@@ -64,7 +64,9 @@ const adminMoreMenus = [
     label: "Penomoran",
     icon: "i-lucide-hash",
     children: [
-      { label: "unknown", to: "/admin/penomoran/" },
+      { label: "Usulan", to: "/admin/penomoran/usulan" },
+      { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
+      { label: "Penomoran", to: "/admin/penomoran/penomoran" },
     ]
   },
   { label: "Naskah Dinas", to: "/admin/naskah-dinas", icon: "i-lucide-file-text" },
@@ -79,7 +81,9 @@ const adminMoreMenus = [
     label: "Laporan",
     icon: "i-lucide-bar-chart-3",
     children: [
-      { label: "unknown", to: "/admin/laporan/" },
+      { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
+      { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
+      { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
     ]
   },
 ];
@@ -143,7 +147,7 @@ const currentMoreMenus = computed(() => route.path.startsWith("/admin") ? adminM
 
     </div>
 
-    <div class="p-4 border-t border-gray-200 dark:border-gray-800 mt-auto">
+    <!-- <div class="p-4 border-t border-gray-200 dark:border-gray-800 mt-auto">
       <div class="relative group">
         <button
           class="flex items-center w-full gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left overflow-hidden">
@@ -155,7 +159,7 @@ const currentMoreMenus = computed(() => route.path.startsWith("/admin") ? adminM
           </div>
         </button>
       </div>
-    </div>
+    </div> -->
   </aside>
 </template>
 
