@@ -109,6 +109,95 @@
         onBeforeUnmount(() => {
             editor.value?.destroy()
         })
+function htmlListToPreview(html) {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, "text/html")
+
+  function getDirectText(li) {
+    for (const node of li.childNodes) {
+      if (node.nodeType === 3 && node.textContent.trim()) {
+        return node.textContent.trim()
+      }
+    }
+    return ''
+  }
+
+  function processList(ol, prefix = '') {
+    let result = ''
+    const type = ol.getAttribute('type') || '1'
+    const items = ol.children
+
+    for (let i = 0; i < items.length; i++) {
+      const li = items[i]
+
+      let marker = ''
+      if (type === '1') marker = `${i + 1}. `
+      else if (type === 'a') marker = `${String.fromCharCode(97 + i)}. `
+
+      const text = getDirectText(li)
+      result += prefix + marker + text + '\n'
+
+      const childOl = li.querySelector(':scope > ol')
+      if (childOl) {
+        result += processList(childOl, prefix + '   ')
+      }
+    }
+
+    return result
+  }
+
+  const firstOl = doc.querySelector('ol')
+  if (!firstOl) return ''
+
+  return processList(firstOl).trim()
+}
+
+        const isTemplateModalOpen = ref(false)
+        const templates = [
+        {
+            id: 1,
+            name: 'Default',
+            preview: `1. Lorem ipsum dolor sit amet...\n2. Lorem ipsum...\n3. Lorem ipsum...`,
+            content: `
+            <ol>
+                <li>Lorem ipsum dolor sit amet...</li>
+                <li>Lorem ipsum dolor sit amet...</li>
+                <li>Lorem ipsum dolor sit amet...</li>
+            </ol>
+            `
+        },
+        {
+            id: 2,
+            name: 'Numbering With Child',
+            content: `
+            <ol>
+                <li>Lorem ipsum dolor sit amet...
+                <ol type="a">
+                    <li>Satu</li>
+                    <li>Dua</li>
+                    <li>Tiga</li>
+                </ol>
+                </li>
+                <li>Lorem ipsum dolor sit amet...
+                <ol type="a">
+                    <li>Satu</li>
+                    <li>Dua</li>
+                    <li>Tiga</li>
+                </ol>
+                </li>
+            </ol>
+            `,
+                get preview() {
+      return htmlListToPreview(this.content)
+    }
+        },
+        
+        ]
+        const applyTemplate = (template: any) => {
+            editor.value?.commands.setContent(template.content)
+            isTemplateModalOpen.value = false
+        }
+
 </script>
 
         <template>
@@ -319,15 +408,49 @@
 
                     <div class="relative py-4">
                         <div class="flex gap-2 mb-5">
-                            <UButton label="Pilih Template" color="primary" icon="i-heroicons-adjustments-horizontal"
-                                class="text-white px-6 hover:bg-primary-600 font-medium" />
-
+                        <UModal 
+                        title="Pilih Template"
+                        :close="{
+                        color: 'primary',
+                        variant: 'outline',
+                        class: 'rounded-full'
+                        }">
+                            <UButton label="Pilih Template" color="primary" icon="i-heroicons-adjustments-horizontal"class="text-white px-6 hover:bg-primary-600 font-medium" />
+                            <template #body>
+                                <UCard v-for="template in templates" :key="template.id" class="cursor-pointer hover:bg-gray-50" @click="applyTemplate(template)" >
+                                    <div @click="isTemplateModalOpen = false">
+                                    <div class="py-3">
+                                        
+                                        <h3 class="font-bold">{{ template.name }}</h3>
+                                        <p class="text-sm text-gray-500 whitespace-pre-line">
+                                            {{ template.preview }}
+                                        </p>
+                                    </div>
+                                    </div>
+                                </UCard>
+                            </template>
+                        </UModal>
                             <UButton label="Template Saya" color="primary" icon="i-heroicons-rectangle-stack"
                                 class="text-white px-6 hover:bg-primary-600 font-medium" />
 
                             <!-- BUTTON KANAN SENDIRI -->
-                            <UButton label="Simpan Template" color="primary" icon="i-heroicons-check-circle"
-                                class="text-white px-6 hover:bg-primary-600 font-medium ml-auto" />
+                        <Modal
+                        title="Simpan Template"
+                        variant="modal2"
+                        :descriptions="[
+                            'Masukan Nama Template'
+                        ]"
+                        :inputs="[
+                            { placeholder: 'Nama Template' }
+                        ]"
+                        primary-button="Simpan"
+                        secondary-button="Batal"
+                        open="Simpan Template"
+                        icon="plus"
+                        primary-color="primary"
+                        secondary-color="primary"
+                        open-color="primary"
+                        />                        
                         </div>
 
                         <div class="relative transition-all duration-300 ease-in-out flex flex-col border border-neutral-200 border-radius-lg"
