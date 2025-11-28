@@ -100,7 +100,7 @@
         </p>
 
         <UButton
-          to="/user/dashboard"
+          to="/admin/dashboard"
           class="items-center gap-2 px-8 py-1 text-[18px] sm:px-12 sm:py-2.5 sm:text-[18px] md:px-15 md:py-3 md:text-[20px] bg-[#457FB6] text-white rounded-lg hover:bg-[#35629B] transition"
         >
           <span>{{ $t("Masuk") }}</span>
