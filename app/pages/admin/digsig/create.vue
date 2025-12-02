@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <!-- Left Section - Title & Breadcrumb -->
-            <PageHeader title="Dashboard" :items="items" />
+            <PageHeader title="Create" :items="items" />
         </div>
     </div>
 </template>

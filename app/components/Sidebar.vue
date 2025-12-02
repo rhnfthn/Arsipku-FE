@@ -149,7 +149,11 @@ const adminMenuUtilitas = [
   {
     label: "Digsig",
     icon: "i-lucide-signature",
-    children: [{ label: "unknown", to: "/admin/digsig" }]
+    children: [
+      { label: "Create", to: "/admin/digsig/create" },
+      { label: "Sign", to: "/admin/digsig/sign" },
+      { label: "Check Dokumen", to: "/admin/digsig/check-dokumen" },
+    ]
   },
   { label: "Short URL", to: "/admin/short-url", icon: "i-lucide-link" },
   { label: "Berkas", to: "/admin/berkas", icon: "i-lucide-folder" },
