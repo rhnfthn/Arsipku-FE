@@ -28,7 +28,7 @@
 
       <!-- Angka 13 tetap -->
       <p
-        class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#e3f1ff] font-bold opacity-100 top-[33rem] sm:top-[30rem] md:top-[40rem] lg:top-[35rem] text-[170px] sm:text-[200px] md:text-[260px] lg:text-[350px]"
+        class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#e3f1ff] font-bold opacity-100 top-[33rem] sm:top-[30rem] md:top-[40rem] lg:top-[33rem] text-[170px] sm:text-[200px] md:text-[260px] lg:text-[350px]"
       >
         13
       </p>
@@ -49,7 +49,7 @@
       >
         <h2 class="text-xl font-bold text-[#457FB6]">Airnav Indonesia</h2>
         <!-- Translate -->
-        <div
+        <!-- <div
           class="flex items-center p-1 mt-1 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700"
         >
           <button
@@ -65,7 +65,7 @@
           >
             {{ locale.name }}
           </button>
-        </div>
+        </div> -->
 
         <div class="flex gap-2 mt-2">
           <button
@@ -94,14 +94,14 @@
         class="absolute left-1/2 transform -translate-x-1/2 text-center opacity-0 fade-slide-up top-[17rem] sm:top-[25rem] md:top-[25rem] lg:top-[18rem] w-[70%] sm:w-auto max-w-xs sm:max-w-sm md:max-w-md"
       >
         <p
-          class="text-base sm:text-l md:text-xl font-medium text-[#676767] mb-4 leading-snug"
+          class="text-base sm:text-[16px] md:text-[18px] font-medium text-[#676767] mb-4 leading-snug"
         >
           {{ $t("title") }}
         </p>
 
         <UButton
           to="/admin/dashboard"
-          class="items-center gap-2 px-8 py-1 text-[18px] sm:px-12 sm:py-2.5 sm:text-[18px] md:px-15 md:py-3 md:text-[20px] bg-[#457FB6] text-white rounded-lg hover:bg-[#35629B] transition"
+          class="items-center gap-2 px-8 py-1 sm:px-12 sm:py-2.5 sm:text-[16px] md:px-15 md:py-2 md:text-[18px] bg-[#457FB6] text-white rounded-lg hover:bg-[#35629B] transition"
         >
           <span>{{ $t("Masuk") }}</span>
           <ArrowRight class="w-8 h-5" />
@@ -113,7 +113,7 @@
         v-if="showOnboarding"
         :class="[OnboardingClass, 'fade-slide-up', 'hidden sm:inline-block']"
         :style="OnboardingStyle"
-        class="relative group top-[15rem] left-[-1rem] sm:top-[2rem] sm:left-[-10rem] md:top-[18rem] md:left-[-8rem] lg:top-[12rem] lg:left-[-28rem] z-10"
+        class="relative group top-[15rem] sm:top-[2rem] sm:left-[-10rem] md:top-[18rem] md:left-[-8rem] lg:top-[12rem] lg:left-[-25rem] z-10"
       >
         <!-- <div
         v-if="showOnboarding"
@@ -123,7 +123,7 @@
       > -->
         <img
           src="/onboarding.png"
-          class="w-[280px] sm:w-[320px] md:w-[350px] rounded-2xl transition-all duration-400 group-hover:scale-105"
+          class="w-[270px] sm:w-[320px] md:w-[350px] rounded-2xl transition-all duration-400 group-hover:scale-105"
         />
 
         <div
@@ -168,7 +168,6 @@ const locales = [
   { code: "id", name: "ID" },
   { code: "en", name: "EN" },
 ];
-
 // UI states
 const loaded = ref(false);
 const logoClass = ref("opacity-0");
@@ -176,7 +175,7 @@ const logoStyle = ref({
   top: "25%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: "600px",
+  width: "300px",
   height: "auto",
 });
 const textClass = ref("");
@@ -214,8 +213,8 @@ const getResponsiveLogoSmall = () => {
     };
   return {
     top: "1.25rem",
-    left: "0.5rem",
-    width: "230px",
+    left: "2rem",
+    width: "100px",
     height: "auto",
     transform: "none",
   };

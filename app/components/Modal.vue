@@ -1,85 +1,82 @@
-  <script setup lang="ts">
-  const props = defineProps({
-    modelValue: { type: Boolean, default: false },
-    title: { type: String, default: "" },
-    variant: { type: String, default: "" },
-    descriptions: { type: Array, default: () => [] },
-    inputs: { type: Array, default: () => [] },
-    primaryButton: { type: String, default: "" },
-    secondaryButton: { type: String, default: "" },
-    open: { type: String, default: "" },
-    primaryColor: { type: String, default: "primary" },
-    secondaryColor: { type: String, default: "gray" },
-    openColor: { type: String, default: "primary" },
-    icon: { type: String, default: "" }
-  });
-
-  const computedIcon = computed(() =>
-    props.icon ? `i-lucide-${props.icon}` : undefined
-  )
-
-  const emit = defineEmits(["update:modelValue", "primary", "secondary"]);
-
-  const handlePrimary = () => {
-    emit("primary");
-    emit("update:modelValue", false);
-  };
-
-  const handleSecondary = () => {
-    emit("secondary");
-    emit("update:modelValue", false);
-  };
-  </script>
-
-  <template>
-  <UModal
-    :model-value="modelValue"
-    @update:model-value="emit('update:modelValue', $event)"
-    @close="emit('update:modelValue', false)" 
-    :close="{
-      color: 'primary',
-      variant: 'outline',
-      class: 'rounded-full'
-    }"
+<template>
+  <div
+    v-if="modelValue"
+    class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
   >
-      <template #header>
-        <div class="ml-26 mb-2" >
-          <Heading variant="heading5b" class="text-center mb-5">
-            {{ title }}
-          </Heading>
-
-          <div v-for="(desc, i) in descriptions" :key="i" class="mt-3" :class="variant === 'modal2' ? 'text-start' : 'text-center'">
-            <Paragraph>{{ desc }}</Paragraph>
-
-            <UInput
-              v-if="variant === 'modal2'"
-              :placeholder="inputs[i]?.placeholder"
-              class="w-full mt-2"
-            />
-          </div>
-
-          <div class="flex justify-center gap-3 mt-5">
-            <UButton
-              :color="primaryColor"
-              @click="handlePrimary"
-              class="px-10 py-3"
+    <!-- Hanya modal yang dianimasikan -->
+    <Transition name="modal">
+      <div
+        v-if="modelValue"
+        class="relative bg-white dark:bg-gray-900 rounded-2xl w-120 p-1"
+      >
+        <!-- Header -->
+        <div class="flex justify-between mb-4 border-b border-gray-300">
+          <slot name="title">
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm mb-3 mt-5 ml-5"
             >
-              {{ primaryButton }}
-            </UButton>
+              Judul Modal
+            </Heading>
+          </slot>
 
-            <UButton
-              :color="secondaryColor"
-              variant="outline"
-              @click="handleSecondary"
-              class="px-10 py-3"
-            >
-              {{ secondaryButton }}
-            </UButton>
-          </div>
+          <button @click="$emit('update:modelValue', false)">
+            <X class="w-4 h-4 mr-5" />
+          </button>
         </div>
-      </template>
-      <UButton :color="openColor" :trailing-icon="computedIcon" @click="emit('update:modelValue', true)">
-        {{ open }}
-      </UButton>
-    </UModal>
-  </template>
+
+        <!-- Body -->
+        <div class="flex flex-col gap-5 ml-5 mr-5">
+          <slot />
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end border-t border-gray-300 mt-7 mb-5 gap-3">
+          <button
+            @click="$emit('update:modelValue', false)"
+            class="px-5 py-2 mt-2 text-xs border border-primary-500 hover:bg-primary-100 text-primary rounded-md"
+          >
+            Batal
+          </button>
+
+          <button
+            @click="$emit('save')"
+            class="px-5 py-2 mr-5 mt-2 text-xs bg-primary hover:bg-primary-800 text-white rounded-md"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<script setup>
+import { X } from "lucide-vue-next";
+import Heading from "~/components/Heading.vue";
+
+defineProps({ modelValue: Boolean });
+defineEmits(["update:modelValue", "save"]);
+</script>
+
+<style scoped>
+/* Animasi modal (zoom-in only) */
+.modal-enter-active,
+.modal-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-to,
+.modal-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+</style>

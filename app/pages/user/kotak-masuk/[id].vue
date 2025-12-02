@@ -56,13 +56,6 @@ const icons = [
                 </div>
             </div>
 
-            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 relative">
-                <div class="text-gray-600 text-sm mb-1">Sepertinya pesan ini ditulis dalam Inggris</div>
-                <button class="text-blue-600 text-sm font-medium hover:underline">Terjemahkan ke Indonesia</button>
-                <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" size="xs"
-                    class="absolute top-2 right-2 text-gray-400" />
-            </div>
-
             <div class="text-gray-800 leading-relaxed mb-8 text-[15px]">
                 <p>
                     Sehubungan dengan rapat koordinasi tim operasional, dimohon kehadiran seluruh anggota tim pada:

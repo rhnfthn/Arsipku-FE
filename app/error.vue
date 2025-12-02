@@ -98,9 +98,9 @@ const config = computed(() => {
     const themes: Record<number, any> = {
         404: {
             color: 'blue',
-            title: 'Penerbangan Anda tersesat di angkasa',
-            desc: 'Halaman yang Anda cari tidak ditemukan dalam radar kami. Sepertinya rute penerbangan ini tidak tersedia atau telah dialihkan ke tujuan lain.',
-            subAction: 'Mau terbang ke mana?',
+            title: 'Halaman Tidak Ditemukan',
+            desc: 'Halaman atau halaman yang Anda cari tidak tersedia di Arsipku. Mungkin halaman tersebut telah dipindahkan, diarsipkan ulang, atau rutenya tidak lagi berlaku.',
+            subAction: 'Ingin kembali mengakses halaman?',
             gradientText: 'from-blue-400 to-blue-600',
             gradientBg: 'from-blue-500/20 via-blue-500/5 to-transparent',
             buttonPrimary: 'bg-blue-500 hover:bg-blue-600 shadow-blue-200',

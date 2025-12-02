@@ -1,21 +1,26 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-[#051321] text-gray-900 dark:text-white">
-    
-    <div class="fixed top-0 left-0 bottom-0 z-50 transition-all duration-300">
+  <div
+    class="min-h-dvh w-full bg-[#F6F8FC] dark:bg-[#051321] text-gray-900 dark:text-white transition-colors duration-300">
+
+    <div class="fixed top-0 left-0 bottom-0 z-50 h-screen transition-all duration-300">
       <Sidebar ref="sidebarRef" v-model:collapsed="collapsed" />
     </div>
 
-    <div
-      class="flex flex-col min-h-screen transition-all duration-300"
-      :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-64'"
-    >
-      <Navbar @open-mobile-sidebar="openMobileSidebar" />
+    <div class="flex flex-col min-h-dvh transition-all duration-300"
+      :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'">
 
-      <main class="flex-1 px-8 py-4">
-        <NuxtPage />
+      <div
+        class="sticky top-0 z-40 px-4 md:px-6 py-1 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-[#051321]/90 backdrop-blur-md">
+        <Navbar @open-mobile-sidebar="openMobileSidebar" />
+      </div>
+
+      <main class="flex-1 w-full px-4 md:px-6">
+        <div class="mx-auto w-full">
+          <NuxtPage />
+        </div>
       </main>
 
-      <footer class="p-4 text-center text-xs text-gray-400">
+      <footer class="p-4 mt-7 text-center text-xs text-gray-400">
         &copy; 2025 ArsipKu System
       </footer>
     </div>
@@ -23,10 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import Navbar from "~/components/Navbar.vue";
-import Sidebar from "~/components/Sidebar.vue";
-
 const collapsed = ref(false);
 const sidebarRef = ref();
 
@@ -36,3 +37,18 @@ const openMobileSidebar = () => {
   }
 };
 </script>
+
+<style>
+html,
+body {
+  background-color: #F6F8FC;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+html.dark,
+html.dark body {
+  background-color: #051321;
+}
+</style>

@@ -1,36 +1,131 @@
-<script setup>
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-import SidebarItem from "./SidebarItem.vue";
-import { badge } from "#build/ui";
+<template>
+  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" @click="closeMobile">
+  </div>
 
+  <aside
+    class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-[#1E1F20] shadow-xl md:shadow-none"
+    :class="[
+      // Translasi (Keluar Masuk Layar)
+      isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+      // Lebar Sidebar
+      (collapsed && !isMobile) ? 'w-[72px]' : 'w-[320px] md:w-[320px]'
+    ]">
+
+    <div
+      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-[#28292A] h-full flex-shrink-0 space-y-6 relative z-50">
+
+      <button @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
+        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
+      </button>
+
+      <div class="flex flex-col gap-4 w-full items-center">
+        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
+
+          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="activeApp === app.id ? 'bg-blue-200 dark:bg-blue-900/50' : 'hover:bg-white/50 bg-transparent'">
+            <UIcon :name="app.icon" class="w-6 h-6 transition-colors"
+              :class="activeApp === app.id ? 'text-gray-800 dark:text-white' : 'text-gray-600 dark:text-gray-400'" />
+            <div v-if="app.badge"
+              class="absolute -top-1 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-primary-50 dark:border-[#28292A]">
+              {{ app.badge }}
+            </div>
+          </div>
+          <span class="text-[10px] font-medium transition-colors"
+            :class="activeApp === app.id ? 'text-gray-900 font-bold dark:text-white' : 'text-gray-600 dark:text-gray-400'">{{
+              app.label }}
+          </span>
+
+          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-[#1E1F20] shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
+            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">{{ app.label }}</h3>
+              <!-- <button
+                class="flex items-center justify-center gap-2 w-full bg-[#C2E7FF] text-[#001D35] py-2 rounded-xl text-sm font-medium hover:bg-[#b3dfff]">
+                <UIcon :name="app.actionIcon" class="w-4 h-4" /> {{ app.actionLabel }}
+              </button> -->
+            </div>
+            <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
+              <SidebarItem v-for="(item, idx) in app.menus" :key="idx" :item="item" :collapsed="false" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-[#1E1F20]">
+
+      <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
+        <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
+        <span class="text-xl text-gray-600 dark:text-gray-200 font-medium">ArsipKu</span>
+      </div>
+
+      <!-- <div class="px-4 pb-4"> -->
+      <!-- <button
+          class="flex items-center gap-3 bg-[#C2E7FF] hover:shadow-md transition-all text-[#001D35] px-6 py-4 rounded-2xl cursor-pointer min-w-[140px]">
+          <UIcon :name="currentAppData.actionIcon" class="w-6 h-6" />
+          <span class="font-semibold text-[15px]">{{ currentAppData.actionLabel }}</span>
+        </button> -->
+      <!-- </div> -->
+
+      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2">
+        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
+      </div>
+
+    </div>
+  </aside>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+// import SidebarItem from './SidebarItem.vue'
+
+// --- 1. SETUP & PROPS ---
 const props = defineProps({
   collapsed: Boolean,
-});
-defineEmits(["update:collapsed"]);
+})
+const emit = defineEmits(["update:collapsed"])
 
-const route = useRoute();
-const isMobileOpen = ref(false);
-const showMore = ref(false);
+const route = useRoute()
 
-const closeMobile = () => (isMobileOpen.value = false);
+// --- 2. STATE VARIABLES ---
+const isMobileOpen = ref(false)
+const isMobile = ref(false)
+const activeApp = ref('')
+const hoveredApp = ref(null)
 
-defineExpose({
-  openMobile: () => (isMobileOpen.value = true),
-  closeMobile,
-});
+// --- 3. DATA MENU STATIS ---
 
-const userMenus = [
+// =======================
+// A. DATA MENU USER
+// =======================
+
+// 1. User - Utama (Fokus Korespondensi)
+const userMenuUtama = [
   { label: "Dashboard", to: "/user/dashboard", icon: "i-lucide-layout-dashboard" },
   { label: "Kotak Masuk", to: "/user/korespondensi/kotak-masuk", icon: "i-lucide-inbox", badge: 2 },
   { label: "Terkirim", to: "/user/korespondensi/terkirim", icon: "i-lucide-send" },
   { label: "Draft", to: "/user/korespondensi/draft", icon: "i-lucide-file-text", badge: 1 },
+];
+
+// 2. User - Utilitas (Alat Bantu)
+const userMenuUtilitas = [
   { label: "Short URL", to: "/user/short-url", icon: "i-lucide-link" },
   { label: "Template", to: "/user/template", icon: "i-lucide-copy" },
   { label: "Titelatur Inggris", to: "/user/titelatur", icon: "i-lucide-languages" },
 ];
 
-const adminMainMenus = [
+// =======================
+// B. DATA MENU ADMIN
+// =======================
+
+// 1. Admin - Utama (Harian)
+const adminMenuUtama = [
   { label: "Dashboard", to: "/admin/dashboard", icon: "i-lucide-layout-dashboard" },
   {
     label: "Tulis",
@@ -47,17 +142,22 @@ const adminMainMenus = [
   { label: "Kotak Masuk", to: "/admin/korespondensi/kotak-masuk", icon: "i-lucide-inbox", badge: 2 },
   { label: "Terkirim", to: "/admin/korespondensi/terkirim", icon: "i-lucide-send" },
   { label: "Draft", to: "/admin/korespondensi/draft", icon: "i-lucide-file-text", badge: 1 },
+];
+
+// 2. Admin - Utilitas
+const adminMenuUtilitas = [
   {
     label: "Digsig",
     icon: "i-lucide-signature",
     children: [{ label: "unknown", to: "/admin/digsig" }]
   },
   { label: "Short URL", to: "/admin/short-url", icon: "i-lucide-link" },
-];
-
-const adminMoreMenus = [
   { label: "Berkas", to: "/admin/berkas", icon: "i-lucide-folder" },
   { label: "Template", to: "/admin/template", icon: "i-lucide-copy" },
+];
+
+// 3. Admin - Administrasi
+const adminMenuAdministrasi = [
   { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
   { label: "Titelatur Inggris", to: "/admin/titelatur", icon: "i-lucide-languages" },
   {
@@ -77,95 +177,136 @@ const adminMoreMenus = [
       { label: "unknown", to: "/admin/master/" },
     ]
   },
-  {
-    label: "Laporan",
-    icon: "i-lucide-bar-chart-3",
-    children: [
-      { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
-      { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
-      { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
-    ]
-  },
 ];
 
-const currentMainMenus = computed(() => route.path.startsWith("/admin") ? adminMainMenus : userMenus);
-const currentMoreMenus = computed(() => route.path.startsWith("/admin") ? adminMoreMenus : []);
+// 4. Admin - Laporan (FLAT / Tanpa Submenu)
+// Saya tambahkan icon spesifik karena sekarang mereka jadi menu utama
+const adminMenuLaporan = [
+  { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah", icon: "i-lucide-file-bar-chart-2" },
+  { label: "Detail Naskah", to: "/admin/laporan/detail-naskah", icon: "i-lucide-file-search" },
+  { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk", icon: "i-lucide-folder-input" },
+];
+
+// --- 4. COMPUTED: APPS (DINAMIS BY ROUTE) ---
+const apps = computed(() => {
+  const isAdmin = route.path.startsWith('/admin')
+
+  if (isAdmin) {
+    // --- MODE ADMIN (4 Kategori) ---
+    return [
+      {
+        id: 'admin-utama',
+        label: 'Utama',
+        icon: 'i-heroicons-squares-2x2',
+        menus: adminMenuUtama
+      },
+      {
+        id: 'admin-utilitas',
+        label: 'Utilitas',
+        icon: 'i-heroicons-briefcase',
+        menus: adminMenuUtilitas
+      },
+      {
+        id: 'admin-administrasi',
+        label: 'Administrasi',
+        icon: 'i-heroicons-cog-6-tooth',
+        menus: adminMenuAdministrasi
+      },
+      {
+        id: 'admin-laporan',
+        label: 'Laporan',
+        icon: 'i-heroicons-presentation-chart-line',
+        menus: adminMenuLaporan
+      }
+    ]
+  } else {
+    // --- MODE USER (2 Kategori) ---
+    return [
+      {
+        id: 'user-utama',
+        label: 'Utama',
+        icon: 'i-heroicons-home', // Icon rumah/home
+        actionLabel: 'Tulis',
+        actionIcon: 'i-heroicons-pencil',
+        menus: userMenuUtama
+      },
+      {
+        id: 'user-utilitas',
+        label: 'Utilitas',
+        icon: 'i-heroicons-squares-plus', // Icon menu tambahan
+        menus: userMenuUtilitas
+      }
+    ]
+  }
+})
+
+// --- 5. LOGIC SWITCHING & WATCHER ---
+const setActiveApp = (appId) => { activeApp.value = appId }
+
+const currentAppData = computed(() => {
+  return apps.value.find(app => app.id === activeApp.value) || apps.value[0]
+})
+
+// Reset activeApp saat route/apps berubah
+watch(apps, (newApps) => {
+  if (newApps.length > 0) {
+    const exists = newApps.find(a => a.id === activeApp.value)
+    if (!exists) {
+      activeApp.value = newApps[0].id
+    }
+  }
+}, { immediate: true })
+
+// --- 6. LOGIC RESPONSIVE & EVENT HANDLERS ---
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+const handleMenuClick = () => {
+  if (isMobile.value) {
+    // Mobile: Tutup Sidebar
+    isMobileOpen.value = false
+  } else {
+    // Desktop: Collapse/Expand
+    emit('update:collapsed', !props.collapsed)
+  }
+}
+
+const closeMobile = () => (isMobileOpen.value = false)
+const openMobile = () => (isMobileOpen.value = true)
+
+// Lifecycle Hooks
+onMounted(() => {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
+})
+
+defineExpose({ openMobile, closeMobile })
 </script>
 
-<template>
-  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-30 md:hidden" @click="closeMobile"></div>
-
-  <aside :class="[
-    collapsed ? 'w-20' : 'w-64',
-    isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-    'fixed left-0 top-0 h-screen z-50',
-    'bg-white dark:bg-gray-900 shadow border-r border-gray-200 dark:border-gray-800',
-    'transition-all duration-300 flex flex-col',
-  ]">
-    <div class="relative h-20 flex items-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0"
-      :class="collapsed ? 'justify-center' : 'justify-start px-4'">
-      <div class="flex items-center gap-2 overflow-hidden">
-        <img src="/logo.png" class="h-8 w-auto object-contain flex-shrink-0" />
-        <h1 v-if="!collapsed"
-          class="font-bold text-lg whitespace-nowrap dark:text-white transition-opacity duration-300">
-          ArsipKu
-        </h1>
-      </div>
-      <button @click="isMobileOpen = !isMobileOpen" class="md:hidden absolute right-4 z-20">
-        <UIcon :name="isMobileOpen ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'" class="w-7 h-7" />
-      </button>
-    </div>
-
-    <button @click="$emit('update:collapsed', !collapsed)"
-      class="hidden md:flex absolute top-6 -right-4 z-50 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-300 dark:border-gray-700 items-center justify-center text-gray-500 hover:text-primary-500 transition-colors">
-      <UIcon name="i-heroicons-chevron-left" :class="['w-4 h-4 transition-transform', collapsed && 'rotate-180']" />
-    </button>
-
-    <div class="flex-1 space-y-1 py-4 px-2 overflow-y-auto custom-scrollbar overflow-x-visible">
-
-      <SidebarItem v-for="(item, index) in currentMainMenus" :key="'main-' + index" :item="item"
-        :collapsed="collapsed" />
-
-      <div v-if="currentMoreMenus.length > 0">
-        <div class="mb-1">
-          <button @click="showMore = !showMore" :class="[
-            'flex items-center transition-all duration-200 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-            collapsed ? 'justify-center w-10 h-10 mx-auto' : 'w-full px-4 py-2 gap-3'
-          ]">
-            <UIcon
-              :name="collapsed ? 'i-heroicons-ellipsis-horizontal' : (showMore ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down')"
-              :class="collapsed ? 'w-6 h-6' : 'w-5 h-5'" />
-            <span v-if="!collapsed" class="text-sm font-medium">{{ showMore ? 'Sembunyikan' : 'Lainnya' }}</span>
-          </button>
-        </div>
-
-        <div v-show="showMore" class="space-y-1 transition-all">
-          <SidebarItem v-for="(item, index) in currentMoreMenus" :key="'more-' + index" :item="item"
-            :collapsed="collapsed" />
-        </div>
-      </div>
-
-    </div>
-
-    <!-- <div class="p-4 border-t border-gray-200 dark:border-gray-800 mt-auto">
-      <div class="relative group">
-        <button
-          class="flex items-center w-full gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left overflow-hidden">
-          <img src="https://i.pravatar.cc/150?img=33" alt="User"
-            class="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700 flex-shrink-0" />
-          <div v-if="!collapsed" class="flex-1 min-w-0 overflow-hidden">
-            <p class="text-sm font-bold text-gray-900 dark:text-white truncate">Ivan Dwi Santoso</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Administrator</p>
-          </div>
-        </button>
-      </div>
-    </div> -->
-  </aside>
-</template>
-
 <style scoped>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -173,11 +314,15 @@ const currentMoreMenus = computed(() => route.path.startsWith("/admin") ? adminM
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #e5e7eb;
-  border-radius: 20px;
+  background-color: transparent;
+  border-radius: 10px;
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #374151;
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #dadce0;
+}
+
+.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #444746;
 }
 </style>
