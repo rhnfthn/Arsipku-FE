@@ -26,7 +26,7 @@
         </div>
 
         <!-- Body -->
-        <div class="flex flex-col gap-5 ml-5 mr-5">
+        <div class="flex flex-col gap-5 ml-5 mr-5 max-h-[60vh] overflow-y-auto">
           <slot />
         </div>
 
