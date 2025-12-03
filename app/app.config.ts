@@ -10,7 +10,7 @@ export default defineAppConfig({
     },
 
     typography: {
-      base: "font-montserrat text-neutral-900",
+      base: "font-montserrat ",
 
       variants: {
         //normal
@@ -76,23 +76,22 @@ export default defineAppConfig({
         caption1sb: "text-[12px] font-semibold dark:text-white",
         caption2sb: "text-[11px] font-semibold dark:text-white",
         //bold
-        body1b: 'text-[16px] font-bold dark:text-white',
-        body2b: 'text-[14px] font-bold dark:text-white',
-        body3b: 'text-[12px] font-bold dark:text-white',
-        caption1b: 'text-[12px] font-bold dark:text-white',
-        caption2b: 'text-[11px] font-bold dark:text-white',
-      }
+        body1b: "text-[16px] font-bold dark:text-white",
+        body2b: "text-[14px] font-bold dark:text-white",
+        body3b: "text-[12px] font-bold dark:text-white",
+        caption1b: "text-[12px] font-bold dark:text-white",
+        caption2b: "text-[11px] font-bold dark:text-white",
+      },
     },
     modal: {
       base: {
-        content: 'p-6 rounded-xl bg-white shadow-xl'
+        content: "p-6 rounded-xl bg-white shadow-xl",
       },
 
       variants: {
-        modal1: { content: 'max-w-[420px]' },
-        modal2: { content: 'max-w-[420px]' },
-      }
-    }
-  }
-})
-   
+        modal1: { content: "max-w-[420px]" },
+        modal2: { content: "max-w-[420px]" },
+      },
+    },
+  },
+});

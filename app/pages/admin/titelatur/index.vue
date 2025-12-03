@@ -15,6 +15,10 @@ import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Titelatur Inggris", to: "/admin/titelatur" },
+];
 // ================================
 // DATA
 // ================================
@@ -119,7 +123,7 @@ const filteredItems = computed(() => {
   const s = search.value.toLowerCase();
   return items.value.filter(
     (it) =>
-      it.from.toLowerCase().includes(s) || it.subject.toLowerCase().includes(s)
+      it.from.toLowerCase().includes(s) || it.subject.toLowerCase().includes(s),
   );
 });
 
@@ -151,7 +155,7 @@ const rowsChoices = [5, 10, 15, 25, 50, 100];
 
 const totalItems = computed(() => filteredItems.value.length);
 const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value)
+  Math.ceil(totalItems.value / rowsPerPage.value),
 );
 
 const paginatedItems = computed(() => {
@@ -238,9 +242,7 @@ const deleteNow = () => {
         <Heading variant="heading6b" class="text-mobile-md">
           Titelatur Inggris
         </Heading>
-        <Heading variant="heading10m" class="text-mobile-base">
-          Panduan tata nama dan nomenklatur dalam Bahasa Inggris
-        </Heading>
+        <PageHeader :items="breadcrumbs" />
       </div>
 
       <button
@@ -254,39 +256,53 @@ const deleteNow = () => {
 
     <!-- CARD -->
     <div
-      class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col"
+      class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col"
     >
       <!-- TOP BAR -->
       <div
-        class="p-3 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
+        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3 cursor-pointer"
       >
-        <div class="flex items-center gap-2">
-          <span class="text-xs">Tampilkan</span>
-          <select
-            v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+        <div class="flex items-center gap-4">
+          <!-- tampilkan -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs">Tampilkan</span>
+            <select
+              v-model="rowsPerPage"
+              class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            >
+              <option v-for="n in rowsChoices" :key="n" :value="n">
+                {{ n }}
+              </option>
+            </select>
+          </div>
+
+          <!-- SORT -->
+          <div class="flex items-center gap-2">
+            <button
+              @click="toggleSort"
+              class="flex items-center gap-1 text-gray-500 text-xs px-1 py-1 rounded-md bg-white hover:bg-gray-100"
+            >
+              <ArrowUpDown class="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div class="relative w-full sm:w-60">
+        <!-- Search -->
+        <div class="relative flex-1 w-full md:w-56">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
             v-model="search"
-            placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-300 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            placeholder="Cari Titelatur..."
+            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
 
       <!-- TABLE -->
       <table class="min-w-full text-left text-sm">
-        <thead class="bg-primary-700 text-primary-50">
+        <thead class="bg-primary-400 text-primary-50">
           <tr>
             <th class="px-4 py-4 font-bold">Titelatur Indonesia</th>
             <th class="px-4 py-4 font-bold">Titelatur Inggris</th>
@@ -303,8 +319,8 @@ const deleteNow = () => {
             <td class="px-4 py-3">{{ it.from }}</td>
             <td class="px-4 py-3">{{ it.subject }}</td>
 
-            <td class="px-4 py-3 text-center flex justify-center gap-4">
-              <button @click="openEdit(it)" class="text-primary">
+            <td class="px-4 py-3 text-center flex justify-center gap-5">
+              <button @click="openEdit(it)" class="text-yellow-500">
                 <Pencil class="w-4 h-4" />
               </button>
 

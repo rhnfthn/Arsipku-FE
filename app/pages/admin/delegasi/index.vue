@@ -12,6 +12,7 @@ import {
 
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import Heading from "~/components/Heading.vue";
 
 // ==============================
 // STATE (existing)
@@ -21,6 +22,11 @@ const filterStatus = ref("Semua");
 const sortDirection = ref<"asc" | "desc" | null>(null);
 const showAddModal = ref(false);
 const showEditModal = ref(false);
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Delegasi", to: "/admin/delegasi" },
+];
 
 const listDelegasi = ref([
   {
@@ -151,7 +157,7 @@ const openDelete = (item) => {
 
 const deleteNow = () => {
   listDelegasi.value = listDelegasi.value.filter(
-    (i) => i.id !== itemToDelete.value.id
+    (i) => i.id !== itemToDelete.value.id,
   );
   confirmDeleteOpen.value = false;
 };
@@ -212,7 +218,7 @@ const openEdit = (item) => {
 
 const saveEditDelegasi = () => {
   const index = listDelegasi.value.findIndex(
-    (x) => x.id === editDelegasi.value.id
+    (x) => x.id === editDelegasi.value.id,
   );
   if (index !== -1) {
     listDelegasi.value[index] = {
@@ -228,7 +234,7 @@ const saveEditDelegasi = () => {
 // ================================
 // PAGINATION
 // ================================
-const rowsPerPage = ref(5);
+const rowsPerPage = ref(10);
 const rowsChoices = [5, 10, 15];
 
 const currentPage = ref(1);
@@ -241,7 +247,7 @@ const paginatedDelegasi = computed(() => {
 const totalItems = computed(() => filteredData.value.length);
 
 const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value)
+  Math.ceil(totalItems.value / rowsPerPage.value),
 );
 
 // reset page saat search atau rowsPerPage berubah
@@ -367,8 +373,21 @@ function selectEditJabatan(val: string) {
 
 <template>
   <div class="w-full min-w-0 min-h-screen bg-gray-50">
-    <h2 class="text-2xl font-bold mb-2">Delegasi</h2>
-    <p class="text-gray-500 mb-6">Kelola delegasi tugas dan wewenang</p>
+    <div class="flex items-start justify-between w-full mb-5">
+      <div>
+        <Heading variant="heading6b" class="text-mobile-md"> Delegasi </Heading>
+        <PageHeader :items="breadcrumbs" />
+      </div>
+      <div class="flex">
+        <UButton
+          @click="showAddModal = true"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-xs"
+        >
+          <Plus class="w-4 h-4" />
+          Tambah Delegasi
+        </UButton>
+      </div>
+    </div>
 
     <div
       class="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-200"
@@ -430,7 +449,7 @@ function selectEditJabatan(val: string) {
               </svg>
             </button>
 
-           <div
+            <div
               v-if="openFilterStatus"
               class="absolute left-0 mt-2 w-56 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden"
             >
@@ -465,14 +484,6 @@ function selectEditJabatan(val: string) {
               class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
             />
           </div>
-
-          <UButton
-            @click="showAddModal = true"
-            class="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-xs"
-          >
-            <Plus class="w-4 h-4" />
-            Tambah Delegasi
-          </UButton>
         </div>
 
         <!-- LIST -->

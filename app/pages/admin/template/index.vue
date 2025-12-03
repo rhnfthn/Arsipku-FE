@@ -5,8 +5,8 @@
     <div class="flex items-center justify-between w-full mb-5">
       <!-- KIRI -->
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">Template</Heading>
-        <Heading variant="heading10m">Panduan Template Dokumen</Heading>
+        <Heading variant="heading6b" class="text-mobile-md"> Template </Heading>
+        <PageHeader :items="breadcrumbs" />
       </div>
 
       <!-- KANAN -->
@@ -18,10 +18,11 @@
         Tambah Titelatur
       </button>
     </div>
-
+    <!-- CARD -->
     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm w-full">
+      <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 p-5"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 p-3"
       >
         <div class="flex items-center gap-2">
           <span class="text-xs">Tampilkan</span>
@@ -33,16 +34,47 @@
               {{ n }}
             </option>
           </select>
+          <div class="relative">
+            <button
+              @click="showDateMenu = !showDateMenu"
+              class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
+              title="Periode Data"
+            >
+              <History class="w-4 h-4" />
+            </button>
+            <div
+              v-if="showDateMenu"
+              @click="showDateMenu = false"
+              class="fixed inset-0 z-40 bg-transparent"
+            ></div>
+            <div
+              v-if="showDateMenu"
+              class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
+            >
+              <button
+                v-for="opt in dateOptions"
+                :key="opt"
+                @click="selectDateFilter(opt)"
+                class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-100 flex items-center justify-between"
+              >
+                <span>{{ opt }}</span>
+                <Check
+                  v-if="activeDateLabel === opt"
+                  class="w-3 h-3 text-primary"
+                />
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="relative w-full md:w-56">
+        <div class="relative flex-1 w-full md:w-56">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
             v-model="search"
             placeholder="Cari template..."
-            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -50,7 +82,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
           <thead>
-            <tr class="bg-gray-100 dark:bg-gray-800">
+            <tr class="bg-primary-400 text-white dark:bg-gray-800">
               <th
                 class="text-left text-[14px] p-4 border-b border-gray-300 cursor-pointer"
                 @click="toggleSort('from')"
@@ -79,14 +111,14 @@
             <tr
               v-for="mail in paginatedEmails"
               :key="mail.id"
-              class="border-b border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              class="border-b bg-white border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
             >
               <td class="p-4">{{ mail.from }}</td>
               <td class="p-4 text-primary-400 font-medium">
                 {{ mail.fileName }}
               </td>
 
-              <td class="p-4 flex items-center gap-3">
+              <td class="p-4 flex items-center gap-4 mr-2">
                 <button class="text-sky-600 hover:text-sky-800">
                   <Download class="w-4 h-4" />
                 </button>
@@ -98,7 +130,7 @@
                   <Pencil class="w-4 h-4" />
                 </button>
 
-                <button @click="openDelete(it)" class="text-red-500">
+                <button @click="openDelete(item)" class="text-red-500">
                   <Trash2 class="w-4 h-4" />
                 </button>
               </td>
@@ -263,7 +295,7 @@
     <!-- ========================= -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
-      title="Hapus Titelatur?"
+      title="Hapus Data?"
       description="Data yang dihapus tidak dapat dikembalikan."
       confirmText="Hapus"
       cancelText="Batal"
@@ -272,7 +304,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import {
   Inbox,
@@ -288,6 +320,7 @@ import {
   Pencil,
   Trash2,
   Plus,
+  History,
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
@@ -297,7 +330,13 @@ const sortBy = ref("from");
 const sortDir = ref("asc");
 const editModal = ref(false);
 const editData = ref({});
+const showDateMenu = ref(false);
+const selectDateFilter = (opt) => {
+  activeDateLabel.value = opt;
+  showDateMenu.value = false;
+};
 
+const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun"];
 const emails = ref([
   { id: 1, from: "PER - PERATURAN DIREKSI", fileName: "peraturan_1.pdf" },
   { id: 2, from: "KEP - KEPUTUSAN DIREKSI", fileName: "keputusan.pdf" },
@@ -339,25 +378,51 @@ const toggleSort = (column) => {
   }
 };
 
-// ================================
-// POPUP DELETE
-// ================================
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref(null);
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Template", to: "/admin/template" },
+];
 
-const openDelete = (item) => {
+// ==============================
+// DELETE (existing)
+// ==============================
+// const confirmDeleteOpen = ref(false);
+// const itemToDelete = ref < any > null;
+
+// const openDelete = (item) => {
+//   itemToDelete.value = item;
+//   confirmDeleteOpen.value = true;
+// };
+
+// const deleteNow = () => {
+//   listDelegasi.value = listDelegasi.value.filter(
+//     (i) => i.id !== itemToDelete.value.id,
+//   );
+//   confirmDeleteOpen.value = false;
+// };
+
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<any>(null);
+
+const openDelete = (item: any) => {
   itemToDelete.value = item;
   confirmDeleteOpen.value = true;
 };
 
 const deleteNow = () => {
-  items.value = items.value.filter((i) => i.id !== itemToDelete.value.id);
+  if (!itemToDelete.value) return;
+
+  listDelegasi.value = listDelegasi.value.filter(
+    (i) => i.id !== itemToDelete.value.id,
+  );
+
   confirmDeleteOpen.value = false;
 };
+
 // ================================
 // PAGINATION
 // ================================
-const rowsPerPage = ref(5);
+const rowsPerPage = ref(10);
 const rowsChoices = [5, 10, 15];
 
 const currentPage = ref(1);
@@ -370,7 +435,7 @@ const paginatedEmails = computed(() => {
 const totalItems = computed(() => sortedEmails.value.length);
 
 const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value)
+  Math.ceil(totalItems.value / rowsPerPage.value),
 );
 
 // reset page saat search atau rowsPerPage berubah
