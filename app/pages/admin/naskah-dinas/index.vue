@@ -265,11 +265,18 @@ function selectEditSifatNaskah(val: string) {
 </script>
 
 <template>
-    <div class="space-y-6 mb-3">
+    <div class="mb-3 flex flex-wrap justify-between">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <!-- Left Section - Title & Breadcrumb -->
             <PageHeader title="Naskah Dinas" :items="items" />
-        </div>        
+        </div>
+        <UButton
+            @click="showAddModal = true"
+            class="flex items-center gap-1 bg-primary hover:bg-primary-800 text-white h-10 rounded-lg text-xs"
+          >
+            <Plus class="w-4 h-4" />
+            Tambah Naskah Dinas
+        </UButton>        
     </div>
   <div class="w-full min-w-0 min-h-screen bg-gray-50">
     <div
@@ -356,26 +363,17 @@ function selectEditSifatNaskah(val: string) {
               class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
             />
           </div>
-
-          <UButton
-            @click="showAddModal = true"
-            class="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-xs"
-          >
-            <Plus class="w-4 h-4" />
-            Tambah Naskah Dinas
-          </UButton>
         </div>
 <!-- LIST TABLE -->
 <div class="overflow-x-auto">
   <table class="w-full border-collapse text-sm">
     <thead>
-      <tr class="bg-gray-100 text-gray-600 text-left">
-        <th class="px-4 py-3 border-b">Tertuju</th>
-        <th class="px-4 py-3 border-b">Asal Naskah</th>
-        <th class="px-4 py-3 border-b">Jabatan</th>
-        <th class="px-4 py-3 border-b">Perihal</th>
-        <th class="px-4 py-3 border-b">Jam Dibuat</th>
-        <th class="px-4 py-3 border-b text-center">Aksi</th>
+      <tr class="bg-blue-100 text-gray-600 text-left">
+        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Tertuju</th>
+        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Asal Naskah</th>
+        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Jabatan</th>
+        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Perihal</th>
+        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Jam Dibuat</th>
       </tr>
     </thead>
 
@@ -383,7 +381,7 @@ function selectEditSifatNaskah(val: string) {
       <tr
         v-for="item in filteredData"
         :key="item.id"
-        class="hover:bg-gray-50 transition-colors"
+        class="hover:bg-blue-50 transition-colors"
       >
         <td class="px-4 py-3 text-black uppercase">
           {{ item.tertuju }} <br>
@@ -409,24 +407,6 @@ function selectEditSifatNaskah(val: string) {
         </td>
         <td class="px-4 py-3 text-black uppercase">
           {{ item.jam }}
-        </td>
-
-        <td class="px-4 py-3 text-center">
-          <div class="flex justify-center items-center gap-0.5 ">
-            <button
-              @click="openEdit(item)"
-              class="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <Pencil class="w-4 h-4 text-gray-600" />
-            </button>
-
-            <button
-              @click="openDelete(item)"
-              class="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <Trash2 class="w-4 h-4 text-red-500" />
-            </button>
-          </div>
         </td>
       </tr>
     </tbody>
@@ -517,6 +497,13 @@ function selectEditSifatNaskah(val: string) {
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >Nomor Asal Naskah <span class="text-red-500">*</span></label
+          >
+          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+        </div>
+
+        <div class="flex flex-wrap flex-col">
+          <label class="text-xs font-semibold"
+            >Asal Naskah <span class="text-red-500">*</span></label
           >
           <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
         </div>

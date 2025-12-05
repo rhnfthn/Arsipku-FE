@@ -348,11 +348,11 @@ const copyUrl = (value: string, type: string) => {
   <table class="min-w-full text-sm border-collapse">
     <thead>
       <tr class=" dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-        <th class="px-3 py-2 border-b text-left">Tanggal</th>
-        <th class="px-3 py-2 border-b text-left">URL Asli</th>
-        <th class="px-3 py-2 border-b text-left">URL Modifikasi</th>
-        <th class="px-3 py-2 border-b text-left">Keterangan</th>
-        <th class="px-3 py-2 border-b text-center">Aksi</th>
+        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">Tanggal</th>
+        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">URL Asli</th>
+        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">URL Modifikasi</th>
+        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">Keterangan</th>
+        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-center">Aksi</th>
       </tr>
     </thead>
 
