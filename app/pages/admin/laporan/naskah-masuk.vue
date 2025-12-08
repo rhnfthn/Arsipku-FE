@@ -154,4 +154,10 @@ const yearOptions = computed(() => {
   data.value.forEach(d => d.years.forEach(y => years.add(y.tahun)));
   return Array.from(years).sort((a, b) => b - a);
 });
+
+const refreshData = () => {
+  selectedMonth.value = "";
+  selectedType.value = "";
+  selectedYear.value = 2025;
+};
 </script>

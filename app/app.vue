@@ -1,5 +1,5 @@
 <template>
-  <UApp>
+  <UApp :toaster="toaster">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -7,6 +7,10 @@
     <USelectMenu />
   </UApp>
 </template>
+
+<script setup lang="ts">
+const toaster = { position: 'top-right' }
+</script>
 
 <style>
 :root {

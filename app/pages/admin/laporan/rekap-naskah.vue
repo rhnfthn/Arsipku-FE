@@ -7,11 +7,12 @@
         </Paragraph>
       </div>
       <button
+        @click="exportExcel"
         class="flex items-center gap-2 bg-primary text-white h-9 px-4 rounded-lg hover:bg-primary-800 text-xs"
       >
         <FileDown class="w-4 h-4" />
         Export
-      </button>    
+      </button>
     </div>
     <div class="p-5 overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <div class="flex items-center">
@@ -90,10 +91,22 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import {FileDown, RotateCcw} from "lucide-vue-next";
+import { useToast } from "#imports";
 
 const selectedYear = ref(2025);
 const selectedType = ref("");
 const selectedMonth = ref("");
+
+const toast = useToast();
+
+const exportExcel = () => {
+  toast.add({
+    title: "Berhasil!",
+    description: "Data berhasil diexport testt",
+    color: "success",
+    icon: "i-lucide-check-circle"
+  });
+};
 
 const monthOptions = [
   { label: "Januari", value: "januari" },
