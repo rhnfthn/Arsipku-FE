@@ -181,6 +181,11 @@ const userMenuUtilitas = [
     to: "/user/titelatur",
     icon: "i-lucide-languages",
   },
+  {
+    label: "Usulan Penomoran",
+    to: "/user/penomoran/usulan",
+    icon: "i-lucide-hash",
+  },
 ];
 
 // =======================
@@ -209,7 +214,6 @@ const adminMenuUtama = [
         label: "Surat Dinas Eksternal",
         to: "/admin/korespondensi/tulis/surat-dinas-eksternal",
       },
-      { label: "Registrasi", to: "/admin/korespondensi/tulis/registrasi" },
     ],
   },
   {
@@ -261,7 +265,7 @@ const adminMenuAdministrasi = [
     children: [
       { label: "Usulan", to: "/admin/penomoran/usulan" },
       { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
-      { label: "Penomoran", to: "/admin/penomoran" },
+      { label: "Penomoran", to: "/admin/penomoran/penomoran" },
     ],
   },
   {
@@ -272,7 +276,11 @@ const adminMenuAdministrasi = [
   {
     label: "Master Data",
     icon: "i-lucide-database",
-    children: [{ label: "unknown", to: "/admin/master/" }],
+    children: [
+      { label: "Akun", to: "/admin/master/akun" },
+      { label: "Hak Akses", to: "/admin/master/hak-akses" },
+      { label: "Unknown", to: "/admin/master/" },
+    ],
   },
 ];
 

@@ -15,8 +15,6 @@ import {
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   Plus,
-  Copy,
-  Trash2,
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 
@@ -25,22 +23,6 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const toast = useToast();
 const { copy } = useClipboard();
-
-/* Breadcrumb */
-const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "short-url", to: "/admin/short-url" },
-];
-
-const generateRandomString = (length = 5) => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 type Payment = {
   tanggal: string;
@@ -62,7 +44,7 @@ const data = ref<Payment[]>([
     LUrl: "https://urlasli2",
     SUrl: "url.modifikasi.com",
     keterangan:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
   },
 ]);
 
@@ -139,55 +121,75 @@ const columns: TableColumn<Payment>[] = [
   },
 
   {
-    id: "actions",
     header: "Aksi",
-    cell: ({ row }) =>
-      h("div", { class: "flex items-center gap-2" }, [
-        // COPY BUTTON
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
         h(
-          "button",
+          UDropdownMenu,
           {
-            class: "p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800",
-            onClick: () => {
-              copy(row.original.SUrl);
-              toast.add({
-                title: "URL berhasil disalin!",
-                color: "success",
-                icon: "i-lucide-copy",
-              });
+            content: {
+              align: "end",
             },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
           },
           () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-copy",
-              class: "w-4 h-4 text-gray-600 dark:text-gray-300",
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
             }),
         ),
-
-        // DELETE BUTTON
-        h(
-          "button",
-          {
-            class: "p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900",
-            onClick: () => {
-              const index = data.value.indexOf(row.original);
-              data.value.splice(index, 1);
-              toast.add({
-                title: "URL berhasil dihapus!",
-                color: "error",
-                icon: "i-lucide-trash-2",
-              });
-            },
-          },
-          () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-trash-2",
-              class: "w-4 h-4 text-red-600 dark:text-red-400",
-            }),
-        ),
-      ]),
+      );
+    },
   },
 ];
+
+function getRowItems(row: Row<Payment>) {
+  return [
+    {
+      label: "Salin Url Modifikasi",
+      onSelect() {
+        copy(row.original.SUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+    {
+      label: "Salin Url Asli",
+      onSelect() {
+        copy(row.original.LUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+    {
+      label: "Hapus",
+      onSelect() {
+        copy(row.original.SUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+  ];
+}
 
 const showAddModal = ref(false);
 
@@ -198,7 +200,7 @@ const addForm = ref({
 });
 
 const saveAdd = () => {
-  if (!addForm.value.LUrl) {
+  if (!addForm.value.LUrl || !addForm.value.SUrl) {
     toast.add({
       title: "URL belum lengkap!",
       color: "warning",
@@ -207,14 +209,10 @@ const saveAdd = () => {
     return;
   }
 
-  const shortCode = addForm.value.SUrl
-    ? addForm.value.SUrl
-    : generateRandomString();
-
   data.value.unshift({
     tanggal: new Date().toISOString(),
     LUrl: addForm.value.LUrl,
-    SUrl: `airnav/${shortCode}`,
+    SUrl: addForm.value.SUrl,
     keterangan: addForm.value.keterangan,
   });
 
@@ -232,29 +230,13 @@ const openAdd = () => {
   addForm.value = { ind: "", eng: "" };
   showAddModal.value = true;
 };
-
-const activeCopyIndex = ref<number | null>(null);
-
-const toggleCopyDropdown = (index: number) => {
-  activeCopyIndex.value = activeCopyIndex.value === index ? null : index;
-};
-
-const copyUrl = (value: string, type: string) => {
-  copy(value);
-  toast.add({
-    title: `Berhasil menyalin ${type}!`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
-  activeCopyIndex.value = null;
-};
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-between">
+  <div class="flex flex-wrap justify-between items-center mb-5">
     <div class="flex flex-col flex-wrap justify-between mb-3">
-      <Heading variant="heading6b" class="text-mobile-md"> Short URL </Heading>
-      <PageHeader :items="breadcrumbs" />
+      <Heading variant="heading6b">Short Url</Heading>
+      <Heading variant="heading10m">Kelola short URL untuk dokumen</Heading>
     </div>
     <div>
       <button
@@ -268,7 +250,7 @@ const copyUrl = (value: string, type: string) => {
   </div>
   <Modal v-model="showAddModal" @save="saveAdd">
     <template #title>
-      <div class="ml-5 mb-3">
+      <div class="mt-5 ml-5 mb-3">
         <Heading variant="heading9b" class="font-semibold text-sm">
           Buat Short URL Baru
         </Heading>
@@ -396,117 +378,7 @@ const copyUrl = (value: string, type: string) => {
       </div>
     </div>
     <div class="w-full overflow-auto p-2">
-      <div class="w-full overflow-auto p-2">
-        <table class="min-w-full text-sm border-collapse">
-          <thead>
-            <tr class="dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                Tanggal
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                URL Asli
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                URL Modifikasi
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                Keterangan
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-center">
-                Aksi
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr
-              v-for="(row, index) in data"
-              :key="index"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <!-- Tanggal -->
-              <td class="px-3 py-2 whitespace-nowrap">
-                {{
-                  new Date(row.tanggal).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })
-                }},
-                {{
-                  String(new Date(row.tanggal).getHours()).padStart(2, "0")
-                }}.{{
-                  String(new Date(row.tanggal).getMinutes()).padStart(2, "0")
-                }}
-              </td>
-
-              <!-- URL Asli -->
-              <td class="px-3 py-2 max-w-[250px] break-words">
-                {{ row.LUrl }}
-              </td>
-
-              <!-- URL Modifikasi -->
-              <td class="px-3 py-2 max-w-[200px] break-words">
-                {{ row.SUrl }}
-              </td>
-
-              <!-- Keterangan -->
-              <td class="px-3 py-2 max-w-[300px] break-words">
-                {{ row.keterangan }}
-              </td>
-
-              <!-- ACTION -->
-              <td class="px-3 py-2 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <!-- COPY -->
-                  <div class="relative">
-                    <button
-                      class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                      @click="toggleCopyDropdown(index)"
-                    >
-                      <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                    </button>
-
-                    <!-- DROPDOWN -->
-                    <div
-                      v-if="activeCopyIndex === index"
-                      class="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md overflow-hidden z-50"
-                    >
-                      <button
-                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="copyUrl(row.LUrl, 'URL Asli')"
-                      >
-                        Copy URL Asli
-                      </button>
-                      <button
-                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="copyUrl(row.SUrl, 'URL Modifikasi')"
-                      >
-                        Copy URL Modifikasi
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- DELETE -->
-                  <button
-                    class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
-                    @click="
-                      data.splice(index, 1);
-                      toast.add({
-                        title: 'URL berhasil dihapus!',
-                        color: 'error',
-                        icon: 'i-lucide-trash-2',
-                      });
-                    "
-                  >
-                    <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <UTable :data="data" :columns="columns" />
     </div>
   </div>
 </template>
