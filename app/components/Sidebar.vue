@@ -6,7 +6,7 @@
   ></div>
 
   <aside
-    class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-[#1E1F20] shadow-xl md:shadow-none"
+    class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       // Translasi (Keluar Masuk Layar)
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
@@ -57,6 +57,25 @@
               v-if="app.badge"
               class="absolute -top-1 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-primary-50 dark:border-[#28292A]"
             >
+      <!-- class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"> -->
+
+      <button @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
+        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
+      </button>
+
+      <div class="flex flex-col gap-4 w-full items-center">
+        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
+
+          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="activeApp === app.id ? 'bg-blue-200 dark:bg-gray-800' : 'hover:bg-white/50 bg-transparent'">
+            <UIcon :name="app.icon" class="w-6 h-6 transition-colors"
+              :class="activeApp === app.id ? 'text-gray-800 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'" />
+            <div v-if="app.badge"
+              class="absolute -top-1 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-primary-50 dark:border-gray-900">
+
               {{ app.badge }}
             </div>
           </div>
@@ -86,6 +105,12 @@
                 class="flex items-center justify-center gap-2 w-full bg-[#C2E7FF] text-[#001D35] py-2 rounded-xl text-sm font-medium hover:bg-[#b3dfff]">
                 <UIcon :name="app.actionIcon" class="w-4 h-4" /> {{ app.actionLabel }}
               </button> -->
+
+          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
+            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">{{ app.label }}</h3>
+
             </div>
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
               <SidebarItem
@@ -128,6 +153,18 @@
           :item="item"
           :collapsed="false"
         />
+
+    <div v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900">
+
+      <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
+        <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2">
+        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
+
       </div>
     </div>
   </aside>
@@ -289,7 +326,6 @@ const adminMenuAdministrasi = [
 ];
 
 // 4. Admin - Laporan (FLAT / Tanpa Submenu)
-// Saya tambahkan icon spesifik karena sekarang mereka jadi menu utama
 const adminMenuLaporan = [
   {
     label: "Rekap Naskah",
@@ -313,7 +349,6 @@ const apps = computed(() => {
   const isAdmin = route.path.startsWith("/admin");
 
   if (isAdmin) {
-    // --- MODE ADMIN (4 Kategori) ---
     return [
       {
         id: "admin-utama",
@@ -341,7 +376,6 @@ const apps = computed(() => {
       },
     ];
   } else {
-    // --- MODE USER (2 Kategori) ---
     return [
       {
         id: "user-utama",
@@ -358,6 +392,21 @@ const apps = computed(() => {
         menus: userMenuUtilitas,
       },
     ];
+    // {
+    //     id: 'user-utama',
+    //     label: 'Utama',
+    //     icon: 'i-heroicons-home',
+    //     actionLabel: 'Tulis',
+    //     actionIcon: 'i-heroicons-pencil',
+    //     menus: userMenuUtama
+    //   },
+    //   {
+    //     id: 'user-utilitas',
+    //     label: 'Utilitas',
+    //     icon: 'i-heroicons-squares-plus',
+    //     menus: userMenuUtilitas
+    //   }
+    // ]
   }
 });
 
@@ -396,6 +445,10 @@ const handleMenuClick = () => {
   } else {
     // Desktop: Collapse/Expand
     emit("update:collapsed", !props.collapsed);
+
+    isMobileOpen.value = false
+  } else {
+    emit('update:collapsed', !props.collapsed)
   }
 };
 

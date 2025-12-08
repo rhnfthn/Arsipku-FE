@@ -6,6 +6,13 @@ export default defineNuxtConfig({
   build: {
     transpile: ["@vuepic/vue-datepicker"],
   },
+
+  runtimeConfig: {
+    public: {
+      API_URL: process.env.NUXT_PUBLIC_API_URL,
+    },
+  },
+
   i18n: {
     defaultLocale: "id",
     langDir: "locales/",
@@ -44,5 +51,7 @@ export default defineNuxtConfig({
   // devServer: {
   //   port: 7010,
   //   host: "0.0.0.0",
+  //   host: "0.0.0.0", // kalau mau bisa diakses dari device lain di jaringan
+
   // },
 });

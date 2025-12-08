@@ -21,7 +21,7 @@
 
     <div v-if="hasChildren && isOpen" class="mt-1 mx-3 space-y-0.5">
       <NuxtLink v-for="(child, i) in item.children" :key="i" :to="child.to"
-        class="flex items-center px-4 py-1.5 pl-12 rounded-full text-[14px] transition-colors"
+        class="whitespace-nowrap flex items-center px-4 py-1.5 pl-12 rounded-full text-[14px] transition-colors"
         :class="route.path === child.to ? 'bg-[#D3E3FD] font-bold text-gray-900' : 'text-gray-600 hover:bg-gray-100'">
         {{ child.label }}
       </NuxtLink>

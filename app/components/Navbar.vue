@@ -14,9 +14,8 @@
 
       <UInput v-model="search" placeholder="Ketik untuk cari naskah dinas ..." icon="i-heroicons-magnifying-glass"
         variant="none" size="xl"
-        class="w-full md:min-w-100 rounded-full [&>input]:placeholder-gray-800 [&>input]:dark:placeholder-gray-400"
-        :ui="{
-          base: 'py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-sm dark:focus:bg-gray-700 transition-all',
+        class="w-full md:min-w-100 rounded-full [&>input]:placeholder-gray-800 [&>input]:dark:placeholder-gray-500" :ui="{
+          base: 'py-3 bg-primary-50/80 dark:bg-gray-900 rounded-full focus:bg-white focus:shadow-sm dark:focus:bg-gray-800 transition-all',
           leadingIcon: 'size-5 text-gray-800 dark:text-gray-400 group-focus-within:text-white dark:group-focus-within:text-white transition-colors',
           icon: {
             trailing: {
@@ -24,22 +23,19 @@
             }
           }
         }" />
-
-
     </div>
 
     <div class="flex items-center gap-5">
       <UDropdownMenu :items="menuItems" :content="{ align: 'end' }" :ui="{
-        content: 'w-72',
+        content: 'w-72 dark:bg-gray-900 dark:ring-gray-800',
         item: 'px-4 py-2.5',
         itemLeadingIcon: 'size-5',
         itemLabel: 'text-sm'
       }">
 
-        <!-- Avatar dengan nama di navbar -->
         <div class="flex items-center gap-2 cursor-pointer">
           <div class="flex flex-col text-right leading-tight">
-            <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-white">
+            <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100">
               Ivan Dwi Santoso
             </span>
 
@@ -56,13 +52,28 @@
         <template #theme-label>
           <div class="flex items-center justify-between w-full py-1 px-2.5">
             <span class="text-sm text-gray-700 dark:text-gray-200">Tampilan</span>
-            <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
-              <UButton v-for="mode in ['light', 'dark']" :key="mode"
-                :icon="mode === 'light' ? 'i-heroicons-sun' : 'i-heroicons-moon'" size="2xs"
-                :color="colorMode.value === mode ? 'white' : 'gray'"
-                :variant="colorMode.value === mode ? 'solid' : 'ghost'" class="rounded-md shadow-sm"
-                :class="{ '!bg-white dark:!bg-gray-700 !text-primary-500': colorMode.value === mode }"
-                @click.stop="colorMode.preference = mode" />
+
+            <div class="flex items-center rounded-lg">
+              <div
+                class="flex items-center p-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 backdrop-blur">
+
+                <button @click="isDark = false"
+                  class="p-1.5 rounded-full transition-all duration-200 flex items-center justify-center" :class="!isDark
+                    ? 'bg-white dark:bg-gray-700 text-orange-500 shadow scale-105'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    ">
+                  <UIcon name="i-heroicons-sun" class="w-4 h-4" />
+                </button>
+
+                <button @click="isDark = true"
+                  class="p-1.5 rounded-full transition-all duration-200 flex items-center justify-center" :class="isDark
+                    ? 'bg-gray-700 text-yellow-300 shadow scale-105'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    ">
+                  <UIcon name="i-heroicons-moon" class="w-4 h-4" />
+                </button>
+
+              </div>
             </div>
           </div>
         </template>
@@ -70,16 +81,18 @@
         <template #lang-label>
           <div class="flex items-center justify-between w-full py-1 px-2.5">
             <span class="text-sm text-gray-700 dark:text-gray-200">Bahasa</span>
+
             <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
               <UButton v-for="lang in locales" :key="lang.code" :label="lang.name" size="2xs"
                 :color="currentLocale === lang.code ? 'white' : 'gray'"
                 :variant="currentLocale === lang.code ? 'solid' : 'ghost'"
-                class="rounded-md text-[10px] font-bold min-w-[32px] justify-center shadow-sm"
-                :class="{ '!bg-white dark:!bg-gray-700 !text-primary-500': currentLocale === lang.code }"
-                @click.stop="setLocale(lang.code)" />
+                class="rounded-md text-[10px] font-semibold min-w-[32px] justify-center px-2 py-1 transition" :class="{
+                  '!bg-white dark:!bg-gray-700 !text-primary-500 shadow-sm': currentLocale === lang.code
+                }" @click="setLocale(lang.code)" />
             </div>
           </div>
         </template>
+
 
         <template #search>
           <div class="block md:hidden px-2 pb-2 pt-1">
@@ -93,6 +106,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 
 defineEmits(["open-mobile-sidebar"]);
@@ -101,6 +115,9 @@ const colorMode = useColorMode();
 const currentLocale = ref("id");
 const locales = [{ code: "id", name: "ID" }, { code: "en", name: "EN" }];
 const setLocale = (code: string) => (currentLocale.value = code);
+
+
+const isDark = useDark();
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   // Menu items tanpa icon
@@ -121,7 +138,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     {
       label: "Setting Temporary File",
       class: "text-sm text-gray-700 dark:text-gray-200 truncate"
-    }
+    },
   ],
 
   // Label khusus: Tema, Bahasa, Cari
