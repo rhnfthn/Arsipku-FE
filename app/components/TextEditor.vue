@@ -7,13 +7,13 @@
       <div class="bg-white shadow-xl relative transition-all duration-300 flex flex-col tn-roman"
         :class="{ 'fullscreen-editor': isFullscreen, 'editor-container mx-auto': !isFullscreen }">
 
-        <div class="px-12 py-4 shrink-0 select-none">
+        <div class="px-12 pt-4 shrink-0 select-none">
           <slot name="header"></slot>
         </div>
 
-        <div ref="editorRef" class="editor-content flex-1 tn-roman-editor px-12"></div>
+        <div ref="editorRef" class="editor-content h-auto flex-1 tn-roman-editor px-12"></div>
 
-        <div class="mt-8 px-12 pb-10 pt-4 tn-roman shrink-0">
+        <div class="px-12 pb-10 tn-roman shrink-0">
           <slot name="footer"></slot>
         </div>
       </div>

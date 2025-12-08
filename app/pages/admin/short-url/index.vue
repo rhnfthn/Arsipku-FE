@@ -18,16 +18,14 @@ import {
   Copy,
   Trash2,
 } from "lucide-vue-next";
+import Heading from "~/components/Heading.vue";
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const toast = useToast();
 const { copy } = useClipboard();
-const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Short Url", to: "/admin/short-url" },
-];
+
 const generateRandomString = (length = 5) => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -248,125 +246,19 @@ const copyUrl = (value: string, type: string) => {
 
 <template>
   <div class="flex flex-wrap justify-between">
-    <div class="flex items-center justify-between w-full mb-5">
-      <!-- KIRI -->
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md"> Template </Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
-
-      <!-- KANAN -->
+    <div class="flex flex-col flex-wrap justify-between mb-3">
+      <Heading variant="heading5m">Short Url</Heading>
+      <Heading variant="body1">Kelola short URL untuk dokumen</Heading>
+    </div>
+    <div>
       <button
         @click="openAdd"
         class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
       >
         <Plus class="w-4 h-4" />
-        Buat Short Url
+        Tambah Url
       </button>
     </div>
-    <!-- <div class="flex flex-col flex-wrap justify-between mb-3">
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md">
-          Short Url
-        </Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
-<<<<<<< HEAD
-    </div> -->
-    <!-- <div> -->
-    <!-- <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
-
-    </Modal>
-    
-<!-- CARD FULL HEIGHT -->
-<div class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-    <!-- HEADER -->
-    <div class="px-2 py-2 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:flex-wrap md:flex-row items-start md:items-center justify-between gap-3">
-      <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          <!-- FILTER -->
-        <div class="relative">
-          <button @click.stop="toggleDropdown('filter')"
-              class="custom-dropdown-trigger flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-              :class="{
-                'ring-2 ring-sky-100 border-sky-300': openDropdown === 'filter',
-              }">
-              <Filter class="w-3.5 h-3.5" />
-              <span class="text-xs font-medium truncate max-w-[100px]">{{
-                filterMode
-              }}</span>
-              <ChevronRight class="w-3 h-3 rotate-90 opacity-50" />
-          </button>
-
-            <!-- DROPDOWN -->
-            <div v-if="openDropdown === 'filter'"
-              class="custom-dropdown-content absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50">
-              <button v-for="opt in filterOptions" :key="opt" @click="setFilter(opt)"
-                class="w-full text-left px-4 py-2 text-xs hover:bg-sky-50 dark:hover:bg-gray-700 flex justify-between items-center"
-                :class="filterMode === opt
-                    ? 'text-sky-600 font-bold'
-                    : 'text-gray-700 dark:text-gray-300'
-                  ">
-                {{ opt }}
-                <FileCheck v-if="filterMode === opt" class="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          <!-- SORT + REFRESH -->
-          <div class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
-
-          <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500">
-            <ArrowUpDown class="w-4 h-4" />
-          </button>
-          <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500">
-            <RotateCcw class="w-4 h-4" />
-          </button>
-        </div>
-
-        <!-- SEARCH -->
-        <div class="flex items-center gap-3 w-full md:w-auto">
-          <div class="relative flex-1 w-full md:w-56 group">
-            <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input v-model="search" placeholder="Cari surat..."
-              class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:ring-sky-500 focus:border-sky-500 outline-none" />
-          </div>
-
-          <div class="flex items-center gap-1 text-gray-500">
-            <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-            <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-              <ChevronRightIcon class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    <div class="w-full overflow-auto p-2">
-<div class="w-full overflow-auto p-2">
-  <table class="min-w-full text-sm border-collapse">
-    <thead>
-      <tr class=" dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">Tanggal</th>
-        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">URL Asli</th>
-        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">URL Modifikasi</th>
-        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-left">Keterangan</th>
-        <th class="px-3 py-2 border-b-2 border-b-gray-100  text-center">Aksi</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <tr
-        v-for="(row, index) in data"
-        :key="index"
-        class="hover:bg-gray-50 dark:hover:bg-gray-800"
-
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Url
-      </button> 
-    <!-- </div> -->
   </div>
   <Modal v-model="showAddModal" @save="saveAdd">
     <template #title>
@@ -502,11 +394,21 @@ const copyUrl = (value: string, type: string) => {
         <table class="min-w-full text-sm border-collapse">
           <thead>
             <tr class="dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-              <th class="px-3 py-2 border-b text-left">Tanggal</th>
-              <th class="px-3 py-2 border-b text-left">URL Asli</th>
-              <th class="px-3 py-2 border-b text-left">URL Modifikasi</th>
-              <th class="px-3 py-2 border-b text-left">Keterangan</th>
-              <th class="px-3 py-2 border-b text-center">Aksi</th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                Tanggal
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                URL Asli
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                URL Modifikasi
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                Keterangan
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-center">
+                Aksi
+              </th>
             </tr>
           </thead>
 
