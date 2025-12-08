@@ -4,6 +4,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n"],
 
+  runtimeConfig: {
+    public: {
+      API_URL: process.env.NUXT_PUBLIC_API_URL,
+    },
+  },
+
   i18n: {
     defaultLocale: "id",
     langDir: "locales/",
@@ -39,4 +45,8 @@ export default defineNuxtConfig({
       componentDetection: ["Modal", "Dropdown", "Popover"],
     },
   },
+  // devServer: {
+  //   port: 7010,
+  //   host: "0.0.0.0", // kalau mau bisa diakses dari device lain di jaringan
+  // },
 });

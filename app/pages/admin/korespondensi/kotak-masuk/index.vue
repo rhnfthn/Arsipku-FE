@@ -264,12 +264,12 @@ const getCategoryLabel = (cat) => {
       </div>
 
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
-        <div class="relative hidden md:block group mr-1">
+        <!-- <div class="relative hidden md:block group mr-1">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-primary" />
           <input v-model="searchQuery" type="text" placeholder="Cari..."
             class="pl-8 pr-3 py-1.5 text-caption1 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-100 focus:border-primary transition-all w-32 lg:w-48 placeholder:text-neutral-400">
-        </div>
+        </div> -->
         <div class="relative">
           <button @click="showDateMenu = !showDateMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
