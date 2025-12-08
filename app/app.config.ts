@@ -24,6 +24,7 @@ export default defineAppConfig({
         heading8: "text-[20px] font-normal dark:text-white",
         heading9: "text-[18px] font-normal dark:text-white",
         heading10: "text-[15px] font-normal dark:text-white",
+        heading11: "text-[13px] font-normal dark:text-white",
         //medium
         heading1m: "text-[60px] font-medium dark:text-white",
         heading2m: "text-[52px] font-medium dark:text-white",
@@ -35,6 +36,7 @@ export default defineAppConfig({
         heading8m: "text-[20px] font-medium dark:text-white",
         heading9m: "text-[18px] font-medium dark:text-white",
         heading10m: "text-[15px] font-medium dark:text-white",
+        heading11m: "text-[13px] font-medium dark:text-white",
         //semibold
         heading1sb: "text-[60px] font-semibold dark:text-white",
         heading2sb: "text-[52px] font-semibold dark:text-white",
@@ -46,6 +48,7 @@ export default defineAppConfig({
         heading8sb: "text-[20px] font-semibold dark:text-white",
         heading9sb: "text-[18px] font-semibold dark:text-white",
         heading10sb: "text-[15px] font-semibold dark:text-white",
+        heading11sb: "text-[13px] font-semibold dark:text-white",
         //bold
         heading1b: "text-[60px] font-bold dark:text-white",
         heading2b: "text-[52px] font-bold dark:text-white",
@@ -57,6 +60,7 @@ export default defineAppConfig({
         heading8b: "text-[20px] font-bold dark:text-white",
         heading9b: "text-[18px] font-bold dark:text-white",
         heading10b: "text-[15px] font-bold dark:text-white",
+        heading11b: "text-[13px] font-bold dark:text-white",
         //normal
         body1: "text-[16px] font-normal dark:text-white",
         body2: "text-[14px] font-normal dark:text-white",

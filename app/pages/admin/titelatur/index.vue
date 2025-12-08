@@ -314,10 +314,10 @@ const deleteNow = () => {
           <tr
             v-for="it in paginatedItems"
             :key="it.id"
-            class="border-b border-gray-100 hover:bg-primary-50"
+            class="border-b border-gray-200 hover:bg-primary-50"
           >
-            <td class="px-4 py-3">{{ it.from }}</td>
-            <td class="px-4 py-3">{{ it.subject }}</td>
+            <td class="px-5 py-4">{{ it.from }}</td>
+            <td class="px-5 py-4">{{ it.subject }}</td>
 
             <td class="px-4 py-3 text-center flex justify-center gap-5">
               <button @click="openEdit(it)" class="text-yellow-500">

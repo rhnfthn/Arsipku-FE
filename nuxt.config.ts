@@ -3,7 +3,9 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n"],
-
+  build: {
+    transpile: ["@vuepic/vue-datepicker"],
+  },
   i18n: {
     defaultLocale: "id",
     langDir: "locales/",
@@ -39,4 +41,8 @@ export default defineNuxtConfig({
       componentDetection: ["Modal", "Dropdown", "Popover"],
     },
   },
+  // devServer: {
+  //   port: 7010,
+  //   host: "0.0.0.0",
+  // },
 });

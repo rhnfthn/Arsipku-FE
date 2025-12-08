@@ -18,14 +18,16 @@ import {
   Copy,
   Trash2,
 } from "lucide-vue-next";
-import Heading from "~/components/Heading.vue";
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const toast = useToast();
 const { copy } = useClipboard();
-
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Short Url", to: "/admin/short-url" },
+];
 const generateRandomString = (length = 5) => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -246,19 +248,39 @@ const copyUrl = (value: string, type: string) => {
 
 <template>
   <div class="flex flex-wrap justify-between">
-    <div class="flex flex-col flex-wrap justify-between mb-3">
-      <Heading variant="heading5m">Short Url</Heading>
-      <Heading variant="body1">Kelola short URL untuk dokumen</Heading>
-    </div>
-    <div>
+    <div class="flex items-center justify-between w-full mb-5">
+      <!-- KIRI -->
+      <div>
+        <Heading variant="heading6b" class="text-mobile-md"> Template </Heading>
+        <PageHeader :items="breadcrumbs" />
+      </div>
+
+      <!-- KANAN -->
       <button
         @click="openAdd"
         class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
       >
         <Plus class="w-4 h-4" />
-        Tambah Url
+        Buat Short Url
       </button>
     </div>
+    <!-- <div class="flex flex-col flex-wrap justify-between mb-3">
+      <div>
+        <Heading variant="heading6b" class="text-mobile-md">
+          Short Url
+        </Heading>
+        <PageHeader :items="breadcrumbs" />
+      </div>
+    </div> -->
+    <!-- <div> -->
+    <!-- <button
+        @click="openAdd"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
+      >
+        <Plus class="w-4 h-4" />
+        Tambah Url
+      </button> -->
+    <!-- </div> -->
   </div>
   <Modal v-model="showAddModal" @save="saveAdd">
     <template #title>

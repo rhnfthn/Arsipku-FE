@@ -31,7 +31,10 @@
         </div>
 
         <!-- Footer -->
-        <div class="flex justify-end border-t border-gray-300 mt-7 mb-5 gap-3">
+        <div
+          v-if="!hideDefaultFooter"
+          class="flex justify-end border-t border-gray-300 mt-7 mb-5 gap-3"
+        >
           <button
             @click="$emit('update:modelValue', false)"
             class="px-5 py-2 mt-2 text-xs border border-primary-500 hover:bg-primary-100 text-primary rounded-md"
@@ -46,6 +49,9 @@
             Simpan
           </button>
         </div>
+
+        <!-- Slot Footer dari Parent -->
+        <slot name="footer" />
       </div>
     </Transition>
   </div>
@@ -55,8 +61,13 @@
 import { X } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 
-defineProps({ modelValue: Boolean });
+// defineProps({ modelValue: Boolean });
 defineEmits(["update:modelValue", "save"]);
+
+defineProps({
+  modelValue: Boolean,
+  hideDefaultFooter: { type: Boolean, default: false },
+});
 </script>
 
 <style scoped>

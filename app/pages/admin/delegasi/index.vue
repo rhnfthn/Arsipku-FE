@@ -389,17 +389,15 @@ function selectEditJabatan(val: string) {
       </div>
     </div>
 
-    <div
-      class="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-200"
-    >
-      <div class="px-4 py-4 border-b border-gray-200">
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-sm">
+      <div class="">
         <!-- FILTER BAR -->
 
-        <div class="flex gap-4 mb-6 items-center flex-wrap">
+        <div class="flex gap-4 mb-1 items-center flex-wrap px-3 py-3">
           <span class="text-xs">Tampilkan</span>
           <select
             v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 bg-white rounded-md"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -486,94 +484,121 @@ function selectEditJabatan(val: string) {
           </div>
         </div>
 
-        <!-- LIST -->
-        <div class="space-y-3">
-          <div
-            v-for="item in filteredData"
-            :key="item.id"
-            class="border border-gray-300 rounded-xl p-5 bg-white flex items-start"
-          >
-            <div class="w-full grid grid-cols-12 gap-4 items-center">
-              <div class="col-span-3 flex items-center gap-3">
-                <User class="w-5 h-5 text-gray-500" />
-                <span class="font-semibold text-gray-800">{{ item.nama }}</span>
-              </div>
+        <!-- LIST (TABEL) -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead class="bg-primary text-xs text-white">
+              <tr>
+                <th class="px-4 py-3 border-b text-left">Delegator</th>
+                <th class="px-4 py-3 border-b text-left">Jabatan</th>
+                <th class="px-4 py-3 border-b text-left">Periode</th>
+                <th class="px-4 py-3 border-b text-left">Status</th>
+                <th class="px-4 py-3 border-b text-center">Aksi</th>
+              </tr>
+            </thead>
 
-              <div class="col-span-3 flex flex-col">
-                <span class="text-gray-800 text-sm font-medium">{{
-                  item.jabatan
-                }}</span>
-                <span class="text-gray-500 text-xs">{{ item.lokasi }}</span>
-              </div>
+            <tbody>
+              <tr
+                v-for="item in filteredData"
+                :key="item.id"
+                class="text-sm hover:bg-gray-50"
+              >
+                <!-- Delegator -->
 
-              <div class="col-span-3 flex items-center gap-2 text-gray-700">
-                <UIcon name="i-heroicons-calendar" />
-                <span class="text-sm">{{ item.tanggal }}</span>
-              </div>
+                <td class="px-4 py-3 border-b border-gray-200">
+                  <div class="flex flex-col">
+                    <span class="text-gray-800 font-medium text-sm">
+                      {{ item.nama }}
+                    </span>
+                  </div>
+                </td>
 
-              <div class="col-span-2">
-                <UBadge
-                  :class="[
-                    'px-3 py-1 text-xs rounded-full',
-                    item.status === 'Aktif'
-                      ? 'bg-green-100 text-green-800'
-                      : item.status === 'Tidak Aktif'
-                        ? 'bg-gray-100 text-gray-600'
-                        : 'bg-red-100 text-red-800',
-                  ]"
-                >
-                  {{ item.status }}
-                </UBadge>
-              </div>
+                <!-- Jabatan -->
+                <td class="px-4 py-3 border-b border-gray-200">
+                  <div class="flex flex-col">
+                    <span class="text-gray-800 font-medium text-sm">
+                      {{ item.jabatan }}
+                    </span>
+                    <span class="text-gray-500 text-xs">
+                      {{ item.lokasi }}
+                    </span>
+                  </div>
+                </td>
 
-              <div class="col-span-1 flex gap-5 justify-end">
-                <button @click="openEdit(item)" class="text-yellow-500">
-                  <Pencil class="w-4 h-4" />
-                </button>
-                <button @click="openDelete(item)" class="text-red-500">
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+                <!-- Periode -->
+                <td class="px-4 py-3 border-b border-gray-200 text-gray-700">
+                  {{ item.tanggal }}
+                </td>
+
+                <!-- Status -->
+                <td class="px-4 py-3 border-b border-gray-200">
+                  <UBadge
+                    :class="[
+                      'px-3 py-1 text-xs rounded-full',
+                      item.status === 'Aktif'
+                        ? 'bg-green-100 text-green-800'
+                        : item.status === 'Tidak Aktif'
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-red-100 text-red-800',
+                    ]"
+                  >
+                    {{ item.status }}
+                  </UBadge>
+                </td>
+
+                <!-- Aksi -->
+                <td class="px-4 py-3 border-b border-gray-200">
+                  <div class="flex justify-center gap-4">
+                    <button @click="openEdit(item)" class="text-yellow-500">
+                      <Pencil class="w-4 h-4" />
+                    </button>
+                    <button @click="openDelete(item)" class="text-red-500">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION tetapkan di bawah -->
+        <div class="flex items-center px-3 py-5 justify-between">
+          <div class="text-xs flex flex-col text-gray-600">
+            Menampilkan {{ paginatedDelegasi.length }} dari
+            {{ totalItems }} data
           </div>
-          <div class="flex items-center mt-5 justify-between">
-            <div class="text-xs flex flex-col text-gray-600">
-              Menampilkan {{ paginatedDelegasi.length }} dari
-              {{ totalItems }} data
-            </div>
 
-            <!-- KANAN: pagination -->
-            <div class="flex gap-1">
-              <button
-                @click="currentPage = Math.max(1, currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
-              >
-                &lt;
-              </button>
+          <div class="flex gap-1">
+            <button
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
+            >
+              &lt;
+            </button>
 
-              <button
-                v-for="page in totalPages"
-                :key="page"
-                @click="currentPage = page"
-                :class="[
-                  'px-3 py-1 text-xs rounded-md',
-                  currentPage === page
-                    ? 'bg-primary text-white'
-                    : 'hover:bg-gray-200',
-                ]"
-              >
-                {{ page }}
-              </button>
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'px-3 py-1 text-xs rounded-md',
+                currentPage === page
+                  ? 'bg-primary text-white'
+                  : 'hover:bg-gray-200',
+              ]"
+            >
+              {{ page }}
+            </button>
 
-              <button
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
-              >
-                &gt;
-              </button>
-            </div>
+            <button
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>
