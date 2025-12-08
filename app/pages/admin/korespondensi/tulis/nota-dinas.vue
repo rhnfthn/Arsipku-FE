@@ -20,7 +20,7 @@
               <template #default>
                 <span v-if="selectedSender" class="truncate text-sm block w-full text-left dark:text-white">{{
                   selectedSender.label
-                  }}</span>
+                }}</span>
                 <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">Pilih berkas
                   pengirim...</span>
               </template>
@@ -55,7 +55,6 @@
           <span
             class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
-            <USelectMenu v-model="tertujuList" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
             <USelectMenu v-model="tertujuList" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
               :search-input="{ placeholder: 'Cari tertuju', size: 'lg' }" variant="none" :ui="{
                 base: 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
@@ -118,7 +117,7 @@
                 <div class="flex items-center gap-1.5 min-h-[2.5rem] pr-10 w-full">
                   <span v-if="selectedSifat"
                     class="text-sm font-medium text-left truncate max-w-[200px] dark:text-white">{{
-                    selectedSifat.label }}</span>
+                      selectedSifat.label }}</span>
                   <span v-else class="text-sm text-gray-400 dark:text-gray-500">Pilih sifat...</span>
                 </div>
               </template>
@@ -129,8 +128,7 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span
-              class="w-full sm:w-32 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-32 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <input type="text" v-model="subject"
               class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               placeholder="Ketik perihal" />
@@ -138,8 +136,6 @@
         </div>
 
         <div class="flex flex-col py-4">
-          <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
-            <div class="flex flex-wrap gap-2 flex-shrink-0">
           <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
             <div class="flex flex-wrap gap-2 flex-shrink-0">
               <UModal v-model="isTemplateModalOpen" title="Pilih Template">
@@ -324,7 +320,8 @@
             ">
             <tbody>
               <tr>
-                <td style="border: none !important;width: 100px; font-weight: bold; vertical-align: top;">Kepada Yth.</td>
+                <td style="border: none !important;width: 100px; font-weight: bold; vertical-align: top;">Kepada Yth.
+                </td>
                 <td style="border: none !important;width: 10px; vertical-align: top;">:</td>
                 <td style="border: none !important;vertical-align: top;">
                   {{tertujuList.length ? tertujuList.map((s: any) => s.label).join(', ') : '...................'}}
@@ -396,7 +393,6 @@ let quillInstance: any = null
 const date = ref<CalendarDate>()
 const open = ref(false)
 const senders_selected = ref('')
-const subject = ref('')
 const subject = ref('')
 const isFullscreenEditor = ref(false)
 const uploadedFiles = ref<File[]>([])
