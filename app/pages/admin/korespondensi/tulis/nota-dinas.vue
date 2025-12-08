@@ -56,6 +56,7 @@
             class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="tertujuList" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
+            <USelectMenu v-model="tertujuList" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
               :search-input="{ placeholder: 'Cari tertuju', size: 'lg' }" variant="none" :ui="{
                 base: 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
                 wrapper: 'pr-10 w-full', input: 'pr-10 w-full dark:text-white', value: 'p-0 w-full', trigger: { base: 'px-0 py-1 w-full' }
@@ -91,7 +92,9 @@
                 <div class="flex items-center gap-1.5 flex-wrap min-h-[2.5rem] pr-10 w-full">
                   <UBadge v-for="item in tembusanList" :key="item.value" color="primary" variant="soft" size="md"
                     class="gap-1.5 pl-2 pr-1 flex items-center justify-start rounded-md">
-                    <span class="text-xs font-medium text-left truncate max-w-[150px]">{{ item.label }}</span>
+                    <span class="text-xs font-medium text-left truncate max-w-[150px]">
+                      {{ item.label }}
+                    </span>
                     <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
                       class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
                       @click="removeTembusan(item, $event)" />
@@ -135,6 +138,8 @@
         </div>
 
         <div class="flex flex-col py-4">
+          <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
+            <div class="flex flex-wrap gap-2 flex-shrink-0">
           <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
             <div class="flex flex-wrap gap-2 flex-shrink-0">
               <UModal v-model="isTemplateModalOpen" title="Pilih Template">
@@ -391,6 +396,7 @@ let quillInstance: any = null
 const date = ref<CalendarDate>()
 const open = ref(false)
 const senders_selected = ref('')
+const subject = ref('')
 const subject = ref('')
 const isFullscreenEditor = ref(false)
 const uploadedFiles = ref<File[]>([])
