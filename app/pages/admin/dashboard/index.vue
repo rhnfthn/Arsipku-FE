@@ -1,14 +1,8 @@
 <template>
   <div class="space-y-6">
-    <div class="flex flex-row justify-between items-center">
-      <div class="flex flex-col">
-        <PageHeader title="Dashboard" />
-        <Heading variant="heading10m" class="text-gray-500">
-          Selamat Datang di Sistem Arsip Korespondensi
-        </Heading>
-      </div>
-
-      <div>
+    <div class="flex flex-row sm:items-center justify-between gap-6">
+      <PageHeader title="Dashboard" />
+      <div class="flex gap-3">
         <UDropdownMenu :items="items" :content="{ align: 'end' }">
           <UButton
             trailing-icon="i-lucide-chevron-down"
