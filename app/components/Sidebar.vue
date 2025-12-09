@@ -265,7 +265,7 @@ const adminMenuAdministrasi = [
     children: [
       { label: "Usulan", to: "/admin/penomoran/usulan" },
       { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
-      { label: "Penomoran", to: "/admin/penomoran/penomoran" },
+      { label: "Penomoran", to: "/admin/penomoran" },
     ],
   },
   {

@@ -81,21 +81,19 @@
           </thead>
 
           <tbody>
-            <tr>
-              <td class="p-4">16/03/2024 10:11:37</td>
+            <tr v-for="(row, i) in filteredRows" :key="i">
+              <td class="p-4">{{ row.date }}</td>
 
               <td class="p-4">
-                <div class="font-medium">002 / Coba Ttd UAT</div>
-                <div class="text-gray-500 text-xs">
-                  Pengujian Tanda Tangan Digital UAT
-                </div>
+                <div class="font-medium">{{ row.no }}</div>
+                <div class="text-gray-500 text-xs">{{ row.desc }}</div>
               </td>
 
-              <td class="p-4 text-center">1</td>
+              <td class="p-4 text-center">{{ row.count }}</td>
 
               <td class="p-4 text-center">
                 <button
-                  class="flex items-center gap-2 mx-auto bg-blue-50 text-primary text-xs font-medium px-3 py-1 rounded-lg"
+                  class="flex items-center gap-2 mx-auto bg-blue-50 text-primary px-3 py-1 text-xs font-medium rounded-lg"
                 >
                   <FileCheck class="w-4 h-4" />
                   Lihat
@@ -104,50 +102,24 @@
 
               <td class="p-4 text-center">
                 <span
-                  class="bg-red-100 text-red-600 text-xs font-medium px-3 py-1 rounded-lg"
+                  class="px-3 py-1 rounded-lg text-xs"
+                  :class="
+                    row.status === 'Completed'
+                      ? 'bg-green-100 text-green-600'
+                      : 'bg-red-100 text-red-600'
+                  "
                 >
-                  Rejected
-                </span>
-              </td>
-
-              <td class="p-4 text-center">
-                <Eye class="w-5 h-5 text-gray-600 cursor-pointer" />
-              </td>
-            </tr>
-
-            <tr>
-              <td class="p-4">03/07/2024 13:36</td>
-
-              <td class="p-4">
-                <div class="font-medium">001 / Mas Coba Digsig ya,,</div>
-                <div class="text-gray-500 text-xs">
-                  Testing Digital Signature
-                </div>
-              </td>
-
-              <td class="p-4 text-center">1</td>
-
-              <td class="p-4 text-center">
-                <button
-                  class="flex items-center gap-2 mx-auto bg-blue-50 text-primary px-3 py-1 text-xs font-medium' rounded-lg"
-                >
-                  <FileCheck class="w-4 h-4" />
-                  Lihat
-                </button>
-              </td>
-
-              <td class="p-4 text-center">
-                <span
-                  class="bg-green-100 text-green-600 text-xs font-medium' px-3 py-1 rounded-lg"
-                >
-                  Completed
+                  {{ row.status }}
                 </span>
               </td>
 
               <td class="p-4 text-center">
                 <Eye
                   class="w-5 h-5 text-gray-600 cursor-pointer"
-                  @click="openDetail = true"
+                  @click="
+                    openDetail = true;
+                    selectedRow = row;
+                  "
                 />
               </td>
             </tr>
@@ -157,7 +129,7 @@
       <!---------->
       <!-- MODAL -->
       <!---------->
-      <Modal v-model="openDetail" :hideDefaultFooter="true">
+      <Modal v-model="openDetail" :hideDefaultFooter="true" class="w-full">
         <template #title>
           <Heading
             variant="heading9b"
@@ -168,30 +140,30 @@
         </template>
 
         <!-- BODY → tempelkan layout seperti screenshot kamu -->
-        <div class="grid grid-cols-2 gap-6 text-sm mt-2">
+        <div class="grid grid-cols-2 gap-6 text-sm mt-2" v-if="selectedRow">
           <div>
             <p class="text-gray-600">ID</p>
-            <p class="font-medium">1</p>
+            <p class="font-medium">{{ selectedRow.id ?? "-" }}</p>
           </div>
 
           <div>
             <p class="text-gray-600">No</p>
-            <p class="font-medium">002 / Coba Ttd UAT</p>
+            <p class="font-medium">{{ selectedRow.no }}</p>
           </div>
 
           <div>
             <p class="text-gray-600">Tanggal</p>
-            <p class="font-medium">16/03/2024 10:11:37</p>
+            <p class="font-medium">{{ selectedRow.date }}</p>
           </div>
 
           <div>
             <p class="text-gray-600">Jenis</p>
-            <p class="font-medium">PGM - Sertifikat atau Piagam</p>
+            <p class="font-medium">{{ selectedRow.type ?? "-" }}</p>
           </div>
 
           <div>
             <p class="text-gray-600">Klasifikasi</p>
-            <p class="font-medium">OPS - OPERASI</p>
+            <p class="font-medium">{{ selectedRow.classification ?? "-" }}</p>
           </div>
         </div>
 
@@ -208,18 +180,23 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td class="p-3">1</td>
-                <td class="p-3">3374031234567890</td>
-                <td class="p-3">BUDI SANTOSO</td>
+              <tr v-for="(s, i) in selectedRow.signerList" :key="i">
+                <td class="p-3">{{ i + 1 }}</td>
+                <td class="p-3">{{ s.nik }}</td>
+                <td class="p-3">{{ s.name }}</td>
                 <td class="p-3 text-center">
                   <span
-                    class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs"
+                    class="px-3 py-1 rounded-lg text-xs"
+                    :class="
+                      s.status === 'Completed'
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-red-100 text-red-600'
+                    "
                   >
-                    Rejected
+                    {{ s.status }}
                   </span>
                 </td>
-                <td class="p-3 text-center">-</td>
+                <td class="p-3 text-center">{{ s.note }}</td>
               </tr>
             </tbody>
           </table>
@@ -255,18 +232,40 @@ const loading = ref(false);
 // dummy row (biar tidak error)
 const rows = ref([
   {
+    id: 1,
     date: "16/03/2024 10:11:37",
     no: "002 / Coba Ttd UAT",
     desc: "Pengujian Tanda Tangan Digital UAT",
     count: 1,
     status: "Rejected",
+    type: "PGM - Sertifikat atau Piagam",
+    classification: "OPS - OPERASI",
+    signerList: [
+      {
+        nik: "3374031234567890",
+        name: "BUDI SANTOSO",
+        status: "Rejected",
+        note: "-",
+      },
+    ],
   },
   {
-    date: "03/07/2024 13:36",
-    no: "001 / Mas Coba Digsig ya,,",
-    desc: "Testing Digital Signature",
+    id: 1,
+    date: "16/03/2024 10:11:37",
+    no: "002 / Coba Ttd UAT",
+    desc: "Pengujian Tanda Tangan Digital UAT",
     count: 1,
-    status: "Completed",
+    status: "Success",
+    type: "PGM - Sertifikat atau Piagam",
+    classification: "OPS - OPERASI",
+    signerList: [
+      {
+        nik: "3374031234567890",
+        name: "BUDI SANTOSO",
+        status: "Success",
+        note: "-",
+      },
+    ],
   },
 ]);
 
