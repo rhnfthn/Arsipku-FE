@@ -1,24 +1,20 @@
 <template>
     <div class="mb-3 flex flex-wrap justify-between">
       <div>
-        <Heading variant="heading8">Rekap Naskah Dinas</Heading>
+        <Heading variant="heading6sb">Rekap Naskah Dinas Masuk</Heading>
         <Paragraph variant="body2">
           Rekapitulasi jumlah naskah dinas berdasarkan bulan dan kategori.
         </Paragraph>
       </div>
       <button
         @click="exportExcel"
-        class="flex items-center gap-2 bg-primary text-white h-9 px-4 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
       >
         <FileDown class="w-4 h-4" />
         Export
       </button>
     </div>
-    <div class="p-5 overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
-        <div class="flex items-center">
-            <Heading variant="heading9m" class="flex-1">Rekap Naskah Masuk</Heading>
-        </div>
-
+    <div class=" overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <div class="flex gap-3 py-3">
           <button
             @click="refreshData"
@@ -47,7 +43,7 @@
         
         <table class="text-center">
             <thead>
-                <tr>
+                <tr class="bg-primary-400 text-white">
                     <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm w-[350px] text-start">Naskah</th>
                     <template v-if="!selectedMonth">
                         <th v-for="bulan in monthOptions" :key="bulan.value"

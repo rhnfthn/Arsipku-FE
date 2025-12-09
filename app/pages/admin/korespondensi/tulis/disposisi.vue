@@ -7,9 +7,9 @@
     <UCard variant="soft" :ui="{ root: 'rounded-t-none ring-0 shadow-none bg-white print:hidden' }">
       <div class="flex-1 overflow-y-auto space-y-1">
 
+        <!-- Tanggal Disposisi -->
         <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 relative gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal
-            Disposisi</span>
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal Disposisi</span>
           <div class="relative w-full">
             <ClientOnly>
               <UPopover v-model:open="open" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
@@ -45,8 +45,8 @@
           </div>
         </div>
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <!-- Nomor Surat -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Nomor Surat</span>
             <input type="text" v-model="refNumber"
@@ -55,8 +55,8 @@
           </div>
         </div>
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <!-- Perihal -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Perihal Surat</span>
             <input type="text" v-model="subject"
@@ -65,6 +65,7 @@
           </div>
         </div>
 
+        <!-- Tertuju -->
         <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center min-h-[28px]">
@@ -72,11 +73,9 @@
               <div class="flex items-center gap-1.5 flex-wrap w-full">
                 <UBadge v-for="item in tertujuList" :key="item.value" color="primary" variant="soft" size="md"
                   class="gap-1.5 pl-2 pr-1 flex items-center rounded-md">
-                  <span class="text-xs font-medium text-left truncate max-w-[500px]">
-                    {{ item.label }}
-                  </span>
-                  <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
-                    class="w-4 h-4 hover:bg-gray-200 rounded shrink-0" @click="removeTertuju(item)" />
+                  <span class="text-xs font-medium text-left truncate max-w-[500px]">{{ item.label }}</span>
+                  <UButton icon="i-lucide-x" size="2xs" variant="ghost" :padded="false"
+                    class="w-4 h-4 hover:bg-gray-200 rounded" @click="removeTertuju(item)" />
                 </UBadge>
               </div>
 
@@ -99,7 +98,6 @@
                       {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Pilih tertuju' }}
                     </span>
                   </div>
-
                   <UIcon name="i-heroicons-chevron-down-20-solid" class="size-5 text-gray-400 shrink-0" />
                 </div>
 
@@ -123,6 +121,7 @@
           </div>
         </div>
 
+        <!-- Checklist -->
         <div class="flex flex-col py-3 border-b border-gray-200 gap-3">
           <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -137,15 +136,12 @@
           </div>
         </div>
 
+        <!-- Editor -->
         <div class="flex flex-col py-4">
-          <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
-            <div class="flex flex-wrap gap-2 flex-shrink-0">
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-              <UButton v-if="!isFullscreenEditor" icon="i-lucide-maximize" color="neutral" variant="soft"
-                label="Fullscreen" @click="toggleFullscreenEditor" />
-              <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
-            </div>
+          <div class="flex justify-end gap-3 mb-2">
+            <UButton v-if="!isFullscreenEditor" icon="i-lucide-maximize" color="neutral" variant="soft"
+              label="Fullscreen" @click="toggleFullscreenEditor" />
+            <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
           </div>
 
           <ClientOnly>
@@ -274,18 +270,35 @@
             <label class="text-sm font-medium text-gray-700">Lampiran File</label>
             <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
               description="Klik atau drag & drop untuk upload file PDF" />
+          <!-- Upload File -->
+          <div class="flex flex-col py-3 gap-2">
+            <label class="text-sm font-medium text-gray-700">Lampiran File</label>
+            <input type="file" accept="application/pdf" multiple @change="handleFileUpload"
+              class="block w-full text-sm file:py-2 file:px-4 file:rounded-md file:bg-primary-50 border rounded-lg" />
+
+            <div v-if="uploadedFiles.length > 0" class="flex flex-col gap-2 mt-2">
+              <div v-for="(file, index) in uploadedFiles" :key="index"
+                class="flex items-center justify-between p-2 bg-gray-50 border rounded-md">
+                <span class="text-sm truncate">{{ file.name }}</span>
+                <UButton icon="i-lucide-x" color="red" variant="ghost" size="xs"
+                  @click="removeFile(index)" />
+              </div>
+            </div>
           </div>
+
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 flex items-center justify-end bg-white">
-          <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" />
-          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            class="px-8 font-bold" />
+        <!-- Submit -->
+        <div class="py-6 border-t flex justify-end gap-4 bg-white">
+          <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text" />
+          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="font-bold" />
         </div>
+
       </div>
+    </div>
     </UCard>
 
+    <!-- Hidden PDF Content -->
     <ClientOnly>
       <div class="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden">
         <div ref="pdfSourceRef"

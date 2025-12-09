@@ -24,6 +24,16 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 const toast = useToast();
 const { copy } = useClipboard();
 
+const generateRandomString = (length = 5) => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 type Payment = {
   tanggal: string;
   LUrl: string;
@@ -227,7 +237,7 @@ const saveAdd = () => {
 };
 
 const openAdd = () => {
-  addForm.value = { ind: "", eng: "" };
+  addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
   showAddModal.value = true;
 };
 </script>
@@ -379,6 +389,117 @@ const openAdd = () => {
     </div>
     <div class="w-full overflow-auto p-2">
       <UTable :data="data" :columns="columns" />
+      <div class="w-full overflow-auto p-2">
+        <table class="min-w-full text-sm border-collapse">
+          <thead>
+            <tr class="dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                Tanggal
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                URL Asli
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                URL Modifikasi
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
+                Keterangan
+              </th>
+              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-center">
+                Aksi
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              v-for="(row, index) in data"
+              :key="index"
+              class="hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <!-- Tanggal -->
+              <td class="px-3 py-2 whitespace-nowrap">
+                {{
+                  new Date(row.tanggal).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })
+                }},
+                {{
+                  String(new Date(row.tanggal).getHours()).padStart(2, "0")
+                }}.{{
+                  String(new Date(row.tanggal).getMinutes()).padStart(2, "0")
+                }}
+              </td>
+
+              <!-- URL Asli -->
+              <td class="px-3 py-2 max-w-[250px] break-words">
+                {{ row.LUrl }}
+              </td>
+
+              <!-- URL Modifikasi -->
+              <td class="px-3 py-2 max-w-[200px] break-words">
+                {{ row.SUrl }}
+              </td>
+
+              <!-- Keterangan -->
+              <td class="px-3 py-2 max-w-[300px] break-words">
+                {{ row.keterangan }}
+              </td>
+
+              <!-- ACTION -->
+              <td class="px-3 py-2 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <!-- COPY -->
+                  <div class="relative">
+                    <button
+                      class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                      @click="toggleCopyDropdown(index)"
+                    >
+                      <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                    </button>
+
+                    <!-- DROPDOWN -->
+                    <div
+                      v-if="activeCopyIndex === index"
+                      class="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md overflow-hidden z-50"
+                    >
+                      <button
+                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                        @click="copyUrl(row.LUrl, 'URL Asli')"
+                      >
+                        Copy URL Asli
+                      </button>
+                      <button
+                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                        @click="copyUrl(row.SUrl, 'URL Modifikasi')"
+                      >
+                        Copy URL Modifikasi
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- DELETE -->
+                  <button
+                    class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                    @click="
+                      data.splice(index, 1);
+                      toast.add({
+                        title: 'URL berhasil dihapus!',
+                        color: 'error',
+                        icon: 'i-lucide-trash-2',
+                      });
+                    "
+                  >
+                    <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
