@@ -220,7 +220,7 @@ const openDetail = ref(false);
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Verify Digsig", to: "/admin/digsig/verify" },
+  { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 
 // STATE

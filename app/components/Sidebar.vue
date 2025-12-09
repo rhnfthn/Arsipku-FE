@@ -241,9 +241,10 @@ const adminMenuUtilitas = [
     label: "Digsig",
     icon: "i-lucide-signature",
     children: [
-      { label: "Create", to: "/admin/digsig/create" },
-      { label: "Sign", to: "/admin/digsig/sign" },
-      { label: "Check Dokumen", to: "/admin/digsig/check-dokumen" },
+      { label: "Verifikasi Dokumen", to: "/admin/digsig/verifikasi-dokumen" },
+      { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
+      { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
+      { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
     ],
   },
   { label: "Short URL", to: "/admin/short-url", icon: "i-lucide-link" },

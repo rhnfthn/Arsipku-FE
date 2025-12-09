@@ -1,0 +1,21 @@
+<template>
+  <div class="space-y-6">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <div>
+        <Heading variant="heading6b" class="text-mobile-md">
+          Penandatanganan
+        </Heading>
+        <PageHeader :items="breadcrumbs" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
+];
+</script>
