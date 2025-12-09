@@ -15,7 +15,7 @@
       <UInput v-model="search" placeholder="Ketik untuk cari naskah dinas ..." icon="i-heroicons-magnifying-glass"
         variant="none" size="xl"
         class="w-full md:min-w-100 rounded-full [&>input]:placeholder-gray-800 [&>input]:dark:placeholder-gray-500" :ui="{
-          base: 'py-3 bg-primary-50/80 dark:bg-gray-900 rounded-full focus:bg-white focus:shadow-sm dark:focus:bg-gray-800 transition-all',
+          base: 'py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-sm dark:focus:bg-gray-800 transition-all',
           leadingIcon: 'size-5 text-gray-800 dark:text-gray-400 group-focus-within:text-white dark:group-focus-within:text-white transition-colors',
           icon: {
             trailing: {
@@ -81,7 +81,6 @@
         <template #lang-label>
           <div class="flex items-center justify-between w-full py-1 px-2.5">
             <span class="text-sm text-gray-700 dark:text-gray-200">Bahasa</span>
-
             <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
               <UButton v-for="lang in locales" :key="lang.code" :label="lang.name" size="2xs"
                 :color="currentLocale === lang.code ? 'white' : 'gray'"

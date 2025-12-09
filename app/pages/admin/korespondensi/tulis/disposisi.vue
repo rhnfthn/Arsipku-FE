@@ -27,16 +27,18 @@
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Sifat Naskah</span>
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Sifat</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="selectedSifat" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
-              :searchable="false" variant="none">
+              :search-input="{ placeholder: 'Cari sifat ...', size: 'lg' }" variant="none">
               <template #default>
-                <div class="flex items-center gap-1.5 min-h-[2.5rem] pr-10 w-full">
-                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">{{
-                    selectedSifat.label }}</span>
-                  <span v-else class="text-sm text-gray-400">Pilih sifat...</span>
+                <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full">
+                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">
+                    {{ selectedSifat.label }}
+                  </span>
+                  <span v-else class="text-sm text-gray-400">Pilih sifat</span>
                 </div>
               </template>
             </USelectMenu>
@@ -65,7 +67,7 @@
 
         <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tertuju</span>
-          <div class="flex flex-wrap gap-1 w-full items-center">
+          <div class="flex flex-wrap gap-1 w-full items-center min-h-[28px]">
             <div class="w-full">
               <div class="flex items-center gap-1.5 flex-wrap w-full">
                 <UBadge v-for="item in tertujuList" :key="item.value" color="primary" variant="soft" size="md"
@@ -78,8 +80,15 @@
                 </UBadge>
               </div>
 
-              <UPopover :disabled="isLoadingRecipient" :ui="{ content: 'p-0 w-full min-w-[500px]' }">
-                <div class="w-full flex items-center justify-between py-1.5 cursor-pointer bg-transparent group"
+              <UPopover :disabled="isLoadingRecipient" :content="{
+                side: 'bottom',
+                align: 'start',
+                alignOffset: 0,
+                sideOffset: 4
+              }" :ui="{
+                content: 'w-[var(--reka-popper-anchor-width)]'
+              }">
+                <div class="w-full flex items-center justify-between cursor-pointer bg-transparent group"
                   :class="isLoadingRecipient ? 'cursor-wait' : ''">
 
                   <div class="flex items-center gap-2 text-sm text-gray-400 flex-1 overflow-hidden">
@@ -87,7 +96,7 @@
                       class="animate-spin size-4 shrink-0 text-primary-500" />
 
                     <span class="truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                      {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Cari tertuju...' }}
+                      {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Pilih tertuju' }}
                     </span>
                   </div>
 
@@ -95,7 +104,7 @@
                 </div>
 
                 <template #content="{ close }">
-                  <UCommandPalette v-model="tertujuList" multiple virtualize placeholder="Cari tertuju..."
+                  <UCommandPalette v-model="tertujuList" multiple virtualize placeholder="Cari tertuju ..."
                     :groups="groups" :fuse="{
                       resultLimit: 20,
                       fuseOptions: {
@@ -104,11 +113,12 @@
                       }
                     }" class="w-full" :ui="{
                       input: '[&>input]:h-12 [&>input]:text-sm',
-                      content: 'h-[360px]',
+                      content: 'h-[250px]',
                       viewport: 'max-h-[350px]'
                     }" />
                 </template>
               </UPopover>
+
             </div>
           </div>
         </div>
@@ -262,34 +272,8 @@
 
           <div class="flex flex-col py-3 gap-2 mt-4">
             <label class="text-sm font-medium text-gray-700">Lampiran File</label>
-            <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
-              @drop.prevent="handleDrop" @click="triggerFileInput"
-              class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50"
-              :class="isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-white'">
-              <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 mb-2" />
-              <p class="text-sm text-gray-500 text-center">
-                <span class="font-semibold text-primary-600">Klik untuk upload</span> atau drag and drop file PDF
-              </p>
-              <p class="text-xs text-gray-400 mt-1">Hanya file PDF yang diperbolehkan</p>
-
-              <input ref="fileInputRef" type="file" accept="application/pdf" multiple class="hidden"
-                @change="handleFileChange" />
-            </div>
-
-            <div v-if="uploadedFiles.length > 0" class="flex flex-col gap-2 mt-2">
-              <div v-for="(file, index) in uploadedFiles" :key="index"
-                class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md shadow-sm">
-                <div class="flex items-center gap-2 overflow-hidden">
-                  <UIcon name="i-lucide-file-text" class="size-4 text-red-500 shrink-0" />
-                  <div class="flex flex-col">
-                    <span class="text-sm text-gray-700 truncate font-medium">{{ file.name }}</span>
-                    <span class="text-xs text-gray-400">{{ (file.size / 1024).toFixed(1) }} KB</span>
-                  </div>
-                </div>
-                <UButton icon="i-lucide-trash-2" color="red" variant="ghost" size="xs" :padded="false"
-                  class="w-6 h-6 hover:bg-red-50 rounded shrink-0" @click.stop="removeFile(index)" />
-              </div>
-            </div>
+            <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
+              description="Klik atau drag & drop untuk upload file PDF" />
           </div>
         </div>
 
@@ -549,22 +533,6 @@ const selectedSender = computed(() => senders.find(s => s.value === senders_sele
 const onEditorReady = (q: any) => { quillInstance = q; }
 const cleanContent = (content: string) => content
 const toggleFullscreenEditor = () => { isFullscreenEditor.value = !isFullscreenEditor.value; document.body.style.overflow = isFullscreenEditor.value ? 'hidden' : '' }
-
-// --- DRAG & DROP HANDLERS ---
-const triggerFileInput = () => { fileInputRef.value?.click() }
-const handleFileChange = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (input.files) processFiles(input.files)
-}
-const handleDrop = (event: DragEvent) => {
-  isDragging.value = false
-  if (event.dataTransfer?.files) processFiles(event.dataTransfer.files)
-}
-const processFiles = (fileList: FileList) => {
-  const newFiles = Array.from(fileList).filter(file => file.type === 'application/pdf')
-  uploadedFiles.value = [...uploadedFiles.value, ...newFiles]
-}
-const removeFile = (i: number) => { uploadedFiles.value.splice(i, 1) }
 
 // --- PDF GENERATOR ---
 async function openPreview() {

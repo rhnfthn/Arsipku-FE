@@ -11,7 +11,7 @@
         <div
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
           <span
-            class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Berkas</span>
+            class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Berkas</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="senders_selected" :items="senders" value-key="value" placeholder="Pilih Pengirim"
               :search-input="{ placeholder: 'Cari berkas', size: 'lg' }" variant="none" class="w-full" :ui="{
@@ -31,16 +31,16 @@
         <div
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 relative gap-1 sm:gap-0">
           <span
-            class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tanggal
+            class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tanggal
             Surat</span>
           <div class="relative w-full">
             <ClientOnly>
               <UPopover v-model:open="open" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
-                <div class="flex items-center gap-2 cursor-pointer w-full pr-2" @click="open = true">
+                <div class="flex items-center gap-2 cursor-pointer w-full pr-2 h-[28px]" @click="open = true">
                   <UInputDate locale="id-ID" v-model="date" variant="none" size="sm" format="DD MMMM YYYY"
                     class="flex-1"
                     :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-8 dark:text-white' }" />
-                  <UIcon name="i-lucide-calendar" class="size-4 text-gray-400 dark:text-gray-500 shrink-0 mr-1" />
+                  <UIcon name="i-lucide-calendar" class="size-4 text-gray-400 dark:text-gray-500 shrink-0 mr-0.5" />
                 </div>
                 <template #content>
                   <UCalendar v-model="date" class="p-2" @update:model-value="open = false" />
@@ -50,10 +50,10 @@
           </div>
         </div>
 
-        <div
+        <!-- <div
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
           <span
-            class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tertuju</span>
+            class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="tertujuList" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
               :search-input="{ placeholder: 'Cari tertuju', size: 'lg' }" variant="none" :ui="{
@@ -75,31 +75,98 @@
               </template>
             </USelectMenu>
           </div>
-        </div>
+        </div> -->
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
-          <span
-            class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Tembusan</span>
+        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1 text-gray-500 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
-            <USelectMenu v-model="tembusanList" :items="tembusanOptions" multiple placeholder="Tembusan ..."
-              class="w-full p-0" :search-input="{ placeholder: 'Cari tertuju', size: 'lg' }" variant="none" :ui="{
-                base: 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
-                wrapper: 'pr-10 w-full', input: 'pr-10 w-full dark:text-white', value: 'p-0 w-full', trigger: { base: 'px-0 py-1 w-full' }
+            <USelectMenu v-model="selected" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
+              variant="none" :ui="{
+                base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
+                wrapper: 'pr-10 w-full',
+                input: 'pr-10 w-full',
+                value: 'p-0 w-full',
+                trigger: { base: 'px-0 py-1 w-full' },
               }">
+              <template #item="{ item, selected: isSel }">
+                <div class="flex items-start gap-3 w-full py-1 overflow-hidden">
+                  <UCheckbox :model-value="isItemSelected(item)" class="pointer-events-none shrink-0"
+                    :checked="isItemSelected(item)" />
+                  <img v-if="item.image" :src="item.image" :alt="item.label"
+                    class="w-7 h-7 rounded-full object-cover shrink-0" />
+                  <div class="flex-1 min-w-0">
+                    <span class="block text-sm text-left truncate w-full">
+                      {{ item.label }}
+                    </span>
+                  </div>
+                </div>
+              </template>
+
               <template #default>
-                <div class="flex items-center gap-1.5 flex-wrap min-h-[2.5rem] pr-10 w-full">
-                  <UBadge v-for="item in tembusanList" :key="item.value" color="primary" variant="soft" size="md"
-                    class="gap-1.5 pl-2 pr-1 flex items-center justify-start rounded-md">
-                    <span class="text-xs font-medium text-left truncate max-w-[150px]">
+                <div class="flex items-center gap-1.5 flex-wrap min-h-[28px] pr-10 w-full">
+                  <UBadge v-for="item in selected" :key="item.value" color="primary" variant="soft" size="md"
+                    class="gap-1.5 pl-2 pr-1 flex items-center justify-start rounded-md max-w-full">
+                    <img v-if="item.image" :src="item.image" :alt="item.label"
+                      class="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                    <span class="text-xs font-medium text-left truncate max-w-[150px] sm:max-w-[220px]">
                       {{ item.label }}
                     </span>
                     <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
                       class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
-                      @click="removeTembusan(item, $event)" />
+                      @click="removeItem(item, $event)" />
                   </UBadge>
-                  <span v-if="!tembusanList.length" class="text-sm text-gray-400 dark:text-gray-500">Pilih
-                    penerima...</span>
+
+                  <span v-if="!selected.length" class="text-sm text-gray-400 dark:text-gray-500">
+                    Pilih tertuju
+                  </span>
+                </div>
+              </template>
+            </USelectMenu>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1 text-gray-500 font-medium shrink-0">Tembusan</span>
+          <div class="flex flex-wrap gap-1 w-full items-center">
+            <USelectMenu v-model="selected" :items="items" multiple placeholder="Kepada ..." class="w-full p-0"
+              variant="none" :ui="{
+                base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
+                wrapper: 'pr-10 w-full',
+                input: 'pr-10 w-full',
+                value: 'p-0 w-full',
+                trigger: { base: 'px-0 py-1 w-full' },
+              }">
+              <template #item="{ item, selected: isSel }">
+                <div class="flex items-start gap-3 w-full py-1 overflow-hidden">
+                  <UCheckbox :model-value="isItemSelected(item)" class="pointer-events-none shrink-0"
+                    :checked="isItemSelected(item)" />
+                  <img v-if="item.image" :src="item.image" :alt="item.label"
+                    class="w-7 h-7 rounded-full object-cover shrink-0" />
+                  <div class="flex-1 min-w-0">
+                    <span class="block text-sm text-left truncate w-full">
+                      {{ item.label }}
+                    </span>
+                  </div>
+                </div>
+              </template>
+
+              <template #default>
+                <div class="flex items-center gap-1.5 flex-wrap min-h-[28px] pr-10 w-full">
+                  <UBadge v-for="item in selected" :key="item.value" color="primary" variant="soft" size="md"
+                    class="gap-1.5 pl-2 pr-1 flex items-center justify-start rounded-md max-w-full">
+                    <img v-if="item.image" :src="item.image" :alt="item.label"
+                      class="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                    <span class="text-xs font-medium text-left truncate max-w-[150px] sm:max-w-[220px]">
+                      {{ item.label }}
+                    </span>
+                    <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
+                      class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
+                      @click="removeItem(item, $event)" />
+                  </UBadge>
+
+                  <span v-if="!selected.length" class="text-sm text-gray-400 dark:text-gray-500">
+                    Pilih tembusan
+                  </span>
                 </div>
               </template>
             </USelectMenu>
@@ -107,18 +174,17 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
-          <span
-            class="w-full sm:w-32 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">Sifat</span>
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Sifat</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="selectedSifat" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
-              :searchable="false" variant="none">
+              :search-input="{ placeholder: 'Cari sifat ...', size: 'lg' }" variant="none">
               <template #default>
-                <div class="flex items-center gap-1.5 min-h-[2.5rem] pr-10 w-full">
-                  <span v-if="selectedSifat"
-                    class="text-sm font-medium text-left truncate max-w-[200px] dark:text-white">{{
-                      selectedSifat.label }}</span>
-                  <span v-else class="text-sm text-gray-400 dark:text-gray-500">Pilih sifat...</span>
+                <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full">
+                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">
+                    {{ selectedSifat.label }}
+                  </span>
+                  <span v-else class="text-sm text-gray-400">Pilih sifat</span>
                 </div>
               </template>
             </USelectMenu>
@@ -128,7 +194,7 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-32 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <input type="text" v-model="subject"
               class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               placeholder="Ketik perihal" />
@@ -247,18 +313,10 @@
             </div>
           </ClientOnly>
 
-          <div class="flex flex-col py-3 gap-2">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Lampiran File</label>
-            <input type="file" accept="application/pdf" multiple @change="handleFileUpload"
-              class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:dark:bg-primary-900 file:text-primary-700 file:dark:text-primary-200 hover:file:bg-primary-100 cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none" />
-            <div v-if="uploadedFiles.length > 0" class="flex flex-col gap-2 mt-2">
-              <div v-for="(file, index) in uploadedFiles" :key="index"
-                class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
-                <span class="text-sm text-gray-700 dark:text-gray-200 truncate">{{ file.name }}</span>
-                <UButton icon="i-lucide-x" color="red" variant="ghost" size="xs" :padded="false"
-                  @click="removeFile(index)" />
-              </div>
-            </div>
+          <div class="flex flex-col py-3 gap-2 mt-4">
+            <label class="text-sm font-medium text-gray-700">Lampiran File</label>
+            <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
+              description="Klik atau drag & drop untuk upload file PDF" />
           </div>
         </div>
 
@@ -402,12 +460,69 @@ const tembusanList = ref([])
 
 // --- MOCK DATA ---
 const senders = [{ label: 'Berkas - OTP', value: 'tes1' }, { label: 'Berkas - Runway Cap', value: 'tes2' }]
-const items = ref([{ label: 'Direksi Perum LPPNPI', value: 'direksi' }, { label: 'Setio Anggoro', value: 'setio' }])
+const itemms = ref([{ label: 'Direksi Perum LPPNPI', value: 'direksi' }, { label: 'Setio Anggoro', value: 'setio' }])
 const tembusanOptions = ref([{ label: 'Direksi Perum LPPNPI', value: 'direksi' }, { label: 'Setio Anggoro', value: 'setio' }])
 const breadcrumbs = [{ label: 'Dashboard', to: '/user/dashboard' }, { label: 'Tulis Nota Dinas', to: '#' }]
 const templates = [{ id: 1, name: 'Default', content: `<ol><li>Poin 1</li></ol>` }]
 const sifatOptions = [{ label: 'Rahasia', value: 'rahasia' }, { label: 'Biasa', value: 'biasa' }]
 const selectedSifat = ref()
+
+const items = ref([
+  { type: "label", label: "Grup Tertuju" },
+  {
+    label: "Direksi Perum LPPNPI",
+    value: "direksi",
+    image:
+      "https://ui-avatars.com/api/?name=Direksi+Perum+LPPNPI&size=128&rounded=true&background=random",
+  },
+  {
+    label: "Para Executive Vice President",
+    value: "evp",
+    image:
+      "https://ui-avatars.com/api/?name=Executive+Vice+President&size=128&rounded=true&background=random",
+  },
+  { type: "separator" },
+  { type: "label", label: "Tertuju" },
+  {
+    label: "PT / PH - (-) Ketua Dewan Pengawas Kantor Pusat",
+    value: "ketua",
+    image:
+      "https://ui-avatars.com/api/?name=Ketua+Dewan+Pengawas&size=128&rounded=true&background=random",
+  },
+  {
+    label: "Avirianto Suratno - (U) Direktur Utama Kantor Pusat",
+    value: "avirianto",
+    image:
+      "https://ui-avatars.com/api/?name=Avirianto+Suratno&size=128&rounded=true&background=random",
+  },
+  {
+    label:
+      "Azizatun Azhimah - (K) Direktur Keuangan dan Manajemen Risiko Kantor Pusat",
+    value: "azizah",
+    image:
+      "https://ui-avatars.com/api/?name=Azizatun+Azhimah&size=128&rounded=true&background=random",
+  },
+  {
+    label: "Setio Anggoro - (O) Direktur Operasi Kantor Pusat",
+    value: "setio",
+    image:
+      "https://ui-avatars.com/api/?name=Setio+Anggoro&size=128&rounded=true&background=random",
+  },
+]);
+
+const selected = ref([]);
+
+function isItemSelected(item: any) {
+  return selected.value.some((s) => s.value === item.value);
+}
+
+function removeItem(item: any, event: Event) {
+  event.stopPropagation();
+  const index = selected.value.findIndex((i) => i.value === item.value);
+  if (index > -1) {
+    selected.value.splice(index, 1);
+  }
+}
 
 onMounted(() => {
   const now = new Date()
