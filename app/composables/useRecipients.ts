@@ -1,52 +1,58 @@
 // composables/useRecipients.ts
+import { useApi } from "~/composables/useApi";
+import type {
+  RecipientItem,
+  RecipientApiResponse,
+  RecipientApiData,
+} from "~/types/recipients";
 
-export const useRecipients = (id: number | string) => {
-  // const config = useRuntimeConfig(); // Tidak butuh config URL eksternal lagi disini
+export const useRecipients = () => {
+  const { apiGet } = useApi();
 
-  // Perhatikan URL-nya: Kita ganti domain asli dengan '/api/proxy'
-  return useFetch<RawApiResponse, FormattedRecipientData>(
-    `/api/proxy/DI/get-recipient/${id}`,
-    {
-      // Hapus baseURL karena kita menggunakan relative path ke proxy server sendiri
-      // baseURL: config.public.API_URL, <--- HAPUS INI
+  /**
+   * Normalize recipients → menjadi array flat + group
+   */
+  const normalizeRecipients = (
+    raw: RecipientApiData | undefined,
+  ): RecipientItem[] => {
+    if (!raw || !raw.recipients) return [];
 
-      key: `recipient-list-${id}`,
-      timeout: 10000,
+    const groups = raw.recipients;
+    const list: RecipientItem[] = [];
 
-      transform: (data) => {
-        // ... logika transform sama seperti sebelumnya ...
-        const rawAtasan = data?.recipients?.ATASAN || [];
-        const rawBawahan = data?.recipients?.BAWAHAN || [];
-
-        const formatRecipient = (
-          r: RawRecipient,
-          group: "ATASAN" | "BAWAHAN",
-        ): RecipientOption => ({
-          label: `${r.persnum_person_text} - ${r.position_text}`,
-          value: r.position,
-          suffix: r.position_text,
-          group,
+    Object.keys(groups).forEach((groupName) => {
+      groups[groupName].forEach((item) => {
+        list.push({
+          ...item,
+          group: groupName,
         });
+      });
+    });
 
-        const atasans = rawAtasan.map((r) => formatRecipient(r, "ATASAN"));
-        const bawahans = rawBawahan.map((r) => formatRecipient(r, "BAWAHAN"));
+    return list;
+  };
 
-        return {
-          sender: data?.sender || {},
-          recipients: {
-            ATASAN: atasans,
-            BAWAHAN: bawahans,
-            ALL: [...atasans, ...bawahans],
-          },
-        };
-      },
+  /**
+   * GET /ND/get-recipient/{positionId}
+   */
+  const getRecipients = async (
+    positionId: number,
+  ): Promise<{
+    sender: RecipientApiData["sender"] | null;
+    recipients: RecipientItem[];
+  }> => {
+    if (!positionId) throw new Error("positionId kosong");
 
-      onResponseError({ response }) {
-        console.error(
-          "Failed to fetch recipients via Proxy:",
-          response.statusText,
-        );
-      },
-    },
-  );
+    // tipe otomatis jadi RecipientApiResponse
+    const res = await apiGet<RecipientApiResponse>(
+      `/ND/get-recipient/${positionId}`,
+    );
+
+    return {
+      sender: res?.data?.sender ?? null,
+      recipients: normalizeRecipients(res?.data),
+    };
+  };
+
+  return { getRecipients };
 };

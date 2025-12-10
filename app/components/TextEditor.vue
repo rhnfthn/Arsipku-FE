@@ -219,7 +219,7 @@ onMounted(async () => {
             // ['blockquote', 'code-block'],
             // ['link', 'image', 'video', 'formula'],
             // [{ 'header': 1 }, { 'header': 2 }],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
             [{ 'script': 'sub' }, { 'script': 'super' }],
             [{ 'indent': '-1' }, { 'indent': '+1' }],
             // [{ 'direction': 'rtl' }],
@@ -244,7 +244,24 @@ onMounted(async () => {
           menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'copy', 'delete'],
           toolbarTable: true,
         },
-        keyboard: { bindings: QuillTableBetter.keyboardBindings },
+        keyboard: {
+          bindings: {
+            ...QuillTableBetter.keyboardBindings,
+
+            customEnter: {
+              key: 13,
+              handler(range, context) {
+                if (context.format.list) {
+                  quill?.insertText(range.index, '\n', context.format);
+                  quill?.setSelection(range.index + 1, 0);
+                  return false;
+                }
+                return true;
+              }
+            },
+
+          }
+        },
         history: { userOnly: true } // Pastikan module history aktif
       },
       placeholder: props.placeholder
@@ -283,7 +300,8 @@ watch(() => props.modelValue, (newVal) => {
   display: list-item !important;
   /* Pastikan posisi marker di luar teks */
   list-style-position: outside !important;
-  padding-left: 0 !important; /* Biarkan OL/UL yang mengontrol indentasi */
+  padding-left: 0 !important;
+  /* Biarkan OL/UL yang mengontrol indentasi */
   color: #000000 !important;
 }
 
@@ -311,8 +329,13 @@ watch(() => props.modelValue, (newVal) => {
 :deep(.ql-editor ol ol) {
   list-style-type: lower-alpha !important;
 }
+
 :deep(.ql-editor ol ol ol) {
   list-style-type: lower-roman !important;
+}
+
+:deep(.ql-editor li::before) {
+  display: inline-block;
 }
 
 .tn-roman,

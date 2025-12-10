@@ -9,7 +9,8 @@
 
         <!-- Tanggal Disposisi -->
         <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 relative gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal Disposisi</span>
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal
+            Disposisi</span>
           <div class="relative w-full">
             <ClientOnly>
               <UPopover v-model:open="open" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
@@ -46,7 +47,8 @@
         </div>
 
         <!-- Nomor Surat -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Nomor Surat</span>
             <input type="text" v-model="refNumber"
@@ -56,7 +58,8 @@
         </div>
 
         <!-- Perihal -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Perihal Surat</span>
             <input type="text" v-model="subject"
@@ -66,7 +69,7 @@
         </div>
 
         <!-- Tertuju -->
-        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <!-- <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tertuju</span>
           <div class="flex flex-wrap gap-1 w-full items-center min-h-[28px]">
             <div class="w-full">
@@ -119,7 +122,7 @@
 
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Checklist -->
         <div class="flex flex-col py-3 border-b border-gray-200 gap-3">
@@ -270,32 +273,17 @@
             <label class="text-sm font-medium text-gray-700">Lampiran File</label>
             <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
               description="Klik atau drag & drop untuk upload file PDF" />
-          <!-- Upload File -->
-          <div class="flex flex-col py-3 gap-2">
-            <label class="text-sm font-medium text-gray-700">Lampiran File</label>
-            <input type="file" accept="application/pdf" multiple @change="handleFileUpload"
-              class="block w-full text-sm file:py-2 file:px-4 file:rounded-md file:bg-primary-50 border rounded-lg" />
+          </div>
 
-            <div v-if="uploadedFiles.length > 0" class="flex flex-col gap-2 mt-2">
-              <div v-for="(file, index) in uploadedFiles" :key="index"
-                class="flex items-center justify-between p-2 bg-gray-50 border rounded-md">
-                <span class="text-sm truncate">{{ file.name }}</span>
-                <UButton icon="i-lucide-x" color="red" variant="ghost" size="xs"
-                  @click="removeFile(index)" />
-              </div>
-            </div>
+          <!-- Submit -->
+          <div class="py-6 flex justify-end gap-4 bg-white">
+            <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text" />
+            <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+              class="font-bold" />
           </div>
 
         </div>
-
-        <!-- Submit -->
-        <div class="py-6 border-t flex justify-end gap-4 bg-white">
-          <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text" />
-          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="font-bold" />
-        </div>
-
       </div>
-    </div>
     </UCard>
 
     <!-- Hidden PDF Content -->
@@ -490,24 +478,24 @@ const uploadedFiles = ref<File[]>([])
 const isDragging = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const id = 70016581
-const { data: recipientData, status } = await useRecipients(id);
-const isLoadingRecipient = computed(() => status.value === 'pending');
+// const id = 70016581
+// const { data: recipientData, status } = await useRecipients(id);
+// const isLoadingRecipient = computed(() => status.value === 'pending');
 
-// --- TERTUJU LIST ---
-const tertujuList = ref<RecipientOption[]>([]);
-const groups = computed(() => {
-  const items = recipientData.value?.recipients?.ALL || [];
-  return [{
-    id: 'users',
-    label: 'Daftar Pegawai',
-    items: items
-  }];
-});
+// // --- TERTUJU LIST ---
+// const tertujuList = ref<RecipientOption[]>([]);
+// const groups = computed(() => {
+//   const items = recipientData.value?.recipients?.ALL || [];
+//   return [{
+//     id: 'users',
+//     label: 'Daftar Pegawai',
+//     items: items
+//   }];
+// });
 
-function removeTertuju(item: RecipientOption) {
-  tertujuList.value = tertujuList.value.filter(i => i.value !== item.value);
-}
+// function removeTertuju(item: RecipientOption) {
+//   tertujuList.value = tertujuList.value.filter(i => i.value !== item.value);
+// }
 
 // --- CHECKBOX STATE & OPTIONS ---
 const selectedChecklist = ref<string[]>([])
@@ -548,7 +536,9 @@ const cleanContent = (content: string) => content
 const toggleFullscreenEditor = () => { isFullscreenEditor.value = !isFullscreenEditor.value; document.body.style.overflow = isFullscreenEditor.value ? 'hidden' : '' }
 
 // --- PDF GENERATOR ---
+// --- PDF GENERATOR & MERGER ---
 async function openPreview() {
+  // 1. Sync Content Editor
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML
   } else {
@@ -564,8 +554,11 @@ async function openPreview() {
   }
 
   isOpenPreview.value = true
+  // Reset URL sebelumnya agar loading terlihat
+  if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
   pdfUrl.value = ''
 
+  // 2. Clone Element & Style Injection
   const clone = element.cloneNode(true) as HTMLElement
   const style = document.createElement('style');
   style.innerHTML = `
@@ -576,28 +569,27 @@ async function openPreview() {
     p { margin: 0 !important; padding-bottom: 0.5em !important; line-height: 1.5 !important; }
     *:not(td):not(tr) { background-color: transparent !important; }
     svg, path { fill: #000000 !important; stroke: #000000 !important; }
-
-    /* FIX NUMBERING LIST DI HASIL PDF */
     ol { list-style-type: decimal !important; padding-left: 20px !important; margin-left: 10px !important; }
     ul { list-style-type: disc !important; padding-left: 20px !important; margin-left: 10px !important; }
     li { display: list-item !important; }
   `;
   clone.appendChild(style);
 
-  // FIX LAYOUT SHIFT:
-  // Gunakan 'left: -9999px' agar elemen tidak terlihat TAPI tidak mempengaruhi flow layout utama.
+  // Ghost Div untuk rendering HTML2PDF
   const ghostDiv = document.createElement('div')
   ghostDiv.style.position = 'fixed';
   ghostDiv.style.top = '0';
-  ghostDiv.style.left = '-9999px'; // Pindahkan jauh ke kiri luar layar
+  ghostDiv.style.left = '-9999px';
   ghostDiv.style.width = '180mm';
   ghostDiv.style.padding = '0';
-
   ghostDiv.appendChild(clone)
   document.body.appendChild(ghostDiv)
 
   try {
+    // Import Library Secara Dynamic
     const html2pdf = (await import('html2pdf.js')).default
+    const { PDFDocument } = await import('pdf-lib')
+
     const opt = {
       margin: [15, 15, 20, 15],
       filename: `Disposisi_${Date.now()}.pdf`,
@@ -607,11 +599,44 @@ async function openPreview() {
       pagebreak: { mode: ['css'] }
     };
 
-    const pdfBlob = await html2pdf().set(opt).from(clone).output('bloburl');
-    pdfUrl.value = pdfBlob;
+    // 3. GENERATE PDF UTAMA (Disposisi) -> ARRAY BUFFER
+    const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer');
+
+    // 4. SETUP MERGING
+    // Buat dokumen kosong baru
+    const mergedPdf = await PDFDocument.create();
+
+    // Load PDF Utama (Disposisi)
+    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer);
+    const mainPages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices());
+    mainPages.forEach((page) => mergedPdf.addPage(page));
+
+    // 5. LOOP LAMPIRAN & MERGE
+    if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+      for (const file of uploadedFiles.value) {
+        // Pastikan hanya memproses PDF
+        if (file.type === 'application/pdf') {
+          try {
+            const fileBuffer = await file.arrayBuffer();
+            const attachmentDoc = await PDFDocument.load(fileBuffer);
+            const attachmentPages = await mergedPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices());
+
+            attachmentPages.forEach((page) => mergedPdf.addPage(page));
+          } catch (err) {
+            console.error(`Gagal merge file ${file.name}:`, err);
+          }
+        }
+      }
+    }
+
+    // 6. FINALIZE & DISPLAY
+    const mergedPdfBytes = await mergedPdf.save();
+    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+    pdfUrl.value = URL.createObjectURL(blob);
 
   } catch (err: any) {
-    console.error("PDF Error:", err); alert("Gagal: " + err.message);
+    console.error("PDF Error:", err);
+    alert("Gagal: " + err.message);
     isOpenPreview.value = false;
   } finally {
     document.body.removeChild(ghostDiv)

@@ -7,11 +7,10 @@ export default defineNuxtConfig({
     transpile: ["@vuepic/vue-datepicker"],
   },
 
-  routeRules: {
-    // Setiap request ke '/api/proxy/...' akan diteruskan ke target API
-    '/api/proxy/**': {
-      proxy: 'https://arsipku-api.rizan.app/**'
-    }
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: "https://arsipku-api.rizan.app",
+    },
   },
 
   i18n: {
