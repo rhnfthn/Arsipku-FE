@@ -20,12 +20,42 @@
       <div class="px-5 flex flex-col gap-4 pb-4">
         <div>
           <label class="text-xs font-medium">Tanggal Surat</label>
-          <input
-            type="date"
-            v-model="form.tanggal"
-            :max="today"
-            class="mt-1 w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-700"
-          />
+
+          <ClientOnly>
+            <UPopover
+              v-model:open="open"
+              :max="today"
+              :content="{ align: 'start', side: 'bottom', sideOffset: 8 }"
+            >
+              <div
+                class="mt-1 flex w-full items-center px-2 py-2 border border-gray-300 rounded-lg gap-2 cursor-pointer focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-700 pr-2"
+                @click="open = true"
+              >
+                <UInputDate
+                  locale="id-ID"
+                  v-model="date"
+                  variant="none"
+                  size="sm"
+                  format="DD MMMM YYYY"
+                  class="flex-1"
+                  :ui="{
+                    base: '!bg-transparent !text-sm !px-0  pointer-events-none inline-flex items-center h-3',
+                  }"
+                />
+                <UIcon
+                  name="i-lucide-calendar"
+                  class="size-4 text-gray-400 shrink-0 mr-1"
+                />
+              </div>
+              <template #content>
+                <UCalendar
+                  v-model="date"
+                  class="p-2"
+                  @update:model-value="open = false"
+                />
+              </template>
+            </UPopover>
+          </ClientOnly>
         </div>
 
         <div>

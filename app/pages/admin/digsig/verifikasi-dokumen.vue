@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
-          Verify Dokumen Digsig
+          Verifikasi Dokumen Digsig
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -21,18 +21,19 @@
     <div class="bg-white shadow-lg rounded-xl w-full">
       <!-- TOP ACTION BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
       >
-        <!-- Rows dropdown -->
+        <!-- STATUS FILTER -->
         <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Tampilkan</span>
+          <span class="text-xs text-gray-600">Status</span>
+
           <select
-            v-model="rowsPerPage"
+            v-model="statusFilter"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
           >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
+            <option value="">Semua</option>
+            <option value="Success">Success</option>
+            <option value="Rejected">Rejected</option>
           </select>
         </div>
 
@@ -71,11 +72,25 @@
         <table class="w-full bg-white text-sm">
           <thead class="bg-primary text-white text-[15px]">
             <tr>
-              <th class="p-4 text-left">Tgl. dibuat</th>
-              <th class="p-4 text-left">No Dokumen / Perihal</th>
-              <th class="p-4 text-center">Jumlah Penandatanganan</th>
+              <th class="p-4 text-left cursor-pointer" @click="sortBy('date')">
+                Tgl. dibuat
+              </th>
+
+              <th class="p-4 text-left cursor-pointer" @click="sortBy('no')">
+                No Dokumen / Perihal
+              </th>
+
+              <th class="p-4 text-center">Penandatangan</th>
+
               <th class="p-4 text-center">Dokumen</th>
-              <th class="p-4 text-center">Status</th>
+
+              <th
+                class="p-4 text-center cursor-pointer"
+                @click="sortBy('status')"
+              >
+                Status
+              </th>
+
               <th class="p-4 text-center">Action</th>
             </tr>
           </thead>
@@ -113,14 +128,17 @@
                 </span>
               </td>
 
-              <td class="p-4 text-center">
+              <td class="p-4 flex items-center gap-4 mt-2">
                 <Eye
-                  class="w-5 h-5 text-gray-600 cursor-pointer"
+                  class="w-4 h-4 text-gray-600 cursor-pointer"
                   @click="
                     openDetail = true;
                     selectedRow = row;
                   "
                 />
+                <button class="text-yellow-500 hover:text-yellow-700">
+                  <Pencil class="w-4 h-4" />
+                </button>
               </td>
             </tr>
           </tbody>
@@ -129,7 +147,12 @@
       <!---------->
       <!-- MODAL -->
       <!---------->
-      <Modal v-model="openDetail" :hideDefaultFooter="true" class="w-full">
+      <Modal
+        v-model="openDetail"
+        :hideDefaultFooter="true"
+        class="w-full"
+        size="lg"
+      >
         <template #title>
           <Heading
             variant="heading9b"
@@ -213,6 +236,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Pencil,
   FileCheck,
   Eye,
 } from "lucide-vue-next";
@@ -222,6 +246,10 @@ const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
+
+const statusFilter = ref("");
+const sortKey = ref("");
+const sortOrder = ref("asc");
 
 // STATE
 const rowsPerPage = ref(10);
@@ -250,7 +278,25 @@ const rows = ref([
     ],
   },
   {
-    id: 1,
+    id: 2,
+    date: "16/03/2024 10:11:37",
+    no: "002 / Coba Ttd UAT",
+    desc: "Pengujian Tanda Tangan Digital UAT",
+    count: 1,
+    status: "Success",
+    type: "PGM - Sertifikat atau Piagam",
+    classification: "OPS - OPERASI",
+    signerList: [
+      {
+        nik: "3374031234567890",
+        name: "BUDI SANTOSO",
+        status: "Success",
+        note: "-",
+      },
+    ],
+  },
+  {
+    id: 3,
     date: "16/03/2024 10:11:37",
     no: "002 / Coba Ttd UAT",
     desc: "Pengujian Tanda Tangan Digital UAT",
@@ -268,10 +314,46 @@ const rows = ref([
     ],
   },
 ]);
+function sortBy(key: string) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
 
 const filteredRows = computed(() => {
-  return rows.value.filter((row) =>
+  let data = [...rows.value];
+
+  // SEARCH
+  data = data.filter((row) =>
     row.no.toLowerCase().includes(search.value.toLowerCase()),
   );
+
+  // STATUS FILTER
+  if (statusFilter.value) {
+    data = data.filter((row) => row.status === statusFilter.value);
+  }
+
+  // SORTING
+  if (sortKey.value) {
+    data.sort((a, b) => {
+      let valA = a[sortKey.value];
+      let valB = b[sortKey.value];
+
+      // khusus TANGGAL → convert
+      if (sortKey.value === "date") {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+      }
+
+      if (valA < valB) return sortOrder.value === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder.value === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
+
+  return data;
 });
 </script>

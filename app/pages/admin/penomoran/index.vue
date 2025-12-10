@@ -114,7 +114,7 @@
               <td class="px-5 py-4">{{ row.jabatan }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
               <td class="px-5 py-4">{{ row.tanggal_nomor }}</td>
-              <td class="px-5 py-4">{{ row.pengirim }}</td>
+              <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.waktu }}</td>
             </tr>
           </tbody>
@@ -243,27 +243,39 @@
       </div>
 
       <!-- Tanggal -->
-      <div class="flex justify-between">
-        <span class="text-gray-600 w-48">Tanggal</span>
-        <span class="font-medium">{{ selectedRow.tanggal }}</span>
+      <div class="flex items-start">
+        <span class="text-gray-600 w-48 flex-shrink-0">Tanggal</span>
+
+        <span class="font-medium text-right flex-1">
+          {{ selectedRow.tanggal }}
+        </span>
       </div>
 
       <!-- Pengirim -->
-      <div class="flex justify-between">
-        <span class="text-gray-600 w-48">Pengirim</span>
-        <span class="font-medium">{{ selectedRow.pengirim }}</span>
+      <div class="flex items-start">
+        <span class="text-gray-600 w-48 flex-shrink-0">Pengirim</span>
+
+        <span class="font-medium text-right flex-1">
+          {{ selectedRow.pengusul }}
+        </span>
       </div>
 
       <!-- Klasifikasi -->
-      <div class="flex justify-between">
-        <span class="text-gray-600 w-48">Klasifikasi</span>
-        <span class="font-medium">{{ selectedRow.klasifikasi }}</span>
+      <div class="flex items-start">
+        <span class="text-gray-600 w-48 flex-shrink-0">Klasifikasi</span>
+
+        <span class="font-medium text-right flex-1">
+          {{ selectedRow.klasifikasi }}
+        </span>
       </div>
 
       <!-- Jenis Naskah -->
-      <div class="flex justify-between">
-        <span class="text-gray-600 w-48">Jenis Naskah</span>
-        <span class="font-medium">{{ selectedRow.jenis_naskah }}</span>
+      <div class="flex items-start">
+        <span class="text-gray-600 w-48 flex-shrink-0">Jenis Naskah</span>
+
+        <span class="font-medium text-right flex-1">
+          {{ selectedRow.jenis_naskah }}
+        </span>
       </div>
 
       <!-- NOMOR SURAT LIST -->
@@ -424,7 +436,7 @@ const headers = [
   { label: "Jabatan", key: "jabatan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
   { label: "Tanggal & Nomor", key: "tanggal & nomor", sortable: true },
-  { label: "Pengirim", key: "pengirim", sortable: false },
+  { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "waktu", key: "waktu", sortable: true },
 ];
 
@@ -498,7 +510,7 @@ const rows = ref<any[]>([
     jabatan: "Direktur Utama",
     perihal: "Berita Acara Stock Opname",
     tanggal_nomor: "06.11.2024 / 1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-    pengirim: "IKA OCTAFIA SAPUTRI",
+    pengusul: "IKA OCTAFIA SAPUTRI",
     waktu: "15:34",
     tanggal: "28.02.2024",
     klasifikasi: "PGD.07 - Inventarisasi Barang",
@@ -511,7 +523,7 @@ const rows = ref<any[]>([
     jabatan: "Direktur Operasi",
     perihal: "On The Job Training Instructor",
     tanggal_nomor: "28.02.2024 / 02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-    pengirim: "SITI RAHAYU",
+    pengusul: "SITI RAHAYU",
     waktu: "16:37",
     tanggal: "15.03.2024",
     klasifikasi: "PGD.03 - Pelatihan",
@@ -524,7 +536,7 @@ const rows = ref<any[]>([
     jabatan: "Direktur SDM",
     perihal: "Penetapan Jadwal Pelatihan",
     tanggal_nomor: "15.03.2024 / 05/SK/U/14/LPPNPI/PGD.05/III/2024",
-    pengirim: "AHMAD HIDAYAT",
+    pengusul: "AHMAD HIDAYAT",
     waktu: "09:15",
     tanggal: "28.02.2024",
     klasifikasi: "PGD.05 - Penjadwalan",
@@ -537,7 +549,7 @@ const rows = ref<any[]>([
     jabatan: "Direktur Utama",
     perihal: "Kerja Sama dengan PT Mitra Sejahtera",
     tanggal_nomor: "20.04.2024 / 08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
-    pengirim: "BUDI SANTOSO",
+    pengusul: "BUDI SANTOSO",
     waktu: "14:22",
     tanggal: "20.04.2024",
     klasifikasi: "PGD.10 - Kerja Sama",

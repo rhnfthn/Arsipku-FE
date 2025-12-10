@@ -6,7 +6,7 @@
     >
       <div class="flex flex-col z-10">
         <Heading variant="heading6b" class="text-primary-600"
-          >Halo, Azzah</Heading
+          >Halo, Ivan</Heading
         >
         <Heading variant="heading9m" class="mt-1 text-primary-400"
           >Semoga hari anda menyenangkan</Heading
@@ -21,7 +21,7 @@
     />
 
     <!-- STAT CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <UCard
         v-for="(stat, idx) in stats"
         :key="idx"
@@ -32,7 +32,7 @@
           :class="`absolute left-0 top-0 h-full w-1 ${stat.borderColor}`"
         ></div>
 
-        <div class="flex justify-between items-start pl-4">
+        <div class="flex justify-between items-start pl-2">
           <div>
             <p class="text-sm text-gray-500">{{ stat.label }}</p>
             <Heading
@@ -42,7 +42,7 @@
             >
           </div>
 
-          <div :class="`p-3 rounded-lg ${stat.bgSolid}`">
+          <div :class="`p-2 rounded-lg ${stat.bgSolid}`">
             <UIcon :name="stat.icon" :class="`w-7 h-6 ${stat.iconColor}`" />
           </div>
         </div>
@@ -223,6 +223,14 @@ const stats = [
     bgSolid: "bg-purple-100",
     borderColor: "bg-purple-500",
     iconColor: "text-purple-600",
+  },
+  {
+    label: "perlu diTandatangan",
+    value: "5",
+    icon: "i-lucide-signature",
+    bgSolid: "bg-yellow-100",
+    borderColor: "bg-yellow-500",
+    iconColor: "text-yellow-600",
   },
 ];
 
