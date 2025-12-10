@@ -21,7 +21,7 @@ export default defineCachedEventHandler(async (event) => {
       suffix: r.position_text // Tambahan untuk pencarian lebih akurat jika perlu
     }));
 
-    const atasans = rawAtasan.map((r: any) => ({
+    const atasans = rawAtasan .map((r: any) => ({
       label: `${r.persnum_person_text} - ${r.position_text}`,
       value: r.position,
       suffix: r.position_text
