@@ -486,14 +486,14 @@ function selectEditJabatan(val: string) {
 
         <!-- LIST (TABEL) -->
         <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-primary text-xs text-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-primary font-semibold text-white">
               <tr>
-                <th class="px-4 py-3 border-b text-left">Delegator</th>
-                <th class="px-4 py-3 border-b text-left">Jabatan</th>
-                <th class="px-4 py-3 border-b text-left">Periode</th>
-                <th class="px-4 py-3 border-b text-left">Status</th>
-                <th class="px-4 py-3 border-b text-center">Aksi</th>
+                <th class="px-5 py-3 border-b text-left">Delegator</th>
+                <th class="px-5 py-3 border-b text-left">Jabatan</th>
+                <th class="px-5 py-3 border-b text-left">Periode</th>
+                <th class="px-5 py-3 border-b text-left">Status</th>
+                <th class="px-5 py-3 border-b text-center">Aksi</th>
               </tr>
             </thead>
 

@@ -151,7 +151,7 @@
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penanda }}</td>
+              <td class="px-5 py-4">{{ row.pengirim }}</td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -287,33 +287,32 @@
           <div
             v-for="(nomor, idx) in selectedRow.nomor_surat"
             :key="idx"
-            class="flex items-center gap-3 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2"
+            class="flex items-center gap-2"
           >
             <!-- CHECKBOX -->
             <input
               type="checkbox"
               v-model="selectedRow.checkedNomor[idx]"
-              class="w-4 h-4"
+              class="w-5 h-5"
             />
-
             <!-- NOMOR URUT -->
-            <span class="text-sm text-gray-700 w-4">{{ idx + 1 }}</span>
-
-            <!-- INPUT NOMOR SURAT -->
-            <input
-              type="text"
-              v-model="selectedRow.nomor_surat[idx]"
-              class="flex-1 bg-transparent outline-none text-sm"
-            />
-
-            <!-- COPY BUTTON -->
-            <button
-              @click="
-                navigator.clipboard.writeText(selectedRow.nomor_surat[idx])
-              "
-              class="p-1 hover:bg-gray-200 rounded"
+            <div
+              class="relative flex w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2"
             >
-              <i class="fas fa-copy text-gray-500"></i>
+              <span class="text-sm text-gray-700">{{ idx + 1 }}</span>
+
+              <input
+                type="text"
+                v-model="selectedRow.nomor_surat[idx]"
+                class="flex-1 bg-transparent outline-none text-sm pr-2"
+              />
+            </div>
+            <!-- COPY BUTTON INSIDE INPUT BOX -->
+            <button
+              @click="handleCopy(no, idx)"
+              class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+            >
+              <Copy class="w-4 h-4 text-gray-600" />
             </button>
           </div>
         </div>
@@ -335,22 +334,26 @@
 
     <!-- FOOTER -->
     <template #footer>
-      <div
-        class="flex justify-between px-8 py-5 border-t border-gray-200 gap-3"
-      >
+      <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
         <button
           @click="submitUsulan"
-          class="flex-1 py-3 text-[15px] rounded-lg bg-primary text-white font-medium"
+          class="px-5 py-2 text-xs bg-primary text-white rounded-md"
         >
           Nomor Disetujui
         </button>
-
         <button
           @click="hapusUsulan"
-          class="flex-1 py-3 text-[15px] rounded-lg border border-red-400 text-red-600 font-medium"
+          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
         >
           Nomor Ditolak
         </button>
+
+        <!-- <button
+          @click="$emit('hapus-usulan')"
+          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
+        >
+          Hapus Usulan
+        </button> -->
       </div>
     </template>
   </Modal>
@@ -358,7 +361,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Plus } from "lucide-vue-next";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 
 import Heading from "~/components/Heading.vue";
@@ -378,7 +381,18 @@ const showPreview = (row: any) => {
 
   openPreview.value = true;
 };
+const toast = useToast();
 
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
 // const openPreview = (row: any) => {
 //   selectedRow.value = {
 //     ...row,
@@ -419,7 +433,7 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penanda Tangan", key: "penanda", sortable: false },
+  { label: "Pengirim", key: "pengirim", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
@@ -493,12 +507,12 @@ const rows = ref<any[]>([
   {
     id: "1534490706124",
     jenis: "BAC",
-    tanggal: "06.11.2024",
+    tanggal: "06.11.2025",
     perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
+    pengirim: "Direktur Utama",
     jumlah: 5,
     pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
+    tglUsulan: "06 November 25 15:34",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Utama",
@@ -517,12 +531,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Menunggu Verifikasi",
 
     pengirim: "Direktur Operasi",
@@ -537,12 +551,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Menunggu Verifikasi",
 
     pengirim: "Direktur Operasi",
@@ -557,12 +571,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Operasi",
@@ -577,12 +591,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Ditolak",
 
     pengirim: "Direktur Operasi",
@@ -597,12 +611,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Operasi",
@@ -617,12 +631,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Menunggu Verifikasi",
 
     pengirim: "Direktur Operasi",
@@ -637,12 +651,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Operasi",
@@ -657,12 +671,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 1,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Menunggu Verifikasi",
 
     pengirim: "Direktur Operasi",
@@ -674,12 +688,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 1,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Operasi",
@@ -691,12 +705,12 @@ const rows = ref<any[]>([
   {
     id: "1537437828224",
     jenis: "SPR",
-    tanggal: "28.02.2024",
+    tanggal: "28.02.2025",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 2,
     pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
+    tglUsulan: "28 February 25 16:37",
     status: "Nomor Disetujui",
 
     pengirim: "Direktur Operasi",

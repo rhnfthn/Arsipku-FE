@@ -17,14 +17,6 @@
         <Plus class="w-4 h-4" />
         Tambah Usulan
       </button>
-
-      <!-- <button
-        @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Titelatur
-      </button> -->
     </div>
 
     <!-- CARD -->
@@ -160,7 +152,7 @@
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penanda }}</td>
+              <td class="px-5 py-4">{{ row.pengirim }}</td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -232,20 +224,11 @@
       <!------------->
       <!-- MODAL TAMBAH -->
       <!------------->
-
       <AddUsulan
         v-model="openAdd"
         @preview="handlePreview"
         @submit="handleSubmit"
       />
-
-      <!-- <PreviewUsulan v-model="openPreview" :data="previewData" /> -->
-
-      <!-- <AddUsulan
-        v-model="openAdd"
-        @preview="handlePreview"
-        @submit="handleSubmit"
-      /> -->
     </div>
   </div>
   <!------------->
@@ -258,10 +241,10 @@
         <h2 class="text-lg font-semibold uppercase">
           {{ selectedRow?.jenis_naskah || "Detail" }}
         </h2>
-        <!-- 
-            <span class="text-xs text-gray-500">
-              {{ selectedRow?.timestamp || "—" }}
-            </span> -->
+
+        <!-- <span class="text-xs text-gray-500">
+          {{ selectedRow?.timestamp || "—" }}
+        </span> -->
       </div>
     </template>
 
@@ -300,16 +283,85 @@
       <div class="pb-2">
         <p class="text-gray-500 text-xs">Nomor Surat</p>
 
-        <div class="flex items-center gap-2 mt-2">
-          <input
-            class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-            :value="selectedRow.nomor_surat"
-            readonly
-          />
+        <!-- Jika nomor_surat array -->
+        <div
+          v-if="Array.isArray(selectedRow.nomor_surat)"
+          class="space-y-4 mt-2"
+        >
+          <div
+            v-for="(no, idx) in selectedRow.nomor_surat"
+            :key="idx"
+            class="space-y-2"
+          >
+            <!-- Nomor surat -->
 
-          <button @click="copyNomor" class="p-2 border rounded-md">
+            <div class="flex items-center gap-2">
+              <input
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                :value="no"
+                readonly
+              />
+
+              <button
+                @click="handleCopy(no, idx)"
+                class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+              >
+                <Copy class="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+
+            <!-- Upload dengan ICON -->
+            <label
+              class="w-full mb-7 flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              <svg
+                class="w-5 h-5 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+
+              <span class="text-gray-600">Upload File</span>
+
+              <input
+                type="file"
+                class="hidden"
+                @change="handleFile(idx, $event)"
+              />
+            </label>
+          </div>
+        </div>
+
+        <!-- Jika nomor_surat string -->
+        <div v-else class="mt-2 space-y-2">
+          <div class="flex items-center gap-2">
+            <input
+              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              :value="selectedRow.nomor_surat"
+              readonly
+            />
+
+            <button
+              @click="handleCopy(no, idx)"
+              class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+            >
+              <Copy class="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          <!-- Upload tunggal -->
+          <label
+            class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+          >
             <svg
-              class="w-4 h-4 text-gray-500"
+              class="w-5 h-5 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -318,10 +370,14 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M8 16h8M8 12h8m-7 8h6m-2-16h2a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2h2"
+                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
               />
             </svg>
-          </button>
+
+            <span class="text-gray-600">Upload File</span>
+
+            <input type="file" class="hidden" @change="handleFile(0, $event)" />
+          </label>
         </div>
       </div>
     </div>
@@ -355,32 +411,46 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Plus } from "lucide-vue-next";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { UInput, USelect, Modal } from "#components";
 
-// data tabel kamu (contoh)
-import { tableData } from "~/data/usulan-data";
+const toast = useToast();
+
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
 
 // State modal
 const openPreview = ref(false);
 const selectedRow = ref(null);
 
-// Event dari AddUsulan
-// function handlePreview(data) {
-//   console.log("DATA PREVIEW:", data);
-// }
-
-// function handleSubmit(data) {
-//   console.log("DATA SUBMIT:", data);
-// }
 function handlePreview(data) {
   previewData.value = data;
   openPreview.value = true;
 }
+
+function handleFile(idx, event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!selectedRow.value.uploadFiles) {
+    selectedRow.value.uploadFiles = [];
+  }
+
+  selectedRow.value.uploadFiles[idx] = file;
+}
+
 // Function saat klik row
 function openRowModal(row) {
   selectedRow.value = row;
@@ -398,7 +468,7 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penanda Tangan", key: "penanda", sortable: false },
+  { label: "Pengirim", key: "pengirim", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
@@ -458,8 +528,8 @@ const rows = ref<any[]>([
     jenis: "BAC",
     tanggal: "06.11.2024",
     perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
+    pengirim: "Direktur Utama",
+    jumlah: 2,
     pengusul: "Natassia Nurcurie",
     tglUsulan: "06 November 24 15:34",
     status: "Belum Diajukan",
@@ -468,7 +538,10 @@ const rows = ref<any[]>([
     pengirim: "Direktur Utama",
     klasifikasi: "PGD.07 - Inventarisasi Barang",
     jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
+    nomor_surat: [
+      "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
+      "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
+    ],
   },
 
   {
@@ -476,7 +549,7 @@ const rows = ref<any[]>([
     jenis: "SPR",
     tanggal: "28.02.2024",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 1,
     pengusul: "Firda Kabisatika",
     tglUsulan: "28 February 24 16:37",
@@ -486,7 +559,7 @@ const rows = ref<any[]>([
     pengirim: "Direktur Operasi",
     klasifikasi: "PGD.03 - Pelatihan",
     jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
+    nomor_surat: "SPR/.../U/18/LPPNPI/PGD.07/XI/2024",
   },
 
   {
@@ -494,7 +567,7 @@ const rows = ref<any[]>([
     jenis: "SK",
     tanggal: "15.03.2024",
     perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
+    pengirim: "Direktur SDM",
     jumlah: 2,
     pengusul: "Ahmad Rizki",
     tglUsulan: "15 March 24 09:15",
@@ -504,7 +577,10 @@ const rows = ref<any[]>([
     pengirim: "Direktur SDM",
     klasifikasi: "PGD.05 - Penjadwalan",
     jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
+    nomor_surat: [
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+    ],
   },
 
   {
@@ -512,7 +588,7 @@ const rows = ref<any[]>([
     jenis: "MOU",
     tanggal: "20.04.2024",
     perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
+    pengirim: "Direktur Utama",
     jumlah: 1,
     pengusul: "Siti Aminah",
     tglUsulan: "20 April 24 14:22",
@@ -522,14 +598,14 @@ const rows = ref<any[]>([
     pengirim: "Direktur Utama",
     klasifikasi: "PGD.10 - Kerja Sama",
     jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
+    nomor_surat: "MOU/.../U/18/LPPNPI/PGD.07/XI/2024",
   },
   {
     id: "1322344206125",
     jenis: "SK",
     tanggal: "15.03.2024",
     perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
+    pengirim: "Direktur SDM",
     jumlah: 2,
     pengusul: "Ahmad Rizki",
     tglUsulan: "15 March 24 09:15",
@@ -539,14 +615,17 @@ const rows = ref<any[]>([
     pengirim: "Direktur SDM",
     klasifikasi: "PGD.05 - Penjadwalan",
     jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
+    nomor_surat: [
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+    ],
   },
   {
     id: "19754344206124",
     jenis: "BAC",
     tanggal: "06.11.2024",
     perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
+    pengirim: "Direktur Utama",
     jumlah: 1,
     pengusul: "Natassia Nurcurie",
     tglUsulan: "06 November 24 15:34",
@@ -556,7 +635,7 @@ const rows = ref<any[]>([
     pengirim: "Direktur Utama",
     klasifikasi: "PGD.07 - Inventarisasi Barang",
     jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
+    nomor_surat: "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
   },
 
   {
@@ -564,7 +643,7 @@ const rows = ref<any[]>([
     jenis: "SPR",
     tanggal: "28.02.2024",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 1,
     pengusul: "Firda Kabisatika",
     tglUsulan: "28 February 24 16:37",
@@ -574,14 +653,14 @@ const rows = ref<any[]>([
     pengirim: "Direktur Operasi",
     klasifikasi: "PGD.03 - Pelatihan",
     jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
+    nomor_surat: "SPR/.../U/12/LPPNPI/PGD.03/II/2024",
   },
   {
     id: "1534408314525",
     jenis: "SK",
     tanggal: "15.03.2024",
     perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
+    pengirim: "Direktur SDM",
     jumlah: 2,
     pengusul: "Ahmad Rizki",
     tglUsulan: "15 March 24 09:15",
@@ -591,7 +670,10 @@ const rows = ref<any[]>([
     pengirim: "Direktur SDM",
     klasifikasi: "PGD.05 - Penjadwalan",
     jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
+    nomor_surat: [
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
+    ],
   },
 
   {
@@ -599,7 +681,7 @@ const rows = ref<any[]>([
     jenis: "MOU",
     tanggal: "20.04.2024",
     perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
+    pengirim: "Direktur Utama",
     jumlah: 1,
     pengusul: "Siti Aminah",
     tglUsulan: "20 April 24 14:22",
@@ -609,14 +691,14 @@ const rows = ref<any[]>([
     pengirim: "Direktur Utama",
     klasifikasi: "PGD.10 - Kerja Sama",
     jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
+    nomor_surat: "MOU/.../U/20/LPPNPI/PGD.10/IV/2024",
   },
   {
     id: "1975238706124",
     jenis: "BAC",
     tanggal: "06.11.2024",
     perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
+    pengirim: "Direktur Utama",
     jumlah: 1,
     pengusul: "Natassia Nurcurie",
     tglUsulan: "06 November 24 15:34",
@@ -626,7 +708,7 @@ const rows = ref<any[]>([
     pengirim: "Direktur Utama",
     klasifikasi: "PGD.07 - Inventarisasi Barang",
     jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
+    nomor_surat: "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
   },
 
   {
@@ -634,7 +716,7 @@ const rows = ref<any[]>([
     jenis: "SPR",
     tanggal: "28.02.2024",
     perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
+    pengirim: "Direktur Operasi",
     jumlah: 1,
     pengusul: "Firda Kabisatika",
     tglUsulan: "28 February 24 16:37",
@@ -644,7 +726,7 @@ const rows = ref<any[]>([
     pengirim: "Direktur Operasi",
     klasifikasi: "PGD.03 - Pelatihan",
     jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
+    nomor_surat: "SPR/.../U/12/LPPNPI/PGD.03/II/2024",
   },
 ]);
 
