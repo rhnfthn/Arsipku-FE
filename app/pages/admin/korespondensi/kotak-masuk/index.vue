@@ -31,10 +31,20 @@ import {
   StickyNote,
 } from "lucide-vue-next";
 
-import { useInbox } from "~/composables/naskah-masuk";
+import { useInbox } from "~/composables/useInbox";
 
-const positionId = ref("70008040"); 
-const { items, pending, error, refresh, toggleFavorit, toggleArsip} = useInbox(positionId);
+const { user, getProfile } = useAuth()
+
+// Ambil profil user saat page load
+onMounted(async () => {
+  if (!user.value) {
+    await getProfile()              
+  }
+})
+
+const positionId = computed(() => user.value?.position || null)
+
+const { items, pending, error, refresh } = useInbox(positionId)
 
 // --- STATE ---
 const selected = ref(null);

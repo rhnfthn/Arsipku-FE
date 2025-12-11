@@ -41,23 +41,33 @@ try {
 
   await delayWithFade()
 
-  if (result?.success) {
+if (result?.success) {
 
-    const accessToken = result?.data?.accessToken
-    const sessionId = result?.data?.sessionId
+  const accessToken = result?.data?.accessToken
+  const sessionId = result?.data?.sessionId
+  const role = result?.data?.user?.role   // ⬅️ ambil role
 
-    if (!accessToken || !sessionId) {
-      console.error("Token/sessionId missing from API response:", result)
-      return navigateTo('/login')
-    }
-
-    localStorage.setItem("token", accessToken)
-    localStorage.setItem("sessionId", sessionId)
-
-    return navigateTo('/admin/dashboard')
-  } else {
+  if (!accessToken || !sessionId) {
+    console.error("Token/sessionId missing from API response:", result)
     return navigateTo('/login')
   }
+
+  // Simpan token
+  localStorage.setItem("token", accessToken)
+  localStorage.setItem("sessionId", sessionId)
+
+  // ⬅️ ROUTING DINAMIS
+  if (role === "admin" || role === "superadmin") {
+    return navigateTo('/admin/dashboard')
+  } 
+  
+  if (role === "user") {
+    return navigateTo('/user/dashboard')
+  }
+
+  // fallback jika role tidak dikenal
+  return navigateTo('/')
+}
 
 } catch (error) {
   console.error("Verify token gagal:", error)

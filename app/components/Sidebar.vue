@@ -124,6 +124,9 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
+import { useAuth } from '~/composables/auth'
+const { user } = useAuth()
+
 // import SidebarItem from './SidebarItem.vue'
 
 // --- 1. SETUP & PROPS ---
@@ -253,37 +256,41 @@ const adminMenuUtilitas = [
 ];
 
 // 3. Admin - Administrasi
-const adminMenuAdministrasi = [
-  { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
-  {
-    label: "Titelatur Inggris",
-    to: "/admin/titelatur",
-    icon: "i-lucide-languages",
-  },
-  {
-    label: "Penomoran",
-    icon: "i-lucide-hash",
-    children: [
-      { label: "Usulan", to: "/admin/penomoran/usulan" },
-      { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
-      { label: "Penomoran", to: "/admin/penomoran" },
-    ],
-  },
-  {
-    label: "Naskah Dinas",
-    to: "/admin/naskah-dinas",
-    icon: "i-lucide-file-text",
-  },
-  {
-    label: "Master Data",
-    icon: "i-lucide-database",
-    children: [
-      { label: "Akun", to: "/admin/master/akun" },
-      { label: "Hak Akses", to: "/admin/master/hak-akses" },
-      { label: "Unknown", to: "/admin/master/" },
-    ],
-  },
-];
+const adminMenuAdministrasi = computed(() => {
+  const menu = [
+    { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
+    { label: "Titelatur Inggris", to: "/admin/titelatur", icon: "i-lucide-languages" },
+    {
+      label: "Penomoran",
+      icon: "i-lucide-hash",
+      children: [
+        { label: "Usulan", to: "/admin/penomoran/usulan" },
+        { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
+        { label: "Penomoran", to: "/admin/penomoran" },
+      ],
+    },
+    {
+      label: "Naskah Dinas",
+      to: "/admin/naskah-dinas",
+      icon: "i-lucide-file-text",
+    },
+  ]
+
+  // superadmin yang boleh melihat Master Data
+  if (user.value?.role === "superadmin") {
+    menu.push({
+      label: "Master Data",
+      icon: "i-lucide-database",
+      children: [
+        { label: "Akun", to: "/admin/master/akun" },
+        { label: "Hak Akses", to: "/admin/master/hak-akses" },
+        { label: "Unknown", to: "/admin/master/" },
+      ],
+    })
+  }
+
+  return menu
+})
 
 // 4. Admin - Laporan (FLAT / Tanpa Submenu)
 const adminMenuLaporan = [
@@ -326,7 +333,7 @@ const apps = computed(() => {
         id: "admin-administrasi",
         label: "Administrasi",
         icon: "i-heroicons-cog-6-tooth",
-        menus: adminMenuAdministrasi,
+        menus: adminMenuAdministrasi.value,
       },
       {
         id: "admin-laporan",
