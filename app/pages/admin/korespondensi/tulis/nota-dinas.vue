@@ -609,14 +609,13 @@ import type { Berkas } from "~/types/berkas";
 /* -------------------------------------------------------------------------- */
 const route = useRoute();
 const { apiGet } = useApi();
-// const { saveDraft, isLoadingDraft } = useDraft();
+const { saveDraft, isLoadingDraft, getDraftDetail } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
 
 /* -------------------------------------------------------------------------- */
 /* STATE & REFS                                                               */
 /* -------------------------------------------------------------------------- */
-// --- UI State ---
 const breadcrumbs = [{ label: 'Dashboard', to: '/user/dashboard' }, { label: 'Tulis Nota Dinas', to: '#' }];
 const isFullscreenEditor = ref(false);
 const isTemplateModalOpen = ref(false);
@@ -624,14 +623,12 @@ const isOpenPreview = ref(false);
 const open = ref(false);
 const isLoadingData = ref(false);
 
-// --- Form State ---
 const date = ref<CalendarDate>();
 const subject = ref("");
 const selectedSifat = ref();
 const uploadedFiles = ref<File[]>([]);
 const editDraftId = ref<string | null>(null);
 
-// --- Data Lists & Select ---
 const english = ref(false)
 const berkasList = ref<Berkas[]>([]);
 const berkasStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -641,7 +638,6 @@ const items = ref([]);
 const selectedTertuju = ref([]);
 const selectedTembusan = ref([]);
 
-// --- Editor & PDF State ---
 const editorContent = ref("");
 const rawHtmlContent = ref("");
 const textEditorComponent = ref();
@@ -649,21 +645,10 @@ const pdfSourceRef = ref<HTMLElement | null>(null);
 const pdfUrl = ref('');
 let quillInstance: any = null;
 
-// --- Static Options ---
-const templates = [{ id: 1, name: 'Default', content: `<ol><li>Poin 1</li></ol>` }];
-const sifatOptions = [{ label: 'Rahasia', value: 'rahasia' }, { label: 'Biasa', value: 'biasa' }];
-
-// ------------------------------------------------------------------------------ */
-
-// Tambahkan destructuring getDraftDetail
-const { saveDraft, isLoadingDraft, getDraftDetail } = useDraft();
-
-// ... state existing ...
-
-// State tambahan untuk file yang sudah ada di server (karena tidak bisa masuk ke uploadedFiles tipe File[])
 const existingFiles = ref<any[]>([]);
 
-// ... helper & methods ...
+const templates = [{ id: 1, name: 'Default', content: `<ol><li>Poin 1</li></ol>` }];
+const sifatOptions = [{ label: 'Rahasia', value: 'rahasia' }, { label: 'Biasa', value: 'biasa' }];
 
 /* -------------------------------------------------------------------------- */
 /* LIFECYCLE HOOKS (LOGIC POPULATE FORM)                                      */
@@ -671,27 +656,24 @@ const existingFiles = ref<any[]>([]);
 onMounted(async () => {
   try {
     berkasStatus.value = 'loading';
-    // 1. Load Master Data Dulu
+    // 1. Load Master Data
     const [resBerkas, resRecipients] = await Promise.all([
       getBerkasList(),
-      getRecipients(70016581) // ID User Login
+      getRecipients(70016581)
     ]);
 
-    // Setup Master Data
     berkasList.value = Array.isArray(resBerkas) ? resBerkas : resBerkas?.data ?? [];
     berkasStatus.value = 'success';
 
-    // Setup Recipient Items untuk Select Menu
+    // Inisialisasi Items Master
     items.value = resRecipients.recipients.map(r => ({
-      // PERBAIKAN: Format lengkap untuk Dropdown
       label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
-      // PERBAIKAN: Format Jabatan saja untuk Editor/Preview
       labelJob: r.position_text,
-      value: r.position, // Pastikan ini cocok dengan data yg disimpan
+      value: r.position,
       raw: r
     }));
 
-    // PERBAIKAN: Set Default Date NOW jika tidak ada draft (akan ditimpa jika ada draft)
+    // Default Date
     const now = new Date();
     date.value = new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
@@ -703,104 +685,107 @@ onMounted(async () => {
       editDraftId.value = draftId;
 
       try {
-        // Panggil API Detail /ND/{id}
         const res = await getDraftDetail(draftId);
 
         if (res.success && res.data) {
-          const d = res.data; // Shortcut variable
+          const d = res.data;
 
-          // A. Mapping Text Dasar
+          // Mapping Basic Data
           subject.value = d.perihal || "";
-
-          // Mapping Sifat (Cari yang value-nya cocok, atau default 'biasa')
           selectedSifat.value = sifatOptions.find(opt => opt.value === d.sifat) || sifatOptions[1];
-
           english.value = d.english || false;
 
-          // B. Mapping Tanggal
           if (d.tanggal) {
             const dateObj = new Date(d.tanggal);
             date.value = new CalendarDate(dateObj.getFullYear(), dateObj.getMonth() + 1, dateObj.getDate());
           }
 
-          // C. Mapping Berkas (Klasifikasi)
-          // JSON Response memberikan: "klasifikasi": " OPS.02" (ada spasi di depan kadang berpengaruh)
           if (d.klasifikasi) {
             const cleanKlasifikasi = d.klasifikasi.trim();
             const foundBerkas = berkasList.value.find(b => b.klasifikasi === cleanKlasifikasi);
-            if (foundBerkas) {
-              selectedBerkasId.value = foundBerkas.id;
-            }
+            if (foundBerkas) selectedBerkasId.value = foundBerkas.id;
           }
 
-          // D. Mapping Penerima & Tembusan
-          // JSON Response memberikan array object lengkap. Kita perlu map ke format USelectMenu
-          // Asumsi: Kita map berdasarkan nama/posisi karena ID di JSON draft mungkin beda dengan ID master data
+          // ============================================================
+          // FIX UTAMA: HANDLING DROPDOWN ITEM AGAR TIDAK HILANG (KEDIP)
+          // ============================================================
 
-          // ... di dalam onMounted, setelah items.value terisi ...
+          // 1. Gabungkan semua penerima dari draft untuk dicek
+          const draftRecipients = [
+            ...(Array.isArray(d.penerima) ? d.penerima : []),
+            ...(Array.isArray(d.tembusan) ? d.tembusan : [])
+          ];
 
-          // ---------------------------------------------------------
-          // 1. MAPPING PENERIMA (TERTUJU)
-          // ---------------------------------------------------------
+          // 2. Array penampung item baru (yang tidak ada di Master Data)
+          const newItemsToAdd = [];
+
+          // Helper cek kesamaan data
+          const isMatch = (masterItem: any, draftItem: any) => {
+             // Cek by Persnum/ID (Prioritas)
+             const mId = String(masterItem.raw?.persnum || masterItem.raw?.personal_number || masterItem.value || '');
+             const dId = String(draftItem.persnum || draftItem.id || '');
+             if(mId && dId && mId === dId) return true;
+
+             // Cek by Nama (Secondary)
+             const mName = String(masterItem.raw?.nama || masterItem.raw?.name || '').toLowerCase().trim();
+             const dName = String(draftItem.nama || '').toLowerCase().trim();
+             return mName && dName && mName === dName;
+          };
+
+          // 3. Loop semua data draft, jika tidak ada di items -> masukkan ke antrian newItemsToAdd
+          draftRecipients.forEach(draftItem => {
+             const existsInMaster = items.value.some(i => isMatch(i, draftItem));
+             const alreadyQueued = newItemsToAdd.some(n => isMatch(n, draftItem));
+
+             if (!existsInMaster && !alreadyQueued) {
+               newItemsToAdd.push({
+                 label: `${draftItem.nama} - ${draftItem.positionText}`,
+                 labelJob: draftItem.positionText, // Penting untuk Preview/Editor
+                 value: draftItem.id || draftItem.persnum,
+                 raw: draftItem,
+                 image: null,
+                 disabled: false
+               });
+             }
+          });
+
+          // 4. UPDATE MASTER ITEMS SEKALIGUS (Batch Update)
+          if (newItemsToAdd.length > 0) {
+            items.value = [...items.value, ...newItemsToAdd];
+          }
+
+          // 5. TUNGGU REACTIVITY VUE SELESAI (Sangat Penting!)
+          // Ini mencegah dropdown me-reset value karena opsi belum "ready" di DOM
+          await nextTick();
+
+          // 6. SET SELECTED VALUE DENGAN REFERENSI DARI ITEMS
+          // Kita harus mencari objek yang ada di dalam `items.value` agar === true
+
           if (d.penerima && Array.isArray(d.penerima)) {
-            selectedTertuju.value = d.penerima.map((p: any) => {
-              // CARI JODOHNYA DI MASTER DATA (ITEMS)
-              // Kita gunakan 'persnum' sebagai kunci unik pencocokan
-              const matchedItem = items.value.find((i: any) => i.raw?.persnum == p.persnum);
-
-              // JIKA KETEMU: Pakai object dari Master Data (Agar checkbox ✅ aktif)
-              if (matchedItem) {
-                return matchedItem;
-              }
-
-              // JIKA TIDAK KETEMU (Misal pegawai pensiun/pindah): Buat object manual agar nama tetap tampil
-              return {
-                label: `${p.nama} - ${p.positionText}`, // Format Lengkap
-                labelJob: p.positionText, // Format Jabatan
-                value: p.id, // Fallback ID
-                image: null,
-                disabled: false,
-                raw: p // Simpan data asli untuk jaga-jaga
-              };
-            });
+            selectedTertuju.value = d.penerima
+              .map(p => items.value.find(i => isMatch(i, p)))
+              .filter(Boolean); // Hanya ambil yang ketemu (seharusnya ketemu semua skrg)
           }
 
-          // ---------------------------------------------------------
-          // 2. MAPPING TEMBUSAN
-          // ---------------------------------------------------------
           if (d.tembusan && Array.isArray(d.tembusan)) {
-            selectedTembusan.value = d.tembusan.map((t: any) => {
-              // CARI JODOHNYA DI MASTER DATA
-              const matchedItem = items.value.find((i: any) => i.raw?.persnum == t.persnum);
-
-              if (matchedItem) {
-                return matchedItem;
-              }
-
-              return {
-                label: `${t.nama} - ${t.positionText}`, // Format Lengkap
-                labelJob: t.positionText, // Format Jabatan
-                value: t.id,
-                image: null,
-                disabled: false,
-                raw: t
-              };
-            });
+            selectedTembusan.value = d.tembusan
+              .map(t => items.value.find(i => isMatch(i, t)))
+              .filter(Boolean);
           }
 
-          // E. Mapping Konten Editor
+          // ============================================================
+          // END FIX
+          // ============================================================
+
           const kontenHTML = d.konten || "";
           editorContent.value = kontenHTML;
           if (quillInstance) {
             quillInstance.clipboard.dangerouslyPasteHTML(0, kontenHTML);
           }
 
-          // F. Mapping Lampiran (Existing Files)
           if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
             existingFiles.value = d.lampiran_files;
-            // Kita perlu UI khusus untuk menampilkan ini karena uploadedFiles hanya untuk file baru
           }
-
         }
       } catch (error) {
         console.error("Gagal load detail draft:", error);
@@ -814,7 +799,6 @@ onMounted(async () => {
     berkasStatus.value = 'error';
   }
 });
-
 
 /* -------------------------------------------------------------------------- */
 /* COMPUTED PROPERTIES                                                        */
@@ -877,9 +861,7 @@ const removeItem = (item, list, event) => {
 /* CORE FUNCTIONS                                                             */
 /* -------------------------------------------------------------------------- */
 
-// --- 1. Generate PDF Blob ---
 const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
-  // Sync Content
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML
   } else {
@@ -890,10 +872,7 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
   const element = pdfSourceRef.value
   if (!element) return null
 
-  // Gunakan clone agar tidak mengganggu DOM asli
   const clone = element.cloneNode(true) as HTMLElement
-
-  // Pastikan style ter-inject dengan benar (Critical untuk html2canvas)
   const style = document.createElement("style")
   style.innerHTML = `
     * { box-sizing: border-box; }
@@ -910,7 +889,6 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
   `
   clone.appendChild(style)
 
-  // Ghost Container (Hidden but rendered)
   const ghostDiv = document.createElement("div")
   Object.assign(ghostDiv.style, {
     position: 'fixed', top: '0', left: '-9999px', zIndex: '-9999',
@@ -927,20 +905,16 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
       margin: [15, 15, 20, 15],
       filename: `temp.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true }, // CORS penting untuk gambar
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
     }
 
-    // 1. Generate Main PDF
     const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer')
-
-    // 2. Merge dengan PDF Lib
     const mergedPdf = await PDFDocument.create()
     const mainPdfDoc = await PDFDocument.load(mainPdfBuffer)
     const pages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices())
     pages.forEach(p => mergedPdf.addPage(p))
 
-    // 3. Merge Lampiran
     for (const file of uploadedFiles.value) {
       if (file.type === 'application/pdf') {
         try {
@@ -953,7 +927,6 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
     }
 
     const pdfBytes = await mergedPdf.save()
-    // Return Blob
     return new Blob([pdfBytes], { type: 'application/pdf' })
 
   } catch (err) {
@@ -964,7 +937,6 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
   }
 }
 
-// --- 2. Preview PDF ---
 async function openPreview() {
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML;
@@ -979,18 +951,13 @@ async function openPreview() {
   if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
   pdfUrl.value = '';
 
-  // Logic Preview disamakan dengan Generate (Simplified for brevity)
-  // ... (Gunakan logika existing Anda atau panggil getGeneratedPdfBlob untuk preview)
-  // Untuk efisiensi code, saya sarankan preview memanggil getGeneratedPdfBlob juga:
   isLoadingData.value = true;
   const blob = await getGeneratedPdfBlob();
   isLoadingData.value = false;
   if (blob) pdfUrl.value = URL.createObjectURL(blob);
 }
 
-// --- 3. Save Draft Action (FIXED) ---
 const handleSaveDraft = async () => {
-  // 1. Validasi
   if (!selectedBerkas.value) {
     alert("Mohon pilih berkas arsip terlebih dahulu.")
     return
@@ -999,35 +966,24 @@ const handleSaveDraft = async () => {
   isLoadingDraft.value = true
 
   try {
-    // 2. Generate PDF
-    console.log("Mulai generate PDF...");
     const pdfBlob = await getGeneratedPdfBlob()
+    if (!pdfBlob) throw new Error("Gagal membuat PDF.");
 
-    // --- DEBUGGING 1: CEK BLOB ---
-    if (!pdfBlob) throw new Error("Gagal membuat PDF (Null).");
-    if (pdfBlob.size === 0) throw new Error("Gagal membuat PDF (Size 0).");
-    console.log(`PDF Berhasil dibuat! Ukuran: ${(pdfBlob.size / 1024).toFixed(2)} KB`);
-
-    // 3. Siapkan FormData
     const formData = new FormData()
-
     if (editDraftId.value) formData.append("id_naskah", editDraftId.value)
 
-    // Data Text
     formData.append("pengirim", "70016786")
     formData.append("klasifikasi", selectedBerkas.value.klasifikasi ?? "")
     formData.append("klasifikasi_text", selectedBerkas.value.judulBerkas ?? "")
     formData.append("sifat", selectedSifat.value?.value || "biasa")
     formData.append("perihal", subject.value)
 
-    // Perbaikan: Kirim Array untuk Backend (PHP/Laravel butuh [])
     selectedTertuju.value.forEach(item => formData.append("penerima[]", item.value))
     selectedTembusan.value.forEach(item => formData.append("tembusan[]", item.value))
 
     const contentHtml = quillInstance?.root?.innerHTML || editorContent.value
     formData.append("konten", contentHtml)
 
-    // Data Statis
     formData.append("nama_tempat", "Tangerang")
     formData.append("nama_jabatan", "AVP of Enterprise Technology Planning")
     formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2")
@@ -1039,36 +995,18 @@ const handleSaveDraft = async () => {
     formData.append("tgl", tglStr)
     formData.append("english", english.value ? "1" : "0")
 
-    // --- APPEND FILE UTAMA ---
     formData.append("final_pdf", pdfBlob, "Draft_Nota_Dinas.pdf")
 
-    // --- APPEND LAMPIRAN ---
     if (uploadedFiles.value && uploadedFiles.value.length > 0) {
       uploadedFiles.value.forEach((file) => {
         if (file instanceof File) {
-          // PENTING: Gunakan [] jika backendnya PHP/Laravel
           formData.append("lampiran_files[]", file, file.name)
         }
       })
     }
 
-    // --- DEBUGGING 2: CEK FINAL PAYLOAD ---
-    // Lihat di Console browser, pastikan muncul "File" object
-    console.log("--- DEBUG PAYLOAD ---");
-    for (const pair of formData.entries()) {
-      if (pair[1] instanceof File || pair[1] instanceof Blob) {
-        console.log(`${pair[0]}: File/Blob (Size: ${pair[1].size})`);
-      } else {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
-    }
-
-    // 4. KIRIM KE BACKEND
-    // PENTING: Pastikan 'saveDraft' tidak mengubah Header 'Content-Type'
-    // Biarkan browser yang set 'multipart/form-data; boundary=...'
     await saveDraft(formData)
-
-    await navigateTo("/admin/korespondensi/draft")
+    await navigateTo("/admin/korespondensi/terkirim")
 
   } catch (e: any) {
     console.error("Error Save Draft:", e)
@@ -1077,78 +1015,6 @@ const handleSaveDraft = async () => {
     isLoadingDraft.value = false
   }
 }
-
-/* -------------------------------------------------------------------------- */
-/* LIFECYCLE HOOKS                                                            */
-/* -------------------------------------------------------------------------- */
-onMounted(async () => {
-  try {
-    berkasStatus.value = 'loading';
-    const [resBerkas, resRecipients] = await Promise.all([
-      getBerkasList(),
-      getRecipients(70016581)
-    ]);
-
-    berkasList.value = Array.isArray(resBerkas) ? resBerkas : resBerkas?.data ?? [];
-    berkasStatus.value = 'success';
-
-    items.value = resRecipients.recipients.map(r => ({
-      // PERBAIKAN: Format lengkap untuk Dropdown
-      label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
-      // PERBAIKAN: Format Jabatan saja untuk Editor/Preview
-      labelJob: r.position_text,
-      value: r.position,
-      raw: r
-    }));
-
-    const draftId = route.query.draft_id as string;
-    if (draftId) {
-      isLoadingData.value = true;
-      editDraftId.value = draftId;
-      try {
-        const res = await apiGet(`/ND/${draftId}`);
-        const draft = res.data;
-
-        if (draft) {
-          subject.value = draft.perihal || "";
-          selectedSifat.value = sifatOptions.find(opt => opt.value === draft.sifat) || sifatOptions[1];
-
-          if (draft.tanggal) {
-            const d = new Date(draft.tanggal);
-            date.value = new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
-          }
-
-          if (draft.klasifikasi) {
-            const foundBerkas = berkasList.value.find(b => b.klasifikasi === draft.klasifikasi);
-            if (foundBerkas) selectedBerkasId.value = foundBerkas.id;
-          }
-
-          if (draft.penerima && Array.isArray(draft.penerima)) {
-            selectedTertuju.value = items.value.filter(i => draft.penerima.includes(i.value));
-          }
-
-          if (draft.tembusan && Array.isArray(draft.tembusan)) {
-            selectedTembusan.value = items.value.filter(i => draft.tembusan.includes(i.value));
-          }
-
-          const konten = draft.isi_pesan || draft.konten || "";
-          editorContent.value = konten;
-          if (quillInstance) {
-            quillInstance.clipboard.dangerouslyPasteHTML(0, konten);
-          }
-        }
-      } catch (error) {
-        console.error("Gagal load detail draft:", error);
-      } finally {
-        isLoadingData.value = false;
-      }
-    }
-
-  } catch (err) {
-    console.error("Gagal inisialisasi halaman:", err);
-    berkasStatus.value = 'error';
-  }
-});
 </script>
 
 <style scoped>
