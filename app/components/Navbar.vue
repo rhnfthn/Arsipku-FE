@@ -108,6 +108,19 @@ import { ref, computed } from "vue";
 import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 
+import { useAuth } from "@/composables/auth"
+const { logout } = useAuth()
+
+async function handleLogout() {
+  const success = await logout()
+
+  if (success) {
+    return navigateTo("/")
+  }
+
+  alert("Gagal logout!")
+}
+
 defineEmits(["open-mobile-sidebar"]);
 const search = ref("");
 const colorMode = useColorMode();
@@ -152,7 +165,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     {
       label: "Keluar",
       class: "text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
-      onSelect: () => alert("Logout Clicked")
+      onSelect: async () => handleLogout()
     }
   ]
 ]);
