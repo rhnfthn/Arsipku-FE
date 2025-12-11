@@ -220,7 +220,7 @@ const adminMenuUtama = [
     label: "Kotak Masuk",
     to: "/admin/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
-    badge: 2,
+    // badge: 2,
   },
   {
     label: "Terkirim",
@@ -231,7 +231,7 @@ const adminMenuUtama = [
     label: "Draft",
     to: "/admin/korespondensi/draft",
     icon: "i-lucide-file-text",
-    badge: 1,
+    // badge: 1,
   },
 ];
 

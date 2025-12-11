@@ -1,0 +1,87 @@
+/* assets/css/quill-custom.css */
+
+/* --- 1. MEMUNCULKAN TOMBOL DI TOOLBAR --- */
+
+/* Lebarkan tombol list agar muat teks label */
+.ql-snow .ql-toolbar button.ql-list {
+    width: 35px !important;
+    height: 24px !important;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sembunyikan SVG icon bawaan (karena kita mau ganti pakai Teks) */
+.ql-snow .ql-toolbar button.ql-list svg {
+    display: none !important;
+}
+
+/* Tampilkan kembali SVG KHUSUS untuk Bullet (karena bullet ada iconnya) */
+.ql-snow .ql-toolbar button.ql-list[value="bullet"] svg {
+    display: block !important;
+}
+
+/* Label Manual untuk setiap tombol */
+.ql-snow .ql-toolbar button.ql-list[value="ordered"]::after {
+    content: "1.";
+}
+
+.ql-snow .ql-toolbar button.ql-list[value="lower-alpha"]::after {
+    content: "a.";
+}
+
+.ql-snow .ql-toolbar button.ql-list[value="upper-alpha"]::after {
+    content: "A.";
+}
+
+.ql-snow .ql-toolbar button.ql-list[value="lower-roman"]::after {
+    content: "i.";
+    font-family: 'Times New Roman', serif;
+}
+
+.ql-snow .ql-toolbar button.ql-list[value="upper-roman"]::after {
+    content: "I.";
+    font-family: 'Times New Roman', serif;
+}
+
+
+/* --- 2. TAMPILAN DI DALAM EDITOR (PREVIEW) --- */
+
+/* Reset counter bawaan Quill yang sering bikin error/dobel angka */
+.ql-editor li::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* Pakai List Style native browser berdasarkan atribut data-list */
+.ql-editor li[data-list="ordered"] {
+    list-style-type: decimal;
+}
+
+.ql-editor li[data-list="bullet"] {
+    list-style-type: disc;
+}
+
+.ql-editor li[data-list="lower-alpha"] {
+    list-style-type: lower-alpha;
+}
+
+.ql-editor li[data-list="upper-alpha"] {
+    list-style-type: upper-alpha;
+}
+
+.ql-editor li[data-list="lower-roman"] {
+    list-style-type: lower-roman;
+}
+
+.ql-editor li[data-list="upper-roman"] {
+    list-style-type: upper-roman;
+}
+
+/* Perbaikan margin agar angka romawi tidak kepotong */
+.ql-editor li {
+    margin-left: 1.5rem;
+    padding-left: 0.5rem;
+}

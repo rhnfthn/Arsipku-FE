@@ -3,7 +3,6 @@ import type { AxiosInstance } from 'axios'
 
 export const useApi = () => {
   const config = useRuntimeConfig()
-
   const api: AxiosInstance = axios.create({
     baseURL: config.public.apiBaseUrl,
     withCredentials: false,
