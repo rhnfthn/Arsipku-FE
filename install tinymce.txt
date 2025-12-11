@@ -1,0 +1,4 @@
+mkdir -p public/tinymce
+cp -r node_modules/tinymce/* public/tinymce/
+
+npm install tinymce@6 @tinymce/tinymce-vue
