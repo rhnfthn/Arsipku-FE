@@ -1068,7 +1068,7 @@ const handleSaveDraft = async () => {
     // Biarkan browser yang set 'multipart/form-data; boundary=...'
     await saveDraft(formData)
 
-    await navigateTo("/admin/korespondensi/terkirim")
+    await navigateTo("/admin/korespondensi/draft")
 
   } catch (e: any) {
     console.error("Error Save Draft:", e)

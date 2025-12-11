@@ -18,7 +18,7 @@ const saveDraft = async (payload: FormData | any) => {
     const response = await post("/ND/save-draft", payload, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
-        // "Content-Type": "multipart/form-data", <--- HAPUS BARIS INI! JANGAN DIPAKAI.
+        // "Content-Type": "multipart/form-data",
       },
     });
 
