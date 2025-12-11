@@ -33,15 +33,17 @@
               >
                 <UInputDate
                   locale="id-ID"
-                  v-model="date"
+                  v-model="form.tanggal"
                   variant="none"
                   size="sm"
                   format="DD MMMM YYYY"
+                  readonly
                   class="flex-1"
                   :ui="{
-                    base: '!bg-transparent !text-sm !px-0  pointer-events-none inline-flex items-center h-3',
+                    base: '!bg-transparent !text-sm !px-0 select-none inline-flex items-center h-3',
                   }"
                 />
+
                 <UIcon
                   name="i-lucide-calendar"
                   class="size-4 text-gray-400 shrink-0 mr-1"
@@ -49,7 +51,7 @@
               </div>
               <template #content>
                 <UCalendar
-                  v-model="date"
+                  v-model="form.tanggal"
                   class="p-2"
                   @update:model-value="open = false"
                 />
@@ -58,6 +60,7 @@
           </ClientOnly>
         </div>
 
+        <!-- ✅ DROPDOWN KLASIFIKASI DARI API -->
         <div>
           <label class="text-xs font-medium"
             >Klasifikasi <span class="text-red-500">*</span></label
@@ -65,8 +68,11 @@
           <select
             v-model="form.klasifikasi"
             class="mt-1 border w-full border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 p-2 text-xs"
+            :disabled="isLoadingKlasifikasi"
           >
-            <option disabled value="">Pilih klasifikasi</option>
+            <option disabled value="">
+              {{ isLoadingKlasifikasi ? "Memuat..." : "Pilih klasifikasi" }}
+            </option>
             <option
               v-for="item in klasifikasiOptions"
               :key="item"
@@ -153,8 +159,9 @@
           <button
             @click="submitAndClose"
             class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md"
+            :disabled="isLoadingKlasifikasi"
           >
-            Submit
+            Simpan Usulan
           </button>
         </div>
       </template>
@@ -186,7 +193,7 @@
 
         <p class="text-center text-xs text-gray-500 mb-6">
           ID. {{ form.perihal.length }}{{ form.jumlah
-          }}{{ form.tanggal.replace(/-/g, "") }}
+          }}{{ form.tanggal ? form.tanggal.toString().replace(/-/g, "") : "" }}
         </p>
 
         <div class="space-y-4">
@@ -255,52 +262,150 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import Heading from "~/components/Heading.vue";
 import { UInput } from "#components";
+import { useBerkas } from "~/composables/userBerkas";
 
 const props = defineProps({
   modelValue: Boolean,
 });
 
-const emit = defineEmits(["update:modelValue", "submit"]);
+const open = ref(false);
+const emit = defineEmits(["submit", "update:modelValue"]);
+const toast = useToast();
+
+// ✅ FETCH KLASIFIKASI DARI API
+const { getBerkasList } = useBerkas();
+const klasifikasiOptions = ref([]);
+const isLoadingKlasifikasi = ref(false);
+
+const fetchKlasifikasi = async () => {
+  isLoadingKlasifikasi.value = true;
+
+  try {
+    const response = await getBerkasList();
+
+    // response bisa:
+    // 1. ARRAY → [ { klasifikasi: ... }, ... ]
+    // 2. OBJECT → { success, message, data: [...] }
+
+    const list = Array.isArray(response) ? response : (response.data ?? []);
+
+    const uniqueKlasifikasi = [
+      ...new Set(list.map((item) => item.klasifikasi)),
+    ];
+
+    klasifikasiOptions.value = uniqueKlasifikasi.sort();
+
+    console.log("✅ Klasifikasi berhasil dimuat:", klasifikasiOptions.value);
+  } catch (error) {
+    console.error("❌ Error fetch klasifikasi:", error);
+
+    toast.add({
+      title: "Gagal memuat klasifikasi",
+      description: "Menggunakan data default",
+      color: "yellow",
+    });
+
+    klasifikasiOptions.value = ["Terbatas", "Rahasia", "Biasa"];
+  } finally {
+    isLoadingKlasifikasi.value = false;
+  }
+};
+
+// ✅ Load klasifikasi saat modal dibuka
+onMounted(() => {
+  fetchKlasifikasi();
+});
+
+const submitAndClose = async () => {
+  // Validasi form
+  if (
+    !form.value.tanggal ||
+    !form.value.jenis ||
+    !form.value.klasifikasi ||
+    !form.value.pengirim ||
+    !form.value.perihal ||
+    Number(form.value.jumlah) < 1
+  ) {
+    toast.add({
+      title: "Form tidak lengkap",
+      description: "Pastikan semua field diisi dan jumlah minimal 1",
+      color: "red",
+    });
+    return;
+  }
+
+  // ✅ Payload tanpa field pengirim (karena BE tidak accept)
+  const payload = {
+    position_id: 70016786,
+    tanggal: form.value.tanggal, // Akan diconvert ke Date di composable
+    jenis: form.value.jenis,
+    klasifikasi: form.value.klasifikasi,
+    perihal: form.value.perihal,
+    jumlah: Number(form.value.jumlah),
+  };
+
+  console.log("📤 PAYLOAD FINAL:", payload);
+
+  try {
+    // Emit ke parent untuk proses save ke BE
+    emit("submit", payload);
+
+    // Reset form setelah emit
+    resetForm();
+
+    // Tutup modal
+    emit("update:modelValue", false);
+  } catch (error) {
+    console.error("❌ Gagal submit:", error);
+
+    toast.add({
+      title: "Gagal",
+      description: error.message || "Terjadi kesalahan saat menambahkan usulan",
+      color: "red",
+    });
+  }
+};
+
+const resetForm = () => {
+  form.value = {
+    tanggal: null,
+    klasifikasi: "",
+    jenis: "",
+    pengirim: "",
+    perihal: "",
+    jumlah: 1,
+  };
+};
 
 // FORM STATE
 const form = ref({
-  tanggal: "",
+  tanggal: null,
   klasifikasi: "",
   jenis: "",
   pengirim: "",
   perihal: "",
-  jumlah: "",
+  jumlah: 1,
 });
 
 // BATAS TANGGAL (hanya hari ini & hari yang sudah lewat)
 const today = new Date().toISOString().split("T")[0];
 
-// OPTIONS
-const klasifikasiOptions = ["Terbatas", "Rahasia", "Biasa"];
+// OPTIONS (static)
 const jenisOptions = ["BAC", "SPR", "SK", "MOU"];
 const pengirimOptions = ["Direktur Utama", "Direktur SDM", "Direktur Operasi"];
 
 const previewModal = ref(false);
 
-// OPEN PREVIEW
 function openPreview() {
-  emit("update:modelValue", false);
   previewModal.value = true;
 }
 
-// CLOSE PREVIEW
 function closePreview() {
   previewModal.value = false;
   emit("update:modelValue", true);
-}
-
-// SUBMIT
-function submitAndClose() {
-  emit("submit", { ...form.value });
-  emit("update:modelValue", false);
 }
 
 // FORMATTING

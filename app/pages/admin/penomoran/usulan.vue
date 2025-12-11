@@ -224,17 +224,18 @@
       <!------------->
       <!-- MODAL TAMBAH -->
       <!------------->
+
       <AddUsulan
         v-model="openAdd"
+        @submit="handleSubmitFromModal"
         @preview="handlePreview"
-        @submit="handleSubmit"
       />
     </div>
   </div>
   <!------------->
   <!-- MODAL ROW DETAIL -->
   <!------------->
-  <Modal v-model="openPreview" :hideDefaultFooter="true">
+  <Modal v-model="openDetail" :hideDefaultFooter="true">
     <!-- TITLE -->
     <template #title>
       <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
@@ -249,7 +250,7 @@
     </template>
 
     <!-- BODY -->
-    <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3">
+    <div v-show="selectedRow" class="space-y-6 text-sm px-5 pb-3">
       <!-- Judul Besar -->
       <p class="text-gray-900 font-semibold leading-relaxed text-base">
         {{ selectedRow.perihal }}
@@ -357,6 +358,7 @@
           </div>
 
           <!-- Upload tunggal -->
+
           <label
             class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
           >
@@ -376,7 +378,11 @@
 
             <span class="text-gray-600">Upload File</span>
 
-            <input type="file" class="hidden" @change="handleFile(0, $event)" />
+            <input
+              type="file"
+              class="hidden"
+              @change="handleFile(idx, $event)"
+            />
           </label>
         </div>
       </div>
@@ -413,12 +419,136 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
-
+import type { PenomoranPayload } from "~/types/penomoran";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { UInput, USelect, Modal } from "#components";
+import { usePenomoran } from "~/composables/usePenomoran";
 
+// FETCH
+const { savePenomoran, isLoadingPenomoran } = usePenomoran();
 const toast = useToast();
+const openDetail = ref(false);
+
+const form = ref({
+  tanggal: null,
+  jenis: "",
+  klasifikasi: "",
+  perihal: "",
+  jumlah: 1,
+});
+
+const submitAndClose = async () => {
+  // Validasi form
+  if (
+    !form.value.tanggal ||
+    !form.value.jenis ||
+    !form.value.klasifikasi ||
+    !form.value.pengirim ||
+    !form.value.perihal ||
+    Number(form.value.jumlah) < 1
+  ) {
+    toast.add({
+      title: "Form tidak lengkap",
+      description: "Pastikan semua field diisi dan jumlah minimal 1",
+      color: "error",
+    });
+    return;
+  }
+
+  // Siapkan payload
+  const payload = {
+    position_id: 70016786,
+    tanggal: new Date(form.value.tanggal),
+    jenis: form.value.jenis,
+    klasifikasi: form.value.klasifikasi,
+    pengirim: form.value.pengirim,
+    perihal: form.value.perihal,
+    jumlah: Number(form.value.jumlah),
+  };
+
+  console.log("PAYLOAD:", payload);
+
+  try {
+    // Simpan ke backend
+    await savePenomoran(payload);
+
+    // Toast sukses
+    toast.add({
+      title: "Berhasil disimpan",
+      description: "Usulan penomoran berhasil ditambahkan",
+      color: "success",
+    });
+
+    // Tambahkan langsung ke tabel
+    rows.value.push({
+      id: Date.now().toString(),
+      jenis: payload.jenis,
+      tanggal: payload.tanggal.toLocaleDateString("id-ID"),
+      perihal: payload.perihal,
+      jumlah: payload.jumlah,
+      pengusul: "Anda", // bisa diganti sesuai user login
+      tglUsulan: new Date().toLocaleString("id-ID"),
+      status: "Belum Diajukan",
+      klasifikasi: payload.klasifikasi,
+      pengirim: payload.pengirim,
+      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
+    });
+
+    // Reset form
+    form.value = {
+      tanggal: "",
+      klasifikasi: "",
+      jenis: "",
+      pengirim: "",
+      perihal: "",
+      jumlah: "",
+    };
+
+    // Tutup modal
+    emit("update:modelValue", false);
+  } catch (error: any) {
+    console.error("Gagal menyimpan penomoran:", error);
+    toast.add({
+      title: "Gagal menyimpan",
+      description: error.message || "Terjadi kesalahan saat menyimpan",
+      color: "error",
+    });
+  }
+};
+
+const { submitBooking, isLoadingBooking } = usePenomoran();
+
+// const openPreview = ref(false);
+const selectedRow = ref<any>(null);
+
+// Menampung file upload sesuai index nomor_surat
+const uploadedFiles = ref<File[]>([]);
+
+// Handle input file di modal
+const files = ref([]);
+
+const handleFile = async (index: number, e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  const base64 = await toBase64(file);
+
+  files.value[index] = {
+    file_name: file.name,
+    file_text: base64.split(",")[1], // ambil raw base64
+  };
+
+  console.log("FILES SEND:", files.value);
+};
+
+const toBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
@@ -431,31 +561,86 @@ const handleCopy = (value: string) => {
   });
 };
 
-// State modal
-const openPreview = ref(false);
-const selectedRow = ref(null);
-
-function handlePreview(data) {
-  previewData.value = data;
-  openPreview.value = true;
-}
-
-function handleFile(idx, event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  if (!selectedRow.value.uploadFiles) {
-    selectedRow.value.uploadFiles = [];
-  }
-
-  selectedRow.value.uploadFiles[idx] = file;
-}
-
 // Function saat klik row
-function openRowModal(row) {
-  selectedRow.value = row;
-  openPreview.value = true;
+// function openRowModal(row) {
+//   selectedRow.value = row;
+//   openPreview.value = true;
+// }
+function handlePreview(data) {
+  selectedRow.value = data;
+  openAdd.value = false;
+  openDetail.value = true;
+  uploadedFiles.value = Array(
+    Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1,
+  ).fill(null);
 }
+
+// function openRowModal(row) {
+//   selectedRow.value = row;
+//   uploadedFiles.value = Array(
+//     Array.isArray(row.nomor_surat) ? row.nomor_surat.length : 1,
+//   ).fill(null);
+
+//   openDetail.value = true;
+// }
+
+const { getDetailUsulan } = usePenomoran();
+
+async function openRowModal(row) {
+  try {
+    const detail = await getDetailUsulan(row.id);
+
+    // convert ke format yang dipakai modal
+    selectedRow.value = {
+      id: detail.id,
+      jenis: detail.jenis,
+      jenis_naskah: `${detail.jenis} - ${detail.perihal}`,
+      tanggal: detail.tanggal,
+      perihal: detail.perihal,
+      jumlah: detail.jumlah,
+      pengirim: detail.nama,
+      klasifikasi: detail.klasifikasi,
+      status: detail.status,
+    };
+
+    openDetail.value = true;
+  } catch (err) {
+    console.error("Gagal load detail:", err);
+    toast.add({
+      title: "Gagal memuat detail",
+      color: "error",
+    });
+  }
+}
+
+// GET PENOMORAN
+const { getListUsulan } = usePenomoran();
+
+const rows = ref([]);
+
+onMounted(async () => {
+  const data = await getListUsulan();
+
+  rows.value = data.map((item) => ({
+    id: item.id,
+    jenis: item.jenis,
+    tanggal: item.tanggal,
+    perihal: item.perihal,
+    jumlah: item.jumlah,
+
+    // BE tidak punya “pengirim” → pakai nama
+    pengirim: item.nama || "-",
+
+    // Pengusul → juga pakai nama
+    pengusul: item.nama || "-",
+
+    // Format created_at → “DD/MM/YYYY, HH:mm”
+    tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
+
+    status: item.status,
+  }));
+});
+
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
@@ -468,7 +653,7 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Pengirim", key: "pengirim", sortable: false },
+  { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
@@ -521,214 +706,51 @@ const computedNomorSurat = computed(
   () => `BAC...../U/18/LPPNPI/PGD.07/XI/2024`,
 );
 
-/* Dummy data */
-const rows = ref<any[]>([
-  {
-    id: "1534490706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    pengirim: "Direktur Utama",
-    jumlah: 2,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
+// ✅ PERBAIKAN: handleSubmitFromModal di parent component
 
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: [
-      "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
-      "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
-    ],
-  },
+// const { savePenomoran, isLoadingPenomoran } = usePenomoran();
+// const toast = useToast();
 
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
+const handleSubmitFromModal = async (payload) => {
+  console.log("📥 Received payload from modal:", payload);
 
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "SPR/.../U/18/LPPNPI/PGD.07/XI/2024",
-  },
+  try {
+    // ✅ Kirim ke backend dulu
+    const response = await savePenomoran(payload);
 
-  {
-    id: "1534408877125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    pengirim: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+    console.log("✅ Response dari backend:", response);
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: [
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-    ],
-  },
+    // ✅ Setelah berhasil, tambahkan ke tabel lokal
+    rows.value.push({
+      id: response.data?.id || Date.now().toString(),
+      jenis: payload.jenis,
+      tanggal: new Date(payload.tanggal).toLocaleDateString("id-ID"),
+      perihal: payload.perihal,
+      jumlah: payload.jumlah,
+      pengirim: form.value.pengirim || "-", // ✅ Simpan dari form untuk display saja
+      pengusul: "Anda", // atau ambil dari user session
+      tglUsulan: new Date().toLocaleString("id-ID"),
+      status: "Belum Diajukan",
+      klasifikasi: payload.klasifikasi,
+      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
+      nomor_surat: response.data?.nomor_surat || [], // dari BE
+    });
 
-  {
-    id: "15343432246126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    pengirim: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
+    // Reset pagination
+    currentPage.value = 1;
 
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "MOU/.../U/18/LPPNPI/PGD.07/XI/2024",
-  },
-  {
-    id: "1322344206125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    pengirim: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil ditambahkan",
+      color: "green",
+    });
+  } catch (error) {
+    console.error("❌ Error di handleSubmitFromModal:", error);
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: [
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-    ],
-  },
-  {
-    id: "19754344206124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    pengirim: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
-
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
-  },
-
-  {
-    id: "1864274528224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
-
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "SPR/.../U/12/LPPNPI/PGD.03/II/2024",
-  },
-  {
-    id: "1534408314525",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    pengirim: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
-
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: [
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-      "SK/.../U/18/LPPNPI/PGD.07/XI/2024",
-    ],
-  },
-
-  {
-    id: "153434086656126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    pengirim: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
-
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "MOU/.../U/20/LPPNPI/PGD.10/IV/2024",
-  },
-  {
-    id: "1975238706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    pengirim: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
-
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "BAC/.../U/18/LPPNPI/PGD.07/XI/2024",
-  },
-
-  {
-    id: "18698980028224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
-
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "SPR/.../U/12/LPPNPI/PGD.03/II/2024",
-  },
-]);
+    // Toast sudah ditampilkan di usePenomoran,
+    // tapi bisa tambahkan log atau handling khusus di sini
+  }
+};
 
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
@@ -798,11 +820,42 @@ const copyNomor = async () => {
   }
 };
 
-/* Submit & Hapus (sederhana, karena ini contoh) */
-const submitUsulan = () => {
-  // contoh: kirim data ke API
-  // axios.post('/api/usulan', { ... })
-  openAdd.value = false;
+const submitUsulan = async () => {
+  if (!selectedRow.value) return;
+
+  const nomorSurat = selectedRow.value.nomor_surat;
+
+  // Siapkan payload file untuk BE
+  const filesPayload = [];
+
+  if (Array.isArray(nomorSurat)) {
+    // Multiple nomor_surat → banyak file
+    nomorSurat.forEach((no: string, idx: number) => {
+      const file = uploadedFiles.value[idx];
+      if (file) {
+        filesPayload.push({
+          file_name: file.name,
+          file_text: file, // langsung kirim file (tanpa text/base64)
+        });
+      }
+    });
+  } else {
+    // Single nomor_surat
+    const file = uploadedFiles.value[0];
+    if (file) {
+      filesPayload.push({
+        file_name: file.name,
+        file_text: file,
+      });
+    }
+  }
+
+  try {
+    await submitBooking(selectedRow.value.id_request, { files: filesPayload });
+    // openPreview.value = false;
+  } catch (e) {
+    console.error("Gagal submit booking:", e);
+  }
 };
 
 const hapusUsulan = () => {
@@ -810,12 +863,6 @@ const hapusUsulan = () => {
 
   // Hapus row dari tabel
   rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-
-  // Tutup modal preview
-  openPreview.value = false;
-
-  // Bersihkan selectedRow
-  selectedRow.value = null;
 };
 // const hapusUsulan = () => {
 //   if (!selectedRow.value) return;
@@ -837,12 +884,12 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-onMounted(() => {
-  document.addEventListener("click", handleDocumentClick);
-});
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
-});
+// onMounted(() => {
+//   document.addEventListener("click", handleDocumentClick);
+// });
+// onBeforeUnmount(() => {
+//   document.removeEventListener("click", handleDocumentClick);
+// });
 </script>
 
 <style scoped>
