@@ -3,7 +3,6 @@ import type { AxiosInstance } from 'axios'
 
 export const useApi = () => {
   const config = useRuntimeConfig()
-
   const api: AxiosInstance = axios.create({
     baseURL: config.public.apiBaseUrl,
     withCredentials: false,
@@ -12,10 +11,19 @@ export const useApi = () => {
     }
   })
 
-  const apiGet = async <T = any>(url: string, params?: any): Promise<T> => {
-    const res = await api.get(url, { params })
+const apiGet = async <T = any>(url: string, config: any = {}): Promise<T> => {
+  try {
+    const fullUrl = `${api.defaults.baseURL}${url}`
+    console.log('[api] GET ->', fullUrl, config)
+    const res = await api.get(url, config)
+    console.log('[api] GET response <-', fullUrl, res.status, res.data)
     return res.data
+  } catch (err) {
+    console.error('[api] GET error ->', url, err)
+    throw err
   }
+}
+
 
   const apiPost = async <T = any>(url: string, data?: any): Promise<T> => {
     try {

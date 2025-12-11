@@ -36,17 +36,21 @@
         <div class="flex items-center gap-2 cursor-pointer">
           <div class="flex flex-col text-right leading-tight">
             <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Ivan Dwi Santoso
+              {{ user?.nama }}
             </span>
 
             <span
               class="hidden md:block text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-tight text-nowrap">
-              AVP of Enterprise Technology Planning
+              {{ user?.positionText }}
             </span>
           </div>
 
-          <UAvatar src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="Ivan Dwi Santoso" size="md"
-            class="ring-2 ring-transparent hover:ring-primary-500/50 transition-all" />
+          <UAvatar
+            size="md"
+            class="ring-2 ring-transparent hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center"
+          >
+            {{ getInitials(user?.nama) }}
+          </UAvatar>
         </div>
 
         <template #theme-label>
@@ -108,8 +112,16 @@ import { ref, computed } from "vue";
 import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 
-import { useAuth } from "@/composables/auth"
-const { logout } = useAuth()
+import { useAuth } from "@/composables/auth";
+import { onMounted } from "vue";
+
+const { user, getProfile, logout } = useAuth()
+
+onMounted(() => {
+  if (!user.value) {
+    getProfile() 
+  }
+})
 
 async function handleLogout() {
   const success = await logout()
@@ -144,7 +156,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     },
     {
       label:
-        "AVP of Enterprise Technology Planning – Interim Officer / Viewer Junior Manager Pengembangan Sistem Teknologi Informasi",
+         `${user.value?.positionText || ""}`,
       class: "text-sm text-gray-700 dark:text-gray-200 truncate max-w-[240px]"
     },
     {
@@ -169,4 +181,13 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     }
   ]
 ]);
+
+const getInitials = (name: string) => {
+  if (!name) return ""
+  const parts = name.trim().split(" ")
+  const first = parts[0]?.[0] || ""
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ""
+  return (first + last).toUpperCase()
+}
+
 </script>

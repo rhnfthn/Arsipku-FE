@@ -1,5 +1,13 @@
 <template>
   <div class="">
+    <div v-if="isLoadingData"
+      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div class="flex flex-col items-center gap-2">
+        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+        <span class="text-gray-600 font-medium">Memuat Data Draft...</span>
+      </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
     </div>
@@ -270,7 +278,7 @@
                         <td class="text-[14px] align-top">
                           {{
                             selectedTertuju.length
-                              ? selectedTertuju.map((s: any) => s.label).join(", ")
+                              ? selectedTertuju.map((s: any) => s.labelJob || s.label).join(", ")
                               : "..................."
                           }}
                         </td>
@@ -280,7 +288,7 @@
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           {{
-                            selectedSender?.label ||
+                            selectedBerkas?.judulBerkas ||
                             "................................................"
                           }}
                         </td>
@@ -317,7 +325,7 @@
                     <ol v-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2"
                       style="margin-left: 16px; padding-left: 8px; list-style-type: decimal;">
                       <li v-for="t in selectedTembusan" :key="t.value">
-                        {{ t.label }}
+                        {{ t.labelJob || t.label }}
                       </li>
                     </ol>
 
@@ -330,6 +338,21 @@
 
           <div class="flex flex-col py-3 gap-2 mt-4">
             <label class="text-sm font-medium text-gray-700">Lampiran File</label>
+            <div v-if="existingFiles.length > 0" class="mb-3 space-y-2">
+              <p class="text-sm font-medium text-gray-700">Lampiran Tersimpan:</p>
+              <div v-for="(file, idx) in existingFiles" :key="file.id"
+                class="flex items-center justify-between p-2 bg-gray-50 border rounded-md">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <UIcon name="i-heroicons-paper-clip" class="w-4 h-4 text-gray-400" />
+                  <a :href="file.filePath" target="_blank" class="text-sm text-primary truncate hover:underline">
+                    {{ file.fileName }}
+                  </a>
+                </div>
+                <UButton icon="i-heroicons-trash" size="2xs" color="red" variant="ghost"
+                  @click="existingFiles.splice(idx, 1)" />
+              </div>
+            </div>
+
             <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
               description="Klik atau drag & drop untuk upload file PDF" />
           </div>
@@ -449,7 +472,7 @@
                 <td style="border: none !important; vertical-align: top">
                   {{
                     selectedTertuju.length
-                      ? selectedTertuju.map((s: any) => s.label).join(", ")
+                      ? selectedTertuju.map((s: any) => s.labelJob || s.label).join(", ")
                       : "..................."
                   }}
                 </td>
@@ -526,16 +549,18 @@
               </div>
 
               <ol v-if="selectedTembusan.length > 0" style="
-                margin-left: 0;
-                padding-left: 1.5rem;
-                list-style-type: decimal;
-                list-style-position: outside;
-              ">
-                <li v-for="t in selectedTembusan" :key="t.value" style="
-                  padding-left: 0.25rem;
-                  text-indent: 0;
+                  margin-top: 0;
+                  margin-bottom: 0;
+                  padding-left: 20px;
+                  list-style-type: decimal;
+                  list-style-position: outside;
                 ">
-                  {{ t.label }}
+                <li v-for="t in selectedTembusan" :key="t.value" style="
+                    padding-left: 8px;
+                    margin-bottom: 2px;
+                    text-align: left;
+                  ">
+                  {{ t.labelJob || t.label }}
                 </li>
               </ol>
 
@@ -566,9 +591,10 @@
 
 <script setup lang="ts">
 /* -------------------------------------------------------------------------- */
-/* IMPORTS                                  */
+/* IMPORTS                                                                    */
 /* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted, nextTick } from "vue";
+import { useRoute } from 'vue-router';
 import { CalendarDate } from '@internationalized/date';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 
@@ -577,17 +603,18 @@ import TextEditor from "~/components/TextEditor.vue";
 
 // Types
 import type { Berkas } from "~/types/berkas";
-import type { DraftPayload } from '~/types/draft';
 
 /* -------------------------------------------------------------------------- */
-/* COMPOSABLES                                */
+/* COMPOSABLES                                                                */
 /* -------------------------------------------------------------------------- */
-const { saveDraft, isLoadingDraft } = useDraft();
+const route = useRoute();
+const { apiGet } = useApi();
+// const { saveDraft, isLoadingDraft } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
 
 /* -------------------------------------------------------------------------- */
-/* STATE & REFS                                 */
+/* STATE & REFS                                                               */
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [{ label: 'Dashboard', to: '/user/dashboard' }, { label: 'Tulis Nota Dinas', to: '#' }];
@@ -595,20 +622,22 @@ const isFullscreenEditor = ref(false);
 const isTemplateModalOpen = ref(false);
 const isOpenPreview = ref(false);
 const open = ref(false);
+const isLoadingData = ref(false);
 
 // --- Form State ---
 const date = ref<CalendarDate>();
 const subject = ref("");
 const selectedSifat = ref();
 const uploadedFiles = ref<File[]>([]);
-// const english = ref(false); // Ref untuk bahasa (jika diperlukan)
+const editDraftId = ref<string | null>(null);
 
 // --- Data Lists & Select ---
+const english = ref(false)
 const berkasList = ref<Berkas[]>([]);
 const berkasStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const selectedBerkasId = ref<string | null>(null);
 
-const items = ref([]); // Raw recipients data
+const items = ref([]);
 const selectedTertuju = ref([]);
 const selectedTembusan = ref([]);
 
@@ -624,8 +653,171 @@ let quillInstance: any = null;
 const templates = [{ id: 1, name: 'Default', content: `<ol><li>Poin 1</li></ol>` }];
 const sifatOptions = [{ label: 'Rahasia', value: 'rahasia' }, { label: 'Biasa', value: 'biasa' }];
 
+// ------------------------------------------------------------------------------ */
+
+// Tambahkan destructuring getDraftDetail
+const { saveDraft, isLoadingDraft, getDraftDetail } = useDraft();
+
+// ... state existing ...
+
+// State tambahan untuk file yang sudah ada di server (karena tidak bisa masuk ke uploadedFiles tipe File[])
+const existingFiles = ref<any[]>([]);
+
+// ... helper & methods ...
+
 /* -------------------------------------------------------------------------- */
-/* COMPUTED PROPERTIES                             */
+/* LIFECYCLE HOOKS (LOGIC POPULATE FORM)                                      */
+/* -------------------------------------------------------------------------- */
+onMounted(async () => {
+  try {
+    berkasStatus.value = 'loading';
+    // 1. Load Master Data Dulu
+    const [resBerkas, resRecipients] = await Promise.all([
+      getBerkasList(),
+      getRecipients(70016581) // ID User Login
+    ]);
+
+    // Setup Master Data
+    berkasList.value = Array.isArray(resBerkas) ? resBerkas : resBerkas?.data ?? [];
+    berkasStatus.value = 'success';
+
+    // Setup Recipient Items untuk Select Menu
+    items.value = resRecipients.recipients.map(r => ({
+      // PERBAIKAN: Format lengkap untuk Dropdown
+      label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
+      // PERBAIKAN: Format Jabatan saja untuk Editor/Preview
+      labelJob: r.position_text,
+      value: r.position, // Pastikan ini cocok dengan data yg disimpan
+      raw: r
+    }));
+
+    // PERBAIKAN: Set Default Date NOW jika tidak ada draft (akan ditimpa jika ada draft)
+    const now = new Date();
+    date.value = new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    // 2. Cek Mode Edit
+    const draftId = route.query.draft_id as string;
+
+    if (draftId) {
+      isLoadingData.value = true;
+      editDraftId.value = draftId;
+
+      try {
+        // Panggil API Detail /ND/{id}
+        const res = await getDraftDetail(draftId);
+
+        if (res.success && res.data) {
+          const d = res.data; // Shortcut variable
+
+          // A. Mapping Text Dasar
+          subject.value = d.perihal || "";
+
+          // Mapping Sifat (Cari yang value-nya cocok, atau default 'biasa')
+          selectedSifat.value = sifatOptions.find(opt => opt.value === d.sifat) || sifatOptions[1];
+
+          english.value = d.english || false;
+
+          // B. Mapping Tanggal
+          if (d.tanggal) {
+            const dateObj = new Date(d.tanggal);
+            date.value = new CalendarDate(dateObj.getFullYear(), dateObj.getMonth() + 1, dateObj.getDate());
+          }
+
+          // C. Mapping Berkas (Klasifikasi)
+          // JSON Response memberikan: "klasifikasi": " OPS.02" (ada spasi di depan kadang berpengaruh)
+          if (d.klasifikasi) {
+            const cleanKlasifikasi = d.klasifikasi.trim();
+            const foundBerkas = berkasList.value.find(b => b.klasifikasi === cleanKlasifikasi);
+            if (foundBerkas) {
+              selectedBerkasId.value = foundBerkas.id;
+            }
+          }
+
+          // D. Mapping Penerima & Tembusan
+          // JSON Response memberikan array object lengkap. Kita perlu map ke format USelectMenu
+          // Asumsi: Kita map berdasarkan nama/posisi karena ID di JSON draft mungkin beda dengan ID master data
+
+          // ... di dalam onMounted, setelah items.value terisi ...
+
+          // ---------------------------------------------------------
+          // 1. MAPPING PENERIMA (TERTUJU)
+          // ---------------------------------------------------------
+          if (d.penerima && Array.isArray(d.penerima)) {
+            selectedTertuju.value = d.penerima.map((p: any) => {
+              // CARI JODOHNYA DI MASTER DATA (ITEMS)
+              // Kita gunakan 'persnum' sebagai kunci unik pencocokan
+              const matchedItem = items.value.find((i: any) => i.raw?.persnum == p.persnum);
+
+              // JIKA KETEMU: Pakai object dari Master Data (Agar checkbox ✅ aktif)
+              if (matchedItem) {
+                return matchedItem;
+              }
+
+              // JIKA TIDAK KETEMU (Misal pegawai pensiun/pindah): Buat object manual agar nama tetap tampil
+              return {
+                label: `${p.nama} - ${p.positionText}`, // Format Lengkap
+                labelJob: p.positionText, // Format Jabatan
+                value: p.id, // Fallback ID
+                image: null,
+                disabled: false,
+                raw: p // Simpan data asli untuk jaga-jaga
+              };
+            });
+          }
+
+          // ---------------------------------------------------------
+          // 2. MAPPING TEMBUSAN
+          // ---------------------------------------------------------
+          if (d.tembusan && Array.isArray(d.tembusan)) {
+            selectedTembusan.value = d.tembusan.map((t: any) => {
+              // CARI JODOHNYA DI MASTER DATA
+              const matchedItem = items.value.find((i: any) => i.raw?.persnum == t.persnum);
+
+              if (matchedItem) {
+                return matchedItem;
+              }
+
+              return {
+                label: `${t.nama} - ${t.positionText}`, // Format Lengkap
+                labelJob: t.positionText, // Format Jabatan
+                value: t.id,
+                image: null,
+                disabled: false,
+                raw: t
+              };
+            });
+          }
+
+          // E. Mapping Konten Editor
+          const kontenHTML = d.konten || "";
+          editorContent.value = kontenHTML;
+          if (quillInstance) {
+            quillInstance.clipboard.dangerouslyPasteHTML(0, kontenHTML);
+          }
+
+          // F. Mapping Lampiran (Existing Files)
+          if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
+            existingFiles.value = d.lampiran_files;
+            // Kita perlu UI khusus untuk menampilkan ini karena uploadedFiles hanya untuk file baru
+          }
+
+        }
+      } catch (error) {
+        console.error("Gagal load detail draft:", error);
+      } finally {
+        isLoadingData.value = false;
+      }
+    }
+
+  } catch (err) {
+    console.error("Gagal inisialisasi halaman:", err);
+    berkasStatus.value = 'error';
+  }
+});
+
+
+/* -------------------------------------------------------------------------- */
+/* COMPUTED PROPERTIES                                                        */
 /* -------------------------------------------------------------------------- */
 const selectedBerkas = computed(() => {
   return berkasList.value.find((b) => b.id === selectedBerkasId.value);
@@ -652,10 +844,13 @@ const itemsTertuju = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
-/* HELPER METHODS                               */
+/* HELPER METHODS                                                             */
 /* -------------------------------------------------------------------------- */
 const onEditorReady = (q: any) => {
   quillInstance = q;
+  if (editorContent.value) {
+    q.clipboard.dangerouslyPasteHTML(0, editorContent.value);
+  }
 };
 
 const cleanContent = (content: string) => content;
@@ -670,8 +865,7 @@ const applyTemplate = (t: any) => {
   isTemplateModalOpen.value = false;
 };
 
-const isItemSelected = (item, list) =>
-  list.some((s) => s.value === item.value)
+const isItemSelected = (item, list) => list.some((s) => s.value === item.value)
 
 const removeItem = (item, list, event) => {
   event.stopPropagation()
@@ -680,12 +874,12 @@ const removeItem = (item, list, event) => {
 }
 
 /* -------------------------------------------------------------------------- */
-/* CORE FUNCTIONS                                */
+/* CORE FUNCTIONS                                                             */
 /* -------------------------------------------------------------------------- */
 
 // --- 1. Generate PDF Blob ---
 const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
-  // Sync Content Editor
+  // Sync Content
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML
   } else {
@@ -696,26 +890,27 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
   const element = pdfSourceRef.value
   if (!element) return null
 
-  // Clone element untuk processing
+  // Gunakan clone agar tidak mengganggu DOM asli
   const clone = element.cloneNode(true) as HTMLElement
 
-  // Inject Style (Sama seperti preview)
+  // Pastikan style ter-inject dengan benar (Critical untuk html2canvas)
   const style = document.createElement("style")
   style.innerHTML = `
-    * { box-sizing: border-box !important; color: #000000 !important; border-color: #000000 !important; }
-    body, div, p, span, li, td, th, .tn-roman { font-family: 'Times New Roman', serif !important; }
-    p { margin: 0 !important; line-height: 1.42 !important; }
-    ol { list-style-type: decimal !important; padding-left: 1.5em !important; margin: 0 !important; }
-    ul { list-style-type: disc !important; padding-left: 1.5em !important; margin: 0 !important; }
-    li { padding-left: 0.5em !important; }
-    table { border-collapse: collapse !important; width: 100% !important; }
-    .ql-align-center { text-align: center !important; }
-    .ql-align-right { text-align: right !important; }
-    .ql-align-justify { text-align: justify !important; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Times New Roman', serif; color: #000000; }
+    ol, ul { padding-left: 0; margin: 0; }
+    li[data-list="bullet"] { list-style-type: none; position: relative; padding-left: 1.5em; }
+    li[data-list="bullet"]::before { content: '•'; position: absolute; left: 0; font-weight: bold; }
+    li[data-list="ordered"] { list-style-type: none; position: relative; padding-left: 1.5em; counter-increment: list-0; }
+    li[data-list="ordered"]::before { content: counter(list-0) ". "; position: absolute; left: 0; }
+    ol { counter-reset: list-0; }
+    .tn-roman { font-family: 'Times New Roman', serif !important; }
+    table { width: 100%; border-collapse: collapse; }
+    td { vertical-align: top; }
   `
   clone.appendChild(style)
 
-  // Ghost Container
+  // Ghost Container (Hidden but rendered)
   const ghostDiv = document.createElement("div")
   Object.assign(ghostDiv.style, {
     position: 'fixed', top: '0', left: '-9999px', zIndex: '-9999',
@@ -732,11 +927,11 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
       margin: [15, 15, 20, 15],
       filename: `temp.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true }, // CORS penting untuk gambar
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
     }
 
-    // 1. Generate Main PDF dari HTML
+    // 1. Generate Main PDF
     const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer')
 
     // 2. Merge dengan PDF Lib
@@ -745,7 +940,7 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
     const pages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices())
     pages.forEach(p => mergedPdf.addPage(p))
 
-    // 3. Merge Lampiran (Jika ada)
+    // 3. Merge Lampiran
     for (const file of uploadedFiles.value) {
       if (file.type === 'application/pdf') {
         try {
@@ -757,8 +952,8 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
       }
     }
 
-    // 4. Return sebagai Blob
     const pdfBytes = await mergedPdf.save()
+    // Return Blob
     return new Blob([pdfBytes], { type: 'application/pdf' })
 
   } catch (err) {
@@ -771,13 +966,11 @@ const getGeneratedPdfBlob = async (): Promise<Blob | null> => {
 
 // --- 2. Preview PDF ---
 async function openPreview() {
-  // Sync Content
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML;
   } else {
     rawHtmlContent.value = editorContent.value;
   }
-
   await nextTick();
   const element = pdfSourceRef.value;
   if (!element) return alert("Template PDF tidak ditemukan.");
@@ -786,174 +979,174 @@ async function openPreview() {
   if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
   pdfUrl.value = '';
 
-  const clone = element.cloneNode(true) as HTMLElement;
-
-  const style = document.createElement("style");
-  style.innerHTML = `
-    * { box-sizing: border-box !important; color: #000000 !important; border-color: #000000 !important; }
-    body, div, p, span, li, td, th, .tn-roman { font-family: 'Times New Roman', serif !important; }
-    p { margin: 0 !important; line-height: 1.42 !important; }
-
-    ol {
-      list-style-type: decimal !important;
-      padding-left: 1.5em !important;
-      margin: 0 !important;
-    }
-    ul {
-      list-style-type: disc !important;
-      padding-left: 1.5em !important;
-      margin: 0 !important;
-    }
-    li {
-      padding-left: 0.5em !important;
-    }
-
-    table { border-collapse: collapse !important; width: 100% !important; }
-    .ql-align-center { text-align: center !important; }
-    .ql-align-right { text-align: right !important; }
-    .ql-align-justify { text-align: justify !important; }
-  `;
-  clone.appendChild(style);
-
-  const ghostDiv = document.createElement("div");
-  Object.assign(ghostDiv.style, {
-    position: 'fixed', top: '0', left: '-9999px', zIndex: '-9999',
-    backgroundColor: '#ffffff', width: '180mm', padding: '0'
-  });
-  ghostDiv.appendChild(clone);
-  document.body.appendChild(ghostDiv);
-
-  try {
-    const html2pdf = (await import("html2pdf.js")).default;
-    const { PDFDocument } = await import('pdf-lib');
-
-    const opt = {
-      margin: [15, 15, 20, 15],
-      filename: `Nota_Dinas.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    };
-
-    const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer');
-    const mergedPdf = await PDFDocument.create();
-    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer);
-    (await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices())).forEach(p => mergedPdf.addPage(p));
-
-    // Merge Uploaded Files
-    for (const file of uploadedFiles.value) {
-      if (file.type === 'application/pdf') {
-        try {
-          const fileBuffer = await file.arrayBuffer();
-          const attachmentDoc = await PDFDocument.load(fileBuffer);
-          (await mergedPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices())).forEach(p => mergedPdf.addPage(p));
-        } catch (e) { console.error("Skip file error", e); }
-      }
-    }
-
-    const blob = new Blob([await mergedPdf.save()], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(blob);
-  } catch (err: any) {
-    alert("Gagal generate PDF: " + err.message);
-    isOpenPreview.value = false;
-  } finally {
-    document.body.removeChild(ghostDiv);
-  }
+  // Logic Preview disamakan dengan Generate (Simplified for brevity)
+  // ... (Gunakan logika existing Anda atau panggil getGeneratedPdfBlob untuk preview)
+  // Untuk efisiensi code, saya sarankan preview memanggil getGeneratedPdfBlob juga:
+  isLoadingData.value = true;
+  const blob = await getGeneratedPdfBlob();
+  isLoadingData.value = false;
+  if (blob) pdfUrl.value = URL.createObjectURL(blob);
 }
 
-// --- 3. Save Draft Action ---
+// --- 3. Save Draft Action (FIXED) ---
 const handleSaveDraft = async () => {
+  // 1. Validasi
   if (!selectedBerkas.value) {
     alert("Mohon pilih berkas arsip terlebih dahulu.")
     return
   }
 
-  const pdfBlob = await getGeneratedPdfBlob()
-  if (!pdfBlob) {
-    alert("Gagal membuat PDF.")
-    return
-  }
-
-  const formData = new FormData()
-
-  // number
-  formData.append("pengirim", 70016786)
-
-  // --- ARRAY WAJIB FORMAT penerima[] ---
-  selectedTertuju.value.forEach(i => {
-    formData.append("penerima[]", i.value)
-  })
-
-  selectedTembusan.value.forEach(i => {
-    formData.append("tembusan[]", i.value)
-  })
-
-  // informasi lain
-  formData.append("klasifikasi", selectedBerkas.value.klasifikasi || "")
-  formData.append("klasifikasi_text", selectedBerkas.value.isiRingkas || "")
-  formData.append("sifat", selectedSifat.value?.value || "biasa")
-  formData.append("perihal", subject.value)
-
-  const contentHtml =
-    quillInstance ? quillInstance.root.innerHTML : editorContent.value
-  formData.append("konten", contentHtml)
-
-  formData.append("nama_tempat", "Tangerang")
-  formData.append("nama_jabatan", "AVP of Enterprise Technology Planning")
-  formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2")
-  formData.append("nama_lengkap", "Ivan Dwi Santoso")
-
-  const tglStr = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(
-      date.value.day
-    ).padStart(2, "0")}`
-    : new Date().toISOString().split("T")[0]
-  formData.append("tgl", tglStr)
-
-  // FINAL PDF (dummy string sesuai request)
-  formData.append("final_pdf", "Draft_Nota_Dinas.pdf")
-
-  // Lampiran (kirim nama file saja)
-  uploadedFiles.value.forEach((file) => {
-    formData.append("lampiran_files[]", file.name)
-  })
-
-  // English default false
-  formData.append("english", english.value ?? false)
+  isLoadingDraft.value = true
 
   try {
+    // 2. Generate PDF
+    console.log("Mulai generate PDF...");
+    const pdfBlob = await getGeneratedPdfBlob()
+
+    // --- DEBUGGING 1: CEK BLOB ---
+    if (!pdfBlob) throw new Error("Gagal membuat PDF (Null).");
+    if (pdfBlob.size === 0) throw new Error("Gagal membuat PDF (Size 0).");
+    console.log(`PDF Berhasil dibuat! Ukuran: ${(pdfBlob.size / 1024).toFixed(2)} KB`);
+
+    // 3. Siapkan FormData
+    const formData = new FormData()
+
+    if (editDraftId.value) formData.append("id_naskah", editDraftId.value)
+
+    // Data Text
+    formData.append("pengirim", "70016786")
+    formData.append("klasifikasi", selectedBerkas.value.klasifikasi ?? "")
+    formData.append("klasifikasi_text", selectedBerkas.value.judulBerkas ?? "")
+    formData.append("sifat", selectedSifat.value?.value || "biasa")
+    formData.append("perihal", subject.value)
+
+    // Perbaikan: Kirim Array untuk Backend (PHP/Laravel butuh [])
+    selectedTertuju.value.forEach(item => formData.append("penerima[]", item.value))
+    selectedTembusan.value.forEach(item => formData.append("tembusan[]", item.value))
+
+    const contentHtml = quillInstance?.root?.innerHTML || editorContent.value
+    formData.append("konten", contentHtml)
+
+    // Data Statis
+    formData.append("nama_tempat", "Tangerang")
+    formData.append("nama_jabatan", "AVP of Enterprise Technology Planning")
+    formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2")
+    formData.append("nama_lengkap", "Ivan Dwi Santoso")
+
+    const tglStr = date.value
+      ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+      : new Date().toISOString().split("T")[0]
+    formData.append("tgl", tglStr)
+    formData.append("english", english.value ? "1" : "0")
+
+    // --- APPEND FILE UTAMA ---
+    formData.append("final_pdf", pdfBlob, "Draft_Nota_Dinas.pdf")
+
+    // --- APPEND LAMPIRAN ---
+    if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+      uploadedFiles.value.forEach((file) => {
+        if (file instanceof File) {
+          // PENTING: Gunakan [] jika backendnya PHP/Laravel
+          formData.append("lampiran_files[]", file, file.name)
+        }
+      })
+    }
+
+    // --- DEBUGGING 2: CEK FINAL PAYLOAD ---
+    // Lihat di Console browser, pastikan muncul "File" object
+    console.log("--- DEBUG PAYLOAD ---");
+    for (const pair of formData.entries()) {
+      if (pair[1] instanceof File || pair[1] instanceof Blob) {
+        console.log(`${pair[0]}: File/Blob (Size: ${pair[1].size})`);
+      } else {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+    }
+
+    // 4. KIRIM KE BACKEND
+    // PENTING: Pastikan 'saveDraft' tidak mengubah Header 'Content-Type'
+    // Biarkan browser yang set 'multipart/form-data; boundary=...'
     await saveDraft(formData)
-    await navigateTo("/admin/korespondensi/terkirim")
-  } catch (e) {
-    console.error(e)
+
+    await navigateTo("/admin/korespondensi/draft")
+
+  } catch (e: any) {
+    console.error("Error Save Draft:", e)
+    alert("Gagal menyimpan draft: " + (e.message || e))
+  } finally {
+    isLoadingDraft.value = false
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* LIFECYCLE HOOKS                              */
+/* LIFECYCLE HOOKS                                                            */
 /* -------------------------------------------------------------------------- */
 onMounted(async () => {
-  // 1. Fetch Berkas
   try {
     berkasStatus.value = 'loading';
-    const response = await getBerkasList();
-    berkasList.value = Array.isArray(response) ? response : response?.data ?? [];
-    berkasStatus.value = 'success';
-  } catch (err) {
-    console.error("Gagal mengambil daftar berkas", err);
-    berkasStatus.value = 'error';
-  }
+    const [resBerkas, resRecipients] = await Promise.all([
+      getBerkasList(),
+      getRecipients(70016581)
+    ]);
 
-  // 2. Fetch Recipients
-  try {
-    const res = await getRecipients(70016581)
-    items.value = res.recipients.map(r => ({
+    berkasList.value = Array.isArray(resBerkas) ? resBerkas : resBerkas?.data ?? [];
+    berkasStatus.value = 'success';
+
+    items.value = resRecipients.recipients.map(r => ({
+      // PERBAIKAN: Format lengkap untuk Dropdown
       label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
+      // PERBAIKAN: Format Jabatan saja untuk Editor/Preview
+      labelJob: r.position_text,
       value: r.position,
       raw: r
-    }))
+    }));
+
+    const draftId = route.query.draft_id as string;
+    if (draftId) {
+      isLoadingData.value = true;
+      editDraftId.value = draftId;
+      try {
+        const res = await apiGet(`/ND/${draftId}`);
+        const draft = res.data;
+
+        if (draft) {
+          subject.value = draft.perihal || "";
+          selectedSifat.value = sifatOptions.find(opt => opt.value === draft.sifat) || sifatOptions[1];
+
+          if (draft.tanggal) {
+            const d = new Date(draft.tanggal);
+            date.value = new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          }
+
+          if (draft.klasifikasi) {
+            const foundBerkas = berkasList.value.find(b => b.klasifikasi === draft.klasifikasi);
+            if (foundBerkas) selectedBerkasId.value = foundBerkas.id;
+          }
+
+          if (draft.penerima && Array.isArray(draft.penerima)) {
+            selectedTertuju.value = items.value.filter(i => draft.penerima.includes(i.value));
+          }
+
+          if (draft.tembusan && Array.isArray(draft.tembusan)) {
+            selectedTembusan.value = items.value.filter(i => draft.tembusan.includes(i.value));
+          }
+
+          const konten = draft.isi_pesan || draft.konten || "";
+          editorContent.value = konten;
+          if (quillInstance) {
+            quillInstance.clipboard.dangerouslyPasteHTML(0, konten);
+          }
+        }
+      } catch (error) {
+        console.error("Gagal load detail draft:", error);
+      } finally {
+        isLoadingData.value = false;
+      }
+    }
+
   } catch (err) {
-    console.error("Gagal mengambil daftar penerima", err);
+    console.error("Gagal inisialisasi halaman:", err);
+    berkasStatus.value = 'error';
   }
 });
 </script>

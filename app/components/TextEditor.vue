@@ -87,7 +87,7 @@ let quill: Quill | null = null
 
 // State untuk Modal HTML
 const showCodeModal = ref(false)
-const internalHtmlCode = ref('') // Variabel penampung kode HTML mentah
+const internalHtmlCode = ref('')
 
 defineExpose({
   getQuill: () => quill,
@@ -97,10 +97,8 @@ defineExpose({
 })
 
 // --- HELPER: FORMAT HTML (Prettify) ---
-// Membuat kode HTML rapi (indentasi) saat dibuka di textarea
 function formatHTML(html: string) {
   let formatted = '';
-  // Regex untuk memisahkan tag
   const reg = /(>)(<)(\/*)/g;
   html = html.replace(reg, '$1\r\n$2$3');
   let pad = 0;
@@ -132,32 +130,17 @@ function formatHTML(html: string) {
 // --- HANDLER: BUKA MODAL ---
 function openSourceCode() {
   if (!quill) return;
-
-  // 1. Ambil HTML asli dari Quill
   const rawHtml = quill.root.innerHTML;
-
-  // 2. Format agar rapi, lalu masukkan ke variabel textarea
   internalHtmlCode.value = formatHTML(rawHtml);
-
-  // 3. Tampilkan modal
   showCodeModal.value = true;
 }
 
 // --- HANDLER: SIMPAN PERUBAHAN ---
 function saveSourceCode() {
   if (!quill) return;
-
-  // 1. Ambil nilai dari textarea
   const newHtml = internalHtmlCode.value;
-
-  // 2. Masukkan kembali ke Quill Editor
-  // dangerousPasteHTML(0, ...) mengganti seluruh isi editor
   quill.clipboard.dangerouslyPasteHTML(0, newHtml);
-
-  // 3. Trigger update v-model
   emit('update:modelValue', newHtml);
-
-  // 4. Tutup modal
   showCodeModal.value = false;
 }
 
@@ -166,27 +149,17 @@ onMounted(async () => {
   const QuillModule = await import('quill')
   const Quill = QuillModule.default
 
-  // Import CSS
   await import('quill/dist/quill.snow.css')
 
-  // Dynamic Import Table Better
   const QuillTableBetterModule = await import('quill-table-better')
   const QuillTableBetter = QuillTableBetterModule.default
   Quill.register({ 'modules/table-better': QuillTableBetter }, true)
 
-  // Custom List Logic (Tetap dipertahankan)
-  const BaseList = Quill.import('formats/list') as any;
-  class CustomList extends BaseList {
-    static formats(domNode: any) { return domNode.getAttribute('data-list') || super.formats(domNode) }
-    static create(value: any) {
-      const node = super.create(value);
-      if (['lower-alpha', 'upper-alpha'].includes(value)) node.setAttribute('data-list', value);
-      return node;
-    }
-  }
-  CustomList.blotName = 'list'; CustomList.tagName = ['OL', 'UL']; Quill.register(CustomList, true);
+  // -----------------------------------------------------------
+  // [REMOVED] CUSTOM LIST LOGIC DIHAPUS (Bawaan Quill Saja)
+  // -----------------------------------------------------------
 
-  // --- REGISTER ICONS (HTML Preview + Undo + Redo) ---
+  // --- REGISTER ICONS ---
   const icons = Quill.import('ui/icons') as any;
 
   // Icon HTML Preview
@@ -196,13 +169,11 @@ onMounted(async () => {
     <line class="ql-stroke" x1="10" x2="8" y1="5" y2="13"/>
   </svg>`;
 
-  // Icon Undo
+  // Icon Undo & Redo
   icons['undo'] = `<svg viewbox="0 0 18 18">
     <polygon class="ql-fill ql-stroke" points="6 10 4 12 2 10 6 10"></polygon>
     <path class="ql-stroke" d="M8.09,13.91A4.6,4.6,0,0,0,9,14,5,5,0,1,0,4,9"></path>
   </svg>`;
-
-  // Icon Redo
   icons['redo'] = `<svg viewbox="0 0 18 18">
     <polygon class="ql-fill ql-stroke" points="12 10 14 12 16 10 12 10"></polygon>
     <path class="ql-stroke" d="M9.91,13.91A4.6,4.6,0,0,1,9,14,5,5,0,1,1,14,9"></path>
@@ -214,28 +185,20 @@ onMounted(async () => {
       modules: {
         toolbar: {
           container: [
-            ['undo', 'redo'], // <--- Menambahkan Undo Redo disini
+            ['undo', 'redo'],
             ['bold', 'italic', 'underline', 'strike'],
-            // ['blockquote', 'code-block'],
-            // ['link', 'image', 'video', 'formula'],
-            // [{ 'header': 1 }, { 'header': 2 }],
             [{ 'list': 'ordered' }, { 'list': 'bullet' }],
             [{ 'script': 'sub' }, { 'script': 'super' }],
             [{ 'indent': '-1' }, { 'indent': '+1' }],
-            // [{ 'direction': 'rtl' }],
-            // [{ 'size': ['small', false, 'large', 'huge'] }],
-            // [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            // [{ 'color': [] }, { 'background': [] }],
-            // [{ 'font': [] }],
             [{ 'align': [] }],
             ['clean'],
             ['table-better'],
-            ['html-preview'] // Tombol Code View
+            ['html-preview']
           ],
           handlers: {
             'html-preview': openSourceCode,
-            'undo': () => quill?.history.undo(), // <--- Fungsi Handler Undo
-            'redo': () => quill?.history.redo()  // <--- Fungsi Handler Redo
+            'undo': () => quill?.history.undo(),
+            'redo': () => quill?.history.redo()
           }
         },
         table: false,
@@ -247,22 +210,10 @@ onMounted(async () => {
         keyboard: {
           bindings: {
             ...QuillTableBetter.keyboardBindings,
-
-            customEnter: {
-              key: 13,
-              handler(range, context) {
-                if (context.format.list) {
-                  quill?.insertText(range.index, '\n', context.format);
-                  quill?.setSelection(range.index + 1, 0);
-                  return false;
-                }
-                return true;
-              }
-            },
-
+            // Hapus custom binding lainnya jika ada
           }
         },
-        history: { userOnly: true } // Pastikan module history aktif
+        history: { userOnly: true }
       },
       placeholder: props.placeholder
     })
@@ -281,76 +232,86 @@ onMounted(async () => {
 
 watch(() => props.modelValue, (newVal) => {
   if (quill && newVal !== quill.root.innerHTML) {
-    // Optional logic
+    // Optional logic if needed for external updates
   }
 })
 </script>
 
 <style scoped>
-[data-list="lower-alpha"] {
-  list-style-type: lower-alpha !important;
+/* 1. HILANGKAN ELEMENT SAMPAH QUILL (.ql-ui)
+   Ini adalah penyebab utama munculnya titik ganda aneh itu.
+*/
+:deep(.ql-editor .ql-ui) {
+  display: none !important;
 }
 
-[data-list="upper-alpha"] {
-  list-style-type: upper-alpha !important;
-}
-
-:deep(.ql-editor li) {
-  /* Properiti krusial yang direset Tailwind. Harus dikembalikan. */
-  display: list-item !important;
-  /* Pastikan posisi marker di luar teks */
-  list-style-position: outside !important;
-  padding-left: 0 !important;
-  /* Biarkan OL/UL yang mengontrol indentasi */
-  color: #000000 !important;
-}
-
-/* 2. Atur kontainer list (OL/UL) */
+/* 2. RESET CSS TAILWIND & KEMBALIKAN STYLE NATIVE
+   Tailwind me-reset list-style jadi 'none'. Kita harus paksa balik.
+*/
 :deep(.ql-editor ol),
 :deep(.ql-editor ul) {
-  /* Kunci: set initial untuk mengatasi reset list: none; */
-  list-style: initial !important;
-  /* Beri padding cukup untuk menampung marker */
-  padding-left: 2rem !important;
-  list-style-position: outside !important;
-  margin-left: 0 !important;
+  padding-left: 1.5rem !important;
+  /* Jarak indentasi kiri */
+  margin-bottom: 1rem !important;
 }
 
-/* 3. Perkuat List Type Level 1 */
+/* Pastikan Ordered List pakai Angka (1, 2, 3) */
 :deep(.ql-editor ol) {
   list-style-type: decimal !important;
 }
 
+/* Pastikan Unordered List pakai Titik (Bullet) */
 :deep(.ql-editor ul) {
   list-style-type: disc !important;
 }
 
-/* 4. Perkuat List Type Level 2 dan seterusnya */
-:deep(.ql-editor ol ol) {
+/* Aturan untuk List Item */
+:deep(.ql-editor li) {
+  display: list-item !important;
+  /* Pastikan dianggap item list */
+  list-style-position: outside !important;
+  /* Titik di luar teks */
+  margin-left: 0.5rem !important;
+  /* Sedikit jarak */
+}
+
+/* 3. HANDLING NESTED LIST (List di dalam list) */
+:deep(.ql-editor ol ol),
+:deep(.ql-editor ul ol) {
   list-style-type: lower-alpha !important;
+  /* a, b, c */
 }
 
-:deep(.ql-editor ol ol ol) {
-  list-style-type: lower-roman !important;
+:deep(.ql-editor ol ul),
+:deep(.ql-editor ul ul) {
+  list-style-type: circle !important;
+  /* Lingkaran kosong */
 }
 
-:deep(.ql-editor li::before) {
-  display: inline-block;
-}
-
+/* --- Styling Editor Umum --- */
 .tn-roman,
 .tn-roman * {
   font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Fix lebar tabel agar tidak overflow */
 :deep(.ql-editor table) {
-  width: unset;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+:deep(.ql-editor td),
+:deep(.ql-editor th) {
+  border: 1px solid #000;
+  padding: 4px;
 }
 
 .editor-container {
   width: 210mm;
   min-height: 297mm;
   background: white;
+  margin: 0 auto;
+  /* Center editor */
 }
 
 .fullscreen-editor {
@@ -358,7 +319,7 @@ watch(() => props.modelValue, (newVal) => {
   min-height: 100vh;
 }
 
-/* Dark Mode Overrides */
+/* Dark Mode Support */
 .dark :deep(.ql-toolbar) {
   background-color: rgb(55 65 81) !important;
   border-color: rgb(75 85 99) !important;
@@ -382,17 +343,31 @@ watch(() => props.modelValue, (newVal) => {
   background-color: rgb(31 41 55);
 }
 
+/* Print CSS Helpers */
 table {
-  page-break-inside: auto
+  page-break-inside: auto;
 }
 
 tr {
   page-break-inside: avoid;
-  page-break-after: auto
+  page-break-after: auto;
 }
 
-/* Font khusus coding */
-textarea {
-  font-family: 'Fira Code', 'Consolas', monospace;
+/* --- 1. MEMBUAT TOOLBAR STICKY --- */
+:deep(.ql-toolbar) {
+  position: sticky !important;
+  top: 0 !important; /* Jarak dari atas */
+  z-index: 50 !important; /* Pastikan di atas konten teks */
+  background-color: white !important; /* Wajib ada background agar teks tidak tembus */
+  border-bottom: 1px solid #e5e7eb !important; /* Garis pemisah bawah */
+
+  /* Opsional: Tambahkan shadow saat sticky agar terlihat melayang */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- 2. PENYESUAIAN DARK MODE --- */
+.dark :deep(.ql-toolbar) {
+  background-color: rgb(31 41 55) !important; /* bg-gray-800 */
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
 }
 </style>
