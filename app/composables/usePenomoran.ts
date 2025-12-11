@@ -168,6 +168,31 @@ export const usePenomoran = () => {
     const response = await get(`/admin/nomor-request/${id}`);
     return response.data; // karena backend bentuknya { success, message, data }
   };
+  const getKlasifikasi = async () => {
+    try {
+      const res = await get("/persuratan/klasifikasi");
+      return res.data ?? [];
+    } catch (e) {
+      console.error("❌ Error fetch klasifikasi:", e);
+      return [];
+    }
+  };
+
+  const isLoadingSubmitted = ref(false);
+
+  const getListSubmitted = async () => {
+    isLoadingSubmitted.value = true;
+
+    try {
+      const res = await get("/admin/nomor-request-submitted");
+      return res.data ?? [];
+    } catch (e) {
+      console.error("❌ Error ambil list submitted:", e);
+      return [];
+    } finally {
+      isLoadingSubmitted.value = false;
+    }
+  };
 
   return {
     savePenomoran,
@@ -178,5 +203,8 @@ export const usePenomoran = () => {
     getListUsulan,
     isLoadingList,
     getDetailUsulan,
+    getKlasifikasi,
+    getListSubmitted,
+    isLoadingSubmitted,
   };
 };

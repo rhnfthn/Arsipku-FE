@@ -19,7 +19,9 @@
       <!-- FORM -->
       <div class="px-5 flex flex-col gap-4 pb-4">
         <div>
-          <label class="text-xs font-medium">Tanggal Surat</label>
+          <Heading variant="heading11m" class="text-xs font-medium"
+            >Tanggal Surat</Heading
+          >
 
           <ClientOnly>
             <UPopover
@@ -61,31 +63,51 @@
         </div>
 
         <!-- ✅ DROPDOWN KLASIFIKASI DARI API -->
+
         <div>
-          <label class="text-xs font-medium"
-            >Klasifikasi <span class="text-red-500">*</span></label
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Klasifikasi <span class="text-red-500">*</span>
+          </Heading>
+
+          <UPopover
+            v-model:open="openKlasifikasi"
+            :content="{ side: 'bottom', sideOffset: 6 }"
           >
-          <select
-            v-model="form.klasifikasi"
-            class="mt-1 border w-full border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 p-2 text-xs"
-            :disabled="isLoadingKlasifikasi"
-          >
-            <option disabled value="">
-              {{ isLoadingKlasifikasi ? "Memuat..." : "Pilih klasifikasi" }}
-            </option>
-            <option
-              v-for="item in klasifikasiOptions"
-              :key="item"
-              :value="item"
-            >
-              {{ item }}
-            </option>
-          </select>
+            <div @click="openKlasifikasi = true" class="mt-1">
+              <UInput
+                v-model="klasifikasiSearch"
+                placeholder="Cari klasifikasi..."
+                class="w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <template #content>
+              <div
+                class="max-h-52 overflow-y-auto bg-white border border-gray-100 rounded-md p-1 w-100"
+              >
+                <button
+                  v-for="item in filteredKlasifikasi"
+                  :key="item"
+                  @click="selectKlasifikasi(item)"
+                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 rounded"
+                >
+                  {{ item }}
+                </button>
+
+                <p
+                  v-if="filteredKlasifikasi.length === 0"
+                  class="text-xs text-center text-gray-400 py-2"
+                >
+                  Tidak ada hasil
+                </p>
+              </div>
+            </template>
+          </UPopover>
         </div>
 
         <div>
-          <label class="text-xs font-medium"
-            >Jenis Naskah <span class="text-red-500">*</span></label
+          <Heading variant="heading11m" class="text-xs font-medium"
+            >Jenis Naskah <span class="text-red-500">*</span></Heading
           >
           <select
             v-model="form.jenis"
@@ -99,8 +121,8 @@
         </div>
 
         <div>
-          <label class="text-xs font-medium"
-            >Pengirim <span class="text-red-500">*</span></label
+          <Heading variant="heading11m" class="text-xs font-medium"
+            >Pengirim <span class="text-red-500">*</span></Heading
           >
           <select
             v-model="form.pengirim"
@@ -114,8 +136,10 @@
         </div>
 
         <div>
-          <label class="text-xs font-medium focus:primary-500"
-            >Perihal <span class="text-red-500">*</span></label
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium focus:primary-500"
+            >Perihal <span class="text-red-500">*</span></Heading
           >
           <UInput
             class="mt-1 w-full focus:ring-primary-500 focus:border-primary-500"
@@ -125,8 +149,8 @@
         </div>
 
         <div>
-          <label class="text-xs font-medium"
-            >Jumlah <span class="text-red-500">*</span></label
+          <Heading variant="heading11m" class="text-xs font-medium"
+            >Jumlah <span class="text-red-500">*</span></Heading
           >
           <UInput
             type="number"
@@ -265,7 +289,7 @@
 import { ref, onMounted } from "vue";
 import Heading from "~/components/Heading.vue";
 import { UInput } from "#components";
-import { useBerkas } from "~/composables/userBerkas";
+import { usePenomoran } from "~/composables/usePenomoran";
 
 const props = defineProps({
   modelValue: Boolean,
@@ -275,8 +299,27 @@ const open = ref(false);
 const emit = defineEmits(["submit", "update:modelValue"]);
 const toast = useToast();
 
+const openKlasifikasi = ref(false);
+const klasifikasiSearch = ref("");
+
+// filter klasifikasi berdasarkan input
+const filteredKlasifikasi = computed(() => {
+  if (!klasifikasiSearch.value) return klasifikasiOptions.value;
+
+  return klasifikasiOptions.value.filter((i) =>
+    i.toLowerCase().includes(klasifikasiSearch.value.toLowerCase()),
+  );
+});
+
+function selectKlasifikasi(item) {
+  form.value.klasifikasi = item;
+  klasifikasiSearch.value = item;
+  openKlasifikasi.value = false;
+}
+
 // ✅ FETCH KLASIFIKASI DARI API
-const { getBerkasList } = useBerkas();
+const { getKlasifikasi } = usePenomoran();
+
 const klasifikasiOptions = ref([]);
 const isLoadingKlasifikasi = ref(false);
 
@@ -284,14 +327,13 @@ const fetchKlasifikasi = async () => {
   isLoadingKlasifikasi.value = true;
 
   try {
-    const response = await getBerkasList();
+    const response = await getKlasifikasi();
 
-    // response bisa:
-    // 1. ARRAY → [ { klasifikasi: ... }, ... ]
-    // 2. OBJECT → { success, message, data: [...] }
-
+    // BE selalu mengembalikan bentuk:
+    // { success: true, data: [...] }
     const list = Array.isArray(response) ? response : (response.data ?? []);
 
+    // Ambil hanya kode klasifikasi → "AUD", "AUD.01", dst
     const uniqueKlasifikasi = [
       ...new Set(list.map((item) => item.klasifikasi)),
     ];
@@ -308,7 +350,7 @@ const fetchKlasifikasi = async () => {
       color: "yellow",
     });
 
-    klasifikasiOptions.value = ["Terbatas", "Rahasia", "Biasa"];
+    klasifikasiOptions.value = ["Biasa", "Terbatas", "Rahasia"];
   } finally {
     isLoadingKlasifikasi.value = false;
   }
