@@ -1,35 +1,76 @@
-// composables/useInbox.ts
-import type { ApiResponse, InboxData } from '~/types/inbox'
+// ~/composables/useInbox.ts
+import { ref, watch, isRef } from 'vue'
 
-export const useInbox = () => {
-  // Config runtime untuk base URL API (jika sudah di setup di nuxt.config)
-  const config = useRuntimeConfig()
+export function useInbox(positionId) {
+  const items = ref([])
+  const pending = ref(false)
+  const error = ref(null)
 
-  // Position ID Statis sesuai request
-  const POSITION_ID = "70016581"
-
-  const { data, pending, error, refresh } = useFetch<ApiResponse<InboxData>>(
-    `/naskah_sirkulasi/inbox/${POSITION_ID}`,
-    {
-      // Opsi tambahan jika perlu (headers, dll)
-      // baseURL: config.public.apiBase // uncomment jika pakai base url env
-      server: false, // Client side fetching (opsional, sesuaikan kebutuhan)
-      lazy: true,    // Supaya tidak blocking navigasi
+  const fetchInbox = async (id) => {
+    if (!id) {
+      items.value = []
+      return
     }
-  )
+    pending.value = true
+    error.value = null
 
-  // Helper untuk mengambil items dengan aman
-  const inboxItems = computed(() => data.value?.data?.items || [])
+    try {
+      const token = (typeof window !== 'undefined')
+        ? localStorage.getItem('token')
+        : null
 
-  // Helper untuk mengambil summary
-  const inboxSummary = computed(() => data.value?.data?.summary)
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
 
-  return {
-    data,
-    inboxItems,
-    inboxSummary,
-    pending,
-    error,
-    refresh
+      const res = await $fetch(
+        `https://arsipku-api.rizan.app/naskah_sirkulasi/inbox/${encodeURIComponent(id)}`,
+        { method: 'GET', headers }
+      )
+
+      const rawItems = res?.data?.items || []
+
+      items.value = rawItems.map(it => ({
+        id: it.id_sirkulasi,
+        naskahId: it.id_naskah,
+        category: it.jenis,                  // ND, SDI, SDE, DI, KA
+        category_label: it.jenis_label,      // “Nota Dinas”
+        nomor: it.nomor,
+        tanggal: it.tanggal,
+        subject: it.perihal?.trim() || it.nomor,
+        sifat: it.sifat,
+        status: it.status,
+        lampiran: it.lampiran,
+
+        // PENGIRIM
+        from: it.pengirim?.nama || "-",
+        pengirim: it.pengirim,
+
+        // STATUS
+        isRead: it.status_baca === "sudah_dibaca",
+        read_time: it.read_time,
+        isStarred: it.is_favorit,
+        isFavorit: it.is_favorit,
+        isArsip: it.is_arsip,
+        isNote: it.is_note,
+
+        raw: it
+      }))
+    } catch (err) {
+      console.error("useInbox error:", err)
+      error.value = err
+      items.value = []
+    } finally {
+      pending.value = false
+    }
   }
+
+if (isRef(positionId)) {
+  watch(positionId, (newId) => fetchInbox(newId), { immediate: true })
+}
+
+  const refresh = () => {
+    const id = isRef(positionId) ? positionId.value : positionId
+    return fetchInbox(id)
+  }
+
+  return { items, pending, error, refresh }
 }

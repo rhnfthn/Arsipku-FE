@@ -1,11 +1,38 @@
-// composables/auth.ts
 export const useAuth = () => {
   const { apiGet, apiPost } = useApi()
+
+  // 🟦 Global user state (tersedia di seluruh aplikasi)
+  const user = useState("user", () => null)
+
+  const setUser = (data) => {
+    user.value = data
+  }
+
+  // 🟩 Ambil profil dari backend
+const getProfile = async () => {
+  try {
+    const token = localStorage.getItem("token")
+    if (!token) return null
+
+    const res = await apiGet("/auth/profile", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    const profile = res?.data?.user || res?.user || res
+
+    if (profile) setUser(profile)
+
+    return profile
+  } catch (error) {
+    console.error("[AUTH] Error getProfile:", error)
+    return null
+  }
+}
 
   const getSSORedirectUrl = async () => {
     try {
       const res = await apiGet('/auth/sso-redirect')
-      return res?.data?.url || null
+      return res?.url || null
     } catch (error) {
       console.error('[AUTH] Error getSSORedirectUrl:', error)
       return null
@@ -22,34 +49,30 @@ export const useAuth = () => {
     }
   }
 
-const logout = async () => {
-  try {
-    const sessionId = localStorage.getItem("sessionId")
-    const token = localStorage.getItem("token")
+  const logout = async () => {
+    try {
+      const sessionId = localStorage.getItem("sessionId")
+      const token = localStorage.getItem("token")
 
-    if (!sessionId || !token) {
-      console.warn("[AUTH] sessionId atau token tidak ditemukan")
+      await apiGet(`/auth/logout?sessionId=${sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: (status) => status < 400
+      })
+    } catch (error) {
+      console.warn("[AUTH] Logout redirect normal:", error)
     }
 
-    // Tetap panggil logout ke backend
-    await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      // Izinkan status 302 sebagai success
-      validateStatus: (status) => status < 400
-    })
+    localStorage.removeItem("token")
+    localStorage.removeItem("sessionId")
+    user.value = null // 🟥 clear user di state
 
-  } catch (error) {
-    console.warn("[AUTH] Logout API mengembalikan redirect, tapi ini normal:", error)
+    return true
   }
 
-  // Hapus data di browser, tetap lakukan logout
-  localStorage.removeItem("token")
-  localStorage.removeItem("sessionId")
-
-  return true
-}
-
   return {
+    user,
+    setUser,
+    getProfile,
     getSSORedirectUrl,
     verifyToken,
     logout
