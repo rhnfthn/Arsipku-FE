@@ -112,14 +112,14 @@ import { ref, computed } from "vue";
 import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "~/composables/Auth";
 import { onMounted } from "vue";
 
 const { user, getProfile, logout } = useAuth()
 
 onMounted(() => {
   if (!user.value) {
-    getProfile() 
+    getProfile()
   }
 })
 
