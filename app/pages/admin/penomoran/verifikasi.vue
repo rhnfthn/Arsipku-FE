@@ -8,14 +8,6 @@
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
-
-      <!-- <button
-        @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Titelatur
-      </button> -->
     </div>
 
     <!-- CARD -->
@@ -37,7 +29,7 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown (wrapped relative) -->
+        <!-- Filter button + dropdown -->
         <div class="relative inline-block">
           <button
             data-custom-dropdown
@@ -66,7 +58,7 @@
             </svg>
           </button>
 
-          <!-- Dropdown (positioned relative to button) -->
+          <!-- Dropdown -->
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
@@ -151,7 +143,7 @@
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.pengirim }}</td>
+              <td class="px-5 py-4">{{ row.penandatangan }}</td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -163,9 +155,8 @@
                     {
                       'bg-yellow-100 text-yellow-700':
                         row.status === 'Menunggu Verifikasi',
-                      'bg-green-100 text-green-700':
-                        row.status === 'Nomor Disetujui',
-                      'bg-red-100 text-red-700': row.status === 'Nomor Ditolak',
+                      'bg-green-100 text-green-700': row.status === 'Disetujui',
+                      'bg-red-100 text-red-700': row.status === 'Ditolak',
                     },
                   ]"
                 >
@@ -221,12 +212,8 @@
       </div>
     </div>
   </div>
-  <!------------->
+
   <!-- MODAL ROW DETAIL -->
-  <!------------->
-  <!-- 
-  class="!w-[850px] !max-h-[100vh] !rounded-2xl !overflow-hidden" -->
-  <!-- class="!max-h-[100vh] !rounded-2xl !overflow-hidden" -->
   <Modal
     v-model="openPreview"
     :hideDefaultFooter="true"
@@ -236,7 +223,7 @@
     <template #title>
       <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
         <h2 class="text-lg font-semibold uppercase">
-          {{ selectedRow?.jenis_naskah || "Detail" }}
+          {{ selectedRow?.jenis || "Detail" }}
         </h2>
       </div>
     </template>
@@ -247,7 +234,6 @@
       class="px-6 pb-6 space-y-6 text-[15px] overflow-y-auto max-h-[70vh]"
     >
       <div>
-        <!-- Judul Besar -->
         <Heading
           variant="heading10sb"
           class="text-xl font-semibold leading-relaxed"
@@ -255,33 +241,30 @@
           {{ selectedRow?.perihal }}
         </Heading>
       </div>
-      <!-- Tanggal -->
+
       <div class="flex justify-between">
         <span class="text-gray-600 w-40">Tanggal</span>
         <span class="font-medium">{{ selectedRow.tanggal }}</span>
       </div>
 
-      <!-- Pengirim -->
       <div class="flex justify-between">
-        <span class="text-gray-600 w-40">Pengirim</span>
-        <span class="font-medium">{{ selectedRow.pengirim }}</span>
+        <span class="text-gray-600 w-40">Penandatangan</span>
+        <span class="font-medium">{{ selectedRow.penandatangan }}</span>
       </div>
 
-      <!-- Klasifikasi -->
       <div class="flex justify-between">
         <span class="text-gray-600 w-40">Klasifikasi</span>
         <span class="font-medium">{{ selectedRow.klasifikasi }}</span>
       </div>
 
-      <!-- Jenis Naskah -->
       <div class="flex justify-between">
         <span class="text-gray-600 w-40">Jenis Naskah</span>
-        <span class="font-medium">{{ selectedRow.jenis_naskah }}</span>
+        <span class="font-medium">{{ selectedRow.jenis }}</span>
       </div>
 
-      <!-- Nomor -->
+      <!-- Nomor Surat -->
       <div class="mt-4">
-        <label class="font-medium">Nomor</label>
+        <label class="font-medium">Nomor Surat</label>
 
         <div class="flex flex-col gap-2 mt-2">
           <div
@@ -289,27 +272,27 @@
             :key="idx"
             class="flex items-center gap-2"
           >
-            <!-- CHECKBOX -->
             <input
               type="checkbox"
               v-model="selectedRow.checkedNomor[idx]"
               class="w-5 h-5"
             />
-            <!-- NOMOR URUT -->
+
             <div
               class="relative flex w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2"
             >
-              <span class="text-sm text-gray-700">{{ idx + 1 }}</span>
+              <span class="text-sm text-gray-700 mr-2">{{ idx + 1 }}.</span>
 
               <input
                 type="text"
                 v-model="selectedRow.nomor_surat[idx]"
                 class="flex-1 bg-transparent outline-none text-sm pr-2"
+                readonly
               />
             </div>
-            <!-- COPY BUTTON INSIDE INPUT BOX -->
+
             <button
-              @click="handleCopy(no, idx)"
+              @click="handleCopy(nomor)"
               class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
             >
               <Copy class="w-4 h-4 text-gray-600" />
@@ -327,7 +310,7 @@
         <textarea
           v-model="keterangan_ditolak"
           class="w-full mt-1 border border-gray-300 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50"
-          placeholder="Keterangan Jika Ditolak"
+          placeholder="Masukkan keterangan jika ditolak..."
         ></textarea>
       </div>
     </div>
@@ -336,24 +319,19 @@
     <template #footer>
       <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
         <button
-          @click="submitUsulan"
+          @click="approveUsulan"
+          :disabled="isNoneChecked"
           class="px-5 py-2 text-xs bg-primary text-white rounded-md"
         >
           Nomor Disetujui
         </button>
         <button
-          @click="hapusUsulan"
+          @click="rejectUsulan"
+          :disabled="isAllChecked"
           class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
         >
           Nomor Ditolak
         </button>
-
-        <!-- <button
-          @click="$emit('hapus-usulan')"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
-        >
-          Hapus Usulan
-        </button> -->
       </div>
     </template>
   </Modal>
@@ -361,66 +339,19 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
-import AddUsulan from "~/components/AddUsulan.vue";
-
+import { Search, ArrowUpDown, Copy } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
-import { UInput, USelect, Modal } from "#components";
+import { Modal } from "#components";
+import { useToast } from "#imports";
+import { usePenomoran } from "~/composables/usePenomoran";
 
-// data tabel kamu (contoh)
-import { tableData } from "~/data/usulan-data";
-
-// State modal
-const openPreview = ref(false);
-const showPreview = (row: any) => {
-  selectedRow.value = {
-    ...row,
-    checkedNomor: row.nomor_surat.map(() => false),
-  };
-
-  openPreview.value = true;
-};
 const toast = useToast();
 
-const handleCopy = (value: string) => {
-  navigator.clipboard.writeText(value);
+// ✅ Composable & API
+const { getListSubmitted } = usePenomoran();
+const { get } = useApi();
 
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
-};
-// const openPreview = (row: any) => {
-//   selectedRow.value = {
-//     ...row,
-//     checkedNomor: row.nomor_surat.map(() => true), // default centang semua
-//   };
-
-//   openPreview.value = true;
-// };
-
-// const selectedRow = ref(null);
-
-// Event dari AddUsulan
-// function handlePreview(data) {
-//   console.log("DATA PREVIEW:", data);
-// }
-
-// function handleSubmit(data) {
-//   console.log("DATA SUBMIT:", data);
-// }
-function handlePreview(data) {
-  previewData.value = data;
-  openPreview.value = true;
-}
-// Function saat klik row
-function openRowModal(row) {
-  selectedRow.value = row;
-  openPreview.value = true;
-}
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
@@ -433,19 +364,14 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Pengirim", key: "pengirim", sortable: false },
+  { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
   { label: "Status", key: "status", sortable: true },
 ];
 
-const filterOptions = [
-  "Semua",
-  "Menunggu Verifikasi",
-  "Nomor Disetujui",
-  "Nomor Ditolak",
-];
+const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
 
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -453,21 +379,7 @@ const search = ref<string>("");
 const currentPage = ref<number>(1);
 
 const selectedRow = ref<any>(null);
-const nomorChecked = ref<boolean[]>([]);
-
-// const previewRow = (row: any) => {
-//   selectedRow.value = {
-//     ...row,
-//     nomor_list: Array.from({ length: row.jumlah }, (_, i) => {
-//       if (i === 0) return row.nomor_surat;
-//       return `${i + 1}/${row.nomor_surat}`;
-//     }),
-//   };
-
-//   nomorChecked.value = Array(row.jumlah).fill(false);
-
-//   openPreview.value = true;
-// };
+const keterangan_ditolak = ref("");
 
 /* Loading */
 const loading = ref<boolean>(true);
@@ -493,236 +405,186 @@ const selectFilterStatus = (val: string) => {
   openFilterStatus.value = false;
 };
 
-/* Modal control (A - openAdd = true to open) */
-const openAdd = ref<boolean>(false);
+/* Modal control */
+const openPreview = ref(false);
 
-/* Modal inputs */
-const nomorSurat = ref<string>("3");
-const computedNomorSurat = computed(
-  () => `BAC...../U/18/LPPNPI/PGD.07/XI/2024`,
-);
+/* Data rows */
+const rows = ref<any[]>([]);
 
-/* Dummy data */
-const rows = ref<any[]>([
-  {
-    id: "1534490706124",
-    jenis: "BAC",
-    tanggal: "06.11.2025",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    pengirim: "Direktur Utama",
-    jumlah: 5,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 25 15:34",
-    status: "Nomor Disetujui",
+// ✅ GET DATA DARI API
+const fetchData = async () => {
+  loading.value = true;
 
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi",
-    jenis_naskah: "BAC - Berita Acara",
+  try {
+    const res = await get("/admin/nomor-request-submitted");
 
-    nomor_surat: [
-      "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-      "2/BAC/U/19/LPPNPI/PGD.06/XI/2024",
-      "3/BAC/U/20/LPPNPI/PGD.08/XI/2024",
-      "4/BAC/U/21/LPPNPI/PGD.09/XI/2024",
-      "5/BAC/U/22/LPPNPI/PGD.10/XI/2024",
-    ],
-  },
+    if (!res?.success) {
+      toast.add({
+        title: "Gagal",
+        description: "Tidak dapat mengambil data verifikasi",
+        color: "red",
+      });
+      return;
+    }
 
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Menunggu Verifikasi",
+    // Mapping response ke format tabel
+    rows.value = res.data.map((item: any) => ({
+      id: item.id,
+      jenis: item.jenis,
+      tanggal: formatTanggal(item.tanggal),
+      perihal: item.perihal,
+      penandatangan: item.penandatangan || "-",
+      jumlah: item.jumlah,
+      pengusul: item.nama,
+      tglUsulan: formatDateTime(item.created_at),
+      status: item.status,
+      klasifikasi: item.klasifikasi,
+      // Generate nomor surat dummy (karena belum ada dari BE)
+      nomor_surat: Array.from(
+        { length: item.jumlah },
+        (_, i) =>
+          `${i + 1}/${item.jenis}/U/XX/LPPNPI/${item.klasifikasi}/${new Date().getFullYear()}`,
+      ),
+    }));
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+    console.log("✅ Data verifikasi berhasil dimuat:", rows.value);
+  } catch (error) {
+    console.error("❌ Error fetch data verifikasi:", error);
+    toast.add({
+      title: "Gagal memuat data",
+      description: "Tidak dapat mengambil data verifikasi",
+      color: "red",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Menunggu Verifikasi",
+/* Show Preview Modal */
+const showPreview = (row: any) => {
+  selectedRow.value = {
+    ...row,
+    checkedNomor: row.nomor_surat.map(() => false),
+  };
+  keterangan_ditolak.value = "";
+  openPreview.value = true;
+};
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+/* Handle Copy */
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Disetujui",
+/* Approve Usulan */
+const approveUsulan = () => {
+  if (!selectedRow.value) return;
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  const nomorDipilih = selectedRow.value.nomor_surat.filter(
+    (_n: string, i: number) => selectedRow.value.checkedNomor[i],
+  );
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Ditolak",
+  if (nomorDipilih.length === 0) {
+    toast.add({
+      title: "Peringatan",
+      description: "Pilih minimal 1 nomor surat!",
+      color: "yellow",
+    });
+    return;
+  }
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  console.log("📤 Menyetujui nomor:", nomorDipilih);
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Disetujui",
+  /* NOMOR CHECKBOX DITOLAK DISETUJUI*/
+  const isAllChecked = computed(() => {
+    return (
+      selectedRow.value &&
+      selectedRow.value.checkedNomor.length > 0 &&
+      selectedRow.value.checkedNomor.every((v: boolean) => v === true)
+    );
+  });
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  const isNoneChecked = computed(() => {
+    return (
+      selectedRow.value &&
+      selectedRow.value.checkedNomor.every((v: boolean) => v === false)
+    );
+  });
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Menunggu Verifikasi",
+  /* NOMOR DITOLAK */
+  const rejectNomor = async (id: string) => {
+    try {
+      const res = await get(`/admin/nomor-request/${id}`, {
+        method: "DELETE",
+      });
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+      if (!res?.success) {
+        toast.add({
+          title: "Gagal",
+          description: "Tidak dapat menolak usulan nomor",
+          color: "red",
+        });
+        return false;
+      }
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Disetujui",
+      return true;
+    } catch (err) {
+      console.error("❌ Error rejectNomor:", err);
+      toast.add({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat menolak nomor",
+        color: "red",
+      });
+      return false;
+    }
+  };
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  // TODO: Panggil API approval
+  // await approveNomor(selectedRow.value.id, nomorDipilih);
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Menunggu Verifikasi",
+  openPreview.value = false;
+  toast.add({
+    title: "Berhasil",
+    description: "Nomor surat berhasil disetujui",
+    color: "green",
+  });
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  // Refresh data
+  fetchData();
+};
 
-    nomor_surat: ["01/SPR/U/12/LPPNPI/PGD.03/II/2024"],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Disetujui",
+/* Reject Usulan */
+const rejectUsulan = async () => {
+  if (!selectedRow.value) return;
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  if (!keterangan_ditolak.value) {
+    toast.add({
+      title: "Peringatan",
+      description: "Keterangan penolakan harus diisi!",
+      color: "yellow",
+    });
+    return;
+  }
 
-    nomor_surat: ["02/SPR/U/12/LPPNPI/PGD.03/II/2024"],
-  },
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2025",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    pengirim: "Direktur Operasi",
-    jumlah: 2,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 25 16:37",
-    status: "Nomor Disetujui",
+  const id = selectedRow.value.id;
 
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
+  const ok = await rejectNomor(id);
+  if (!ok) return;
 
-    nomor_surat: [
-      "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-      "03/SPR/U/13/LPPNPI/PGD.03/II/2024",
-    ],
-  },
-]);
+  toast.add({
+    title: "Ditolak",
+    description: "Usulan nomor berhasil ditolak",
+    color: "red",
+  });
+
+  openPreview.value = false;
+  fetchData();
+};
 
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
@@ -759,74 +621,31 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
-/* WATCHERS: reset page when relevant changes */
+/* WATCHERS */
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
 });
 
-/* BADGE COLORS */
-const badgeColor = (status: string) =>
-  ({
-    "Belum Diajukan": "bg-gray-500 text-gray-700",
-    "Menunggu Verifikasi": "bg-yellow-200 text-yellow-700",
-    Disetujui: "bg-green-200 text-green-700",
-    Ditolak: "bg-red-200 text-red-700",
-  })[status.trim()] || "bg-gray-200 text-gray-700";
+/* Format helpers */
+function formatTanggal(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
-/* Simulated loading */
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 700);
-});
-
-/* COPY nomor */
-const copyNomor = async () => {
-  try {
-    await navigator.clipboard.writeText(computedNomorSurat.value);
-    // simple feedback, replace with toast if you have one
-    // alert("Nomor disalin");
-  } catch (err) {
-    // ignore
-  }
-};
-
-/* Submit & Hapus (sederhana, karena ini contoh) */
-const submitUsulan = () => {
-  const nomorDipilih = selectedRow.value.nomor_list.filter(
-    (_n, i) => nomorChecked.value[i],
-  );
-
-  if (nomorDipilih.length === 0) {
-    alert("Pilih minimal 1 nomor surat!");
-    return;
-  }
-
-  console.log("Nomor yang dikirim:", nomorDipilih);
-};
-
-const hapusUsulan = () => {
-  if (!selectedRow.value) return;
-
-  // Hapus row dari tabel
-  rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-
-  // Tutup modal preview
-  openPreview.value = false;
-
-  // Bersihkan selectedRow
-  selectedRow.value = null;
-};
-// const hapusUsulan = () => {
-//   if (!selectedRow.value) return;
-
-//   if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-
-//   rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-//   openPreview.value = false;
-//   selectedRow.value = null;
-// };
+function formatDateTime(dateStr: string) {
+  const date = new Date(dateStr);
+  return `${date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "2-digit",
+  })} ${date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
 
 /* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
@@ -838,16 +657,18 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
+/* Load data on mount */
 onMounted(() => {
+  fetchData();
   document.addEventListener("click", handleDocumentClick);
 });
+
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
 </script>
 
 <style scoped>
-/* small fade-in for dropdown */
 @keyframes fade-in {
   from {
     opacity: 0;

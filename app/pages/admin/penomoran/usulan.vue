@@ -152,7 +152,7 @@
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.pengirim }}</td>
+              <td class="px-5 py-4">{{ row.penandatangan }}</td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -262,10 +262,10 @@
         <p class="font-medium mt-1">{{ selectedRow.tanggal }}</p>
       </div>
 
-      <!-- Pengirim -->
+      <!-- Penandatangan -->
       <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Pengirim</p>
-        <p class="font-medium mt-1">{{ selectedRow.pengirim }}</p>
+        <p class="text-gray-500 text-xs">Penandatangan</p>
+        <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
       </div>
 
       <!-- Klasifikasi -->
@@ -424,6 +424,10 @@ import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { UInput, USelect, Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
+import type penandatangan from "../digsig/penandatangan.vue";
+import { useApi } from "~/composables/useApi";
+
+const { get } = useApi();
 
 // FETCH
 const { savePenomoran, isLoadingPenomoran } = usePenomoran();
@@ -438,13 +442,72 @@ const form = ref({
   jumlah: 1,
 });
 
+const hapusUsulan = async () => {
+  if (!selectedRow.value?.id) return;
+
+  const id = selectedRow.value.id;
+
+  try {
+    const res = await get(`/admin/nomor-request/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.success) {
+      toast.add({
+        title: "Gagal",
+        description: "Usulan tidak dapat dihapus.",
+        color: "red",
+      });
+      return;
+    }
+
+    // Hapus row di frontend agar tabel langsung update
+    rows.value = rows.value.filter((row) => row.id !== id);
+
+    // Tutup modal
+    openDetail.value = false;
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil dihapus",
+      color: "green",
+    });
+  } catch (err) {
+    console.error("❌ Error hapus usulan:", err);
+    toast.add({
+      title: "Error",
+      description: "Terjadi kesalahan saat menghapus usulan.",
+      color: "red",
+    });
+  }
+};
+
+const fetchData = async () => {
+  try {
+    const data = await getListUsulan();
+    rows.value = data.map((item) => ({
+      id: item.id,
+      jenis: item.jenis,
+      tanggal: item.tanggal,
+      perihal: item.perihal,
+      jumlah: item.jumlah,
+      penandatangan: item.nama || "-",
+      pengusul: item.nama || "-",
+      tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
+      status: item.status,
+    }));
+  } catch (err) {
+    console.error("Gagal fetch data:", err);
+  }
+};
+
 const submitAndClose = async () => {
   // Validasi form
   if (
     !form.value.tanggal ||
     !form.value.jenis ||
     !form.value.klasifikasi ||
-    !form.value.pengirim ||
+    !form.value.penandatangan ||
     !form.value.perihal ||
     Number(form.value.jumlah) < 1
   ) {
@@ -462,7 +525,7 @@ const submitAndClose = async () => {
     tanggal: new Date(form.value.tanggal),
     jenis: form.value.jenis,
     klasifikasi: form.value.klasifikasi,
-    pengirim: form.value.pengirim,
+    Penandatangan: form.value.penandatangan,
     perihal: form.value.perihal,
     jumlah: Number(form.value.jumlah),
   };
@@ -491,7 +554,7 @@ const submitAndClose = async () => {
       tglUsulan: new Date().toLocaleString("id-ID"),
       status: "Belum Diajukan",
       klasifikasi: payload.klasifikasi,
-      pengirim: payload.pengirim,
+      penandatangan: payload.penandatangan,
       jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
     });
 
@@ -500,7 +563,7 @@ const submitAndClose = async () => {
       tanggal: "",
       klasifikasi: "",
       jenis: "",
-      pengirim: "",
+      penandatangan: "",
       perihal: "",
       jumlah: "",
     };
@@ -590,7 +653,13 @@ async function openRowModal(row) {
   try {
     const detail = await getDetailUsulan(row.id);
 
-    // convert ke format yang dipakai modal
+    // jika BE sudah ada nomor_surat → gunakan
+    const nomorSuratArray = Array.isArray(detail.nomor_surat)
+      ? detail.nomor_surat
+      : detail.nomor_surat
+        ? [detail.nomor_surat]
+        : Array(detail.jumlah).fill(""); // kalau belum ada → generate kosong sebanyak JUMALAH
+
     selectedRow.value = {
       id: detail.id,
       jenis: detail.jenis,
@@ -598,10 +667,16 @@ async function openRowModal(row) {
       tanggal: detail.tanggal,
       perihal: detail.perihal,
       jumlah: detail.jumlah,
-      pengirim: detail.nama,
+      penandatangan: detail.nama,
       klasifikasi: detail.klasifikasi,
       status: detail.status,
+
+      // isi array nomor_surat
+      nomor_surat: nomorSuratArray,
     };
+
+    // siapkan file upload array sesuai jumlah nomor
+    uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
 
     openDetail.value = true;
   } catch (err) {
@@ -629,7 +704,7 @@ onMounted(async () => {
     jumlah: item.jumlah,
 
     // BE tidak punya “pengirim” → pakai nama
-    pengirim: item.nama || "-",
+    penandatangan: item.nama || "-",
 
     // Pengusul → juga pakai nama
     pengusul: item.nama || "-",
@@ -727,7 +802,7 @@ const handleSubmitFromModal = async (payload) => {
       tanggal: new Date(payload.tanggal).toLocaleDateString("id-ID"),
       perihal: payload.perihal,
       jumlah: payload.jumlah,
-      pengirim: form.value.pengirim || "-", // ✅ Simpan dari form untuk display saja
+      penandatangan: form.value.penandatangan || "-", // ✅ Simpan dari form untuk display saja
       pengusul: "Anda", // atau ambil dari user session
       tglUsulan: new Date().toLocaleString("id-ID"),
       status: "Belum Diajukan",
@@ -857,22 +932,6 @@ const submitUsulan = async () => {
     console.error("Gagal submit booking:", e);
   }
 };
-
-const hapusUsulan = () => {
-  if (!selectedRow.value) return;
-
-  // Hapus row dari tabel
-  rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-};
-// const hapusUsulan = () => {
-//   if (!selectedRow.value) return;
-
-//   if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-
-//   rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-//   openPreview.value = false;
-//   selectedRow.value = null;
-// };
 
 /* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
