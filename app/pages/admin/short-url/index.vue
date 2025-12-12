@@ -15,8 +15,6 @@ import {
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   Plus,
-  Copy,
-  Trash2,
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 
@@ -56,7 +54,7 @@ const data = ref<Payment[]>([
     LUrl: "https://urlasli2",
     SUrl: "url.modifikasi.com",
     keterangan:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
   },
 ]);
 
@@ -133,55 +131,75 @@ const columns: TableColumn<Payment>[] = [
   },
 
   {
-    id: "actions",
     header: "Aksi",
-    cell: ({ row }) =>
-      h("div", { class: "flex items-center gap-2" }, [
-        // COPY BUTTON
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
         h(
-          "button",
+          UDropdownMenu,
           {
-            class: "p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800",
-            onClick: () => {
-              copy(row.original.SUrl);
-              toast.add({
-                title: "URL berhasil disalin!",
-                color: "success",
-                icon: "i-lucide-copy",
-              });
+            content: {
+              align: "end",
             },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
           },
           () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-copy",
-              class: "w-4 h-4 text-gray-600 dark:text-gray-300",
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
             }),
         ),
-
-        // DELETE BUTTON
-        h(
-          "button",
-          {
-            class: "p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900",
-            onClick: () => {
-              const index = data.value.indexOf(row.original);
-              data.value.splice(index, 1);
-              toast.add({
-                title: "URL berhasil dihapus!",
-                color: "error",
-                icon: "i-lucide-trash-2",
-              });
-            },
-          },
-          () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-trash-2",
-              class: "w-4 h-4 text-red-600 dark:text-red-400",
-            }),
-        ),
-      ]),
+      );
+    },
   },
 ];
+
+function getRowItems(row: Row<Payment>) {
+  return [
+    {
+      label: "Salin Url Modifikasi",
+      onSelect() {
+        copy(row.original.SUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+    {
+      label: "Salin Url Asli",
+      onSelect() {
+        copy(row.original.LUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+    {
+      label: "Hapus",
+      onSelect() {
+        copy(row.original.SUrl);
+
+        toast.add({
+          title: "Url Berhasil Di Salin!",
+          color: "success",
+          icon: "i-lucide-circle-check",
+        });
+      },
+    },
+  ];
+}
 
 const showAddModal = ref(false);
 
@@ -192,7 +210,7 @@ const addForm = ref({
 });
 
 const saveAdd = () => {
-  if (!addForm.value.LUrl) {
+  if (!addForm.value.LUrl || !addForm.value.SUrl) {
     toast.add({
       title: "URL belum lengkap!",
       color: "warning",
@@ -201,14 +219,10 @@ const saveAdd = () => {
     return;
   }
 
-  const shortCode = addForm.value.SUrl
-    ? addForm.value.SUrl
-    : generateRandomString();
-
   data.value.unshift({
     tanggal: new Date().toISOString(),
     LUrl: addForm.value.LUrl,
-    SUrl: `airnav/${shortCode}`,
+    SUrl: addForm.value.SUrl,
     keterangan: addForm.value.keterangan,
   });
 
@@ -223,32 +237,16 @@ const saveAdd = () => {
 };
 
 const openAdd = () => {
-  addForm.value = { ind: "", eng: "" };
+  addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
   showAddModal.value = true;
-};
-
-const activeCopyIndex = ref<number | null>(null);
-
-const toggleCopyDropdown = (index: number) => {
-  activeCopyIndex.value = activeCopyIndex.value === index ? null : index;
-};
-
-const copyUrl = (value: string, type: string) => {
-  copy(value);
-  toast.add({
-    title: `Berhasil menyalin ${type}!`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
-  activeCopyIndex.value = null;
 };
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-between">
+  <div class="flex flex-wrap justify-between items-center mb-5">
     <div class="flex flex-col flex-wrap justify-between mb-3">
-      <Heading variant="heading5m">Short Url</Heading>
-      <Heading variant="body1">Kelola short URL untuk dokumen</Heading>
+      <Heading variant="heading6b">Short Url</Heading>
+      <Heading variant="heading10m">Kelola short URL untuk dokumen</Heading>
     </div>
     <div>
       <button
@@ -262,7 +260,7 @@ const copyUrl = (value: string, type: string) => {
   </div>
   <Modal v-model="showAddModal" @save="saveAdd">
     <template #title>
-      <div class="ml-5 mb-3">
+      <div class="mt-5 ml-5 mb-3">
         <Heading variant="heading9b" class="font-semibold text-sm">
           Buat Short URL Baru
         </Heading>
@@ -390,6 +388,7 @@ const copyUrl = (value: string, type: string) => {
       </div>
     </div>
     <div class="w-full overflow-auto p-2">
+      <UTable :data="data" :columns="columns" />
       <div class="w-full overflow-auto p-2">
         <table class="min-w-full text-sm border-collapse">
           <thead>

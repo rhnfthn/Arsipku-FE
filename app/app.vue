@@ -4,7 +4,7 @@
       <NuxtPage />
     </NuxtLayout>
     <!-- <UNotifications /> -->
-    <USelectMenu />
+    <!-- <USelectMenu /> -->
   </UApp>
 </template>
 

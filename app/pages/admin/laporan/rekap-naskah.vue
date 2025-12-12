@@ -1,89 +1,91 @@
 <template>
     <div class="mb-3 flex flex-wrap justify-between">
       <div>
-        <Heading variant="heading8">Rekap Naskah Dinas</Heading>
+        <Heading variant="heading6sb">Rekap Naskah Dinas Masuk</Heading>
         <Paragraph variant="body2">
           Rekapitulasi jumlah naskah dinas berdasarkan bulan dan kategori.
         </Paragraph>
       </div>
-      <button
-        @click="exportExcel"
-        class="flex items-center gap-2 bg-primary text-white h-9 px-4 rounded-lg hover:bg-primary-800 text-xs"
-      >
-        <FileDown class="w-4 h-4" />
-        Export
-      </button>
     </div>
-    <div class="p-5 overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
-        <div class="flex items-center">
-            <Heading variant="heading9m" class="flex-1">Rekap Naskah Masuk</Heading>
+    <div class=" overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+        <div class="sticky top-0 z-40 bg-white flex-wrap flex justify-between p-3">
+          <div class="flex flex-wrap gap-3 ">
+            <button
+              @click="refreshData"
+              class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+            >
+            <RotateCcw class="w-4 h-4" />
+            </button>
+              <select v-model="selectedType" class=" rounded-md p-2 text-sm bg-gray-100">
+                  <option value="">Semua Jenis</option>
+                  <option v-for="item in data" :key="item.id" :value="item.naskah">
+                      {{ item.naskah }}
+                  </option>
+              </select>
+
+              <select v-model="selectedMonth" class="rounded-md p-2 text-sm bg-gray-100">
+                  <option value="">Semua Bulan</option>
+                  <option v-for="bulan in monthOptions" :key="bulan.value" :value="bulan.value">
+                      {{ bulan.label }}
+                  </option>
+              </select>
+              
+              <select v-model="selectedYear" class="rounded-md p-2 text-sm bg-gray-100">
+                  <option v-for="tahun in yearOptions" :key="tahun" :value="tahun">{{ tahun }}</option>
+              </select>
+            </div>
+            <div>
+              <button
+                @click="exportExcel"
+                class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+              >
+                <FileDown class="w-4 h-4" />
+                Export
+              </button>
+            </div>
         </div>
 
-        <div class="flex gap-3 py-3">
-          <button
-            @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-          <RotateCcw class="w-4 h-4" />
-          </button>
-            <select v-model="selectedType" class=" rounded-md p-2 text-sm bg-gray-100">
-                <option value="">Semua Jenis</option>
-                <option v-for="item in data" :key="item.id" :value="item.naskah">
-                    {{ item.naskah }}
-                </option>
-            </select>
+        <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
+          <table class="text-center">
+              <thead class="sticky top-0 z-30 bg-primary-400">
+                  <tr class="bg-primary-400 text-white">
+                      <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm w-[350px] text-start">Naskah</th>
+                      <template v-if="!selectedMonth">
+                          <th v-for="bulan in monthOptions" :key="bulan.value"
+                              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">
+                              {{ bulan.label }}
+                          </th>
+                      </template>
 
-            <select v-model="selectedMonth" class="rounded-md p-2 text-sm bg-gray-100">
-                <option value="">Semua Bulan</option>
-                <option v-for="bulan in monthOptions" :key="bulan.value" :value="bulan.value">
-                    {{ bulan.label }}
-                </option>
-            </select>
-            
-            <select v-model="selectedYear" class="rounded-md p-2 text-sm bg-gray-100">
-                <option v-for="tahun in yearOptions" :key="tahun" :value="tahun">{{ tahun }}</option>
-            </select>
+                      <template v-else>
+                          <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">{{ selectedMonthLabel }}</th>
+                      </template>
+
+                      <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">Jumlah</th>
+                  </tr>
+              </thead>
+
+              <tbody>
+                  <tr v-for="row in filteredTableData" :key="row.id" class="hover:bg-blue-50">
+                      <td class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible">{{ row.naskah }}</td>
+
+                      <template v-if="!selectedMonth">
+                          <td v-for="bulan in monthOptions" :key="bulan.value" class="px-4 py-3 text-sm">
+                              {{ row[bulan.value] || '-' }}
+                          </td>
+                      </template> 
+
+                      <template v-else>
+                          <td class="px-4 py-3 text-sm">
+                              {{ row[selectedMonth] || '-' }}
+                          </td>
+                      </template>
+
+                      <td class="px-4 py-3 font-bold text-sm text-gray-900">{{ row.jumlah }}</td>
+                  </tr>
+              </tbody>
+          </table>
         </div>
-        
-        <table class="text-center">
-            <thead>
-                <tr>
-                    <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm w-[350px] text-start">Naskah</th>
-                    <template v-if="!selectedMonth">
-                        <th v-for="bulan in monthOptions" :key="bulan.value"
-                            class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">
-                            {{ bulan.label }}
-                        </th>
-                    </template>
-
-                    <template v-else>
-                        <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">{{ selectedMonthLabel }}</th>
-                    </template>
-
-                    <th class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm">Jumlah</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr v-for="row in filteredTableData" :key="row.id" class="hover:bg-blue-50">
-                    <td class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible">{{ row.naskah }}</td>
-
-                    <template v-if="!selectedMonth">
-                        <td v-for="bulan in monthOptions" :key="bulan.value" class="px-4 py-3 text-sm">
-                            {{ row[bulan.value] || '-' }}
-                        </td>
-                    </template> 
-
-                    <template v-else>
-                        <td class="px-4 py-3 text-sm">
-                            {{ row[selectedMonth] || '-' }}
-                        </td>
-                    </template>
-
-                    <td class="px-4 py-3 font-bold text-sm text-gray-900">{{ row.jumlah }}</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
     
 </template>

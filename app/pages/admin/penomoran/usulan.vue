@@ -17,14 +17,6 @@
         <Plus class="w-4 h-4" />
         Tambah Usulan
       </button>
-
-      <!-- <button
-        @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Titelatur
-      </button> -->
     </div>
 
     <!-- CARD -->
@@ -160,7 +152,7 @@
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penanda }}</td>
+              <td class="px-5 py-4">{{ row.penandatangan }}</td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -235,38 +227,30 @@
 
       <AddUsulan
         v-model="openAdd"
+        @submit="handleSubmitFromModal"
         @preview="handlePreview"
-        @submit="handleSubmit"
       />
-
-      <!-- <PreviewUsulan v-model="openPreview" :data="previewData" /> -->
-
-      <!-- <AddUsulan
-        v-model="openAdd"
-        @preview="handlePreview"
-        @submit="handleSubmit"
-      /> -->
     </div>
   </div>
   <!------------->
   <!-- MODAL ROW DETAIL -->
   <!------------->
-  <Modal v-model="openPreview" :hideDefaultFooter="true">
+  <Modal v-model="openDetail" :hideDefaultFooter="true">
     <!-- TITLE -->
     <template #title>
       <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
         <h2 class="text-lg font-semibold uppercase">
           {{ selectedRow?.jenis_naskah || "Detail" }}
         </h2>
-        <!-- 
-            <span class="text-xs text-gray-500">
-              {{ selectedRow?.timestamp || "—" }}
-            </span> -->
+
+        <!-- <span class="text-xs text-gray-500">
+          {{ selectedRow?.timestamp || "—" }}
+        </span> -->
       </div>
     </template>
 
     <!-- BODY -->
-    <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3">
+    <div v-show="selectedRow" class="space-y-6 text-sm px-5 pb-3">
       <!-- Judul Besar -->
       <p class="text-gray-900 font-semibold leading-relaxed text-base">
         {{ selectedRow.perihal }}
@@ -278,10 +262,10 @@
         <p class="font-medium mt-1">{{ selectedRow.tanggal }}</p>
       </div>
 
-      <!-- Pengirim -->
+      <!-- Penandatangan -->
       <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Pengirim</p>
-        <p class="font-medium mt-1">{{ selectedRow.pengirim }}</p>
+        <p class="text-gray-500 text-xs">Penandatangan</p>
+        <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
       </div>
 
       <!-- Klasifikasi -->
@@ -300,16 +284,86 @@
       <div class="pb-2">
         <p class="text-gray-500 text-xs">Nomor Surat</p>
 
-        <div class="flex items-center gap-2 mt-2">
-          <input
-            class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-            :value="selectedRow.nomor_surat"
-            readonly
-          />
+        <!-- Jika nomor_surat array -->
+        <div
+          v-if="Array.isArray(selectedRow.nomor_surat)"
+          class="space-y-4 mt-2"
+        >
+          <div
+            v-for="(no, idx) in selectedRow.nomor_surat"
+            :key="idx"
+            class="space-y-2"
+          >
+            <!-- Nomor surat -->
 
-          <button @click="copyNomor" class="p-2 border rounded-md">
+            <div class="flex items-center gap-2">
+              <input
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                :value="no"
+                readonly
+              />
+
+              <button
+                @click="handleCopy(no, idx)"
+                class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+              >
+                <Copy class="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+
+            <!-- Upload dengan ICON -->
+            <label
+              class="w-full mb-7 flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              <svg
+                class="w-5 h-5 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+
+              <span class="text-gray-600">Upload File</span>
+
+              <input
+                type="file"
+                class="hidden"
+                @change="handleFile(idx, $event)"
+              />
+            </label>
+          </div>
+        </div>
+
+        <!-- Jika nomor_surat string -->
+        <div v-else class="mt-2 space-y-2">
+          <div class="flex items-center gap-2">
+            <input
+              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              :value="selectedRow.nomor_surat"
+              readonly
+            />
+
+            <button
+              @click="handleCopy(no, idx)"
+              class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+            >
+              <Copy class="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          <!-- Upload tunggal -->
+
+          <label
+            class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+          >
             <svg
-              class="w-4 h-4 text-gray-500"
+              class="w-5 h-5 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -318,10 +372,18 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M8 16h8M8 12h8m-7 8h6m-2-16h2a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2h2"
+                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
               />
             </svg>
-          </button>
+
+            <span class="text-gray-600">Upload File</span>
+
+            <input
+              type="file"
+              class="hidden"
+              @change="handleFile(idx, $event)"
+            />
+          </label>
         </div>
       </div>
     </div>
@@ -355,37 +417,305 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Plus } from "lucide-vue-next";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
-
+import type { PenomoranPayload } from "~/types/penomoran";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { UInput, USelect, Modal } from "#components";
+import { usePenomoran } from "~/composables/usePenomoran";
+import type penandatangan from "../digsig/penandatangan.vue";
+import { useApi } from "~/composables/useApi";
 
-// data tabel kamu (contoh)
-import { tableData } from "~/data/usulan-data";
+const { get } = useApi();
 
-// State modal
-const openPreview = ref(false);
-const selectedRow = ref(null);
+// FETCH
+const { savePenomoran, isLoadingPenomoran } = usePenomoran();
+const toast = useToast();
+const openDetail = ref(false);
 
-// Event dari AddUsulan
-// function handlePreview(data) {
-//   console.log("DATA PREVIEW:", data);
-// }
+const form = ref({
+  tanggal: null,
+  jenis: "",
+  klasifikasi: "",
+  perihal: "",
+  jumlah: 1,
+});
 
-// function handleSubmit(data) {
-//   console.log("DATA SUBMIT:", data);
+const hapusUsulan = async () => {
+  if (!selectedRow.value?.id) return;
+
+  const id = selectedRow.value.id;
+
+  try {
+    const res = await get(`/admin/nomor-request/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.success) {
+      toast.add({
+        title: "Gagal",
+        description: "Usulan tidak dapat dihapus.",
+        color: "red",
+      });
+      return;
+    }
+
+    // Hapus row di frontend agar tabel langsung update
+    rows.value = rows.value.filter((row) => row.id !== id);
+
+    // Tutup modal
+    openDetail.value = false;
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil dihapus",
+      color: "green",
+    });
+  } catch (err) {
+    console.error("❌ Error hapus usulan:", err);
+    toast.add({
+      title: "Error",
+      description: "Terjadi kesalahan saat menghapus usulan.",
+      color: "red",
+    });
+  }
+};
+
+const fetchData = async () => {
+  try {
+    const data = await getListUsulan();
+    rows.value = data.map((item) => ({
+      id: item.id,
+      jenis: item.jenis,
+      tanggal: item.tanggal,
+      perihal: item.perihal,
+      jumlah: item.jumlah,
+      penandatangan: item.nama || "-",
+      pengusul: item.nama || "-",
+      tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
+      status: item.status,
+    }));
+  } catch (err) {
+    console.error("Gagal fetch data:", err);
+  }
+};
+
+const submitAndClose = async () => {
+  // Validasi form
+  if (
+    !form.value.tanggal ||
+    !form.value.jenis ||
+    !form.value.klasifikasi ||
+    !form.value.penandatangan ||
+    !form.value.perihal ||
+    Number(form.value.jumlah) < 1
+  ) {
+    toast.add({
+      title: "Form tidak lengkap",
+      description: "Pastikan semua field diisi dan jumlah minimal 1",
+      color: "error",
+    });
+    return;
+  }
+
+  // Siapkan payload
+  const payload = {
+    position_id: 70016786,
+    tanggal: new Date(form.value.tanggal),
+    jenis: form.value.jenis,
+    klasifikasi: form.value.klasifikasi,
+    Penandatangan: form.value.penandatangan,
+    perihal: form.value.perihal,
+    jumlah: Number(form.value.jumlah),
+  };
+
+  console.log("PAYLOAD:", payload);
+
+  try {
+    // Simpan ke backend
+    await savePenomoran(payload);
+
+    // Toast sukses
+    toast.add({
+      title: "Berhasil disimpan",
+      description: "Usulan penomoran berhasil ditambahkan",
+      color: "success",
+    });
+
+    // Tambahkan langsung ke tabel
+    rows.value.push({
+      id: Date.now().toString(),
+      jenis: payload.jenis,
+      tanggal: payload.tanggal.toLocaleDateString("id-ID"),
+      perihal: payload.perihal,
+      jumlah: payload.jumlah,
+      pengusul: "Anda", // bisa diganti sesuai user login
+      tglUsulan: new Date().toLocaleString("id-ID"),
+      status: "Belum Diajukan",
+      klasifikasi: payload.klasifikasi,
+      penandatangan: payload.penandatangan,
+      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
+    });
+
+    // Reset form
+    form.value = {
+      tanggal: "",
+      klasifikasi: "",
+      jenis: "",
+      penandatangan: "",
+      perihal: "",
+      jumlah: "",
+    };
+
+    // Tutup modal
+    emit("update:modelValue", false);
+  } catch (error: any) {
+    console.error("Gagal menyimpan penomoran:", error);
+    toast.add({
+      title: "Gagal menyimpan",
+      description: error.message || "Terjadi kesalahan saat menyimpan",
+      color: "error",
+    });
+  }
+};
+
+const { submitBooking, isLoadingBooking } = usePenomoran();
+
+// const openPreview = ref(false);
+const selectedRow = ref<any>(null);
+
+// Menampung file upload sesuai index nomor_surat
+const uploadedFiles = ref<File[]>([]);
+
+// Handle input file di modal
+const files = ref([]);
+
+const handleFile = async (index: number, e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  const base64 = await toBase64(file);
+
+  files.value[index] = {
+    file_name: file.name,
+    file_text: base64.split(",")[1], // ambil raw base64
+  };
+
+  console.log("FILES SEND:", files.value);
+};
+
+const toBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
+
+// Function saat klik row
+// function openRowModal(row) {
+//   selectedRow.value = row;
+//   openPreview.value = true;
 // }
 function handlePreview(data) {
-  previewData.value = data;
-  openPreview.value = true;
+  selectedRow.value = data;
+  openAdd.value = false;
+  openDetail.value = true;
+  uploadedFiles.value = Array(
+    Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1,
+  ).fill(null);
 }
-// Function saat klik row
-function openRowModal(row) {
-  selectedRow.value = row;
-  openPreview.value = true;
+
+// function openRowModal(row) {
+//   selectedRow.value = row;
+//   uploadedFiles.value = Array(
+//     Array.isArray(row.nomor_surat) ? row.nomor_surat.length : 1,
+//   ).fill(null);
+
+//   openDetail.value = true;
+// }
+
+const { getDetailUsulan } = usePenomoran();
+
+async function openRowModal(row) {
+  try {
+    const detail = await getDetailUsulan(row.id);
+
+    // jika BE sudah ada nomor_surat → gunakan
+    const nomorSuratArray = Array.isArray(detail.nomor_surat)
+      ? detail.nomor_surat
+      : detail.nomor_surat
+        ? [detail.nomor_surat]
+        : Array(detail.jumlah).fill(""); // kalau belum ada → generate kosong sebanyak JUMALAH
+
+    selectedRow.value = {
+      id: detail.id,
+      jenis: detail.jenis,
+      jenis_naskah: `${detail.jenis} - ${detail.perihal}`,
+      tanggal: detail.tanggal,
+      perihal: detail.perihal,
+      jumlah: detail.jumlah,
+      penandatangan: detail.nama,
+      klasifikasi: detail.klasifikasi,
+      status: detail.status,
+
+      // isi array nomor_surat
+      nomor_surat: nomorSuratArray,
+    };
+
+    // siapkan file upload array sesuai jumlah nomor
+    uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
+
+    openDetail.value = true;
+  } catch (err) {
+    console.error("Gagal load detail:", err);
+    toast.add({
+      title: "Gagal memuat detail",
+      color: "error",
+    });
+  }
 }
+
+// GET PENOMORAN
+const { getListUsulan } = usePenomoran();
+
+const rows = ref([]);
+
+onMounted(async () => {
+  const data = await getListUsulan();
+
+  rows.value = data.map((item) => ({
+    id: item.id,
+    jenis: item.jenis,
+    tanggal: item.tanggal,
+    perihal: item.perihal,
+    jumlah: item.jumlah,
+
+    // BE tidak punya “pengirim” → pakai nama
+    penandatangan: item.nama || "-",
+
+    // Pengusul → juga pakai nama
+    pengusul: item.nama || "-",
+
+    // Format created_at → “DD/MM/YYYY, HH:mm”
+    tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
+
+    status: item.status,
+  }));
+});
+
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
@@ -398,7 +728,7 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penanda Tangan", key: "penanda", sortable: false },
+  { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
@@ -451,202 +781,51 @@ const computedNomorSurat = computed(
   () => `BAC...../U/18/LPPNPI/PGD.07/XI/2024`,
 );
 
-/* Dummy data */
-const rows = ref<any[]>([
-  {
-    id: "1534490706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
+// ✅ PERBAIKAN: handleSubmitFromModal di parent component
 
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
+// const { savePenomoran, isLoadingPenomoran } = usePenomoran();
+// const toast = useToast();
 
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
+const handleSubmitFromModal = async (payload) => {
+  console.log("📥 Received payload from modal:", payload);
 
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
+  try {
+    // ✅ Kirim ke backend dulu
+    const response = await savePenomoran(payload);
 
-  {
-    id: "1534408877125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+    console.log("✅ Response dari backend:", response);
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
+    // ✅ Setelah berhasil, tambahkan ke tabel lokal
+    rows.value.push({
+      id: response.data?.id || Date.now().toString(),
+      jenis: payload.jenis,
+      tanggal: new Date(payload.tanggal).toLocaleDateString("id-ID"),
+      perihal: payload.perihal,
+      jumlah: payload.jumlah,
+      penandatangan: form.value.penandatangan || "-", // ✅ Simpan dari form untuk display saja
+      pengusul: "Anda", // atau ambil dari user session
+      tglUsulan: new Date().toLocaleString("id-ID"),
+      status: "Belum Diajukan",
+      klasifikasi: payload.klasifikasi,
+      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
+      nomor_surat: response.data?.nomor_surat || [], // dari BE
+    });
 
-  {
-    id: "15343432246126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
+    // Reset pagination
+    currentPage.value = 1;
 
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
-  },
-  {
-    id: "1322344206125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil ditambahkan",
+      color: "green",
+    });
+  } catch (error) {
+    console.error("❌ Error di handleSubmitFromModal:", error);
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
-  {
-    id: "19754344206124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
-
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
-
-  {
-    id: "1864274528224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
-
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
-  {
-    id: "1534408314525",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
-
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
-
-  {
-    id: "153434086656126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
-
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
-  },
-  {
-    id: "1975238706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
-
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
-
-  {
-    id: "18698980028224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
-
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
-]);
+    // Toast sudah ditampilkan di usePenomoran,
+    // tapi bisa tambahkan log atau handling khusus di sini
+  }
+};
 
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
@@ -716,34 +895,43 @@ const copyNomor = async () => {
   }
 };
 
-/* Submit & Hapus (sederhana, karena ini contoh) */
-const submitUsulan = () => {
-  // contoh: kirim data ke API
-  // axios.post('/api/usulan', { ... })
-  openAdd.value = false;
-};
-
-const hapusUsulan = () => {
+const submitUsulan = async () => {
   if (!selectedRow.value) return;
 
-  // Hapus row dari tabel
-  rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
+  const nomorSurat = selectedRow.value.nomor_surat;
 
-  // Tutup modal preview
-  openPreview.value = false;
+  // Siapkan payload file untuk BE
+  const filesPayload = [];
 
-  // Bersihkan selectedRow
-  selectedRow.value = null;
+  if (Array.isArray(nomorSurat)) {
+    // Multiple nomor_surat → banyak file
+    nomorSurat.forEach((no: string, idx: number) => {
+      const file = uploadedFiles.value[idx];
+      if (file) {
+        filesPayload.push({
+          file_name: file.name,
+          file_text: file, // langsung kirim file (tanpa text/base64)
+        });
+      }
+    });
+  } else {
+    // Single nomor_surat
+    const file = uploadedFiles.value[0];
+    if (file) {
+      filesPayload.push({
+        file_name: file.name,
+        file_text: file,
+      });
+    }
+  }
+
+  try {
+    await submitBooking(selectedRow.value.id_request, { files: filesPayload });
+    // openPreview.value = false;
+  } catch (e) {
+    console.error("Gagal submit booking:", e);
+  }
 };
-// const hapusUsulan = () => {
-//   if (!selectedRow.value) return;
-
-//   if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-
-//   rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-//   openPreview.value = false;
-//   selectedRow.value = null;
-// };
 
 /* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
@@ -755,12 +943,12 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-onMounted(() => {
-  document.addEventListener("click", handleDocumentClick);
-});
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
-});
+// onMounted(() => {
+//   document.addEventListener("click", handleDocumentClick);
+// });
+// onBeforeUnmount(() => {
+//   document.removeEventListener("click", handleDocumentClick);
+// });
 </script>
 
 <style scoped>

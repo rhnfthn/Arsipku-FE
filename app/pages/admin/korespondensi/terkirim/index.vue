@@ -6,7 +6,7 @@ import {
   RotateCcw, Star, Check, X, Calendar,
   Printer, Mail, AlertCircle, SquareArrowOutUpRight, Clock,
   MoreVertical, History, ArrowUpDown, Layers, Download,
-  Lock, Flag, StickyNote, Eye // Tambah Icon Eye
+  Lock, Flag, StickyNote, Eye
 } from 'lucide-vue-next';
 
 // --- STATE ---
@@ -30,6 +30,29 @@ const showPageMenu = ref(false);
 const itemsPerPage = ref(10);
 const pageOptions = [10, 25, 50, 100];
 const currentPage = ref(1);
+
+// --- MODAL READER STATE (BARU) ---
+const showReaderModal = ref(false);
+const currentReaderData = ref({
+  subject: '',
+  readList: [],
+  unreadList: []
+});
+
+const openReaderModal = (mail) => {
+  // Dummy Data Statis sesuai gambar referensi
+  currentReaderData.value = {
+    subject: mail.subject,
+    readList: [
+      { name: 'Budi Santoso', date: '20/11/2025 15:00', initial: 'B', bg: 'bg-blue-500' },
+      { name: 'Siti Rahayu', date: '20/11/2025 16:30', initial: 'S', bg: 'bg-blue-500' }
+    ],
+    unreadList: [
+      { name: 'Joko Widodo', status: 'Belum membaca', initial: 'J', bg: 'bg-gray-400' }
+    ]
+  };
+  showReaderModal.value = true;
+};
 
 // --- LOGIC ---
 const selectDateFilter = (opt) => {
@@ -222,11 +245,11 @@ const getCategoryStyle = (cat) => {
 };
 // Update Label agar sesuai gambar
 const getCategoryLabel = (cat) => {
-    if (cat === 'INTERNAL') return 'Surat Dinas Internal';
-    if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
-    if (cat === 'ND') return 'Nota Dinas';
-    if (cat === 'DISPOSISI') return 'Disposisi';
-    return cat;
+  if (cat === 'INTERNAL') return 'Surat Dinas Internal';
+  if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
+  if (cat === 'ND') return 'Nota Dinas';
+  if (cat === 'DISPOSISI') return 'Disposisi';
+  return cat;
 }
 </script>
 
@@ -279,12 +302,6 @@ const getCategoryLabel = (cat) => {
       </div>
 
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
-        <div class="relative hidden md:block group mr-1">
-          <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-primary" />
-          <input v-model="searchQuery" type="text" placeholder="Cari pesan..."
-            class="pl-8 pr-3 py-1.5 text-caption1 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-100 focus:border-primary transition-all w-32 lg:w-48 placeholder:text-neutral-400">
-        </div>
         <div class="relative">
           <button @click="showDateMenu = !showDateMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
@@ -319,7 +336,7 @@ const getCategoryLabel = (cat) => {
         </div>
 
         <button class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors">
-           <Download class="w-3.5 h-3.5" />
+          <Download class="w-3.5 h-3.5" />
         </button>
 
         <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
@@ -392,19 +409,20 @@ const getCategoryLabel = (cat) => {
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
 
               <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                  <div class="text-[13px] font-semibold text-gray-900 truncate">
-                    {{ mail.from }}
-                  </div>
+                <div class="text-[13px] font-semibold text-gray-900 truncate">
+                  {{ mail.from }}
+                </div>
               </div>
 
               <div class="text-[13px] text-gray-900 truncate flex-1">
                 {{ mail.subject }}
               </div>
 
-              <div class="hidden xl:flex shrink-0 w-32 justify-start">
-                 <span class="px-2 py-0.5 rounded text-[11px] font-medium" :class="getCategoryStyle(mail.category)">
-                    {{ getCategoryLabel(mail.category) }}
-                 </span>
+              <div class="hidden xl:flex shrink-0 w-[150px] justify-start items-center">
+                <span class="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
+                </span>
               </div>
 
             </div>
@@ -415,21 +433,11 @@ const getCategoryLabel = (cat) => {
               </span>
             </div>
 
-            <div class="pl-2 shrink-0 text-right w-8 flex items-center justify-end gap-1 text-neutral-500">
-               <Eye class="w-3.5 h-3.5 text-primary" />
-               <span class="text-[12px] font-medium text-primary">{{ mail.viewCount }}</span>
-            </div>
-
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/95 backdrop-blur-sm pl-2 py-1 shadow-sm rounded-l-md border border-gray-100 z-10">
-              <button class="p-1.5 text-neutral-500 hover:text-primary hover:bg-blue-50 rounded transition-colors" title="Arsip">
-                <Archive class="w-4 h-4" />
-              </button>
-              <button class="p-1.5 text-neutral-500 hover:text-error hover:bg-red-50 rounded transition-colors" title="Hapus">
-                <Trash2 class="w-4 h-4" />
-              </button>
-              <!-- <button class="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-gray-100 rounded transition-colors" title="Tandai">
-                <Mail class="w-4 h-4" />
-              </button> -->
+            <div
+              class="min-w-10 pl-2 shrink-0 text-right w-8 flex items-center gap-1 text-neutral-500 cursor-pointer hover:bg-gray-100 rounded p-1"
+              @click.stop="openReaderModal(mail)">
+              <Eye class="w-3.5 h-3.5 text-primary" />
+              <span class="text-[12px] font-medium text-primary">{{ mail.viewCount }}</span>
             </div>
 
           </div>
@@ -443,48 +451,47 @@ const getCategoryLabel = (cat) => {
             {{ selected.subject }}
           </h2>
           <button class="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors" @click="closeDetail">
-             <X class="w-5 h-5" />
+            <X class="w-5 h-5" />
           </button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-6 pb-6">
-           <div class="flex gap-3 mb-3 items-center">
-              <div
-                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0"
-                :class="selected.color">
-                {{ selected.initial }}
+          <div class="flex gap-3 mb-3 items-center">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0"
+              :class="selected.color">
+              {{ selected.initial }}
+            </div>
+            <div class="leading-tight">
+              <div class="font-bold text-gray-900 text-[14px]">
+                {{ selected.from }}
+                <span class="text-gray-500 font-normal text-[13px]">&lt;{{ selected.email }}&gt;</span>
               </div>
-              <div class="leading-tight">
-                 <div class="font-bold text-gray-900 text-[14px]">
-                    {{ selected.from }}
-                    <span class="text-gray-500 font-normal text-[13px]">&lt;{{ selected.email }}&gt;</span>
-                 </div>
-                 <div class="text-[13px] text-gray-500 mt-0.5">kepada saya</div>
-              </div>
-           </div>
-           <div class="mb-5 ml-[52px]">
-              <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-[13px] font-medium inline-block">
-                 {{ getCategoryLabel(selected.category) }}
-              </span>
-           </div>
-           <hr class="border-gray-100 mb-6">
-           <div class="space-y-4 mb-8">
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Kepada</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.recipient || '-' }}</div>
-              </div>
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Disposisi</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.disposition || '-' }}</div>
-              </div>
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Catatan</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.note || '-' }}</div>
-              </div>
-           </div>
-           <div class="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap">
-              {{ selected.body }}
-           </div>
+              <div class="text-[13px] text-gray-500 mt-0.5">kepada saya</div>
+            </div>
+          </div>
+          <div class="mb-5 ml-[52px]">
+            <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-[13px] font-medium inline-block">
+              {{ getCategoryLabel(selected.category) }}
+            </span>
+          </div>
+          <hr class="border-gray-100 mb-6">
+          <div class="space-y-4 mb-8">
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Kepada</div>
+              <div class="text-[15px] text-gray-900">{{ selected.recipient || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Disposisi</div>
+              <div class="text-[15px] text-gray-900">{{ selected.disposition || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Catatan</div>
+              <div class="text-[15px] text-gray-900">{{ selected.note || '-' }}</div>
+            </div>
+          </div>
+          <div class="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap">
+            {{ selected.body }}
+          </div>
         </div>
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">
@@ -495,6 +502,81 @@ const getCategoryLabel = (cat) => {
         </div>
       </div>
 
+    </div>
+
+    <div v-if="showReaderModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]">
+      <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="flex items-start justify-between p-5 pb-2">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Status Pembaca Pesan</h3>
+            <p class="text-sm text-gray-500 mt-1 line-clamp-1">{{ currentReaderData.subject }}</p>
+          </div>
+          <button @click="showReaderModal = false" class="text-gray-400 hover:text-gray-600 p-1">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-5 pt-2 flex-1 overflow-y-auto max-h-[60vh]">
+
+          <div class="mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              <span class="text-[15px] font-medium text-gray-800">Sudah Membaca ({{ currentReaderData.readList.length
+              }})</span>
+            </div>
+            <div class="space-y-2">
+              <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
+                class="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
+                    :class="reader.bg">
+                    {{ reader.initial }}
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-gray-900">{{ reader.name }}</div>
+                    <div class="text-xs text-gray-500">Dibaca pada: {{ reader.date }}</div>
+                  </div>
+                </div>
+                <div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+              <span class="text-[15px] font-medium text-gray-800">Belum Membaca ({{ currentReaderData.unreadList.length
+              }})</span>
+            </div>
+            <div class="space-y-2">
+              <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
+                class="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
+                    :class="reader.bg">
+                    {{ reader.initial }}
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-gray-900">{{ reader.name }}</div>
+                    <div class="text-xs text-gray-500">{{ reader.status }}</div>
+                  </div>
+                </div>
+                <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="p-4 border-t border-gray-100">
+          <button @click="showReaderModal = false"
+            class="w-full py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Tutup
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

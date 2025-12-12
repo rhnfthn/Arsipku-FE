@@ -100,7 +100,7 @@
         </p>
 
         <UButton
-          to="/admin/dashboard"
+          @click="redirectToSSO"
           class="items-center gap-2 px-8 py-1 sm:px-12 sm:py-2.5 sm:text-[16px] md:px-15 md:py-2 md:text-[18px] bg-[#457FB6] text-white rounded-lg hover:bg-[#35629B] transition"
         >
           <span>{{ $t("Masuk") }}</span>
@@ -160,6 +160,19 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { ArrowRight } from "lucide-vue-next";
 
 definePageMeta({ layout: false });
+
+const { getSSORedirectUrl } = useAuth()
+
+const redirectToSSO = async () => {
+  const url = await getSSORedirectUrl()
+
+  if (!url) {
+    console.error("URL SSO tidak ditemukan")
+    return
+  }
+
+  navigateTo(url, { external: true })
+}
 
 const collapsed = ref(false);
 const { setLocale } = useI18n();

@@ -7,6 +7,7 @@
     <UCard variant="soft" :ui="{ root: 'rounded-t-none ring-0 shadow-none bg-white print:hidden' }">
       <div class="flex-1 overflow-y-auto space-y-1">
 
+        <!-- Tanggal Disposisi -->
         <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 relative gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal
             Disposisi</span>
@@ -27,22 +28,25 @@
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Sifat Naskah</span>
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Sifat</span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu v-model="selectedSifat" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
-              :searchable="false" variant="none">
+              :search-input="{ placeholder: 'Cari sifat ...', size: 'lg' }" variant="none">
               <template #default>
-                <div class="flex items-center gap-1.5 min-h-[2.5rem] pr-10 w-full">
-                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">{{
-                    selectedSifat.label }}</span>
-                  <span v-else class="text-sm text-gray-400">Pilih sifat...</span>
+                <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full">
+                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">
+                    {{ selectedSifat.label }}
+                  </span>
+                  <span v-else class="text-sm text-gray-400">Pilih sifat</span>
                 </div>
               </template>
             </USelectMenu>
           </div>
         </div>
 
+        <!-- Nomor Surat -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -53,6 +57,7 @@
           </div>
         </div>
 
+        <!-- Perihal -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -63,23 +68,29 @@
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
+        <!-- Tertuju -->
+        <!-- <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tertuju</span>
-          <div class="flex flex-wrap gap-1 w-full items-center">
+          <div class="flex flex-wrap gap-1 w-full items-center min-h-[28px]">
             <div class="w-full">
               <div class="flex items-center gap-1.5 flex-wrap w-full">
                 <UBadge v-for="item in tertujuList" :key="item.value" color="primary" variant="soft" size="md"
                   class="gap-1.5 pl-2 pr-1 flex items-center rounded-md">
-                  <span class="text-xs font-medium text-left truncate max-w-[500px]">
-                    {{ item.label }}
-                  </span>
-                  <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
-                    class="w-4 h-4 hover:bg-gray-200 rounded shrink-0" @click="removeTertuju(item)" />
+                  <span class="text-xs font-medium text-left truncate max-w-[500px]">{{ item.label }}</span>
+                  <UButton icon="i-lucide-x" size="2xs" variant="ghost" :padded="false"
+                    class="w-4 h-4 hover:bg-gray-200 rounded" @click="removeTertuju(item)" />
                 </UBadge>
               </div>
 
-              <UPopover :disabled="isLoadingRecipient" :ui="{ content: 'p-0 w-full min-w-[500px]' }">
-                <div class="w-full flex items-center justify-between py-1.5 cursor-pointer bg-transparent group"
+              <UPopover :disabled="isLoadingRecipient" :content="{
+                side: 'bottom',
+                align: 'start',
+                alignOffset: 0,
+                sideOffset: 4
+              }" :ui="{
+                content: 'w-[var(--reka-popper-anchor-width)]'
+              }">
+                <div class="w-full flex items-center justify-between cursor-pointer bg-transparent group"
                   :class="isLoadingRecipient ? 'cursor-wait' : ''">
 
                   <div class="flex items-center gap-2 text-sm text-gray-400 flex-1 overflow-hidden">
@@ -87,15 +98,14 @@
                       class="animate-spin size-4 shrink-0 text-primary-500" />
 
                     <span class="truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                      {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Cari tertuju...' }}
+                      {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Pilih tertuju' }}
                     </span>
                   </div>
-
                   <UIcon name="i-heroicons-chevron-down-20-solid" class="size-5 text-gray-400 shrink-0" />
                 </div>
 
                 <template #content="{ close }">
-                  <UCommandPalette v-model="tertujuList" multiple virtualize placeholder="Cari tertuju..."
+                  <UCommandPalette v-model="tertujuList" multiple virtualize placeholder="Cari tertuju ..."
                     :groups="groups" :fuse="{
                       resultLimit: 20,
                       fuseOptions: {
@@ -104,15 +114,17 @@
                       }
                     }" class="w-full" :ui="{
                       input: '[&>input]:h-12 [&>input]:text-sm',
-                      content: 'h-[360px]',
+                      content: 'h-[250px]',
                       viewport: 'max-h-[350px]'
                     }" />
                 </template>
               </UPopover>
+
             </div>
           </div>
-        </div>
+        </div> -->
 
+        <!-- Checklist -->
         <div class="flex flex-col py-3 border-b border-gray-200 gap-3">
           <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -127,15 +139,12 @@
           </div>
         </div>
 
+        <!-- Editor -->
         <div class="flex flex-col py-4">
-          <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
-            <div class="flex flex-wrap gap-2 flex-shrink-0">
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-              <UButton v-if="!isFullscreenEditor" icon="i-lucide-maximize" color="neutral" variant="soft"
-                label="Fullscreen" @click="toggleFullscreenEditor" />
-              <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
-            </div>
+          <div class="flex justify-end gap-3 mb-2">
+            <UButton v-if="!isFullscreenEditor" icon="i-lucide-maximize" color="neutral" variant="soft"
+              label="Fullscreen" @click="toggleFullscreenEditor" />
+            <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
           </div>
 
           <ClientOnly>
@@ -262,46 +271,22 @@
 
           <div class="flex flex-col py-3 gap-2 mt-4">
             <label class="text-sm font-medium text-gray-700">Lampiran File</label>
-            <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
-              @drop.prevent="handleDrop" @click="triggerFileInput"
-              class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50"
-              :class="isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-white'">
-              <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 mb-2" />
-              <p class="text-sm text-gray-500 text-center">
-                <span class="font-semibold text-primary-600">Klik untuk upload</span> atau drag and drop file PDF
-              </p>
-              <p class="text-xs text-gray-400 mt-1">Hanya file PDF yang diperbolehkan</p>
-
-              <input ref="fileInputRef" type="file" accept="application/pdf" multiple class="hidden"
-                @change="handleFileChange" />
-            </div>
-
-            <div v-if="uploadedFiles.length > 0" class="flex flex-col gap-2 mt-2">
-              <div v-for="(file, index) in uploadedFiles" :key="index"
-                class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md shadow-sm">
-                <div class="flex items-center gap-2 overflow-hidden">
-                  <UIcon name="i-lucide-file-text" class="size-4 text-red-500 shrink-0" />
-                  <div class="flex flex-col">
-                    <span class="text-sm text-gray-700 truncate font-medium">{{ file.name }}</span>
-                    <span class="text-xs text-gray-400">{{ (file.size / 1024).toFixed(1) }} KB</span>
-                  </div>
-                </div>
-                <UButton icon="i-lucide-trash-2" color="red" variant="ghost" size="xs" :padded="false"
-                  class="w-6 h-6 hover:bg-red-50 rounded shrink-0" @click.stop="removeFile(index)" />
-              </div>
-            </div>
+            <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
+              description="Klik atau drag & drop untuk upload file PDF" />
           </div>
-        </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 flex items-center justify-end bg-white">
-          <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" />
-          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            class="px-8 font-bold" />
+          <!-- Submit -->
+          <div class="py-6 flex justify-end gap-4 bg-white">
+            <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text" />
+            <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+              class="font-bold" />
+          </div>
+
         </div>
       </div>
     </UCard>
 
+    <!-- Hidden PDF Content -->
     <ClientOnly>
       <div class="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden">
         <div ref="pdfSourceRef"
@@ -493,24 +478,24 @@ const uploadedFiles = ref<File[]>([])
 const isDragging = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const id = 70016581
-const { data: recipientData, status } = await useRecipients(id);
-const isLoadingRecipient = computed(() => status.value === 'pending');
+// const id = 70016581
+// const { data: recipientData, status } = await useRecipients(id);
+// const isLoadingRecipient = computed(() => status.value === 'pending');
 
-// --- TERTUJU LIST ---
-const tertujuList = ref<RecipientOption[]>([]);
-const groups = computed(() => {
-  const items = recipientData.value?.recipients?.ALL || [];
-  return [{
-    id: 'users',
-    label: 'Daftar Pegawai',
-    items: items
-  }];
-});
+// // --- TERTUJU LIST ---
+// const tertujuList = ref<RecipientOption[]>([]);
+// const groups = computed(() => {
+//   const items = recipientData.value?.recipients?.ALL || [];
+//   return [{
+//     id: 'users',
+//     label: 'Daftar Pegawai',
+//     items: items
+//   }];
+// });
 
-function removeTertuju(item: RecipientOption) {
-  tertujuList.value = tertujuList.value.filter(i => i.value !== item.value);
-}
+// function removeTertuju(item: RecipientOption) {
+//   tertujuList.value = tertujuList.value.filter(i => i.value !== item.value);
+// }
 
 // --- CHECKBOX STATE & OPTIONS ---
 const selectedChecklist = ref<string[]>([])
@@ -550,24 +535,10 @@ const onEditorReady = (q: any) => { quillInstance = q; }
 const cleanContent = (content: string) => content
 const toggleFullscreenEditor = () => { isFullscreenEditor.value = !isFullscreenEditor.value; document.body.style.overflow = isFullscreenEditor.value ? 'hidden' : '' }
 
-// --- DRAG & DROP HANDLERS ---
-const triggerFileInput = () => { fileInputRef.value?.click() }
-const handleFileChange = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (input.files) processFiles(input.files)
-}
-const handleDrop = (event: DragEvent) => {
-  isDragging.value = false
-  if (event.dataTransfer?.files) processFiles(event.dataTransfer.files)
-}
-const processFiles = (fileList: FileList) => {
-  const newFiles = Array.from(fileList).filter(file => file.type === 'application/pdf')
-  uploadedFiles.value = [...uploadedFiles.value, ...newFiles]
-}
-const removeFile = (i: number) => { uploadedFiles.value.splice(i, 1) }
-
 // --- PDF GENERATOR ---
+// --- PDF GENERATOR & MERGER ---
 async function openPreview() {
+  // 1. Sync Content Editor
   if (quillInstance) {
     rawHtmlContent.value = quillInstance.root.innerHTML
   } else {
@@ -583,8 +554,11 @@ async function openPreview() {
   }
 
   isOpenPreview.value = true
+  // Reset URL sebelumnya agar loading terlihat
+  if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
   pdfUrl.value = ''
 
+  // 2. Clone Element & Style Injection
   const clone = element.cloneNode(true) as HTMLElement
   const style = document.createElement('style');
   style.innerHTML = `
@@ -595,28 +569,27 @@ async function openPreview() {
     p { margin: 0 !important; padding-bottom: 0.5em !important; line-height: 1.5 !important; }
     *:not(td):not(tr) { background-color: transparent !important; }
     svg, path { fill: #000000 !important; stroke: #000000 !important; }
-
-    /* FIX NUMBERING LIST DI HASIL PDF */
     ol { list-style-type: decimal !important; padding-left: 20px !important; margin-left: 10px !important; }
     ul { list-style-type: disc !important; padding-left: 20px !important; margin-left: 10px !important; }
     li { display: list-item !important; }
   `;
   clone.appendChild(style);
 
-  // FIX LAYOUT SHIFT:
-  // Gunakan 'left: -9999px' agar elemen tidak terlihat TAPI tidak mempengaruhi flow layout utama.
+  // Ghost Div untuk rendering HTML2PDF
   const ghostDiv = document.createElement('div')
   ghostDiv.style.position = 'fixed';
   ghostDiv.style.top = '0';
-  ghostDiv.style.left = '-9999px'; // Pindahkan jauh ke kiri luar layar
+  ghostDiv.style.left = '-9999px';
   ghostDiv.style.width = '180mm';
   ghostDiv.style.padding = '0';
-
   ghostDiv.appendChild(clone)
   document.body.appendChild(ghostDiv)
 
   try {
+    // Import Library Secara Dynamic
     const html2pdf = (await import('html2pdf.js')).default
+    const { PDFDocument } = await import('pdf-lib')
+
     const opt = {
       margin: [15, 15, 20, 15],
       filename: `Disposisi_${Date.now()}.pdf`,
@@ -626,11 +599,44 @@ async function openPreview() {
       pagebreak: { mode: ['css'] }
     };
 
-    const pdfBlob = await html2pdf().set(opt).from(clone).output('bloburl');
-    pdfUrl.value = pdfBlob;
+    // 3. GENERATE PDF UTAMA (Disposisi) -> ARRAY BUFFER
+    const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer');
+
+    // 4. SETUP MERGING
+    // Buat dokumen kosong baru
+    const mergedPdf = await PDFDocument.create();
+
+    // Load PDF Utama (Disposisi)
+    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer);
+    const mainPages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices());
+    mainPages.forEach((page) => mergedPdf.addPage(page));
+
+    // 5. LOOP LAMPIRAN & MERGE
+    if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+      for (const file of uploadedFiles.value) {
+        // Pastikan hanya memproses PDF
+        if (file.type === 'application/pdf') {
+          try {
+            const fileBuffer = await file.arrayBuffer();
+            const attachmentDoc = await PDFDocument.load(fileBuffer);
+            const attachmentPages = await mergedPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices());
+
+            attachmentPages.forEach((page) => mergedPdf.addPage(page));
+          } catch (err) {
+            console.error(`Gagal merge file ${file.name}:`, err);
+          }
+        }
+      }
+    }
+
+    // 6. FINALIZE & DISPLAY
+    const mergedPdfBytes = await mergedPdf.save();
+    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+    pdfUrl.value = URL.createObjectURL(blob);
 
   } catch (err: any) {
-    console.error("PDF Error:", err); alert("Gagal: " + err.message);
+    console.error("PDF Error:", err);
+    alert("Gagal: " + err.message);
     isOpenPreview.value = false;
   } finally {
     document.body.removeChild(ghostDiv)

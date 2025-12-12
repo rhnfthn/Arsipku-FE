@@ -19,9 +19,10 @@
       </span>
     </NuxtLink>
 
-    <div v-if="hasChildren && isOpen" class="mt-1 mx-3 space-y-0.5">
+    <!-- <div v-if="hasChildren && isOpen" class="mt-1 mx-3 space-y-0.5"> -->
+    <div v-if="hasChildren && isOpen" class="mt-0.5 mx-3 space-y-0.5">
       <NuxtLink v-for="(child, i) in item.children" :key="i" :to="child.to"
-        class="whitespace-nowrap flex items-center px-4 py-1.5 pl-12 rounded-full text-[14px] transition-colors"
+        class="whitespace-nowrap flex items-center px-4 py-2.5 my-1 pl-12 rounded-full text-[14px] transition-colors dark:text-gray-400"
         :class="route.path === child.to ? 'bg-[#D3E3FD] font-bold text-gray-900' : 'text-gray-600 hover:bg-gray-100'">
         {{ child.label }}
       </NuxtLink>
@@ -63,7 +64,7 @@ const toggle = () => {
 
 // Style tetap sama untuk kedua kondisi
 const containerClasses = computed(() => [
-  'flex items-center gap-4 px-4 py-2 mx-0 rounded-full min-w-[200px] cursor-pointer transition-colors duration-200 select-none',
+  'flex items-center gap-3 my-1.5 px-4 py-2.5 mx-0 rounded-full min-w-[200px] cursor-pointer transition-colors duration-200 select-none',
   isActive.value
     ? 'bg-[#D3E3FD] text-gray-900 font-bold'
     : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',

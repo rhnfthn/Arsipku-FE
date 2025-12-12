@@ -31,11 +31,24 @@ import {
   StickyNote,
 } from "lucide-vue-next";
 
+import { useInbox } from "~/composables/useInbox";
+
+const { user, getProfile } = useAuth()
+
+// Ambil profil user saat page load
+onMounted(async () => {
+  if (!user.value) {
+    await getProfile()              
+  }
+})
+
+const positionId = computed(() => user.value?.position || null)
+
+const { items, pending, error, refresh } = useInbox(positionId)
+
 // --- STATE ---
 const selected = ref(null);
 const selectedIds = ref(new Set());
-const showDateFilter = ref(false);
-const dateFilterLabel = ref("30 Hari");
 const activeTab = ref("ALL");
 const searchQuery = ref("");
 
@@ -94,142 +107,40 @@ const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun"];
 const tabs = [
   { label: "All", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DISPOSISI", icon: Send },
-  { label: "Internal", value: "INTERNAL", icon: Building },
-  { label: "Eksternal", value: "EXTERNAL", icon: Building2 },
+  { label: "Disposisi", value: "DI", icon: Send },
+  { label: "Internal", value: "SDI", icon: Building },
+  { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
 ];
 
-// --- DATA DUMMY ---
-const generateDummy = () => {
-  const base = [
-    {
-      id: 101,
-      from: "VP OF ENTERPRISE TECHNOLOGY PLANNING",
-      email: "tte.1335@company.com",
-      subject:
-        "Pemberitahuan Pelaksanaan Kegiatan Latihan Emergency Drill di Kantor Pusat Perum LPPNPI",
-      body: "Dengan hormat, kami mengajukan proposal anggaran untuk kuartal pertama tahun 2025. Anggaran yang diajukan sebesar Rp 500.000.000 dengan rincian sebagai berikut: Operasional 40%, Pengembangan 35%, Marketing 15%, dan Cadangan 10%. Mohon untuk dapat ditinjau dan disetujui segera.",
-      category: "DISPOSISI",
-      date: "09:44",
-      fullDate: "2025-11-21 09:44",
-      initial: "VP",
-      color: "bg-purple-600 text-white", // Update warna avatar sesuai gambar
-      isRead: false,
-      isFlagged: true,
-      isStarred: false,
-      isLocked: true,
-      hasNote: true,
-      isArchived: false,
-      canOpenTab: true,
-      recipient: "Kepala Divisi Keuangan",
-      disposition: "Untuk ditindaklanjuti",
-      note: "Mohon segera diproses sebelum akhir bulan",
-    },
-    {
-      id: 2,
-      from: "SITI RAHMA - MANAGER KEUANGAN",
-      email: "siti@email.com",
-      subject: "Undangan Rapat Koordinasi Anggaran Tahunan Q4",
-      body: "Disposisi Surat...",
-      category: "INTERNAL",
-      date: "11-21",
-      fullDate: "2025-11-21 11:00",
-      initial: "SR",
-      color: "bg-emerald-100 text-emerald-600",
-      isRead: true,
-      isFlagged: false,
-      isStarred: true,
-      isLocked: false,
-      hasNote: false,
-      isArchived: true,
-      canOpenTab: true,
-      recipient: "Staff",
-      disposition: "-",
-      note: "-",
-    },
-    {
-      id: 3,
-      from: "AHMAD HIDAYAT - SENIOR STAFF",
-      email: "ahmad@email.com",
-      subject: "Laporan Kegiatan Bulan November",
-      body: "Laporan...",
-      category: "INTERNAL",
-      date: "11-20",
-      fullDate: "2025-11-20 09:00",
-      initial: "AH",
-      color: "bg-emerald-100 text-emerald-600",
-      isRead: false,
-      isFlagged: true,
-      isStarred: false,
-      isLocked: true,
-      hasNote: true,
-      isArchived: false,
-      canOpenTab: true,
-      recipient: "IT",
-      disposition: "Arsipkan",
-      note: "Aman.",
-    },
-  ];
-  let res = [];
-  for (let i = 0; i < 5; i++) {
-    res = [...res, ...base.map((x) => ({ ...x, id: x.id + i * 100 }))];
-  }
-  return res;
-};
-
-const emails = ref(generateDummy());
+const emails = items;
 
 const filteredEmails = computed(() => {
-  let result = emails.value;
+  let result = items.value;
+
   if (activeTab.value !== "ALL")
     result = result.filter((mail) => mail.category === activeTab.value);
+
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     result = result.filter(
       (mail) =>
-        mail.subject.toLowerCase().includes(q) ||
-        mail.from.toLowerCase().includes(q),
+        (mail.subject || "").toLowerCase().includes(q) ||
+        (mail.from || "").toLowerCase().includes(q)
     );
   }
-  switch (activeFilterType.value) {
-    case "Favorite":
-      result = result.filter((mail) => mail.isStarred);
-      break;
-    case "Sudah Dibaca":
-      result = result.filter((mail) => mail.isRead);
-      break;
-    case "Belum Dibaca":
-      result = result.filter((mail) => !mail.isRead);
-      break;
-    case "Sudah Tinjut":
-      result = result.filter(
-        (mail) => mail.disposition && mail.disposition !== "-",
-      );
-      break;
-    case "Belum Tinjut":
-      result = result.filter(
-        (mail) => !mail.disposition || mail.disposition === "-",
-      );
-      break;
-    case "Note":
-      result = result.filter((mail) => mail.note && mail.note !== "-");
-      break;
-    case "Lock":
-      result = result.filter((mail) => mail.isLocked);
-      break;
-  }
+
+  // filter tambahan...
+  if (activeFilterType.value === "Favorite")
+    result = result.filter((a) => a.isStarred);
+
   return result;
 });
-
-watch([activeTab, searchQuery, activeFilterType], () => {
-  currentPage.value = 1;
-});
-
 const totalItems = computed(() => filteredEmails.value.length);
 const totalPages = computed(
-  () => Math.ceil(totalItems.value / itemsPerPage.value) || 1,
+  () => Math.ceil(totalItems.value / itemsPerPage.value) || 1
 );
+
 const paginatedEmails = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
@@ -590,7 +501,7 @@ const getCategoryLabel = (cat) => {
                     ? 'text-yellow-400 fill-yellow-400'
                     : 'text-neutral-300'
                 "
-                @click.stop="mail.isStarred = !mail.isStarred"
+                @click.stop="toggleFavorit(mail.id)"
                 title="Favorite"
               />
             </div>
@@ -648,16 +559,16 @@ const getCategoryLabel = (cat) => {
                   "
                   title="Tindak Lanjut"
                 />
-                <Star
-                  class="w-4 h-4 transition-colors hover:text-yellow-400"
-                  :class="
-                    mail.isStarred
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-neutral-300'
-                  "
-                  @click.stop="mail.isStarred = !mail.isStarred"
-                  title="Favorite"
-                />
+              <Star
+                class="w-4 h-4 transition-colors hover:text-yellow-400"
+                :class="
+                  mail.isStarred
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-neutral-300'
+                "
+                @click.stop="toggleFavorit(mail.id)"
+                title="Favorite"
+              />
                 <Lock
                   class="w-4 h-4 transition-colors hover:text-neutral-600"
                   :class="
@@ -673,8 +584,9 @@ const getCategoryLabel = (cat) => {
                 <Archive
                   class="w-4 h-4 transition-colors hover:text-purple-600"
                   :class="
-                    mail.isArchived ? 'text-purple-500' : 'text-neutral-300'
+                    mail.isArchived ? 'text-purple-500 fill-purple-500' : 'text-neutral-300'
                   "
+                  @click.stop="toggleArsip(mail.id)"
                   title="Arsip Flag"
                 />
               </div>

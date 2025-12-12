@@ -1,378 +1,481 @@
-  <script setup>
-  import { ref, computed } from "vue";
-  import {
-    Inbox, FileText, Send, Building, Building2, FilePen,
-    Search, Archive, Trash2, ChevronLeft, ChevronRight,
-    RotateCcw, Star, Check, X, Calendar,
-    Printer, Mail, AlertCircle, SquareArrowOutUpRight, Clock, Edit
-  } from 'lucide-vue-next';
+<script setup>
+import { useRouter } from "vue-router";
+import { ref, computed, watch, onMounted } from "vue";
+import {
+  Inbox, FileText, Send, Building, Building2, FilePen,
+  Search, Archive, Trash2, ChevronLeft, ChevronRight,
+  RotateCcw, Star, Check, X, Calendar,
+  Printer, Mail, AlertCircle, SquareArrowOutUpRight, Clock, Edit,
+  MoreVertical, History, ArrowUpDown, Layers, Download, Loader2, AlertTriangle
+} from 'lucide-vue-next';
 
-  // --- STATE ---
-  const selected = ref(null);
-  const selectedIds = ref(new Set());
-  const showDateFilter = ref(false);
-  const dateFilterLabel = ref("30 Hari");
-  const activeTab = ref("ALL");
-  const searchQuery = ref("");
+// Import Composable
+// import { useDraft } from '~/composables/useDraft';
 
-  // Options
-  const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun"];
-  const tabs = [
-    { label: "All", value: "ALL", icon: Inbox },
-    { label: "Nota Dinas", value: "ND", icon: FileText },
-    { label: "Disposisi", value: "DISPOSISI", icon: Send },
-    { label: "Internal", value: "INTERNAL", icon: Building },
-    { label: "Eksternal", value: "EXTERNAL", icon: Building2 },
-    { label: "Konsep", value: "KONSEP", icon: FilePen },
+// --- STATE ---
+const { drafts, fetchDrafts, deleteDraft, isLoadingDraft } = useDraft();
+
+const USER_POSITION_ID = "70016786";
+
+const router = useRouter();
+const selected = ref(null); // Masih disimpan biar tidak error, tapi tidak dipakai untuk UI preview
+const selectedIds = ref(new Set());
+const activeTab = ref("ALL");
+const searchQuery = ref("");
+
+// State Modal Delete
+const showDeleteModal = ref(false);
+const itemToDelete = ref(null);
+const isDeleting = ref(false);
+
+// --- TOOLBAR STATE ---
+const showFilterMenu = ref(false);
+const activeFilterType = ref("Semua");
+const showDateMenu = ref(false);
+const activeDateLabel = ref("30 Hari");
+const showSortMenu = ref(false);
+const activeSortLabel = ref("Terbaru");
+const showPageMenu = ref(false);
+const itemsPerPage = ref(10);
+const currentPage = ref(1);
+
+// Options
+const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
+const sortOptions = ["Terbaru", "Terlama"];
+const pageOptions = [5, 10, 25, 50];
+
+const tabs = [
+  { label: "All", value: "ALL", icon: Inbox },
+  { label: "Nota Dinas", value: "ND", icon: FileText },
+  { label: "Disposisi", value: "DISPOSISI", icon: Send },
+  { label: "Internal", value: "INTERNAL", icon: Building },
+  { label: "Eksternal", value: "EXTERNAL", icon: Building2 },
+  { label: "Konsep", value: "KONSEP", icon: FilePen },
+];
+
+// --- API & DATA MAPPING ---
+
+const getInitial = (name) => name ? name.substring(0, 2).toUpperCase() : 'NA';
+const getRandomColor = (id) => {
+  const colors = [
+    "bg-blue-100 text-blue-600",
+    "bg-purple-100 text-purple-600",
+    "bg-emerald-100 text-emerald-600",
+    "bg-indigo-100 text-indigo-600",
+    "bg-orange-100 text-orange-600"
   ];
+  return colors[id.charCodeAt(0) % colors.length] || colors[0];
+};
 
-  // --- DATA DUMMY ---
-  const emails = ref([
-    {
-      id: 2,
-      from: "Siti Rahma",
-      email: "siti.rahma@email.com",
-      subject: "Undangan Rapat Koordinasi",
-      body: "Disposisi Surat Undangan Rapat Koordinasi Mingguan",
-      category: "DISPOSISI",
-      date: "11-21",
-      fullDate: "2025-11-21 11:00",
-      initial: "SR",
-      color: "bg-sky-100 text-sky-600",
-      isRead: true,
-      isStarred: false,
-      recipient: "Seluruh Staff",
-      disposition: "-",
-      note: "-"
-    },
-    {
-      id: 3,
-      from: "Ahmad Hidayat",
-      email: "ahmad.h@email.com",
-      subject: "Laporan Kegiatan",
-      body: "Laporan Kegiatan Bulan November",
-      category: "INTERNAL",
-      date: "11-20",
-      fullDate: "2025-11-20 09:00",
-      initial: "AH",
-      color: "bg-emerald-100 text-emerald-600",
-      isRead: true,
-      isStarred: false,
-      recipient: "IT Manager",
-      disposition: "Arsipkan",
-      note: "Server aman."
-    },
-    {
-      id: 1,
-      from: "Budi Santoso",
-      email: "budi.santoso@email.com",
-      subject: "Pengajuan Anggaran Q1 2025",
-      body: "Berikut terlampir draft pengajuan anggaran untuk kuartal pertama tahun 2025.",
-      category: "ND",
-      date: "11-21",
-      fullDate: "2025-11-21 14:36",
-      initial: "BS",
-      color: "bg-purple-100 text-purple-600",
-      isRead: false,
-      isStarred: false,
-      recipient: "Kepala Divisi Keuangan",
-      disposition: "Mohon analisa kelayakan",
-      note: "Segera proses sebelum akhir bulan."
-    },
-    {
-      id: 4,
-      from: "PT. Mitra Sejahtera",
-      email: "info@mitrasejahtera.com",
-      subject: "Penawaran Kerjasama Distribusi Logistik",
-      body: "PT. Mitra Sejahtera bermaksud menawarkan kerjasama strategis dalam bidang distribusi.",
-      category: "EXTERNAL",
-      date: "11-20",
-      fullDate: "2025-11-20 14:20",
-      initial: "MS",
-      color: "bg-indigo-600 text-white",
-      isRead: false,
-      isStarred: true,
-      recipient: "Direktur Utama",
-      disposition: "Mohon ditinjau",
-      note: "Penawaran menarik untuk dipertimbangkan"
-    },
-  ]);
+// HANDLER EDIT (Navigasi ke Form)
+const handleEdit = (mail) => {
+  router.push({
+    path: '/admin/korespondensi/tulis/nota-dinas',
+    query: {
+      draft_id: mail.id,
+      mode: 'edit'
+    }
+  });
+};
 
-  // --- LOGIC ---
-  const filteredEmails = computed(() => {
-    let result = emails.value;
-    if (activeTab.value !== "ALL") {
+// Format tanggal
+const formatDateShort = (isoString) => {
+  if (!isoString) return '-';
+  const date = new Date(isoString);
+  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+const formatFullDate = (isoString, time) => {
+  if (!isoString) return '-';
+  const date = new Date(isoString);
+  const d = date.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return `${d} ${time || ''}`;
+}
+
+onMounted(async () => {
+  await refreshData();
+});
+
+const refreshData = async () => {
+  await fetchDrafts(USER_POSITION_ID);
+};
+
+// MAPPING DATA
+const mappedEmails = computed(() => {
+  if (!drafts.value) return [];
+
+  return drafts.value.map(item => ({
+    id: item.id_naskah,
+    from: item.penerima || 'Tanpa Penerima',
+    email: 'user@internal.com',
+    subject: item.isi_pesan || 'Tanpa Subjek',
+    body: item.isi_pesan,
+    category: item.jenis || 'KONSEP',
+    date: formatDateShort(item.tanggal),
+    fullDate: formatFullDate(item.tanggal, item.waktu),
+    rawDate: new Date(item.tanggal), // Tambahan untuk sorting/filtering
+    initial: getInitial(item.penerima),
+    color: getRandomColor(item.id_naskah),
+    isRead: true,
+    recipient: item.penerima,
+    originalData: item
+  }));
+});
+
+// --- FILTERING & PAGINATION LOGIC ---
+
+const filteredEmails = computed(() => {
+  let result = [...mappedEmails.value]; // Clone array agar aman
+
+  // 1. Filter Tab
+  if (activeTab.value !== "ALL") {
+    if (activeTab.value === 'INTERNAL' && result.some(x => x.category === 'KA')) {
+      result = result.filter(mail => mail.category === 'KA' || mail.category === 'INTERNAL');
+    } else {
       result = result.filter(mail => mail.category === activeTab.value);
     }
-    if (searchQuery.value) {
-      const q = searchQuery.value.toLowerCase();
-      result = result.filter(mail =>
-        mail.subject.toLowerCase().includes(q) ||
-        mail.from.toLowerCase().includes(q)
-      );
-    }
-    return result;
-  });
-
-  const toggleSelection = (id) => {
-    if (selectedIds.value.has(id)) selectedIds.value.delete(id);
-    else selectedIds.value.add(id);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.value.size === filteredEmails.value.length) selectedIds.value.clear();
-    else filteredEmails.value.forEach(mail => selectedIds.value.add(mail.id));
-  };
-
-  const isAllSelected = computed(() => filteredEmails.value.length > 0 && selectedIds.value.size === filteredEmails.value.length);
-
-  const selectMail = (mail) => {
-    selected.value = mail;
-    if (!mail.isRead) mail.isRead = true;
-  };
-
-  const closeDetail = () => {
-    selected.value = null;
-  };
-
-  // Helpers Style
-  const getCategoryStyle = (cat) => {
-    switch (cat) {
-      case 'ND': return 'bg-blue-100 text-blue-700';
-      case 'DISPOSISI': return 'bg-purple-100 text-purple-700';
-      case 'INTERNAL': return 'bg-blue-100 text-blue-700';
-      case 'EXTERNAL': return 'bg-indigo-100 text-indigo-700';
-      case 'KONSEP': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-50 text-gray-600';
-    }
-  };
-
-  const getCategoryLabel = (cat) => {
-    if (cat === 'INTERNAL') return 'SDI';
-    if (cat === 'EXTERNAL') return 'SDE';
-    return cat;
   }
+
+  // 2. Filter Search
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter(mail =>
+      mail.subject.toLowerCase().includes(q) ||
+      mail.from.toLowerCase().includes(q)
+    );
+  }
+
+  // 3. Filter Tanggal (TOOLBAR FEATURE)
+  if (activeDateLabel.value !== "Semua") {
+    const now = new Date();
+    let days = 30; // Default
+    if (activeDateLabel.value === "7 Hari") days = 7;
+    if (activeDateLabel.value === "30 Hari") days = 30;
+    if (activeDateLabel.value === "60 Hari") days = 60;
+    if (activeDateLabel.value === "1 Tahun") days = 365;
+
+    const limitDate = new Date();
+    limitDate.setDate(now.getDate() - days);
+
+    result = result.filter(mail => mail.rawDate >= limitDate);
+  }
+
+  // 4. Sorting (TOOLBAR FEATURE)
+  if (activeSortLabel.value === "Terbaru") {
+    result.sort((a, b) => b.rawDate - a.rawDate);
+  } else {
+    result.sort((a, b) => a.rawDate - b.rawDate);
+  }
+
+  return result;
+});
+
+const totalItems = computed(() => filteredEmails.value.length);
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value) || 1);
+
+const paginatedEmails = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredEmails.value.slice(start, end);
+});
+
+const paginationInfo = computed(() => {
+  if (totalItems.value === 0) return "0-0 Dari 0";
+  const start = (currentPage.value - 1) * itemsPerPage.value + 1;
+  const end = Math.min(start + itemsPerPage.value - 1, totalItems.value);
+  return `${start}-${end} Dari ${totalItems.value}`;
+});
+
+watch([activeTab, searchQuery, activeFilterType, activeDateLabel, itemsPerPage], () => { currentPage.value = 1; });
+
+// --- ACTIONS ---
+
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+
+const toggleSelection = (id) => {
+  if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+  else selectedIds.value.add(id);
+};
+
+const toggleSelectAll = () => {
+  if (selectedIds.value.size === paginatedEmails.value.length) selectedIds.value.clear();
+  else paginatedEmails.value.forEach(mail => selectedIds.value.add(mail.id));
+};
+
+const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
+
+// TOOLBAR HANDLERS
+const selectDateFilter = (option) => {
+  activeDateLabel.value = option;
+  showDateMenu.value = false;
+}
+
+const selectSortOption = (option) => {
+  activeSortLabel.value = option;
+  showSortMenu.value = false;
+}
+
+const selectPageOption = (option) => {
+  itemsPerPage.value = option;
+  showPageMenu.value = false;
+}
+
+// DELETE ACTIONS MODAL
+const confirmDeleteModal = (mail) => {
+  itemToDelete.value = mail;
+  showDeleteModal.value = true;
+};
+
+const handleDelete = async () => {
+  if (!itemToDelete.value) return;
+
+  isDeleting.value = true;
+  try {
+    await deleteDraft(itemToDelete.value.id, USER_POSITION_ID);
+    await refreshData();
+    showDeleteModal.value = false;
+    itemToDelete.value = null;
+    selectedIds.value.delete(itemToDelete.value?.id); // Hapus dari seleksi jika ada
+  } catch (e) {
+    console.error(e);
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+// Helper Style
+const getCategoryStyle = (cat) => {
+  switch (cat) {
+    case 'ND': return 'bg-blue-100 text-blue-700';
+    case 'DISPOSISI': return 'bg-purple-100 text-purple-700';
+    case 'INTERNAL': case 'KA': return 'bg-blue-100 text-blue-700';
+    case 'EXTERNAL': return 'bg-indigo-100 text-indigo-700';
+    case 'KONSEP': return 'bg-gray-100 text-gray-700';
+    default: return 'bg-gray-50 text-gray-600';
+  }
+};
+
+const getCategoryLabel = (cat) => {
+  if (cat === 'INTERNAL' || cat === 'KA') return 'Surat Dinas Internal';
+  if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
+  if (cat === 'ND') return 'Nota Dinas';
+  if (cat === 'DISPOSISI') return 'Disposisi';
+  return cat;
+}
 </script>
 
-  <template>
-    <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
-      :class="['glass-blue']">
+<template>
+  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
+    :class="['glass-blue']">
 
-      <!-- HEADER (h-14) -> glass header -->
-      <div
-        class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
-        <!-- bagian kiri -->
-        <div class="flex items-center gap-1 shrink-0">
-          <div class="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition-colors group" @click="toggleSelectAll">
-            <div
-              class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
-              :class="{ 'bg-primary border-primary': isAllSelected, 'group-hover:border-gray-600': !isAllSelected }">
-              <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
-            </div>
+    <div
+      class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
+
+      <div class="flex items-center gap-1 shrink-0 relative">
+        <div class="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition-colors group" @click="toggleSelectAll">
+          <div
+            class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
+            :class="{ 'bg-primary border-primary': isAllSelected, 'group-hover:border-gray-600': !isAllSelected }">
+            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
           </div>
+        </div>
+        <button @click="refreshData"
+          class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
+          title="Muat Ulang" :disabled="isLoadingDraft">
+          <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoadingDraft }" />
+        </button>
+        <template v-if="selectedIds.size > 0">
+          <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
+          <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
+            <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
+          </div>
+        </template>
+      </div>
 
-          <button class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-            title="Muat Ulang">
-            <RotateCcw class="w-4 h-4" />
+      <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
+
+        <div class="relative">
+          <button @click="showDateMenu = !showDateMenu"
+            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
+            <History class="w-4 h-4" />
+            <span class="text-xs font-medium hidden sm:inline">{{ activeDateLabel }}</span>
           </button>
 
-          <template v-if="selectedIds.size > 0">
-            <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
-            <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
-              <button class="p-1.5 text-neutral-500 hover:bg-red-50 hover:text-error rounded">
-                <Trash2 class="w-4 h-4" />
-              </button>
-              <button class="p-1.5 text-neutral-500 hover:bg-blue-50 hover:text-primary rounded hidden sm:block">
-                <Archive class="w-4 h-4" />
-              </button>
-            </div>
-          </template>
+          <div v-if="showDateMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
+              class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
+              :class="{'text-primary font-semibold bg-gray-50': activeDateLabel === opt}">
+              {{ opt }}
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0 min-w-0">
-          <div class="relative hidden md:block group">
-            <Search
-              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-primary" />
-            <input v-model="searchQuery" type="text" placeholder="Cari..."
-              class="pl-8 pr-3 py-1.5 text-caption1 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-100 focus:border-primary transition-all w-32 lg:w-56 placeholder:text-neutral-400">
+        <div class="relative">
+          <button @click="showSortMenu = !showSortMenu"
+            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
+            <ArrowUpDown class="w-4 h-4" />
+            <span class="text-xs font-medium hidden sm:inline">{{ activeSortLabel }}</span>
+          </button>
+
+          <div v-if="showSortMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
+              class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
+              :class="{'text-primary font-semibold bg-gray-50': activeSortLabel === opt}">
+              {{ opt }}
+            </button>
+          </div>
+        </div>
+
+        <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
+
+        <div class="flex items-center gap-1">
+          <div class="relative">
+            <button @click="showPageMenu = !showPageMenu"
+              class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
+              <Layers class="w-4 h-4" />
+              <!-- <span class="text-xs font-medium hidden sm:inline">{{ itemsPerPage }}/Hal</span> -->
+            </button>
+
+             <div v-if="showPageMenu"
+              class="absolute top-full right-0 mt-1 w-24 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button v-for="opt in pageOptions" :key="opt" @click="selectPageOption(opt)"
+                class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                :class="{'text-primary font-semibold bg-gray-50': itemsPerPage === opt}">
+                {{ opt }} Item
+              </button>
+            </div>
           </div>
 
-          <!-- <div class="relative shrink-0">
-            <button @click="showDateFilter = !showDateFilter"
-              class="flex items-center gap-2 px-2 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-md text-caption1m text-neutral-700 transition-colors border border-transparent hover:border-gray-200">
-              <Calendar class="w-3.5 h-3.5 text-neutral-500" />
-              <span class="hidden sm:inline whitespace-nowrap">{{ dateFilterLabel }}</span>
-            </button>
-          </div> -->
-
-          <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
-
-          <div class="flex items-center gap-1 text-caption1 text-neutral-500 shrink-0">
-            <button class="p-1 hover:bg-gray-100 rounded disabled:opacity-30">
+          <div class="flex items-center gap-1 text-caption1 text-neutral-600 shrink-0 h-[34px]">
+            <span class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500">
+              {{ paginationInfo }}
+            </span>
+            <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="prevPage"
+              :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
-            <span class="mx-1 font-medium hidden sm:inline">1-5</span>
-            <button class="p-1 hover:bg-gray-100 rounded disabled:opacity-30">
+            <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="nextPage"
+              :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="flex-1 flex overflow-hidden relative w-full">
+    <div class="flex-1 flex overflow-hidden relative w-full">
 
-        <div
-          class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden"
-          :class="selected ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0' : 'flex-1 w-full'">
+      <div
+        class="flex flex-col bg-white transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
 
-          <div class="px-3 py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
-            <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
-              <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary" class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0
+        <div class="px-3 py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
+          <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
+            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary" class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0
                 active:bg-primary-100 active:text-primary-500" :class="activeTab === tab.value
                   ? 'bg-primary-400 text-white border-primary-400'
                   : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'">
-                <component :is="tab.icon" class="w-4 h-4" />
-                {{ tab.label }}
-              </UButton>
-            </div>
-          </div>
-
-          <div class="flex-1 pb-10 w-full">
-            <div v-for="mail in filteredEmails" :key="mail.id" @click="selectMail(mail)"
-              class="group flex gap-2 items-center px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full h-[48px]"
-              :class="selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'">
-              <div class="flex items-center gap-3 pr-2 shrink-0" @click.stop>
-                <div
-                  class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
-                  :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white'"
-                  @click="toggleSelection(mail.id)">
-                  <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
-                </div>
-                <Star class="w-4 h-4 cursor-pointer transition-colors"
-                  :class="mail.isStarred ? 'fill-warning text-warning' : 'text-gray-400 hover:text-warning'"
-                  @click="mail.isStarred = !mail.isStarred" />
-              </div>
-              <div class="flex-1 min-w-0 flex items-center gap-3 overflow-hidden">
-
-                <span class="w-28 md:w-40 xl:w-44 truncate text-[13px] text-neutral-900 shrink-0"
-                  :class="!mail.isRead ? 'font-bold' : 'font-semibold'">
-                  {{ mail.from }}
-                </span>
-
-                <div class="flex-1 min-w-0 flex items-center text-caption1 text-neutral-500 overflow-hidden">
-                  <span class="text-neutral-900 truncate mr-1 max-w-[60%] md:max-w-none text-[13px]"
-                    :class="!mail.isRead ? 'font-bold' : 'font-medium'">
-                    {{ mail.subject }}
-                  </span>
-                </div>
-
-                <div class="hidden xl:flex shrink-0">
-                  <span class="px-2 py-[1px] rounded-full text-[11px] font-semibold whitespace-nowrap"
-                    :class="getCategoryStyle(mail.category)">
-                    {{ getCategoryLabel(mail.category) }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="pl-2 shrink-0 flex justify-end w-[65px] md:w-[75px]">
-
-                <span class="text-caption2b text-neutral-500 text-[12px] group-hover:hidden whitespace-nowrap">
-                  {{ mail.date }}
-                </span>
-
-                <div class="hidden group-hover:flex items-center gap-2 bg-white/90 backdrop-blur-sm p-2 shadow rounded justify-end">
-                  <!-- EDIT -->
-                  <button class="text-neutral-500 hover:text-primary transition-colors" title="Edit">
-                    <Edit class="w-4 h-4" />
-                  </button>
-
-                  <!-- DELETE -->
-                  <button class="text-neutral-500 hover:text-error transition-colors" title="Hapus">
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-
-              </div>
-
-            </div>
+              <component :is="tab.icon" class="w-4 h-4" />
+              {{ tab.label }}
+            </UButton>
           </div>
         </div>
 
-        <div v-if="selected"
-          class="flex flex-col bg-white absolute inset-0 z-40 lg:static lg:flex-1 lg:z-0 animate-in slide-in-from-right-8 duration-200 overflow-hidden border-l border-gray-200">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white shrink-0">
-            <button class="lg:hidden mr-2 p-1.5 hover:bg-gray-100 rounded-full" @click="closeDetail">
-              <ChevronLeft class="w-5 h-5" />
-            </button>
-
-            <h2 class="text-body1b text-neutral-900 truncate flex-1 pr-4">
-              {{ selected.subject }}
-            </h2>
-
-            <div class="flex items-center gap-1 text-neutral-500 shrink-0">
-              <button class="p-1.5 hover:bg-gray-100 rounded hidden sm:block">
-                <Printer class="w-4 h-4" />
-              </button>
-              <button class="p-1.5 hover:bg-gray-100 rounded" @click="closeDetail">
-                <X class="w-5 h-5" />
-              </button>
-            </div>
+        <div class="flex-1 pb-10 w-full relative min-h-[200px]">
+          <div v-if="isLoadingDraft" class="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
+            <Loader2 class="w-8 h-8 text-primary animate-spin" />
           </div>
 
-          <div class="flex-1 overflow-y-auto p-5 scroll-smooth">
-            <div class="flex items-start justify-between mb-6">
-              <div class="flex items-center gap-3 overflow-hidden">
-                <div
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-body1b text-white shadow-sm shrink-0"
-                  :class="selected.color.split(' ')[0]">
-                  {{ selected.initial }}
-                </div>
-                <div class="min-w-0">
-                  <div class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                    <span class="text-body2b text-neutral-900 truncate">{{ selected.from }}</span>
-                    <!-- <span class="text-caption1 text-neutral-500 truncate">&lt;{{ selected.email }}&gt;</span> -->
-                  </div>
-                  <div class="text-caption2 text-neutral-400">kepada saya</div>
-                </div>
-              </div>
+          <div v-else-if="paginatedEmails.length === 0"
+            class="flex flex-col items-center justify-center h-full text-neutral-400 mt-10">
+            <Inbox class="w-12 h-12 mb-2 opacity-50" />
+            <span class="text-sm">Tidak ada draft ditemukan</span>
+          </div>
+
+          <div v-else v-for="mail in paginatedEmails" :key="mail.id"
+            class="group flex gap-2 items-center px-4 py-3 border-b border-gray-100 hover:shadow-sm transition-colors relative w-full h-[54px] hover:bg-gray-50">
+
+            <div class="flex items-center gap-3 pr-2 shrink-0">
               <div
-                class="text-caption2 text-neutral-500 bg-gray-50 px-2 py-1 rounded border border-gray-100 shrink-0 whitespace-nowrap ml-2">
-                {{ selected.fullDate }}
+                class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors cursor-pointer"
+                :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white'"
+                @click="toggleSelection(mail.id)">
+                <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
               </div>
             </div>
 
-            <div class="bg-gray-50/50 border border-gray-100 rounded-lg p-4 mb-6 space-y-3">
-              <div class="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-2 items-center">
-                <span class="text-caption2b text-neutral-400 uppercase tracking-wider">Kategori</span>
-                <div>
-                  <span class="px-2 py-0.5 rounded text-caption2b border inline-block"
-                    :class="getCategoryStyle(selected.category)">
-                    {{ getCategoryLabel(selected.category) }}
-                  </span>
-                </div>
+            <div class="flex-1 min-w-0 flex items-center gap-3 overflow-hidden">
+              <span class="w-28 md:w-40 xl:w-44 truncate text-[13px] text-neutral-900 shrink-0 font-semibold">
+                {{ mail.from }}
+              </span>
+              <div class="flex-1 min-w-0 flex items-center text-caption1 text-neutral-500 overflow-hidden">
+                <span class="text-neutral-900 truncate mr-1 max-w-[60%] md:max-w-none text-[13px] font-medium">
+                  {{ mail.subject }}
+                </span>
               </div>
-              <div class="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-2 items-start">
-                <span class="text-caption2b text-neutral-400 uppercase tracking-wider pt-0.5">Catatan</span>
-                <p class="text-caption1 text-neutral-600 italic leading-relaxed break-words">"{{ selected.note }}"</p>
+              <div class="hidden xl:flex shrink-0">
+                <span class="px-2 py-[1px] rounded-full text-[11px] font-semibold whitespace-nowrap"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
+                </span>
               </div>
             </div>
 
-            <div class="prose max-w-none text-body2 text-neutral-800 leading-6 break-words">
-              <p>{{ selected.body }}</p>
+            <div class="pl-2 shrink-0 flex justify-end w-[65px] md:w-[75px]">
+              <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap">
+                {{ mail.date }}
+              </span>
             </div>
-          </div>
 
-          <div class="p-4 border-t border-gray-200 bg-white shrink-0">
-            <NuxtLink :to="`/user/kotak-masuk/${selected.id}`"
-              class="flex justify-center w-full bg-primary hover:bg-blue-700 text-white text-body2sb py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98]">
-              Lihat Detail Lengkap
-            </NuxtLink>
+            <div class="pl-5 shrink-0 flex justify-end gap-2">
+              <button class="text-primary hover:text-neutral-800 transition-colors p-1" title="Edit"
+                @click.stop="handleEdit(mail)">
+                <Edit class="w-4 h-4" />
+              </button>
+
+              <button class="text-error hover:text-red-800 transition-colors p-1" title="Hapus"
+                @click.stop="confirmDeleteModal(mail)">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
       </div>
+
+    <div v-if="showDeleteModal"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="p-5 text-center">
+          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle class="w-6 h-6 text-red-600" />
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draft?</h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Apakah Anda yakin ingin menghapus draft <br>
+            <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>? <br>
+            Tindakan ini tidak dapat dibatalkan.
+          </p>
+          <div class="flex gap-3 justify-center">
+            <button @click="showDeleteModal = false" :disabled="isDeleting"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors disabled:opacity-50">
+              Batal
+            </button>
+            <button @click="handleDelete" :disabled="isDeleting"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+              {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </template>
+
+  </div>
+</template>
 
 <style scoped>
 .scrollbar-hide::-webkit-scrollbar {

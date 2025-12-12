@@ -2,22 +2,16 @@
   <div class="space-y-4">
     <div class="flex flex-wrap justify-between">
       <div >
-        <Heading variant="heading8">Detail Naskah Dinas</Heading>
+        <Heading variant="heading6sb">Detail Naskah Dinas</Heading>
         <Paragraph variant="body2">
           Daftar detail naskah dinas berdasarkan kategori, lokasi, status, dan tahun.
         </Paragraph>
       </div>
-      <button
-        class="flex items-center gap-2 bg-primary text-white h-9 px-4 rounded-lg hover:px-5 text-xs"
-      >
-        <FileDown class="w-4 h-4" />
-        Export
-      </button> 
     </div>
 
     <!-- Table -->
-    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm p-3 bg-white">
-      <div class="flex flex-wrap gap-4 my-3 items-center justify-between">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+      <div class="flex flex-wrap gap-4 my-3 items-center ">
           <button
             @click="refreshData"
             class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
@@ -50,9 +44,16 @@
           <option value="">Semua Tahun</option>
           <option v-for="tahun in tahunOptions" :key="tahun" :value="tahun">{{ tahun }}</option>
         </select>
+
+        <button
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+      >
+        <FileDown class="w-4 h-4" />
+        Export
+      </button> 
       </div>
 
-      <div class="relative flex-1 w-full my-3">
+      <div class="relative flex-1 w-full my-3 px-2">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
@@ -64,7 +65,7 @@
           />
         </div>
       <table class="min-w-full border-collapse text-sm mt-3">
-        <thead class="text-left">
+        <thead class="text-left bg-primary-400 text-white">
           <tr>
             <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Nomor</th>
             <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Tanggal</th>
