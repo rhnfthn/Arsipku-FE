@@ -124,7 +124,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
-import { useAuth } from '@/composables/auth'
+import { useAuth } from '~/composables/Auth'
 const { user } = useAuth()
 
 // import SidebarItem from './SidebarItem.vue'
