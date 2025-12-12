@@ -1,16 +1,33 @@
 <script setup lang="ts">
 const icons = [
-    'i-heroicons-arrow-left',
-    'i-heroicons-archive-box',
-    'i-heroicons-exclamation-circle',
-    'i-heroicons-trash',
-    'i-heroicons-envelope',
-    'i-heroicons-clock',
-    'i-heroicons-folder-arrow-down',
-    'i-heroicons-tag',
-    'i-heroicons-ellipsis-vertical'
+  'i-heroicons-arrow-left',
+  'i-heroicons-archive-box',
+  'i-heroicons-exclamation-circle',
+  'i-heroicons-trash',
+  'i-heroicons-envelope',
+  'i-heroicons-clock',
+  'i-heroicons-folder-arrow-down',
+  'i-heroicons-tag',
+  'i-heroicons-ellipsis-vertical'
 ]
+
+// Ambil ID dari URL
+const route = useRoute()
+const id = route.params.id
+
+// Ambil posisi user dari store
+const user = useUserStore()
+const positionId = computed(() => user?.position_id)
+
+// Ambil inbox berdasarkan posisi user
+const { items, pending, error, refresh } = useInbox(positionId)
+
+// Item yang sedang dibuka
+const selected = computed(() =>
+  items.value.find(it => it.id === id)
+)
 </script>
+
 
 <template>
     <div
@@ -69,7 +86,7 @@ const icons = [
             <div class="space-y-6 mb-10">
                 <div>
                     <div class="text-sm text-gray-500 mb-1">Tertuju</div>
-                    <div class="text-gray-900">Tim Operasional</div>
+                    <div class="text-gray-900">{{ selected.recipientName }}</div>
                 </div>
 
                 <div>

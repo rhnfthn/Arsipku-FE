@@ -9,8 +9,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // apiBaseUrl: "http://172.20.16.115:3011",
-      apiBaseUrl: "https://arsipku-api.rizan.app",
+      apiBaseUrl: "http://172.20.16.115:3011",
+      // apiBaseUrl: "https://arsipku-api.rizan.app",
     },
   },
 
