@@ -2,7 +2,7 @@
 import { useApi } from "./useApi";
 
 export const useDraft = () => {
-  const { post, get, del } = useApi();
+  const { post, get, patch, del } = useApi();
   const toast = useToast();
 
   const isLoadingDraft = ref(false);
@@ -10,39 +10,62 @@ export const useDraft = () => {
   const totalDrafts = ref(0);
 
   // Save drafts
-const saveDraft = async (payload: FormData | any) => {
-  isLoadingDraft.value = true;
-  try {
-    // PERBAIKAN DI SINI:
-    // HAPUS "Content-Type": "multipart/form-data"
-    const response = await post("/ND/save-draft", payload, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        // "Content-Type": "multipart/form-data",
-      },
-    });
+  const saveDraft = async (formData: FormData, id_draft?: string | null) => {
+    isLoadingDraft.value = true;
 
-    toast.add({
-      title: "Berhasil",
-      description: "Draft berhasil disimpan.",
-      icon: "i-heroicons-check-circle",
-      color: "green",
-      timeout: 3000,
-    });
+    try {
+      let response;
 
-    return response;
-  } catch (error: any) {
-    toast.add({
-      title: "Gagal",
-      description: error.response?.data?.message || "Gagal menyimpan draft.",
-      icon: "i-heroicons-exclamation-circle",
-      color: "red",
-    });
-    throw error;
-  } finally {
-    isLoadingDraft.value = false;
-  }
-};
+      // --- LOGIC PENENTUAN METHOD ---
+      if (id_draft) {
+        // KASUS UPDATE: Gunakan PATCH
+        const url = `/ND/update-draft/${id_draft}`;
+        console.log("Updating Draft (PATCH):", url);
+
+        response = await patch(url, formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            // Content-Type otomatis dihandle browser untuk FormData
+          },
+        });
+      } else {
+        // KASUS BARU: Gunakan POST
+        const url = `/ND/save-draft`;
+        console.log("Saving New Draft (POST):", url);
+
+        response = await post(url, formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+      }
+
+      toast.add({
+        title: "Berhasil",
+        description: id_draft
+          ? "Draft berhasil diperbarui."
+          : "Draft berhasil disimpan.",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+        timeout: 3000,
+      });
+
+      return response;
+    } catch (error: any) {
+      console.error("Save Draft Error:", error);
+      toast.add({
+        title: "Gagal",
+        description:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat menyimpan draft.",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
+      });
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
 
   // 2. Fetch Draft List (NEW)
   const fetchDrafts = async (positionId: string) => {
@@ -127,6 +150,6 @@ const saveDraft = async (payload: FormData | any) => {
     saveDraft,
     fetchDrafts,
     deleteDraft,
-    getDraftDetail
+    getDraftDetail,
   };
 };

@@ -33,7 +33,7 @@
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-gray-900 dark:text-white">Surat Masuk Terbaru</h3>
-              <UButton to="/inbox" size="xs" color="gray" variant="ghost" trailing-icon="i-heroicons-arrow-right">
+              <UButton to="/admin/korespondensi/kotak-masuk" size="xs" color="gray" variant="ghost" trailing-icon="i-heroicons-arrow-right">
                 Lihat Semua
               </UButton>
             </div>
