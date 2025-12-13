@@ -6,7 +6,7 @@
     >
       <div class="flex flex-col z-10">
         <Heading variant="heading6b" class="text-primary-600"
-          >Halo, Ivan</Heading
+          >Halo, {{ user?.nama || "User" }}</Heading
         >
         <Heading variant="heading9m" class="mt-1 text-primary-400"
           >Semoga hari anda menyenangkan</Heading
@@ -74,7 +74,7 @@
               Surat Masuk Terbaru
             </h3>
             <UButton
-              to="/inbox"
+              to="/admin/korespondensi/kotak-masuk"
               size="xs"
               color="primary"
               variant="ghost"
@@ -111,6 +111,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useAuth } from '@/composables/Auth'
+
+const { user, getProfile } = useAuth()
+
+onMounted(() => {
+  if (!user.value) {
+    getProfile()     // pastikan data user terisi
+  }
+})
 
 // 🚀 Import Chart.js secara aman (hindari SSR error)
 let Chart: any;

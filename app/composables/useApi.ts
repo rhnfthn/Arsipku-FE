@@ -3,13 +3,21 @@ import type { AxiosInstance } from 'axios'
 
 export const useApi = () => {
   const config = useRuntimeConfig()
-  const api: AxiosInstance = axios.create({
+  const api = axios.create({
     baseURL: config.public.apiBaseUrl,
-    withCredentials: false,
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    headers: { 'Content-Type': 'application/json' }
   })
+
+  // ⬇️ Tambahkan ini
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      config.headers = config.headers || {}
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  })
+
 
 const apiGet = async <T = any>(url: string, config: any = {}): Promise<T> => {
   try {

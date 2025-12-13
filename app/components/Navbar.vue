@@ -49,9 +49,13 @@
       >
         <div class="flex items-center gap-2 cursor-pointer">
           <div class="flex flex-col text-right leading-tight">
+
             <span
               class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100"
             >
+
+            <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100 text-nowrap">
+
               {{ user?.nama }}
             </span>
 
@@ -160,7 +164,9 @@ const { user, getProfile, logout } = useAuth();
 
 onMounted(() => {
   if (!user.value) {
-    getProfile();
+
+    getProfile()
+
   }
 });
 
@@ -198,8 +204,11 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
       class: "text-sm text-gray-700 dark:text-gray-200 truncate",
     },
     {
-      label: `${user.value?.positionText || ""}`,
-      class: "text-sm text-gray-700 dark:text-gray-200 truncate max-w-[240px]",
+    
+      label:
+         `${user.value?.positionText || ""}`,
+      class: "text-sm text-gray-700 dark:text-gray-200 truncate"
+
     },
     {
       label: "Setting Temporary File",

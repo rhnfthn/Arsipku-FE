@@ -65,6 +65,16 @@
           <canvas id="chart" height="200"></canvas>
         </div>
       </UCard>
+      <div class="col-span-3">
+        <UCard :ui="cardUI" class="h-full !border-0 !shadow-none">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Surat Masuk Terbaru</h3>
+              <UButton to="/admin/korespondensi/kotak-masuk" size="xs" color="gray" variant="ghost" trailing-icon="i-heroicons-arrow-right">
+                Lihat Semua
+              </UButton>
+            </div>
+          </template>
 
       <!-- SURAT TERBARU -->
       <UCard :ui="cardUI" class="w-full lg:w-[600px] !border-0 !shadow-none">
