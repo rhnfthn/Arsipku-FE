@@ -1,6 +1,7 @@
 export interface PenomoranPayload {
   position_id: number;
   tanggal: string; // format YYYY-MM-DD
+  id_position_penandatangan: number | string;
   jenis: string;
   klasifikasi: string;
   perihal: string;

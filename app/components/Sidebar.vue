@@ -124,8 +124,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
-import { useAuth } from '~/composables/auth'
-const { user } = useAuth()
+import { useAuth } from "~/composables/useAuth";
+const { user } = useAuth();
 
 // import SidebarItem from './SidebarItem.vue'
 
@@ -259,7 +259,11 @@ const adminMenuUtilitas = [
 const adminMenuAdministrasi = computed(() => {
   const menu = [
     { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
-    { label: "Titelatur Inggris", to: "/admin/titelatur", icon: "i-lucide-languages" },
+    {
+      label: "Titelatur Inggris",
+      to: "/admin/titelatur",
+      icon: "i-lucide-languages",
+    },
     {
       label: "Penomoran",
       icon: "i-lucide-hash",
@@ -274,7 +278,7 @@ const adminMenuAdministrasi = computed(() => {
       to: "/admin/naskah-dinas",
       icon: "i-lucide-file-text",
     },
-  ]
+  ];
 
   // superadmin yang boleh melihat Master Data
   if (user.value?.role === "superadmin") {
@@ -286,11 +290,11 @@ const adminMenuAdministrasi = computed(() => {
         { label: "Hak Akses", to: "/admin/master/hak-akses" },
         { label: "Unknown", to: "/admin/master/" },
       ],
-    })
+    });
   }
 
-  return menu
-})
+  return menu;
+});
 
 // 4. Admin - Laporan (FLAT / Tanpa Submenu)
 const adminMenuLaporan = [

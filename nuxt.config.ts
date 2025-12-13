@@ -9,8 +9,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // apiBaseUrl: "http://172.20.16.115:3011",
-      apiBaseUrl: "https://arsipku-api.rizan.app",
+      apiBaseUrl: "http://172.20.16.115:3011",
+      // apiBaseUrl: "https://arsipku-api.rizan.app",
     },
   },
 
@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     ],
   },
 
-  css: ["~/assets/css/main.css", "~/assets/css/quill-custom.css"  ],
+  css: ["~/assets/css/main.css", "~/assets/css/quill-custom.css"],
 
   ui: {
     fonts: true,
