@@ -27,7 +27,6 @@ onMounted(async () => {
   console.log("ROUTE FULL:", route.fullPath)
   console.log("TOKEN:", token)
 
-  alert("Token: " + token)
 
   if (!token) {
     await delayWithFade()

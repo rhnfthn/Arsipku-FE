@@ -1,74 +1,81 @@
 export const useAuth = () => {
-  const { apiGet, apiPost } = useApi();
+  const { apiGet, apiPost } = useApi()
 
-  // 🟦 Global user state (tersedia di seluruh aplikasi)
-  const user = useState("user", () => null);
+  // Global state user
+  const user = useState("user", () => null)
 
-  const setUser = (data) => {
-    user.value = data;
-  };
+  const setUser = (data: any) => {
+    user.value = data
+  }
 
-  // 🟩 Ambil profil dari backend
+  // Ambil profil dari backend
   const getProfile = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return null;
+      const token = localStorage.getItem("token")
+      if (!token) return null
 
       const res = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-      const profile = res?.data?.user || res?.user || res;
+      // Normalisasi struktur respons
+      const profile =
+        res?.data?.user ||   // case: { data: { user: {...} } }
+        res?.user ||         // case: { user: {...} }
+        res || null          // case: langsung {persnum, role, ...}
 
-      if (profile) setUser(profile);
+      if (profile) setUser(profile)
 
-      return profile;
+      return profile
     } catch (error) {
-      console.error("[AUTH] Error getProfile:", error);
-      return null;
+      console.error("[AUTH] getProfile error:", error)
+      return null
     }
-  };
+  }
 
+  // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      // const res = await apiGet("/auth/sso-redirect");
-      const res = await apiGet("/auth/sso-redirect-local");
-      return res?.url || null;
+      const res = await apiGet("/auth/sso-redirect-local")
+      // const res = await apiGet("/auth/sso-redirect")
+      return res?.url ?? null
     } catch (error) {
-      console.error("[AUTH] Error getSSORedirectUrl:", error);
-      return null;
+      console.error("[AUTH] getSSORedirectUrl error:", error)
+      return null
     }
-  };
+  }
 
+  // Verifikasi token SSO
   const verifyToken = async (token: string) => {
     try {
-      const res = await apiPost("/auth/verify-token", { token });
-      return res;
+      return await apiPost("/auth/verify-token", { token })
     } catch (error) {
-      console.error("[AUTH] Error verifyToken:", error);
-      throw error;
+      console.error("[AUTH] verifyToken error:", error)
+      throw error
     }
-  };
+  }
 
+  // Logout
   const logout = async () => {
     try {
-      const sessionId = localStorage.getItem("sessionId");
-      const token = localStorage.getItem("token");
+      const sessionId = localStorage.getItem("sessionId")
+      const token = localStorage.getItem("token")
 
       await apiGet(`/auth/logout?sessionId=${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 400,
-      });
+        validateStatus: (s) => s < 400
+      })
     } catch (error) {
-      console.warn("[AUTH] Logout redirect normal:", error);
+      console.warn("[AUTH] logout error (ignored):", error)
     }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("sessionId");
-    user.value = null; // 🟥 clear user di state
+    // Bersihkan localStorage & state
+    localStorage.removeItem("token")
+    localStorage.removeItem("sessionId")
+    user.value = null
 
-    return true;
-  };
+    return true
+  }
 
   return {
     user,
@@ -77,5 +84,5 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
-  };
-};
+  }
+}

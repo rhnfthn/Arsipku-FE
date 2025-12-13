@@ -1,8 +1,15 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 flex flex-wrap justify-between">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <PageHeader title="Manajemen Akun" :items="items" />  
     </div>
+    <UButton
+      @click="showAddModal = true"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
+      >
+      <Plus class="w-4 h-4" />
+        Tambah
+    </UButton>
   </div>
 
   <div class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto mt-5">
@@ -74,9 +81,8 @@
             <div class="flex items-start space-x-3">
               <UserRound class="w-4 h-4 text-gray-500 mt-1" />
               <div>
-                <p class="font-semibold text-gray-700">{{ user.username }}</p>
+                <p class="font-semibold text-gray-700">{{ user.persnum }}</p>
                 <p class="text-xs text-gray-600">{{ user.name }}</p>
-                <p class="text-xs text-gray-400">{{ user.email }}</p>
               </div>
             </div>
           </td>
@@ -96,22 +102,74 @@
           </td>
 
           <td class="px-4 py-3 text-center space-x-3">
-            <button class="text-blue-600 hover:text-blue-800 transition-colors">
-              <Pencil class="w-5 h-5" />
-            </button>
-            <button class="text-red-600 hover:text-red-800 transition-colors">
-              <Trash2 class="w-5 h-5" />
+            <button class="text-red-600 hover:text-red-800 transition-colors" @click="openDelete(user)">
+              <Trash2 class="w-4 h-4" />
             </button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <Modal v-model="showAddModal" @save="saveAccount">
+  <template #title>
+    <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
+      Tambah Akun
+    </Heading>
+  </template>
+
+  <!-- FIELD PERSNUM -->
+  <div class="flex flex-col gap-2">
+    <label class="text-xs font-semibold text-gray-700">Persnum</label>
+    <input
+      v-model="form.persnum"
+      type="text"
+      placeholder="Masukkan persnum"
+      class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+    />
+  </div>
+
+  <!-- FIELD ROLE -->
+  <div class="flex flex-col gap-2">
+    <label class="text-xs font-semibold text-gray-700">Role</label>
+    <select
+      v-model="form.role"
+      class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+    >
+      <option value="" disabled>Pilih role</option>
+      <option value="admin">Admin</option>
+      <option value="superadmin">Super Admin</option>
+    </select>
+  </div>
+</Modal>
+
+    <ConfirmPopup
+      v-model="confirmDeleteOpen"
+      title="Hapus Data?"
+      description="Data yang dihapus tidak dapat dikembalikan."
+      confirmText="Hapus"
+      cancelText="Batal"
+      @confirm="deleteNow"
+    />
+
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue"
-import { Pencil, Trash2, UserRound, Shield, RotateCcw, FileDown, Search } from "lucide-vue-next"
+import { Trash2, UserRound, Shield, RotateCcw, FileDown, Search,Plus } from "lucide-vue-next"
+import Modal from '@/components/Modal.vue'
+import { useManajemenAkun } from '@/composables/useManajemenAkun'
+
+const { accounts, fetchAccounts, loading, addAccount, deleteAccount } = useManajemenAkun()
+
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<any>(null);
+
+const openDelete = (user) => {
+  itemToDelete.value = user;
+  confirmDeleteOpen.value = true;
+};
+
 
 const items = [
   { label: "Dashboard", to: "/" },
@@ -124,24 +182,71 @@ const filters = ref({
   status: "",
 })
 
-const users = [
-  { username: "admin", name: "Administrator", email: "admin@airnav.co.id", role: "Admin", status: "Aktif" },
-  { username: "lifa.user", name: "Lifa", email: "lifa@airnav.co.id", role: "User", status: "Aktif" },
-  { username: "rahmat.rahim", name: "Rahmat Rahim", email: "rahmat.rahim@airnav.co.id", role: "User", status: "Aktif" },
-  { username: "ika.octavia", name: "Ika Octavia", email: "ika.octavia@airnav.co.id", role: "Admin", status: "Aktif" },
-  { username: "farid.wazli", name: "Farid Wazli", email: "farid.wazli@airnav.co.id", role: "User", status: "Tidak Aktif" },
-]
+const saveAccount = async () => {
+  if (!form.value.persnum || !form.value.role) {
+    alert("Persnum dan role wajib diisi")
+    return
+  }
+
+  try {
+    await addAccount(form.value.persnum, form.value.role)
+
+    showAddModal.value = false
+    form.value = { persnum: "", role: "" }
+
+    alert("Role berhasil diberikan kepada user!")
+  } catch (error) {
+    alert("Gagal memberikan role!")
+  }
+}
+
+const deleteNow = async () => {
+  if (!itemToDelete.value) return
+
+  try {
+    await deleteAccount(itemToDelete.value.persnum)
+
+    alert("Role berhasil dihapus. Pengguna kembali menjadi user biasa.")
+
+    confirmDeleteOpen.value = false
+    itemToDelete.value = null
+
+  } catch (err) {
+    alert("Gagal menghapus role!")
+  }
+}
+
+const showAddModal = ref(false)
+const form = ref({
+  persnum: "",
+  role: "",
+})
+
+onMounted(() => {
+  fetchAccounts()
+})
+
 
 const filteredUsers = computed(() => {
-  return users.filter((user) => {
-    const matchesSearch =
-      filters.value.search === "" ||
-      `${user.username} ${user.name} ${user.email}`
-        .toLowerCase()
-        .includes(filters.value.search.toLowerCase())
+  const searchText = filters.value.search.toLowerCase()
 
-    const matchesRole = filters.value.role === "" || user.role === filters.value.role
-    const matchesStatus = filters.value.status === "" || user.status === filters.value.status
+  return accounts.value.filter((user) => {
+    const userRole = (user.role || "").toLowerCase()
+    const userStatus = (user.status || "").toLowerCase()
+
+    const matchesSearch =
+      !searchText ||
+      `${user.persnum} ${user.name} ${user.email}`
+        .toLowerCase()
+        .includes(searchText)
+
+    const matchesRole =
+      !filters.value.role ||
+      userRole === filters.value.role.toLowerCase()
+
+    const matchesStatus =
+      !filters.value.status ||
+      userStatus === filters.value.status.toLowerCase()
 
     return matchesSearch && matchesRole && matchesStatus
   })
@@ -152,8 +257,8 @@ const resetFilter = () => {
 }
 
 const getRoleColor = (role: string) =>
-  role === "Admin" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"
+  role === "admin" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"
 
 const getStatusColor = (status: string) =>
-  status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+  status === "aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
 </script>
