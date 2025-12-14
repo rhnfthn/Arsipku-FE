@@ -21,29 +21,44 @@
     />
 
     <!-- STAT CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <UCard
-        v-for="(stat, idx) in stats"
-        :key="idx"
-        class="rounded-xl shadow-sm border border-gray-100 relative overflow-hidden"
-      >
-        <!-- Garis Samping -->
-        <div
-          :class="`absolute left-0 top-0 h-full w-1 ${stat.borderColor}`"
-        ></div>
-
-        <div class="flex justify-between items-start pl-2">
-          <div>
-            <p class="text-sm text-gray-500">{{ stat.label }}</p>
-            <Heading
-              variant="heading6b"
-              class="text-3xl font-bold mt-1 text-primary"
-              >{{ stat.value }}</Heading
+    <div class="col-span-3 space-y-4">
+      <!-- CARD SURAT MASUK TERBARU -->
+      <UCard :ui="cardUI" class="h-full !border-0 !shadow-none">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-gray-900 dark:text-white">
+              Surat Masuk Terbaru
+            </h3>
+            <UButton
+              to="/admin/korespondensi/kotak-masuk"
+              size="xs"
+              color="gray"
+              variant="ghost"
+              trailing-icon="i-heroicons-arrow-right"
             >
+              Lihat Semua
+            </UButton>
           </div>
+        </template>
 
-          <div :class="`p-2 rounded-lg ${stat.bgSolid}`">
-            <UIcon :name="stat.icon" :class="`w-7 h-6 ${stat.iconColor}`" />
+        <!-- BODY CARD -->
+        <div
+          class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800"
+        >
+          <div
+            v-for="mail in recentMails"
+            :key="mail.id"
+            class="py-4 flex items-center gap-4 hover:bg-gray-50 transition rounded-lg cursor-pointer"
+          >
+            <div :class="`w-1 h-12 rounded-full ${mail.accentColor}`"></div>
+
+            <div class="flex-1">
+              <div class="flex justify-between">
+                <p class="font-semibold truncate">{{ mail.sender }}</p>
+                <span class="text-xs text-gray-400">{{ mail.date }}</span>
+              </div>
+              <p class="text-sm text-gray-500 truncate">{{ mail.subject }}</p>
+            </div>
           </div>
         </div>
       </UCard>
@@ -65,56 +80,67 @@
           <canvas id="chart" height="200"></canvas>
         </div>
       </UCard>
-      <div class="col-span-3">
+      <div class="col-span-3 space-y-4">
+        <!-- CARD SURAT MASUK TERBARU -->
         <UCard :ui="cardUI" class="h-full !border-0 !shadow-none">
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-gray-900 dark:text-white">Surat Masuk Terbaru</h3>
-              <UButton to="/admin/korespondensi/kotak-masuk" size="xs" color="gray" variant="ghost" trailing-icon="i-heroicons-arrow-right">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                Surat Masuk Terbaru
+              </h3>
+              <UButton
+                to="/admin/korespondensi/kotak-masuk"
+                size="xs"
+                color="gray"
+                variant="ghost"
+                trailing-icon="i-heroicons-arrow-right"
+              >
+                Lihat Semua
+              </UButton>
+            </div>
+          </template>
+          <div class="p-4">Konten kartu pertama</div>
+        </UCard>
+
+        <!-- CARD SURAT TERBARU -->
+        <UCard :ui="cardUI" class="w-full lg:w-[600px] !border-0 !shadow-none">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                Surat Masuk Terbaru
+              </h3>
+              <UButton
+                to="/inbox"
+                size="xs"
+                color="primary"
+                variant="ghost"
+                trailing-icon="i-heroicons-arrow-right"
+              >
                 Lihat Semua
               </UButton>
             </div>
           </template>
 
-      <!-- SURAT TERBARU -->
-      <UCard :ui="cardUI" class="w-full lg:w-[600px] !border-0 !shadow-none">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              Surat Masuk Terbaru
-            </h3>
-            <UButton
-              to="/inbox"
-              size="xs"
-              color="primary"
-              variant="ghost"
-              trailing-icon="i-heroicons-arrow-right"
-            >
-              Lihat Semua
-            </UButton>
-          </div>
-        </template>
-
-        <div
-          class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800"
-        >
           <div
-            v-for="mail in recentMails"
-            :key="mail.id"
-            class="py-4 flex items-center gap-4 hover:bg-gray-50 transition rounded-lg cursor-pointer"
+            class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800"
           >
-            <div :class="`w-1 h-12 rounded-full ${mail.accentColor}`"></div>
-
-            <div class="flex-1">
-              <div class="flex justify-between">
-                <p class="font-semibold truncate">{{ mail.sender }}</p>
-                <span class="text-xs text-gray-400">{{ mail.date }}</span>
+            <div
+              v-for="mail in recentMails"
+              :key="mail.id"
+              class="py-4 flex items-center gap-4 hover:bg-gray-50 transition rounded-lg cursor-pointer"
+            >
+              <div :class="`w-1 h-12 rounded-full ${mail.accentColor}`"></div>
+              <div class="flex-1">
+                <div class="flex justify-between">
+                  <p class="font-semibold truncate">{{ mail.sender }}</p>
+                  <span class="text-xs text-gray-400">{{ mail.date }}</span>
+                </div>
+                <p class="text-sm text-gray-500 truncate">{{ mail.subject }}</p>
               </div>
-              <p class="text-sm text-gray-500 truncate">{{ mail.subject }}</p>
             </div>
           </div>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
   </div>
 </template>
