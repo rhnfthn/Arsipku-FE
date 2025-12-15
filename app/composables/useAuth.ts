@@ -39,8 +39,8 @@ export const useAuth = () => {
   // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      const res = await apiGet("/auth/sso-redirect-local")
-      // const res = await apiGet("/auth/sso-redirect")
+      // const res = await apiGet("/auth/sso-redirect-local")
+      const res = await apiGet("/auth/sso-redirect")
       return res?.url ?? null
     } catch (error) {
       console.error("[AUTH] getSSORedirectUrl error:", error)
