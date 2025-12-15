@@ -1,37 +1,69 @@
 // composables/usePenomoran.ts
+import { ref } from "vue";
 import { useApi } from "./useApi";
 import type { PenomoranPayload, PenomoranResponse } from "~/types/penomoran";
 
 export const usePenomoran = () => {
-  const { get, post } = useApi();
+  const { get, post, del } = useApi();
   const toast = useToast();
+
   const isLoadingPenomoran = ref(false);
   const isLoadingBooking = ref(false);
+  const isLoadingList = ref(false);
+  const isLoadingSubmitted = ref(false);
 
+  /** ===========================
+   * SAVE PENOMORAN
+   * =========================== */
   const savePenomoran = async (
     payload: PenomoranPayload,
   ): Promise<PenomoranResponse> => {
     isLoadingPenomoran.value = true;
 
     try {
-      console.log("📤 Mengirim payload:", payload);
+      console.log(
+        "🚀 savePenomoran called with:",
+        JSON.stringify(payload, null, 2),
+      );
 
-      // ✅ PERBAIKAN: Hapus field pengirim & convert tanggal ke Date
+      if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
+
+      // ✅ Pastikan semua field adalah tipe data yang benar
       const formattedPayload = {
-        position_id: payload.position_id,
-        tanggal: new Date(payload.tanggal), // ✅ Harus Date instance
-        jenis: payload.jenis,
-        klasifikasi: payload.klasifikasi,
-        perihal: payload.perihal,
-        jumlah: Number(payload.jumlah),
-        // ❌ HAPUS pengirim - tidak ada di schema BE
+        position_id: parseInt(String(payload.position_id), 10),
+        tanggal: String(payload.tanggal),
+        jenis: String(payload.jenis),
+        klasifikasi: String(payload.klasifikasi),
+        perihal: String(payload.perihal),
+        penandatangan: String(payload.penandatangan),
+        id_position_penandatangan: parseInt(
+          String(payload.id_position_penandatangan),
+          10,
+        ),
+        jumlah: parseInt(String(payload.jumlah), 10),
       };
 
-      console.log("📤 Formatted payload:", formattedPayload);
+      // Validasi final
+      if (isNaN(formattedPayload.id_position_penandatangan)) {
+        throw new Error(
+          `id_position_penandatangan tidak valid: ${payload.id_position_penandatangan}`,
+        );
+      }
+
+      console.log(
+        "📤 POST to /nomor-request:",
+        JSON.stringify(formattedPayload, null, 2),
+      );
+      console.log("🔍 Types check:", {
+        position_id: typeof formattedPayload.position_id,
+        id_position_penandatangan:
+          typeof formattedPayload.id_position_penandatangan,
+        jumlah: typeof formattedPayload.jumlah,
+      });
 
       const response = await post("/nomor-request", formattedPayload);
 
-      console.log("✅ Response dari BE:", response);
+      console.log("✅ Response from backend:", response);
 
       toast.add({
         title: "Berhasil",
@@ -41,10 +73,12 @@ export const usePenomoran = () => {
         timeout: 2500,
       });
 
-      return response;
+      return response.data ?? response;
     } catch (error: any) {
-      console.error("❌ Error Simpan Penomoran:", error);
-      console.error("❌ Error Response:", error.response);
+      console.error("❌ savePenomoran error:", error);
+      console.error("❌ Error response:", error.response);
+      console.error("❌ Error data:", error.response?.data);
+      console.error("❌ Error status:", error.response?.status);
 
       const errorMessage =
         error.response?.data?.message ||
@@ -54,7 +88,9 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Gagal",
-        description: errorMessage,
+        description: Array.isArray(errorMessage)
+          ? errorMessage.join(", ")
+          : errorMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -65,34 +101,13 @@ export const usePenomoran = () => {
     }
   };
 
-  const bookingPenomoran = async (id: number, files: any[]) => {
-    try {
-      const response = await post(`/nomor-request/${id}/booking`, {
-        files,
-      });
-
-      toast.add({
-        title: "Berhasil",
-        description: "Berhasil upload file.",
-        color: "green",
-      });
-
-      return response;
-    } catch (err: any) {
-      toast.add({
-        title: "Gagal",
-        description: err.response?.data?.message || "Upload gagal.",
-        color: "red",
-      });
-      throw err;
-    }
-  };
-
+  /** ===========================
+   * SUBMIT BOOKING
+   * =========================== */
   interface BookingFile {
     file_name: string;
     file_text: string;
   }
-
   interface BookingPayload {
     files: BookingFile[];
   }
@@ -100,44 +115,57 @@ export const usePenomoran = () => {
   const submitBooking = async (
     id_request: number | string,
     payload: BookingPayload,
-  ): Promise<any> => {
+  ) => {
     isLoadingBooking.value = true;
 
     try {
-      console.log("📤 Mengirim booking:", payload);
-
       const formData = new FormData();
-      payload.files.forEach((file, idx) => {
-        const blob = new Blob([file.file_text], { type: "application/pdf" });
-        formData.append(`files[${idx}]`, blob, file.file_name);
+
+      payload.files.forEach((file) => {
+        if (file?.file_text) {
+          const byteString = atob(file.file_text);
+          const arrayBuffer = new ArrayBuffer(byteString.length);
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          for (let i = 0; i < byteString.length; i++) {
+            uint8Array[i] = byteString.charCodeAt(i);
+          }
+
+          const blob = new Blob([uint8Array], {
+            type: "application/octet-stream",
+          });
+
+          formData.append("files", blob, file.file_name);
+        }
       });
 
       const response = await post(
-        `/nomor-request/${id_request}/booking`,
+        `/admin/nomor-request/${id_request}/booking`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         },
       );
 
       toast.add({
         title: "Berhasil",
-        description: "Booking penomoran berhasil dikirim.",
+        description:
+          "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
         icon: "i-heroicons-check-circle",
         color: "green",
-        timeout: 2500,
       });
 
-      return response;
+      return response.data ?? response;
     } catch (error: any) {
-      console.error("❌ Error Booking Penomoran:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal mengirim usulan.";
 
       toast.add({
         title: "Gagal",
-        description:
-          error.response?.data?.message || "Gagal mengirim booking penomoran.",
+        description: errorMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -148,49 +176,131 @@ export const usePenomoran = () => {
     }
   };
 
-  const isLoadingList = ref(false);
-
+  /** ===========================
+   * GET LIST USULAN
+   * =========================== */
   const getListUsulan = async () => {
     isLoadingList.value = true;
-
     try {
       const res = await get("/admin/nomor-request");
       return res.data ?? [];
-    } catch (e) {
+    } catch (e: any) {
       console.error("❌ Error ambil list:", e);
+      toast.add({
+        title: "Gagal fetch data",
+        description: e.message || "Gagal mengambil daftar usulan",
+        color: "red",
+      });
       return [];
     } finally {
       isLoadingList.value = false;
     }
   };
 
+  /** ===========================
+   * GET DETAIL USULAN
+   * =========================== */
   const getDetailUsulan = async (id: string) => {
-    const response = await get(`/admin/nomor-request/${id}`);
-    return response.data; // karena backend bentuknya { success, message, data }
+    try {
+      const res = await get(`/admin/nomor-request/${id}`);
+
+      // Handle berbagai struktur response
+      if (res?.data?.data) {
+        return res.data.data;
+      } else if (res?.data) {
+        return res.data;
+      } else {
+        return res;
+      }
+    } catch (e: any) {
+      console.error("❌ Error fetch detail:", e);
+      toast.add({
+        title: "Gagal fetch detail",
+        description: e.message || "Gagal memuat detail usulan",
+        color: "red",
+      });
+      return null;
+    }
   };
+
+  /** ===========================
+   * GET KLASIFIKASI
+   * =========================== */
   const getKlasifikasi = async () => {
     try {
       const res = await get("/persuratan/klasifikasi");
       return res.data ?? [];
-    } catch (e) {
+    } catch (e: any) {
       console.error("❌ Error fetch klasifikasi:", e);
+      toast.add({
+        title: "Gagal fetch klasifikasi",
+        description: e.message || "Gagal mengambil klasifikasi",
+        color: "red",
+      });
       return [];
     }
   };
 
-  const isLoadingSubmitted = ref(false);
-
+  /** ===========================
+   * GET LIST SUBMITTED
+   * =========================== */
   const getListSubmitted = async () => {
     isLoadingSubmitted.value = true;
-
     try {
       const res = await get("/admin/nomor-request-submitted");
       return res.data ?? [];
-    } catch (e) {
+    } catch (e: any) {
       console.error("❌ Error ambil list submitted:", e);
+      toast.add({
+        title: "Gagal fetch submitted",
+        description: e.message || "Gagal mengambil data submitted",
+        color: "red",
+      });
       return [];
     } finally {
       isLoadingSubmitted.value = false;
+    }
+  };
+
+  /** ===========================
+   * GET PERSON WITH POSITION
+   * =========================== */
+  const getPersonWithPosition = async () => {
+    try {
+      const res = await get("/person/with-position/all");
+      return res.data ?? [];
+    } catch (e: any) {
+      console.error("❌ Error fetch person with position:", e);
+      toast.add({
+        title: "Gagal fetch person",
+        description: e.message || "Gagal mengambil data person",
+        color: "red",
+      });
+      return [];
+    }
+  };
+
+  /** ===========================
+   * DELETE USULAN
+   * =========================== */
+  const deleteUsulan = async (id: string) => {
+    try {
+      const res = await del(`/admin/nomor-request/${id}`);
+      toast.add({
+        title: "Berhasil",
+        description: "Usulan berhasil dihapus",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+      return res.data ?? res;
+    } catch (e: any) {
+      console.error("❌ Error delete usulan:", e);
+      toast.add({
+        title: "Gagal",
+        description: e.response?.data?.message || "Gagal menghapus usulan",
+        color: "red",
+      });
+      throw e;
     }
   };
 
@@ -198,7 +308,6 @@ export const usePenomoran = () => {
     savePenomoran,
     isLoadingPenomoran,
     submitBooking,
-    bookingPenomoran,
     isLoadingBooking,
     getListUsulan,
     isLoadingList,
@@ -206,5 +315,7 @@ export const usePenomoran = () => {
     getKlasifikasi,
     getListSubmitted,
     isLoadingSubmitted,
+    getPersonWithPosition,
+    deleteUsulan,
   };
 };

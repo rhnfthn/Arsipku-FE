@@ -336,7 +336,7 @@ const breadcrumbs = [
 /* TABLE CONFIG */
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Jabatan", key: "jabatan", sortable: false },
+  { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
   { label: "Tanggal & Nomor", key: "tanggal_nomor", sortable: true },
   { label: "Pengusul", key: "pengusul", sortable: false },
@@ -527,20 +527,23 @@ const getListNomor = async () => {
   try {
     const res = await get("/nomor");
 
-    if (!res?.success) return [];
+    if (!res?.success || !Array.isArray(res.data)) return [];
 
-    // Mapping API ke struktur tabel
     return res.data.map((item) => ({
       id: item.id,
+
+      // TABLE
       jenis: item.jenis,
-      jabatan: item.position || "-",
+      jabatan: item.jabatan || "-",
       perihal: item.perihal || "-",
-      tanggal_nomor: formatTanggalNomor(item.nomor, item.created_at),
-      pengusul: item.nama || "-",
-      waktu: formatWaktu(item.created_at),
-      tanggal: formatTanggal(item.created_at),
+      tanggal_nomor: `${formatTanggal(item.tanggal)} / ${item.nomor}`,
+      pengusul: item.nama_pengirim || "-",
+      waktu: formatWaktu(item.waktu),
+
+      // PREVIEW
+      tanggal: formatTanggal(item.tanggal),
       klasifikasi: item.klasifikasi || "-",
-      jenis_naskah: `${item.jenis} - ${item.perihal || "Dokumen"}`,
+      jenis_naskah: item.jenis,
       nomor_surat: item.nomor ? [item.nomor] : [],
       files: [],
     }));

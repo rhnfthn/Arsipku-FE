@@ -15,7 +15,7 @@ export const useAuth = () => {
       if (!token) return null
 
       const res = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` } 
+        headers: { Authorization: `Bearer ${token}` }
       })
 
       // Normalisasi struktur respons

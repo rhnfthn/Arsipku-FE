@@ -9,7 +9,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <!-- ADD BUTTON (buka modal) -->
+      <!-- ADD BUTTON -->
       <button
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
@@ -38,7 +38,7 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown (wrapped relative) -->
+        <!-- Filter button + dropdown -->
         <div class="relative inline-block">
           <button
             data-custom-dropdown
@@ -67,7 +67,7 @@
             </svg>
           </button>
 
-          <!-- Dropdown (positioned relative to button) -->
+          <!-- Dropdown -->
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
@@ -221,10 +221,8 @@
           </button>
         </div>
       </div>
-      <!------------->
-      <!-- MODAL TAMBAH -->
-      <!------------->
 
+      <!-- MODAL TAMBAH -->
       <AddUsulan
         v-model="openAdd"
         @submit="handleSubmitFromModal"
@@ -232,9 +230,8 @@
       />
     </div>
   </div>
-  <!------------->
+
   <!-- MODAL ROW DETAIL -->
-  <!------------->
   <Modal v-model="openDetail" :hideDefaultFooter="true">
     <!-- TITLE -->
     <template #title>
@@ -242,15 +239,11 @@
         <h2 class="text-lg font-semibold uppercase">
           {{ selectedRow?.jenis_naskah || "Detail" }}
         </h2>
-
-        <!-- <span class="text-xs text-gray-500">
-          {{ selectedRow?.timestamp || "—" }}
-        </span> -->
       </div>
     </template>
 
     <!-- BODY -->
-    <div v-show="selectedRow" class="space-y-6 text-sm px-5 pb-3">
+    <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3">
       <!-- Judul Besar -->
       <p class="text-gray-900 font-semibold leading-relaxed text-base">
         {{ selectedRow.perihal }}
@@ -259,7 +252,7 @@
       <!-- Tanggal -->
       <div class="pb-2 border-b border-gray-200">
         <p class="text-gray-500 text-xs">Tanggal</p>
-        <p class="font-medium mt-1">{{ selectedRow.tanggal }}</p>
+        <p class="font-medium mt-1">{{ formatDate(selectedRow.tanggal) }}</p>
       </div>
 
       <!-- Penandatangan -->
@@ -282,9 +275,9 @@
 
       <!-- Nomor Surat -->
       <div class="pb-2">
-        <p class="text-gray-500 text-xs">Nomor Surat</p>
+        <p class="text-gray-500 text-xs mb-2">Nomor Surat</p>
 
-        <!-- Jika nomor_surat array -->
+        <!-- Array nomor surat -->
         <div
           v-if="Array.isArray(selectedRow.nomor_surat)"
           class="space-y-4 mt-2"
@@ -295,16 +288,15 @@
             class="space-y-2"
           >
             <!-- Nomor surat -->
-
             <div class="flex items-center gap-2">
               <input
-                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
                 :value="no"
                 readonly
               />
 
               <button
-                @click="handleCopy(no, idx)"
+                @click="handleCopy(no)"
                 class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
               >
                 <Copy class="w-4 h-4 text-gray-600" />
@@ -313,7 +305,7 @@
 
             <!-- Upload dengan ICON -->
             <label
-              class="w-full mb-7 flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+              class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
             >
               <svg
                 class="w-5 h-5 text-gray-500"
@@ -329,7 +321,9 @@
                 />
               </svg>
 
-              <span class="text-gray-600">Upload File</span>
+              <span class="text-gray-600">
+                {{ files[idx]?.file_name || "Upload File" }}
+              </span>
 
               <input
                 type="file"
@@ -340,17 +334,17 @@
           </div>
         </div>
 
-        <!-- Jika nomor_surat string -->
+        <!-- Single nomor surat -->
         <div v-else class="mt-2 space-y-2">
           <div class="flex items-center gap-2">
             <input
-              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
               :value="selectedRow.nomor_surat"
               readonly
             />
 
             <button
-              @click="handleCopy(no, idx)"
+              @click="handleCopy(selectedRow.nomor_surat)"
               class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
             >
               <Copy class="w-4 h-4 text-gray-600" />
@@ -358,7 +352,6 @@
           </div>
 
           <!-- Upload tunggal -->
-
           <label
             class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
           >
@@ -376,13 +369,11 @@
               />
             </svg>
 
-            <span class="text-gray-600">Upload File</span>
+            <span class="text-gray-600">
+              {{ files[0]?.file_name || "Upload File" }}
+            </span>
 
-            <input
-              type="file"
-              class="hidden"
-              @change="handleFile(idx, $event)"
-            />
+            <input type="file" class="hidden" @change="handleFile(0, $event)" />
           </label>
         </div>
       </div>
@@ -393,204 +384,170 @@
       <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
         <button
           @click="submitUsulan"
-          class="px-5 py-2 text-xs bg-primary text-white rounded-md"
+          :disabled="isLoadingBooking || isDeletingUsulan"
+          class="px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Kirim Usulan
+          {{ isLoadingBooking ? "Mengirim..." : "Kirim Usulan" }}
         </button>
         <button
           @click="hapusUsulan"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
+          :disabled="isLoadingBooking || isDeletingUsulan"
+          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Hapus Usulan
+          {{ isDeletingUsulan ? "Menghapus..." : "Hapus Usulan" }}
         </button>
-
-        <!-- <button
-          @click="$emit('hapus-usulan')"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
-        >
-          Hapus Usulan
-        </button> -->
       </div>
     </template>
   </Modal>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
-import type { PenomoranPayload } from "~/types/penomoran";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
-import { UInput, USelect, Modal } from "#components";
+import { Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
-import type penandatangan from "../digsig/penandatangan.vue";
-import { useApi } from "~/composables/useApi";
+import { useAuth } from "~/composables/useAuth";
 
-const { get } = useApi();
+const { user, getProfile } = useAuth();
+const {
+  savePenomoran,
+  isLoadingPenomoran,
+  deleteUsulan,
+  getPersonWithPosition,
+  submitBooking,
+  isLoadingBooking,
+  getListUsulan,
+  getDetailUsulan,
+} = usePenomoran();
 
-// FETCH
-const { savePenomoran, isLoadingPenomoran } = usePenomoran();
 const toast = useToast();
 const openDetail = ref(false);
+const isDeletingUsulan = ref(false);
+const selectedRow = ref(null);
+const rows = ref([]);
+const loading = ref<boolean>(true);
+const files = ref([]);
+const uploadedFiles = ref([]);
 
-const form = ref({
-  tanggal: null,
-  jenis: "",
-  klasifikasi: "",
-  perihal: "",
-  jumlah: 1,
-});
+// ✅ Person mapping
+const personMap = ref(new Map());
 
-const hapusUsulan = async () => {
-  if (!selectedRow.value?.id) return;
-
-  const id = selectedRow.value.id;
-
+const fetchPersonMap = async () => {
   try {
-    const res = await get(`/admin/nomor-request/${id}`, {
-      method: "DELETE",
+    const response = await getPersonWithPosition();
+    const list = Array.isArray(response) ? response : (response.data ?? []);
+
+    list.forEach((item) => {
+      personMap.value.set(item.persnum, {
+        nama: item.nama,
+        position_text: item.position_text,
+      });
     });
 
-    if (!res.success) {
+    console.log("✅ Person map loaded:", personMap.value.size, "items");
+  } catch (error) {
+    console.error("❌ Error fetch person map:", error);
+  }
+};
+
+// ✅ FETCH DATA
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const data = await getListUsulan();
+
+    if (!Array.isArray(data)) {
+      rows.value = [];
+      return;
+    }
+
+    rows.value = data.map((item) => {
+      const pengusulInfo = personMap.value.get(item.persnum) || {};
+
+      return {
+        id: item.id,
+        jenis: item.jenis,
+        tanggal: item.tanggal,
+        perihal: item.perihal,
+        jumlah: item.jumlah,
+        // ✅ Penandatangan diambil dari jabatan (sesuai preview)
+        penandatangan: item.penandatangan || "-",
+        // ✅ Klasifikasi diambil dari preview
+        klasifikasi: item.klasifikasi || "-",
+        pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
+        tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
+        status: item.status,
+      };
+    });
+
+    console.log("✅ Data loaded:", rows.value.length, "rows");
+  } catch (err) {
+    console.error("❌ Gagal fetch data:", err);
+    rows.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// ✅ OPEN ROW MODAL
+const openRowModal = async (row) => {
+  try {
+    console.log("🔍 Opening row modal for:", row.id);
+
+    const detail = await getDetailUsulan(row.id);
+
+    console.log("📦 Detail response:", detail);
+
+    if (!detail || !detail.id) {
       toast.add({
-        title: "Gagal",
-        description: "Usulan tidak dapat dihapus.",
+        title: "Gagal memuat detail",
+        description: "Data detail tidak ditemukan",
         color: "red",
       });
       return;
     }
 
-    // Hapus row di frontend agar tabel langsung update
-    rows.value = rows.value.filter((row) => row.id !== id);
+    // Generate array nomor surat
+    const nomorSuratArray = Array.isArray(detail.nomor_surat)
+      ? detail.nomor_surat
+      : detail.nomor_surat
+        ? [detail.nomor_surat]
+        : Array(detail.jumlah || 1).fill(detail.template_nomor || "");
 
-    // Tutup modal
-    openDetail.value = false;
+    selectedRow.value = {
+      id: detail.id,
+      jenis: detail.jenis,
+      jenis_naskah: `${detail.jenis} - ${detail.perihal}`,
+      tanggal: detail.tanggal,
+      perihal: detail.perihal,
+      jumlah: detail.jumlah,
+      penandatangan: detail.penandatangan || detail.nama || "-",
+      klasifikasi: detail.klasifikasi || "-",
+      status: detail.status || "-",
+      nomor_surat: nomorSuratArray,
+      template_nomor: detail.template_nomor || "",
+    };
 
-    toast.add({
-      title: "Berhasil",
-      description: "Usulan berhasil dihapus",
-      color: "green",
-    });
+    // Reset files
+    files.value = Array(nomorSuratArray.length).fill(null);
+    uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
+
+    openDetail.value = true;
+    console.log("✅ Modal opened:", selectedRow.value);
   } catch (err) {
-    console.error("❌ Error hapus usulan:", err);
+    console.error("❌ Gagal load detail:", err);
     toast.add({
-      title: "Error",
-      description: "Terjadi kesalahan saat menghapus usulan.",
+      title: "Gagal memuat detail",
+      description: "Silakan coba lagi",
       color: "red",
     });
   }
 };
 
-const fetchData = async () => {
-  try {
-    const data = await getListUsulan();
-    rows.value = data.map((item) => ({
-      id: item.id,
-      jenis: item.jenis,
-      tanggal: item.tanggal,
-      perihal: item.perihal,
-      jumlah: item.jumlah,
-      penandatangan: item.nama || "-",
-      pengusul: item.nama || "-",
-      tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
-      status: item.status,
-    }));
-  } catch (err) {
-    console.error("Gagal fetch data:", err);
-  }
-};
-
-const submitAndClose = async () => {
-  // Validasi form
-  if (
-    !form.value.tanggal ||
-    !form.value.jenis ||
-    !form.value.klasifikasi ||
-    !form.value.penandatangan ||
-    !form.value.perihal ||
-    Number(form.value.jumlah) < 1
-  ) {
-    toast.add({
-      title: "Form tidak lengkap",
-      description: "Pastikan semua field diisi dan jumlah minimal 1",
-      color: "error",
-    });
-    return;
-  }
-
-  // Siapkan payload
-  const payload = {
-    position_id: 70016786,
-    tanggal: new Date(form.value.tanggal),
-    jenis: form.value.jenis,
-    klasifikasi: form.value.klasifikasi,
-    Penandatangan: form.value.penandatangan,
-    perihal: form.value.perihal,
-    jumlah: Number(form.value.jumlah),
-  };
-
-  console.log("PAYLOAD:", payload);
-
-  try {
-    // Simpan ke backend
-    await savePenomoran(payload);
-
-    // Toast sukses
-    toast.add({
-      title: "Berhasil disimpan",
-      description: "Usulan penomoran berhasil ditambahkan",
-      color: "success",
-    });
-
-    // Tambahkan langsung ke tabel
-    rows.value.push({
-      id: Date.now().toString(),
-      jenis: payload.jenis,
-      tanggal: payload.tanggal.toLocaleDateString("id-ID"),
-      perihal: payload.perihal,
-      jumlah: payload.jumlah,
-      pengusul: "Anda", // bisa diganti sesuai user login
-      tglUsulan: new Date().toLocaleString("id-ID"),
-      status: "Belum Diajukan",
-      klasifikasi: payload.klasifikasi,
-      penandatangan: payload.penandatangan,
-      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
-    });
-
-    // Reset form
-    form.value = {
-      tanggal: "",
-      klasifikasi: "",
-      jenis: "",
-      penandatangan: "",
-      perihal: "",
-      jumlah: "",
-    };
-
-    // Tutup modal
-    emit("update:modelValue", false);
-  } catch (error: any) {
-    console.error("Gagal menyimpan penomoran:", error);
-    toast.add({
-      title: "Gagal menyimpan",
-      description: error.message || "Terjadi kesalahan saat menyimpan",
-      color: "error",
-    });
-  }
-};
-
-const { submitBooking, isLoadingBooking } = usePenomoran();
-
-// const openPreview = ref(false);
-const selectedRow = ref<any>(null);
-
-// Menampung file upload sesuai index nomor_surat
-const uploadedFiles = ref<File[]>([]);
-
-// Handle input file di modal
-const files = ref([]);
-
+// ✅ HANDLE FILE UPLOAD
 const handleFile = async (index: number, e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -599,10 +556,10 @@ const handleFile = async (index: number, e: Event) => {
 
   files.value[index] = {
     file_name: file.name,
-    file_text: base64.split(",")[1], // ambil raw base64
+    file_text: base64.split(",")[1],
   };
 
-  console.log("FILES SEND:", files.value);
+  console.log("✅ File uploaded at index", index, ":", file.name);
 };
 
 const toBase64 = (file: File) =>
@@ -613,7 +570,10 @@ const toBase64 = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+// ✅ HANDLE COPY
 const handleCopy = (value: string) => {
+  if (!value) return;
+
   navigator.clipboard.writeText(value);
 
   toast.add({
@@ -624,96 +584,182 @@ const handleCopy = (value: string) => {
   });
 };
 
-// Function saat klik row
-// function openRowModal(row) {
-//   selectedRow.value = row;
-//   openPreview.value = true;
-// }
-function handlePreview(data) {
+// ✅ HANDLE PREVIEW
+function handlePreview(data: any) {
   selectedRow.value = data;
   openAdd.value = false;
   openDetail.value = true;
-  uploadedFiles.value = Array(
-    Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1,
-  ).fill(null);
+
+  const length = Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1;
+
+  files.value = Array(length).fill(null);
+  uploadedFiles.value = Array(length).fill(null);
 }
 
-// function openRowModal(row) {
-//   selectedRow.value = row;
-//   uploadedFiles.value = Array(
-//     Array.isArray(row.nomor_surat) ? row.nomor_surat.length : 1,
-//   ).fill(null);
+// ✅ SUBMIT USULAN
+const submitUsulan = async () => {
+  if (!selectedRow.value) return;
 
-//   openDetail.value = true;
-// }
+  // Validasi file upload
+  const uploadedFiles = files.value.filter((f) => f && f.file_text);
 
-const { getDetailUsulan } = usePenomoran();
-
-async function openRowModal(row) {
-  try {
-    const detail = await getDetailUsulan(row.id);
-
-    // jika BE sudah ada nomor_surat → gunakan
-    const nomorSuratArray = Array.isArray(detail.nomor_surat)
-      ? detail.nomor_surat
-      : detail.nomor_surat
-        ? [detail.nomor_surat]
-        : Array(detail.jumlah).fill(""); // kalau belum ada → generate kosong sebanyak JUMALAH
-
-    selectedRow.value = {
-      id: detail.id,
-      jenis: detail.jenis,
-      jenis_naskah: `${detail.jenis} - ${detail.perihal}`,
-      tanggal: detail.tanggal,
-      perihal: detail.perihal,
-      jumlah: detail.jumlah,
-      penandatangan: detail.nama,
-      klasifikasi: detail.klasifikasi,
-      status: detail.status,
-
-      // isi array nomor_surat
-      nomor_surat: nomorSuratArray,
-    };
-
-    // siapkan file upload array sesuai jumlah nomor
-    uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
-
-    openDetail.value = true;
-  } catch (err) {
-    console.error("Gagal load detail:", err);
+  if (uploadedFiles.length !== selectedRow.value.jumlah) {
     toast.add({
-      title: "Gagal memuat detail",
-      color: "error",
+      title: "Upload Belum Lengkap",
+      description: `Harap upload semua file (${uploadedFiles.length}/${selectedRow.value.jumlah})`,
+      color: "yellow",
+    });
+    return;
+  }
+
+  try {
+    await submitBooking(selectedRow.value.id, {
+      files: uploadedFiles,
+    });
+
+    openDetail.value = false;
+    await fetchData();
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil dikirim",
+      color: "green",
+    });
+  } catch (e) {
+    console.error("❌ Gagal submit usulan:", e);
+    toast.add({
+      title: "Gagal",
+      description: "Gagal mengirim usulan, silakan coba lagi",
+      color: "red",
     });
   }
-}
+};
 
-// GET PENOMORAN
-const { getListUsulan } = usePenomoran();
+// ✅ HAPUS USULAN
+const hapusUsulan = async () => {
+  if (!selectedRow.value?.id) return;
 
-const rows = ref([]);
+  if (!confirm("Apakah Anda yakin ingin menghapus usulan ini?")) {
+    return;
+  }
 
+  const id = selectedRow.value.id;
+  isDeletingUsulan.value = true;
+
+  try {
+    await deleteUsulan(id);
+    openDetail.value = false;
+    await fetchData();
+
+    toast.add({
+      title: "Berhasil",
+      description: "Data berhasil dihapus",
+      color: "green",
+    });
+  } catch (err) {
+    console.error("❌ Error hapus usulan:", err);
+  } finally {
+    isDeletingUsulan.value = false;
+  }
+};
+
+// ✅ HANDLE SUBMIT FROM MODAL
+const handleSubmitFromModal = async (payload: any) => {
+  try {
+    console.log("📤 Payload diterima dari modal:", payload);
+
+    // Validasi payload
+    if (
+      !payload.tanggal ||
+      !payload.jenis ||
+      !payload.klasifikasi ||
+      !payload.perihal ||
+      !payload.jumlah
+    ) {
+      toast.add({
+        title: "Data Tidak Lengkap",
+        description: "Pastikan semua field terisi",
+        color: "yellow",
+      });
+      return;
+    }
+
+    // Format tanggal
+    let formattedDate;
+    try {
+      const dateObj = new Date(payload.tanggal);
+      formattedDate = dateObj.toISOString().split("T")[0];
+      console.log("📅 Tanggal formatted:", formattedDate);
+    } catch (e) {
+      console.error("❌ Error format tanggal:", e);
+      formattedDate = payload.tanggal;
+    }
+
+    // ✅ Format payload sesuai API - id_position_penandatangan harus INTEGER
+    const formattedPayload = {
+      position_id: Number(payload.position_id),
+      tanggal: formattedDate,
+      jenis: String(payload.jenis),
+      klasifikasi: String(payload.klasifikasi),
+      perihal: String(payload.perihal),
+      penandatangan: String(payload.penandatangan),
+      id_position_penandatangan: Number(payload.id_position_penandatangan), // ✅ Convert to number
+      jumlah: Number(payload.jumlah),
+    };
+
+    console.log(
+      "📦 Formatted payload:",
+      JSON.stringify(formattedPayload, null, 2),
+    );
+
+    await savePenomoran(formattedPayload);
+    await fetchData();
+    currentPage.value = 1;
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil ditambahkan",
+      color: "green",
+    });
+  } catch (err) {
+    console.error("❌ Error submit modal:", err);
+    console.error("❌ Error response:", err?.response);
+    console.error("❌ Error data:", err?.response?.data);
+
+    const errorMessage =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "Usulan gagal dikirim";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
+  }
+};
+
+// ✅ FORMAT DATE
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+// ✅ INIT
 onMounted(async () => {
-  const data = await getListUsulan();
+  loading.value = true;
 
-  rows.value = data.map((item) => ({
-    id: item.id,
-    jenis: item.jenis,
-    tanggal: item.tanggal,
-    perihal: item.perihal,
-    jumlah: item.jumlah,
+  if (!user.value) {
+    await getProfile();
+  }
 
-    // BE tidak punya “pengirim” → pakai nama
-    penandatangan: item.nama || "-",
-
-    // Pengusul → juga pakai nama
-    pengusul: item.nama || "-",
-
-    // Format created_at → “DD/MM/YYYY, HH:mm”
-    tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
-
-    status: item.status,
-  }));
+  await fetchPersonMap();
+  await fetchData();
 });
 
 /* Breadcrumb */
@@ -748,9 +794,6 @@ const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
 
-/* Loading */
-const loading = ref<boolean>(true);
-
 /* SORT STATE */
 const sortBy = ref<string>("id");
 const sortDir = ref<"asc" | "desc">("asc");
@@ -772,60 +815,8 @@ const selectFilterStatus = (val: string) => {
   openFilterStatus.value = false;
 };
 
-/* Modal control (A - openAdd = true to open) */
+/* Modal control */
 const openAdd = ref<boolean>(false);
-
-/* Modal inputs */
-const nomorSurat = ref<string>("3");
-const computedNomorSurat = computed(
-  () => `BAC...../U/18/LPPNPI/PGD.07/XI/2024`,
-);
-
-// ✅ PERBAIKAN: handleSubmitFromModal di parent component
-
-// const { savePenomoran, isLoadingPenomoran } = usePenomoran();
-// const toast = useToast();
-
-const handleSubmitFromModal = async (payload) => {
-  console.log("📥 Received payload from modal:", payload);
-
-  try {
-    // ✅ Kirim ke backend dulu
-    const response = await savePenomoran(payload);
-
-    console.log("✅ Response dari backend:", response);
-
-    // ✅ Setelah berhasil, tambahkan ke tabel lokal
-    rows.value.push({
-      id: response.data?.id || Date.now().toString(),
-      jenis: payload.jenis,
-      tanggal: new Date(payload.tanggal).toLocaleDateString("id-ID"),
-      perihal: payload.perihal,
-      jumlah: payload.jumlah,
-      penandatangan: form.value.penandatangan || "-", // ✅ Simpan dari form untuk display saja
-      pengusul: "Anda", // atau ambil dari user session
-      tglUsulan: new Date().toLocaleString("id-ID"),
-      status: "Belum Diajukan",
-      klasifikasi: payload.klasifikasi,
-      jenis_naskah: `${payload.jenis} - ${payload.perihal}`,
-      nomor_surat: response.data?.nomor_surat || [], // dari BE
-    });
-
-    // Reset pagination
-    currentPage.value = 1;
-
-    toast.add({
-      title: "Berhasil",
-      description: "Usulan berhasil ditambahkan",
-      color: "green",
-    });
-  } catch (error) {
-    console.error("❌ Error di handleSubmitFromModal:", error);
-
-    // Toast sudah ditampilkan di usePenomoran,
-    // tapi bisa tambahkan log atau handling khusus di sini
-  }
-};
 
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
@@ -833,9 +824,14 @@ const filteredRows = computed(() => {
   const fs = filterStatus.value;
 
   return rows.value.filter((r) => {
+    if (!r || typeof r !== "object") return false;
+
     const matchSearch = Object.values(r).some((v) =>
-      String(v).toLowerCase().includes(s),
+      String(v ?? "")
+        .toLowerCase()
+        .includes(s),
     );
+
     const matchStatus = fs === "Semua" || r.status === fs;
     return matchSearch && matchStatus;
   });
@@ -862,97 +858,13 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
-/* WATCHERS: reset page when relevant changes */
+/* WATCHERS */
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
 });
-
-/* BADGE COLORS */
-const badgeColor = (status: string) =>
-  ({
-    "Belum Diajukan": "bg-gray-500 text-gray-700",
-    "Menunggu Verifikasi": "bg-yellow-200 text-yellow-700",
-    Disetujui: "bg-green-200 text-green-700",
-    Ditolak: "bg-red-200 text-red-700",
-  })[status.trim()] || "bg-gray-200 text-gray-700";
-
-/* Simulated loading */
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 700);
-});
-
-/* COPY nomor */
-const copyNomor = async () => {
-  try {
-    await navigator.clipboard.writeText(computedNomorSurat.value);
-    // simple feedback, replace with toast if you have one
-    // alert("Nomor disalin");
-  } catch (err) {
-    // ignore
-  }
-};
-
-const submitUsulan = async () => {
-  if (!selectedRow.value) return;
-
-  const nomorSurat = selectedRow.value.nomor_surat;
-
-  // Siapkan payload file untuk BE
-  const filesPayload = [];
-
-  if (Array.isArray(nomorSurat)) {
-    // Multiple nomor_surat → banyak file
-    nomorSurat.forEach((no: string, idx: number) => {
-      const file = uploadedFiles.value[idx];
-      if (file) {
-        filesPayload.push({
-          file_name: file.name,
-          file_text: file, // langsung kirim file (tanpa text/base64)
-        });
-      }
-    });
-  } else {
-    // Single nomor_surat
-    const file = uploadedFiles.value[0];
-    if (file) {
-      filesPayload.push({
-        file_name: file.name,
-        file_text: file,
-      });
-    }
-  }
-
-  try {
-    await submitBooking(selectedRow.value.id_request, { files: filesPayload });
-    // openPreview.value = false;
-  } catch (e) {
-    console.error("Gagal submit booking:", e);
-  }
-};
-
-/* Close dropdown when click outside */
-function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
-  for (const el of Array.from(dropdownEls)) {
-    if (el.contains(target)) return;
-  }
-  openFilterStatus.value = false;
-}
-
-// onMounted(() => {
-//   document.addEventListener("click", handleDocumentClick);
-// });
-// onBeforeUnmount(() => {
-//   document.removeEventListener("click", handleDocumentClick);
-// });
 </script>
 
 <style scoped>
-/* small fade-in for dropdown */
 @keyframes fade-in {
   from {
     opacity: 0;

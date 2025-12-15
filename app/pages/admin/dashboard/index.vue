@@ -74,7 +74,7 @@
               Surat Masuk Terbaru
             </h3>
             <UButton
-              to="/inbox"
+              to="/admin/korespondensi/kotak-masuk"
               size="xs"
               color="primary"
               variant="ghost"
