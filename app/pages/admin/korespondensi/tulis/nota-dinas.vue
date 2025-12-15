@@ -16,9 +16,9 @@
       root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
     }">
       <div class="flex-1 overflow-y-auto space-y-1">
-
         <TulisInputBerkas v-model="selectedBerkasId" :items="berkasList || []" :loading="berkasStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
+
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Kepada ..." :items="items"
           :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Tembusan ..." :items="items"
@@ -53,31 +53,156 @@
         </div>
 
         <div class="flex flex-col py-4">
-          <div class="flex flex-wrap items-center justify-between w-full gap-3 mb-2">
-            <div class="flex flex-wrap gap-2 flex-shrink-0">
-              <UModal v-model="isTemplateModalOpen" title="Pilih Template">
-                <UButton label="Pilih Template" color="primary" variant="soft"
-                  icon="i-heroicons-adjustments-horizontal" />
-                <template #body>
-                  <div class="flex flex-col gap-2">
-                    <UCard v-for="template in templates" :key="template.id"
-                      class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" @click="applyTemplate(template)">
-                      <div class="py-3">
-                        <h3 class="font-bold dark:text-white">{{ template.name }}</h3>
-                      </div>
-                    </UCard>
-                  </div>
-                </template>
-              </UModal>
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-              <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
+          <div class="flex items-center justify-between w-full gap-3">
+            <UButton label="Pilih Template" color="primary" variant="soft" icon="i-heroicons-adjustments-horizontal"
+              @click="isTemplateModalOpen = true" />
+
+            <div class="flex gap-3 flex-shrink-0">
+              <UButton label="Simpan Sebagai Template" icon="i-heroicons-plus" variant="soft" color="primary"
+                @click="isAddTemplateOpen = true" />
+
+              <UButton label="Template Saya" icon="i-heroicons-bookmark" variant="soft" color="primary"
+                @click="isMyTemplateModalOpen = true" />
             </div>
           </div>
 
+          <!-- Modal Pilih Template Publik -->
+          <UModal v-model:open="isTemplateModalOpen" title="Pilih Template">
+            <template #body>
+              <div class="space-y-3">
+                <UCard v-for="template in templates" :key="template.id">
+                  <!-- Header -->
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold text-gray-800">
+                      {{ template.name }}
+                    </h3>
+
+                    <UButton label="Gunakan" size="xs" color="primary" variant="soft"
+                      @click="applyTemplate(template)" />
+                  </div>
+
+                  <!-- Preview (TANPA border) -->
+                  <iframe :srcdoc="template.content" class="w-full rounded bg-white"
+                    style="height: 90px; pointer-events: none;" />
+                </UCard>
+              </div>
+            </template>
+          </UModal>
+
+          <!-- Modal Simpan Template -->
+          <UModal v-model:open="isAddTemplateOpen" :ui="{ width: 'sm:max-w-md' }">
+            <template #header>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Simpan Template
+              </h3>
+            </template>
+
+            <template #body>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nama Template
+                  </label>
+                  <UInput v-model="newTemplateName" placeholder="Masukkan nama template" icon="i-heroicons-tag"
+                    size="lg" class="w-full" />
+                </div>
+
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div class="flex items-start gap-2">
+                    <UIicon name="i-heroicons-information-circle"
+                      class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <p class="text-sm text-blue-800 dark:text-blue-300">
+                      Konten editor saat ini akan disimpan sebagai template
+                      <strong>{{ newTemplateName || '(belum diberi nama)' }}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template #footer>
+              <div class="flex w-full justify-end gap-3">
+                <UButton label="Batal" variant="ghost" color="gray" @click="isAddTemplateOpen = false" />
+                <UButton label="Simpan Template" color="primary" icon="i-heroicons-check-circle"
+                  :disabled="!newTemplateName.trim()" @click="saveMyTemplate" />
+              </div>
+            </template>
+          </UModal>
+
+          <!-- Modal Template Saya -->
+          <UModal v-model:open="isMyTemplateModalOpen" :ui="{ width: 'sm:max-w-xl' }">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">
+                  Template Saya
+                </h3>
+                <UBadge color="primary" variant="subtle">
+                  {{ myTemplates.length }}
+                </UBadge>
+              </div>
+            </template>
+
+            <template #body>
+              <div class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+
+                <UCard v-for="template in myTemplates" :key="template.id"
+                  class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <div class="space-y-4">
+
+                    <!-- Header (selaras dgn form label style) -->
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <UIicon name="i-heroicons-bookmark-solid"
+                          class="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {{ template.name }}
+                        </h4>
+                      </div>
+
+                      <UButton icon="i-heroicons-trash" color="red" variant="ghost" size="xs"
+                        @click.stop="deleteTemplate(template.id)" />
+                    </div>
+
+                    <!-- Content (samakan tone text + prose) -->
+                    <div v-html="template.content" style="
+                      font-family: 'Times New Roman', serif;
+                      font-size: 14px;
+                      line-height: 1.4;
+                    "></div>
+
+                    <!-- Action (posisi & feel sama) -->
+                    <div class="flex justify-end pt-1">
+                      <UButton label="Gunakan Template" size="sm" color="primary" @click="applyTemplate(template)" />
+                    </div>
+                  </div>
+                </UCard>
+
+                <!-- Empty state (selaras tone info box) -->
+                <div v-if="myTemplates.length === 0"
+                  class="p-6 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+                  <UIicon name="i-heroicons-bookmark" class="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                  <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    Belum ada template tersimpan
+                  </p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    Klik "Simpan Sebagai Template" untuk menyimpan konten sebagai template
+                  </p>
+                </div>
+
+              </div>
+            </template>
+
+
+            <template #footer>
+              <div class="flex w-full justify-end">
+                <UButton label="Tutup" variant="ghost" color="gray" @click="isMyTemplateModalOpen = false" />
+              </div>
+            </template>
+          </UModal>
+
           <ClientOnly>
             <div
-              class="flex flex-col bg-gray-100 dark:bg-gray-800 transition-all duration-300 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              class="flex flex-col bg-gray-100 dark:bg-gray-800 transition-all duration-300 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div
                 class="bg-white dark:bg-gray-900 px-8 pt-8 pb-4 border-b border-gray-100 dark:border-gray-700 select-none">
                 <div class="flex items-center pb-2 mb-6">
@@ -103,19 +228,26 @@
                   <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
                     NOTA DINAS
                   </h1>
-                  <p class="text-lg mt-1 text-[14px]">
-                    Nomor : ..............................................
-                  </p>
+                  <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                 </div>
 
-                <table class="w-full text-lg leading-relaxed mb-4 tn-roman text-black dark:text-white">
+                <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black dark:text-white">
                   <tbody>
                     <tr>
                       <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
                       <td class="text-[14px] w-[20px] align-top">:</td>
                       <td class="text-[14px] align-top">
-                        {{selectedTertuju.length ? selectedTertuju.map((s: any) => s.labelJob || s.label).join(", ") :
-                          "..................."}}
+                        <span v-html="selectedTertuju.length
+                          ? selectedTertuju
+                            .map(
+                              (s: any, i: number) =>
+                                `<div style='margin-left:1em;text-indent:-1em'>
+                                    ${i + 1}. ${s.labelJob || s.label}
+                                  </div>`
+                            )
+                            .join('')
+                          : '................................................'
+                          "></span>
                       </td>
                     </tr>
                     <tr>
@@ -134,7 +266,6 @@
                     </tr>
                   </tbody>
                 </table>
-                <div class="border-t-2 border-black dark:border-white mb-4"></div>
               </div>
 
               <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
@@ -145,9 +276,9 @@
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div>Tangerang, {{ formattedDate }}</div>
-                      <div class="font-bold">AVP of Enterprise Technology Planning</div>
+                      <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px]">Ivan Dwi Santoso</div>
+                    <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
                 <div class="text-[12px] mt-2 w-full text-left text-black dark:text-white">
@@ -168,17 +299,16 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800">
-          <UButton label="Simpan Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" :loading="isLoadingDraft" @click="handleSaveDraft" />
-          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            class="px-8 font-bold" />
+          <UButton label="Preview Dokumen" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
       </div>
     </UCard>
 
     <USlideover v-model:open="isOpenPreview" title="Preview PDF" side="bottom" :ui="{
       content: 'h-screen max-h-screen',
-      body: 'p-0'
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
     }">
       <template #body>
         <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
@@ -189,348 +319,595 @@
           </div>
         </div>
       </template>
+      <template #footer>
+        <div class="flex justify-end gap-4 w-full">
+          <UButton label="Simpan Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+            class="px-8" :loading="isLoadingDraft" @click="handleSaveDraft" />
+          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            class="px-8 font-bold" @click="handleKirimDokumen" />
+        </div>
+      </template>
     </USlideover>
-
   </div>
 </template>
 
 <script setup lang="ts">
 /* -------------------------------------------------------------------------- */
-/* IMPORTS                                                                    */
+/* IMPORTS                                                                    */
 /* -------------------------------------------------------------------------- */
+// ... IMPORTS tidak berubah ...
 import { ref, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
-import { CalendarDate } from '@internationalized/date';
+import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import { useAuth } from "@/composables/auth";
+import type { Editor as TinyMCEEditor } from 'tinymce';
 
-// Import Validasi dan Type
-import { validateDraftPayload, type DraftPayload } from "~/types/drafts";
+// Types
 import type { Berkas } from "~/types/berkas";
+// Import validateDraftPayload dari types/drafts
+import { validateDraftPayload, type DraftPayload } from "~/types/drafts";
 
 /* -------------------------------------------------------------------------- */
-/* COMPOSABLES                                                                */
+/* COMPOSABLES                                                                */
 /* -------------------------------------------------------------------------- */
 const route = useRoute();
 const router = useRouter();
-const { apiGet } = useApi();
-const { saveDraft, isLoadingDraft, getDraftDetail } = useDraft();
+const { saveDraft, sendMessage, isLoadingDraft, getDraftDetail } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
+const { user, getProfile } = useAuth();
+const toast = useToast(); // Inisialisasi Toast
+
+const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 /* -------------------------------------------------------------------------- */
-/* STATE & REFS                                                               */
+/* STATE & REFS                                                               */
 /* -------------------------------------------------------------------------- */
-const breadcrumbs = [{ label: 'Dashboard', to: '/user/dashboard' }, { label: 'Tulis Nota Dinas', to: '#' }];
-const isTemplateModalOpen = ref(false);
+// --- UI State ---
+const breadcrumbs = [
+  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Tulis Nota Dinas", to: "#" },
+];
+
 const isOpenPreview = ref(false);
-const isLoadingData = ref(false);
+const loading = ref(false);
+const isLoadingData = ref(false); // Tambahkan state ini jika belum ada, untuk loading generate PDF
+const myTemplates = ref<any[]>([]);
+const isTemplateModalOpen = ref(false)
+const isAddTemplateOpen = ref(false)
+const isMyTemplateModalOpen = ref(false)
+const newTemplateName = ref('')
 
-const date = ref<CalendarDate>();
+// --- Form State ---
+const editDraftId = ref<string | null>(null);
+// TANGGAL SURAT KASIH DEFAULT HARI INI
+const today = new Date();
+const defaultDate = new CalendarDate(
+  today.getFullYear(),
+  today.getMonth() + 1,
+  today.getDate()
+);
+const date = ref<CalendarDate>(defaultDate);
 const subject = ref("");
 const selectedSifat = ref();
 const uploadedFiles = ref<File[]>([]);
-const editDraftId = ref<string | null>(null);
+const existingFiles = ref<any[]>([]);
+const english = ref(false);
 
-const english = ref(false)
+// --- Data Lists ---
 const berkasList = ref<Berkas[]>([]);
-const berkasStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
+const berkasStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedBerkasId = ref<string | null>(null);
 
-const items = ref<any[]>([]);
+// --- Select Menu State ---
+const items = ref<any[]>([]); // Master Data Penerima
 const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
 
+// --- Editor ---
+const content = ref("");
 const editorContent = ref("");
-const pdfUrl = ref('');
-const existingFiles = ref<any[]>([]);
+const pdfBlob = ref<Blob | null>(null);
+const pdfUrl = ref("");
 
-const templates = [{ id: 1, name: 'Default', content: `<ol><li>Poin 1</li></ol>` }];
-const sifatOptions = [{ label: 'Rahasia', value: 'rahasia' }, { label: 'Biasa', value: 'biasa' }];
-
+// --- TinyMCE Config ---
+// TOMBOL FULLSCREEN PINDAH KE KANAN
 const tinyMceInit = {
   base_url: '/tinymce',
   suffix: '.min',
-  height: 600,
+  height: 400,
   menubar: false,
-  statusbar: false,
-  plugins: 'lists advlist link image table preview code fullscreen noneditable',
-  toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | code fullscreen',
-  noneditable_class: 'mceNonEditable',
-  content_style: `body { font-family: 'Times New Roman'; font-size: 12pt; margin: 20px; } table { width: 100%; border-collapse: collapse; } td { padding: 2px; }`
+  promotion: false,
+  branding: false,
+  placeholder: 'Ketik konten disini...',
+  plugins: 'lists advlist link image code table fullscreen',
+  // Tombol fullscreen diletakkan di akhir toolbar
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+
+  content_style: `
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 14pt;
+    }
+  `,
+
+  setup(editor: TinyMCEEditor) {
+    tinymceEditor.value = editor;
+  }
 };
 
+// --- Options ---
+// MOCK TEMPLATES (Bisa diisi dari data statis/API jika ada template publik)
+const templates = [
+  {
+    id: 'list-decimal',
+    name: 'List Angka (1,2,3)',
+    content: '<ol><li>Poin pertama</li><li>Poin kedua</li><li>Poin ketiga</li></ol>'
+  },
+  {
+    id: 'list-alpha',
+    name: 'List Huruf (A,B,C)',
+    content: '<ol type="A"><li>Poin A</li><li>Poin B</li><li>Poin C</li></ol>'
+  },
+  {
+    id: 'bullet',
+    name: 'Bullet List',
+    content: '<ul><li>Item pertama</li><li>Item kedua</li><li>Item ketiga</li></ul>'
+  },
+  {
+    id: 'table',
+    name: 'Tabel',
+    content:
+      '<table border="1" width="100%" style="border-collapse:collapse;">' +
+      '<tr><th>Kolom 1</th><th>Kolom 2</th></tr>' +
+      '<tr><td>Isi</td><td>Isi</td></tr>' +
+      '</table>'
+  }
+];
+
+
+const sifatOptions = [{ label: "Rahasia", value: "rahasia" }, { label: "Biasa", value: "biasa" }];
+
 /* -------------------------------------------------------------------------- */
-/* LIFECYCLE HOOKS                                                            */
+/* COMPUTED PROPERTIES (Tidak Berubah)                                        */
+/* -------------------------------------------------------------------------- */
+const selectedBerkas = computed(() => berkasList.value.find((b) => b.id === selectedBerkasId.value));
+
+const formattedDate = computed(() => {
+  if (!date.value) return "-";
+  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
+  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+});
+
+// ... sortedItemsTertuju & sortedItemsTembusan (Tidak Berubah) ...
+const sortedItemsTertuju = computed(() => {
+  if (selectedTertuju.value.length === 0) return items.value;
+  // Pisahkan yang terpilih dan belum
+  const selectedVals = new Set(selectedTertuju.value.map(i => i.value));
+  const selectedItems = items.value.filter(i => selectedVals.has(i.value));
+  const unselectedItems = items.value.filter(i => !selectedVals.has(i.value));
+  return [...selectedItems, ...unselectedItems];
+});
+
+const sortedItemsTembusan = computed(() => {
+  if (selectedTembusan.value.length === 0) return items.value;
+  const selectedVals = new Set(selectedTembusan.value.map(i => i.value));
+  const selectedItems = items.value.filter(i => selectedVals.has(i.value));
+  const unselectedItems = items.value.filter(i => !selectedVals.has(i.value));
+  return [...selectedItems, ...unselectedItems];
+});
+
+/* -------------------------------------------------------------------------- */
+/* HELPER METHODS (DIPERBAIKI)                                             */
+/* -------------------------------------------------------------------------- */
+const applyTemplate = async (t: any) => {
+  if (!tinymceEditor.value) return;
+
+  // BERSIHKAN HTML TEMPLATE
+  const cleanContent = t.content
+    .trim()                 // buang enter awal & akhir
+    .replace(/>\s+</g, '><') // rapikan antar tag
+
+  // Insert di cursor aktif (TIDAK menimpa konten lama)
+  tinymceEditor.value.insertContent(cleanContent);
+
+  // Sinkronkan ke v-model
+  editorContent.value = tinymceEditor.value.getContent();
+
+  // Tutup modal
+  await nextTick();
+  isTemplateModalOpen.value = false;
+  isMyTemplateModalOpen.value = false;
+};
+
+
+// Fungsi Helper untuk Validasi dan Menampilkan Toast
+const validateAndToast = (payload: DraftPayload) => {
+  const validationResult = validateDraftPayload(payload);
+
+  if (!validationResult.isValid) {
+    // Ambil pesan error pertama
+    const firstErrorKey = Object.keys(validationResult.errors)[0];
+    const errorMessage = validationResult.errors[firstErrorKey];
+
+    toast.add({
+      title: 'Validasi Gagal',
+      description: errorMessage,
+      icon: 'i-heroicons-x-circle-20-solid',
+      color: 'red'
+    });
+    return false;
+  }
+  return true;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* CORE FUNCTIONS (Preview & Save)                                            */
+/* -------------------------------------------------------------------------- */
+
+const getBasePayload = () => {
+  const tglStr = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : new Date().toISOString().split("T")[0];
+
+  const pengirimId = user.value?.position || "70007846"; // Fallback ke contoh user
+
+  return {
+    id_naskah: editDraftId.value,
+    pengirim: pengirimId,
+    penerima: selectedTertuju.value.map(i => i.value),
+    tembusan: selectedTembusan.value.map(i => i.value),
+    klasifikasi: selectedBerkas.value?.klasifikasi || "OPS.02", // Fallback contoh
+    klasifikasi_text: selectedBerkas.value?.judulBerkas || "Air Traffic Flow Management (ATFM)",
+    sifat: selectedSifat.value?.value || 'biasa',
+    perihal: subject.value,
+    konten: editorContent.value,
+    english: english.value,
+    nama_tempat: user.value?.areaText || "Tangerang",
+    nama_jabatan: user.value?.positionText || "Direktur Utama",
+    tanda_tangan: "vsydc526d728g29uwedhwidciwdcbhbddy2",
+    nama_lengkap: user.value?.nama || "John Doe",
+    tgl: tglStr,
+    lampiran_files: uploadedFiles.value,
+    final_pdf: null, // Kita set null di payload object, nanti dihandle di FormData
+  } as DraftPayload;
+}
+
+const handlePreview = async () => {
+  const payload = getBasePayload();
+
+  // 1. Validasi Input sebelum generate PDF
+  if (!validateAndToast(payload)) {
+    return;
+  }
+
+  // 2. Jika valid, jalankan proses preview
+  await openPreview();
+};
+
+// --- 2. Preview PDF (UPDATE: SIMPAN BLOB) ---
+async function openPreview() {
+  isLoadingData.value = true;
+  try {
+    isOpenPreview.value = true;
+    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+
+    // Reset Blob lama
+    pdfBlob.value = null;
+
+    const draftData = getBasePayload();
+
+    // Payload khusus generate PDF (String only)
+    const pdfPayload: any = {
+      penerima: selectedTertuju.value.map(i => i.labelJob || i.label),
+      tembusan: selectedTembusan.value.map(i => i.labelJob || i.label),
+      tgl: draftData.tgl,
+      perihal: draftData.perihal,
+      sifat: draftData.sifat,
+      htmlContent: draftData.konten,
+      penandatangan: draftData.nama_lengkap,
+      nama_jabatan: draftData.nama_jabatan,
+      nama_tempat: draftData.nama_tempat,
+    };
+
+    const response = await fetch("http://172.20.16.115:3011/ND/generate-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pdfPayload),
+    });
+
+    if (!response.ok) throw new Error("Gagal generate PDF");
+
+    // AMBIL BLOB DAN SIMPAN KE STATE
+    const blob = await response.blob();
+    pdfBlob.value = blob; // <--- PENTING: Disimpan untuk proses kirim
+    pdfUrl.value = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error("PDF generate error:", err);
+    toast.add({ title: 'Error Preview', description: "Gagal generate PDF.", color: 'red' });
+    isOpenPreview.value = false;
+  } finally {
+    isLoadingData.value = false;
+  }
+}
+
+// Helper untuk membuat FormData (DRY Code)
+const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
+  const formData = new FormData();
+
+  formData.append("pengirim", payload.pengirim);
+
+  // Array Handling
+  payload.penerima.forEach((id) => formData.append("penerima[]", String(id)));
+  payload.tembusan.forEach((id) => formData.append("tembusan[]", String(id)));
+
+  formData.append("klasifikasi", payload.klasifikasi);
+  formData.append("klasifikasi_text", payload.klasifikasi_text);
+  formData.append("sifat", payload.sifat);
+  formData.append("perihal", payload.perihal);
+  formData.append("konten", payload.konten);
+
+  formData.append("nama_tempat", payload.nama_tempat);
+  formData.append("nama_jabatan", payload.nama_jabatan);
+  formData.append("tanda_tangan", payload.tanda_tangan);
+  formData.append("nama_lengkap", payload.nama_lengkap);
+
+  formData.append("tgl", payload.tgl);
+  formData.append("english", String(payload.english));
+
+  // Upload File Baru
+  if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+    uploadedFiles.value.forEach((file) => {
+      formData.append("lampiran_files", file, file.name);
+    });
+  }
+
+  // File Lama
+  if (existingFiles.value && existingFiles.value.length > 0) {
+    existingFiles.value.forEach((file) => {
+      formData.append("existing_lampiran_ids[]", file.id);
+    });
+  }
+
+  // LOGIC FINAL PDF (Hanya untuk KIRIM)
+  if (includePdf && pdfBlob.value) {
+    // Nama file diset statis atau dinamis sesuai kebutuhan
+    const fileName = `Nota_Dinas_${payload.tgl}.pdf`;
+    formData.append("final_pdf", pdfBlob.value, fileName);
+  } else if (includePdf && !pdfBlob.value) {
+    console.warn("PDF Blob is missing during send!");
+  }
+
+  return formData;
+}
+
+// --- 3. Save Draft (UPDATE: HAPUS FINAL PDF) ---
+const handleSaveDraft = async () => {
+  if (!user.value) await getProfile();
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
+
+  // Generate FormData TANPA PDF (parameter kedua false)
+  const formData = createFormData(payload, false);
+
+  // Pastikan key final_pdf TIDAK ADA atau dihapus jika createFormData defaultnya ada
+  // (Di fungsi createFormData di atas saya sudah buat conditional `includePdf`)
+
+  try {
+    await saveDraft(formData, editDraftId.value);
+    isOpenPreview.value = false;
+    await router.push("/admin/korespondensi/draft");
+  } catch (e) {
+    // Error handled in composable
+  }
+};
+
+// --- 4. Kirim Dokumen (UPDATE: IMPLEMENTASI BARU) ---
+const handleKirimDokumen = async () => {
+  if (!user.value) await getProfile();
+  const payload = getBasePayload();
+
+  // Validasi
+  if (!validateAndToast(payload)) return;
+
+  // Cek apakah PDF hasil preview sudah ada
+  if (!pdfBlob.value) {
+    toast.add({
+      title: 'PDF Belum Siap',
+      description: "Silakan tunggu proses preview selesai atau refresh preview.",
+      color: 'orange'
+    });
+    return;
+  }
+
+  // Generate FormData DENGAN PDF (parameter kedua true)
+  const formData = createFormData(payload, true);
+
+  try {
+    // Panggil endpoint /ND/send-message
+    await sendMessage(formData);
+
+    // Sukses
+    isOpenPreview.value = false;
+    // Redirect ke halaman Outbox atau Dashboard setelah kirim
+    await router.push("/admin/korespondensi/terkirim");
+  } catch (e) {
+    // Error handled in composable
+    console.error("Gagal Kirim:", e);
+  }
+};
+
+
+// Perbaikan 3: Menggunakan editorContent.value dan mereset newTemplateName
+const saveMyTemplate = () => {
+  if (!newTemplateName.value.trim()) return;
+
+  if (!tinymceEditor.value) return;
+
+  const content = tinymceEditor.value.getContent();
+
+  myTemplates.value.push({
+    id: Date.now(),
+    name: newTemplateName.value,
+    content
+  });
+
+  newTemplateName.value = "";
+  isAddTemplateOpen.value = false;
+
+  toast.add({
+    title: 'Berhasil',
+    description: 'Template berhasil disimpan.',
+    icon: 'i-heroicons-check-circle-20-solid',
+    color: 'green'
+  });
+};
+
+
+const deleteTemplate = (id: number) => {
+  myTemplates.value = myTemplates.value.filter(t => t.id !== id);
+  toast.add({
+    title: 'Dihapus',
+    description: "Template berhasil dihapus.",
+    icon: 'i-heroicons-trash-20-solid',
+    color: 'orange'
+  });
+};
+
+
+/* -------------------------------------------------------------------------- */
+/* LIFECYCLE HOOKS                                                            */
 /* -------------------------------------------------------------------------- */
 onMounted(async () => {
-  // 1. Load Master Berkas
-  try {
-    berkasStatus.value = 'loading';
-    const resBerkas = await getBerkasList();
-    berkasList.value = Array.isArray(resBerkas) ? resBerkas : resBerkas?.data ?? [];
-    berkasStatus.value = 'success';
-  } catch (err) {
-    console.error("Gagal load Berkas:", err);
-    berkasStatus.value = 'error';
+  // ... (Logic Loading User, Berkas, dan Penerima tidak berubah) ...
+
+  // A. LOAD USER
+  if (!user.value) {
+    try {
+      await getProfile();
+    } catch (e) {
+      console.error("Gagal load profile user");
+      return;
+    }
   }
 
-  // 2. Load Master Penerima
+  // B. LOAD BERKAS (MASTER DATA)
   try {
-    const resRecipients = await getRecipients(70016581);
-    const rawRecipients = resRecipients?.recipients || resRecipients?.data || [];
-    items.value = rawRecipients.map((r: any) => ({
-      // Format Label Master: NAMA - (KODE) JABATAN
-      // Contoh: AVIRIANTO SURATNO - (U) Direktur Utama
-      label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
-      labelJob: r.position_text,
-      value: r.position, // ID Jabatan
-      raw: r
-    }));
+    berkasStatus.value = "loading";
+    const response = await getBerkasList();
+    berkasList.value = Array.isArray(response) ? response : (response?.data ?? []);
+    berkasStatus.value = "success";
   } catch (err) {
-    console.error("Gagal load Penerima:", err);
-    items.value = [];
+    console.error("Gagal load berkas", err);
+    berkasStatus.value = "error";
   }
 
-  // 3. Populate Form (Edit Mode)
+  // C. LOAD PENERIMA & POPULATE DRAFT
   try {
-    const now = new Date();
-    date.value = new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    // 1. Ambil Master Data Penerima Dulu
+    const userPositionId = user.value?.position;
+    const res = await getRecipients(userPositionId);
+    const rawData = res.recipients || res.data || [];
 
+    // --- MAPPING MASTER DATA (Supaya Dropdown & Badge Benar) ---
+    items.value = rawData.map((r: any) => {
+      // Pastikan ID diambil dengan benar. Tambahkan fallback '0' biar tidak NaN.
+      const id = r.position || r.id || r.position_id || r.persnum || "0";
+
+      return {
+        // FORMAT LABEL SESUAI REQUEST (Badge & Dropdown)
+        label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
+
+        // Simpan info jabatan saja untuk keperluan PDF Preview (cleaner)
+        labelJob: r.position_text,
+
+        // ID Jabatan (Pastikan String)
+        value: String(id),
+
+        raw: r,
+      };
+    });
+
+    // 2. CEK JIKA INI EDIT MODE
     const draftId = route.query.draft_id as string;
-    if (draftId) {
-      isLoadingData.value = true;
-      editDraftId.value = draftId;
-      const res = await getDraftDetail(draftId);
 
-      if (res.success && res.data) {
-        const d = res.data;
+    if (draftId) {
+      loading.value = true;
+      editDraftId.value = draftId;
+
+      const resDraft = await getDraftDetail(draftId);
+      if (resDraft.success && resDraft.data) {
+        const d = resDraft.data;
+
+        // Populate Field Sederhana
         subject.value = d.perihal || "";
+        content.value = d.konten || "";
+        editorContent.value = d.konten || ""; // Pastikan editorContent juga terisi
+        english.value = d.english || false;
 
         const draftSifat = d.sifat?.toLowerCase();
         selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions.find(opt => opt.value === 'biasa');
-        english.value = d.english || false;
 
         if (d.tanggal) {
           const dateObj = new Date(d.tanggal);
           date.value = new CalendarDate(dateObj.getFullYear(), dateObj.getMonth() + 1, dateObj.getDate());
         }
 
-        // --- SELECTED BERKAS ---
         if (d.klasifikasi && berkasList.value.length > 0) {
-          let foundBerkas = null;
-          // Cari by ID dulu
-          if (d.id_berkas) foundBerkas = berkasList.value.find(b => b.id === d.id_berkas);
-          // Cari by Kode
-          if (!foundBerkas) {
-            const cleanCode = d.klasifikasi.toString().trim().toLowerCase();
-            foundBerkas = berkasList.value.find(b => b.klasifikasi?.toString().toLowerCase() === cleanCode);
-          }
-          // Cari by Judul
-          if (!foundBerkas && d.klasifikasi_text) {
-             const cleanText = d.klasifikasi_text.toString().trim().toLowerCase();
-             foundBerkas = berkasList.value.find(b => b.judulBerkas?.toString().toLowerCase() === cleanText);
-          }
+          const foundBerkas = berkasList.value.find(b =>
+            b.id === d.id_berkas ||
+            b.klasifikasi?.toString().toLowerCase() === d.klasifikasi.toString().toLowerCase()
+          );
           if (foundBerkas) selectedBerkasId.value = foundBerkas.id;
         }
 
-        editorContent.value = d.konten || "";
         if (d.lampiran_files) existingFiles.value = d.lampiran_files;
 
-        // ============================================================
-        // LOGIC FIX: SELECTED PENERIMA & TEMBUSAN (PRIORITAS MASTER DATA)
-        // ============================================================
+        // --- LOGIC VITAL: POPULATE PENERIMA (FIX SELECT & BADGE) ---
+        const processDraftItems = (list: any[]) => {
+          if (!Array.isArray(list)) return [];
+          return list.map((draftItem) => {
+            // 1. Ambil ID dari draft item. Cek field 'position' atau 'value'.
+            const rawId = draftItem.position || draftItem.value || draftItem.id;
+            const targetId = String(rawId);
 
-        /**
-         * Helper: Mencari Item di Master Data (items.value) berdasarkan Persnum
-         * Tujuannya: Menggunakan object REFERENCE yang sudah ada di dropdown
-         * supaya checklist menyala dan format label konsisten.
-         */
-        const findInMaster = (draftItem: any) => {
-          const draftPersnum = String(draftItem.persnum || '');
-          if (!draftPersnum) return null;
+            // 2. CARI DI MASTER DATA (ITEMS)
+            const foundInMaster = items.value.find(m => m.value === targetId);
 
-          return items.value.find(m =>
-            String(m.raw?.persnum || m.raw?.personal_number || '') === draftPersnum
-          );
-        };
-
-        /**
-         * Fungsi Mapping:
-         * 1. Cek di Master Data.
-         * 2. Jika ADA: Pakai object master itu (Label akan otomatis ikut format master).
-         * 3. Jika TIDAK ADA: Buat object baru, push ke master, lalu pakai object baru itu.
-         */
-        const processItems = (draftList: any[]) => {
-          if (!Array.isArray(draftList)) return [];
-
-          return draftList.map((dr) => {
-            // 1. Coba cari object yang SUDAH ADA di Master (items.value)
-            const existingMasterItem = findInMaster(dr);
-
-            if (existingMasterItem) {
-              // KEMBALIKAN REFERENSI MASTER (Checklist Nyala & Label Konsisten)
-              return existingMasterItem;
+            if (foundInMaster) {
+              return foundInMaster;
             } else {
-              // 2. Jika tidak ada, buat ITEM BARU (Fallback)
-              const newItem = {
-                // Format label fallback jika data tidak ada di master
-                label: `${dr.nama} - ${dr.positionText || dr.position_text}`,
-                labelJob: dr.positionText || dr.position_text || dr.labelJob,
-                value: dr.position || dr.persnum,
-                raw: dr
-              };
+              // JIKA TIDAK KETEMU (Fallback):
+              const pName = draftItem.nama || draftItem.persnum_person_text || 'Unknown';
+              const pAbbr = draftItem.kode || draftItem.position_abbreviation || '-';
+              const pJob = draftItem.jabatan || draftItem.positionText || draftItem.position_text || 'Unknown Job';
 
-              // Push ke master list agar ada di dropdown
-              items.value.push(newItem);
-
-              return newItem;
+              return {
+                label: `${pName} - (${pAbbr}) ${pJob}`,
+                labelJob: pJob,
+                value: targetId !== 'undefined' ? targetId : "0", // Cegah NaN
+                raw: draftItem
+              }
             }
           });
         };
 
-        // Eksekusi Processing (Langsung assign hasilnya ke v-model)
-        if (d.penerima) selectedTertuju.value = processItems(d.penerima);
-        if (d.tembusan) selectedTembusan.value = processItems(d.tembusan);
+        if (d.penerima) selectedTertuju.value = processDraftItems(d.penerima);
+        if (d.tembusan) selectedTembusan.value = processDraftItems(d.tembusan);
 
-        // Paksa UI update
         await nextTick();
       }
-      isLoadingData.value = false;
     }
   } catch (err) {
-    console.error("Error init:", err);
-    isLoadingData.value = false;
-  }
-});
-
-/* -------------------------------------------------------------------------- */
-/* COMPUTED & METHODS                                                         */
-/* -------------------------------------------------------------------------- */
-const selectedBerkas = computed(() => berkasList.value.find((b) => b.id === selectedBerkasId.value));
-const formattedDate = computed(() => {
-  if (!date.value) return "-";
-  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-});
-const applyTemplate = (t: any) => { editorContent.value = t.content; isTemplateModalOpen.value = false; };
-
-/* -------------------------------------------------------------------------- */
-/* PREVIEW & SAVE                                                             */
-/* -------------------------------------------------------------------------- */
-const generatePdfFromBackend = async () => {
-  const payload = {
-    htmlContent: editorContent.value,
-    penerima: selectedTertuju.value.map(i => i.labelJob || i.label),
-    dari: selectedBerkas.value?.judulBerkas || '-',
-    tanggal: formattedDate.value,
-    penandatangan: "Ivan Dwi Santoso",
-    tembusan: selectedTembusan.value.map(i => i.labelJob || i.label)
-  };
-  const res = await fetch('http://172.20.16.115:3011/ND/generate-pdf', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error("Gagal generate PDF");
-  return await res.blob();
-}
-
-const openPreview = async () => {
-  isOpenPreview.value = true; isLoadingData.value = true;
-  if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-  try {
-    const blob = await generatePdfFromBackend();
-    pdfUrl.value = URL.createObjectURL(blob);
-  } catch (e) {
-    alert("Gagal memuat preview."); isOpenPreview.value = false;
-  } finally { isLoadingData.value = false; }
-}
-
-const handleSaveDraft = async () => {
-  if (!selectedBerkas.value) { return alert("Mohon pilih berkas arsip terlebih dahulu."); }
-  isLoadingDraft.value = true;
-
-  try {
-    const pdfBlob = await generatePdfFromBackend();
-
-    // --- LOGIC FIX START ---
-    // Helper function untuk mengambil Persnum dengan aman
-    const extractPersnum = (item: any) => {
-      const raw = item.raw || {};
-
-      // 1. Cek berbagai kemungkinan nama field untuk Persnum di API/Database Anda
-      // Silakan cek console log browser untuk melihat nama field asli dari 'raw'
-      const id = raw.persnum || raw.personal_number || raw.pernr || raw.employee_id || raw.personalNumber;
-
-      // 2. Jika ditemukan di raw, kembalikan
-      if (id) return String(id);
-
-      // 3. Fallback HANYA jika item.value BUKAN position (misal saat edit mode itemnya beda struktur)
-      // Tapi karena Anda bilang 'value' itu position, kita lebih baik return string kosong atau error daripada salah simpan
-      console.warn("Persnum tidak ditemukan untuk item:", item.label);
-      return String(item.value); // Tetap return value sebagai cadangan terakhir
-    };
-    // --- LOGIC FIX END ---
-
-    const rawPayload: DraftPayload = {
-      id_naskah: editDraftId.value,
-      pengirim: "70016786",
-
-      // GUNAKAN HELPER TADI DI SINI
-      penerima: selectedTertuju.value.map(extractPersnum),
-      tembusan: selectedTembusan.value.map(extractPersnum),
-
-      klasifikasi: selectedBerkas.value?.klasifikasi || "",
-      klasifikasi_text: selectedBerkas.value?.judulBerkas || "",
-      sifat: selectedSifat.value?.value || "biasa",
-      perihal: subject.value,
-      konten: editorContent.value,
-      english: english.value,
-      nama_tempat: "Tangerang",
-      nama_jabatan: "AVP of Enterprise Technology Planning",
-      tanda_tangan: "vsydc526d728g29uwedhwidciwdcbhbddy2",
-      nama_lengkap: "Ivan Dwi Santoso",
-      tgl: date.value ? `${date.value.year}-${String(date.value.month).padStart(2, '0')}-${String(date.value.day).padStart(2, '0')}` : "",
-      final_pdf: pdfBlob
-    };
-
-    // Validasi & FormData builder tetap sama...
-    const validation = validateDraftPayload(rawPayload);
-    if (!validation.isValid) {
-      alert(`Validasi Gagal: ${Object.values(validation.errors)[0]}`);
-      isLoadingDraft.value = false;
-      return;
-    }
-
-    const formData = new FormData();
-
-    // ... Sisa kode sama persis ...
-
-    Object.keys(rawPayload).forEach(key => {
-      const val = rawPayload[key as keyof DraftPayload];
-      if (!Array.isArray(val) && key !== 'lampiran_files' && key !== 'final_pdf' && val !== undefined && val !== null) {
-        formData.append(key, String(val));
-      }
-    });
-
-    if (rawPayload.penerima.length) rawPayload.penerima.forEach(v => formData.append("penerima[]", String(v)));
-    if (rawPayload.tembusan.length) rawPayload.tembusan.forEach(v => formData.append("tembusan[]", String(v)));
-    if (rawPayload.final_pdf) formData.append("final_pdf", rawPayload.final_pdf, "Draft_Nota_Dinas.pdf");
-
-    if (uploadedFiles.value.length) {
-      uploadedFiles.value.forEach(file => {
-        if (file instanceof File) formData.append("lampiran_files[]", file, file.name);
-      });
-    }
-
-    // Ingat update useDraft agar pakai PUT native sesuai diskusi sebelumnya
-    await saveDraft(formData, editDraftId.value);
-    await router.push("/admin/korespondensi/draft");
-
-  } catch (e: any) {
-    console.error("Save Error:", e);
+    console.error("Error init data:", err);
   } finally {
-    isLoadingDraft.value = false;
+    loading.value = false;
   }
-};
+});
 </script>
 
 <style scoped>

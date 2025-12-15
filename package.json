@@ -15,7 +15,7 @@
     "@nuxt/icon": "^2.1.0",
     "@nuxt/ui": "^4.2.1",
     "@nuxtjs/i18n": "^10.2.1",
-    "@tinymce/tinymce-vue": "^6.3.0",
+    "@tinymce/tinymce-vue": "^4.0.7",
     "@tiptap/extension-font-family": "^3.11.1",
     "@tiptap/extension-image": "^3.11.1",
     "@tiptap/extension-link": "^3.11.1",
@@ -51,7 +51,8 @@
     "vue": "^3.5.24",
     "vue-multiselect": "^3.4.0",
     "vue-router": "^4.6.3",
-    "vue3-datepicker": "^0.4.0"
+    "vue3-datepicker": "^0.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@iconify-json/heroicons": "^1.2.3",

@@ -380,7 +380,7 @@
                   icon="i-heroicons-adjustments-horizontal"
                 />
               <UModal v-model:open="isTemplateModalOpen" title="Pilih Template">
-                
+
                 <template #body>
                   <div class="flex flex-col gap-2">
                     <UCard
@@ -742,49 +742,29 @@
 </template>
 
 <script setup lang="ts">
-const content = ref("");
-const loading = ref(false);
-
-// konfigurasi TinyMCE
-const tinyMceInit = {
-  base_url: '/tinymce',
-  suffix: '.min',
-  height: 400,
-  menubar: false,
-  promotion: false,
-  branding: false, // hilangkan tulisan Tiny
-  placeholder: 'Ketik konten disini...',
-  plugins: 'lists advlist link image code table',
-  toolbar:
-    'bold italic underline strikethrough | ' +
-    'alignleft aligncenter alignright alignjustify | ' +
-    'table bullist numlist outdent indent | ' +
-    'forecolor backcolor | code',
-  advlist_bullet_styles: 'default,circle,square',
-  advlist_number_styles:
-    'default,lower-alpha,lower-roman,upper-alpha,upper-roman',
-};
-
 /* -------------------------------------------------------------------------- */
-/* IMPORTS                                  */
+/* IMPORTS                                                                    */
 /* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted, nextTick } from "vue";
 import { CalendarDate } from "@internationalized/date";
+import Editor from '@tinymce/tinymce-vue'; // Pastikan import ini ada jika pakai TinyMCE
 import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import { useAuth } from "@/composables/auth"; // <--- IMPORT USEAUTH
 
 // Types
 import type { Berkas } from "~/types/berkas";
 import type { DraftPayload } from "~/types/draft";
 
 /* -------------------------------------------------------------------------- */
-/* COMPOSABLES                                */
+/* COMPOSABLES                                                                */
 /* -------------------------------------------------------------------------- */
 const { saveDraft, isLoadingDraft } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
+const { user, getProfile } = useAuth(); // <--- INIT USEAUTH
 
 /* -------------------------------------------------------------------------- */
-/* STATE & REFS                                 */
+/* STATE & REFS                                                               */
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [
@@ -794,105 +774,47 @@ const breadcrumbs = [
 const isFullscreenEditor = ref(false);
 const isTemplateModalOpen = ref(false);
 const isOpenPreview = ref(false);
-const open = ref(false);
+const loading = ref(false);
 
 // --- Form State ---
 const date = ref<CalendarDate>();
 const subject = ref("");
 const selectedSifat = ref();
 const uploadedFiles = ref<File[]>([]);
-// const english = ref(false); // Ref untuk bahasa (jika diperlukan)
+const english = ref(false);
 
 // --- Data Lists & Select ---
 const berkasList = ref<Berkas[]>([]);
 const berkasStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedBerkasId = ref<string | null>(null);
 
-const items = ref([]); // Raw recipients data
-const selectedTertuju = ref([]);
-const selectedTembusan = ref([]);
+// *** REVISI STATE SELECT ***
+const items = ref<any[]>([]);
+const selectedTertuju = ref<any[]>([]); // Pastikan array
+const selectedTembusan = ref<any[]>([]); // Pastikan array
 
 // --- Editor & PDF State ---
+const content = ref(""); // Digunakan untuk v-model editor
 const editorContent = ref("");
-const rawHtmlContent = ref("");
-const textEditorComponent = ref();
-const pdfSourceRef = ref<HTMLElement | null>(null);
 const pdfUrl = ref("");
 let quillInstance: any = null;
 
+// --- TinyMCE Config ---
+const tinyMceInit = {
+  base_url: '/tinymce',
+  suffix: '.min',
+  height: 400,
+  menubar: false,
+  promotion: false,
+  branding: false,
+  placeholder: 'Ketik konten disini...',
+  plugins: 'lists advlist link image code table',
+  toolbar: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | table bullist numlist | code',
+};
+
 // --- Static Options ---
 const templates = [
-  { id: 1, name: "Default", content: `
-<ol style="padding: 5px 5px 5px 15px; text-align: justify; line-height: 20px;" type="1">
-<li style="margin-bottom: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-<li style="margin-bottom: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-<li style="margin-bottom: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-</ol>` },
-  { id: 2, name: "Custom Numbering", content: `
-<ol style="padding: 5px 5px 5px 15px; text-align: justify; line-height: 20px;" type="1">
-<li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-<ol style="margin-left: -20px;" type="a">
-<li>Satu</li>
-<li>Dua</li>
-<li>Tiga</li>
-</ol>
-</li>
-<li style="margin-top: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-<ol style="margin-left: -20px;" type="a">
-<li>Satu</li>
-<li>Dua</li>
-<li>Tiga</li>
-</ol>
-</li>
-<li style="margin-top: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-<ol style="margin-left: -20px;" type="a">
-<li>Satu</li>
-<li>Dua</li>
-<li>Tiga</li>
-</ol>
-</li>
-</ol>` },
-  { id: 3, name: "Table", content: `
-<ol style="padding: 5px 5px 5px 15px; text-align: justify; line-height: 20px;" type="1">
-<li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-<li style="margin-top: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<br />
-<table style="border-collapse: collapse; width: 100%;" border="1">
-<thead>
-<tr>
-<th style="text-align: center;" width="10%">Kolom1</th>
-<th style="text-align: center;" width="10%">Kolom 2</th>
-<th style="text-align: center;" width="10%">Kolom 3</th>
-<th style="text-align: center;" width="10%">Kolom 4</th>
-<th style="text-align: center;" width="10%">Kolom 5</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td rowspan="1">Baris 1</td>
-<td style="text-align: center;">Baris 1</td>
-<td style="text-align: center;">Baris 1</td>
-<td style="text-align: center;">Baris 1</td>
-<td style="text-align: center;">Baris 1</td>
-</tr>
-<tr>
-<td>Baris 2</td>
-<td style="text-align: center;">Baris 2</td>
-<td style="text-align: center;">Baris 2</td>
-<td style="text-align: center;">Baris 2</td>
-<td style="text-align: center;">Baris 2</td>
-</tr>
-<tr>
-<td>Baris 3</td>
-<td style="text-align: center;">Baris 3</td>
-<td style="text-align: center;">Baris 3</td>
-<td style="text-align: center;">Baris 3</td>
-<td style="text-align: center;">Baris 3</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li style="margin-top: 5px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-</ol>` },
+  { id: 1, name: "Default", content: `<ol><li>Contoh isi...</li></ol>` },
 ];
 const sifatOptions = [
   { label: "Rahasia", value: "rahasia" },
@@ -900,7 +822,7 @@ const sifatOptions = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* COMPUTED PROPERTIES                             */
+/* COMPUTED PROPERTIES                                                        */
 /* -------------------------------------------------------------------------- */
 const selectedBerkas = computed(() => {
   return berkasList.value.find((b) => b.id === selectedBerkasId.value);
@@ -908,65 +830,20 @@ const selectedBerkas = computed(() => {
 
 const formattedDate = computed(() => {
   if (!date.value) return "-";
-  const jsDate = new Date(
-    date.value.year,
-    date.value.month - 1,
-    date.value.day,
-  );
-  return jsDate.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-});
-
-const itemsTembusan = computed(() => {
-  return items.value.map((item) => ({
-    ...item,
-    disabled: selectedTertuju.value.some((s) => s.value === item.value),
-  }));
-});
-
-const itemsTertuju = computed(() => {
-  return items.value.map((item) => ({
-    ...item,
-    disabled: selectedTembusan.value.some((s) => s.value === item.value),
-  }));
+  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
+  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
 /* -------------------------------------------------------------------------- */
-/* HELPER METHODS                               */
+/* HELPER METHODS                                                             */
 /* -------------------------------------------------------------------------- */
-const onEditorReady = (q: any) => {
-  quillInstance = q;
-};
-
-const cleanContent = (content: string) => content;
-
-const toggleFullscreenEditor = () => {
-  isFullscreenEditor.value = !isFullscreenEditor.value;
-  document.body.style.overflow = isFullscreenEditor.value ? "hidden" : "";
-};
-
-const openTemplate = () => {
-  isTemplateModalOpen.value = true;
-}
-
 const applyTemplate = (t: any) => {
   content.value = t.content;
   isTemplateModalOpen.value = false;
 };
 
-const isItemSelected = (item, list) => list.some((s) => s.value === item.value);
-
-const removeItem = (item, list, event) => {
-  event.stopPropagation();
-  const index = list.findIndex((s) => s.value === item.value);
-  if (index > -1) list.splice(index, 1);
-};
-
 /* -------------------------------------------------------------------------- */
-/* CORE FUNCTIONS                                */
+/* CORE FUNCTIONS (Preview & Save)                                            */
 /* -------------------------------------------------------------------------- */
 
 // --- 2. Preview PDF ---
@@ -975,142 +852,163 @@ async function openPreview() {
   try {
     isOpenPreview.value = true;
 
-    const json: any = {};
+    // Pastikan URL sebelumnya dibersihkan
+    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
 
-    // Array penerima
-    json.penerima = selectedTertuju.value.map(i => i.label);
-    
-    // Array tembusan (jika ada)
-    json.tembusan = selectedTembusan.value.map(i => i.label);
+    const payload: any = {};
 
-    // Contoh tambahan data lain
+    // Map ke Label untuk Tampilan PDF
+    payload.penerima = selectedTertuju.value.map(i => i.label);
+    payload.tembusan = selectedTembusan.value.map(i => i.label);
+
+    // Format Tanggal
     const tglStr = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(
-        date.value.day,
-      ).padStart(2, "0")}`
-    : new Date().toISOString().split("T")[0];
-    json.tgl = tglStr;
-    json.perihal = subject.value;
-    json.sifat = selectedSifat.value?.value || 'biasa';
+      ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+      : new Date().toISOString().split("T")[0];
 
-    const base64Text = btoa(unescape(encodeURIComponent(content.value)));
-    console.log(base64Text);
+    payload.tgl = tglStr;
+    payload.perihal = subject.value;
+    payload.sifat = selectedSifat.value?.value || 'biasa';
+    payload.htmlContent = content.value; // Kirim konten HTML
 
-    json.html = base64Text;
-    json.filename = "nota-dinas.pdf";
-    console.log(json);
-    // return;
+    // Ambil Info Pengirim dari User Login
+    payload.penandatangan = user.value?.nama || "Nama Tidak Diketahui";
 
-    const response = await $fetch("http://localhost:3211/generate-pdf", {
+    // FETCH PDF
+    // Pastikan endpoint ini benar dan backend mengembalikan BLOB
+    const response = await fetch("http://172.20.16.115:3011/ND/generate-pdf", {
       method: "POST",
-      body: json,
-      // penting: untuk mendapatkan blob PDF
-      responseType: "blob",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    loading.value = false;
-    pdfUrl.value = URL.createObjectURL(response);
+
+    if(!response.ok) throw new Error("Gagal generate PDF");
+
+    const blob = await response.blob();
+    pdfUrl.value = URL.createObjectURL(blob);
+
   } catch (err) {
-    console.error("PDF generate error:", err);    
+    console.error("PDF generate error:", err);
     alert("Terjadi kesalahan saat generate PDF.");
-    loading.value = false;
     isOpenPreview.value = false;
+  } finally {
+    loading.value = false;
   }
 }
 
 // --- 3. Save Draft Action ---
 const handleSaveDraft = async () => {
+  if (!user.value) await getProfile(); // Safety check
+
   if (!selectedBerkas.value) {
     alert("Mohon pilih berkas arsip terlebih dahulu.");
     return;
   }
 
-  const pdfBlob = await getGeneratedPdfBlob();
-  if (!pdfBlob) {
-    alert("Gagal membuat PDF.");
-    return;
-  }
-
   const formData = new FormData();
 
-  // number
-  formData.append("pengirim", 70016786);
+  // 1. PENGIRIM (Ambil ID Jabatan User Login)
+  formData.append("pengirim", user.value?.position || "0");
 
-  // --- ARRAY WAJIB FORMAT penerima[] ---
+  // 2. PENERIMA & TEMBUSAN (Kirim VALUE / ID JABATAN)
+  // Format array: penerima[] = "ID1", penerima[] = "ID2"
   selectedTertuju.value.forEach((i) => {
-    formData.append("penerima[]", i.value);
+    formData.append("penerima[]", String(i.value));
   });
 
   selectedTembusan.value.forEach((i) => {
-    formData.append("tembusan[]", i.value);
+    formData.append("tembusan[]", String(i.value));
   });
 
-  // informasi lain
+  // 3. INFORMASI LAIN
   formData.append("klasifikasi", selectedBerkas.value.klasifikasi || "");
-  formData.append("klasifikasi_text", selectedBerkas.value.isiRingkas || "");
+  formData.append("klasifikasi_text", selectedBerkas.value.judulBerkas || selectedBerkas.value.isiRingkas || ""); // Sesuaikan nama field berkas
   formData.append("sifat", selectedSifat.value?.value || "biasa");
   formData.append("perihal", subject.value);
+  formData.append("konten", content.value); // Gunakan v-model editor
 
-  const contentHtml = quillInstance
-    ? quillInstance.root.innerHTML
-    : editorContent.value;
-  formData.append("konten", contentHtml);
+  // 4. INFO TANDA TANGAN (Ambil dari User Login)
+  formData.append("nama_tempat", user.value?.areaText || "Tangerang");
+  formData.append("nama_jabatan", user.value?.positionText || "Jabatan Tidak Diketahui");
+  formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2"); // Hardcode/Generated ID
+  formData.append("nama_lengkap", user.value?.nama || "Nama Tidak Diketahui");
 
-  formData.append("nama_tempat", "Tangerang");
-  formData.append("nama_jabatan", "AVP of Enterprise Technology Planning");
-  formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2");
-  formData.append("nama_lengkap", "Ivan Dwi Santoso");
-
+  // 5. TANGGAL
   const tglStr = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(
-        date.value.day,
-      ).padStart(2, "0")}`
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
     : new Date().toISOString().split("T")[0];
   formData.append("tgl", tglStr);
 
-  // FINAL PDF (dummy string sesuai request)
-  formData.append("final_pdf", "Draft_Nota_Dinas.pdf");
+  // 6. DUMMY PDF & LAMPIRAN
+  formData.append("final_pdf", "Draft_Nota_Dinas.pdf"); // Backend butuh file asli atau generate ulang disana?
 
-  // Lampiran (kirim nama file saja)
   uploadedFiles.value.forEach((file) => {
-    formData.append("lampiran_files[]", file.name);
+    formData.append("lampiran_files[]", file, file.name);
   });
 
-  // English default false
-  formData.append("english", english.value ?? false);
+  formData.append("english", String(english.value));
 
   try {
+    // Panggil saveDraft dari composable
     await saveDraft(formData);
-    await navigateTo("/admin/korespondensi/terkirim");
+    // await navigateTo("/admin/korespondensi/terkirim"); // Redirect jika perlu
   } catch (e) {
     console.error(e);
   }
 };
 
 /* -------------------------------------------------------------------------- */
-/* LIFECYCLE HOOKS                              */
+/* LIFECYCLE HOOKS                                                            */
 /* -------------------------------------------------------------------------- */
 onMounted(async () => {
-  // 1. Fetch Berkas
+  // A. LOAD USER PROFILE (Agar Position ID tersedia)
+  if (!user.value) {
+    try {
+      await getProfile();
+    } catch (e) {
+      console.error("Gagal load profile user");
+      return;
+    }
+  }
+
+  // B. FETCH BERKAS
   try {
     berkasStatus.value = "loading";
     const response = await getBerkasList();
-    berkasList.value = Array.isArray(response)
-      ? response
-      : (response?.data ?? []);
+    berkasList.value = Array.isArray(response) ? response : (response?.data ?? []);
     berkasStatus.value = "success";
   } catch (err) {
     console.error("Gagal mengambil daftar berkas", err);
     berkasStatus.value = "error";
   }
 
-  // 2. Fetch Recipients
+  // C. FETCH RECIPIENTS (Menggunakan Position ID User Login)
   try {
-    const res = await getRecipients(70016581);
-    items.value = res.recipients.map((r) => ({
-      label: `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`,
-      value: r.position,
-      raw: r,
-    }));
+    // Ambil position ID user
+    const userPositionId = user.value?.position || 70016581; // Fallback ID jika null
+
+    console.log("Mengambil penerima untuk posisi:", userPositionId);
+
+    const res = await getRecipients(userPositionId);
+    const rawData = res.recipients || res.data || [];
+
+    // MAPPING DATA AGAR KONSISTEN (BADGE & DROPDOWN)
+    items.value = rawData.map((r: any) => {
+      // 1. Tentukan Value (ID Jabatan)
+      const safeValue = r.position || r.id || r.position_id || r.persnum;
+
+      // 2. Format Label (Agar Dropdown & Badge sama)
+      // Format: NAMA PEJABAT - (KODE) NAMA JABATAN
+      const formattedLabel = `${r.persnum_person_text} - (${r.position_abbreviation}) ${r.position_text}`;
+
+      return {
+        label: formattedLabel, // Ini yang akan muncul di Dropdown & Badge (jika default USelectMenu)
+        labelJob: r.position_text, // Simpan nama jabatan saja jika butuh
+        value: safeValue ? String(safeValue) : "0", // Pastikan string ID
+        raw: r,
+      };
+    });
+
   } catch (err) {
     console.error("Gagal mengambil daftar penerima", err);
   }
