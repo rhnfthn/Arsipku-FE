@@ -9,16 +9,22 @@ import {
   MoreVertical, History, ArrowUpDown, Layers, Download, Loader2, AlertTriangle
 } from 'lucide-vue-next';
 
-// Import Composable
+// 1. IMPORT USEAUTH
+import { useAuth } from '@/composables/auth';
+
+// Import Composable Draft (Asumsi path sudah benar)
 // import { useDraft } from '~/composables/useDraft';
 
 // --- STATE ---
+// 2. AMBIL USER DARI AUTH
+const { user } = useAuth();
 const { drafts, fetchDrafts, deleteDraft, isLoadingDraft } = useDraft();
 
-const USER_POSITION_ID = "70016786";
+// HAPUS BARIS INI (Tidak dipakai lagi)
+// const USER_POSITION_ID = "70016786";
 
 const router = useRouter();
-const selected = ref(null); // Masih disimpan biar tidak error, tapi tidak dipakai untuk UI preview
+const selected = ref(null);
 const selectedIds = ref(new Set());
 const activeTab = ref("ALL");
 const searchQuery = ref("");
@@ -28,7 +34,7 @@ const showDeleteModal = ref(false);
 const itemToDelete = ref(null);
 const isDeleting = ref(false);
 
-// --- TOOLBAR STATE ---
+// ... (State Toolbar lainnya tetap sama) ...
 const showFilterMenu = ref(false);
 const activeFilterType = ref("Semua");
 const showDateMenu = ref(false);
@@ -39,7 +45,6 @@ const showPageMenu = ref(false);
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
-// Options
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [5, 10, 25, 50];
@@ -53,8 +58,6 @@ const tabs = [
   { label: "Konsep", value: "KONSEP", icon: FilePen },
 ];
 
-// --- API & DATA MAPPING ---
-
 const getInitial = (name) => name ? name.substring(0, 2).toUpperCase() : 'NA';
 const getRandomColor = (id) => {
   const colors = [
@@ -67,7 +70,6 @@ const getRandomColor = (id) => {
   return colors[id.charCodeAt(0) % colors.length] || colors[0];
 };
 
-// HANDLER EDIT (Navigasi ke Form)
 const handleEdit = (mail) => {
   router.push({
     path: '/admin/korespondensi/tulis/nota-dinas',
@@ -78,7 +80,6 @@ const handleEdit = (mail) => {
   });
 };
 
-// Format tanggal
 const formatDateShort = (isoString) => {
   if (!isoString) return '-';
   const date = new Date(isoString);
@@ -92,18 +93,36 @@ const formatFullDate = (isoString, time) => {
   return `${d} ${time || ''}`;
 }
 
+// 3. UPDATE LOGIC FETCH DATA
+const refreshData = async () => {
+  // Cek apakah user sudah ada
+  if (user.value?.position) {
+    await fetchDrafts(user.value.position);
+  } else {
+    console.warn("User position belum tersedia, menunggu data user...");
+  }
+};
+
 onMounted(async () => {
-  await refreshData();
+  // Jika user sudah ada (navigasi client), langsung fetch
+  if (user.value) {
+    await refreshData();
+  }
 });
 
-const refreshData = async () => {
-  await fetchDrafts(USER_POSITION_ID);
-};
+// 4. TAMBAHKAN WATCHER (PENTING UNTUK REFRESH PAGE)
+// Jika halaman direfresh, user.value awalnya null.
+// Watcher ini akan memanggil refreshData otomatis begitu data user tiba dari API/Middleware.
+watch(user, (newUser) => {
+  if (newUser?.position) {
+    refreshData();
+  }
+}, { immediate: true }); // immediate: true agar cek juga saat pertama kali component mount
 
 // MAPPING DATA
 const mappedEmails = computed(() => {
   if (!drafts.value) return [];
-
+  // ... mapping logic sama ...
   return drafts.value.map(item => ({
     id: item.id_naskah,
     from: item.penerima || 'Tanpa Penerima',
@@ -113,7 +132,7 @@ const mappedEmails = computed(() => {
     category: item.jenis || 'KONSEP',
     date: formatDateShort(item.tanggal),
     fullDate: formatFullDate(item.tanggal, item.waktu),
-    rawDate: new Date(item.tanggal), // Tambahan untuk sorting/filtering
+    rawDate: new Date(item.tanggal),
     initial: getInitial(item.penerima),
     color: getRandomColor(item.id_naskah),
     isRead: true,
@@ -122,12 +141,11 @@ const mappedEmails = computed(() => {
   }));
 });
 
-// --- FILTERING & PAGINATION LOGIC ---
-
+// ... (Logic Filtering & Pagination TETAP SAMA) ...
+// ... Copy paste logic filteredEmails, totalItems, paginatedEmails, paginationInfo ...
 const filteredEmails = computed(() => {
-  let result = [...mappedEmails.value]; // Clone array agar aman
+  let result = [...mappedEmails.value];
 
-  // 1. Filter Tab
   if (activeTab.value !== "ALL") {
     if (activeTab.value === 'INTERNAL' && result.some(x => x.category === 'KA')) {
       result = result.filter(mail => mail.category === 'KA' || mail.category === 'INTERNAL');
@@ -136,7 +154,6 @@ const filteredEmails = computed(() => {
     }
   }
 
-  // 2. Filter Search
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     result = result.filter(mail =>
@@ -145,10 +162,9 @@ const filteredEmails = computed(() => {
     );
   }
 
-  // 3. Filter Tanggal (TOOLBAR FEATURE)
   if (activeDateLabel.value !== "Semua") {
     const now = new Date();
-    let days = 30; // Default
+    let days = 30;
     if (activeDateLabel.value === "7 Hari") days = 7;
     if (activeDateLabel.value === "30 Hari") days = 30;
     if (activeDateLabel.value === "60 Hari") days = 60;
@@ -160,7 +176,6 @@ const filteredEmails = computed(() => {
     result = result.filter(mail => mail.rawDate >= limitDate);
   }
 
-  // 4. Sorting (TOOLBAR FEATURE)
   if (activeSortLabel.value === "Terbaru") {
     result.sort((a, b) => b.rawDate - a.rawDate);
   } else {
@@ -188,8 +203,6 @@ const paginationInfo = computed(() => {
 
 watch([activeTab, searchQuery, activeFilterType, activeDateLabel, itemsPerPage], () => { currentPage.value = 1; });
 
-// --- ACTIONS ---
-
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
@@ -205,38 +218,33 @@ const toggleSelectAll = () => {
 
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
 
-// TOOLBAR HANDLERS
-const selectDateFilter = (option) => {
-  activeDateLabel.value = option;
-  showDateMenu.value = false;
-}
+const selectDateFilter = (option) => { activeDateLabel.value = option; showDateMenu.value = false; }
+const selectSortOption = (option) => { activeSortLabel.value = option; showSortMenu.value = false; }
+const selectPageOption = (option) => { itemsPerPage.value = option; showPageMenu.value = false; }
 
-const selectSortOption = (option) => {
-  activeSortLabel.value = option;
-  showSortMenu.value = false;
-}
-
-const selectPageOption = (option) => {
-  itemsPerPage.value = option;
-  showPageMenu.value = false;
-}
-
-// DELETE ACTIONS MODAL
 const confirmDeleteModal = (mail) => {
   itemToDelete.value = mail;
   showDeleteModal.value = true;
 };
 
+// 5. UPDATE DELETE HANDLER
 const handleDelete = async () => {
   if (!itemToDelete.value) return;
 
+  // Pastikan user position ada sebelum menghapus
+  if (!user.value?.position) {
+      alert("Gagal menghapus: Data user tidak ditemukan.");
+      return;
+  }
+
   isDeleting.value = true;
   try {
-    await deleteDraft(itemToDelete.value.id, USER_POSITION_ID);
+    // Gunakan user.value.position
+    await deleteDraft(itemToDelete.value.id, user.value.position);
     await refreshData();
     showDeleteModal.value = false;
     itemToDelete.value = null;
-    selectedIds.value.delete(itemToDelete.value?.id); // Hapus dari seleksi jika ada
+    selectedIds.value.delete(itemToDelete.value?.id);
   } catch (e) {
     console.error(e);
   } finally {
@@ -244,7 +252,6 @@ const handleDelete = async () => {
   }
 };
 
-// Helper Style
 const getCategoryStyle = (cat) => {
   switch (cat) {
     case 'ND': return 'bg-blue-100 text-blue-700';
@@ -268,7 +275,6 @@ const getCategoryLabel = (cat) => {
 <template>
   <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
     :class="['glass-blue']">
-
     <div
       class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
 
@@ -316,7 +322,7 @@ const getCategoryLabel = (cat) => {
           <button @click="showSortMenu = !showSortMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
             <ArrowUpDown class="w-4 h-4" />
-            <span class="text-xs font-medium hidden sm:inline">{{ activeSortLabel }}</span>
+            <!-- <span class="text-xs font-medium hidden sm:inline">{{ activeSortLabel }}</span> -->
           </button>
 
           <div v-if="showSortMenu"
@@ -336,8 +342,7 @@ const getCategoryLabel = (cat) => {
             <button @click="showPageMenu = !showPageMenu"
               class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
               <Layers class="w-4 h-4" />
-              <!-- <span class="text-xs font-medium hidden sm:inline">{{ itemsPerPage }}/Hal</span> -->
-            </button>
+              </button>
 
              <div v-if="showPageMenu"
               class="absolute top-full right-0 mt-1 w-24 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
@@ -473,7 +478,6 @@ const getCategoryLabel = (cat) => {
         </div>
       </div>
     </div>
-
   </div>
 </template>
 

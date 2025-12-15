@@ -161,18 +161,18 @@ import { ArrowRight } from "lucide-vue-next";
 
 definePageMeta({ layout: false });
 
-const { getSSORedirectUrl } = useAuth()
+const { getSSORedirectUrl } = useAuth();
 
 const redirectToSSO = async () => {
-  const url = await getSSORedirectUrl()
+  const url = await getSSORedirectUrl();
 
   if (!url) {
-    console.error("URL SSO tidak ditemukan")
-    return
+    console.error("URL SSO tidak ditemukan");
+    return;
   }
 
-  navigateTo(url, { external: true })
-}
+  navigateTo(url, { external: true });
+};
 
 const collapsed = ref(false);
 const { setLocale } = useI18n();
@@ -225,8 +225,8 @@ const getResponsiveLogoSmall = () => {
       transform: "none",
     };
   return {
-    top: "1.25rem",
-    left: "2rem",
+    top: "1.5rem",
+    left: "4rem",
     width: "100px",
     height: "auto",
     transform: "none",
@@ -276,14 +276,14 @@ onMounted(() => {
       () => {
         showText.value = true;
       },
-      50 + 1200 + 800 + 600
+      50 + 1200 + 800 + 600,
     );
 
     setTimeout(
       () => {
         showOnboarding.value = true;
       },
-      50 + 1200 + 800 + 800
+      50 + 1200 + 800 + 800,
     );
   }, startAt);
 });

@@ -642,7 +642,7 @@ const getCategoryLabel = (cat) => {
             <div>
               <div class="text-sm text-gray-500 mb-0.5">Kepada</div>
               <div class="text-base text-gray-900">
-                {{ selected.recipient || "-" }}
+                {{ selectedItem?.recipientName || "-" }}
               </div>
             </div>
             <div>
@@ -652,17 +652,11 @@ const getCategoryLabel = (cat) => {
               </div>
             </div>
             <div>
-              <div class="text-sm text-gray-500 mb-0.5">Catatan</div>
-              <div class="text-base text-gray-900">
+              <div class="text-base text-gray-500 mb-0.5">Catatan</div>
+              <div class="text-sm text-gray-900">
                 {{ selected.note || "-" }}
               </div>
             </div>
-          </div>
-
-          <div
-            class="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap"
-          >
-            {{ selected.body }}
           </div>
         </div>
 

@@ -1,5 +1,13 @@
 <template>
   <div>
+    <div v-if="isLoadingData || isSdiLoading"
+      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div class="flex flex-col items-center gap-2">
+        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+        <span class="text-gray-600 font-medium">Memproses...</span>
+      </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-900 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden">
       <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
     </div>
@@ -7,388 +15,261 @@
     <UCard variant="soft" :ui="{ root: 'rounded-t-none ring-0 shadow-none bg-white print:hidden' }">
       <div class="flex-1 overflow-y-auto space-y-1">
 
-        <!-- Tanggal Disposisi -->
-        <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 relative gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tanggal
-            Disposisi</span>
-          <div class="relative w-full">
-            <ClientOnly>
-              <UPopover v-model:open="open" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
-                <div class="flex items-center gap-2 cursor-pointer w-full pr-2" @click="open = true">
-                  <UInputDate locale="id-ID" v-model="date" variant="none" size="sm" format="DD MMMM YYYY"
-                    class="flex-1"
-                    :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-8' }" />
-                  <UIcon name="i-lucide-calendar" class="size-4 text-gray-400 shrink-0 mr-1" />
-                </div>
-                <template #content>
-                  <UCalendar v-model="date" class="p-2" @update:model-value="open = false" />
-                </template>
-              </UPopover>
-            </ClientOnly>
-          </div>
-        </div>
+        <div class="grid grid-cols-1 gap-x-6 gap-y-2 mb-6">
+          <div class="space-y-2">
+            <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Sifat</span>
-          <div class="flex flex-wrap gap-1 w-full items-center">
-            <USelectMenu v-model="selectedSifat" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
-              :search-input="{ placeholder: 'Cari sifat ...', size: 'lg' }" variant="none">
-              <template #default>
-                <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full">
-                  <span v-if="selectedSifat" class="text-sm font-medium text-left truncate max-w-[200px]">
-                    {{ selectedSifat.label }}
-                  </span>
-                  <span v-else class="text-sm text-gray-400">Pilih sifat</span>
-                </div>
-              </template>
-            </USelectMenu>
-          </div>
-        </div>
-
-        <!-- Nomor Surat -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Nomor Surat</span>
-            <input type="text" v-model="refNumber"
-              class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
-              placeholder="Ketik nomor surat" />
-          </div>
-        </div>
-
-        <!-- Perihal -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Perihal Surat</span>
-            <input type="text" v-model="subject"
-              class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
-              placeholder="Ketik perihal surat" />
-          </div>
-        </div>
-
-        <!-- Tertuju -->
-        <!-- <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0">Tertuju</span>
-          <div class="flex flex-wrap gap-1 w-full items-center min-h-[28px]">
-            <div class="w-full">
-              <div class="flex items-center gap-1.5 flex-wrap w-full">
-                <UBadge v-for="item in tertujuList" :key="item.value" color="primary" variant="soft" size="md"
-                  class="gap-1.5 pl-2 pr-1 flex items-center rounded-md">
-                  <span class="text-xs font-medium text-left truncate max-w-[500px]">{{ item.label }}</span>
-                  <UButton icon="i-lucide-x" size="2xs" variant="ghost" :padded="false"
-                    class="w-4 h-4 hover:bg-gray-200 rounded" @click="removeTertuju(item)" />
-                </UBadge>
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+              <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Sifat</span>
+              <div class="flex flex-wrap gap-1 w-full items-center">
+                <USelectMenu v-model="selectedSifat" :items="sifatOptions" placeholder="Pilih sifat ..."
+                  class="w-full p-0" variant="none">
+                  <template #default>
+                    <span v-if="selectedSifat" class="text-sm font-medium">{{ selectedSifat.label }}</span>
+                    <span v-else class="text-sm text-gray-400">Pilih sifat</span>
+                  </template>
+                </USelectMenu>
               </div>
-
-              <UPopover :disabled="isLoadingRecipient" :content="{
-                side: 'bottom',
-                align: 'start',
-                alignOffset: 0,
-                sideOffset: 4
-              }" :ui="{
-                content: 'w-[var(--reka-popper-anchor-width)]'
-              }">
-                <div class="w-full flex items-center justify-between cursor-pointer bg-transparent group"
-                  :class="isLoadingRecipient ? 'cursor-wait' : ''">
-
-                  <div class="flex items-center gap-2 text-sm text-gray-400 flex-1 overflow-hidden">
-                    <UIcon v-if="isLoadingRecipient" name="i-lucide-loader-2"
-                      class="animate-spin size-4 shrink-0 text-primary-500" />
-
-                    <span class="truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                      {{ isLoadingRecipient ? 'Sedang memuat data...' : 'Pilih tertuju' }}
-                    </span>
-                  </div>
-                  <UIcon name="i-heroicons-chevron-down-20-solid" class="size-5 text-gray-400 shrink-0" />
-                </div>
-
-                <template #content="{ close }">
-                  <UCommandPalette v-model="tertujuList" multiple virtualize placeholder="Cari tertuju ..."
-                    :groups="groups" :fuse="{
-                      resultLimit: 20,
-                      fuseOptions: {
-                        threshold: 0.3,
-                        keys: ['label', 'suffix']
-                      }
-                    }" class="w-full" :ui="{
-                      input: '[&>input]:h-12 [&>input]:text-sm',
-                      content: 'h-[250px]',
-                      viewport: 'max-h-[350px]'
-                    }" />
-                </template>
-              </UPopover>
-
             </div>
           </div>
-        </div> -->
 
-        <!-- Checklist -->
-        <div class="flex flex-col py-3 border-b border-gray-200 gap-3">
+          <div class="space-y-2">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+              <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Nomor</span>
+              <input type="text" v-model="refNumber"
+                class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
+                placeholder="Nomor Surat Masuk" />
+            </div>
+
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+              <span class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0">Ref. Perihal</span>
+              <input type="text" v-model="subject"
+                class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
+                placeholder="Perihal Surat Masuk" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col py-3 border-b border-gray-200 gap-3 mb-6">
           <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2">
+            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start">
               <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
-                class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-              <label :for="opt"
-                class="text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer select-none text-xs">
+                class="mt-0.5 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer">
+              <label :for="opt" class="text-sm text-gray-700 cursor-pointer select-none leading-tight">
                 {{ opt }}
               </label>
             </div>
           </div>
         </div>
 
-        <!-- Editor -->
         <div class="flex flex-col py-4">
-          <div class="flex justify-end gap-3 mb-2">
-            <UButton v-if="!isFullscreenEditor" icon="i-lucide-maximize" color="neutral" variant="soft"
-              label="Fullscreen" @click="toggleFullscreenEditor" />
-            <UButton icon="i-lucide-eye" color="neutral" variant="soft" label="Preview PDF" @click="openPreview" />
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-gray-700">Preview Layout</h3>
+            <UButton icon="i-lucide-eye" color="primary" size="md" label="Preview" @click="openPreview" />
           </div>
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 dark:bg-gray-900 transition-all duration-300 ql-custom-wrapper"
-              :class="[
-                isFullscreenEditor ? 'fixed inset-0 z-[9999] w-screen h-screen' : 'relative h-screen border border-gray-200 rounded-lg overflow-hidden',
-                !showEditor ? 'hidden-editor-body' : ''
-              ]">
+            <div class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto">
+              <div
+                class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-serif relative">
 
-              <div v-if="isFullscreenEditor" class="absolute top-4 right-6 z-[10000]">
-                <UButton icon="i-lucide-minimize" color="primary" variant="solid" label="Keluar Fullscreen"
-                  class="shadow-xl" @click="toggleFullscreenEditor" />
-              </div>
-
-              <TextEditor ref="textEditorComponent" v-model="editorContent" :is-fullscreen="isFullscreenEditor"
-                @ready="onEditorReady" placeholder="Ketik Catatan Disposisi disini...">
-
-                <template #header>
-                  <div class="w-full border-2 border-black font-serif text-black select-none bg-white">
-                    <div class="flex border-b-2 border-black p-2">
-                      <div class="w-1/2 flex items-center gap-2">
-                        <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
-                        <span class="font-bold text-lg">AirNav Indonesia</span>
-                      </div>
-                      <div class="w-1/2 text-right font-bold text-sm flex flex-col justify-center">
-                        <div>LEMBAR DISPOSISI</div>
-                        <div>KEPALA DIVISI UMUM</div>
-                      </div>
+                <div class="border-2 border-black mb-0">
+                  <div class="flex border-b-2 border-black">
+                    <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
+                      <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
+                      <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                     </div>
-
-                    <div class="flex border-b-2 border-black">
-                      <div class="w-2/3 border-r-2 border-black flex">
-                        <div class="w-24 p-1 border-r-2 border-black font-bold text-xs flex flex-col">
-                          <div class="mb-2 underline">
-                            AGENDA
-                          </div>
-                          <div class="font-bold text-xs flex flex-col justify-center">
-                            <div>No:</div>
-                            <div class="mt-2">Tgl:</div>
-                          </div>
-                        </div>
-                        <div class="flex-1 text-xs">
-                          <div class="flex">
-                            <div class="w-16 p-1">Surat dari</div>
-                            <div class="p-1 flex-1">: {{ selectedSender?.label || '-' }}</div>
-                          </div>
-                          <div class="flex">
-                            <div class="w-16 p-1">Tanggal</div>
-                            <div class="p-1 flex-1">: {{ formattedDate }}</div>
-                          </div>
-                          <div class="flex">
-                            <div class="w-16 p-1">Nomor</div>
-                            <div class="p-1 flex-1">: {{ refNumber || '-' }}</div>
-                          </div>
-                          <div class="flex">
-                            <div class="w-16 p-1">Perihal</div>
-                            <div class="p-1 flex-1">: {{ subject || '-' }}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="w-1/3 p-1 text-xs">
-                        <div class="font-bold mb-1 underline pb-1">KLASIFIKASI</div>
-                        <div class="flex flex-col gap-1">
-                          <div class="flex items-center gap-1">
-                            <span class="text-sm">{{ selectedSifat?.value === 'sangat_rahasia' ? '☑' : '☐' }}</span>
-                            Sangat Rahasia
-                          </div>
-                          <div class="flex items-center gap-1">
-                            <span class="text-sm">{{ selectedSifat?.value === 'rahasia' ? '☑' : '☐' }}</span> Rahasia
-                          </div>
-                          <div class="flex items-center gap-1">
-                            <span class="text-sm">{{ selectedSifat?.value === 'terbatas' ? '☑' : '☐' }}</span> Terbatas
-                          </div>
-                          <div class="flex items-center gap-1">
-                            <span class="text-sm">{{ selectedSifat?.value === 'biasa' ? '☑' : '☐' }}</span> Biasa
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="p-1 border-b-2 border-black text-xs">
-                      <div class="mb-2">
-                        <span class="font-bold underline">Kepada Yth. :</span>
-                        {{tertujuList.length ? tertujuList.map(s => s.label).join(', ') :
-                          '................................................'}}
-                      </div>
-                    </div>
-
-                    <div class="p-1 border-b-2 border-black text-xs flex">
-                      <div class="w-20 font-bold underline">DISPOSISI:</div>
-                      <div class="flex-1 grid grid-cols-3 gap-x-2 gap-y-1">
-                        <div v-for="opt in checklistOptions" :key="opt" class="flex items-center gap-1">
-                          <span class="text-sm">{{ selectedChecklist.includes(opt) ? '☑' : '☐' }}</span> {{ opt }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="p-1 font-bold text-xs bg-white">
-                      <span class="underline">CATATAN :</span>
+                    <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
+                      <div>LEMBAR DISPOSISI</div>
+                      <div class="uppercase">{{ user?.positionText || 'NAMA JABATAN' }}</div>
                     </div>
                   </div>
-                </template>
 
-                <template #footer>
-                  <div
-                    class="w-full border-x-2 border-b-2 border-black font-serif text-black p-2 bg-white relative mt-[-2px] select-none">
-                    <div class="flex justify-end mb-4">
-                      <div class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs">
+                  <div class="flex border-b-2 border-black">
+                    <div class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between">
+                      <div class="font-bold underline mb-4">AGENDA</div>
+                      <div class="text-xs font-bold space-y-2">
+                        <div>No: ........</div>
+                        <div>Tgl: ........</div>
+                      </div>
+                    </div>
+
+                    <div class="w-[55%] border-r-2 border-black p-2 text-xs">
+                      <table class="w-full">
+                        <tr>
+                          <td class="w-16 py-1">Surat dari</td>
+                          <td class="py-1">: {{ selectedSender?.label || '.....................' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1">Tanggal</td>
+                          <td class="py-1">: {{ formattedDate }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1">Nomor</td>
+                          <td class="py-1">: {{ refNumber || '.....................' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1 align-top">Perihal</td>
+                          <td class="py-1 align-top">: {{ subject || '.....................' }}</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                    <div class="w-[30%] p-2 text-xs">
+                      <div class="font-bold underline mb-2">KLASIFIKASI</div>
+                      <div class="space-y-1">
+                        <div v-for="s in sifatOptions" :key="s.value" class="flex items-center gap-2">
+                          <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px]">
+                            {{ selectedSifat?.value === s.value ? '✓' : '' }}
+                          </div>
+                          <span>{{ s.label }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="border-b-2 border-black p-2 text-xs">
+                    <div class="font-bold underline mb-1">Kepada Yth. :</div>
+                    <div class="pl-4 italic text-gray-500">
+                      (Pilih penerima pada tahap selanjutnya / sistem)
+                    </div>
+                  </div>
+
+                  <div class="border-b-2 border-black p-2 text-xs flex">
+                    <div class="w-20 font-bold underline shrink-0">DISPOSISI :</div>
+                    <div class="flex-1 grid grid-cols-3 gap-2">
+                      <div v-for="opt in checklistOptions" :key="opt" class="flex items-start gap-1">
+                        <div
+                          class="w-3 h-3 border border-black flex items-center justify-center text-[8px] mt-0.5 shrink-0">
+                          {{ selectedChecklist.includes(opt) ? '✓' : '' }}
+                        </div>
+                        <span class="leading-tight">{{ opt }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-0 min-h-[300px] relative">
+                    <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
+
+                    <div v-if="showEditor" class="relative">
+                      <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                    </div>
+                    <div v-else class="h-[300px] bg-white w-full"></div>
+
+                    <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
+                      <div
+                        class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
                         Paraf
                       </div>
                     </div>
-
-                    <div class="border-t-2 border-black pt-1 text-[10px] font-bold">
-                      CATATAN<br>
-                      Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada
-                      agenda ini.
-                    </div>
                   </div>
-                </template>
 
-              </TextEditor>
+                  <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
+                    Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
+                    ini.
+                  </div>
+                </div>
+
+              </div>
             </div>
           </ClientOnly>
 
           <div class="flex flex-col py-3 gap-2 mt-4">
-            <label class="text-sm font-medium text-gray-700">Lampiran File</label>
+            <label class="text-sm font-medium text-gray-700">Lampiran File Tambahan</label>
             <FileUpload v-model="uploadedFiles" accept="application/pdf" :multiple="true"
               description="Klik atau drag & drop untuk upload file PDF" />
           </div>
 
-          <!-- Submit -->
-          <div class="py-6 flex justify-end gap-4 bg-white">
-            <UButton label="Simpan Draft" color="gray" variant="outline" size="lg" icon="i-heroicons-document-text" />
-            <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-              class="font-bold" />
-          </div>
-
         </div>
+
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800">
+          <UButton label="Preview Dokumen" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="openPreview" />
+        </div>
+
       </div>
     </UCard>
 
-    <!-- Hidden PDF Content -->
     <ClientOnly>
       <div class="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden">
         <div ref="pdfSourceRef"
-          style="width: 100%; max-width: 800px; padding: 0; background-color: #ffffff; color: #000000; font-family: 'Times New Roman', Times, serif; position: relative; box-sizing: border-box;">
+          style="width: 800px; padding: 20px; background-color: #ffffff; color: #000000; font-family: 'Times New Roman', serif;">
 
-          <table style="border-collapse: collapse; width: 100%; border: 2px solid #000; font-size: 11px;">
-            <tr style="border-bottom: 2px solid #000;">
-              <td colspan="2" style="width: 65%; padding: 5px 10px; vertical-align:top;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                  <img src="/logoAirnav.png" style="height: 50px; object-fit: contain;" alt="Logo" />
-                  <span style="font-weight: bold; font-size: 18px;">AirNav Indonesia</span>
+          <table style="width: 100%; border-collapse: collapse; border: 2px solid #000000;">
+            <tr style="border-bottom: 2px solid #000000;">
+              <td colspan="2" style="padding: 10px; border-right: 2px solid #000000; width: 60%;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <img src="/logoAirnav.png" style="height: 50px;" />
+                  <span style="font-size: 18px; font-weight: bold; color: #000000;">AirNav Indonesia</span>
                 </div>
               </td>
-              <td style="width: 35%; text-align: right; padding: 5px 10px; vertical-align:top;">
-                <div style="font-weight: bold; font-size: 12px;">LEMBAR DISPOSISI</div>
-                <div style="font-weight: bold; font-size: 12px;">KEPALA DIVISI UMUM</div>
+              <td style="padding: 10px; text-align: center; font-weight: bold; font-size: 12px; color: #000000;">
+                <div>LEMBAR DISPOSISI</div>
+                <div style="text-transform: uppercase;">{{ user?.positionText || 'NAMA JABATAN' }}</div>
               </td>
             </tr>
 
-            <tr style="border-bottom: 2px solid #000;">
-              <td style="width: 15%; border-right: 2px solid #000; vertical-align:top; padding: 8px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 25px;">AGENDA</div>
-                <div style="margin-bottom: 15px;">No : <span
-                    style="display:inline-block; border-bottom:1px solid #000; width: 40px;">&nbsp;</span></div>
-                <div>Tgl : <span style="display:inline-block; border-bottom:1px solid #000; width: 40px;">&nbsp;</span>
+            <tr style="border-bottom: 2px solid #000000;">
+              <td style="width: 15%; padding: 5px; border-right: 2px solid #000000; vertical-align: top;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 20px; color: #000000;">AGENDA
                 </div>
+                <div style="font-size: 11px; color: #000000;">No: .........</div>
+                <div style="font-size: 11px; color: #000000;">Tgl: .........</div>
               </td>
-
-              <td style="width: 55%; border-right: 2px solid #000; vertical-align:top; padding: 8px;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <td style="width: 55%; padding: 5px; border-right: 2px solid #000000; vertical-align: top;">
+                <table style="width: 100%; font-size: 11px; color: #000000;">
                   <tr>
-                    <td style="width: 70px; padding-bottom: 6px;">Surat dari</td>
-                    <td style="padding-bottom: 6px;">: <b>{{ selectedSender?.label || '-' }}</b></td>
+                    <td style="width: 60px;">Surat dari</td>
+                    <td>: {{ selectedSender?.label || '-' }}</td>
                   </tr>
                   <tr>
-                    <td style="padding-bottom: 6px;">Tanggal</td>
-                    <td style="padding-bottom: 6px;">: {{ formattedDate }}</td>
+                    <td>Tanggal</td>
+                    <td>: {{ formattedDate }}</td>
                   </tr>
                   <tr>
-                    <td style="padding-bottom: 6px;">Nomor</td>
-                    <td style="padding-bottom: 6px;">: {{ refNumber || '-' }}</td>
+                    <td>Nomor</td>
+                    <td>: {{ refNumber || '-' }}</td>
                   </tr>
                   <tr>
-                    <td style="padding-bottom: 6px; vertical-align:top;">Perihal</td>
-                    <td style="padding-bottom: 6px;">: {{ subject || '-' }}</td>
+                    <td style="vertical-align: top;">Perihal</td>
+                    <td style="vertical-align: top;">: {{ subject || '-' }}</td>
                   </tr>
                 </table>
               </td>
-
-              <td style="width: 30%; vertical-align:top; padding: 8px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 8px;">KLASIFIKASI</div>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                  <div style="display:flex; align-items: center;">
-                    <span style="font-size:14px; margin-right:5px; line-height:1;">{{ selectedSifat?.value ===
-                      'sangat_rahasia' ? '☑' : '☐' }}</span> Sangat Rahasia
-                  </div>
-                  <div style="display:flex; align-items: center;">
-                    <span style="font-size:14px; margin-right:5px; line-height:1;">{{ selectedSifat?.value ===
-                      'rahasia'
-                      ?
-                      '☑' : '☐' }}</span> Rahasia
-                  </div>
-                  <div style="display:flex; align-items: center;">
-                    <span style="font-size:14px; margin-right:5px; line-height:1;">{{ selectedSifat?.value ===
-                      'terbatas' ?
-                      '☑' : '☐' }}</span> Terbatas
-                  </div>
-                  <div style="display:flex; align-items: center;">
-                    <span style="font-size:14px; margin-right:5px; line-height:1;">{{ selectedSifat?.value === 'biasa'
-                      ?
-                      '☑'
-                      : '☐' }}</span> Biasa
+              <td style="width: 30%; padding: 5px; vertical-align: top;">
+                <div
+                  style="font-weight: bold; text-decoration: underline; font-size: 11px; margin-bottom: 5px; color: #000000;">
+                  KLASIFIKASI</div>
+                <div style="font-size: 11px; color: #000000;">
+                  <div v-for="s in sifatOptions" :key="s.value">
+                    [ {{ selectedSifat?.value === s.value ? 'X' : ' ' }} ] {{ s.label }}
                   </div>
                 </div>
               </td>
             </tr>
 
-            <tr style="border-bottom: 2px solid #000;">
-              <td colspan="3" style="padding: 10px;">
-                <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Kepada Yth. :</div>
-
-                <div style="margin-top: 8px; margin-left: 18px;">
-                  {{tertujuList.length ? tertujuList.map(e => e.label).join(', ') : ''}}
-                </div>
+            <tr style="border-bottom: 2px solid #000000;">
+              <td colspan="3" style="padding: 5px; font-size: 11px; color: #000000;">
+                <span style="font-weight: bold; text-decoration: underline;">Kepada Yth. :</span>
+                <div style="margin-left: 10px; margin-top: 5px;">(Daftar Penerima)</div>
               </td>
             </tr>
 
-            <tr style="border-bottom: 2px solid #000;">
-              <td colspan="3" style="padding: 10px;">
-                <div style="display: flex; width: 100%;">
-                  <div style="width: 90px; font-weight: bold; text-decoration: underline; padding-top: 2px;">DISPOSISI
-                    :
-                  </div>
-                  <div style="flex: 1;">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 10px;">
-                      <div v-for="opt in checklistOptions" :key="opt"
-                        style="display: flex; align-items: flex-start; line-height: 1.2;">
-                        <span style="font-size: 14px; margin-right: 5px; line-height: 1;">
-                          {{ selectedChecklist.includes(opt) ? '☑' : '☐' }}
-                        </span>
-                        <span style="font-size: 11px;">{{ opt }}</span>
-                      </div>
+            <tr style="border-bottom: 2px solid #000000;">
+              <td colspan="3" style="padding: 5px;">
+                <div style="display: flex;">
+                  <div
+                    style="width: 80px; font-weight: bold; text-decoration: underline; font-size: 11px; color: #000000;">
+                    DISPOSISI :</div>
+                  <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div v-for="opt in checklistOptions" :key="opt"
+                      style="font-size: 10px; width: 30%; color: #000000;">
+                      [ {{ selectedChecklist.includes(opt) ? 'X' : ' ' }} ] {{ opt }}
                     </div>
                   </div>
                 </div>
@@ -396,47 +277,40 @@
             </tr>
 
             <tr>
-              <td colspan="3" style="padding: 10px; vertical-align:top; position: relative;">
+              <td colspan="3" style="padding: 10px; min-height: 300px; vertical-align: top; position: relative;">
+                <div
+                  style="font-weight: bold; text-decoration: underline; font-size: 11px; margin-bottom: 10px; color: #000000;">
+                  CATATAN :</div>
 
-                <div style="font-weight: bold; margin-bottom: 8px; text-decoration: underline;">CATATAN :</div>
+                <div v-if="showEditor" v-html="editorContent"
+                  style="font-size: 12px; line-height: 1.5; min-height: 200px; color: #000000;"></div>
+                <div v-else style="min-height: 200px;"></div>
 
-                <div v-if="showEditor || rawHtmlContent" v-html="cleanContent(rawHtmlContent)" class="ql-editor-content"
-                  style="font-size: 11px; line-height: 1.4; margin-bottom: 40px; min-height: 100px;">
-                </div>
-                <div v-else style="min-height: 100px;"></div>
-
-                <div style="position: absolute; bottom: 10px; right: 15px;">
+                <div style="text-align: right; margin-top: 50px; margin-right: 20px;">
                   <div
-                    style="border: 1px solid #000; width: 100px; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    style="border: 2px solid #000000; width: 80px; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; margin-left: auto; color: #000000;">
                     Paraf
                   </div>
                 </div>
-
               </td>
             </tr>
 
-            <tr>
-              <td colspan="3" style="border-top: 2px solid #000; padding: 5px 10px;">
-                <div style="font-weight: bold; font-size: 10px; text-decoration: underline; margin-bottom: 2px;">CATATAN
-                </div>
-                <div style="font-size: 10px;">
-                  Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
-                  ini.
-                </div>
+            <tr style="border-top: 2px solid #000000;">
+              <td colspan="3"
+                style="text-align: center; font-size: 9px; font-weight: bold; padding: 2px; color: #000000;">
+                Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda ini.
               </td>
             </tr>
-
           </table>
+
         </div>
       </div>
     </ClientOnly>
 
-    <USlideover v-model:open="isOpenPreview" title="Preview PDF" side="bottom" :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0'
-    }">
+    <USlideover v-model:open="isOpenPreview" title="Preview PDF" side="bottom"
+      :ui="{ content: 'h-screen max-h-screen', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
       <template #body>
-        <div class="h-full w-full flex items-center justify-center bg-gray-100 bg-white">
+        <div class="h-full w-full flex items-center justify-center bg-gray-100">
           <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
@@ -444,58 +318,52 @@
           </div>
         </div>
       </template>
-    </USlideover>
 
+      <template #footer>
+        <div class="flex justify-end gap-4 w-full">
+          <UButton label="Simpan Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+            class="px-8" :loading="isSdiLoading" @click="handleSaveDraft" />
+          <UButton label="Kirim Dokumen" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            class="px-8 font-bold" @click="handleKirimDokumen" />
+        </div>
+      </template>
+    </USlideover>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { CalendarDate } from '@internationalized/date'
-import TextEditor from '~/components/TextEditor.vue'
+import Editor from '@tinymce/tinymce-vue'
+import { useAuth } from "@/composables/auth"
+import type { Editor as TinyMCEEditor } from 'tinymce'
+import { useSdi } from "~/composables/useSdi"
+import { type SdiPayload } from "~/types/sdi"
+
+const { user, getProfile } = useAuth()
+const toast = useToast()
+
+const { saveDraft, sendMessage, isLoading: isSdiLoading } = useSdi()
 
 // --- STATE ---
 const pdfSourceRef = ref<HTMLElement | null>(null)
-const rawHtmlContent = ref('')
 const editorContent = ref('')
-const textEditorComponent = ref()
-let quillInstance: any = null
+const tinymceEditor = ref<TinyMCEEditor | null>(null)
 
 const date = ref<CalendarDate>()
-const open = ref(false)
 const senders_selected = ref('')
 const subject = ref('')
 const refNumber = ref('')
-const isFullscreenEditor = ref(false)
+const isLoadingData = ref(false)
 
 // --- PREVIEW STATE ---
 const isOpenPreview = ref(false)
 const pdfUrl = ref('')
+const pdfBlob = ref<Blob | null>(null)
 
 // --- UPLOAD STATE ---
 const uploadedFiles = ref<File[]>([])
-const isDragging = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-// const id = 70016581
-// const { data: recipientData, status } = await useRecipients(id);
-// const isLoadingRecipient = computed(() => status.value === 'pending');
-
-// // --- TERTUJU LIST ---
-// const tertujuList = ref<RecipientOption[]>([]);
-// const groups = computed(() => {
-//   const items = recipientData.value?.recipients?.ALL || [];
-//   return [{
-//     id: 'users',
-//     label: 'Daftar Pegawai',
-//     items: items
-//   }];
-// });
-
-// function removeTertuju(item: RecipientOption) {
-//   tertujuList.value = tertujuList.value.filter(i => i.value !== item.value);
-// }
 
 // --- CHECKBOX STATE & OPTIONS ---
 const selectedChecklist = ref<string[]>([])
@@ -508,7 +376,7 @@ const checklistOptions = [
 const showEditor = computed(() => selectedChecklist.value.includes('Lainnya'))
 
 // --- MOCK DATA ---
-const senders = [{ label: 'Berkas - OTP', value: 'tes1' }, { label: 'Berkas - Runway Cap', value: 'tes2' }]
+const senders = [{ label: 'Internal - Divisi SDM', value: 'tes1' }, { label: 'Eksternal - Kemenhub', value: 'tes2' }]
 const breadcrumbs = [{ label: 'Dashboard', to: '/user/dashboard' }, { label: 'Tulis Disposisi', to: '#' }]
 const sifatOptions = [
   { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
@@ -518,9 +386,31 @@ const sifatOptions = [
 ]
 const selectedSifat = ref()
 
-onMounted(() => {
+// --- TINYMCE CONFIG ---
+const tinyMceInit = {
+  base_url: '/tinymce',
+  suffix: '.min',
+  height: 300,
+  menubar: false,
+  promotion: false,
+  branding: false,
+  statusbar: false,
+  placeholder: 'Ketik catatan disposisi disini...',
+  plugins: 'lists advlist link table fullscreen',
+  toolbar: 'bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | table',
+  content_style: `
+    body { font-family: "Times New Roman", Times, serif; font-size: 11pt; margin: 10px; }
+    p { margin: 0; padding: 0; line-height: 1.4; }
+  `,
+  setup(editor: TinyMCEEditor) {
+    tinymceEditor.value = editor
+  }
+}
+
+onMounted(async () => {
   const now = new Date()
   date.value = new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate())
+  if (!user.value) await getProfile()
 })
 
 const formattedDate = computed(() => {
@@ -530,160 +420,153 @@ const formattedDate = computed(() => {
 })
 const selectedSender = computed(() => senders.find(s => s.value === senders_selected.value))
 
-// --- HANDLERS ---
-const onEditorReady = (q: any) => { quillInstance = q; }
-const cleanContent = (content: string) => content
-const toggleFullscreenEditor = () => { isFullscreenEditor.value = !isFullscreenEditor.value; document.body.style.overflow = isFullscreenEditor.value ? 'hidden' : '' }
+// --- PAYLOAD PREPARATION ---
+const getPayload = () => {
+  const tglStr = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : new Date().toISOString().split("T")[0];
+
+  return {
+    pengirim: user.value?.position || "70000000",
+    penerima: [],
+    tembusan: [],
+    klasifikasi: "DISPOSISI",
+    klasifikasi_text: "Lembar Disposisi",
+    sifat: selectedSifat.value?.value || 'biasa',
+    perihal: subject.value,
+    konten: showEditor.value ? editorContent.value : '-',
+    english: false,
+    nama_tempat: user.value?.areaText || "Tangerang",
+    nama_jabatan: user.value?.positionText || "Jabatan",
+    tanda_tangan: "hash_ttd_placeholder",
+    nama_lengkap: user.value?.nama || "User",
+    tgl: tglStr,
+    lampiran: uploadedFiles.value.length > 0 ? "Terlampir" : "-",
+    final_pdf: null
+  } as SdiPayload
+}
+
+const createFormData = (payload: SdiPayload, includePdf: boolean = false) => {
+  const formData = new FormData();
+  formData.append("pengirim", String(payload.pengirim));
+  formData.append("sifat", payload.sifat);
+  formData.append("perihal", payload.perihal);
+  formData.append("konten", payload.konten);
+  formData.append("tgl", payload.tgl);
+
+  formData.append("checklist", JSON.stringify(selectedChecklist.value));
+  formData.append("ref_number", refNumber.value);
+
+  if (uploadedFiles.value.length > 0) {
+    uploadedFiles.value.forEach((file) => formData.append("lampiran_files", file, file.name));
+  }
+
+  if (includePdf && pdfBlob.value) {
+    formData.append("final_pdf", pdfBlob.value, `Disposisi_${payload.tgl}.pdf`);
+  }
+  return formData;
+}
+
+// --- ACTIONS ---
+const handleSaveDraft = async () => {
+  if (!user.value) await getProfile();
+  const payload = getPayload();
+  const formData = createFormData(payload, false);
+  try {
+    await saveDraft(formData);
+    toast.add({ title: 'Berhasil', description: 'Draft Disposisi disimpan', color: 'green' });
+    isOpenPreview.value = false;
+  } catch (e) {
+    toast.add({ title: 'Gagal', description: 'Gagal simpan draft', color: 'red' });
+  }
+}
+
+const handleKirimDokumen = async () => {
+  if (!user.value) await getProfile();
+  const payload = getPayload();
+
+  if (!pdfBlob.value) {
+    toast.add({ title: 'PDF Belum Siap', description: 'Tunggu preview selesai', color: 'orange' });
+    return;
+  }
+
+  const formData = createFormData(payload, true);
+  try {
+    await sendMessage(formData);
+    toast.add({ title: 'Terkirim', description: 'Disposisi berhasil dikirim', color: 'green' });
+    isOpenPreview.value = false;
+  } catch (e) {
+    toast.add({ title: 'Gagal', description: 'Gagal kirim disposisi', color: 'red' });
+  }
+}
 
 // --- PDF GENERATOR ---
-// --- PDF GENERATOR & MERGER ---
 async function openPreview() {
-  // 1. Sync Content Editor
-  if (quillInstance) {
-    rawHtmlContent.value = quillInstance.root.innerHTML
-  } else {
-    rawHtmlContent.value = editorContent.value
-  }
-
-  await nextTick()
-
   const element = pdfSourceRef.value
-  if (!element) {
-    alert("Error: Template PDF tidak ditemukan.")
-    return
-  }
+  if (!element) return
 
+  isLoadingData.value = true
   isOpenPreview.value = true
-  // Reset URL sebelumnya agar loading terlihat
   if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
   pdfUrl.value = ''
-
-  // 2. Clone Element & Style Injection
-  const clone = element.cloneNode(true) as HTMLElement
-  const style = document.createElement('style');
-  style.innerHTML = `
-    * { box-sizing: border-box !important; color: #000000 !important; border-color: #000000 !important; }
-    .tn-roman, .tn-roman * { font-family: 'Times New Roman', serif !important; }
-    p, div, span, li, ul, ol { page-break-inside: auto !important; }
-    table, tr, td, th, img, h1, h2, h3 { page-break-inside: avoid !important; }
-    p { margin: 0 !important; padding-bottom: 0.5em !important; line-height: 1.5 !important; }
-    *:not(td):not(tr) { background-color: transparent !important; }
-    svg, path { fill: #000000 !important; stroke: #000000 !important; }
-    ol { list-style-type: decimal !important; padding-left: 20px !important; margin-left: 10px !important; }
-    ul { list-style-type: disc !important; padding-left: 20px !important; margin-left: 10px !important; }
-    li { display: list-item !important; }
-  `;
-  clone.appendChild(style);
-
-  // Ghost Div untuk rendering HTML2PDF
-  const ghostDiv = document.createElement('div')
-  ghostDiv.style.position = 'fixed';
-  ghostDiv.style.top = '0';
-  ghostDiv.style.left = '-9999px';
-  ghostDiv.style.width = '180mm';
-  ghostDiv.style.padding = '0';
-  ghostDiv.appendChild(clone)
-  document.body.appendChild(ghostDiv)
+  pdfBlob.value = null
 
   try {
-    // Import Library Secara Dynamic
     const html2pdf = (await import('html2pdf.js')).default
     const { PDFDocument } = await import('pdf-lib')
 
     const opt = {
-      margin: [15, 15, 20, 15],
+      margin: 10,
       filename: `Disposisi_${Date.now()}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, ignoreElements: (el: any) => el.tagName === 'LINK' || el.tagName === 'STYLE' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css'] }
-    };
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
 
-    // 3. GENERATE PDF UTAMA (Disposisi) -> ARRAY BUFFER
-    const mainPdfBuffer = await html2pdf().set(opt).from(clone).output('arraybuffer');
+    const mainPdfBuffer = await html2pdf().set(opt).from(element).output('arraybuffer')
 
-    // 4. SETUP MERGING
-    // Buat dokumen kosong baru
-    const mergedPdf = await PDFDocument.create();
+    const mergedPdf = await PDFDocument.create()
+    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer)
+    const mainPages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices())
+    mainPages.forEach((page) => mergedPdf.addPage(page))
 
-    // Load PDF Utama (Disposisi)
-    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer);
-    const mainPages = await mergedPdf.copyPages(mainPdfDoc, mainPdfDoc.getPageIndices());
-    mainPages.forEach((page) => mergedPdf.addPage(page));
-
-    // 5. LOOP LAMPIRAN & MERGE
     if (uploadedFiles.value && uploadedFiles.value.length > 0) {
       for (const file of uploadedFiles.value) {
-        // Pastikan hanya memproses PDF
         if (file.type === 'application/pdf') {
           try {
-            const fileBuffer = await file.arrayBuffer();
-            const attachmentDoc = await PDFDocument.load(fileBuffer);
-            const attachmentPages = await mergedPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices());
-
-            attachmentPages.forEach((page) => mergedPdf.addPage(page));
+            const fileBuffer = await file.arrayBuffer()
+            const attachmentDoc = await PDFDocument.load(fileBuffer)
+            const attachmentPages = await mergedPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices())
+            attachmentPages.forEach((page) => mergedPdf.addPage(page))
           } catch (err) {
-            console.error(`Gagal merge file ${file.name}:`, err);
+            console.error(`Gagal merge file ${file.name}`, err)
           }
         }
       }
     }
 
-    // 6. FINALIZE & DISPLAY
-    const mergedPdfBytes = await mergedPdf.save();
-    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(blob);
+    const mergedPdfBytes = await mergedPdf.save()
+    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    pdfBlob.value = blob
+    pdfUrl.value = URL.createObjectURL(blob)
 
   } catch (err: any) {
-    console.error("PDF Error:", err);
-    alert("Gagal: " + err.message);
-    isOpenPreview.value = false;
+    console.error("PDF Error:", err)
+    alert("Gagal generate PDF: " + err.message)
+    isOpenPreview.value = false
   } finally {
-    document.body.removeChild(ghostDiv)
+    isLoadingData.value = false
   }
 }
 </script>
 
 <style scoped>
-.hidden-editor-body :deep(.ql-toolbar),
-.hidden-editor-body :deep(.ql-container) {
-  display: none !important;
-}
-
-.hidden-editor-body {
+:deep(.tox-tinymce) {
   border: none !important;
-  min-height: auto;
 }
 
-/* FIX NUMBERING EDITOR:
-  Target class bawaan quill '.ql-editor'.
-  Kita harus override spesifik untuk children dari .ql-editor
-*/
-:deep(.ql-editor ol),
-:deep(.ql-editor ul) {
-  padding-left: 1.5em !important;
-}
-
-:deep(.ql-editor ol) {
-  list-style-type: decimal !important;
-}
-
-:deep(.ql-editor ul) {
-  list-style-type: disc !important;
-}
-
-:deep(.ql-editor li) {
-  display: list-item !important;
-}
-
-/* Target Preview HTML Content juga */
-.ql-editor-content ol {
-  list-style-type: decimal !important;
-  padding-left: 1.5em !important;
-}
-
-.ql-editor-content ul {
-  list-style-type: disc !important;
-  padding-left: 1.5em !important;
+input[type="text"]::placeholder {
+  color: #9ca3af;
+  font-style: italic;
 }
 </style>
