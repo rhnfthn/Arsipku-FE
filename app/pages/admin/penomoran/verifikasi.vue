@@ -823,7 +823,7 @@ const processApproval = async () => {
   }
 };
 
-/* ✅ PROSES REJECTION */
+/* ✅ PROSES REJECTION - UPDATE STATUS JADI DITOLAK */
 const processRejection = async () => {
   if (!selectedRow.value) return;
 
@@ -852,64 +852,56 @@ const processRejection = async () => {
   isProcessing.value = true;
 
   try {
-    let successCount = 0;
+    // ✅ Collect detail IDs yang akan ditolak
+    const detailIdsToReject = rejectedDetails
+      .filter((d) => d.id !== null)
+      .map((d) => d.id);
 
-    const detailsToReject = rejectedDetails.filter((d) => d.id !== null);
+    console.log("📝 Detail IDs yang akan ditolak:", detailIdsToReject);
+    console.log("📝 ID Usulan utama:", selectedRow.value.id);
 
-    if (detailsToReject.length === 0) {
-      toast.add({
-        title: "Info",
-        description: "Tidak ada nomor yang sudah dibooking untuk ditolak",
-        color: "blue",
-      });
-      openPreview.value = false;
-      return;
-    }
+    // ✅ Gunakan endpoint PATCH/PUT untuk update status jadi "Ditolak"
+    // Bukan DELETE, karena kita hanya update status, bukan hapus data
+    const rejectRes = await post(
+      `/admin/nomor-request/${selectedRow.value.id}/reject`,
+      {
+        keterangan: keterangan_ditolak.value,
+        detail_ids: detailIdsToReject, // Kirim array ID detail yang ditolak
+      },
+    );
 
-    for (const detail of detailsToReject) {
-      try {
-        const res = await del(`/admin/nomor-request/${detail.id}`, {
-          data: {
-            keterangan: keterangan_ditolak.value,
-          },
-        });
+    console.log("✅ Response reject:", rejectRes);
 
-        if (res?.success) {
-          successCount++;
-        }
-      } catch (err) {
-        console.error("❌ Error reject detail:", detail.id, err);
-      }
-    }
-
-    if (successCount > 0) {
+    if (rejectRes?.success) {
       toast.add({
         title: "Berhasil",
-        description: `${successCount} nomor berhasil ditolak`,
+        description: `Usulan berhasil ditolak dengan ${rejectedDetails.length} nomor ditolak`,
         color: "green",
       });
-    } else {
-      toast.add({
-        title: "Gagal",
-        description: "Tidak ada nomor yang berhasil ditolak",
-        color: "red",
-      });
-    }
 
-    openPreview.value = false;
-    fetchData();
-  } catch (error) {
+      openPreview.value = false;
+      await fetchData(); // Refresh tabel - status akan berubah jadi "Ditolak"
+    } else {
+      throw new Error(rejectRes?.message || "Gagal menolak usulan");
+    }
+  } catch (error: any) {
     console.error("❌ Error rejection:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Terjadi kesalahan saat menolak nomor";
+
     toast.add({
       title: "Gagal",
-      description: "Terjadi kesalahan saat menolak nomor",
+      description: errorMsg,
       color: "red",
     });
   } finally {
     isProcessing.value = false;
   }
 };
-
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
   const s = search.value.toLowerCase();

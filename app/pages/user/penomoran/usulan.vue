@@ -9,7 +9,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <!-- ADD BUTTON (buka modal) -->
+      <!-- ADD BUTTON -->
       <button
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
@@ -17,14 +17,6 @@
         <Plus class="w-4 h-4" />
         Tambah Usulan
       </button>
-
-      <!-- <button
-          @click="openAdd = true"
-          class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
-        >
-          <Plus class="w-4 h-4" />
-          Tambah Titelatur
-        </button> -->
     </div>
 
     <!-- CARD -->
@@ -46,7 +38,7 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown (wrapped relative) -->
+        <!-- Filter button + dropdown -->
         <div class="relative inline-block">
           <button
             data-custom-dropdown
@@ -75,7 +67,7 @@
             </svg>
           </button>
 
-          <!-- Dropdown (positioned relative to button) -->
+          <!-- Dropdown -->
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
@@ -156,7 +148,7 @@
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
               @click="openRowModal(row)"
             >
-              <td class="px-5 py-4">{{ row.id }}</td>
+              <td class="px-5 py-4 text-xs">{{ row.id }}</td>
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
@@ -229,125 +221,200 @@
           </button>
         </div>
       </div>
-      <!------------->
-      <!-- MODAL TAMBAH -->
-      <!------------->
 
+      <!-- MODAL TAMBAH -->
       <AddUsulan
         v-model="openAdd"
         @preview="handlePreview"
-        @submit="handleSubmit"
+        @submit="handleSubmitUsulan"
       />
-
-      <!-- <PreviewUsulan v-model="openPreview" :data="previewData" /> -->
-
-      <!-- <AddUsulan
-          v-model="openAdd"
-          @preview="handlePreview"
-          @submit="handleSubmit"
-        /> -->
     </div>
   </div>
-  <!------------->
+
   <!-- MODAL ROW DETAIL -->
-  <!------------->
   <Modal v-model="openPreview" :hideDefaultFooter="true">
     <!-- TITLE -->
     <template #title>
-      <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
-        <h2 class="text-lg font-semibold uppercase">
-          {{ selectedRow?.jenis_naskah || "Detail" }}
-        </h2>
-        <!-- 
-              <span class="text-xs text-gray-500">
-                {{ selectedRow?.timestamp || "—" }}
-              </span> -->
+      <div
+        class="flex items-center justify-between w-full px-6 pt-6 pb-4 border-b border-gray-200"
+      >
+        <button
+          @click="openPreview = false"
+          class="text-gray-600 hover:text-gray-800"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+
+        <span class="text-sm text-gray-500">
+          {{ formatDateTime(new Date()) }}
+        </span>
       </div>
     </template>
 
     <!-- BODY -->
-    <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3">
-      <!-- Judul Besar -->
-      <p class="text-gray-900 font-semibold leading-relaxed text-base">
-        {{ selectedRow.perihal }}
-      </p>
+    <div
+      v-if="selectedRow"
+      class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
+    >
+      <!-- Judul -->
+      <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
+        {{ selectedRow?.perihal }}
+      </h2>
 
-      <!-- Tanggal -->
-      <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Tanggal</p>
-        <p class="font-medium mt-1">{{ selectedRow.tanggal }}</p>
+      <!-- Detail Info -->
+      <div class="space-y-4 text-base">
+        <div class="flex">
+          <span class="text-gray-700 w-40 flex-shrink-0">Tanggal</span>
+          <span class="font-medium text-gray-900">{{
+            selectedRow.tanggal
+          }}</span>
+        </div>
+
+        <div class="flex">
+          <span class="text-gray-700 w-40 flex-shrink-0">Pengirim</span>
+          <span class="font-medium text-gray-900">{{
+            selectedRow.pengirim || selectedRow.penanda
+          }}</span>
+        </div>
+
+        <div class="flex">
+          <span class="text-gray-700 w-40 flex-shrink-0">Klasifikasi</span>
+          <span class="font-medium text-gray-900">{{
+            selectedRow.klasifikasi
+          }}</span>
+        </div>
+
+        <div class="flex">
+          <span class="text-gray-700 w-40 flex-shrink-0">Jenis Naskah</span>
+          <span class="font-medium text-gray-900">{{ selectedRow.jenis }}</span>
+        </div>
       </div>
 
-      <!-- Pengirim -->
-      <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Pengirim</p>
-        <p class="font-medium mt-1">{{ selectedRow.pengirim }}</p>
-      </div>
+      <!-- Nomor Surat Section -->
+      <div class="pt-4">
+        <label class="block text-base font-medium text-gray-900 mb-3"
+          >Nomor Surat</label
+        >
 
-      <!-- Klasifikasi -->
-      <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Klasifikasi</p>
-        <p class="font-medium mt-1">{{ selectedRow.klasifikasi }}</p>
-      </div>
-
-      <!-- Jenis Naskah -->
-      <div class="pb-2 border-b border-gray-200">
-        <p class="text-gray-500 text-xs">Jenis Naskah</p>
-        <p class="font-medium mt-1">{{ selectedRow.jenis_naskah }}</p>
-      </div>
-
-      <!-- Nomor Surat -->
-      <div class="pb-2">
-        <p class="text-gray-500 text-xs">Nomor Surat</p>
-
-        <div class="flex items-center gap-2 mt-2">
-          <input
-            class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-            :value="selectedRow.nomor_surat"
-            readonly
-          />
-
-          <button @click="copyNomor" class="p-2 border rounded-md">
-            <svg
-              class="w-4 h-4 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div class="space-y-3">
+          <div
+            v-for="(detail, idx) in selectedRow.details"
+            :key="detail.id || idx"
+            class="flex items-center gap-3"
+          >
+            <!-- Nomor Container -->
+            <div
+              class="relative flex flex-1 bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 items-center"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 16h8M8 12h8m-7 8h6m-2-16h2a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2h2"
+              <span class="text-sm text-gray-600 font-medium mr-3">{{
+                idx + 1
+              }}</span>
+
+              <input
+                type="text"
+                :value="detail.nomor || '-'"
+                class="flex-1 bg-transparent outline-none text-sm text-gray-900 font-mono"
+                readonly
               />
-            </svg>
-          </button>
+
+              <!-- Status Badge -->
+              <span
+                v-if="detail.status"
+                :class="[
+                  'ml-3 px-2 py-1 rounded-full text-xs font-medium',
+                  {
+                    'bg-yellow-100 text-yellow-700':
+                      detail.status === 'pending' ||
+                      detail.status === 'menunggu',
+                    'bg-blue-100 text-blue-700': detail.status === 'booking',
+                    'bg-green-100 text-green-700': detail.status === 'terpakai',
+                    'bg-red-100 text-red-700': detail.status === 'ditolak',
+                    'bg-gray-100 text-gray-700': detail.status === 'hangus',
+                  },
+                ]"
+              >
+                {{ detail.status }}
+              </span>
+            </div>
+
+            <!-- Copy Button -->
+            <button
+              v-if="detail.nomor && detail.status === 'terpakai'"
+              @click="handleCopy(detail.nomor)"
+              class="p-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center flex-shrink-0"
+            >
+              <Copy class="w-4 h-4 text-gray-600" />
+            </button>
+
+            <div v-else class="w-[52px]"></div>
+          </div>
+        </div>
+
+        <!-- Jika tidak ada detail -->
+        <div
+          v-if="!selectedRow.details || selectedRow.details.length === 0"
+          class="text-center py-8 text-gray-500"
+        >
+          <p class="text-sm">Belum ada nomor yang dibooking</p>
         </div>
       </div>
     </div>
 
     <!-- FOOTER -->
     <template #footer>
-      <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
+      <div class="flex gap-3 px-5 py-4 border-t border-gray-200">
+        <!-- Tombol Kirim Usulan (hanya jika belum diajukan) -->
         <button
+          v-if="selectedRow?.status === 'Belum Diajukan'"
           @click="submitUsulan"
-          class="px-5 py-2 text-xs bg-primary text-white rounded-md"
+          :disabled="isProcessing"
+          class="flex-1 px-5 py-2 text-base font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
         >
-          Kirim Usulan
+          <svg
+            v-if="isProcessing"
+            class="animate-spin h-5 w-5"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          {{ isProcessing ? "Memproses..." : "Kirim Usulan" }}
         </button>
+
+        <!-- Tombol Hapus (hanya jika belum diajukan) -->
         <button
+          v-if="selectedRow?.status === 'Belum Diajukan'"
           @click="hapusUsulan"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
+          :disabled="isProcessing"
+          class="flex-1 px-5 py-2 text-base font-medium bg-white text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           Hapus Usulan
         </button>
-
-        <!-- <button
-            @click="$emit('hapus-usulan')"
-            class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md"
-          >
-            Hapus Usulan
-          </button> -->
       </div>
     </template>
   </Modal>
@@ -355,37 +422,20 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Plus } from "lucide-vue-next";
-import AddUsulan from "~/components/AddUsulan.vue";
-
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
-import { UInput, USelect, Modal } from "#components";
+import { Modal } from "#components";
+import { useToast } from "#imports";
+import { usePenomoran } from "~/composables/usePenomoran";
+import AddUsulan from "~/components/AddUsulan.vue";
 
-// data tabel kamu (contoh)
-import { tableData } from "~/data/usulan-data";
+const toast = useToast();
 
-// State modal
-const openPreview = ref(false);
-const selectedRow = ref(null);
+// Composable & API
+const { getPersonWithPosition } = usePenomoran();
+const { get, post, del } = useApi();
 
-// Event dari AddUsulan
-// function handlePreview(data) {
-//   console.log("DATA PREVIEW:", data);
-// }
-
-// function handleSubmit(data) {
-//   console.log("DATA SUBMIT:", data);
-// }
-function handlePreview(data) {
-  previewData.value = data;
-  openPreview.value = true;
-}
-// Function saat klik row
-function openRowModal(row) {
-  selectedRow.value = row;
-  openPreview.value = true;
-}
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
@@ -418,7 +468,9 @@ const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
 
-/* Loading */
+const selectedRow = ref<any>(null);
+const isProcessing = ref(false);
+
 const loading = ref<boolean>(true);
 
 /* SORT STATE */
@@ -442,211 +494,228 @@ const selectFilterStatus = (val: string) => {
   openFilterStatus.value = false;
 };
 
-/* Modal control (A - openAdd = true to open) */
-const openAdd = ref<boolean>(false);
+/* Modal control */
+const openPreview = ref(false);
+const openAdd = ref(false);
 
-/* Modal inputs */
-const nomorSurat = ref<string>("3");
-const computedNomorSurat = computed(
-  () => `BAC...../U/18/LPPNPI/PGD.07/XI/2024`,
-);
+/* Data rows */
+const rows = ref<any[]>([]);
 
-/* Dummy data */
-const rows = ref<any[]>([
-  {
-    id: "1534490706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
+// Person Map
+const personMap = ref(new Map());
 
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
+// Get user position from auth/store
+const userPosition = ref<string>("70016786"); // Default, replace with actual from auth
 
-  {
-    id: "1537437828224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
+const fetchPersonMap = async () => {
+  try {
+    const response = await getPersonWithPosition();
+    const list = Array.isArray(response) ? response : (response.data ?? []);
 
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
+    list.forEach((item) => {
+      personMap.value.set(item.persnum, {
+        nama: item.nama,
+        position_text: item.position_text,
+      });
+    });
+  } catch (error) {
+    console.error("❌ Error fetch person map:", error);
+  }
+};
 
-  {
-    id: "1534408877125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+// ✅ GET DATA DARI API
+const fetchData = async () => {
+  loading.value = true;
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
+  try {
+    // GET /nomor-request/:id_position
+    const res = await get(`/nomor-request/${userPosition.value}`);
 
-  {
-    id: "15343432246126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
+    if (!res?.success) {
+      toast.add({
+        title: "Gagal",
+        description: "Tidak dapat mengambil data usulan",
+        color: "red",
+      });
+      return;
+    }
 
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
-  },
-  {
-    id: "1322344206125",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+    const rawData = res.data || [];
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
-  {
-    id: "19754344206124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
+    rows.value = rawData.map((item: any) => {
+      // Tentukan status berdasarkan details
+      let status = "Belum Diajukan";
 
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
+      if (item.details && item.details.length > 0) {
+        const hasBooking = item.details.some(
+          (d: any) => d.status === "booking",
+        );
+        const hasTerpakai = item.details.some(
+          (d: any) => d.status === "terpakai",
+        );
+        const hasDitolak = item.details.some(
+          (d: any) => d.status === "ditolak",
+        );
 
-  {
-    id: "1864274528224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
+        if (hasTerpakai) {
+          status = "Disetujui";
+        } else if (hasDitolak) {
+          status = "Ditolak";
+        } else if (hasBooking) {
+          status = "Menunggu Verifikasi";
+        }
+      }
 
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
-  {
-    id: "1534408314525",
-    jenis: "SK",
-    tanggal: "15.03.2024",
-    perihal: "PENETAPAN JADWAL PELATIHAN",
-    penanda: "Direktur SDM",
-    jumlah: 2,
-    pengusul: "Ahmad Rizki",
-    tglUsulan: "15 March 24 09:15",
-    status: "Disetujui",
+      const person = personMap.value.get(item.position);
 
-    // EXTRA
-    pengirim: "Direktur SDM",
-    klasifikasi: "PGD.05 - Penjadwalan",
-    jenis_naskah: "SK - Surat Keputusan",
-    nomor_surat: "05/SK/U/14/LPPNPI/PGD.05/III/2024",
-  },
+      return {
+        id: item.id,
+        jenis: item.jenis,
+        tanggal: formatTanggal(item.tanggal),
+        perihal: item.perihal,
+        penanda: person?.position_text || "-",
+        jumlah: item.jumlah,
+        pengusul: person?.nama || "-",
+        tglUsulan: formatDateTime(item.created_at),
+        status: status,
+        klasifikasi: item.klasifikasi,
+        details: item.details || [],
+        // Keep original data
+        _raw: item,
+      };
+    });
 
-  {
-    id: "153434086656126",
-    jenis: "MOU",
-    tanggal: "20.04.2024",
-    perihal: "KERJA SAMA DENGAN PT MITRA SEJAHTERA",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Siti Aminah",
-    tglUsulan: "20 April 24 14:22",
-    status: "Ditolak",
+    console.log("✅ Data usulan berhasil dimuat:", rows.value);
+  } catch (error) {
+    console.error("❌ Error fetch data usulan:", error);
+    toast.add({
+      title: "Gagal memuat data",
+      description: "Tidak dapat mengambil data usulan",
+      color: "red",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
 
-    // EXTRA
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.10 - Kerja Sama",
-    jenis_naskah: "MOU - Memorandum of Understanding",
-    nomor_surat: "08/MOU/U/20/LPPNPI/PGD.10/IV/2024",
-  },
-  {
-    id: "1975238706124",
-    jenis: "BAC",
-    tanggal: "06.11.2024",
-    perihal: "BERITA ACARA STOCK OPNAME BARANG PERSEDIAAN SUKU",
-    penanda: "Direktur Utama",
-    jumlah: 1,
-    pengusul: "Natassia Nurcurie",
-    tglUsulan: "06 November 24 15:34",
-    status: "Belum Diajukan",
+/* ✅ OPEN ROW MODAL */
+const openRowModal = (row: any) => {
+  selectedRow.value = { ...row };
+  openPreview.value = true;
+};
 
-    // EXTRA FOR MODAL ONLY
-    pengirim: "Direktur Utama",
-    klasifikasi: "PGD.07 - Inventarisasi Barang",
-    jenis_naskah: "BAC - Berita Acara",
-    nomor_surat: "1/BAC/U/18/LPPNPI/PGD.07/XI/2024",
-  },
+/* ✅ HANDLE SUBMIT USULAN BARU */
+const handleSubmitUsulan = async (data: any) => {
+  console.log("✅ Submit usulan baru:", data);
 
-  {
-    id: "18698980028224",
-    jenis: "SPR",
-    tanggal: "28.02.2024",
-    perihal: "PENETAPAN ON THE JOB TRAINING INSTRUCTOR",
-    penanda: "Direktur Operasi",
-    jumlah: 1,
-    pengusul: "Firda Kabisatika",
-    tglUsulan: "28 February 24 16:37",
-    status: "Menunggu Verifikasi",
+  // Refresh data setelah submit
+  await fetchData();
 
-    // EXTRA
-    pengirim: "Direktur Operasi",
-    klasifikasi: "PGD.03 - Pelatihan",
-    jenis_naskah: "SPR - Surat Perintah",
-    nomor_surat: "02/SPR/U/12/LPPNPI/PGD.03/II/2024",
-  },
-]);
+  openAdd.value = false;
+};
+
+/* ✅ HANDLE PREVIEW */
+const handlePreview = (data: any) => {
+  console.log("📄 Preview data:", data);
+};
+
+/* ✅ SUBMIT USULAN (Booking) */
+const submitUsulan = async () => {
+  if (!selectedRow.value) return;
+
+  isProcessing.value = true;
+
+  try {
+    // POST /admin/nomor-request/:id/booking
+    const res = await post(
+      `/admin/nomor-request/${selectedRow.value.id}/booking`,
+      {},
+    );
+
+    if (res?.success) {
+      toast.add({
+        title: "Berhasil",
+        description: "Usulan berhasil dikirim ke verifikasi",
+        color: "green",
+      });
+
+      openPreview.value = false;
+      await fetchData();
+    } else {
+      throw new Error(res?.message || "Gagal mengirim usulan");
+    }
+  } catch (error: any) {
+    console.error("❌ Error submit usulan:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Terjadi kesalahan saat mengirim usulan";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/* ✅ HAPUS USULAN */
+const hapusUsulan = async () => {
+  if (!selectedRow.value) return;
+
+  if (!confirm("Yakin ingin menghapus usulan ini?")) return;
+
+  isProcessing.value = true;
+
+  try {
+    // DELETE /nomor-request/:id
+    const res = await del(`/nomor-request/${selectedRow.value.id}`);
+
+    if (res?.success) {
+      toast.add({
+        title: "Berhasil",
+        description: "Usulan berhasil dihapus",
+        color: "green",
+      });
+
+      openPreview.value = false;
+      await fetchData();
+    } else {
+      throw new Error(res?.message || "Gagal menghapus usulan");
+    }
+  } catch (error: any) {
+    console.error("❌ Error hapus usulan:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Terjadi kesalahan saat menghapus usulan";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/* Handle Copy */
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
 
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
@@ -683,67 +752,31 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
-/* WATCHERS: reset page when relevant changes */
+/* WATCHERS */
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
 });
 
-/* BADGE COLORS */
-const badgeColor = (status: string) =>
-  ({
-    "Belum Diajukan": "bg-gray-500 text-gray-700",
-    "Menunggu Verifikasi": "bg-yellow-200 text-yellow-700",
-    Disetujui: "bg-green-200 text-green-700",
-    Ditolak: "bg-red-200 text-red-700",
-  })[status.trim()] || "bg-gray-200 text-gray-700";
+/* Format helpers */
+function formatTanggal(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
-/* Simulated loading */
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 700);
-});
-
-/* COPY nomor */
-const copyNomor = async () => {
-  try {
-    await navigator.clipboard.writeText(computedNomorSurat.value);
-    // simple feedback, replace with toast if you have one
-    // alert("Nomor disalin");
-  } catch (err) {
-    // ignore
-  }
-};
-
-/* Submit & Hapus (sederhana, karena ini contoh) */
-const submitUsulan = () => {
-  // contoh: kirim data ke API
-  // axios.post('/api/usulan', { ... })
-  openAdd.value = false;
-};
-
-const hapusUsulan = () => {
-  if (!selectedRow.value) return;
-
-  // Hapus row dari tabel
-  rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-
-  // Tutup modal preview
-  openPreview.value = false;
-
-  // Bersihkan selectedRow
-  selectedRow.value = null;
-};
-// const hapusUsulan = () => {
-//   if (!selectedRow.value) return;
-
-//   if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-
-//   rows.value = rows.value.filter((r) => r.id !== selectedRow.value.id);
-//   openPreview.value = false;
-//   selectedRow.value = null;
-// };
+function formatDateTime(dateStr: string | Date) {
+  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  return `${date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })} ${date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
 
 /* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
@@ -755,16 +788,19 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-onMounted(() => {
+/* Load data on mount */
+onMounted(async () => {
+  await fetchPersonMap();
+  await fetchData();
   document.addEventListener("click", handleDocumentClick);
 });
+
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
 </script>
 
 <style scoped>
-/* small fade-in for dropdown */
 @keyframes fade-in {
   from {
     opacity: 0;

@@ -331,9 +331,10 @@ const props = defineProps({
 
 const emit = defineEmits(["submit", "update:modelValue", "preview"]);
 const toast = useToast();
-const jenisOptions = ["BAC", "SPR", "SK", "MOU", "INS"];
+const jenisOptions = ["BAC", "SPR", "SK", "MOU", "INS", "PER"];
 
 /* STATE DASAR */
+const open = ref(false);
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref("");
 
@@ -414,7 +415,7 @@ function selectKlasifikasi(item) {
 function selectPenandatangan(item) {
   form.value.penandatanganName = item.nama;
   form.value.penandatanganJabatan = item.positionText;
-  form.value.id_position_penandatangan = Number(item.position); // ✅ Convert to number
+  form.value.id_position_penandatangan = Number(item.position);
 
   penandatanganSearch.value = item.positionText;
   openPenandatangan.value = false;
@@ -443,7 +444,7 @@ const fetchPositions = async () => {
     penandatanganOptions.value = list.map((item) => ({
       nama: item.nama,
       positionText: item.position_text,
-      position: item.position, // ✅ Ambil position ID
+      position: item.position,
     }));
 
     console.log("✅ Positions loaded:", penandatanganOptions.value.length);
@@ -509,36 +510,32 @@ const submitAndClose = async () => {
     type: typeof form.value.id_position_penandatangan,
   });
 
-  // ✅ Payload sesuai format API - id_position_penandatangan harus INTEGER
+  // ✅ Payload dengan PENOMORAN yang akan digenerate
   const payload = {
     position_id: Number(user.value.position),
     tanggal: form.value.tanggal,
     jenis: form.value.jenis,
     klasifikasi: form.value.klasifikasi,
     perihal: form.value.perihal,
-    penandatangan: form.value.penandatanganJabatan, // ✅ Jabatan dari preview
+    penandatangan: form.value.penandatanganJabatan,
     id_position_penandatangan: parseInt(
       form.value.id_position_penandatangan,
       10,
-    ), // ✅ Force parseInt with radix 10
+    ),
     jumlah: Number(form.value.jumlah),
+
+    // ✅ TAMBAHAN: Data penomoran untuk generate nomor
+    penomoran: {
+      jenis: form.value.jenis,
+      klasifikasi: form.value.klasifikasi,
+      tanggal: form.value.tanggal,
+      jumlah: Number(form.value.jumlah),
+    },
   };
 
-  console.log("📤 PAYLOAD SUBMIT (raw):", payload);
-  console.log(
-    "📤 PAYLOAD SUBMIT (stringified):",
-    JSON.stringify(payload, null, 2),
-  );
-  console.log(
-    "🔍 id_position_penandatangan type:",
-    typeof payload.id_position_penandatangan,
-  );
-  console.log(
-    "🔍 id_position_penandatangan value:",
-    payload.id_position_penandatangan,
-  );
+  console.log("📤 PAYLOAD SUBMIT:", JSON.stringify(payload, null, 2));
 
-  // Validasi final sebelum emit
+  // Validasi final
   if (
     !payload.id_position_penandatangan ||
     isNaN(payload.id_position_penandatangan)
