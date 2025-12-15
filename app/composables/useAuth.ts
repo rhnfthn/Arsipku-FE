@@ -2,11 +2,6 @@ export const useAuth = () => {
 
   const { apiGet, apiPost } = useApi();
 
-  const user = useState("user", () => null);
-
-  const setUser = (data) => {
-    user.value = data;
-  };
 
   // Global state user
   const user = useState("user", () => null)
@@ -39,36 +34,6 @@ export const useAuth = () => {
       return null
     }
   }
-
-  const verifyToken = async (token: string) => {
-    try {
-      const res = await apiPost("/auth/verify-token", { token });
-      return res;
-    } catch (error) {
-      console.error("[AUTH] Error verifyToken:", error);
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      const sessionId = localStorage.getItem("sessionId");
-      const token = localStorage.getItem("token");
-
-      await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 400,
-      });
-    } catch (error) {
-      console.warn("[AUTH] Logout redirect normal:", error);
-    }
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("sessionId");
-    user.value = null;
-
-    return true;
-  };
 
   // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
@@ -114,6 +79,20 @@ export const useAuth = () => {
     return true
   }
 
+  const refreshToken = async () => {
+    const sessionId = localStorage.getItem("sessionId")
+    if (!sessionId) throw new Error("No sessionId")
+
+    const res = await apiPost("/auth/refresh-token", {
+      sessionId
+    })
+
+    const newAccessToken = res?.data?.accessToken
+    if (!newAccessToken) throw new Error("Refresh token failed")
+
+    localStorage.setItem("token", newAccessToken)
+    return newAccessToken
+  }
 
   return {
     user,
@@ -122,6 +101,7 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
+    refreshToken
 
   };
 };
@@ -173,7 +153,4 @@ export const useAuth = () => {
 //     logout,
 //   };
 // };
-=======
-  }
-}
->>>>>>> 3fa76252a7d21e64f15723259532cc4719ac6980
+

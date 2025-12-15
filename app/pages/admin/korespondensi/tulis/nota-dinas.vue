@@ -341,7 +341,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import "@vueup/vue-quill/dist/vue-quill.snow.css";
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "@/composables/useAuth";
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
 // Types

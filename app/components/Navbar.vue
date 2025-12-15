@@ -145,6 +145,17 @@
       </UDropdownMenu>
     </div>
   </nav>
+  <ConfirmPopup
+    v-model="showLogoutPopup"
+    type="warning"
+    title="Keluar dari akun?"
+    message="Anda akan keluar dari sistem. Pastikan semua pekerjaan sudah disimpan."
+    confirmText="Keluar"
+    cancelText="Batal"
+    :isLoading="isLoggingOut"
+    @confirm="confirmLogout"
+    @cancel="showLogoutPopup = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -155,6 +166,11 @@ import type { DropdownMenuItem } from "#ui/types";
 import { useAuth } from "~/composables/useAuth";
 import { onMounted } from "vue";
 
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
+
+const showLogoutPopup = ref(false);
+const isLoggingOut = ref(false);
+
 const { user, getProfile, logout } = useAuth();
 
 onMounted(() => {
@@ -163,15 +179,24 @@ onMounted(() => {
   }
 });
 
-async function handleLogout() {
+const openLogoutPopup = () => {
+  showLogoutPopup.value = true;
+};
+
+const confirmLogout = async () => {
+  isLoggingOut.value = true;
+
   const success = await logout();
+
+  isLoggingOut.value = false;
+  showLogoutPopup.value = false;
 
   if (success) {
     return navigateTo("/");
   }
 
   alert("Gagal logout!");
-}
+};
 
 defineEmits(["open-mobile-sidebar"]);
 const search = ref("");
@@ -219,7 +244,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
       label: "Keluar",
       class:
         "text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
-      onSelect: async () => handleLogout(),
+      onSelect: () => openLogoutPopup(),
     },
   ],
 ]);

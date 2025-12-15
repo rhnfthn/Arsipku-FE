@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useAuth } from '@/composables/Auth'
+import { useAuth } from '@/composables/useAuth'
 
 const { user, getProfile } = useAuth()
 
