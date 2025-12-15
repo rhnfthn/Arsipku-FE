@@ -1,63 +1,47 @@
 // composables/useDraft.ts
+import axios from "axios";
 import { useApi } from "./useApi";
 
 export const useDraft = () => {
-  const { post, get, patch, del } = useApi();
+  const { post, get, patch, del, api } = useApi();
   const toast = useToast();
 
   const isLoadingDraft = ref(false);
   const drafts = ref([]);
   const totalDrafts = ref(0);
 
-  // Save drafts
+  // Helper config for multipart
+  const multipartConfig = {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  };
+
+  // 1. Save drafts (HAPUS final_pdf logic di component nanti)
   const saveDraft = async (formData: FormData, id_draft?: string | null) => {
     isLoadingDraft.value = true;
-
     try {
       let response;
-
-      // --- LOGIC PENENTUAN METHOD ---
       if (id_draft) {
-        // KASUS UPDATE: Gunakan PATCH
         const url = `/ND/update-draft/${id_draft}`;
-        console.log("Updating Draft (PATCH):", url);
-
-        response = await patch(url, formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            // Content-Type otomatis dihandle browser untuk FormData
-          },
-        });
+        response = await api.patch(url, formData, multipartConfig);
       } else {
-        // KASUS BARU: Gunakan POST
         const url = `/ND/save-draft`;
-        console.log("Saving New Draft (POST):", url);
-
-        response = await post(url, formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        response = await api.post(url, formData, multipartConfig);
       }
 
       toast.add({
         title: "Berhasil",
-        description: id_draft
-          ? "Draft berhasil diperbarui."
-          : "Draft berhasil disimpan.",
+        description: id_draft ? "Draft diperbarui." : "Draft disimpan.",
         icon: "i-heroicons-check-circle",
         color: "green",
-        timeout: 3000,
       });
-
-      return response;
+      return response.data;
     } catch (error: any) {
       console.error("Save Draft Error:", error);
       toast.add({
         title: "Gagal",
-        description:
-          error.response?.data?.message ||
-          "Terjadi kesalahan saat menyimpan draft.",
+        description: error.response?.data?.message || "Gagal menyimpan draft.",
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -67,11 +51,44 @@ export const useDraft = () => {
     }
   };
 
-  // 2. Fetch Draft List (NEW)
+  // --- BARU: PROSES KIRIM (SEND MESSAGE) ---
+  const sendMessage = async (formData: FormData) => {
+    isLoadingDraft.value = true; // Gunakan loading state yang sama atau buat baru
+    try {
+      const url = `/ND/send-message`;
+      console.log("Sending Message (POST):", url);
+
+      // Endpoint ini menerima Multipart (Body + Attachments + Final PDF)
+      const response = await api.post(url, formData, multipartConfig);
+
+      toast.add({
+        title: "Terkirim",
+        description: "Nota Dinas berhasil dikirim.",
+        icon: "i-heroicons-paper-airplane",
+        color: "green",
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Send Message Error:", error);
+      toast.add({
+        title: "Gagal Kirim",
+        description:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat mengirim data.",
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
+      });
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
+  // 2. Fetch Draft List
   const fetchDrafts = async (positionId: string) => {
     isLoadingDraft.value = true;
     try {
-      // Endpoint: /draft/list/{position_id}
       const response = await get(`/draft/list/${positionId}`);
 
       if (response.success) {
@@ -91,7 +108,7 @@ export const useDraft = () => {
     }
   };
 
-  // 3. Delete Draft (NEW)
+  // 3. Delete Draft
   const deleteDraft = async (idNaskah: string, positionId: string) => {
     isLoadingDraft.value = true;
     try {
@@ -105,7 +122,6 @@ export const useDraft = () => {
         color: "green",
       });
 
-      // Refresh list lokal setelah hapus
       drafts.value = drafts.value.filter(
         (item: any) => item.id_naskah !== idNaskah,
       );
@@ -127,7 +143,6 @@ export const useDraft = () => {
   const getDraftDetail = async (idNaskah: string) => {
     isLoadingDraft.value = true;
     try {
-      // Sesuai request: /ND/{uuid}
       const response = await get(`/ND/${idNaskah}`);
       return response;
     } catch (error: any) {
@@ -143,6 +158,30 @@ export const useDraft = () => {
     }
   };
 
+  // 4. Generate PDF (FIXED URL)
+  const generatePdf = async (payload: any) => {
+    try {
+      // --- PERBAIKAN DI SINI ---
+      // Gunakan URL Absolute karena native fetch tidak tahu BaseURL useApi
+      const url = "http://172.20.16.115:3011/ND/generate-pdf";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Gagal generate PDF dari server.");
+      }
+
+      return await res.blob();
+    } catch (error) {
+      console.error("Generate PDF Error:", error);
+      throw error;
+    }
+  };
+
   return {
     drafts,
     totalDrafts,
@@ -151,5 +190,7 @@ export const useDraft = () => {
     fetchDrafts,
     deleteDraft,
     getDraftDetail,
+    generatePdf,
+    sendMessage
   };
 };

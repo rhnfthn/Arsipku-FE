@@ -37,6 +37,7 @@ export const validateDraftPayload = (data: DraftPayload): DraftValidationResult 
   if (!data.pengirim) errors.pengirim = "Pengirim tidak boleh kosong";
   if (!data.klasifikasi) errors.klasifikasi = "Klasifikasi berkas harus dipilih";
   if (!data.perihal) errors.perihal = "Perihal harus diisi";
+  // Tanggal default hari ini sudah diatur di komponen, jadi ini hanya memastikan ada nilainya
   if (!data.tgl) errors.tgl = "Tanggal surat harus diisi";
   if (!data.konten || data.konten === '<p><br></p>') errors.konten = "Isi naskah tidak boleh kosong";
 
