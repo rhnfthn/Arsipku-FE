@@ -2,12 +2,6 @@ export const useAuth = () => {
 
   const { apiGet, apiPost } = useApi();
 
-  const user = useState("user", () => null);
-
-  const setUser = (data) => {
-    user.value = data;
-  };
-
   // Global state user
   const user = useState("user", () => null)
 
@@ -40,35 +34,7 @@ export const useAuth = () => {
     }
   }
 
-  const verifyToken = async (token: string) => {
-    try {
-      const res = await apiPost("/auth/verify-token", { token });
-      return res;
-    } catch (error) {
-      console.error("[AUTH] Error verifyToken:", error);
-      throw error;
-    }
-  };
 
-  const logout = async () => {
-    try {
-      const sessionId = localStorage.getItem("sessionId");
-      const token = localStorage.getItem("token");
-
-      await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 400,
-      });
-    } catch (error) {
-      console.warn("[AUTH] Logout redirect normal:", error);
-    }
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("sessionId");
-    user.value = null;
-
-    return true;
-  };
 
   // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
