@@ -5,7 +5,7 @@ import {
   Check, X, RotateCcw, MoreVertical, History, ArrowUpDown, Layers, Download,
   Archive, Trash2, ChevronLeft, ChevronRight, Eye, Loader2
 } from 'lucide-vue-next';
-import { useAuth } from '@/composables/auth';
+import { useAuth } from '@/composables/useAuth';
 import { useSirkulasi } from '@/composables/useTerkirim';
 import type { NaskahItem, UIMailItem } from '~/types/terkirim';
 import * as XLSX from 'xlsx'; // Import library xlsx

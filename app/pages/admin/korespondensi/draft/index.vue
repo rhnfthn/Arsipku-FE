@@ -10,7 +10,7 @@ import {
 } from 'lucide-vue-next';
 
 // 1. IMPORT USEAUTH
-import { useAuth } from '@/composables/auth';
+import { useAuth } from '@/composables/useAuth';
 
 // Import Composable Draft (Asumsi path sudah benar)
 // import { useDraft } from '~/composables/useDraft';
