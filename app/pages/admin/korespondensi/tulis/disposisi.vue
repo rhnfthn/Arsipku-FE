@@ -336,7 +336,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { CalendarDate } from '@internationalized/date'
 import Editor from '@tinymce/tinymce-vue'
-import { useAuth } from "@/composables/auth"
+import { useAuth } from "@/composables/useAuth"
 import type { Editor as TinyMCEEditor } from 'tinymce'
 import { useSdi } from "~/composables/useSdi"
 import { type SdiPayload } from "~/types/sdi"
