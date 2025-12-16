@@ -2,6 +2,7 @@ export const useAuth = () => {
 
   const { apiGet, apiPost } = useApi();
 
+
   // Global state user
   const user = useState("user", () => null)
 
@@ -78,6 +79,20 @@ export const useAuth = () => {
     return true
   }
 
+  const refreshToken = async () => {
+    const sessionId = localStorage.getItem("sessionId")
+    if (!sessionId) throw new Error("No sessionId")
+
+    const res = await apiPost("/auth/refresh-token", {
+      sessionId
+    })
+
+    const newAccessToken = res?.data?.accessToken
+    if (!newAccessToken) throw new Error("Refresh token failed")
+
+    localStorage.setItem("token", newAccessToken)
+    return newAccessToken
+  }
 
   return {
     user,
@@ -86,6 +101,7 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
+    refreshToken
 
   };
 };
@@ -137,3 +153,4 @@ export const useAuth = () => {
 //     logout,
 //   };
 // };
+
