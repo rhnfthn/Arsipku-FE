@@ -75,7 +75,7 @@
           <ClientOnly>
             <div class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto">
               <div
-                class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-serif relative">
+                class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-['Times_New_Roman'] relative">
 
                 <div class="border-2 border-black mb-0">
                   <div class="flex border-b-2 border-black">
@@ -297,7 +297,7 @@
 
             <tr style="border-top: 2px solid #000000;">
               <td colspan="3"
-                style="text-align: center; font-size: 9px; font-weight: bold; padding: 2px; color: #000000;">
+                style="font-size: 9px; font-weight: bold; padding: 2px; color: #000000;">
                 Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda ini.
               </td>
             </tr>
@@ -397,7 +397,7 @@ const tinyMceInit = {
   statusbar: false,
   placeholder: 'Ketik catatan disposisi disini...',
   plugins: 'lists advlist link table fullscreen',
-  toolbar: 'bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | table',
+  toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | table | code fullscreen',
   content_style: `
     body { font-family: "Times New Roman", Times, serif; font-size: 11pt; margin: 10px; }
     p { margin: 0; padding: 0; line-height: 1.4; }

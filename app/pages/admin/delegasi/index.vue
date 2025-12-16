@@ -24,7 +24,7 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Delegasi", to: "/admin/delegasi" },
 ];
 

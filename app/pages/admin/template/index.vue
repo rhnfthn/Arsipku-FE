@@ -379,7 +379,7 @@ const toggleSort = (column) => {
 };
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Template", to: "/admin/template" },
 ];
 
