@@ -216,7 +216,7 @@ import "@vueup/vue-quill/dist/vue-quill.snow.css";
 import { useAuth } from "@/composables/useAuth";
 import type { Editor as TinyMCEEditor } from 'tinymce'; import type { Klasifikasi } from "~/types/klasifikasi"; // Ganti Berkas
 import { useKlasifikasi } from "@/composables/useKlasifikasi"; // Ganti useBerkas
-import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue"; // Component baru
+import TulisInputKlasifikasi from "@/components/tulis/InputKlasifikasi.vue"; // Component baru
 
 const { getKlasifikasiList } = useKlasifikasi(); // Destructure
 
