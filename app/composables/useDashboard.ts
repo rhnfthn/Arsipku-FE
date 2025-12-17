@@ -29,7 +29,7 @@ export const useDashboard = () => {
       console.log("🔍 Fetching dashboard data for position:", positionId);
 
       const response = await apiGet<DashboardResponse>(
-        `/dashboard/user/${positionId}`,
+        `/dashboard/${positionId}`,
       );
 
       console.log("📦 Raw API Response:", response);

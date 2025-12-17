@@ -6,7 +6,7 @@
       :model-value="modelValue"
       :hide-default-footer="true"
       size="xl"
-      @update:model-value="emit('update:modelValue', $event)"
+      @update:model-value="handleClose"
     >
       <template #title>
         <Heading
@@ -39,17 +39,17 @@
             Klasifikasi <span class="text-red-500">*</span>
           </Heading>
 
-          <div class="relative">
+          <div class="relative" ref="klasifikasiRef">
             <input
               v-model="klasifikasiSearch"
-              @click="openKlasifikasi = true"
+              @click="toggleKlasifikasi"
               @input="openKlasifikasi = true"
               :placeholder="form.klasifikasiDisplay || 'Cari klasifikasi...'"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             />
 
             <div
-              v-if="openKlasifikasi"
+              v-if="openKlasifikasi && filteredKlasifikasi.length > 0"
               class="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
             >
               <button
@@ -60,14 +60,14 @@
               >
                 {{ item.display }}
               </button>
-
-              <p
-                v-if="filteredKlasifikasi.length === 0"
-                class="text-xs text-center text-gray-400 py-2"
-              >
-                {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
-              </p>
             </div>
+
+            <p
+              v-if="openKlasifikasi && filteredKlasifikasi.length === 0"
+              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+            >
+              {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
+            </p>
           </div>
         </div>
 
@@ -92,16 +92,16 @@
           </select>
         </div>
 
-        <!-- ✅ DROPDOWN PENANDATANGAN - Hanya Jabatan -->
+        <!-- ✅ DROPDOWN PENANDATANGAN - Jabatan (Sub Area) -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium"
             >Penandatangan <span class="text-red-500">*</span></Heading
           >
 
-          <div class="relative">
+          <div class="relative" ref="penandatanganRef">
             <input
               v-model="penandatanganSearch"
-              @click="openPenandatangan = true"
+              @click="togglePenandatangan"
               @input="openPenandatangan = true"
               :placeholder="
                 form.penandatanganJabatan || 'Cari penandatangan...'
@@ -111,7 +111,7 @@
             />
 
             <div
-              v-if="openPenandatangan"
+              v-if="openPenandatangan && filteredPenandatangan.length > 0"
               class="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
             >
               <button
@@ -120,16 +120,16 @@
                 @click="selectPenandatangan(item)"
                 class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100"
               >
-                {{ item.positionText }}
+                {{ item.displayText }}
               </button>
-
-              <p
-                v-if="filteredPenandatangan.length === 0"
-                class="text-xs text-center text-gray-400 py-2"
-              >
-                {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
-              </p>
             </div>
+
+            <p
+              v-if="openPenandatangan && filteredPenandatangan.length === 0"
+              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+            >
+              {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
+            </p>
           </div>
         </div>
 
@@ -179,7 +179,7 @@
           class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4 w-full"
         >
           <button
-            @click="emit('update:modelValue', false)"
+            @click="handleCancel"
             class="px-5 py-2 text-xs border border-gray-300 hover:bg-gray-100 rounded-md"
           >
             Batal
@@ -298,7 +298,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
 import Heading from "~/components/Heading.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
@@ -323,9 +323,11 @@ const jenisOptions = [
 /* STATE DASAR */
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref("");
+const klasifikasiRef = ref(null);
 
 const openPenandatangan = ref(false);
 const penandatanganSearch = ref("");
+const penandatanganRef = ref(null);
 const penandatanganOptions = ref([]);
 const isLoadingPositions = ref(false);
 
@@ -361,16 +363,35 @@ watch(tanggalString, (newVal) => {
   }
 });
 
-// Close dropdowns when clicking outside
+// ✅ Close dropdowns when clicking outside
 const handleClickOutside = (e) => {
-  if (!e.target.closest(".relative")) {
+  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target)) {
     openKlasifikasi.value = false;
+  }
+  if (penandatanganRef.value && !penandatanganRef.value.contains(e.target)) {
     openPenandatangan.value = false;
+  }
+};
+
+// ✅ Toggle dropdowns - hanya buka jika ada data
+const toggleKlasifikasi = () => {
+  if (klasifikasiOptions.value.length > 0) {
+    openKlasifikasi.value = !openKlasifikasi.value;
+  }
+};
+
+const togglePenandatangan = () => {
+  if (penandatanganOptions.value.length > 0) {
+    openPenandatangan.value = !openPenandatangan.value;
   }
 };
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
 });
 
 /* PRATINJAU */
@@ -417,7 +438,7 @@ const filteredKlasifikasi = computed(() => {
 const filteredPenandatangan = computed(() => {
   if (!penandatanganSearch.value) return penandatanganOptions.value;
   return penandatanganOptions.value.filter((item) =>
-    item.positionText
+    item.displayText
       .toLowerCase()
       .includes(penandatanganSearch.value.toLowerCase()),
   );
@@ -438,15 +459,15 @@ function selectKlasifikasi(item) {
 
 function selectPenandatangan(item) {
   form.value.penandatanganName = item.nama;
-  form.value.penandatanganJabatan = item.positionText;
+  form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
 
-  penandatanganSearch.value = item.positionText;
+  penandatanganSearch.value = item.displayText;
   openPenandatangan.value = false;
 
   console.log("✅ Penandatangan selected:", {
     nama: item.nama,
-    position_text: item.positionText,
+    display_text: item.displayText,
     position_id: item.position,
   });
 }
@@ -498,24 +519,45 @@ const fetchPositions = async () => {
   isLoadingPositions.value = true;
   try {
     const response = await getPersonWithPosition();
-    const raw = response?.data ?? response;
+    console.log("📥 Raw response from API:", response);
 
+    const raw = response?.data ?? response;
     const list = Array.isArray(raw?.data)
       ? raw.data
       : Array.isArray(raw)
         ? raw
         : [];
 
-    // ✅ Format: Hanya tampilkan jabatan di dropdown
-    penandatanganOptions.value = list.map((item) => ({
-      nama: item.nama,
-      positionText: item.position_text,
-      position: item.position,
-    }));
+    console.log("📋 List to process:", list);
+
+    // ✅ Format: "Position Text (Sub Area Text)"
+    penandatanganOptions.value = list.map((item) => {
+      const positionText = item.position_text || "";
+      const subAreaText = item.sub_area_text || "";
+
+      // Format: "Manager Operasi 4 (Cabang Balikpapan)"
+      const displayText = subAreaText
+        ? `${positionText} (${subAreaText})`
+        : positionText;
+
+      return {
+        nama: item.nama,
+        positionText: item.position_text,
+        subAreaText: item.sub_area_text,
+        displayText: displayText,
+        position: item.position,
+      };
+    });
 
     console.log("✅ Positions loaded:", penandatanganOptions.value.length);
+    console.log("📋 Sample data:", penandatanganOptions.value.slice(0, 3));
   } catch (err) {
     console.error("❌ Error fetch positions:", err);
+    toast.add({
+      title: "Gagal memuat data",
+      description: "Tidak dapat memuat daftar penandatangan",
+      color: "red",
+    });
   } finally {
     isLoadingPositions.value = false;
   }
@@ -538,6 +580,44 @@ const fetchKlasifikasi = async () => {
   } finally {
     isLoadingKlasifikasi.value = false;
   }
+};
+
+/* RESET FORM */
+const resetForm = () => {
+  tanggalString.value = todayString;
+  form.value = {
+    tanggal: new Date(),
+    klasifikasi: "",
+    klasifikasiDisplay: "",
+    jenis: "",
+    jenisDisplay: "",
+    id_position_penandatangan: null,
+    penandatanganName: "",
+    penandatanganJabatan: "",
+    perihal: "",
+    jumlah: 1,
+  };
+
+  klasifikasiSearch.value = "";
+  penandatanganSearch.value = "";
+  jumlahError.value = "";
+  openKlasifikasi.value = false;
+  openPenandatangan.value = false;
+
+  console.log("🔄 Form reset");
+};
+
+/* HANDLE CLOSE & CANCEL */
+const handleClose = (value) => {
+  if (!value) {
+    resetForm();
+  }
+  emit("update:modelValue", value);
+};
+
+const handleCancel = () => {
+  resetForm();
+  emit("update:modelValue", false);
 };
 
 /* SUBMIT */
@@ -616,26 +696,6 @@ const submitAndClose = async () => {
   emit("submit", payload);
   resetForm();
   emit("update:modelValue", false);
-};
-
-const resetForm = () => {
-  tanggalString.value = todayString;
-  form.value = {
-    tanggal: new Date(),
-    klasifikasi: "",
-    klasifikasiDisplay: "",
-    jenis: "",
-    jenisDisplay: "",
-    id_position_penandatangan: null,
-    penandatanganName: "",
-    penandatanganJabatan: "",
-    perihal: "",
-    jumlah: 1,
-  };
-
-  klasifikasiSearch.value = "";
-  penandatanganSearch.value = "";
-  jumlahError.value = "";
 };
 
 /* INIT */

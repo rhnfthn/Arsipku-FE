@@ -13,7 +13,7 @@ export const usePenomoran = () => {
   const isLoadingSubmitted = ref(false);
 
   /** ===========================
-   * SAVE PENOMORAN
+   * SAVE PENOMORAN - NEW ENDPOINT
    * =========================== */
   const savePenomoran = async (
     payload: PenomoranPayload,
@@ -23,6 +23,104 @@ export const usePenomoran = () => {
     try {
       console.log(
         "🚀 savePenomoran called with:",
+        JSON.stringify(payload, null, 2),
+      );
+
+      if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
+
+      // ✅ Format payload untuk endpoint baru: /admin/nomor
+      const formattedPayload = {
+        position_id: parseInt(String(payload.position_id), 10),
+        tanggal:
+          payload.tanggal instanceof Date
+            ? payload.tanggal.toISOString().split("T")[0]
+            : String(payload.tanggal),
+        jenis: String(payload.jenis),
+        klasifikasi: String(payload.klasifikasi),
+        perihal: String(payload.perihal),
+        jumlah: parseInt(String(payload.jumlah), 10),
+        penandatangan: String(payload.penandatangan),
+        id_position_penandatangan: parseInt(
+          String(payload.id_position_penandatangan),
+          10,
+        ),
+      };
+
+      // Validasi final
+      if (isNaN(formattedPayload.id_position_penandatangan)) {
+        throw new Error(
+          `id_position_penandatangan tidak valid: ${payload.id_position_penandatangan}`,
+        );
+      }
+
+      if (isNaN(formattedPayload.position_id)) {
+        throw new Error(`position_id tidak valid: ${payload.position_id}`);
+      }
+
+      console.log(
+        "📤 POST to /admin/nomor:",
+        JSON.stringify(formattedPayload, null, 2),
+      );
+      console.log("🔍 Types check:", {
+        position_id: typeof formattedPayload.position_id,
+        id_position_penandatangan:
+          typeof formattedPayload.id_position_penandatangan,
+        jumlah: typeof formattedPayload.jumlah,
+        tanggal: typeof formattedPayload.tanggal,
+      });
+
+      // ✅ Call NEW endpoint
+      const response = await post("/admin/nomor", formattedPayload);
+
+      console.log("✅ Response from backend:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: "Penomoran berhasil disimpan.",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+        timeout: 2500,
+      });
+
+      return response.data ?? response;
+    } catch (error: any) {
+      console.error("❌ savePenomoran error:", error);
+      console.error("❌ Error response:", error.response);
+      console.error("❌ Error data:", error.response?.data);
+      console.error("❌ Error status:", error.response?.status);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal menyimpan penomoran.";
+
+      toast.add({
+        title: "Gagal",
+        description: Array.isArray(errorMessage)
+          ? errorMessage.join(", ")
+          : errorMessage,
+        icon: "i-heroicons-exclamation-circle",
+        color: "red",
+      });
+
+      throw error;
+    } finally {
+      isLoadingPenomoran.value = false;
+    }
+  };
+
+  /** ===========================
+   * SAVE PENOMORAN REQUEST - OLD ENDPOINT (Keep for backward compatibility)
+   * =========================== */
+  const savePenomoranRequest = async (
+    payload: PenomoranPayload,
+  ): Promise<PenomoranResponse> => {
+    isLoadingPenomoran.value = true;
+
+    try {
+      console.log(
+        "🚀 savePenomoranRequest called with:",
         JSON.stringify(payload, null, 2),
       );
 
@@ -54,12 +152,6 @@ export const usePenomoran = () => {
         "📤 POST to /nomor-request:",
         JSON.stringify(formattedPayload, null, 2),
       );
-      console.log("🔍 Types check:", {
-        position_id: typeof formattedPayload.position_id,
-        id_position_penandatangan:
-          typeof formattedPayload.id_position_penandatangan,
-        jumlah: typeof formattedPayload.jumlah,
-      });
 
       const response = await post("/nomor-request", formattedPayload);
 
@@ -75,10 +167,7 @@ export const usePenomoran = () => {
 
       return response.data ?? response;
     } catch (error: any) {
-      console.error("❌ savePenomoran error:", error);
-      console.error("❌ Error response:", error.response);
-      console.error("❌ Error data:", error.response?.data);
-      console.error("❌ Error status:", error.response?.status);
+      console.error("❌ savePenomoranRequest error:", error);
 
       const errorMessage =
         error.response?.data?.message ||
@@ -173,6 +262,27 @@ export const usePenomoran = () => {
       throw error;
     } finally {
       isLoadingBooking.value = false;
+    }
+  };
+
+  /** ===========================
+   * GET LIST NOMOR (For Table)
+   * =========================== */
+  const getListNomor = async () => {
+    isLoadingList.value = true;
+    try {
+      const res = await get("/admin/nomor");
+      return res.data ?? [];
+    } catch (e: any) {
+      console.error("❌ Error ambil list nomor:", e);
+      toast.add({
+        title: "Gagal fetch data",
+        description: e.message || "Gagal mengambil daftar nomor",
+        color: "red",
+      });
+      return [];
+    } finally {
+      isLoadingList.value = false;
     }
   };
 
@@ -327,8 +437,50 @@ export const usePenomoran = () => {
     }
   };
 
+  /** ===========================
+   * DELETE NOMOR
+   * =========================== */
+  const deleteNomor = async (id: string) => {
+    try {
+      const res = await del(`/admin/nomor/${id}`);
+
+      console.log("✅ Delete nomor response:", res);
+
+      toast.add({
+        title: "Berhasil",
+        description: res?.data?.message || "Nomor berhasil dihapus",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+
+      return res.data ?? res;
+    } catch (e: any) {
+      console.error("❌ Error delete nomor:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menghapus nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
   return {
+    // NEW Endpoint (Primary)
     savePenomoran,
+    getListNomor,
+    deleteNomor,
+
+    // OLD Endpoints (Backward Compatibility)
+    savePenomoranRequest,
     isLoadingPenomoran,
     submitBooking,
     isLoadingBooking,
