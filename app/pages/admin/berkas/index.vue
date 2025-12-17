@@ -245,7 +245,7 @@ import {
 } from "lucide-vue-next";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useKlasifikasi } from "~/composables/useKlasifikasi";
-import { useBerkas } from "~/composables/useBerkas;
+import { useBerkas } from "~/composables/useBerkas";
 const {
   getBerkasList,
   createBerkas,
