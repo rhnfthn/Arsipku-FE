@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
-          Daftar Verifikasi Dokumen
+          Daftar Verifikasi Penomoran
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -214,30 +214,19 @@
   </div>
 
   <!-- MODAL VERIFIKASI -->
-  <Modal v-model="openPreview" :hideDefaultFooter="true">
+  <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
     <!-- HEADER -->
     <template #title>
       <div
         class="flex items-center justify-between w-full px-6 pt-6 pb-4 border-b border-gray-200"
       >
+        <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
+          {{ selectedRow?.perihal }}
+        </h2>
         <button
           @click="openPreview = false"
           class="text-gray-600 hover:text-gray-800"
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+        ></button>
 
         <span class="text-sm text-gray-500">
           {{ formatDateTime(new Date()) }}
@@ -251,41 +240,81 @@
       class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
     >
       <!-- Judul -->
-      <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
-        {{ selectedRow?.perihal }}
-      </h2>
 
       <!-- Detail Info -->
       <div class="space-y-4 text-base">
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Tanggal</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.tanggal
-          }}</span>
+        <!-- Tanggal -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Tanggal</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.tanggal }}
+          </p>
         </div>
 
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Pengirim</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.penandatangan
-          }}</span>
+        <!-- Pengirim -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Pengirim</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.penandatangan }}
+          </p>
         </div>
 
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Klasifikasi</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.klasifikasi
-          }}</span>
+        <!-- Klasifikasi -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Klasifikasi</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.klasifikasi }}
+          </p>
         </div>
 
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Jenis Naskah</span>
-          <span class="font-medium text-gray-900">{{ selectedRow.jenis }}</span>
+        <!-- Jenis Naskah -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Jenis Naskah</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.jenis }}
+          </p>
+        </div>
+      </div>
+
+      <!-- File Lampiran -->
+      <div v-if="selectedRow.file_path" class="pt-2">
+        <label class="block text-base font-medium text-gray-900 mb-2"
+          >File Lampiran Pengusul</label
+        >
+        <div
+          class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-300 rounded-lg"
+        >
+          <svg
+            class="w-8 h-8 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-900">
+              {{ getFileName(selectedRow.file_path) }}
+            </p>
+            <p class="text-xs text-gray-500">Dokumen lampiran</p>
+          </div>
+          <a
+            :href="selectedRow.file_path"
+            target="_blank"
+            class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+          >
+            Lihat
+          </a>
         </div>
       </div>
 
       <!-- Nomor Surat Section -->
-      <div class="pt-4">
+      <div class="pt-2">
         <label class="block text-base font-medium text-gray-900 mb-3"
           >Nomor</label
         >
@@ -296,7 +325,7 @@
             :key="detail.id || idx"
             class="flex items-center gap-3"
           >
-            <!-- Checkbox -->
+            <!-- Checkbox - Default ter-check -->
             <input
               type="checkbox"
               v-model="detail.checked"
@@ -358,16 +387,16 @@
         </div>
       </div>
 
-      <!-- Keterangan Jika Ada yang Ditolak -->
+      <!-- Keterangan Jika Ada yang Tidak Di-check (Ditolak) -->
       <div v-if="hasUnchecked" class="pt-2">
         <label class="block text-base font-medium text-gray-900 mb-2"
-          >Keterangan Jika Ditolak <span class="text-red-500">*</span></label
+          >Keterangan Penolakan <span class="text-red-500">*</span></label
         >
 
         <textarea
           v-model="keterangan_ditolak"
           class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
-          placeholder="Keterangan Jika Ditolak"
+          placeholder="Masukkan keterangan mengapa nomor ditolak..."
         ></textarea>
       </div>
     </div>
@@ -377,9 +406,9 @@
       <div class="flex gap-3 px-5 py-4 border-t border-gray-200">
         <!-- Tombol Disetujui -->
         <button
-          @click="processApproval"
+          @click="confirmApproval"
           :disabled="isProcessing || !hasAnyChecked"
-          class="flex-1 px-5 py-2 text-base font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+          class="flex-1 px-5 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
         >
           <svg
             v-if="isProcessing"
@@ -407,15 +436,35 @@
 
         <!-- Tombol Ditolak -->
         <button
-          @click="processRejection"
+          @click="confirmRejection"
           :disabled="isProcessing || !hasUnchecked"
-          class="flex-1 px-5 py-2 text-base font-medium bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          class="flex-1 px-5 py-2 text-sm font-medium bg-white border border-red-400 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           Nomor Ditolak
         </button>
       </div>
     </template>
   </Modal>
+
+  <!-- CONFIRM MODAL APPROVE -->
+  <ConfirmPopup
+    v-model="showConfirmApprove"
+    title="Konfirmasi Persetujuan"
+    :description="`Apakah Anda yakin ingin menyetujui ${checkedCount} nomor yang dipilih?`"
+    confirmText="Ya, Setujui"
+    cancelText="Batal"
+    @confirm="processApproval"
+  />
+
+  <!-- CONFIRM MODAL REJECT -->
+  <ConfirmPopup
+    v-model="showConfirmReject"
+    title="Konfirmasi Penolakan"
+    :description="`Apakah Anda yakin ingin menolak ${uncheckedCount} nomor yang tidak dipilih?`"
+    confirmText="Ya, Tolak"
+    cancelText="Batal"
+    @confirm="processRejection"
+  />
 </template>
 
 <script setup lang="ts">
@@ -424,6 +473,7 @@ import { Search, ArrowUpDown, Copy } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
 
@@ -433,10 +483,43 @@ const toast = useToast();
 const { getPersonWithPosition } = usePenomoran();
 const { get, post, del } = useApi();
 
-/* Breadcrumb */
+// Get user role
+// const userStore = useUserStore();
+// const userRole = computed(() => userStore.getRole);
+
+/* Breadcrumb - Dynamic based on role */
+// const breadcrumbs = computed(() => {
+//   const role = userRole.value;
+
+//   if (role === "admin") {
+//     return [
+//       { label: "Dashboard", to: "/admin/dashboard" },
+//       {
+//         label: "Daftar Verifikasi Penomoran",
+//         to: "/admin/penomoran/verifikasi",
+//       },
+//     ];
+//   } else if (role === "superadmin") {
+//     return [
+//       { label: "Dashboard", to: "/superadmin/dashboard" },
+//       {
+//         label: "Daftar Verifikasi Penomoran",
+//         to: "/superadmin/penomoran/verifikasi",
+//       },
+//     ];
+//   } else {
+//     return [
+//       { label: "Dashboard", to: "/user/dashboard" },
+//       {
+//         label: "Daftar Verifikasi Penomoran",
+//         to: "/user/penomoran/verifikasi",
+//       },
+//     ];
+//   }
+// });
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Verifikasi", to: "/admin/verifikasi" },
 ];
 
 /* TABLE CONFIG */
@@ -465,9 +548,13 @@ const isProcessing = ref(false);
 
 const loading = ref<boolean>(true);
 
+/* Confirm Modals */
+const showConfirmApprove = ref(false);
+const showConfirmReject = ref(false);
+
 /* SORT STATE */
-const sortBy = ref<string>("id");
-const sortDir = ref<"asc" | "desc">("asc");
+const sortBy = ref<string>("tglUsulan"); // Default sort by tanggal usulan
+const sortDir = ref<"asc" | "desc">("asc"); // Default ascending
 
 const sort = (col: string) => {
   if (sortBy.value === col) {
@@ -479,7 +566,7 @@ const sort = (col: string) => {
 };
 
 /* STATUS FILTER */
-const filterStatus = ref<string>("Semua");
+const filterStatus = ref<string>("Menunggu Verifikasi"); // Default filter
 const openFilterStatus = ref<boolean>(false);
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
@@ -541,6 +628,7 @@ const fetchData = async () => {
         tglUsulan: formatDateTime(item.created_at),
         status: item.status,
         klasifikasi: item.klasifikasi,
+        file_path: item.file_path,
       };
     });
 
@@ -591,7 +679,7 @@ const showPreview = async (row: any) => {
         nomor: d.nomor || null,
         template_nomor: template_nomor,
         status: d.status || "booking",
-        checked: false,
+        checked: true, // ✅ Default ter-check
       }));
 
       // ✅ Jika kurang, tambahkan pending
@@ -602,7 +690,7 @@ const showPreview = async (row: any) => {
           nomor: null,
           template_nomor: template_nomor,
           status: "pending",
-          checked: false,
+          checked: true, // ✅ Default ter-check
         });
       }
     } else {
@@ -613,7 +701,7 @@ const showPreview = async (row: any) => {
           nomor: null,
           template_nomor: template_nomor,
           status: "pending",
-          checked: false,
+          checked: true, // ✅ Default ter-check
         });
       }
     }
@@ -665,7 +753,13 @@ const handleCopy = (value: string) => {
   });
 };
 
-// Computed untuk validasi
+/* Get filename from path */
+const getFileName = (path: string) => {
+  if (!path) return "-";
+  return path.split("/").pop() || path;
+};
+
+// Computed untuk validasi dan counting
 const hasAnyChecked = computed(() => {
   return selectedRow.value?.details?.some((d: any) => d.checked) || false;
 });
@@ -674,8 +768,31 @@ const hasUnchecked = computed(() => {
   return selectedRow.value?.details?.some((d: any) => !d.checked) || false;
 });
 
+const checkedCount = computed(() => {
+  return selectedRow.value?.details?.filter((d: any) => d.checked).length || 0;
+});
+
+const uncheckedCount = computed(() => {
+  return selectedRow.value?.details?.filter((d: any) => !d.checked).length || 0;
+});
+
+/* ✅ KONFIRMASI APPROVAL */
+const confirmApproval = () => {
+  if (!hasAnyChecked.value) {
+    toast.add({
+      title: "Peringatan",
+      description: "Pilih minimal 1 nomor untuk disetujui!",
+      color: "yellow",
+    });
+    return;
+  }
+  showConfirmApprove.value = true;
+};
+
 /* ✅ PROSES APPROVAL - APPROVE SATU PER SATU */
 const processApproval = async () => {
+  showConfirmApprove.value = false;
+
   if (!selectedRow.value) return;
 
   const approvedDetails = selectedRow.value.details.filter(
@@ -744,8 +861,6 @@ const processApproval = async () => {
       try {
         console.log(`📤 Approving detail ID: ${detailId}`);
 
-        // ✅ Endpoint: /admin/nomor-request-detail/{detailId}/approve
-        // ✅ Payload: empty object {}
         const approveRes = await post(
           `/admin/nomor-request-detail/${detailId}/approve`,
           {},
@@ -823,8 +938,33 @@ const processApproval = async () => {
   }
 };
 
+/* ✅ KONFIRMASI REJECTION */
+const confirmRejection = () => {
+  if (!hasUnchecked.value) {
+    toast.add({
+      title: "Peringatan",
+      description: "Tidak ada nomor yang akan ditolak!",
+      color: "yellow",
+    });
+    return;
+  }
+
+  if (!keterangan_ditolak.value.trim()) {
+    toast.add({
+      title: "Peringatan",
+      description: "Keterangan penolakan harus diisi!",
+      color: "yellow",
+    });
+    return;
+  }
+
+  showConfirmReject.value = true;
+};
+
 /* ✅ PROSES REJECTION - UPDATE STATUS JADI DITOLAK */
 const processRejection = async () => {
+  showConfirmReject.value = false;
+
   if (!selectedRow.value) return;
 
   const rejectedDetails = selectedRow.value.details.filter(
@@ -852,7 +992,6 @@ const processRejection = async () => {
   isProcessing.value = true;
 
   try {
-    // ✅ Collect detail IDs yang akan ditolak
     const detailIdsToReject = rejectedDetails
       .filter((d) => d.id !== null)
       .map((d) => d.id);
@@ -860,13 +999,11 @@ const processRejection = async () => {
     console.log("📝 Detail IDs yang akan ditolak:", detailIdsToReject);
     console.log("📝 ID Usulan utama:", selectedRow.value.id);
 
-    // ✅ Gunakan endpoint PATCH/PUT untuk update status jadi "Ditolak"
-    // Bukan DELETE, karena kita hanya update status, bukan hapus data
     const rejectRes = await post(
       `/admin/nomor-request/${selectedRow.value.id}/reject`,
       {
         keterangan: keterangan_ditolak.value,
-        detail_ids: detailIdsToReject, // Kirim array ID detail yang ditolak
+        detail_ids: detailIdsToReject,
       },
     );
 
@@ -880,7 +1017,7 @@ const processRejection = async () => {
       });
 
       openPreview.value = false;
-      await fetchData(); // Refresh tabel - status akan berubah jadi "Ditolak"
+      await fetchData();
     } else {
       throw new Error(rejectRes?.message || "Gagal menolak usulan");
     }
@@ -902,6 +1039,7 @@ const processRejection = async () => {
     isProcessing.value = false;
   }
 };
+
 /* FILTER + SEARCH */
 const filteredRows = computed(() => {
   const s = search.value.toLowerCase();

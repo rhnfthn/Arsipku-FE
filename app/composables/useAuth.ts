@@ -1,5 +1,4 @@
 export const useAuth = () => {
-
   const { apiGet, apiPost } = useApi();
 
   const user = useState("user", () => null);
@@ -8,37 +7,30 @@ export const useAuth = () => {
     user.value = data;
   };
 
-  // Global state user
-  const user = useState("user", () => null)
-
-  const setUser = (data: any) => {
-    user.value = data
-  }
-
   // Ambil profil dari backend
   const getProfile = async () => {
     try {
-
       const token = localStorage.getItem("token");
       if (!token) return null;
       const res = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       // Normalisasi struktur respons
       const profile =
-        res?.data?.user ||   // case: { data: { user: {...} } }
-        res?.user ||         // case: { user: {...} }
-        res || null          // case: langsung {persnum, role, ...}
+        res?.data?.user || // case: { data: { user: {...} } }
+        res?.user || // case: { user: {...} }
+        res ||
+        null; // case: langsung {persnum, role, ...}
 
-      if (profile) setUser(profile)
+      if (profile) setUser(profile);
 
-      return profile
+      return profile;
     } catch (error) {
-      console.error("[AUTH] getProfile error:", error)
-      return null
+      console.error("[AUTH] getProfile error:", error);
+      return null;
     }
-  }
+  };
 
   const verifyToken = async (token: string) => {
     try {
@@ -50,6 +42,19 @@ export const useAuth = () => {
     }
   };
 
+  // Ambil URL SSO Redirect
+  const getSSORedirectUrl = async () => {
+    try {
+      const res = await apiGet("/auth/sso-redirect-local");
+      // const res = await apiGet("/auth/sso-redirect")
+      return res?.url ?? null;
+    } catch (error) {
+      console.error("[AUTH] getSSORedirectUrl error:", error);
+      return null;
+    }
+  };
+
+  // Logout
   const logout = async () => {
     try {
       const sessionId = localStorage.getItem("sessionId");
@@ -57,63 +62,19 @@ export const useAuth = () => {
 
       await apiGet(`/auth/logout?sessionId=${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 400,
+        validateStatus: (s) => s < 400,
       });
     } catch (error) {
-      console.warn("[AUTH] Logout redirect normal:", error);
+      console.warn("[AUTH] logout error (ignored):", error);
     }
 
+    // Bersihkan localStorage & state
     localStorage.removeItem("token");
     localStorage.removeItem("sessionId");
     user.value = null;
 
     return true;
   };
-
-  // Ambil URL SSO Redirect
-  const getSSORedirectUrl = async () => {
-    try {
-      const res = await apiGet("/auth/sso-redirect-local")
-      // const res = await apiGet("/auth/sso-redirect")
-      return res?.url ?? null
-    } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error)
-      return null
-    }
-  }
-
-  // Verifikasi token SSO
-  const verifyToken = async (token: string) => {
-    try {
-      return await apiPost("/auth/verify-token", { token })
-    } catch (error) {
-      console.error("[AUTH] verifyToken error:", error)
-      throw error
-    }
-  }
-
-  // Logout
-  const logout = async () => {
-    try {
-      const sessionId = localStorage.getItem("sessionId")
-      const token = localStorage.getItem("token")
-
-      await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (s) => s < 400
-      })
-    } catch (error) {
-      console.warn("[AUTH] logout error (ignored):", error)
-    }
-
-    // Bersihkan localStorage & state
-    localStorage.removeItem("token")
-    localStorage.removeItem("sessionId")
-    user.value = null
-
-    return true
-  }
-
 
   return {
     user,
@@ -122,7 +83,6 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
-
   };
 };
 
@@ -173,7 +133,3 @@ export const useAuth = () => {
 //     logout,
 //   };
 // };
-=======
-  }
-}
->>>>>>> 3fa76252a7d21e64f15723259532cc4719ac6980

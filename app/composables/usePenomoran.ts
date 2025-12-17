@@ -229,7 +229,18 @@ export const usePenomoran = () => {
   const getKlasifikasi = async () => {
     try {
       const res = await get("/persuratan/klasifikasi");
-      return res.data ?? [];
+
+      // Response sudah dalam format { success: true, data: [...] }
+      const rawData = res.data ?? res;
+      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? []);
+
+      // Transform data untuk menampilkan "CODE - TEXT"
+      return dataArray.map((item: any) => ({
+        code: item.klasifikasi,
+        text: item.klasifikasi_text,
+        display: `${item.klasifikasi} - ${item.klasifikasi_text}`,
+        id: item.id,
+      }));
     } catch (e: any) {
       console.error("❌ Error fetch klasifikasi:", e);
       toast.add({
@@ -286,20 +297,32 @@ export const usePenomoran = () => {
   const deleteUsulan = async (id: string) => {
     try {
       const res = await del(`/admin/nomor-request/${id}`);
+
+      console.log("✅ Delete response:", res);
+
       toast.add({
         title: "Berhasil",
-        description: "Usulan berhasil dihapus",
+        description: res?.data?.message || "Usulan berhasil dihapus",
         icon: "i-heroicons-check-circle",
         color: "green",
       });
+
       return res.data ?? res;
     } catch (e: any) {
       console.error("❌ Error delete usulan:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menghapus usulan";
+
       toast.add({
         title: "Gagal",
-        description: e.response?.data?.message || "Gagal menghapus usulan",
+        description: errorMsg,
         color: "red",
       });
+
       throw e;
     }
   };
