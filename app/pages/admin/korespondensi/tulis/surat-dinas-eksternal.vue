@@ -320,7 +320,7 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 // --- STATE ---
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Surat Dinas Eksternal", to: "#" },
 ];
 

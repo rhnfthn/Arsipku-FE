@@ -768,7 +768,7 @@ const { user, getProfile } = useAuth(); // <--- INIT USEAUTH
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 const isFullscreenEditor = ref(false);

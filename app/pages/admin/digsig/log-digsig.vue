@@ -172,7 +172,7 @@
 
 <script setup lang="ts">
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
 ];
 

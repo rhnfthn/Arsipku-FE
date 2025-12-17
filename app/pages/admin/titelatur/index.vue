@@ -16,7 +16,7 @@ import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Titelatur Inggris", to: "/admin/titelatur" },
 ];
 // ================================

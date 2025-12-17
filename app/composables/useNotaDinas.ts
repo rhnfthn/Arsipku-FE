@@ -1,21 +1,36 @@
 // composables/useNotaDinas.ts
-import type { NotaDinasDraftPayload } from "~/types/notaDinas";
+import { useApi } from "@/composables/useApi";
 
 export const useNotaDinas = () => {
-  const { post } = useApi(); // Menggunakan useApi yang Anda sediakan
+  const { api, apiPost } = useApi();
 
-  const saveDraft = async (payload: NotaDinasDraftPayload) => {
+  const ENDPOINT_PDF = "/ND/preview-pdf";
+  const ENDPOINT_DRAFT = "/ND/save-draft";
+
+  // Generate PDF
+  const generatePdf = async (payload: any) => {
     try {
-      // Endpoint sesuai request: /ND/save-draft
-      const response = await post("/ND/save-draft", payload);
-      return response;
+      const response = await api.post("/ND/preview-pdf", payload, {
+        responseType: "blob",
+        headers: {
+          "Content-Type": undefined,
+        },
+      });
+
+      return response.data;
     } catch (error) {
-      console.error("Gagal menyimpan draft:", error);
+      console.error("Gagal generate PDF:", error);
       throw error;
     }
   };
 
+  // 2. Save Draft (Contoh penggunaan wrapper apiPost biasa)
+  const saveDraft = async (payload: any) => {
+    return await apiPost(ENDPOINT_DRAFT, payload);
+  };
+
   return {
+    generatePdf,
     saveDraft,
   };
 };

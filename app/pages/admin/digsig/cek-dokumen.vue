@@ -190,7 +190,7 @@ const signerOpen = ref(true);
 
 /* Breadcrumb */
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
 ];
 

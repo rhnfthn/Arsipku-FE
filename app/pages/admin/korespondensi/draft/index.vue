@@ -20,7 +20,6 @@ import { useAuth } from '@/composables/useAuth';
 const { user } = useAuth();
 const { drafts, fetchDrafts, deleteDraft, isLoadingDraft } = useDraft();
 
-// HAPUS BARIS INI (Tidak dipakai lagi)
 // const USER_POSITION_ID = "70016786";
 
 const router = useRouter();
@@ -97,7 +96,7 @@ const formatFullDate = (isoString, time) => {
 const refreshData = async () => {
   // Cek apakah user sudah ada
   if (user.value?.position) {
-    await fetchDrafts(user.value.position);
+    await fetchDrafts(user.value.position || "70016786");
   } else {
     console.warn("User position belum tersedia, menunggu data user...");
   }
