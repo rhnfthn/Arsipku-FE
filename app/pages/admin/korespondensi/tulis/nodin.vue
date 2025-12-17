@@ -749,7 +749,7 @@ import { ref, computed, onMounted, nextTick } from "vue";
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue'; // Pastikan import ini ada jika pakai TinyMCE
 import "@vueup/vue-quill/dist/vue-quill.snow.css";
-import { useAuth } from "@/composables/auth"; // <--- IMPORT USEAUTH
+import { useAuth } from "@/composables/useAuth"; // <--- IMPORT USEAUTH
 
 // Types
 import type { Berkas } from "~/types/berkas";
@@ -768,7 +768,7 @@ const { user, getProfile } = useAuth(); // <--- INIT USEAUTH
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 const isFullscreenEditor = ref(false);

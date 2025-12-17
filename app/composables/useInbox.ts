@@ -1,74 +1,67 @@
 // ~/composables/useInbox.ts
 import { ref, watch, isRef } from 'vue'
+import { useApi } from '~/composables/useApi'
 
-export function useInbox(positionId) {
-  const items = ref([])
+export function useInbox(positionId: any) {
+  const { apiGet } = useApi()
+
+  const items = ref<any[]>([])
   const pending = ref(false)
-  const error = ref(null)
+  const error = ref<any>(null)
 
-  const fetchInbox = async (id) => {
+  const fetchInbox = async (id: string | null) => {
     if (!id) {
       items.value = []
       return
     }
+
     pending.value = true
     error.value = null
 
     try {
-      const token = (typeof window !== 'undefined')
-        ? localStorage.getItem('token')
-        : null
-
-      const headers = token ? { Authorization: `Bearer ${token}` } : {}
-
-      const res = await $fetch(
-        `http://172.20.16.115:3011/naskah_sirkulasi/inbox/${encodeURIComponent(id)}`,
-        { method: 'GET', headers }
+      const res = await apiGet(
+        `/naskah_sirkulasi/inbox/${encodeURIComponent(id)}`
       )
 
       const rawItems = res?.data?.items || []
 
-items.value = rawItems.map(it => ({
-  id: it.id_sirkulasi,
-  naskahId: it.id_naskah,
-  category: it.jenis,                  // ND, SDI, SDE, DI, KA
-  category_label: it.jenis_label,      // “Nota Dinas”
-  nomor: it.nomor,
-  tanggal: it.tanggal,
-  // subject tetap untuk daftar singkat
-  subject: (it.perihal || it.nomor || '').toString().trim(),
+      items.value = rawItems.map((it: any) => ({
+        id: it.id_sirkulasi,
+        naskahId: it.id_naskah,
 
-  // --- tambahan untuk template detail ---
-  // Catatan yang Anda minta: ambil dari perihal
-  note: (it.perihal || '').toString().trim(),
+        category: it.jenis,
+        category_label: it.jenis_label,
+        nomor: it.nomor,
+        tanggal: it.tanggal,
 
-  // body: kalau nanti mau isi lengkap (fallback ke perihal)
-  body: (it.body || it.isi || it.perihal || '').toString().trim(),
+        subject: (it.perihal || it.nomor || '').toString().trim(),
+        note: (it.perihal || '').toString().trim(),
+        body: (it.body || it.isi || it.perihal || '').toString().trim(),
 
-  sifat: it.sifat,
-  status: it.status,
-  lampiran: it.lampiran,
+        sifat: it.sifat,
+        status: it.status,
+        lampiran: it.lampiran,
 
-  // PENGIRIM
-  from: it.pengirim?.nama || "-",
-  pengirim: it.pengirim,
+        // pengirim
+        from: it.pengirim?.nama || '-',
+        pengirim: it.pengirim,
 
-  // STATUS
-  isRead: it.status_baca === "sudah_dibaca",
-  read_time: it.read_time,
-  isStarred: it.is_favorit,
-  isFavorit: it.is_favorit,
-  isArsip: it.is_arsip,
-  isNote: it.is_note,
+        // penerima
+        recipientName: it.penerima?.nama || '-',
+        recipient: it.penerima,
 
-    // PENERIMA (kepada user yang login)
-  recipientName: it.penerima?.nama || "-",
-  recipient: it.penerima,
+        // flags
+        isRead: it.status_baca === 'sudah_dibaca',
+        read_time: it.read_time,
+        isStarred: it.is_favorit,
+        isFavorit: it.is_favorit,
+        isArsip: it.is_arsip,
+        isNote: it.is_note,
 
-  raw: it
-}))
+        raw: it
+      }))
     } catch (err) {
-      console.error("useInbox error:", err)
+      console.error('useInbox error:', err)
       error.value = err
       items.value = []
     } finally {
@@ -76,9 +69,10 @@ items.value = rawItems.map(it => ({
     }
   }
 
-if (isRef(positionId)) {
-  watch(positionId, (newId) => fetchInbox(newId), { immediate: true })
-}
+  // 🔁 auto fetch kalau positionId ref
+  if (isRef(positionId)) {
+    watch(positionId, (newId) => fetchInbox(newId), { immediate: true })
+  }
 
   const refresh = () => {
     const id = isRef(positionId) ? positionId.value : positionId

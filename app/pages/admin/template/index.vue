@@ -417,12 +417,6 @@ const addData = ref<any>({
   fileName: "",
 });
 
-// Breadcrumbs
-const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Template", to: "/admin/template" },
-];
-
 // ✅ Fetch Data dari API
 const fetchData = async () => {
   try {
@@ -463,8 +457,51 @@ const toggleSort = (column: string) => {
     sortDir.value = "asc";
   }
 };
-
 // Pagination
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Template", to: "/admin/template" },
+];
+
+// ==============================
+// DELETE (existing)
+// ==============================
+// const confirmDeleteOpen = ref(false);
+// const itemToDelete = ref < any > null;
+
+// const openDelete = (item) => {
+//   itemToDelete.value = item;
+//   confirmDeleteOpen.value = true;
+// };
+
+// const deleteNow = () => {
+//   listDelegasi.value = listDelegasi.value.filter(
+//     (i) => i.id !== itemToDelete.value.id,
+//   );
+//   confirmDeleteOpen.value = false;
+// };
+
+// const confirmDeleteOpen = ref(false);
+// const itemToDelete = ref<any>(null);
+
+// const openDelete = (item: any) => {
+//   itemToDelete.value = item;
+//   confirmDeleteOpen.value = true;
+// };
+
+// const deleteNow = () => {
+//   if (!itemToDelete.value) return;
+
+//   listDelegasi.value = listDelegasi.value.filter(
+//     (i) => i.id !== itemToDelete.value.id,
+//   );
+
+//   confirmDeleteOpen.value = false;
+// };
+
+// ================================
+// PAGINATION
+// ================================
 const rowsPerPage = ref(10);
 const rowsChoices = [5, 10, 15, 20];
 const currentPage = ref(1);

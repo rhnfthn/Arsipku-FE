@@ -194,7 +194,7 @@ import { ref, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "@/composables/useAuth";
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Berkas } from "~/types/berkas";
 
@@ -220,7 +220,7 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 // State
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Surat Dinas Internal", to: "#" },
 ];
 const isOpenPreview = ref(false);

@@ -1,56 +1,40 @@
 <template>
   <div class="space-y-4">
-    <div class="space-y-6 flex justify-between">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <!-- Left Section - Title & Breadcrumb -->
-            <PageHeader title="Berkas" :items="items" />
-        </div>
-        <button @click="showModal = true; resetForm()" class="flex items-center gap-2 bg-primary text-white space-y-6 h-8 px-6 rounded-lg hover:bg-primary-800 text-xs">
-          <Plus class="w-4 h-4" />
-          Tambah
-        </button>
+    <div class="flex justify-between">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+      >
+        <!-- Left Section - Title & Breadcrumb -->
+        <PageHeader title="Berkas" :items="items" />
+      </div>
+      <button
+        @click="
+          showModal = true;
+          resetForm();
+        "
+        class="flex items-center gap-2 bg-primary text-white space-y-6 h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+      >
+        <Plus class="w-4 h-4" />
+        Tambah
+      </button>
     </div>
 
     <!-- Table -->
-    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
-      <div class="flex flex-wrap gap-4 my-3 items-center ">
-          <button
-            @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-          <RotateCcw class="w-4 h-4" />
-          </button>        
-        <!-- Filter Jenis -->
-        <select v-model="filters.jenis" class="bg-gray-100 rounded px-3 py-2 text-sm">
-          <option value="">Semua Jenis</option>
-          <option value="ND">Nota Dinas</option>
-          <option value="ST">Surat Tugas</option>
-        </select>
-
-        <!-- Filter Lokasi -->
-        <select v-model="filters.lokasi" class="bg-gray-100 rounded px-3 py-2 text-sm">
-          <option value="">Semua Lokasi</option>
-          <option v-for="lok in lokasiOptions" :key="lok" :value="lok">{{ lok }}</option>
-        </select>
-
-        <!-- Filter Tahun -->
-        <select v-model="filters.tahun" class="bg-gray-100 rounded px-3 py-2 text-sm">
-          <option value="">Semua Tahun</option>
-          <option v-for="tahun in tahunOptions" :key="tahun" :value="tahun">{{ tahun }}</option>
-        </select>
-
+    <div
+      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+    >
+      <div class="flex flex-wrap gap-2 p-2 items-center">
         <button
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
-      >
-        <FileDown class="w-4 h-4" />
-        Export
-      </button> 
-      </div>
+          @click="refreshData"
+          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
 
-      <div class="relative flex-1 w-full my-3 px-2">
+        <div class="relative flex-1 w-full my-3 px-2">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
+          />
           <input
             v-model="filters.search"
             type="text"
@@ -58,14 +42,36 @@
             class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
-      <table class="min-w-full border-collapse text-sm mt-3">
+        <button
+          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+        >
+          <FileDown class="w-4 h-4" />
+          Export
+        </button>
+      </div>
+
+      <table class="min-w-full border-collapse text-sm">
         <thead class="text-left bg-primary-400 text-white">
           <tr>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Klasifikasi</th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Berkas</th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Lokasi</th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Tanggal Dibuat</th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">Aksi</th>
+            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              Klasifikasi
+            </th>
+            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              Berkas
+            </th>
+            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              Lokasi
+            </th>
+            <th
+              class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold whitespace-nowrap"
+            >
+              Tanggal Dibuat
+            </th>
+            <th
+              class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold text-center"
+            >
+              Aksi
+            </th>
           </tr>
         </thead>
 
@@ -75,9 +81,13 @@
             :key="item.id"
             class="hover:bg-blue-50 transition-colors"
           >
-            <td class="px-4 py-3">{{ item.klasifikasi }}</td>
+            <td class="px-4 py-3">
+              {{ item.klasifikasi }} - {{ item.klasifikasi_teks }}
+            </td>
             <td class="px-4 py-3 capitalize">{{ item.berkas }}</td>
-            <td class="px-4 py-3 capitalize">{{ item.lokasi }}</td>
+            <td class="px-4 py-3 capitalize whitespace-nowrap">
+              {{ item.lokasi }}
+            </td>
             <td class="px-4 py-3">{{ item.tanggal }}</td>
             <td class="px-4 py-3 text-center flex justify-center gap-5">
               <button class="text-yellow-500" @click="editData(item)">
@@ -91,7 +101,23 @@
           </tr>
         </tbody>
       </table>
-      <Modal :model-value="showModal" @update:modelValue="showModal = $event" @save="saveData">
+
+      <ConfirmPopup
+        v-model="showDeletePopup"
+        type="danger"
+        title="Hapus Berkas?"
+        message="Berkas yang dihapus tidak dapat dikembalikan."
+        confirmText="Hapus"
+        cancelText="Batal"
+        @confirm="confirmDelete"
+        @cancel="showDeletePopup = false"
+      />
+
+      <Modal
+        :model-value="showModal"
+        @update:modelValue="showModal = $event"
+        @save="saveData"
+      >
         <template #title>
           <Heading variant="heading9b" class="font-semibold text-sm mt-5 ml-5">
             {{ isEdit ? "Edit Berkas" : "Tambah Berkas" }}
@@ -102,35 +128,103 @@
           <!-- Klasifikasi -->
           <div>
             <label class="text-xs font-semibold">Klasifikasi</label>
-            <select v-model="form.klasifikasi" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            <select
+              v-model="form.klasifikasi"
+              required
+              class="w-full border rounded-lg px-3 py-2 text-sm"
+            >
               <option disabled value="">Pilih klasifikasi</option>
-              <option>OPS - OPERASI</option>
-              <option>OPS.01 - ATFM</option>
-              <option>OPS.01.01 - SLOT TIME</option>
+
+              <option
+                v-for="item in klasifikasiOptions"
+                :key="item.id"
+                :value="item.klasifikasi"
+              >
+                {{ item.klasifikasi }} - {{ item.klasifikasi_text }}
+              </option>
             </select>
           </div>
 
           <!-- Judul Berkas -->
           <div>
             <label class="text-xs font-semibold">Judul Berkas</label>
-            <input v-model="form.berkas" type="text"
+            <input
+              v-model="form.berkas"
+              required
+              type="text"
               class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-              placeholder="Masukkan judul berkas" />
+              placeholder="Masukkan judul berkas"
+            />
+          </div>
+
+          <!-- Hitung Waktu Retensi Dari -->
+          <div>
+            <label class="text-xs font-semibold">
+              Hitung Waktu Retensi Dari
+            </label>
+
+            <select
+              v-model="form.retensi"
+              required
+              class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
+            >
+              <option disabled value="">Pilih waktu retensi</option>
+
+              <option
+                v-for="opt in retensiOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Tindakan -->
+          <div>
+            <label class="text-xs font-semibold">
+              Tindakan Penyusutan Akhir
+            </label>
+
+            <select
+              v-model="form.tindakan"
+              required
+              class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
+            >
+              <option disabled value="">Pilih tindakan</option>
+
+              <option
+                v-for="opt in tindakanOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
           </div>
 
           <!-- Lokasi -->
           <div>
             <label class="text-xs font-semibold">Lokasi</label>
-            <input v-model="form.lokasi" type="text"
-              class="w-full border rounded-lg px-3 py-2 text-sm mt-1" placeholder="Masukkan lokasi"/>
+            <input
+              v-model="form.lokasi"
+              required
+              type="text"
+              class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
+              placeholder="Masukkan lokasi"
+            />
           </div>
 
           <!-- Isi Ringkas -->
           <div>
             <label class="text-xs font-semibold">Isi Ringkas</label>
-            <textarea v-model="form.isi" rows="4"
+            <textarea
+              v-model="form.isi"
+              required
+              rows="4"
               class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-              placeholder="Tulis isi ringkas (opsional)">
+              placeholder="Tulis isi ringkas (opsional)"
+            >
             </textarea>
           </div>
         </div>
@@ -140,156 +234,259 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import {Search, FileDown, RotateCcw, Trash2, Pencil, Plus} from "lucide-vue-next";
+import { ref, computed, onMounted } from "vue";
+import {
+  Search,
+  FileDown,
+  RotateCcw,
+  Trash2,
+  Pencil,
+  Plus,
+} from "lucide-vue-next";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useKlasifikasi } from "~/composables/useKlasifikasi";
+import { useBerkas } from "~/composables/useBerkas";
+const {
+  getBerkasList,
+  createBerkas,
+  deleteBerkas,
+  updateBerkas,
+  getBerkasById,
+} = useBerkas();
+
+const { getKlasifikasiList } = useKlasifikasi();
+
+const klasifikasiOptions = ref<any[]>([]);
+const loadingKlasifikasi = ref(false);
+
+const fetchKlasifikasi = async () => {
+  try {
+    loadingKlasifikasi.value = true;
+    const res = await getKlasifikasiList();
+    const list = res.data ?? res;
+
+    klasifikasiOptions.value = list.filter(
+      (item: Klasifikasi) => item.active === 1,
+    );
+  } catch (err) {
+    console.error("Gagal ambil klasifikasi", err);
+  } finally {
+    loadingKlasifikasi.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchKlasifikasi();
+});
+
+const data = ref<any[]>([]);
+const loadingData = ref(false);
+
+const fetchBerkas = async () => {
+  try {
+    loadingData.value = true;
+    const res = await getBerkasList();
+    const list = res.data ?? res;
+
+    data.value = list.map((item: any) => ({
+      id: item.id,
+      klasifikasi: item.klasifikasi,
+      klasifikasi_teks: item.klasifikasiTeks,
+      berkas: item.judulBerkas,
+      lokasi: item.lokasi,
+      tanggal: item.createdAt
+        ? new Date(item.createdAt).toLocaleDateString("id-ID")
+        : "-",
+    }));
+  } catch (error) {
+    console.error("Gagal ambil berkas", error);
+  } finally {
+    loadingData.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchKlasifikasi();
+  fetchBerkas();
+});
 
 const items = [
-    {
-        label: 'Dashboard',
-        to: '/'
-    },
-    {
-        label: 'Berkas',
-        to: '/admin/berkas/'
-    }
-] satisfies BreadcrumbItem[]
-
-const data = ref([
   {
-    id: 1,
-    klasifikasi: "OPS - OPERASI",
-    tanggal: "03/03/2025",
-    berkas: "Persetujuan Proses Pembayaran Biaya Pegawai",
-    lokasi: "Jakarta Timur",
+    label: "Dashboard",
+    to: "/",
   },
   {
-    id: 2,
-    klasifikasi: "OPS.01 - AIR TRAFFIC FLOW MANAGEMENT (ATFM",
-    tanggal: "03/03/2024",
-    berkas: "Pengajuan Dana Operasional Kantor Cabang Jakarta",
-    lokasi: "Jakarta Pusat",
+    label: "Berkas",
+    to: "/admin/berkas/",
   },
-  {
-    id: 3,
-    klasifikasi: "OPS.01.01 - PEMANTAUAN SLOT TIME",
-    tanggal: "03/03/2023",
-    berkas: "Penggantian Biaya Pembelian",
-    lokasi: "Jakarta Pusat",
-  },
-]);
+] satisfies BreadcrumbItem[];
 
 // Filter state
 const filters = ref({
-  jenis: "",
-  lokasi: "",
-  tahun: "",
   search: "",
 });
 
-// Options
-const lokasiOptions = computed(() =>
-  [...new Set(data.value.map((d) => d.lokasi))]
-);
-const tahunOptions = computed(() =>
-  [...new Set(data.value.map((d) => d.tanggal.split("/")[2]))]
-);
-
 // Filtered data
 const filteredData = computed(() => {
-  return data.value.filter((item) => {
-    const tahunItem = item.tanggal.split("/")[2];
-    return (
-      (filters.value.jenis === "" || item.jenis === filters.value.jenis) &&
-      (filters.value.lokasi === "" || item.lokasi === filters.value.lokasi) &&
-      (filters.value.tahun === "" || tahunItem === filters.value.tahun) &&
-      (filters.value.search === "" ||
-        Object.values({
-          klasifikasi: item.klasifikasi,
-          tanggal: item.tanggal,
-          berkas: item.berkas,
-          jabatan: item.jabatan,
-          lokasi: item.lokasi,
-        })
-          .join(" ")
-          .toLowerCase()
-          .includes(filters.value.search.toLowerCase()))
-    );
-  });
+  return data.value.filter(
+    (item) =>
+      filters.value.search === "" ||
+      Object.values({
+        klasifikasi: item.klasifikasi,
+        tanggal: item.tanggal,
+        berkas: item.berkas,
+        lokasi: item.lokasi,
+      })
+        .join(" ")
+        .toLowerCase()
+        .includes(filters.value.search.toLowerCase()),
+  );
 });
 
 const refreshData = () => {
-  filters.value.jenis = "";
-  filters.value.lokasi = "";
   filters.value.search = "";
-  filters.value.tahun = "";
 };
 
 // Modal visibility
-const showModal = ref(false)
+const showModal = ref(false);
+
+export interface Klasifikasi {
+  id: string;
+  klasifikasi: string;
+  klasifikasi_text: string;
+  active: number;
+}
 
 // Form state
+export interface BerkasCreateInput {
+  klasifikasi: string;
+  judul_berkas: string;
+  hitung_waktu_retensi_dari: string;
+  tindakan_penyusutan_akhir: string;
+  lokasi: string;
+  isi_ringkas?: string;
+}
+
+const retensiOptions = ref([
+  {
+    value: "Sejak Berkas Dibuat",
+    label: "Sejak Berkas Dibuat",
+  },
+  {
+    value: "Sejak Berkas Ditutup",
+    label: "Sejak Berkas Ditutup",
+  },
+]);
+const tindakanOptions = ref([
+  { value: "Musnah", label: "Musnah" },
+  { value: "Dinilai Kembali", label: "Dinilai Kembali" },
+  { value: "Permanen", label: "Permanen" },
+]);
+
+const isEdit = ref(false);
+const selectedId = ref<number | null>(null);
+
+const editData = async (item: any) => {
+  try {
+    isEdit.value = true;
+    showModal.value = true;
+    selectedId.value = item.id;
+
+    const res = await getBerkasById(item.id);
+    const berkas = res.data ?? res;
+
+    form.value = {
+      klasifikasi: berkas.klasifikasi,
+      berkas: berkas.judulBerkas,
+      lokasi: berkas.lokasi,
+      isi: berkas.isiRingkas ?? "",
+      retensi: berkas.hitungWaktuRetensiDari ?? "",
+      tindakan: berkas.tindakanPenyusutanAkhir ?? "",
+    };
+  } catch (error) {
+    console.error("Gagal ambil detail berkas", error);
+  }
+};
+
 const form = ref({
   klasifikasi: "",
   berkas: "",
   lokasi: "",
   isi: "",
-})
+  retensi: "",
+  tindakan: "",
+});
 
-const isEdit = ref(false)
-const selectedId = ref<number | null>(null)
-
-const editData = (item: any) => {
-  isEdit.value = true
-  showModal.value = true
-  selectedId.value = item.id
-
-  form.value = {
-    klasifikasi: item.klasifikasi,
-    berkas: item.berkas,
-    lokasi: item.lokasi,
-    isi: ""   // optional
+const saveData = async () => {
+  if (
+    !form.value.klasifikasi ||
+    !form.value.berkas ||
+    !form.value.retensi ||
+    !form.value.tindakan ||
+    !form.value.lokasi ||
+    !form.value.isi
+  ) {
+    alert("Semua field wajib diisi");
+    return;
   }
-}
 
-
-const saveData = () => {
-  if (isEdit.value && selectedId.value !== null) {
-    // Update data
-    const index = data.value.findIndex(d => d.id === selectedId.value)
-    if (index !== -1) {
-      data.value[index].klasifikasi = form.value.klasifikasi
-      data.value[index].berkas = form.value.berkas
-      data.value[index].lokasi = form.value.lokasi
-    }
-  } else {
-    // Tambah Baru
-    const today = new Date()
-    const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(
-      today.getMonth() + 1
-    ).padStart(2, "0")}/${today.getFullYear()}`
-
-    data.value.push({
-      id: Date.now(),
+  try {
+    const payload = {
       klasifikasi: form.value.klasifikasi,
-      berkas: form.value.berkas,
+      judul_berkas: form.value.berkas,
+      hitung_waktu_retensi_dari: form.value.retensi,
+      tindakan_penyusutan_akhir: form.value.tindakan,
       lokasi: form.value.lokasi,
-      tanggal: formattedDate,
-    })
-  }
+      isi_ringkas: form.value.isi,
+    };
 
-  showModal.value = false
-  resetForm()
-}
+    if (isEdit.value && selectedId.value) {
+      await updateBerkas(selectedId.value, payload);
+    } else {
+      await createBerkas(payload);
+    }
+
+    showModal.value = false;
+    resetForm();
+    await fetchBerkas();
+  } catch (error) {
+    console.error("Gagal simpan berkas", error);
+  }
+};
 
 const resetForm = () => {
-  isEdit.value = false
-  selectedId.value = null
-  form.value = { klasifikasi: "", berkas: "", lokasi: "", isi: "" }
-}
+  isEdit.value = false;
+  selectedId.value = null;
+  form.value = {
+    klasifikasi: "",
+    berkas: "",
+    lokasi: "",
+    isi: "",
+    retensi: "",
+    tindakan: "",
+  };
+};
 
 const deleteData = (id: number) => {
-  data.value = data.value.filter(item => item.id !== id)
-}
+  deleteId.value = id;
+  showDeletePopup.value = true;
+};
 
+const confirmDelete = async () => {
+  if (!deleteId.value) return;
 
+  try {
+    await deleteBerkas(deleteId.value);
+
+    showDeletePopup.value = false;
+    deleteId.value = null;
+
+    await fetchBerkas();
+  } catch (error) {
+    console.error("Gagal menghapus berkas", error);
+  }
+};
+
+const showDeletePopup = ref(false);
+const deleteId = ref<number | null>(null);
 </script>

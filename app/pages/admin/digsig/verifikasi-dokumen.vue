@@ -243,7 +243,7 @@ import {
 const openDetail = ref(false);
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 

@@ -186,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
+import { onMounted, watch, ref } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useDashboard } from "@/composables/useDashboard";
 

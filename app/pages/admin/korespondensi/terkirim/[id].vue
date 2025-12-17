@@ -76,14 +76,14 @@ onMounted(async () => {
 
       <div class="flex items-center gap-1 shrink-0">
         <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400"
-          title="Cetak">
+          title="Cetak" @click="openPdfPreview">
           <Printer class="w-4 h-4" />
         </button>
-        <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
-        <button
+        <!-- <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div> -->
+        <!-- <button
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 hidden sm:block">
           <MoreVertical class="w-4 h-4" />
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -97,7 +97,7 @@ onMounted(async () => {
       <div v-else-if="detail" class="max-w-5xl mx-auto w-full p-6 md:p-10">
 
         <div class="mb-6 space-y-3">
-          <h1 class="text-2xl md:text-3xl font-normal text-gray-900 dark:text-white leading-snug tracking-tight">
+          <h1 class="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
             {{ detail.perihal }}
           </h1>
 
@@ -107,15 +107,21 @@ onMounted(async () => {
               {{ detail.jenis_label }}
             </span>
 
-            <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ring-inset ring-current/20"
+            <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ring-inset ring-current/20 capitalize"
               :class="getSifatColor(detail.sifat).replace('bg-', 'bg-opacity-10 text-')">
               {{ detail.sifat }}
             </span>
-
             <span
               class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-400/20">
-              {{ detail.status }}
+              {{
+                detail.status === 'final'
+                  ? 'Belum Ditandatangani'
+                  : detail.status === 'final_tte'
+                    ? 'Sudah Ditandatangani'
+                    : detail.status
+              }}
             </span>
+
           </div>
         </div>
 
@@ -127,7 +133,7 @@ onMounted(async () => {
 
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-baseline">
-              <span class="text-base font-bold text-gray-900 dark:text-white">
+              <span class="text-base font-semibold text-gray-900 dark:text-white">
                 {{ detail.pengirim.nama_sirkuler }}
               </span>
               <div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4 font-medium">
@@ -141,8 +147,7 @@ onMounted(async () => {
               {{ detail.pengirim.position_text }}
             </div>
 
-            <div
-              class="mt-3">
+            <div class="mt-3">
 
               <span class="block text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2 select-none">
                 Kepada:
@@ -186,6 +191,15 @@ onMounted(async () => {
         </div>
 
         <div class="border-t border-gray-100 dark:border-gray-800 pt-6 space-y-6">
+
+          <div class="w-full">
+            <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Berita</h3>
+            <div class="dark:border-gray-800">
+              <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 break-words"
+                v-html="detail.konten || '<p class=\'text-gray-400 italic\'>Tidak ada konten</p>'">
+              </div>
+            </div>
+          </div>
 
           <div class="w-full">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Dokumen</h3>
@@ -243,7 +257,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <USlideover v-model:open="showPdfModal" title="Preview PDF" side="bottom" :ui="{
+    <USlideover v-model:open="showPdfModal" title="Preview Dokumen" side="bottom" :ui="{
       content: 'h-screen max-h-screen',
       body: 'p-0',
       footer: 'p-4 border-t border-gray-200 dark:border-gray-800',

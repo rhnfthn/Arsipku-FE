@@ -616,7 +616,7 @@ const getCategoryLabel = (cat) => {
         <div class="flex-1 overflow-y-auto px-6 pb-6">
           <div class="flex gap-4 mb-5">
             <div
-              class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-sm shrink-0"
+              class="w-10 h-10 rounded-full flex bg-primary-400 items-center justify-center text-lg font-bold shadow-sm shrink-0"
               :class="selected.color"
             >
               {{ selected.initial }}

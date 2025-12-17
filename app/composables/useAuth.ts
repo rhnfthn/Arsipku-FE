@@ -1,12 +1,11 @@
 export const useAuth = () => {
   const { apiGet, apiPost } = useApi();
-
+  // Global state user
   const user = useState("user", () => null);
 
-  const setUser = (data) => {
+  const setUser = (data: any) => {
     user.value = data;
   };
-
   // Ambil profil dari backend
   const getProfile = async () => {
     try {
@@ -32,16 +31,6 @@ export const useAuth = () => {
     }
   };
 
-  const verifyToken = async (token: string) => {
-    try {
-      const res = await apiPost("/auth/verify-token", { token });
-      return res;
-    } catch (error) {
-      console.error("[AUTH] Error verifyToken:", error);
-      throw error;
-    }
-  };
-
   // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
@@ -51,6 +40,16 @@ export const useAuth = () => {
     } catch (error) {
       console.error("[AUTH] getSSORedirectUrl error:", error);
       return null;
+    }
+  };
+
+  // Verifikasi token SSO
+  const verifyToken = async (token: string) => {
+    try {
+      return await apiPost("/auth/verify-token", { token });
+    } catch (error) {
+      console.error("[AUTH] verifyToken error:", error);
+      throw error;
     }
   };
 
@@ -76,6 +75,21 @@ export const useAuth = () => {
     return true;
   };
 
+  const refreshToken = async () => {
+    const sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) throw new Error("No sessionId");
+
+    const res = await apiPost("/auth/refresh-token", {
+      sessionId,
+    });
+
+    const newAccessToken = res?.data?.accessToken;
+    if (!newAccessToken) throw new Error("Refresh token failed");
+
+    localStorage.setItem("token", newAccessToken);
+    return newAccessToken;
+  };
+
   return {
     user,
     setUser,
@@ -83,6 +97,8 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
+
+    refreshToken,
   };
 };
 
