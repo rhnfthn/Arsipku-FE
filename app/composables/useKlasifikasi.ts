@@ -4,7 +4,7 @@ import type { Klasifikasi, KlasifikasiResponse } from "~/types/klasifikasi";
 export const useKlasifikasi = () => {
   const { api } = useApi();
 
-  const getKlasifikasiList = async (): Promise<Klasifikasi[]> => {
+  const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
       const response = await api.get<KlasifikasiResponse>(
         "/persuratan/klasifikasi",
@@ -17,6 +17,6 @@ export const useKlasifikasi = () => {
   };
 
   return {
-    getKlasifikasiList,
+    getKlasifikasi,
   };
 };
