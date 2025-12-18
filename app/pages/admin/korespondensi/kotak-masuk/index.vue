@@ -44,7 +44,8 @@ onMounted(async () => {
 
 const positionId = computed(() => user.value?.position || null);
 
-const { items, pending, error, refresh, markAsRead } = useInbox(positionId);
+const { items, pending, error, refresh, markAsRead, toggleFlag } =
+  useInbox(positionId);
 
 // --- STATE ---
 const selected = ref(null);
@@ -559,22 +560,6 @@ const penerimaDetail = computed(() => {
               class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
             >
               <div class="flex items-center gap-2 p-1">
-                <SquareArrowOutUpRight
-                  class="w-4 h-4 transition-colors hover:text-emerald-600"
-                  :class="
-                    mail.canOpenTab ? 'text-emerald-500' : 'text-neutral-300'
-                  "
-                  title="Open Tab"
-                />
-                <Flag
-                  class="w-4 h-4 transition-colors hover:text-blue-600"
-                  :class="
-                    mail.isFlagged
-                      ? 'text-blue-500 fill-blue-500'
-                      : 'text-neutral-300'
-                  "
-                  title="Tindak Lanjut"
-                />
                 <Star
                   class="w-4 h-4 transition-colors hover:text-yellow-400"
                   :class="
@@ -582,29 +567,28 @@ const penerimaDetail = computed(() => {
                       ? 'text-yellow-400 fill-yellow-400'
                       : 'text-neutral-300'
                   "
-                  @click.stop="toggleFavorit(mail.id)"
+                  @click.stop="toggleFlag(mail, 'favorit')"
                   title="Favorite"
                 />
-                <Lock
-                  class="w-4 h-4 transition-colors hover:text-neutral-600"
-                  :class="
-                    mail.isLocked ? 'text-neutral-500' : 'text-neutral-300'
-                  "
-                  title="Lock"
-                />
                 <StickyNote
-                  class="w-4 h-4 transition-colors hover:text-amber-500"
-                  :class="mail.hasNote ? 'text-amber-500' : 'text-neutral-300'"
+                  class="w-4 h-4 transition-colors hover:text-orange-400"
+                  :class="
+                    mail.isNote
+                      ? 'text-orange-400 fill-orange-400'
+                      : 'text-neutral-300'
+                  "
+                  @click.stop="toggleFlag(mail, 'note')"
                   title="Note"
                 />
+
                 <Archive
                   class="w-4 h-4 transition-colors hover:text-purple-600"
                   :class="
-                    mail.isArchived
+                    mail.isArsip
                       ? 'text-purple-500 fill-purple-500'
                       : 'text-neutral-300'
                   "
-                  @click.stop="toggleArsip(mail.id)"
+                  @click.stop="toggleFlag(mail, 'arsip')"
                   title="Arsip Flag"
                 />
               </div>
