@@ -400,8 +400,8 @@ const getBasePayload = () => {
     : "";
 
   const lampiranIds = existingFiles.value
-    ? existingFiles.value.map((f: any) => f.id).filter((id: any) => !!id)
-    : [];
+    .map((f: any) => f.id || f.value) // Pastikan mengambil .id dari hasil upload baru
+    .filter((id: any) => !!id);
 
   return {
     id_naskah: editDraftId.value,
@@ -513,31 +513,30 @@ const confirmKirimDokumen = async () => {
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
-  // Validasi menggunakan Zod
   if (!validateAndToast(payload)) return;
 
   try {
     isLoadingData.value = true;
 
-    // FIX: Jika pdfBlob belum ada (user langsung klik Kirim), generate dulu secara otomatis
-    if (!pdfBlob.value) {
-      const formDataPreview = createFormData(payload, false); // Buat form data tanpa pdf
-      const blobResponse = await generatePdf(formDataPreview); // Ambil dari useNotaDinas
-      pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
+    // Selalu generate PDF terbaru agar konten & lampiran_ids sinkron
+    const formDataPreview = createFormData(payload, false);
+    const blobResponse = await generatePdf(formDataPreview);
+    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
+
+    // Kirim menggunakan payload terbaru
+    const formData = createFormData(payload, true);
+    const result = await sendNotaDinas(formData);
+
+    if (result.success) {
+      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'green' });
+      router.push("/admin/korespondensi/terkirim");
     }
-
-    // Gunakan fungsi sendNotaDinas dari useNotaDinas
-    const formData = createFormData(payload, true); // true untuk menyertakan 'final_pdf'
-    await sendNotaDinas(formData);
-
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'green' });
-    router.push("/admin/korespondensi/terkirim");
   } catch (e: any) {
     console.error("Gagal mengirim:", e);
     toast.add({
       title: 'Gagal Mengirim',
-      description: e.response?.data?.message || 'Terjadi kesalahan server',
+      description: e.response?.data?.message || 'Pastikan semua input sudah benar',
       color: 'red'
     });
   } finally {
