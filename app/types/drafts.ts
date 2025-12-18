@@ -10,7 +10,7 @@ export interface DraftPayload {
   klasifikasi_text: string;
   sifat: string;
   perihal: string;
-  konten: string;
+  htmlContent: string;
   english: boolean;
 
   nama_tempat: string;
@@ -39,7 +39,7 @@ export const validateDraftPayload = (data: DraftPayload): DraftValidationResult 
   if (!data.perihal) errors.perihal = "Perihal harus diisi";
   // Tanggal default hari ini sudah diatur di komponen, jadi ini hanya memastikan ada nilainya
   if (!data.tgl) errors.tgl = "Tanggal surat harus diisi";
-  if (!data.konten || data.konten === '<p><br></p>') errors.konten = "Isi naskah tidak boleh kosong";
+  if (!data.htmlContent || data.htmlContent === '<p><br></p>') errors.htmlContent = "Isi naskah tidak boleh kosong";
 
   // Validasi Penerima (Minimal 1)
   if (!data.penerima || data.penerima.length === 0) {
