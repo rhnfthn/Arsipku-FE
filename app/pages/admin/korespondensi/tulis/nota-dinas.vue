@@ -105,11 +105,16 @@
                       <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
                       <td class="text-[14px] w-[20px] align-top">:</td>
                       <td class="text-[14px] align-top">
-                        <span v-html="selectedTertuju.length
+                        <span v-if="selectedTertuju.length > 5">
+                          Periksa Alamat Terlampir
+                        </span>
+
+                        <span v-else v-html="selectedTertuju.length
                           ? selectedTertuju
-                            .map(
-                              (s: any, i: number) =>
-                                `<div style='margin-left:1em;text-indent:-1em'>
+                            .map((s: any, i: number) =>
+                              selectedTertuju.length === 1
+                                ? `<div>${s.labelJob || s.label}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>
                                     ${i + 1}. ${s.labelJob || s.label}
                                   </div>`
                             )
@@ -122,9 +127,7 @@
                       <td class="text-[14px] font-bold align-top">Dari</td>
                       <td class="text-[14px] align-top">:</td>
                       <td class="text-[14px] align-top">
-                        {{ selectedKlasifikasi ? `${selectedKlasifikasi.klasifikasi} -
-                        ${selectedKlasifikasi.klasifikasi_text}`
-                          : "................................................" }}
+                        {{ user?.nama || 'Nama Lengkap' }}
                       </td>
                     </tr>
                     <tr>
@@ -153,7 +156,13 @@
                 </div>
                 <div class="text-[12px] mt-2 w-full text-left text-black dark:text-white">
                   <div class="font-bold underline mb-1">Tembusan :</div>
-                  <ol v-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                    Periksa Alamat Terlampir
+                  </div>
+                  <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
+                    {{ selectedTembusan[0].labelJob || selectedTembusan[0].label }}
+                  </div>
+                  <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">
                       {{ t.labelJob || t.label }}
                     </li>
@@ -161,10 +170,49 @@
                   <div v-else class="text-gray-400 italic">...</div>
                 </div>
               </div>
+              <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page">
+
+                <div class="flex justify-end mb-10 text-[14px]">
+                  <div class="text-left min-w-[300px]">
+                    <table class="w-full">
+                      <tr>
+                        <td class="align-top pr-2">Lampiran Surat</td>
+                      </tr>
+                      <tr>
+                        <td class="align-top pr-2">Nomor Surat :</td>
+                        <td>.....................................</td>
+                      </tr>
+                      <tr>
+                        <td class="align-top pr-2">Tanggal Surat :</td>
+                        <td>{{ formattedDate }}</td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+
+                <div v-if="selectedTertuju.length > 0" class="mb-8">
+                  <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                  <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                    <li v-for="item in selectedTertuju" :key="item.value">
+                      {{ item.labelJob || item.label }}
+                    </li>
+                  </ol>
+                </div>
+
+                <div v-if="selectedTembusan.length > 0">
+                  <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                  <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                    <li v-for="item in selectedTembusan" :key="item.value">
+                      {{ item.labelJob || item.label }}
+                    </li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </ClientOnly>
 
-          <TulisInputLampiran v-model:uploaded="uploadedFiles" v-model:existingFiles="existingFiles" />
+          <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
         <div
@@ -217,8 +265,9 @@ import { useAuth } from "@/composables/useAuth";
 import type { Editor as TinyMCEEditor } from 'tinymce'; import type { Klasifikasi } from "~/types/klasifikasi"; // Ganti Berkas
 import { useKlasifikasi } from "@/composables/useKlasifikasi"; // Ganti useBerkas
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue"; // Component baru
+import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
 
-const { getKlasifikasiList } = useKlasifikasi(); // Destructure
+const { getKlasifikasi } = useKlasifikasi(); // Destructure
 
 // Types
 import type { Berkas } from "~/types/berkas";
@@ -316,6 +365,7 @@ const tinyMceInit = {
       font-family: "Times New Roman", Times, serif;
       font-size: 12pt;
       line-height: 1.5;
+      border: none !important;
     }
   `,
 
@@ -572,16 +622,25 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   formData.append("english", String(payload.english));
 
   // Upload File Baru
-  if (uploadedFiles.value && uploadedFiles.value.length > 0) {
-    uploadedFiles.value.forEach((file) => {
-      formData.append("lampiran_files", file, file.name);
-    });
-  }
+  // if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+  //   uploadedFiles.value.forEach((file) => {
+  //     formData.append("lampiran_files", file, file.name);
+  //   });
+  // }
 
-  // File Lama
+  // // File Lama
+  // if (existingFiles.value && existingFiles.value.length > 0) {
+  //   existingFiles.value.forEach((file) => {
+  //     formData.append("existing_lampiran_ids[]", file.id);
+  //   });
+  // }
+
   if (existingFiles.value && existingFiles.value.length > 0) {
     existingFiles.value.forEach((file) => {
-      formData.append("existing_lampiran_ids[]", file.id);
+      // Kirim ID file.
+      // Sesuaikan nama key dengan Backend Controller Anda.
+      // Contoh umum: 'lampiran_ids[]' atau 'attachments[]'
+      formData.append("lampiran_ids[]", file.id);
     });
   }
 
@@ -673,7 +732,7 @@ onMounted(async () => {
   // B. LOAD BERKAS (MASTER DATA)
   try {
     klasifikasiStatus.value = "loading";
-    const data = await getKlasifikasiList();
+    const data = await getKlasifikasi();
     klasifikasiList.value = data;
     klasifikasiStatus.value = "success";
   } catch (err) {
