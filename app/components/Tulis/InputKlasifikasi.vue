@@ -28,7 +28,7 @@
             {{ selectedObj.klasifikasi }} - {{ selectedObj.klasifikasi_text }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">
-            Pilih klasifikasi surat...
+            Pilih klasifikasi
           </span>
         </template>
       </USelectMenu>

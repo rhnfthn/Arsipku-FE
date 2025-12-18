@@ -52,7 +52,8 @@
     "vue-multiselect": "^3.4.0",
     "vue-router": "^4.6.3",
     "vue3-datepicker": "^0.4.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@iconify-json/heroicons": "^1.2.3",

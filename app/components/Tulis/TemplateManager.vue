@@ -1,43 +1,38 @@
 <template>
   <div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
-    <UButton label="Pilih Template" color="primary" variant="soft" icon="i-heroicons-adjustments-horizontal"
-      class="w-full sm:w-auto justify-center" @click="isTemplateModalOpen = true" />
-
     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-      <UButton label="Simpan Sebagai Template" icon="i-heroicons-plus" variant="soft" color="primary"
-        class="w-full sm:w-auto justify-center" @click="openSaveModal(false)" />
-
-      <UButton label="Template Saya" icon="i-heroicons-bookmark" variant="soft" color="primary"
+      <UButton label="Pilih Template" color="primary" variant="soft" icon="i-lucide-folder-search"
+        class="w-full sm:w-auto justify-center" @click="isTemplateModalOpen = true" />
+      <UButton label="Template Saya" icon="i-lucide-folder-pen" variant="soft" color="primary"
         class="w-full sm:w-auto justify-center" @click="openMyTemplateModal" />
     </div>
+    <UButton label="Simpan Template" icon="i-lucide-save" variant="soft" color="primary"
+      class="w-full sm:w-auto justify-center" @click="openSaveModal(false)" />
   </div>
 
   <div v-if="isTemplateModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-gray-900/75 transition-opacity" @click="isTemplateModalOpen = false"></div>
-    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="isTemplateModalOpen = false">
+    </div>
 
+    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Template Umum</h3>
         <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
       </div>
-
       <div class="p-4 overflow-y-auto">
         <UAccordion multiple :items="publicTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
-
           <template #default="{ item, open }">
             <div
               class="w-full flex justify-between items-center py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded-md border border-transparent hover:border-gray-200 dark:border-gray-700">
-
               <div class="flex items-center gap-2 flex-1 w-full">
                 <UIcon name="i-heroicons-chevron-right" :class="[open && 'transform rotate-90']"
                   class="w-4 h-4 transition-transform text-gray-500" />
                 <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.label }}</span>
               </div>
-
-              <UButton label="Gunakan" size="xs" color="primary" class="ml-5" variant="solid" @click.stop="selectTemplate(item)" />
+              <UButton label="Gunakan" size="xs" color="primary" class="ml-5" variant="solid"
+                @click.stop="selectTemplate(item)" />
             </div>
           </template>
-
           <template #template-body="{ item }">
             <div class="p-2">
               <iframe :srcdoc="item.content" class="w-full rounded bg-white shadow-sm border border-gray-200"
@@ -49,8 +44,10 @@
     </div>
   </div>
 
-  <div v-if="isAddTemplateOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-900/75 transition-opacity" @click="isAddTemplateOpen = false"></div>
+  <div v-if="isAddTemplateOpen" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="isAddTemplateOpen = false">
+    </div>
+
     <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
       <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -80,9 +77,11 @@
   </div>
 
   <div v-if="isMyTemplateModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-gray-900/75 transition-opacity" @click="isMyTemplateModalOpen = false"></div>
-    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+      @click="isMyTemplateModalOpen = false">
+    </div>
 
+    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">Template Saya</h3>
@@ -90,23 +89,18 @@
         </div>
         <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
       </div>
-
       <div class="p-4 overflow-y-auto">
         <div v-if="isLoadingList" class="flex justify-center py-8">
           <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary" />
         </div>
-
         <div v-else-if="myTemplates.length === 0" class="p-6 text-center text-gray-500">
           Belum ada template tersimpan.
         </div>
-
         <div v-else class="space-y-3">
           <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
-
             <template #default="{ item, open }">
               <div
                 class="w-full flex justify-between items-center py-3 px-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded-md">
-
                 <div class="flex items-center gap-2 flex-1 overflow-hidden">
                   <UIcon name="i-heroicons-chevron-right" :class="[open && 'transform rotate-90']"
                     class="w-4 h-4 transition-transform text-gray-500 flex-shrink-0" />
@@ -117,19 +111,15 @@
                       item.created_at) }}</span>
                   </div>
                 </div>
-
                 <div class="flex items-center gap-2 ml-2" @click.stop>
                   <UButton icon="i-heroicons-pencil-square" color="orange" variant="soft" size="xs"
                     @click="openEditModal(item)" />
-
                   <UButton icon="i-heroicons-trash" color="red" variant="soft" size="xs"
                     @click="handleDeleteTemplate(item.id)" />
-
                   <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
                 </div>
               </div>
             </template>
-
             <template #template-body="{ item }">
               <div class="p-2 bg-gray-50 dark:bg-gray-900/50">
                 <iframe :srcdoc="item.content" class="w-full rounded bg-white shadow-sm border border-gray-200"
@@ -146,7 +136,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '@/composables/useAuth';
-import { useTemplate } from '@/composables/useTemplate';
+import { useTemplateTulis } from '@/composables/useTemplateTulis';
 import type { TemplateSurat, TemplatePayload } from '@/types/template';
 
 // Props & Emits
@@ -154,10 +144,11 @@ const props = defineProps<{ currentContent: string }>();
 const emit = defineEmits<{ (e: 'apply', content: string): void }>();
 
 // Composables
-const { Alert } = useSwal();
+// const { Alert } = useSwal();
+import { Alert } from '@/composables/useAlert';
 const toast = useToast();
 const { user, getProfile } = useAuth();
-const { getTemplatesByPosition, createTemplate, updateTemplate, deleteTemplateById } = useTemplate();
+const { getTemplatesByPosition, createTemplate, updateTemplate, deleteTemplateById } = useTemplateTulis();
 
 // State Modal
 const isTemplateModalOpen = ref(false);
@@ -295,60 +286,61 @@ const submitTemplate = async () => {
 // 4. Delete Template
 // Tambahkan console.log untuk debugging
 const handleDeleteTemplate = async (id: any) => {
-  // 1. Cek apakah ID masuk
-  console.log('handleDeleteTemplate dipanggil dengan ID:', id);
-
   if (!id) {
-    Alert.error('Error', 'ID Template tidak ditemukan.');
+    Alert.warning('Error', 'ID Template tidak ditemukan.');
     return;
   }
 
-  // 2. Tampilkan Confirm
-  const confirmResult = await Alert.confirm(
+  // 1. Tampilkan Confirm dan tunggu hasilnya
+  const isConfirmed = await Alert.confirm(
     'Hapus Template?',
     'Template yang dihapus tidak dapat dikembalikan.',
     'Ya, Hapus',
     'Batal',
-    true
+    true // Ini akan mengeset type menjadi 'danger'
   );
 
-  // 3. Cek hasil confirm di console
-  console.log('Hasil Confirm:', confirmResult);
-
-  if (!confirmResult) {
-    console.log('User membatalkan penghapusan.');
-    return;
-  }
+  // 2. Jika user klik Batal (isConfirmed = false), hentikan proses
+  if (!isConfirmed) return;
 
   try {
-    console.log('Memanggil API Delete...');
-    // Pastikan deleteTemplateById ada dan diimport dari useTemplate
+    isLoadingList.value = true;
     await deleteTemplateById(String(id));
 
-    toast.add({ title: 'Terhapus', description: 'Template berhasil dihapus.', color: 'green' });
+    toast.add({
+      title: 'Terhapus',
+      description: 'Template berhasil dihapus.',
+      color: 'green'
+    });
 
-    // Refresh list
     await fetchMyTemplates();
   } catch (error) {
     console.error('Error saat delete:', error);
-    Alert.error('Gagal', 'Gagal menghapus template.');
+    // Jika Alert.error belum ada di composable, gunakan Alert.warning
+    Alert.warning('Gagal', 'Gagal menghapus template.');
+  } finally {
+    isLoadingList.value = false;
   }
 };
 
 // 5. Use Template
 const selectTemplate = async (template: any) => {
+  // Gunakan nama template dari item list (public vs myTemplate punya key berbeda)
+  const templateName = template.name || template.label;
+
   const isConfirmed = await Alert.confirm(
     "Gunakan Template",
-    `Apakah Anda yakin ingin menggunakan template "${template.name}"?<br><br>
-     <b>PERINGATAN:</b> Isi editor saat ini akan diganti seluruhnya.`,
+    `Apakah Anda yakin ingin menggunakan template "${templateName}"?<br><br><b>PERINGATAN:</b> Isi editor saat ini akan diganti seluruhnya.`,
     "Ya, Gunakan",
     "Batal",
-    true
+    false
   );
 
-  if (!isConfirmed) return; // klik Batal → langsung keluar
+  if (!isConfirmed) return;
 
   emit("apply", template.content);
+
+  // Tutup semua modal template
   isTemplateModalOpen.value = false;
   isMyTemplateModalOpen.value = false;
 };

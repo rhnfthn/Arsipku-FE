@@ -1,36 +1,34 @@
-// composables/useNotaDinas.ts
-import { useApi } from "@/composables/useApi";
+import { useApi } from "./useApi";
 
 export const useNotaDinas = () => {
-  const { api, apiPost } = useApi();
+  const { api, get } = useApi();
 
-  const ENDPOINT_PDF = "/ND/preview-pdf";
-  const ENDPOINT_DRAFT = "/ND/save-draft";
+  // 1. Preview PDF (POST Multipart)
+  const generatePdf = async (formData: FormData) => {
+    const response = await api.post("/ND/preview-pdf", formData, {
+      responseType: "blob",
+    });
+    return response.data;
+  };
 
-  // Generate PDF
-  const generatePdf = async (payload: any) => {
-    try {
-      const response = await api.post("/ND/preview-pdf", payload, {
-        responseType: "blob",
-        headers: {
-          "Content-Type": undefined,
-        },
-      });
+  // 2. Send Nota Dinas (POST Multipart + Final PDF)
+  const sendNotaDinas = async (formData: FormData) => {
+    return await api.post("/ND/send-message", formData);
+  };
 
-      return response.data;
-    } catch (error) {
-      console.error("Gagal generate PDF:", error);
-      throw error;
+  // 3. Save/Update Draft (POST Multipart Tanpa Final PDF)
+  const saveDraft = async (formData: FormData, id?: string | null) => {
+    if (id) {
+      return await api.patch(`/ND/update-draft/${id}`, formData);
+    } else {
+      return await api.post("/ND/save-draft", formData);
     }
   };
 
-  // 2. Save Draft (Contoh penggunaan wrapper apiPost biasa)
-  const saveDraft = async (payload: any) => {
-    return await apiPost(ENDPOINT_DRAFT, payload);
+  // 4. Get Detail /ND/id
+  const getNotaDinasDetail = async (id: string) => {
+    return await get(`/ND/${id}`);
   };
 
-  return {
-    generatePdf,
-    saveDraft,
-  };
+  return { generatePdf, sendNotaDinas, saveDraft, getNotaDinasDetail };
 };

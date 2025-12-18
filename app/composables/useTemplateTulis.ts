@@ -1,7 +1,7 @@
 // composables/useTemplate.ts
 import type { TemplateSurat, TemplatePayload } from "~/types/templates";
 
-export const useTemplate = () => {
+export const useTemplateTulis = () => {
   const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
   // GET: Ambil template berdasarkan Position ID
