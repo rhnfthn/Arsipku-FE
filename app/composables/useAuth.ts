@@ -1,98 +1,94 @@
 export const useAuth = () => {
-
   const { apiGet, apiPost } = useApi();
-
-
   // Global state user
-  const user = useState("user", () => null)
+  const user = useState("user", () => null);
 
   const setUser = (data: any) => {
-    user.value = data
-  }
-
+    user.value = data;
+  };
   // Ambil profil dari backend
   const getProfile = async () => {
     try {
-
       const token = localStorage.getItem("token");
       if (!token) return null;
       const res = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       // Normalisasi struktur respons
       const profile =
-        res?.data?.user ||   // case: { data: { user: {...} } }
-        res?.user ||         // case: { user: {...} }
-        res || null          // case: langsung {persnum, role, ...}
+        res?.data?.user || // case: { data: { user: {...} } }
+        res?.user || // case: { user: {...} }
+        res ||
+        null; // case: langsung {persnum, role, ...}
 
-      if (profile) setUser(profile)
+      if (profile) setUser(profile);
 
-      return profile
+      return profile;
     } catch (error) {
-      console.error("[AUTH] getProfile error:", error)
-      return null
+      console.error("[AUTH] getProfile error:", error);
+      return null;
     }
-  }
+  };
 
   // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      const res = await apiGet("/auth/sso-redirect-local")
+      const res = await apiGet("/auth/sso-redirect-local");
       // const res = await apiGet("/auth/sso-redirect")
-      return res?.url ?? null
+      return res?.url ?? null;
     } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error)
-      return null
+      console.error("[AUTH] getSSORedirectUrl error:", error);
+      return null;
     }
-  }
+  };
 
   // Verifikasi token SSO
   const verifyToken = async (token: string) => {
     try {
-      return await apiPost("/auth/verify-token", { token })
+      return await apiPost("/auth/verify-token", { token });
     } catch (error) {
-      console.error("[AUTH] verifyToken error:", error)
-      throw error
+      console.error("[AUTH] verifyToken error:", error);
+      throw error;
     }
-  }
+  };
 
   // Logout
   const logout = async () => {
     try {
-      const sessionId = localStorage.getItem("sessionId")
-      const token = localStorage.getItem("token")
+      const sessionId = localStorage.getItem("sessionId");
+      const token = localStorage.getItem("token");
 
       await apiGet(`/auth/logout?sessionId=${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (s) => s < 400
-      })
+        validateStatus: (s) => s < 400,
+      });
     } catch (error) {
-      console.warn("[AUTH] logout error (ignored):", error)
+      console.warn("[AUTH] logout error (ignored):", error);
     }
 
     // Bersihkan localStorage & state
-    localStorage.removeItem("token")
-    localStorage.removeItem("sessionId")
-    user.value = null
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionId");
+    user.value = null;
 
-    return true
-  }
+    return true;
+  };
 
   const refreshToken = async () => {
-    const sessionId = localStorage.getItem("sessionId")
-    if (!sessionId) throw new Error("No sessionId")
+    const sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) throw new Error("No sessionId");
 
     const res = await apiPost("/auth/refresh-token", {
-      sessionId
-    })
+      sessionId,
+    });
 
-    const newAccessToken = res?.data?.accessToken
-    if (!newAccessToken) throw new Error("Refresh token failed")
+    const newAccessToken = res?.data?.accessToken;
+    if (!newAccessToken) throw new Error("Refresh token failed");
 
-    localStorage.setItem("token", newAccessToken)
-    return newAccessToken
-  }
+    localStorage.setItem("token", newAccessToken);
+    return newAccessToken;
+  };
 
   return {
     user,
@@ -101,8 +97,8 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
-    refreshToken
 
+    refreshToken,
   };
 };
 
@@ -153,4 +149,3 @@ export const useAuth = () => {
 //     logout,
 //   };
 // };
-

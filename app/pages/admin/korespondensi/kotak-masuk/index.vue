@@ -33,18 +33,18 @@ import {
 
 import { useInbox } from "~/composables/useInbox";
 
-const { user, getProfile } = useAuth()
+const { user, getProfile } = useAuth();
 
 // Ambil profil user saat page load
 onMounted(async () => {
   if (!user.value) {
-    await getProfile()              
+    await getProfile();
   }
-})
+});
 
-const positionId = computed(() => user.value?.position || null)
+const positionId = computed(() => user.value?.position || null);
 
-const { items, pending, error, refresh } = useInbox(positionId)
+const { items, pending, error, refresh, markAsRead } = useInbox(positionId);
 
 // --- STATE ---
 const selected = ref(null);
@@ -126,7 +126,7 @@ const filteredEmails = computed(() => {
     result = result.filter(
       (mail) =>
         (mail.subject || "").toLowerCase().includes(q) ||
-        (mail.from || "").toLowerCase().includes(q)
+        (mail.from || "").toLowerCase().includes(q),
     );
   }
 
@@ -138,7 +138,7 @@ const filteredEmails = computed(() => {
 });
 const totalItems = computed(() => filteredEmails.value.length);
 const totalPages = computed(
-  () => Math.ceil(totalItems.value / itemsPerPage.value) || 1
+  () => Math.ceil(totalItems.value / itemsPerPage.value) || 1,
 );
 
 const paginatedEmails = computed(() => {
@@ -177,10 +177,16 @@ const isAllSelected = computed(
     paginatedEmails.value.length > 0 &&
     selectedIds.value.size === paginatedEmails.value.length,
 );
-const selectMail = (mail) => {
+
+const selectMail = async (mail) => {
   selected.value = mail;
-  if (!mail.isRead) mail.isRead = true;
+
+  const posId = user.value?.position;
+  if (!posId) return;
+
+  await markAsRead(mail, posId);
 };
+
 const closeDetail = () => {
   selected.value = null;
 };
@@ -208,6 +214,18 @@ const getCategoryLabel = (cat) => {
   if (cat === "ND") return "Nota Dinas"; // Update label ND
   return cat;
 };
+
+const penerimaDetail = computed(() => {
+  if (!selected.value?.penerima) return null;
+
+  const p = selected.value.penerima;
+
+  return {
+    nama: p.nama,
+    position: p.position_text,
+    organization: p.organization_text,
+  };
+});
 </script>
 
 <template>
@@ -494,16 +512,6 @@ const getCategoryLabel = (cat) => {
                   class="w-3 h-3 text-white"
                 />
               </div>
-              <Star
-                class="w-4 h-4 transition-colors hover:text-yellow-400"
-                :class="
-                  mail.isStarred
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-neutral-300'
-                "
-                @click.stop="toggleFavorit(mail.id)"
-                title="Favorite"
-              />
             </div>
 
             <div
@@ -533,6 +541,14 @@ const getCategoryLabel = (cat) => {
 
             <div class="pl-2 shrink-0 pt-0.5 text-right">
               <span
+                v-if="mail.category_label"
+                class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm"
+              >
+                {{ mail.category_label }}
+              </span>
+            </div>
+            <div class="pl-2 shrink-0 pt-0.5 text-right">
+              <span
                 class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap"
               >
                 {{ mail.date }}
@@ -559,16 +575,16 @@ const getCategoryLabel = (cat) => {
                   "
                   title="Tindak Lanjut"
                 />
-              <Star
-                class="w-4 h-4 transition-colors hover:text-yellow-400"
-                :class="
-                  mail.isStarred
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-neutral-300'
-                "
-                @click.stop="toggleFavorit(mail.id)"
-                title="Favorite"
-              />
+                <Star
+                  class="w-4 h-4 transition-colors hover:text-yellow-400"
+                  :class="
+                    mail.isStarred
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : 'text-neutral-300'
+                  "
+                  @click.stop="toggleFavorit(mail.id)"
+                  title="Favorite"
+                />
                 <Lock
                   class="w-4 h-4 transition-colors hover:text-neutral-600"
                   :class="
@@ -584,7 +600,9 @@ const getCategoryLabel = (cat) => {
                 <Archive
                   class="w-4 h-4 transition-colors hover:text-purple-600"
                   :class="
-                    mail.isArchived ? 'text-purple-500 fill-purple-500' : 'text-neutral-300'
+                    mail.isArchived
+                      ? 'text-purple-500 fill-purple-500'
+                      : 'text-neutral-300'
                   "
                   @click.stop="toggleArsip(mail.id)"
                   title="Arsip Flag"
@@ -616,13 +634,18 @@ const getCategoryLabel = (cat) => {
         <div class="flex-1 overflow-y-auto px-6 pb-6">
           <div class="flex gap-4 mb-5">
             <div
-              class="w-10 h-10 rounded-full flex bg-primary-400 items-center justify-center text-lg font-bold shadow-sm shrink-0"
+              class="w-10 h-10 rounded-full flex bg-primary-400 text-white items-center justify-center text-lg font-bold shadow-sm shrink-0"
               :class="selected.color"
             >
               {{ selected.initial }}
             </div>
             <div>
-              <div class="font-bold text-gray-900">{{ selected.from }}</div>
+              <div class="font-bold text-gray-900">
+                {{ selected.fromPosition }}
+              </div>
+              <div class="text-sm text-gray-600">
+                {{ selected.fromName }}
+              </div>
               <div class="text-sm text-gray-500">
                 &lt;{{ selected.email }}&gt;
               </div>
@@ -641,20 +664,17 @@ const getCategoryLabel = (cat) => {
           <div class="space-y-4 mb-8">
             <div>
               <div class="text-sm text-gray-500 mb-0.5">Kepada</div>
-              <div class="text-base text-gray-900">
-                {{ selectedItem?.recipientName || "-" }}
-              </div>
-            </div>
-            <div>
-              <div class="text-sm text-gray-500 mb-0.5">Disposisi</div>
-              <div class="text-base text-gray-900">
-                {{ selected.disposition || "-" }}
+              <div v-for="(p, i) in selected.penerima" :key="i" class="mb-2">
+                <div class="text-xs">{{ p.nama }} – {{ p.position_text }}</div>
+                <div class="text-xs">
+                  {{ p.organization_text }}
+                </div>
               </div>
             </div>
             <div>
               <div class="text-base text-gray-500 mb-0.5">Catatan</div>
               <div class="text-sm text-gray-900">
-                {{ selected.note || "-" }}
+                {{ selected.subject || "-" }}
               </div>
             </div>
           </div>

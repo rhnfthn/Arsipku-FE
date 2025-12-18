@@ -1,12 +1,16 @@
-// composables/useKlasifikasi.ts
-import type { Klasifikasi, KlasifikasiResponse } from "~/types/klasifikasi";
+export interface Klasifikasi {
+  id: string;
+  klasifikasi: string;
+  klasifikasi_text: string;
+  active: number;
+}
 
 export const useKlasifikasi = () => {
-  const { api } = useApi();
+  const { apiGet, api } = useApi();
 
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
-      const response = await api.get<KlasifikasiResponse>(
+      const response = await api.get<{ data: Klasifikasi[] }>(
         "/persuratan/klasifikasi",
       );
       return response.data.data;
@@ -16,7 +20,12 @@ export const useKlasifikasi = () => {
     }
   };
 
+  const getKlasifikasiList = async (): Promise<Klasifikasi[]> => {
+    return await apiGet<Klasifikasi[]>("/persuratan/klasifikasi");
+  };
+
   return {
     getKlasifikasi,
+    getKlasifikasiList,
   };
 };
