@@ -5,18 +5,17 @@ import type { Row } from "@tanstack/vue-table";
 import { useClipboard } from "@vueuse/core";
 import { ref, computed, watch } from "vue";
 import {
-  Inbox,
-  Filter,
-  FileCheck,
-  ChevronRight,
   Search,
   ArrowUpDown,
   RotateCcw,
-  ChevronLeft,
   ChevronRight as ChevronRightIcon,
   Plus,
+  Copy,
+  Trash2,
+  Pencil,
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
+import ConfirmPopup from "@/components/ConfirmPopup.vue";
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -53,8 +52,7 @@ const data = ref<Payment[]>([
     tanggal: "2024-03-11T10:10:00",
     LUrl: "https://urlasli2",
     SUrl: "url.modifikasi.com",
-    keterangan:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+    keterangan: "Lorem Ipsum is simply dummy text of the ",
   },
 ]);
 
@@ -131,75 +129,55 @@ const columns: TableColumn<Payment>[] = [
   },
 
   {
-    header: "Aksi",
     id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
+    header: "Aksi",
+    cell: ({ row }) =>
+      h("div", { class: "flex items-center gap-2" }, [
+        // COPY BUTTON
         h(
-          UDropdownMenu,
+          "button",
           {
-            content: {
-              align: "end",
+            class: "p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800",
+            onClick: () => {
+              copy(row.original.SUrl);
+              toast.add({
+                title: "URL berhasil disalin!",
+                color: "success",
+                icon: "i-lucide-copy",
+              });
             },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
           },
           () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
+            h(resolveComponent("UIcon"), {
+              name: "i-lucide-copy",
+              class: "w-4 h-4 text-gray-600 dark:text-gray-300",
             }),
         ),
-      );
-    },
+
+        // DELETE BUTTON
+        h(
+          "button",
+          {
+            class: "p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900",
+            onClick: () => {
+              const index = data.value.indexOf(row.original);
+              data.value.splice(index, 1);
+              toast.add({
+                title: "URL berhasil dihapus!",
+                color: "error",
+                icon: "i-lucide-trash-2",
+              });
+            },
+          },
+          () =>
+            h(resolveComponent("UIcon"), {
+              name: "i-lucide-trash-2",
+              class: "w-4 h-4 text-red-600 dark:text-red-400",
+            }),
+        ),
+      ]),
   },
 ];
-
-function getRowItems(row: Row<Payment>) {
-  return [
-    {
-      label: "Salin Url Modifikasi",
-      onSelect() {
-        copy(row.original.SUrl);
-
-        toast.add({
-          title: "Url Berhasil Di Salin!",
-          color: "success",
-          icon: "i-lucide-circle-check",
-        });
-      },
-    },
-    {
-      label: "Salin Url Asli",
-      onSelect() {
-        copy(row.original.LUrl);
-
-        toast.add({
-          title: "Url Berhasil Di Salin!",
-          color: "success",
-          icon: "i-lucide-circle-check",
-        });
-      },
-    },
-    {
-      label: "Hapus",
-      onSelect() {
-        copy(row.original.SUrl);
-
-        toast.add({
-          title: "Url Berhasil Di Salin!",
-          color: "success",
-          icon: "i-lucide-circle-check",
-        });
-      },
-    },
-  ];
-}
 
 const showAddModal = ref(false);
 
@@ -210,7 +188,7 @@ const addForm = ref({
 });
 
 const saveAdd = () => {
-  if (!addForm.value.LUrl || !addForm.value.SUrl) {
+  if (!addForm.value.LUrl) {
     toast.add({
       title: "URL belum lengkap!",
       color: "warning",
@@ -219,34 +197,130 @@ const saveAdd = () => {
     return;
   }
 
-  data.value.unshift({
-    tanggal: new Date().toISOString(),
-    LUrl: addForm.value.LUrl,
-    SUrl: addForm.value.SUrl,
-    keterangan: addForm.value.keterangan,
-  });
+  const shortCode = addForm.value.SUrl
+    ? addForm.value.SUrl
+    : generateRandomString();
 
-  toast.add({
-    title: "URL berhasil ditambahkan!",
-    color: "success",
-    icon: "i-lucide-circle-check",
-  });
+  if (isEditMode.value && editIndex.value !== null) {
+    // EDIT MODE
+    data.value[editIndex.value] = {
+      ...data.value[editIndex.value],
+      LUrl: addForm.value.LUrl,
+      SUrl: `airnav/${shortCode}`,
+      keterangan: addForm.value.keterangan,
+    };
 
+    toast.add({
+      title: "URL berhasil diperbarui!",
+      color: "success",
+      icon: "i-lucide-pencil",
+    });
+  } else {
+    // ADD MODE
+    data.value.unshift({
+      tanggal: new Date().toISOString(),
+      LUrl: addForm.value.LUrl,
+      SUrl: `airnav/${shortCode}`,
+      keterangan: addForm.value.keterangan,
+    });
+
+    toast.add({
+      title: "URL berhasil ditambahkan!",
+      color: "success",
+      icon: "i-lucide-circle-check",
+    });
+  }
+
+  // RESET
   showAddModal.value = false;
+  isEditMode.value = false;
+  editIndex.value = null;
   addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
 };
 
 const openAdd = () => {
+  isEditMode.value = false;
+  editIndex.value = null;
   addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
   showAddModal.value = true;
+};
+
+const items = [
+  {
+    label: "Dashboard",
+    to: "/admin/dashboard",
+  },
+  {
+    label: "Short Url",
+    to: "/admin/short-url",
+  },
+] satisfies BreadcrumbItem[];
+
+const sortOrder = ref<"asc" | "desc">("desc");
+
+const sortedData = computed(() => {
+  return [...data.value].sort((a, b) => {
+    const timeA = new Date(a.tanggal).getTime();
+    const timeB = new Date(b.tanggal).getTime();
+
+    return sortOrder.value === "desc"
+      ? timeB - timeA // terbaru → lama
+      : timeA - timeB; // lama → terbaru
+  });
+});
+
+const truncateUrl = (url: string, max = 20) => {
+  if (!url) return "";
+  return url.length > max ? url.slice(0, max) + "....." : url;
+};
+
+const isEditMode = ref(false);
+const editIndex = ref<number | null>(null);
+
+const openEdit = (row: Payment, index: number) => {
+  isEditMode.value = true;
+  editIndex.value = index;
+
+  addForm.value = {
+    LUrl: row.LUrl,
+    SUrl: row.SUrl.replace("airnav/", ""),
+    keterangan: row.keterangan,
+  };
+
+  showAddModal.value = true;
+};
+
+const showDeleteConfirm = ref(false);
+const deleteIndex = ref<number | null>(null);
+
+const openDeleteConfirm = (index: number) => {
+  deleteIndex.value = index;
+  showDeleteConfirm.value = true;
+};
+
+const confirmDelete = () => {
+  if (deleteIndex.value !== null) {
+    data.value.splice(deleteIndex.value, 1);
+
+    toast.add({
+      title: "URL berhasil dihapus!",
+      color: "error",
+      icon: "i-lucide-trash-2",
+    });
+  }
+
+  showDeleteConfirm.value = false;
+  deleteIndex.value = null;
 };
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-between items-center mb-5">
-    <div class="flex flex-col flex-wrap justify-between mb-3">
-      <Heading variant="heading6b">Short Url</Heading>
-      <Heading variant="heading10m">Kelola short URL untuk dokumen</Heading>
+  <div class="flex flex-wrap justify-between">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <!-- Left Section - Title & Breadcrumb -->
+      <PageHeader title="Short Url" :items="items" />
     </div>
     <div>
       <button
@@ -260,7 +334,7 @@ const openAdd = () => {
   </div>
   <Modal v-model="showAddModal" @save="saveAdd">
     <template #title>
-      <div class="mt-5 ml-5 mb-3">
+      <div class="ml-5 mb-3">
         <Heading variant="heading9b" class="font-semibold text-sm">
           Buat Short URL Baru
         </Heading>
@@ -304,202 +378,134 @@ const openAdd = () => {
   <div
     class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
   >
-    <!-- HEADER -->
-    <div
-      class="px-2 py-2 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:flex-wrap md:flex-row items-start md:items-center justify-between gap-3"
-    >
-      <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-        <!-- FILTER -->
-        <div class="relative">
-          <button
-            @click.stop="toggleDropdown('filter')"
-            class="custom-dropdown-trigger flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            :class="{
-              'ring-2 ring-sky-100 border-sky-300': openDropdown === 'filter',
-            }"
-          >
-            <Filter class="w-3.5 h-3.5" />
-            <span class="text-xs font-medium truncate max-w-[100px]">{{
-              filterMode
-            }}</span>
-            <ChevronRight class="w-3 h-3 rotate-90 opacity-50" />
-          </button>
+    <div class="flex flex-wrap gap-2 p-2 items-center">
+      <button
+        @click="toggleSort"
+        class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+      >
+        <ArrowUpDown class="w-4 h-4" />
+      </button>
 
-          <!-- DROPDOWN -->
-          <div
-            v-if="openDropdown === 'filter'"
-            class="custom-dropdown-content absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50"
-          >
-            <button
-              v-for="opt in filterOptions"
-              :key="opt"
-              @click="setFilter(opt)"
-              class="w-full text-left px-4 py-2 text-xs hover:bg-sky-50 dark:hover:bg-gray-700 flex justify-between items-center"
-              :class="
-                filterMode === opt
-                  ? 'text-sky-600 font-bold'
-                  : 'text-gray-700 dark:text-gray-300'
-              "
-            >
-              {{ opt }}
-              <FileCheck v-if="filterMode === opt" class="w-3 h-3" />
-            </button>
-          </div>
-        </div>
+      <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+        <RotateCcw class="w-4 h-4" />
+      </button>
 
-        <!-- SORT + REFRESH -->
-        <div
-          class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"
-        ></div>
-
-        <button
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500"
-        >
-          <ArrowUpDown class="w-4 h-4" />
-        </button>
-        <button
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-      </div>
-
-      <!-- SEARCH -->
-      <div class="flex items-center gap-3 w-full md:w-auto">
-        <div class="relative flex-1 w-full md:w-56 group">
-          <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            v-model="search"
-            placeholder="Cari surat..."
-            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:ring-sky-500 focus:border-sky-500 outline-none"
-          />
-        </div>
-
-        <div class="flex items-center gap-1 text-gray-500">
-          <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-            <ChevronLeft class="w-4 h-4" />
-          </button>
-          <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-            <ChevronRightIcon class="w-4 h-4" />
-          </button>
-        </div>
+      <div class="relative flex-1 w-full my-3 px-2">
+        <Search
+          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          type="text"
+          placeholder="Cari berkas / klasifikasi..."
+          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+        />
       </div>
     </div>
-    <div class="w-full overflow-auto p-2">
-      <UTable :data="data" :columns="columns" />
-      <div class="w-full overflow-auto p-2">
-        <table class="min-w-full text-sm border-collapse">
-          <thead>
-            <tr class="dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                Tanggal
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                URL Asli
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                URL Modifikasi
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-left">
-                Keterangan
-              </th>
-              <th class="px-3 py-2 border-b-2 border-b-gray-100 text-center">
-                Aksi
-              </th>
-            </tr>
-          </thead>
+    <div class="w-full overflow-auto">
+      <table class="min-w-full text-sm border-collapse">
+        <thead class="bg-primary-400 text-white">
+          <tr class="p-3">
+            <th class="px-4 py-3 text-left">Tanggal</th>
+            <th class="px-4 py-3 text-left">URL Asli</th>
+            <th class="px-4 py-3 text-left">URL Modifikasi</th>
+            <th class="px-4 py-3 text-left">Keterangan</th>
+            <th class="px-4 py-3 text-center">Aksi</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            <tr
-              v-for="(row, index) in data"
-              :key="index"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <!-- Tanggal -->
-              <td class="px-3 py-2 whitespace-nowrap">
-                {{
-                  new Date(row.tanggal).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })
-                }},
-                {{
-                  String(new Date(row.tanggal).getHours()).padStart(2, "0")
-                }}.{{
-                  String(new Date(row.tanggal).getMinutes()).padStart(2, "0")
-                }}
-              </td>
+        <tbody>
+          <tr
+            v-for="(row, index) in sortedData"
+            :key="index"
+            class="hover:bg-blue-50 dark:hover:bg-gray-800"
+          >
+            <!-- Tanggal -->
+            <td class="px-3 py-2 whitespace-nowrap">
+              {{
+                new Date(row.tanggal).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+              }}
+            </td>
 
-              <!-- URL Asli -->
-              <td class="px-3 py-2 max-w-[250px] break-words">
-                {{ row.LUrl }}
-              </td>
+            <!-- URL Asli -->
+            <td class="px-3 py-2 max-w-[250px]">
+              <a
+                :href="row.LUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary-600 underline hover:text-primary-800 break-all"
+                :title="row.LUrl"
+              >
+                {{ truncateUrl(row.LUrl, 35) }}
+              </a>
+            </td>
 
-              <!-- URL Modifikasi -->
-              <td class="px-3 py-2 max-w-[200px] break-words">
-                {{ row.SUrl }}
-              </td>
+            <!-- URL Modifikasi -->
+            <td class="px-3 py-2 max-w-[260px]">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs break-all" :title="row.SUrl">
+                  {{ truncateUrl(row.SUrl, 25) }}
+                </span>
 
-              <!-- Keterangan -->
-              <td class="px-3 py-2 max-w-[300px] break-words">
-                {{ row.keterangan }}
-              </td>
+                <button
+                  class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                  @click="
+                    copy(row.SUrl);
+                    toast.add({
+                      title: 'URL berhasil disalin!',
+                      color: 'success',
+                      icon: 'i-lucide-copy',
+                    });
+                  "
+                >
+                  <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                </button>
+              </div>
+            </td>
 
-              <!-- ACTION -->
-              <td class="px-3 py-2 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <!-- COPY -->
-                  <div class="relative">
-                    <button
-                      class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                      @click="toggleCopyDropdown(index)"
-                    >
-                      <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                    </button>
+            <!-- Keterangan -->
+            <td class="px-3 py-2 max-w-[300px]">
+              {{ row.keterangan }}
+            </td>
 
-                    <!-- DROPDOWN -->
-                    <div
-                      v-if="activeCopyIndex === index"
-                      class="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md overflow-hidden z-50"
-                    >
-                      <button
-                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="copyUrl(row.LUrl, 'URL Asli')"
-                      >
-                        Copy URL Asli
-                      </button>
-                      <button
-                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="copyUrl(row.SUrl, 'URL Modifikasi')"
-                      >
-                        Copy URL Modifikasi
-                      </button>
-                    </div>
-                  </div>
+            <!-- ACTION -->
+            <td class="px-3 py-2 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <!-- EDIT -->
+                <button
+                  class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900"
+                  @click="openEdit(row, index)"
+                >
+                  <Pencil
+                    class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
+                  />
+                </button>
 
-                  <!-- DELETE -->
-                  <button
-                    class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
-                    @click="
-                      data.splice(index, 1);
-                      toast.add({
-                        title: 'URL berhasil dihapus!',
-                        color: 'error',
-                        icon: 'i-lucide-trash-2',
-                      });
-                    "
-                  >
-                    <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                <!-- DELETE -->
+                <button
+                  class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                  @click="openDeleteConfirm(index)"
+                >
+                  <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ConfirmPopup
+        v-model="showDeleteConfirm"
+        type="danger"
+        title="Hapus Short URL?"
+        :message="`Hapus URL ${data[deleteIndex]?.SUrl}?`"
+        confirm-text="Hapus"
+        cancel-text="Batal"
+        @confirm="confirmDelete"
+      />
     </div>
   </div>
 </template>

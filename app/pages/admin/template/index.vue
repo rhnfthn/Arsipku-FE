@@ -12,12 +12,14 @@
       <!-- KANAN -->
       <button
         @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
+        :disabled="isLoadingCreate"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Plus class="w-4 h-4" />
-        Tambah Titelatur
+        {{ isLoadingCreate ? "Menyimpan..." : "Tambah Template" }}
       </button>
     </div>
+
     <!-- CARD -->
     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm w-full">
       <!-- TOP BAR -->
@@ -34,37 +36,6 @@
               {{ n }}
             </option>
           </select>
-          <div class="relative">
-            <button
-              @click="showDateMenu = !showDateMenu"
-              class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-              title="Periode Data"
-            >
-              <History class="w-4 h-4" />
-            </button>
-            <div
-              v-if="showDateMenu"
-              @click="showDateMenu = false"
-              class="fixed inset-0 z-40 bg-transparent"
-            ></div>
-            <div
-              v-if="showDateMenu"
-              class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-            >
-              <button
-                v-for="opt in dateOptions"
-                :key="opt"
-                @click="selectDateFilter(opt)"
-                class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-100 flex items-center justify-between"
-              >
-                <span>{{ opt }}</span>
-                <Check
-                  v-if="activeDateLabel === opt"
-                  class="w-3 h-3 text-primary"
-                />
-              </button>
-            </div>
-          </div>
         </div>
 
         <div class="relative flex-1 w-full md:w-56">
@@ -79,13 +50,25 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <!-- LOADING STATE -->
+      <div v-if="isLoadingList" class="p-8">
+        <div class="space-y-3">
+          <div
+            v-for="i in 5"
+            :key="i"
+            class="h-12 bg-gray-200 animate-pulse rounded"
+          ></div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
           <thead>
             <tr class="bg-primary-400 text-white dark:bg-gray-800">
               <th
                 class="text-left text-[14px] p-4 border-b border-gray-300 cursor-pointer"
-                @click="toggleSort('from')"
+                @click="toggleSort('nama_template')"
               >
                 Nama Template
                 <ArrowUpDown class="inline w-3 h-3 ml-2" />
@@ -93,7 +76,7 @@
 
               <th
                 class="text-left p-3 text-[14px] border-b border-gray-300 cursor-pointer"
-                @click="toggleSort('fileName')"
+                @click="toggleSort('file')"
               >
                 Dokumen File
                 <ArrowUpDown class="inline w-3 h-3 ml-2" />
@@ -109,34 +92,45 @@
 
           <tbody>
             <tr
-              v-for="mail in paginatedEmails"
-              :key="mail.id"
+              v-for="template in paginatedTemplates"
+              :key="template.id"
               class="border-b bg-white border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
             >
-              <td class="p-4">{{ mail.from }}</td>
-              <td class="p-4 text-primary-400 font-medium">
-                {{ mail.fileName }}
+              <td class="p-4 text-sm">{{ template.nama_template }}</td>
+              <td class="p-4 text-primary-400 text-sm">
+                {{ getFileName(template.file) }}
               </td>
 
               <td class="p-4 flex items-center gap-4 mr-2">
-                <button class="text-sky-600 hover:text-sky-800">
+                <button
+                  @click="downloadTemplate(template)"
+                  class="text-sky-600 hover:text-sky-800"
+                  title="Download"
+                >
                   <Download class="w-4 h-4" />
                 </button>
 
                 <button
                   class="text-yellow-500 hover:text-yellow-700"
-                  @click="openEdit(mail)"
+                  @click="openEdit(template)"
+                  title="Edit"
+                  :disabled="isLoadingUpdate"
                 >
                   <Pencil class="w-4 h-4" />
                 </button>
 
-                <button @click="openDelete(item)" class="text-red-500">
+                <button
+                  @click="openDelete(template)"
+                  class="text-red-500 hover:text-red-700"
+                  title="Hapus"
+                  :disabled="isLoadingDelete"
+                >
                   <Trash2 class="w-4 h-4" />
                 </button>
               </td>
             </tr>
 
-            <tr v-if="paginatedEmails.length === 0">
+            <tr v-if="paginatedTemplates.length === 0">
               <td colspan="3" class="text-center py-10 text-gray-400">
                 <Inbox class="w-10 h-10 mx-auto mb-2 opacity-20" />
                 Tidak ada data ditemukan
@@ -146,9 +140,10 @@
         </table>
       </div>
 
+      <!-- PAGINATION -->
       <div class="flex items-center justify-between ml-5 mr-5 mt-5 mb-5">
         <div class="text-xs">
-          Menampilkan {{ paginatedEmails.length }} dari {{ totalItems }} data
+          Menampilkan {{ paginatedTemplates.length }} dari {{ totalItems }} data
         </div>
 
         <div class="flex items-center gap-1">
@@ -185,7 +180,9 @@
       </div>
     </div>
 
-    <!-- Modal -->
+    <!-- ========================= -->
+    <!-- MODAL EDIT TEMPLATE -->
+    <!-- ========================= -->
     <Modal v-model="editModal" @save="saveEdit">
       <template #title>
         <Heading
@@ -196,7 +193,6 @@
         </Heading>
       </template>
 
-      <!-- Isi Modal -->
       <div class="px-2 py-3 flex flex-col gap-6">
         <!-- Nama Template -->
         <div class="flex flex-col">
@@ -205,7 +201,7 @@
           </Heading>
 
           <input
-            v-model="editData.from"
+            v-model="editData.nama_template"
             class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
             placeholder="Masukkan nama template"
           />
@@ -214,35 +210,66 @@
         <!-- Upload File -->
         <div class="flex flex-col">
           <Heading variant="body2m" class="font-semibold mb-1">
-            File Dokumen
+            File Dokumen <span class="text-xs text-gray-500">(Opsional)</span>
           </Heading>
 
           <label
             class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
           >
             <FileCheck class="w-6 h-6 text-gray-500" />
-            <span class="font-medium">Pilih File</span>
-            <span class="ml-2 text-gray-500">{{ editData.fileName }}</span>
+            <span class="font-medium">Pilih File Baru</span>
+            <span class="ml-2 text-gray-500">
+              {{ editData.newFileName || "Tidak ada file baru" }}
+            </span>
 
-            <input type="file" class="hidden" @change="handleFileUpload" />
+            <input type="file" class="hidden" @change="handleEditFile" />
           </label>
 
-          <!-- Preview file terpilih -->
+          <!-- Current file info -->
           <div
-            v-if="editData.fileName"
-            class="mt-3 px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 flex items-center justify-between"
+            v-if="!editData.newFileName && editData.file"
+            class="mt-3 px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
+          >
+            <FileCheck class="w-6 h-6 text-gray-400" />
+            <div>
+              <p class="text-xs text-gray-500">File saat ini:</p>
+              <p class="text-sm font-medium">
+                {{ getFileName(editData.file) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Preview new file -->
+          <div
+            v-if="editData.newFileName"
+            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
           >
             <div class="flex items-center gap-3">
               <FileCheck class="w-6 h-6 text-primary-500" />
               <div>
-                <p class="text-sm font-medium">{{ editData.fileName }}</p>
-                <p class="text-xs text-gray-500">45 KB</p>
+                <p class="text-xs text-primary-600">File baru:</p>
+                <p class="text-sm font-medium">{{ editData.newFileName }}</p>
+                <p class="text-xs text-gray-500">
+                  {{
+                    editData.newFile
+                      ? formatFileSize(editData.newFile.size)
+                      : "-"
+                  }}
+                </p>
               </div>
             </div>
+            <button
+              @click="clearEditFile"
+              class="text-red-500 hover:text-red-700"
+              title="Hapus file baru"
+            >
+              <Trash2 class="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
     </Modal>
+
     <!-- ========================= -->
     <!-- MODAL TAMBAH TEMPLATE -->
     <!-- ========================= -->
@@ -264,7 +291,7 @@
           </Heading>
 
           <input
-            v-model="addData.from"
+            v-model="addData.nama_template"
             class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
             placeholder="Masukkan nama template"
           />
@@ -285,18 +312,47 @@
               {{ addData.fileName || "Belum ada file dipilih" }}
             </span>
 
-            <input type="file" class="hidden" @change="handleAddFile" />
+            <input
+              type="file"
+              class="hidden"
+              accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
+              @change="handleAddFile"
+            />
           </label>
+
+          <!-- Preview file -->
+          <div
+            v-if="addData.file"
+            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <FileCheck class="w-6 h-6 text-primary-500" />
+              <div>
+                <p class="text-sm font-medium">{{ addData.fileName }}</p>
+                <p class="text-xs text-gray-500">
+                  {{ formatFileSize(addData.file.size) }}
+                </p>
+              </div>
+            </div>
+            <button
+              @click="clearAddFile"
+              class="text-red-500 hover:text-red-700"
+              title="Hapus file"
+            >
+              <Trash2 class="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
+
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
-      title="Hapus Data?"
-      description="Data yang dihapus tidak dapat dikembalikan."
+      title="Hapus Template?"
+      description="Template yang dihapus tidak dapat dikembalikan."
       confirmText="Hapus"
       cancelText="Batal"
       @confirm="deleteNow"
@@ -305,62 +361,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import {
   Inbox,
-  Filter,
   FileCheck,
-  ChevronRight,
   Search,
   ArrowUpDown,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight as ChevronRightIcon,
   Download,
   Pencil,
   Trash2,
   Plus,
-  History,
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
+import PageHeader from "~/components/PageHeader.vue";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useTemplate } from "~/composables/useTemplate";
+import type { Template } from "~/types/template";
 
+const toast = useToast();
+
+// ✅ Composable
+const {
+  getTemplates,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  isLoadingList,
+  isLoadingCreate,
+  isLoadingUpdate,
+  isLoadingDelete,
+} = useTemplate();
+
+// State
+const templates = ref<Template[]>([]);
 const search = ref("");
-const sortBy = ref("from");
-const sortDir = ref("asc");
+const sortBy = ref("nama_template");
+const sortDir = ref<"asc" | "desc">("asc");
 const editModal = ref(false);
-const editData = ref({});
-const showDateMenu = ref(false);
-const selectDateFilter = (opt) => {
-  activeDateLabel.value = opt;
-  showDateMenu.value = false;
-};
+const addModal = ref(false);
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<Template | null>(null);
 
-const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun"];
-const emails = ref([
-  { id: 1, from: "PER - PERATURAN DIREKSI", fileName: "peraturan_1.pdf" },
-  { id: 2, from: "KEP - KEPUTUSAN DIREKSI", fileName: "keputusan.pdf" },
-  { id: 3, from: "INS - INSTRUKSI", fileName: "instruksi_1.docx" },
-  { id: 4, from: "SPR - SURAT PERINTAH", fileName: "spr_01.pdf" },
-  { id: 5, from: "SOP - OPERASIONAL", fileName: "sop_lengkap.pdf" },
-  { id: 6, from: "PER - PERATURAN DIREKSI", fileName: "peraturan_2.pdf" },
-  { id: 7, from: "PER - PERATURAN DIREKSI", fileName: "peraturan_1.pdf" },
-  { id: 8, from: "KEP - KEPUTUSAN DIREKSI", fileName: "keputusan.pdf" },
-  { id: 9, from: "INS - INSTRUKSI", fileName: "instruksi_1.docx" },
-  { id: 10, from: "SPR - SURAT PERINTAH", fileName: "spr_01.pdf" },
-  { id: 11, from: "SOP - OPERASIONAL", fileName: "sop_lengkap.pdf" },
-  { id: 12, from: "PER - PERATURAN DIREKSI", fileName: "peraturan_2.pdf" },
-]);
-
-const filteredEmails = computed(() => {
-  const s = search.value.toLowerCase();
-  return emails.value.filter((mail) => mail.from.toLowerCase().includes(s));
+const editData = ref<any>({
+  id: "",
+  nama_template: "",
+  file: "",
+  newFile: null,
+  newFileName: "",
 });
 
-const sortedEmails = computed(() => {
-  return [...filteredEmails.value].sort((a, b) => {
-    const colA = a[sortBy.value].toLowerCase();
-    const colB = b[sortBy.value].toLowerCase();
+const addData = ref<any>({
+  nama_template: "",
+  file: null,
+  fileName: "",
+});
+
+// ✅ Fetch Data dari API
+const fetchData = async () => {
+  try {
+    const data = await getTemplates();
+    templates.value = data;
+    console.log("✅ Templates loaded:", templates.value.length);
+  } catch (error) {
+    console.error("❌ Error loading templates:", error);
+  }
+};
+
+// Filter & Sort
+const filteredTemplates = computed(() => {
+  const s = search.value.toLowerCase();
+  return templates.value.filter(
+    (template) =>
+      template.nama_template.toLowerCase().includes(s) ||
+      template.file.toLowerCase().includes(s),
+  );
+});
+
+const sortedTemplates = computed(() => {
+  return [...filteredTemplates.value].sort((a, b) => {
+    const colA = String(a[sortBy.value] || "").toLowerCase();
+    const colB = String(b[sortBy.value] || "").toLowerCase();
 
     if (colA < colB) return sortDir.value === "asc" ? -1 : 1;
     if (colA > colB) return sortDir.value === "asc" ? 1 : -1;
@@ -368,18 +449,17 @@ const sortedEmails = computed(() => {
   });
 });
 
-const toggleSort = (column) => {
+const toggleSort = (column: string) => {
   if (sortBy.value === column) {
-    // toggle asc/desc
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
   } else {
     sortBy.value = column;
     sortDir.value = "asc";
   }
 };
-
+// Pagination
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Template", to: "/admin/template" },
 ];
 
@@ -401,100 +481,217 @@ const breadcrumbs = [
 //   confirmDeleteOpen.value = false;
 // };
 
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref<any>(null);
+// const confirmDeleteOpen = ref(false);
+// const itemToDelete = ref<any>(null);
 
-const openDelete = (item: any) => {
-  itemToDelete.value = item;
-  confirmDeleteOpen.value = true;
-};
+// const openDelete = (item: any) => {
+//   itemToDelete.value = item;
+//   confirmDeleteOpen.value = true;
+// };
 
-const deleteNow = () => {
-  if (!itemToDelete.value) return;
+// const deleteNow = () => {
+//   if (!itemToDelete.value) return;
 
-  listDelegasi.value = listDelegasi.value.filter(
-    (i) => i.id !== itemToDelete.value.id,
-  );
+//   listDelegasi.value = listDelegasi.value.filter(
+//     (i) => i.id !== itemToDelete.value.id,
+//   );
 
-  confirmDeleteOpen.value = false;
-};
+//   confirmDeleteOpen.value = false;
+// };
 
 // ================================
 // PAGINATION
 // ================================
 const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 15];
-
+const rowsChoices = [5, 10, 15, 20];
 const currentPage = ref(1);
 
-const paginatedEmails = computed(() => {
+const paginatedTemplates = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
-  return sortedEmails.value.slice(start, start + rowsPerPage.value);
+  return sortedTemplates.value.slice(start, start + rowsPerPage.value);
 });
 
-const totalItems = computed(() => sortedEmails.value.length);
-
+const totalItems = computed(() => sortedTemplates.value.length);
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
 
-// reset page saat search atau rowsPerPage berubah
 watch([search, rowsPerPage], () => {
   currentPage.value = 1;
 });
 
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  editData.value.file = file;
-  editData.value.fileName = file.name;
-};
-const openEdit = (mail) => {
-  editData.value = {
-    ...mail,
-    file: null, // kosongkan file upload
-  };
-  editModal.value = true;
-};
-
-const addModal = ref(false);
-
-const addData = ref({
-  from: "",
-  file: null,
-  fileName: "",
-});
-
+// ✅ OPEN ADD MODAL
 const openAdd = () => {
   addData.value = {
-    from: "",
+    nama_template: "",
     file: null,
     fileName: "",
   };
   addModal.value = true;
 };
 
-const handleAddFile = (event) => {
-  const file = event.target.files[0];
+// ✅ HANDLE ADD FILE
+const handleAddFile = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (!file) return;
 
   addData.value.file = file;
   addData.value.fileName = file.name;
+  console.log("📎 File selected:", file.name, formatFileSize(file.size));
 };
 
-const saveAdd = () => {
-  if (!addData.value.from || !addData.value.file) {
-    alert("Nama template dan file wajib diisi!");
+// ✅ CLEAR ADD FILE
+const clearAddFile = () => {
+  addData.value.file = null;
+  addData.value.fileName = "";
+};
+
+// ✅ SAVE ADD
+const saveAdd = async () => {
+  if (!addData.value.nama_template || !addData.value.file) {
+    toast.add({
+      title: "Form tidak lengkap",
+      description: "Nama template dan file wajib diisi",
+      color: "yellow",
+    });
     return;
   }
 
-  emails.value.push({
-    id: emails.value.length + 1,
-    from: addData.value.from,
-    fileName: addData.value.fileName,
-  });
+  try {
+    console.log("💾 Saving new template:", addData.value.nama_template);
 
-  addModal.value = false;
+    await createTemplate({
+      nama_template: addData.value.nama_template,
+      file: addData.value.file,
+    });
+
+    addModal.value = false;
+    await fetchData();
+    currentPage.value = 1;
+  } catch (error) {
+    console.error("❌ Error creating template:", error);
+  }
 };
+
+// ✅ OPEN EDIT MODAL
+const openEdit = (template: Template) => {
+  editData.value = {
+    id: template.id,
+    nama_template: template.nama_template,
+    file: template.file,
+    newFile: null,
+    newFileName: "",
+  };
+  editModal.value = true;
+  console.log("✏️ Editing template:", template.nama_template);
+};
+
+// ✅ HANDLE EDIT FILE
+const handleEditFile = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  editData.value.newFile = file;
+  editData.value.newFileName = file.name;
+  console.log("📎 New file selected:", file.name, formatFileSize(file.size));
+};
+
+// ✅ CLEAR EDIT FILE
+const clearEditFile = () => {
+  editData.value.newFile = null;
+  editData.value.newFileName = "";
+};
+
+// ✅ SAVE EDIT
+const saveEdit = async () => {
+  if (!editData.value.nama_template) {
+    toast.add({
+      title: "Form tidak lengkap",
+      description: "Nama template wajib diisi",
+      color: "yellow",
+    });
+    return;
+  }
+
+  try {
+    console.log("💾 Updating template:", editData.value.id);
+
+    const payload: any = {
+      nama_template: editData.value.nama_template,
+    };
+
+    // Jika ada file baru, kirim file baru
+    if (editData.value.newFile) {
+      payload.file = editData.value.newFile;
+    }
+    // Jika tidak ada file baru, biarkan backend gunakan file lama
+    // (tidak perlu kirim file path string)
+
+    await updateTemplate(editData.value.id, payload);
+
+    editModal.value = false;
+    await fetchData();
+  } catch (error) {
+    console.error("❌ Error updating template:", error);
+  }
+};
+
+// ✅ OPEN DELETE CONFIRMATION
+const openDelete = (template: Template) => {
+  itemToDelete.value = template;
+  confirmDeleteOpen.value = true;
+};
+
+// ✅ DELETE NOW
+const deleteNow = async () => {
+  if (!itemToDelete.value) return;
+
+  try {
+    console.log("🗑️ Deleting template:", itemToDelete.value.id);
+    await deleteTemplate(itemToDelete.value.id);
+    confirmDeleteOpen.value = false;
+    await fetchData();
+  } catch (error) {
+    console.error("❌ Error deleting template:", error);
+  } finally {
+    itemToDelete.value = null;
+  }
+};
+
+// ✅ DOWNLOAD TEMPLATE
+const downloadTemplate = (template: Template) => {
+  if (template.file_url) {
+    console.log("⬇️ Downloading:", template.file_url);
+    window.open(template.file_url, "_blank");
+  } else {
+    toast.add({
+      title: "URL tidak tersedia",
+      description: "File tidak dapat diunduh",
+      color: "red",
+    });
+  }
+};
+
+// Helper functions
+const getFileName = (filePath: string): string => {
+  if (!filePath) return "-";
+  const parts = filePath.split("/");
+  return parts[parts.length - 1];
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+};
+
+// ✅ Load data on mount
+onMounted(async () => {
+  console.log("🚀 Template page mounted");
+  await fetchData();
+});
 </script>

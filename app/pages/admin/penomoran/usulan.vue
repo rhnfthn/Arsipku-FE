@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
-          Daftar Usulan Dokumen
+          Daftar Usulan Penomoran
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -232,7 +232,7 @@
   </div>
 
   <!-- MODAL ROW DETAIL -->
-  <Modal v-model="openDetail" :hideDefaultFooter="true">
+  <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
     <!-- TITLE -->
     <template #title>
       <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
@@ -261,10 +261,12 @@
         <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
       </div>
 
-      <!-- Klasifikasi -->
+      <!-- ✅ Klasifikasi dengan format "CODE - TEXT" -->
       <div class="pb-2 border-b border-gray-200">
         <p class="text-gray-500 text-xs">Klasifikasi</p>
-        <p class="font-medium mt-1">{{ selectedRow.klasifikasi }}</p>
+        <p class="font-medium mt-1">
+          {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi }}
+        </p>
       </div>
 
       <!-- Jenis Naskah -->
@@ -421,6 +423,7 @@ const {
   isLoadingBooking,
   getListUsulan,
   getDetailUsulan,
+  getKlasifikasi,
 } = usePenomoran();
 
 const toast = useToast();
@@ -434,6 +437,8 @@ const uploadedFiles = ref([]);
 
 // ✅ Person mapping
 const personMap = ref(new Map());
+// ✅ Klasifikasi mapping untuk display
+const klasifikasiMap = ref(new Map());
 
 const fetchPersonMap = async () => {
   try {
@@ -453,6 +458,27 @@ const fetchPersonMap = async () => {
   }
 };
 
+// ✅ Fetch klasifikasi map untuk display
+const fetchKlasifikasiMap = async () => {
+  try {
+    const response = await getKlasifikasi();
+
+    if (Array.isArray(response)) {
+      response.forEach((item) => {
+        klasifikasiMap.value.set(item.code, item.display);
+      });
+    }
+
+    console.log(
+      "✅ Klasifikasi map loaded:",
+      klasifikasiMap.value.size,
+      "items",
+    );
+  } catch (error) {
+    console.error("❌ Error fetch klasifikasi map:", error);
+  }
+};
+
 // ✅ FETCH DATA
 const fetchData = async () => {
   loading.value = true;
@@ -466,6 +492,8 @@ const fetchData = async () => {
 
     rows.value = data.map((item) => {
       const pengusulInfo = personMap.value.get(item.persnum) || {};
+      const klasifikasiDisplay =
+        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
       return {
         id: item.id,
@@ -473,10 +501,9 @@ const fetchData = async () => {
         tanggal: item.tanggal,
         perihal: item.perihal,
         jumlah: item.jumlah,
-        // ✅ Penandatangan diambil dari jabatan (sesuai preview)
         penandatangan: item.penandatangan || "-",
-        // ✅ Klasifikasi diambil dari preview
         klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay: klasifikasiDisplay,
         pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
         tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
         status: item.status,
@@ -510,28 +537,30 @@ const openRowModal = async (row) => {
       return;
     }
 
-    // Generate array nomor surat
     const nomorSuratArray = Array.isArray(detail.nomor_surat)
       ? detail.nomor_surat
       : detail.nomor_surat
         ? [detail.nomor_surat]
         : Array(detail.jumlah || 1).fill(detail.template_nomor || "");
 
+    const klasifikasiDisplay =
+      klasifikasiMap.value.get(detail.klasifikasi) || detail.klasifikasi;
+
     selectedRow.value = {
       id: detail.id,
       jenis: detail.jenis,
-      jenis_naskah: `${detail.jenis} - ${detail.perihal}`,
+      jenis_naskah: detail.jenis,
       tanggal: detail.tanggal,
       perihal: detail.perihal,
       jumlah: detail.jumlah,
       penandatangan: detail.penandatangan || detail.nama || "-",
       klasifikasi: detail.klasifikasi || "-",
+      klasifikasiDisplay: klasifikasiDisplay,
       status: detail.status || "-",
       nomor_surat: nomorSuratArray,
       template_nomor: detail.template_nomor || "",
     };
 
-    // Reset files
     files.value = Array(nomorSuratArray.length).fill(null);
     uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
 
@@ -600,21 +629,12 @@ function handlePreview(data: any) {
 const submitUsulan = async () => {
   if (!selectedRow.value) return;
 
-  // Validasi file upload
+  // ambil file yang benar-benar diupload
   const uploadedFiles = files.value.filter((f) => f && f.file_text);
-
-  if (uploadedFiles.length !== selectedRow.value.jumlah) {
-    toast.add({
-      title: "Upload Belum Lengkap",
-      description: `Harap upload semua file (${uploadedFiles.length}/${selectedRow.value.jumlah})`,
-      color: "yellow",
-    });
-    return;
-  }
 
   try {
     await submitBooking(selectedRow.value.id, {
-      files: uploadedFiles,
+      files: uploadedFiles.length > 0 ? uploadedFiles : [], // opsional
     });
 
     openDetail.value = false;
@@ -668,7 +688,6 @@ const handleSubmitFromModal = async (payload: any) => {
   try {
     console.log("📤 Payload diterima dari modal:", payload);
 
-    // Validasi payload
     if (
       !payload.tanggal ||
       !payload.jenis ||
@@ -684,7 +703,6 @@ const handleSubmitFromModal = async (payload: any) => {
       return;
     }
 
-    // Format tanggal
     let formattedDate;
     try {
       const dateObj = new Date(payload.tanggal);
@@ -695,7 +713,6 @@ const handleSubmitFromModal = async (payload: any) => {
       formattedDate = payload.tanggal;
     }
 
-    // ✅ Format payload sesuai API - id_position_penandatangan harus INTEGER
     const formattedPayload = {
       position_id: Number(payload.position_id),
       tanggal: formattedDate,
@@ -703,7 +720,7 @@ const handleSubmitFromModal = async (payload: any) => {
       klasifikasi: String(payload.klasifikasi),
       perihal: String(payload.perihal),
       penandatangan: String(payload.penandatangan),
-      id_position_penandatangan: Number(payload.id_position_penandatangan), // ✅ Convert to number
+      id_position_penandatangan: Number(payload.id_position_penandatangan),
       jumlah: Number(payload.jumlah),
     };
 
@@ -723,8 +740,6 @@ const handleSubmitFromModal = async (payload: any) => {
     });
   } catch (err) {
     console.error("❌ Error submit modal:", err);
-    console.error("❌ Error response:", err?.response);
-    console.error("❌ Error data:", err?.response?.data);
 
     const errorMessage =
       err?.response?.data?.message ||
@@ -734,7 +749,7 @@ const handleSubmitFromModal = async (payload: any) => {
 
     toast.add({
       title: "Gagal",
-      description: errorMsg,
+      description: errorMessage,
       color: "red",
     });
   }
@@ -758,6 +773,7 @@ onMounted(async () => {
     await getProfile();
   }
 
+  await fetchKlasifikasiMap();
   await fetchPersonMap();
   await fetchData();
 });
@@ -794,9 +810,9 @@ const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
 
-/* SORT STATE */
-const sortBy = ref<string>("id");
-const sortDir = ref<"asc" | "desc">("asc");
+/* SORT STATE - ✅ Default DESC by Tanggal Usulan */
+const sortBy = ref<string>("tglUsulan");
+const sortDir = ref<"asc" | "desc">("desc");
 
 const sort = (col: string) => {
   if (sortBy.value === col) {

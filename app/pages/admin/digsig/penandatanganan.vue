@@ -403,7 +403,7 @@ const rows = [
 ];
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
 ];
 

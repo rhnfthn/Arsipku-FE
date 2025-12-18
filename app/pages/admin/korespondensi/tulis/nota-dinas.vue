@@ -16,11 +16,14 @@
       root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
     }">
       <div class="flex-1 overflow-y-auto space-y-1">
-        <TulisInputBerkas v-model="selectedBerkasId" :items="berkasList || []" :loading="berkasStatus === 'loading'" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'" />
+
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Kepada ..." :items="items"
           :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Tembusan ..." :items="items"
           :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
@@ -46,159 +49,24 @@
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
-            <input type="text" v-model="subject"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-              placeholder="Ketik perihal" />
+
+            <div class="flex items-center flex-1 w-full gap-2">
+              <input type="text" v-model="subject" :maxlength="maxPerihal"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                placeholder="Ketik perihal" />
+
+              <span class="text-[10px] font-mono shrink-0 transition-colors"
+                :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
+                {{ subject.length }}/{{ maxPerihal }}
+              </span>
+            </div>
+
           </div>
         </div>
 
         <div class="flex flex-col py-4">
-          <div class="flex items-center justify-between w-full gap-3">
-            <UButton label="Pilih Template" color="primary" variant="soft" icon="i-heroicons-adjustments-horizontal"
-              @click="isTemplateModalOpen = true" />
 
-            <div class="flex gap-3 flex-shrink-0">
-              <UButton label="Simpan Sebagai Template" icon="i-heroicons-plus" variant="soft" color="primary"
-                @click="isAddTemplateOpen = true" />
-
-              <UButton label="Template Saya" icon="i-heroicons-bookmark" variant="soft" color="primary"
-                @click="isMyTemplateModalOpen = true" />
-            </div>
-          </div>
-
-          <!-- Modal Pilih Template Publik -->
-          <UModal v-model:open="isTemplateModalOpen" title="Pilih Template">
-            <template #body>
-              <div class="space-y-3">
-                <UCard v-for="template in templates" :key="template.id">
-                  <!-- Header -->
-                  <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-sm font-semibold text-gray-800">
-                      {{ template.name }}
-                    </h3>
-
-                    <UButton label="Gunakan" size="xs" color="primary" variant="soft"
-                      @click="applyTemplate(template)" />
-                  </div>
-
-                  <!-- Preview (TANPA border) -->
-                  <iframe :srcdoc="template.content" class="w-full rounded bg-white"
-                    style="height: 90px; pointer-events: none;" />
-                </UCard>
-              </div>
-            </template>
-          </UModal>
-
-          <!-- Modal Simpan Template -->
-          <UModal v-model:open="isAddTemplateOpen" :ui="{ width: 'sm:max-w-md' }">
-            <template #header>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Simpan Template
-              </h3>
-            </template>
-
-            <template #body>
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nama Template
-                  </label>
-                  <UInput v-model="newTemplateName" placeholder="Masukkan nama template" icon="i-heroicons-tag"
-                    size="lg" class="w-full" />
-                </div>
-
-                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <div class="flex items-start gap-2">
-                    <UIicon name="i-heroicons-information-circle"
-                      class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                    <p class="text-sm text-blue-800 dark:text-blue-300">
-                      Konten editor saat ini akan disimpan sebagai template
-                      <strong>{{ newTemplateName || '(belum diberi nama)' }}</strong>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <template #footer>
-              <div class="flex w-full justify-end gap-3">
-                <UButton label="Batal" variant="ghost" color="gray" @click="isAddTemplateOpen = false" />
-                <UButton label="Simpan Template" color="primary" icon="i-heroicons-check-circle"
-                  :disabled="!newTemplateName.trim()" @click="saveMyTemplate" />
-              </div>
-            </template>
-          </UModal>
-
-          <!-- Modal Template Saya -->
-          <UModal v-model:open="isMyTemplateModalOpen" :ui="{ width: 'sm:max-w-xl' }">
-            <template #header>
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">
-                  Template Saya
-                </h3>
-                <UBadge color="primary" variant="subtle">
-                  {{ myTemplates.length }}
-                </UBadge>
-              </div>
-            </template>
-
-            <template #body>
-              <div class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
-
-                <UCard v-for="template in myTemplates" :key="template.id"
-                  class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <div class="space-y-4">
-
-                    <!-- Header (selaras dgn form label style) -->
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-center gap-2 flex-1 min-w-0">
-                        <UIicon name="i-heroicons-bookmark-solid"
-                          class="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
-                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {{ template.name }}
-                        </h4>
-                      </div>
-
-                      <UButton icon="i-heroicons-trash" color="red" variant="ghost" size="xs"
-                        @click.stop="deleteTemplate(template.id)" />
-                    </div>
-
-                    <!-- Content (samakan tone text + prose) -->
-                    <div v-html="template.content" style="
-                      font-family: 'Times New Roman', serif;
-                      font-size: 14px;
-                      line-height: 1.4;
-                    "></div>
-
-                    <!-- Action (posisi & feel sama) -->
-                    <div class="flex justify-end pt-1">
-                      <UButton label="Gunakan Template" size="sm" color="primary" @click="applyTemplate(template)" />
-                    </div>
-                  </div>
-                </UCard>
-
-                <!-- Empty state (selaras tone info box) -->
-                <div v-if="myTemplates.length === 0"
-                  class="p-6 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                  <UIicon name="i-heroicons-bookmark" class="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                  <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    Belum ada template tersimpan
-                  </p>
-                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Klik "Simpan Sebagai Template" untuk menyimpan konten sebagai template
-                  </p>
-                </div>
-
-              </div>
-            </template>
-
-
-            <template #footer>
-              <div class="flex w-full justify-end">
-                <UButton label="Tutup" variant="ghost" color="gray" @click="isMyTemplateModalOpen = false" />
-              </div>
-            </template>
-          </UModal>
+          <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
             <div
@@ -237,11 +105,16 @@
                       <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
                       <td class="text-[14px] w-[20px] align-top">:</td>
                       <td class="text-[14px] align-top">
-                        <span v-html="selectedTertuju.length
+                        <span v-if="selectedTertuju.length > 5">
+                          Periksa Alamat Terlampir
+                        </span>
+
+                        <span v-else v-html="selectedTertuju.length
                           ? selectedTertuju
-                            .map(
-                              (s: any, i: number) =>
-                                `<div style='margin-left:1em;text-indent:-1em'>
+                            .map((s: any, i: number) =>
+                              selectedTertuju.length === 1
+                                ? `<div>${s.labelJob || s.label}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>
                                     ${i + 1}. ${s.labelJob || s.label}
                                   </div>`
                             )
@@ -254,7 +127,7 @@
                       <td class="text-[14px] font-bold align-top">Dari</td>
                       <td class="text-[14px] align-top">:</td>
                       <td class="text-[14px] align-top">
-                        {{ selectedBerkas?.judulBerkas || "................................................" }}
+                        {{ user?.nama || 'Nama Lengkap' }}
                       </td>
                     </tr>
                     <tr>
@@ -283,7 +156,13 @@
                 </div>
                 <div class="text-[12px] mt-2 w-full text-left text-black dark:text-white">
                   <div class="font-bold underline mb-1">Tembusan :</div>
-                  <ol v-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                    Periksa Alamat Terlampir
+                  </div>
+                  <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
+                    {{ selectedTembusan[0].labelJob || selectedTembusan[0].label }}
+                  </div>
+                  <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">
                       {{ t.labelJob || t.label }}
                     </li>
@@ -291,10 +170,49 @@
                   <div v-else class="text-gray-400 italic">...</div>
                 </div>
               </div>
+              <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page">
+
+                <div class="flex justify-end mb-10 text-[14px]">
+                  <div class="text-left min-w-[300px]">
+                    <table class="w-full">
+                      <tr>
+                        <td class="align-top pr-2">Lampiran Surat</td>
+                      </tr>
+                      <tr>
+                        <td class="align-top pr-2">Nomor Surat :</td>
+                        <td>.....................................</td>
+                      </tr>
+                      <tr>
+                        <td class="align-top pr-2">Tanggal Surat :</td>
+                        <td>{{ formattedDate }}</td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+
+                <div v-if="selectedTertuju.length > 0" class="mb-8">
+                  <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                  <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                    <li v-for="item in selectedTertuju" :key="item.value">
+                      {{ item.labelJob || item.label }}
+                    </li>
+                  </ol>
+                </div>
+
+                <div v-if="selectedTembusan.length > 0">
+                  <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                  <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                    <li v-for="item in selectedTembusan" :key="item.value">
+                      {{ item.labelJob || item.label }}
+                    </li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </ClientOnly>
 
-          <TulisInputLampiran v-model:uploaded="uploadedFiles" v-model:existingFiles="existingFiles" />
+          <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
         <div
@@ -336,18 +254,30 @@
 /* IMPORTS                                                                    */
 /* -------------------------------------------------------------------------- */
 // ... IMPORTS tidak berubah ...
+const maxPerihal = 200;
+
 import { ref, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import "@vueup/vue-quill/dist/vue-quill.snow.css";
 import { useAuth } from "@/composables/useAuth";
-import type { Editor as TinyMCEEditor } from 'tinymce';
+import type { Editor as TinyMCEEditor } from 'tinymce'; import type { Klasifikasi } from "~/types/klasifikasi"; // Ganti Berkas
+import { useKlasifikasi } from "@/composables/useKlasifikasi"; // Ganti useBerkas
+import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue"; // Component baru
+import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
+
+const { getKlasifikasi } = useKlasifikasi(); // Destructure
 
 // Types
 import type { Berkas } from "~/types/berkas";
 // Import validateDraftPayload dari types/drafts
 import { validateDraftPayload, type DraftPayload } from "~/types/drafts";
+import { useNotaDinas } from "@/composables/useNotaDinas"
+import TemplateManager from '@/components/Tulis/TemplateManager.vue'; // Import komponen
+
+// Init Composable
+const { generatePdf } = useNotaDinas()
 
 /* -------------------------------------------------------------------------- */
 /* COMPOSABLES                                                                */
@@ -360,6 +290,15 @@ const { getRecipients } = useRecipients();
 const { user, getProfile } = useAuth();
 const toast = useToast(); // Inisialisasi Toast
 
+const klasifikasiList = ref<Klasifikasi[]>([]);
+const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
+const selectedKlasifikasiId = ref<string | null>(null); // Ganti selectedBerkasId
+
+const selectedKlasifikasi = computed(() =>
+  klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
+);
+
+
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 /* -------------------------------------------------------------------------- */
@@ -367,18 +306,13 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 
 const isOpenPreview = ref(false);
 const loading = ref(false);
-const isLoadingData = ref(false); // Tambahkan state ini jika belum ada, untuk loading generate PDF
-const myTemplates = ref<any[]>([]);
-const isTemplateModalOpen = ref(false)
-const isAddTemplateOpen = ref(false)
-const isMyTemplateModalOpen = ref(false)
-const newTemplateName = ref('')
+const isLoadingData = ref(false);
 
 // --- Form State ---
 const editDraftId = ref<string | null>(null);
@@ -427,11 +361,13 @@ const tinyMceInit = {
   toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
 
   content_style: `
-    body {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 14pt;
-    }
-  `,
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      border: none !important;
+    }
+  `,
 
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
@@ -467,8 +403,12 @@ const templates = [
   }
 ];
 
-
-const sifatOptions = [{ label: "Rahasia", value: "rahasia" }, { label: "Biasa", value: "biasa" }];
+const sifatOptions = [
+  { label: "Sangat Rahasia", value: "Sangat Rahasia" },
+  { label: "Rahasia", value: "Rahasia" },
+  { label: "Terbatas", value: "Terbatas" },
+  { label: "Biasa / Terbuka", value: "Biasa/ Terbuka" }
+]
 
 /* -------------------------------------------------------------------------- */
 /* COMPUTED PROPERTIES (Tidak Berubah)                                        */
@@ -502,25 +442,6 @@ const sortedItemsTembusan = computed(() => {
 /* -------------------------------------------------------------------------- */
 /* HELPER METHODS (DIPERBAIKI)                                             */
 /* -------------------------------------------------------------------------- */
-const applyTemplate = async (t: any) => {
-  if (!tinymceEditor.value) return;
-
-  // BERSIHKAN HTML TEMPLATE
-  const cleanContent = t.content
-    .trim()                 // buang enter awal & akhir
-    .replace(/>\s+</g, '><') // rapikan antar tag
-
-  // Insert di cursor aktif (TIDAK menimpa konten lama)
-  tinymceEditor.value.insertContent(cleanContent);
-
-  // Sinkronkan ke v-model
-  editorContent.value = tinymceEditor.value.getContent();
-
-  // Tutup modal
-  await nextTick();
-  isTemplateModalOpen.value = false;
-  isMyTemplateModalOpen.value = false;
-};
 
 
 // Fungsi Helper untuk Validasi dan Menampilkan Toast
@@ -560,8 +481,8 @@ const getBasePayload = () => {
     pengirim: pengirimId,
     penerima: selectedTertuju.value.map(i => i.value),
     tembusan: selectedTembusan.value.map(i => i.value),
-    klasifikasi: selectedBerkas.value?.klasifikasi || "OPS.02", // Fallback contoh
-    klasifikasi_text: selectedBerkas.value?.judulBerkas || "Air Traffic Flow Management (ATFM)",
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     konten: editorContent.value,
@@ -575,6 +496,20 @@ const getBasePayload = () => {
     final_pdf: null, // Kita set null di payload object, nanti dihandle di FormData
   } as DraftPayload;
 }
+
+const handleApplyTemplate = (htmlContent: string) => {
+  if (tinymceEditor.value) {
+    // 1. Bersihkan HTML jika perlu
+    const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
+
+    // 2. GUNAKAN setContent UNTUK MENIMPA SEMUA (REPLACE ALL)
+    // Sebelumnya: insertContent (menyisipkan di kursor)
+    tinymceEditor.value.setContent(cleanContent);
+
+    // 3. Update v-model state
+    editorContent.value = tinymceEditor.value.getContent();
+  }
+};
 
 const handlePreview = async () => {
   const payload = getBasePayload();
@@ -590,48 +525,75 @@ const handlePreview = async () => {
 
 // --- 2. Preview PDF (UPDATE: SIMPAN BLOB) ---
 async function openPreview() {
-  isLoadingData.value = true;
+  isLoadingData.value = true
+
   try {
-    isOpenPreview.value = true;
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+    // 1. Bersihkan state lama
+    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
+    pdfBlob.value = null
 
-    // Reset Blob lama
-    pdfBlob.value = null;
+    // 2. Siapkan Payload menggunakan FormData
+    const draftData = getBasePayload()
+    const formData = new FormData()
 
-    const draftData = getBasePayload();
+    // --- A. Data Teks (Simple Fields) ---
+    formData.append('tgl', draftData.tgl)
+    formData.append('perihal', draftData.perihal)
+    formData.append('sifat', draftData.sifat)
+    formData.append('htmlContent', draftData.konten)
+    formData.append('penandatangan', draftData.nama_lengkap)
+    formData.append('nama_jabatan', draftData.nama_jabatan)
+    formData.append('nama_tempat', draftData.nama_tempat)
 
-    // Payload khusus generate PDF (String only)
-    const pdfPayload: any = {
-      penerima: selectedTertuju.value.map(i => i.labelJob || i.label),
-      tembusan: selectedTembusan.value.map(i => i.labelJob || i.label),
-      tgl: draftData.tgl,
-      perihal: draftData.perihal,
-      sifat: draftData.sifat,
-      htmlContent: draftData.konten,
-      penandatangan: draftData.nama_lengkap,
-      nama_jabatan: draftData.nama_jabatan,
-      nama_tempat: draftData.nama_tempat,
-    };
+    // --- B. Data Array (Penerima & Tembusan) ---
+    // Backend biasanya menerima array dengan key 'nama[]' atau mengulang key yang sama
+    selectedTertuju.value.forEach((item: any) => {
+      // Kirim Label/Jabatan (sesuai logika sebelumnya)
+      formData.append('penerima[]', item.labelJob || item.label)
+    })
 
-    const response = await fetch("http://172.20.16.115:3011/ND/generate-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(pdfPayload),
-    });
+    selectedTembusan.value.forEach((item: any) => {
+      formData.append('tembusan[]', item.labelJob || item.label)
+    })
 
-    if (!response.ok) throw new Error("Gagal generate PDF");
+    // --- C. Data File (Lampiran) ---
+    // Pastikan 'uploadedFiles' adalah ref<File[]> yang berisi file asli dari input
+    if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+      uploadedFiles.value.forEach((file) => {
+        // 'lampiran_files' harus sesuai dengan nama field yang diminta Backend
+        formData.append('lampiran_files', file)
+      })
+    }
 
-    // AMBIL BLOB DAN SIMPAN KE STATE
-    const blob = await response.blob();
-    pdfBlob.value = blob; // <--- PENTING: Disimpan untuk proses kirim
-    pdfUrl.value = URL.createObjectURL(blob);
+    // --- D. File Existing (Jika perlu mengirim ID file yang sudah ada di server) ---
+    if (existingFiles.value && existingFiles.value.length > 0) {
+      existingFiles.value.forEach((file) => {
+        formData.append('existing_lampiran_ids[]', file.id)
+      })
+    }
+
+    // 3. Panggil API
+    // useNotaDinas harus siap menerima FormData
+    const blobResponse = await generatePdf(formData)
+
+    // 4. Buat URL Preview
+    const blob = new Blob([blobResponse], { type: 'application/pdf' })
+    pdfBlob.value = blob
+    pdfUrl.value = URL.createObjectURL(blob)
+
+    // 5. Buka Modal
+    isOpenPreview.value = true
 
   } catch (err) {
-    console.error("PDF generate error:", err);
-    toast.add({ title: 'Error Preview', description: "Gagal generate PDF.", color: 'red' });
-    isOpenPreview.value = false;
+    console.error("PDF generate error:", err)
+    toast.add({
+      title: 'Gagal Preview',
+      description: "Terjadi kesalahan saat membuat PDF.",
+      color: 'red'
+    })
+    isOpenPreview.value = false
   } finally {
-    isLoadingData.value = false;
+    isLoadingData.value = false
   }
 }
 
@@ -660,16 +622,25 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   formData.append("english", String(payload.english));
 
   // Upload File Baru
-  if (uploadedFiles.value && uploadedFiles.value.length > 0) {
-    uploadedFiles.value.forEach((file) => {
-      formData.append("lampiran_files", file, file.name);
-    });
-  }
+  // if (uploadedFiles.value && uploadedFiles.value.length > 0) {
+  //   uploadedFiles.value.forEach((file) => {
+  //     formData.append("lampiran_files", file, file.name);
+  //   });
+  // }
 
-  // File Lama
+  // // File Lama
+  // if (existingFiles.value && existingFiles.value.length > 0) {
+  //   existingFiles.value.forEach((file) => {
+  //     formData.append("existing_lampiran_ids[]", file.id);
+  //   });
+  // }
+
   if (existingFiles.value && existingFiles.value.length > 0) {
     existingFiles.value.forEach((file) => {
-      formData.append("existing_lampiran_ids[]", file.id);
+      // Kirim ID file.
+      // Sesuaikan nama key dengan Backend Controller Anda.
+      // Contoh umum: 'lampiran_ids[]' atau 'attachments[]'
+      formData.append("lampiran_ids[]", file.id);
     });
   }
 
@@ -742,43 +713,6 @@ const handleKirimDokumen = async () => {
 };
 
 
-// Perbaikan 3: Menggunakan editorContent.value dan mereset newTemplateName
-const saveMyTemplate = () => {
-  if (!newTemplateName.value.trim()) return;
-
-  if (!tinymceEditor.value) return;
-
-  const content = tinymceEditor.value.getContent();
-
-  myTemplates.value.push({
-    id: Date.now(),
-    name: newTemplateName.value,
-    content
-  });
-
-  newTemplateName.value = "";
-  isAddTemplateOpen.value = false;
-
-  toast.add({
-    title: 'Berhasil',
-    description: 'Template berhasil disimpan.',
-    icon: 'i-heroicons-check-circle-20-solid',
-    color: 'green'
-  });
-};
-
-
-const deleteTemplate = (id: number) => {
-  myTemplates.value = myTemplates.value.filter(t => t.id !== id);
-  toast.add({
-    title: 'Dihapus',
-    description: "Template berhasil dihapus.",
-    icon: 'i-heroicons-trash-20-solid',
-    color: 'orange'
-  });
-};
-
-
 /* -------------------------------------------------------------------------- */
 /* LIFECYCLE HOOKS                                                            */
 /* -------------------------------------------------------------------------- */
@@ -797,13 +731,13 @@ onMounted(async () => {
 
   // B. LOAD BERKAS (MASTER DATA)
   try {
-    berkasStatus.value = "loading";
-    const response = await getBerkasList();
-    berkasList.value = Array.isArray(response) ? response : (response?.data ?? []);
-    berkasStatus.value = "success";
+    klasifikasiStatus.value = "loading";
+    const data = await getKlasifikasi();
+    klasifikasiList.value = data;
+    klasifikasiStatus.value = "success";
   } catch (err) {
-    console.error("Gagal load berkas", err);
-    berkasStatus.value = "error";
+    console.error("Gagal load klasifikasi", err);
+    klasifikasiStatus.value = "error";
   }
 
   // C. LOAD PENERIMA & POPULATE DRAFT

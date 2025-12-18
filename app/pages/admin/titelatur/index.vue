@@ -1,119 +1,37 @@
-<script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import {
-  Filter,
-  FileCheck,
-  ChevronRight,
-  Search,
-  ArrowUpDown,
-  RotateCcw,
-  Pencil,
-  Trash2,
-  Plus,
-} from "lucide-vue-next";
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
+import { Search, ArrowUpDown, Pencil, Trash2, Plus } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useTitelatur } from "~/composables/useTitelatur";
+import type { TitelaturItem } from "~/types/titelatur";
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Titelatur Inggris", to: "/admin/titelatur" },
 ];
+
 // ================================
-// DATA
+// COMPOSABLE
 // ================================
-const items = ref([
-  {
-    id: 1,
-    from: "Kepala Divisi Teknologi Informasi",
-    subject: "SVP Information Technology",
-    maintain: "Maintain",
-  },
-  {
-    id: 2,
-    from: "Direktur Keselamatan, Keamanan dan Standarisasi",
-    subject: "Director of Safety, Security and Standarization",
-    maintain: "Maintain",
-  },
-  {
-    id: 3,
-    from: "Direktur Teknik",
-    subject: "Director of Engineering",
-    maintain: "Maintain",
-  },
-  {
-    id: 4,
-    from: "Kepala Divisi Teknologi Informasi",
-    subject: "SVP Information Technology",
-    maintain: "Maintain",
-  },
-  {
-    id: 5,
-    from: "Direktur Keselamatan, Keamanan dan Standarisasi",
-    subject: "Director of Safety, Security and Standarization",
-    maintain: "Maintain",
-  },
-  {
-    id: 6,
-    from: "Direktur Teknik",
-    subject: "Director of Engineering",
-    maintain: "Maintain",
-  },
-  {
-    id: 7,
-    from: "Direktur Teknik",
-    subject: "Director of Engineering",
-    maintain: "Maintain",
-  },
-  {
-    id: 8,
-    from: "Kepala Divisi Teknologi Informasi",
-    subject: "SVP Information Technology",
-    maintain: "Maintain",
-  },
-  {
-    id: 9,
-    from: "Direktur Keselamatan, Keamanan dan Standarisasi",
-    subject: "Director of Safety, Security and Standarization",
-    maintain: "Maintain",
-  },
-  {
-    id: 10,
-    from: "Direktur Teknik",
-    subject: "Director of Engineering",
-    maintain: "Maintain",
-  },
-  {
-    id: 11,
-    from: "Kepala Divisi Teknologi Informasi",
-    subject: "SVP Information Technology",
-    maintain: "Maintain",
-  },
-  {
-    id: 12,
-    from: "Direktur Keselamatan, Keamanan dan Standarisasi",
-    subject: "Director of Safety, Security and Standarization",
-    maintain: "Maintain",
-  },
-  {
-    id: 13,
-    from: "Kepala Divisi Teknologi Informasi",
-    subject: "SVP Information Technology",
-    maintain: "Maintain",
-  },
-  {
-    id: 14,
-    from: "Direktur Keselamatan, Keamanan dan Standarisasi",
-    subject: "Director of Safety, Security and Standarization",
-    maintain: "Maintain",
-  },
-  {
-    id: 15,
-    from: "Direktur Teknik",
-    subject: "Director of Engineering",
-    maintain: "Maintain",
-  },
-]);
+const {
+  items,
+  loading,
+  error,
+  fetchTitelatur,
+  fetchTitelaturById,
+  createTitelatur,
+  updateTitelatur,
+  deleteTitelatur,
+} = useTitelatur();
+
+// ================================
+// LIFECYCLE
+// ================================
+onMounted(async () => {
+  await fetchTitelatur();
+});
 
 // ================================
 // SEARCH + FILTER + SORT
@@ -123,11 +41,12 @@ const filteredItems = computed(() => {
   const s = search.value.toLowerCase();
   return items.value.filter(
     (it) =>
-      it.from.toLowerCase().includes(s) || it.subject.toLowerCase().includes(s),
+      it.long_text?.toLowerCase().includes(s) ||
+      it.long_text_en?.toLowerCase().includes(s),
   );
 });
 
-const sortDirection = ref(null);
+const sortDirection = ref<"asc" | "desc" | null>(null);
 const toggleSort = () => {
   sortDirection.value =
     sortDirection.value === "asc"
@@ -139,10 +58,12 @@ const toggleSort = () => {
 
 const sortedItems = computed(() => {
   let arr = [...filteredItems.value];
-  if (sortDirection.value === "asc")
-    arr.sort((a, b) => a.from.localeCompare(b.from));
-  if (sortDirection.value === "desc")
-    arr.sort((a, b) => b.from.localeCompare(a.from));
+  if (sortDirection.value === "asc") {
+    arr.sort((a, b) => (a.long_text || "").localeCompare(b.long_text || ""));
+  }
+  if (sortDirection.value === "desc") {
+    arr.sort((a, b) => (b.long_text || "").localeCompare(a.long_text || ""));
+  }
   return arr;
 });
 
@@ -170,26 +91,49 @@ watch(rowsPerPage, () => (currentPage.value = 1));
 // MODAL: EDIT
 // ================================
 const showEditModal = ref(false);
-const selectedItem = ref(null);
+const selectedItem = ref<TitelaturItem | null>(null);
 
 const editForm = ref({
-  ind: "",
-  eng: "",
+  company: "10000",
+  start_date: "",
+  end_date: "9999-12-31",
+  object_type: "CO",
+  long_text: "",
+  long_text_en: "",
 });
 
-const openEdit = (item) => {
-  selectedItem.value = item;
-  editForm.value.ind = item.from;
-  editForm.value.eng = item.subject;
-  showEditModal.value = true;
+const openEdit = async (item: TitelaturItem) => {
+  const fullItem = await fetchTitelaturById(item.id);
+  if (fullItem) {
+    selectedItem.value = fullItem;
+    editForm.value = {
+      company: fullItem.company || "10000",
+      start_date: fullItem.start_date || "",
+      end_date: fullItem.end_date || "9999-12-31",
+      object_type: fullItem.object_type || "CO",
+      long_text: fullItem.long_text || "",
+      long_text_en: fullItem.long_text_en || "",
+    };
+    showEditModal.value = true;
+  }
 };
 
-const saveEdit = () => {
-  if (selectedItem.value) {
-    selectedItem.value.from = editForm.value.ind;
-    selectedItem.value.subject = editForm.value.eng;
+const saveEdit = async () => {
+  if (!selectedItem.value) return;
+
+  const success = await updateTitelatur(selectedItem.value.id, {
+    company: editForm.value.company,
+    start_date: editForm.value.start_date,
+    end_date: editForm.value.end_date,
+    object_type: editForm.value.object_type,
+    long_text: editForm.value.long_text,
+    long_text_en: editForm.value.long_text_en,
+  });
+
+  if (success) {
+    showEditModal.value = false;
+    // Optionally show success notification
   }
-  showEditModal.value = false;
 };
 
 // ================================
@@ -198,39 +142,62 @@ const saveEdit = () => {
 const showAddModal = ref(false);
 
 const addForm = ref({
-  ind: "",
-  eng: "",
+  company: "10000",
+  start_date: new Date().toISOString().split("T")[0],
+  end_date: "9999-12-31",
+  object_type: "CO",
+  long_text: "",
+  long_text_en: "",
 });
 
 const openAdd = () => {
-  addForm.value = { ind: "", eng: "" };
+  addForm.value = {
+    company: "10000",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "9999-12-31",
+    object_type: "CO",
+    long_text: "",
+    long_text_en: "",
+  };
   showAddModal.value = true;
 };
 
-const saveAdd = () => {
-  items.value.push({
-    id: Date.now(),
-    from: addForm.value.ind,
-    subject: addForm.value.eng,
+const saveAdd = async () => {
+  const success = await createTitelatur({
+    company: addForm.value.company,
+    start_date: addForm.value.start_date,
+    end_date: addForm.value.end_date,
+    object_type: addForm.value.object_type,
+    long_text: addForm.value.long_text,
+    long_text_en: addForm.value.long_text_en,
   });
 
-  showAddModal.value = false;
+  if (success) {
+    showAddModal.value = false;
+    // Optionally show success notification
+  }
 };
 
 // ================================
 // POPUP DELETE
 // ================================
 const confirmDeleteOpen = ref(false);
-const itemToDelete = ref(null);
+const itemToDelete = ref<TitelaturItem | null>(null);
 
-const openDelete = (item) => {
+const openDelete = (item: TitelaturItem) => {
   itemToDelete.value = item;
   confirmDeleteOpen.value = true;
 };
 
-const deleteNow = () => {
-  items.value = items.value.filter((i) => i.id !== itemToDelete.value.id);
-  confirmDeleteOpen.value = false;
+const deleteNow = async () => {
+  if (!itemToDelete.value) return;
+
+  const success = await deleteTitelatur(itemToDelete.value.id);
+
+  if (success) {
+    confirmDeleteOpen.value = false;
+    // Optionally show success notification
+  }
 };
 </script>
 
@@ -254,8 +221,25 @@ const deleteNow = () => {
       </button>
     </div>
 
+    <!-- LOADING STATE -->
+    <div v-if="loading" class="text-center py-8">
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"
+      ></div>
+      <p class="mt-2 text-gray-600">Memuat data...</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div
+      v-if="error"
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4"
+    >
+      {{ error }}
+    </div>
+
     <!-- CARD -->
     <div
+      v-if="!loading"
       class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col"
     >
       <!-- TOP BAR -->
@@ -304,9 +288,9 @@ const deleteNow = () => {
       <table class="min-w-full text-left text-sm">
         <thead class="bg-primary-400 text-primary-50">
           <tr>
-            <th class="px-4 py-4 font-bold">Titelatur Indonesia</th>
-            <th class="px-4 py-4 font-bold">Titelatur Inggris</th>
-            <th class="px-4 py-4 font-bold text-center">Aksi</th>
+            <th class="px-4 py-3 font-bold">Titelatur Indonesia</th>
+            <th class="px-4 py-3 font-bold">Titelatur Inggris</th>
+            <th class="px-4 py-3 font-bold text-center">Aksi</th>
           </tr>
         </thead>
 
@@ -316,21 +300,35 @@ const deleteNow = () => {
             :key="it.id"
             class="border-b border-gray-200 hover:bg-primary-50"
           >
-            <td class="px-5 py-4">{{ it.from }}</td>
-            <td class="px-5 py-4">{{ it.subject }}</td>
+            <td class="px-5 py-3">{{ it.long_text || "-" }}</td>
+            <td class="px-5 py-3">{{ it.long_text_en || "-" }}</td>
 
             <td class="px-4 py-3 text-center flex justify-center gap-5">
-              <button @click="openEdit(it)" class="text-yellow-500">
+              <button
+                @click="openEdit(it)"
+                class="text-yellow-500 hover:text-yellow-600"
+              >
                 <Pencil class="w-4 h-4" />
               </button>
 
-              <button @click="openDelete(it)" class="text-red-500">
+              <button
+                @click="openDelete(it)"
+                class="text-red-500 hover:text-red-600"
+              >
                 <Trash2 class="w-4 h-4" />
               </button>
             </td>
           </tr>
+
+          <!-- Empty State -->
+          <tr v-if="paginatedItems.length === 0">
+            <td colspan="3" class="px-5 py-8 text-center text-gray-500">
+              Tidak ada data titelatur
+            </td>
+          </tr>
         </tbody>
       </table>
+
       <!-- PAGINATION -->
       <div class="flex justify-between p-4 text-xs">
         <div>
@@ -392,7 +390,7 @@ const deleteNow = () => {
           >Titelatur Indonesia <span class="text-red-500">*</span></Heading
         >
         <input
-          v-model="editForm.ind"
+          v-model="editForm.long_text"
           class="border px-3 py-2 rounded-md text-sm bg-gray-50"
         />
 
@@ -400,7 +398,7 @@ const deleteNow = () => {
           >Titelatur Inggris <span class="text-red-500">*</span></Heading
         >
         <input
-          v-model="editForm.eng"
+          v-model="editForm.long_text_en"
           class="border px-3 py-2 rounded-md text-sm bg-gray-50"
         />
       </div>
@@ -427,7 +425,7 @@ const deleteNow = () => {
           >Titelatur Indonesia <span class="text-red-500">*</span></Heading
         >
         <input
-          v-model="addForm.ind"
+          v-model="addForm.long_text"
           placeholder="Masukkan Titelatur Indonesia"
           class="border px-3 py-2 rounded-md text-sm bg-gray-50"
         />
@@ -436,7 +434,7 @@ const deleteNow = () => {
           >Titelatur Inggris <span class="text-red-500">*</span></Heading
         >
         <input
-          v-model="addForm.eng"
+          v-model="addForm.long_text_en"
           placeholder="Masukkan Titelatur Inggris"
           class="border px-3 py-2 rounded-md text-sm bg-gray-50"
         />

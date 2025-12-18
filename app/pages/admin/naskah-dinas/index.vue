@@ -8,6 +8,7 @@ import {
   User,
   Pencil,
   Trash2,
+  FileDown
 } from "lucide-vue-next";
 
 import Modal from "~/components/Modal.vue";
@@ -24,17 +25,14 @@ const showEditModal = ref(false);
 
 const items = [
     {
-        label: 'Home',
-        to: '/'
+        label: 'Dashboard',
+        to: '/admin/dashboard'
     },
     {
-        label: 'Components',
-        to: '/docs/components'
+        label: 'Naskah Dinas',
+        to: '/admin/naskah-dinas'
     },
-    {
-        label: 'Breadcrumb',
-        to: '/docs/components/breadcrumb'
-    }
+
 ] satisfies BreadcrumbItem[]
 
 
@@ -282,9 +280,9 @@ function selectEditSifatNaskah(val: string) {
     <div
       class="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-200"
     >
-      <div class="px-4 py-4 border-b border-gray-200">
+      <div class=" border-b border-gray-200">
         <!-- FILTER BAR -->
-        <div class="flex gap-4 mb-6 items-center flex-wrap">
+        <div class="flex gap-4 p-3 items-center flex-wrap">
           <button
             @click="toggleSort"
             class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
@@ -363,12 +361,18 @@ function selectEditSifatNaskah(val: string) {
               class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
             />
           </div>
+          <button
+            class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+          >
+            <FileDown class="w-4 h-4" />
+            Export
+          </button> 
         </div>
 <!-- LIST TABLE -->
 <div class="overflow-x-auto">
   <table class="w-full border-collapse text-sm">
     <thead>
-      <tr class="bg-blue-100 text-gray-600 text-left">
+      <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
         <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Tertuju</th>
         <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Asal Naskah</th>
         <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Jabatan</th>

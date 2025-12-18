@@ -1,89 +1,158 @@
 // ~/composables/useInbox.ts
-import { ref, watch, isRef } from 'vue'
+import { ref, watch, isRef } from "vue";
+import { useApi } from "~/composables/useApi";
 
-export function useInbox(positionId) {
-  const items = ref([])
-  const pending = ref(false)
-  const error = ref(null)
+const formatDateTime = (value: string | null | undefined) => {
+  if (!value) return "-";
 
-  const fetchInbox = async (id) => {
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "-";
+
+  const tanggal = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+
+  const jam = new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+
+  return `${tanggal} ${jam}`;
+};
+
+export function useInbox(positionId: any) {
+  const { apiGet, apiPut, apiPatch } = useApi();
+
+  const items = ref<any[]>([]);
+  const pending = ref(false);
+  const error = ref<any>(null);
+
+  const fetchInbox = async (id: string | null) => {
     if (!id) {
-      items.value = []
-      return
+      items.value = [];
+      return;
     }
-    pending.value = true
-    error.value = null
+
+    pending.value = true;
+    error.value = null;
 
     try {
-      const token = (typeof window !== 'undefined')
-        ? localStorage.getItem('token')
-        : null
+      const res = await apiGet(
+        `/naskah_sirkulasi/inbox/${encodeURIComponent(id)}`,
+      );
 
-      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const rawItems = res?.data?.items || [];
 
-      const res = await $fetch(
-        `http://172.20.16.115:3011/naskah_sirkulasi/inbox/${encodeURIComponent(id)}`,
-        { method: 'GET', headers }
-      )
+      items.value = rawItems.map((it: any) => {
+        const position = it.pengirim?.position_text || "-";
+        const name = it.pengirim?.nama || "-";
 
-      const rawItems = res?.data?.items || []
+        return {
+          id: it.id_sirkulasi,
+          naskahId: it.id_naskah,
 
-items.value = rawItems.map(it => ({
-  id: it.id_sirkulasi,
-  naskahId: it.id_naskah,
-  category: it.jenis,                  // ND, SDI, SDE, DI, KA
-  category_label: it.jenis_label,      // “Nota Dinas”
-  nomor: it.nomor,
-  tanggal: it.tanggal,
-  // subject tetap untuk daftar singkat
-  subject: (it.perihal || it.nomor || '').toString().trim(),
+          category: it.jenis,
+          category_label: it.jenis_label,
+          nomor: it.nomor,
+          date: formatDateTime(it.tanggal),
+          subject: (it.perihal || it.nomor || "").toString().trim(),
 
-  // --- tambahan untuk template detail ---
-  // Catatan yang Anda minta: ambil dari perihal
-  note: (it.perihal || '').toString().trim(),
+          from: position,
+          fromPosition: position,
+          fromName: name,
 
-  // body: kalau nanti mau isi lengkap (fallback ke perihal)
-  body: (it.body || it.isi || it.perihal || '').toString().trim(),
+          initial:
+            name !== "-"
+              ? name
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()
+              : "?",
 
-  sifat: it.sifat,
-  status: it.status,
-  lampiran: it.lampiran,
+          // Status
+          isRead: it.status_baca === "terbaca",
+          isStarred: it.is_favorit,
+          isArsip: it.is_arsip,
+          isNote: it.is_note,
 
-  // PENGIRIM
-  from: it.pengirim?.nama || "-",
-  pengirim: it.pengirim,
+          pengirim: it.pengirim,
+          penerima: it.penerima
+            ? Array.isArray(it.penerima)
+              ? it.penerima
+              : [it.penerima]
+            : [],
 
-  // STATUS
-  isRead: it.status_baca === "sudah_dibaca",
-  read_time: it.read_time,
-  isStarred: it.is_favorit,
-  isFavorit: it.is_favorit,
-  isArsip: it.is_arsip,
-  isNote: it.is_note,
-
-    // PENERIMA (kepada user yang login)
-  recipientName: it.penerima?.nama || "-",
-  recipient: it.penerima,
-
-  raw: it
-}))
+          raw: it,
+        };
+      });
     } catch (err) {
-      console.error("useInbox error:", err)
-      error.value = err
-      items.value = []
+      console.error("useInbox error:", err);
+      error.value = err;
+      items.value = [];
     } finally {
-      pending.value = false
+      pending.value = false;
     }
-  }
+  };
 
-if (isRef(positionId)) {
-  watch(positionId, (newId) => fetchInbox(newId), { immediate: true })
-}
+  if (isRef(positionId)) {
+    watch(positionId, (newId) => fetchInbox(newId), { immediate: true });
+  }
 
   const refresh = () => {
-    const id = isRef(positionId) ? positionId.value : positionId
-    return fetchInbox(id)
-  }
+    const id = isRef(positionId) ? positionId.value : positionId;
+    return fetchInbox(id);
+  };
 
-  return { items, pending, error, refresh }
+  const markAsRead = async (mail: any, positionId: string) => {
+    if (mail.isRead) return;
+
+    try {
+      await apiPut("/naskah_sirkulasi/update-read-status", {
+        id_naskah: mail.naskahId,
+        position_id: positionId,
+      });
+
+      mail.isRead = true;
+      mail.raw.status_baca = "terbaca";
+      mail.raw.read_time = new Date().toISOString();
+    } catch (err) {
+      console.error("Gagal update status baca:", err);
+    }
+  };
+
+  const toggleFlag = async (
+    mail: any,
+    flagType: "favorit" | "arsip" | "note",
+  ) => {
+    try {
+      const res: any = await apiPatch("/naskah_sirkulasi/toggle-flag", {
+        id_sirkulasi: mail.id,
+        flag_type: flagType,
+      });
+
+      const newValue = res?.data?.new_value;
+
+      // Update state lokal
+      if (flagType === "favorit") mail.isStarred = newValue;
+      if (flagType === "arsip") mail.isArsip = newValue;
+      if (flagType === "note") mail.isNote = newValue;
+
+      // sync raw
+      if (mail.raw) {
+        if (flagType === "favorit") mail.raw.is_favorit = newValue;
+        if (flagType === "arsip") mail.raw.is_arsip = newValue;
+        if (flagType === "note") mail.raw.is_note = newValue;
+      }
+    } catch (err) {
+      console.error("Gagal toggle flag:", flagType, err);
+    }
+  };
+
+  return { items, pending, error, refresh, markAsRead, toggleFlag };
 }
