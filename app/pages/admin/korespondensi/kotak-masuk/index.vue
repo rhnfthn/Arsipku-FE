@@ -648,11 +648,8 @@ const penerimaDetail = computed(() => {
           <div class="space-y-4 mb-8">
             <div>
               <div class="text-sm text-gray-500 mb-0.5">Kepada</div>
-              <div v-for="(p, i) in selected.penerima" :key="i" class="mb-2">
-                <div class="text-xs">{{ p.nama }} – {{ p.position_text }}</div>
-                <div class="text-xs">
-                  {{ p.organization_text }}
-                </div>
+              <div v-for="(p, i) in selected.kepada" :key="i" class="mb-2">
+                <div class="text-xs">{{ p.position_text }}</div>
               </div>
             </div>
             <div>
