@@ -15,53 +15,30 @@
   </div>
 
   <div
-    class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto mt-5"
+    class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white mt-5"
   >
-    <!-- Controls -->
-    <div class="sticky top-0 bg-white z-40 flex flex-wrap justify-between p-3">
-      <div class="flex flex-wrap gap-3 items-center">
-        <button
-          @click="resetFilter"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
+    <div class="flex flex-wrap gap-4 items-center p-3">
+      <button
+        @click="refreshData"
+        class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+      >
+        <RotateCcw class="w-4 h-4" />
+      </button>
 
-        <!-- Search with Icon -->
-        <div class="relative">
-          <Search class="w-4 h-4 text-gray-400 absolute left-2 top-2.5" />
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Cari username / nama / email..."
-            class="bg-gray-50 border border-gray-200 text-sm pl-8 pr-3 py-1.5 rounded-lg"
-          />
-        </div>
-
-        <!-- Select Filter -->
-        <select
-          v-model="filters.role"
-          class="bg-gray-100 text-sm px-3 py-1.5 rounded-lg"
-        >
-          <option value="">Semua Role</option>
-          <option value="Admin">Admin</option>
-          <option value="User">User</option>
-        </select>
-
-        <select
-          v-model="filters.status"
-          class="bg-gray-100 text-sm px-3 py-1.5 rounded-lg"
-        >
-          <option value="">Semua Status</option>
-          <option value="Aktif">Aktif</option>
-          <option value="Tidak Aktif">Tidak Aktif</option>
-        </select>
+      <div class="relative flex-1 w-full px-2">
+        <Search
+          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          v-model="filters.search"
+          type="text"
+          placeholder="Cari perihal / nomor..."
+          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+        />
       </div>
 
-      <!-- Export Button - Right Side -->
       <button
-        class="flex items-center gap-2 bg-primary text-white text-sm font-medium px-4 py-1.5 rounded-lg transition"
-        @click="exportData"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
       >
         <FileDown class="w-4 h-4" />
         Export
@@ -198,7 +175,7 @@ const openDelete = (user) => {
 
 const items = [
   { label: "Dashboard", to: "/" },
-  { label: "Akun", to: "/admin/master/akun" },
+  { label: "Manajemen Akun", to: "/admin/master/akun" },
 ];
 
 const filters = ref({

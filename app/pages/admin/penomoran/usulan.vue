@@ -144,15 +144,36 @@
           <tbody>
             <tr
               v-for="row in paginatedRows"
-              :key="row.id"
+              :key="row.id_usulan"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
               @click="openRowModal(row)"
             >
-              <td class="px-5 py-4">{{ row.id }}</td>
+              <td class="px-5 py-4 text-xs">{{ row.id_usulan }}</td>
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penandatangan }}</td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[350px]">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 cursor-help"
+                  >
+                    {{ row.perihal }}
+                  </p>
+
+                  <!-- Tooltip -->
+                  <div
+                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
+                  >
+                    {{ row.perihal }}
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[300px]">
+                  <p class="whitespace-normal break-words line-clamp-3">
+                    {{ row.penandatangan }}
+                  </p>
+                </div>
+              </td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
@@ -261,7 +282,7 @@
         <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
       </div>
 
-      <!-- ✅ Klasifikasi dengan format "CODE - TEXT" -->
+      <!-- Klasifikasi -->
       <div class="pb-2 border-b border-gray-200">
         <p class="text-gray-500 text-xs">Klasifikasi</p>
         <p class="font-medium mt-1">
@@ -384,13 +405,34 @@
     <!-- FOOTER -->
     <template #footer>
       <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
+        <!-- Show Kirim button only if status is "Belum Diajukan" -->
         <button
+          v-if="selectedRow?.status === 'Belum Diajukan'"
           @click="submitUsulan"
           :disabled="isLoadingBooking || isDeletingUsulan"
           class="px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isLoadingBooking ? "Mengirim..." : "Kirim Usulan" }}
         </button>
+
+        <!-- Show status badge if not "Belum Diajukan" -->
+        <div v-else class="flex items-center gap-2">
+          <span
+            :class="[
+              'px-3 py-1 rounded-full text-xs font-medium',
+              {
+                'bg-yellow-100 text-yellow-700':
+                  selectedRow?.status === 'Menunggu Verifikasi',
+                'bg-green-100 text-green-700':
+                  selectedRow?.status === 'Disetujui',
+                'bg-red-100 text-red-700': selectedRow?.status === 'Ditolak',
+              },
+            ]"
+          >
+            {{ selectedRow?.status }}
+          </span>
+        </div>
+
         <button
           @click="hapusUsulan"
           :disabled="isLoadingBooking || isDeletingUsulan"
@@ -401,6 +443,16 @@
       </div>
     </template>
   </Modal>
+  <ConfirmPopup
+    v-model="openConfirmDelete"
+    type="danger"
+    title="Hapus Usulan?"
+    message="Usulan yang dihapus tidak dapat dikembalikan. Apakah Anda yakin?"
+    confirm-text="Ya, Hapus"
+    cancel-text="Batal"
+    :is-loading="isDeletingUsulan"
+    @confirm="confirmDeleteUsulan"
+  />
 </template>
 
 <script setup lang="ts">
@@ -412,10 +464,11 @@ import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
 
 const { user, getProfile } = useAuth();
 const {
-  savePenomoran,
+  createUsulanDraft,
   isLoadingPenomoran,
   deleteUsulan,
   getPersonWithPosition,
@@ -435,9 +488,9 @@ const loading = ref<boolean>(true);
 const files = ref([]);
 const uploadedFiles = ref([]);
 
-// ✅ Person mapping
+// Person mapping
 const personMap = ref(new Map());
-// ✅ Klasifikasi mapping untuk display
+// Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
 
 const fetchPersonMap = async () => {
@@ -458,7 +511,7 @@ const fetchPersonMap = async () => {
   }
 };
 
-// ✅ Fetch klasifikasi map untuk display
+// Fetch klasifikasi map untuk display
 const fetchKlasifikasiMap = async () => {
   try {
     const response = await getKlasifikasi();
@@ -479,7 +532,7 @@ const fetchKlasifikasiMap = async () => {
   }
 };
 
-// ✅ FETCH DATA
+// FETCH DATA
 const fetchData = async () => {
   loading.value = true;
   try {
@@ -495,8 +548,14 @@ const fetchData = async () => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
+      // ✅ Status mapping - Backend sudah mengirim status yang benar
+      // Status dari backend: "Belum Diajukan", "Menunggu Verifikasi", "Disetujui", "Ditolak"
+      let mappedStatus = item.status || "Belum Diajukan";
+
+      console.log(`📊 Item ${item.id}: Status from backend="${item.status}"`);
+
       return {
-        id: item.id,
+        id_usulan: item.id_usulan ?? item.id,
         jenis: item.jenis,
         tanggal: item.tanggal,
         perihal: item.perihal,
@@ -506,11 +565,20 @@ const fetchData = async () => {
         klasifikasiDisplay: klasifikasiDisplay,
         pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
         tglUsulan: new Date(item.created_at).toLocaleString("id-ID"),
-        status: item.status,
+        status: mappedStatus,
       };
     });
 
     console.log("✅ Data loaded:", rows.value.length, "rows");
+    console.log("📋 Status summary:", {
+      belumDiajukan: rows.value.filter((r) => r.status === "Belum Diajukan")
+        .length,
+      menungguVerifikasi: rows.value.filter(
+        (r) => r.status === "Menunggu Verifikasi",
+      ).length,
+      disetujui: rows.value.filter((r) => r.status === "Disetujui").length,
+      ditolak: rows.value.filter((r) => r.status === "Ditolak").length,
+    });
   } catch (err) {
     console.error("❌ Gagal fetch data:", err);
     rows.value = [];
@@ -519,12 +587,11 @@ const fetchData = async () => {
   }
 };
 
-// ✅ OPEN ROW MODAL
+// OPEN ROW MODAL
 const openRowModal = async (row) => {
   try {
-    console.log("🔍 Opening row modal for:", row.id);
-
-    const detail = await getDetailUsulan(row.id);
+    console.log("🔍 Opening row modal for:", row.id_usulan);
+    const detail = await getDetailUsulan(row.id_usulan);
 
     console.log("📦 Detail response:", detail);
 
@@ -546,8 +613,13 @@ const openRowModal = async (row) => {
     const klasifikasiDisplay =
       klasifikasiMap.value.get(detail.klasifikasi) || detail.klasifikasi;
 
+    // ✅ Use status from backend directly
+    const mappedStatus = detail.status || "Belum Diajukan";
+
+    console.log(`📊 Modal: Status from backend="${detail.status}"`);
+
     selectedRow.value = {
-      id: detail.id,
+      id_usulan: detail.id_usulan ?? detail.id,
       jenis: detail.jenis,
       jenis_naskah: detail.jenis,
       tanggal: detail.tanggal,
@@ -556,7 +628,7 @@ const openRowModal = async (row) => {
       penandatangan: detail.penandatangan || detail.nama || "-",
       klasifikasi: detail.klasifikasi || "-",
       klasifikasiDisplay: klasifikasiDisplay,
-      status: detail.status || "-",
+      status: mappedStatus,
       nomor_surat: nomorSuratArray,
       template_nomor: detail.template_nomor || "",
     };
@@ -565,7 +637,7 @@ const openRowModal = async (row) => {
     uploadedFiles.value = Array(nomorSuratArray.length).fill(null);
 
     openDetail.value = true;
-    console.log("✅ Modal opened:", selectedRow.value);
+    console.log("✅ Modal opened with status:", selectedRow.value.status);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
     toast.add({
@@ -576,7 +648,7 @@ const openRowModal = async (row) => {
   }
 };
 
-// ✅ HANDLE FILE UPLOAD
+// HANDLE FILE UPLOAD
 const handleFile = async (index: number, e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -599,7 +671,7 @@ const toBase64 = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-// ✅ HANDLE COPY
+// HANDLE COPY
 const handleCopy = (value: string) => {
   if (!value) return;
 
@@ -613,7 +685,7 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ✅ HANDLE PREVIEW
+// HANDLE PREVIEW
 function handlePreview(data: any) {
   selectedRow.value = data;
   openAdd.value = false;
@@ -625,16 +697,16 @@ function handlePreview(data: any) {
   uploadedFiles.value = Array(length).fill(null);
 }
 
-// ✅ SUBMIT USULAN
+// SUBMIT USULAN - Updates status to "Menunggu Verifikasi"
 const submitUsulan = async () => {
   if (!selectedRow.value) return;
 
-  // ambil file yang benar-benar diupload
+  // Ambil file yang benar-benar diupload
   const uploadedFiles = files.value.filter((f) => f && f.file_text);
 
   try {
-    await submitBooking(selectedRow.value.id, {
-      files: uploadedFiles.length > 0 ? uploadedFiles : [], // opsional
+    await submitBooking(selectedRow.value.id_usulan, {
+      files: uploadedFiles.length > 0 ? uploadedFiles : [],
     });
 
     openDetail.value = false;
@@ -642,7 +714,8 @@ const submitUsulan = async () => {
 
     toast.add({
       title: "Berhasil",
-      description: "Usulan berhasil dikirim",
+      description:
+        "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'",
       color: "green",
     });
   } catch (e) {
@@ -655,35 +728,98 @@ const submitUsulan = async () => {
   }
 };
 
-// ✅ HAPUS USULAN
-const hapusUsulan = async () => {
-  if (!selectedRow.value?.id) return;
+// HAPUS USULAN
+const openConfirmDelete = ref(false);
+const idToDelete = ref<string | null>(null);
+const hapusUsulan = () => {
+  if (!selectedRow.value?.id_usulan) return;
 
-  if (!confirm("Apakah Anda yakin ingin menghapus usulan ini?")) {
-    return;
-  }
+  idToDelete.value = selectedRow.value.id_usulan;
+  openConfirmDelete.value = true;
+};
 
-  const id = selectedRow.value.id;
+// const hapusUsulan = async () => {
+//   if (!selectedRow.value?.id) return;
+
+//   idToDelete.value = selectedRow.value.id;
+//   openConfirmDelete.value = true;
+
+//   const id = selectedRow.value.id;
+//   isDeletingUsulan.value = true;
+
+//   try {
+//     await deleteUsulan(id);
+//     openDetail.value = false;
+//     await fetchData();
+
+//     toast.add({
+//       title: "Berhasil",
+//       description: "Data berhasil dihapus",
+//       color: "green",
+//     });
+//   } catch (err) {
+//     console.error("❌ Error hapus usulan:", err);
+//   } finally {
+//     isDeletingUsulan.value = false;
+//   }
+// };
+const confirmDeleteUsulan = async () => {
+  if (!idToDelete.value) return;
+
   isDeletingUsulan.value = true;
 
   try {
-    await deleteUsulan(id);
-    openDetail.value = false;
-    await fetchData();
+    await deleteUsulan(idToDelete.value);
 
     toast.add({
       title: "Berhasil",
-      description: "Data berhasil dihapus",
+      description: "Usulan berhasil dihapus",
       color: "green",
     });
-  } catch (err) {
-    console.error("❌ Error hapus usulan:", err);
+
+    openConfirmDelete.value = false;
+    openDetail.value = false;
+    idToDelete.value = null;
+
+    await fetchData();
   } finally {
     isDeletingUsulan.value = false;
   }
 };
 
-// ✅ HANDLE SUBMIT FROM MODAL
+// const confirmDeleteUsulan = async () => {
+//   if (!idToDelete.value) return;
+
+//   isDeletingUsulan.value = true;
+
+//   try {
+//     await deleteUsulan(idToDelete.value);
+
+//     toast.add({
+//       title: "Berhasil",
+//       description: "Usulan berhasil dihapus",
+//       color: "green",
+//     });
+
+//     openConfirmDelete.value = false;
+//     openDetail.value = false;
+//     idToDelete.value = null;
+
+//     await fetchData();
+//   } catch (err) {
+//     console.error("❌ Error hapus usulan:", err);
+
+//     toast.add({
+//       title: "Gagal",
+//       description: "Gagal menghapus usulan",
+//       color: "red",
+//     });
+//   } finally {
+//     isDeletingUsulan.value = false;
+//   }
+// };
+
+// HANDLE SUBMIT FROM MODAL - Creates usulan with "Belum Diajukan" status
 const handleSubmitFromModal = async (payload: any) => {
   try {
     console.log("📤 Payload diterima dari modal:", payload);
@@ -729,13 +865,23 @@ const handleSubmitFromModal = async (payload: any) => {
       JSON.stringify(formattedPayload, null, 2),
     );
 
-    await savePenomoran(formattedPayload);
+    const response = await createUsulanDraft(formattedPayload);
+    console.log("📥 Response from createUsulanDraft:", response);
+
+    // ✅ Refresh data dari server untuk mendapatkan status terbaru
     await fetchData();
     currentPage.value = 1;
 
+    // ✅ Cek status data yang baru saja dibuat
+    const newItem = rows.value.find(
+      // (r) => r.id === response?.id || r.perihal === formattedPayload.perihal,
+      (r) => r.id_usulan === response?.id_usulan,
+    );
+    console.log("🆕 New item after fetch:", newItem);
+
     toast.add({
       title: "Berhasil",
-      description: "Usulan berhasil ditambahkan",
+      description: `Usulan berhasil ditambahkan dengan status '${newItem?.status || "Belum Diajukan"}'`,
       color: "green",
     });
   } catch (err) {
@@ -755,7 +901,7 @@ const handleSubmitFromModal = async (payload: any) => {
   }
 };
 
-// ✅ FORMAT DATE
+// FORMAT DATE
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -765,7 +911,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-// ✅ INIT
+// INIT
 onMounted(async () => {
   loading.value = true;
 
@@ -786,7 +932,7 @@ const breadcrumbs = [
 
 /* TABLE CONFIG */
 const headers = [
-  { label: "ID", key: "id", sortable: true },
+  { label: "ID Usulan", key: "id_usulan", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
@@ -810,7 +956,7 @@ const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
 
-/* SORT STATE - ✅ Default DESC by Tanggal Usulan */
+/* SORT STATE - Default DESC by Tanggal Usulan */
 const sortBy = ref<string>("tglUsulan");
 const sortDir = ref<"asc" | "desc">("desc");
 

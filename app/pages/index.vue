@@ -236,10 +236,10 @@ const getResponsiveLogoSmall = () => {
 let resizeHandler = null;
 
 onMounted(() => {
-  setTimeout(() => (loaded.value = true), 50);
+  setTimeout(() => (loaded.value = true), 30);
 
   // logo besar fade in
-  setTimeout(() => (logoClass.value = "opacity-100"), 100);
+  setTimeout(() => (logoClass.value = "opacity-100"), 80);
 
   resizeHandler = () => {
     if (textClass.value === "") {
@@ -267,23 +267,23 @@ onMounted(() => {
   }, 1000);
 
   // sequence pesawat
-  const startAt = 2000;
+  const startAt = 1500;
   setTimeout(() => {
     showPlane.value = true;
     setTimeout(() => (planeAppear.value = true), 50);
-    setTimeout(() => (planeTakeoff.value = true), 50 + 1200 + 800);
+    setTimeout(() => (planeTakeoff.value = true), 50 + 1000 + 500);
     setTimeout(
       () => {
         showText.value = true;
       },
-      50 + 1200 + 800 + 600,
+      50 + 1000 + 500 + 600,
     );
 
     setTimeout(
       () => {
         showOnboarding.value = true;
       },
-      50 + 1200 + 800 + 800,
+      50 + 1000 + 800 + 800,
     );
   }, startAt);
 });
@@ -373,14 +373,14 @@ onUnmounted(() => {
   bottom: -300px;
   opacity: 1;
   transition:
-    bottom 1.2s ease-out,
+    bottom 1s ease-out,
     opacity 0.8s ease-out;
 }
 .plane-takeoff {
   bottom: 120%;
   opacity: 1;
   transform: translateX(-50%);
-  transition: bottom 1.2s cubic-bezier(0.2, 0.8, 0.1, 1);
+  transition: bottom 1s cubic-bezier(0.2, 0.8, 0.1, 1);
 }
 
 .page-container {
