@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div>
     <div class="flex justify-between">
       <div
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
@@ -21,9 +21,9 @@
 
     <!-- Table -->
     <div
-      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white mt-5"
     >
-      <div class="flex flex-wrap gap-2 p-2 items-center">
+      <div class="flex flex-wrap gap-2 p-3 items-center">
         <button
           @click="refreshData"
           class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
@@ -31,7 +31,7 @@
           <RotateCcw class="w-4 h-4" />
         </button>
 
-        <div class="relative flex-1 w-full my-3 px-2">
+        <div class="relative flex-1 w-full">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
@@ -79,7 +79,7 @@
           <tr
             v-for="item in filteredData"
             :key="item.id"
-            class="hover:bg-blue-50 transition-colors"
+            class="hover:bg-blue-50 transition-colors border-b border-b-gray-200"
           >
             <td class="px-4 py-3">
               {{ item.klasifikasi }} - {{ item.klasifikasi_teks }}

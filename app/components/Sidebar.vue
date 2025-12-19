@@ -297,50 +297,12 @@ watch(
         label: "Master Data",
         icon: "i-lucide-database",
         children: [
-          { label: "Akun", to: "/admin/master/akun" },
-          { label: "Hak Akses", to: "/admin/master/hak-akses" },
-        ],
-      });
-    }
-
-    adminMenuAdministrasi.value = base;
-  },
-  { immediate: true },
-);
-
-watch(
-  () => user.value,
-  (val) => {
-    const base = [
-      { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
-      {
-        label: "Titelatur Inggris",
-        to: "/admin/titelatur",
-        icon: "i-lucide-languages",
-      },
-      {
-        label: "Penomoran",
-        icon: "i-lucide-hash",
-        children: [
-          { label: "Usulan", to: "/admin/penomoran/usulan" },
-          { label: "Verifikasi", to: "/admin/penomoran/verifikasi" },
-          { label: "Penomoran", to: "/admin/penomoran" },
-        ],
-      },
-      {
-        label: "Naskah Dinas",
-        to: "/admin/naskah-dinas",
-        icon: "i-lucide-file-text",
-      },
-    ];
-
-    if (val?.role === "superadmin") {
-      base.push({
-        label: "Master Data",
-        icon: "i-lucide-database",
-        children: [
-          { label: "Akun", to: "/admin/master/akun" },
-          { label: "Hak Akses", to: "/admin/master/hak-akses" },
+          {
+            label: "Akun",
+            to: "/admin/master/akun",
+            icon: "i-lucide-user-round",
+          },
+          { label: "Tertuju Eksternal", to: "/admin/master/tertuju-eksternal" },
         ],
       });
     }

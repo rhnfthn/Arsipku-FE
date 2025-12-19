@@ -417,7 +417,7 @@ const confirmDelete = () => {
           <tr
             v-for="(row, index) in sortedData"
             :key="index"
-            class="hover:bg-blue-50 dark:hover:bg-gray-800"
+            class="hover:bg-blue-50 dark:hover:bg-gray-800 border-b border-b-gray-200"
           >
             <!-- Tanggal -->
             <td class="px-3 py-2 whitespace-nowrap">
