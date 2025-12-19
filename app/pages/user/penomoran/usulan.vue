@@ -3,9 +3,9 @@
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
-          Daftar Usulan Dokumen
-        </Heading>
+        <Heading variant="heading6b" class="text-mobile-md"
+          >Daftar Usulan Dokumen</Heading
+        >
         <PageHeader :items="breadcrumbs" />
       </div>
 
@@ -45,10 +45,7 @@
             class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-1 rounded-lg min-w-[100px]"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <span class="text-sm">
-              {{ filterStatus || "Semua" }}
-            </span>
-
+            <span class="text-sm">{{ filterStatus || "Semua" }}</span>
             <svg
               :class="[
                 'w-4 h-4 transition-transform duration-200',
@@ -148,7 +145,7 @@
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
               @click="openRowModal(row)"
             >
-              <td class="px-5 py-4 text-xs">{{ row.id }}</td>
+              <td class="px-5 py-4 text-xs">{{ row.displayId }}</td>
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">{{ row.perihal }}</td>
@@ -156,7 +153,6 @@
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
-
               <td class="px-5 py-3">
                 <span
                   :class="[
@@ -232,30 +228,19 @@
   </div>
 
   <!-- MODAL ROW DETAIL -->
-  <Modal v-model="openPreview" :hideDefaultFooter="true">
+  <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
     <!-- TITLE -->
     <template #title>
       <div
         class="flex items-center justify-between w-full px-6 pt-6 pb-4 border-b border-gray-200"
       >
+        <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
+          {{ selectedRow?.perihal }}
+        </h2>
         <button
           @click="openPreview = false"
           class="text-gray-600 hover:text-gray-800"
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+        ></button>
 
         <span class="text-sm text-gray-500">
           {{ formatDateTime(new Date()) }}
@@ -268,37 +253,40 @@
       v-if="selectedRow"
       class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
     >
-      <!-- Judul -->
-      <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
-        {{ selectedRow?.perihal }}
-      </h2>
-
       <!-- Detail Info -->
       <div class="space-y-4 text-base">
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Tanggal</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.tanggal
-          }}</span>
+        <!-- Tanggal -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Tanggal</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.tanggal }}
+          </p>
         </div>
-
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Pengirim</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.pengirim || selectedRow.penanda
-          }}</span>
+        <!-- Pengirim -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-500 text-xs">Penandatangan</p>
+          <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
         </div>
-
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Klasifikasi</span>
-          <span class="font-medium text-gray-900">{{
-            selectedRow.klasifikasi
-          }}</span>
+        <!-- Klasifikasi -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Klasifikasi</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.klasifikasi }}
+          </p>
         </div>
-
-        <div class="flex">
-          <span class="text-gray-700 w-40 flex-shrink-0">Jenis Naskah</span>
-          <span class="font-medium text-gray-900">{{ selectedRow.jenis }}</span>
+        <!-- Jenis Naskah -->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Jenis Naskah</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.jenis }}
+          </p>
+        </div>
+        <!-- Pengusul-->
+        <div class="pb-2 border-b border-gray-200">
+          <p class="text-gray-600 text-xs">Penandatangan</p>
+          <p class="font-medium text-gray-900 mt-1">
+            {{ selectedRow.penanda }}
+          </p>
         </div>
       </div>
 
@@ -321,7 +309,6 @@
               <span class="text-sm text-gray-600 font-medium mr-3">{{
                 idx + 1
               }}</span>
-
               <input
                 type="text"
                 :value="detail.nomor || '-'"
@@ -357,7 +344,6 @@
             >
               <Copy class="w-4 h-4 text-gray-600" />
             </button>
-
             <div v-else class="w-[52px]"></div>
           </div>
         </div>
@@ -427,24 +413,20 @@ import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import { useToast } from "#imports";
-import { usePenomoran } from "~/composables/usePenomoran";
+import { useAuth } from "~/composables/useAuth";
 import AddUsulan from "~/components/AddUsulan.vue";
 
 const toast = useToast();
-
-// Composable & API
-const { getPersonWithPosition } = usePenomoran();
 const { get, post, del } = useApi();
+const { user, getProfile } = useAuth();
 
-/* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
   { label: "Usulan", to: "/admin/penomoran/usulan" },
 ];
 
-/* TABLE CONFIG */
 const headers = [
-  { label: "ID", key: "id", sortable: true },
+  { label: "ID", key: "displayId", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
@@ -467,16 +449,20 @@ const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
-
 const selectedRow = ref<any>(null);
 const isProcessing = ref(false);
-
 const loading = ref<boolean>(true);
 
-/* SORT STATE */
-const sortBy = ref<string>("id");
-const sortDir = ref<"asc" | "desc">("asc");
+const filterStatus = ref<string>("Semua");
+const openFilterStatus = ref<boolean>(false);
+const openPreview = ref(false);
+const openAdd = ref(false);
+const rows = ref<any[]>([]);
+const personMap = ref(new Map());
 
+// SORTING
+const sortBy = ref<string>("tglUsulan");
+const sortDir = ref<"asc" | "desc">("desc");
 const sort = (col: string) => {
   if (sortBy.value === col) {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -486,70 +472,71 @@ const sort = (col: string) => {
   }
 };
 
-/* STATUS FILTER */
-const filterStatus = ref<string>("Semua");
-const openFilterStatus = ref<boolean>(false);
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
 };
 
-/* Modal control */
-const openPreview = ref(false);
-const openAdd = ref(false);
-
-/* Data rows */
-const rows = ref<any[]>([]);
-
-// Person Map
-const personMap = ref(new Map());
-
-// Get user position from auth/store
-const userPosition = ref<string>("70016786"); // Default, replace with actual from auth
-
 const fetchPersonMap = async () => {
   try {
-    const response = await getPersonWithPosition();
-    const list = Array.isArray(response) ? response : (response.data ?? []);
+    const response = await get("/person/with-position/all");
+    console.log("📥 Person Map Response:", response);
 
-    list.forEach((item) => {
-      personMap.value.set(item.persnum, {
+    const list = response?.data || [];
+
+    list.forEach((item: any) => {
+      personMap.value.set(String(item.position), {
         nama: item.nama,
         position_text: item.position_text,
       });
     });
+
+    console.log("✅ Person Map loaded:", personMap.value.size, "entries");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
   }
 };
 
-// ✅ GET DATA DARI API
 const fetchData = async () => {
   loading.value = true;
 
   try {
-    // GET /nomor-request/:id_position
-    const res = await get(`/nomor-request/${userPosition.value}`);
+    if (!user.value) {
+      await getProfile();
+    }
+
+    if (!user.value?.position) {
+      toast.add({
+        title: "Error",
+        description: "User position tidak ditemukan",
+        color: "red",
+      });
+      return;
+    }
+
+    const userPositionId = user.value.position;
+    console.log("🔍 Fetching usulan for position:", userPositionId);
+
+    const res = await get(`/nomor-request/${userPositionId}`);
+    console.log("📥 API Response:", res);
 
     if (!res?.success) {
       toast.add({
         title: "Gagal",
-        description: "Tidak dapat mengambil data usulan",
+        description: res?.message || "Tidak dapat mengambil data usulan",
         color: "red",
       });
       return;
     }
 
     const rawData = res.data || [];
+    console.log("📊 Raw data usulan:", rawData);
 
-    rows.value = rawData.map((item: any) => {
-      // Tentukan status berdasarkan details
+    rows.value = rawData.map((item: any, index: number) => {
       let status = "Belum Diajukan";
 
       if (item.details && item.details.length > 0) {
-        const hasBooking = item.details.some(
-          (d: any) => d.status === "booking",
-        );
+        const hasBooking = item.details.some((d: any) => d.status === "hangus");
         const hasTerpakai = item.details.some(
           (d: any) => d.status === "terpakai",
         );
@@ -566,31 +553,39 @@ const fetchData = async () => {
         }
       }
 
-      const person = personMap.value.get(item.position);
+      const person = personMap.value.get(String(item.position));
+      console.log(`🔍 Looking up position ${item.position}:`, person);
 
       return {
         id: item.id,
+        displayId: `#${String(index + 1).padStart(3, "0")}`,
         jenis: item.jenis,
         tanggal: formatTanggal(item.tanggal),
         perihal: item.perihal,
         penanda: person?.position_text || "-",
         jumlah: item.jumlah,
-        pengusul: person?.nama || "-",
+        pengusul: person?.nama || user.value?.nama || "-",
         tglUsulan: formatDateTime(item.created_at),
         status: status,
         klasifikasi: item.klasifikasi,
         details: item.details || [],
-        // Keep original data
         _raw: item,
       };
     });
 
     console.log("✅ Data usulan berhasil dimuat:", rows.value);
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error fetch data usulan:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Tidak dapat mengambil data usulan";
+
     toast.add({
       title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data usulan",
+      description: errorMsg,
       color: "red",
     });
   } finally {
@@ -598,35 +593,26 @@ const fetchData = async () => {
   }
 };
 
-/* ✅ OPEN ROW MODAL */
 const openRowModal = (row: any) => {
   selectedRow.value = { ...row };
   openPreview.value = true;
 };
 
-/* ✅ HANDLE SUBMIT USULAN BARU */
 const handleSubmitUsulan = async (data: any) => {
   console.log("✅ Submit usulan baru:", data);
-
-  // Refresh data setelah submit
   await fetchData();
-
   openAdd.value = false;
 };
 
-/* ✅ HANDLE PREVIEW */
 const handlePreview = (data: any) => {
   console.log("📄 Preview data:", data);
 };
 
-/* ✅ SUBMIT USULAN (Booking) */
 const submitUsulan = async () => {
   if (!selectedRow.value) return;
-
   isProcessing.value = true;
 
   try {
-    // POST /admin/nomor-request/:id/booking
     const res = await post(
       `/admin/nomor-request/${selectedRow.value.id}/booking`,
       {},
@@ -638,7 +624,6 @@ const submitUsulan = async () => {
         description: "Usulan berhasil dikirim ke verifikasi",
         color: "green",
       });
-
       openPreview.value = false;
       await fetchData();
     } else {
@@ -646,7 +631,6 @@ const submitUsulan = async () => {
     }
   } catch (error: any) {
     console.error("❌ Error submit usulan:", error);
-
     const errorMsg =
       error.response?.data?.message ||
       error.response?.data?.error ||
@@ -663,16 +647,12 @@ const submitUsulan = async () => {
   }
 };
 
-/* ✅ HAPUS USULAN */
 const hapusUsulan = async () => {
   if (!selectedRow.value) return;
-
   if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-
   isProcessing.value = true;
 
   try {
-    // DELETE /nomor-request/:id
     const res = await del(`/nomor-request/${selectedRow.value.id}`);
 
     if (res?.success) {
@@ -681,7 +661,6 @@ const hapusUsulan = async () => {
         description: "Usulan berhasil dihapus",
         color: "green",
       });
-
       openPreview.value = false;
       await fetchData();
     } else {
@@ -689,7 +668,6 @@ const hapusUsulan = async () => {
     }
   } catch (error: any) {
     console.error("❌ Error hapus usulan:", error);
-
     const errorMsg =
       error.response?.data?.message ||
       error.response?.data?.error ||
@@ -706,7 +684,6 @@ const hapusUsulan = async () => {
   }
 };
 
-/* Handle Copy */
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   toast.add({
@@ -717,7 +694,6 @@ const handleCopy = (value: string) => {
   });
 };
 
-/* FILTER + SEARCH */
 const filteredRows = computed(() => {
   const s = search.value.toLowerCase();
   const fs = filterStatus.value;
@@ -731,7 +707,6 @@ const filteredRows = computed(() => {
   });
 });
 
-/* SORT */
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
     const A = String(a[sortBy.value] ?? "").toLowerCase();
@@ -742,7 +717,6 @@ const sortedRows = computed(() => {
   });
 });
 
-/* PAGINATION */
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return sortedRows.value.slice(start, start + rowsPerPage.value);
@@ -752,12 +726,10 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
-/* WATCHERS */
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
 });
 
-/* Format helpers */
 function formatTanggal(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -778,7 +750,6 @@ function formatDateTime(dateStr: string | Date) {
   })}`;
 }
 
-/* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
@@ -788,8 +759,8 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-/* Load data on mount */
 onMounted(async () => {
+  if (!user.value) await getProfile();
   await fetchPersonMap();
   await fetchData();
   document.addEventListener("click", handleDocumentClick);

@@ -19,12 +19,11 @@
 
       <!-- FORM -->
       <div class="px-5 flex flex-col gap-4 pb-4">
-        <!-- ✅ Tanggal Surat - Simple Date Picker -->
+        <!-- Tanggal Surat -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Tanggal Surat <span class="text-red-500">*</span></Heading
-          >
-
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Tanggal Surat <span class="text-red-500">*</span>
+          </Heading>
           <input
             type="date"
             v-model="tanggalString"
@@ -33,12 +32,11 @@
           />
         </div>
 
-        <!-- ✅ DROPDOWN KLASIFIKASI DENGAN FORMAT "CODE - TEXT" -->
+        <!-- Klasifikasi -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium">
             Klasifikasi <span class="text-red-500">*</span>
           </Heading>
-
           <div class="relative" ref="klasifikasiRef">
             <input
               v-model="klasifikasiSearch"
@@ -47,7 +45,6 @@
               :placeholder="form.klasifikasiDisplay || 'Cari klasifikasi...'"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             />
-
             <div
               v-if="openKlasifikasi && filteredKlasifikasi.length > 0"
               class="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
@@ -61,7 +58,6 @@
                 {{ item.display }}
               </button>
             </div>
-
             <p
               v-if="openKlasifikasi && filteredKlasifikasi.length === 0"
               class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
@@ -71,11 +67,11 @@
           </div>
         </div>
 
-        <!-- ✅ Jenis Naskah - Format "CODE - TEXT" -->
+        <!-- Jenis Naskah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Jenis Naskah <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Jenis Naskah <span class="text-red-500">*</span>
+          </Heading>
           <select
             v-model="form.jenis"
             @change="updateJenisDisplay"
@@ -92,12 +88,11 @@
           </select>
         </div>
 
-        <!-- ✅ DROPDOWN PENANDATANGAN - Jabatan (Sub Area) -->
+        <!-- Penandatangan -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Penandatangan <span class="text-red-500">*</span></Heading
-          >
-
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Penandatangan <span class="text-red-500">*</span>
+          </Heading>
           <div class="relative" ref="penandatanganRef">
             <input
               v-model="penandatanganSearch"
@@ -109,7 +104,6 @@
               :disabled="isLoadingPositions"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
-
             <div
               v-if="openPenandatangan && filteredPenandatangan.length > 0"
               class="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
@@ -123,7 +117,6 @@
                 {{ item.displayText }}
               </button>
             </div>
-
             <p
               v-if="openPenandatangan && filteredPenandatangan.length === 0"
               class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
@@ -133,12 +126,11 @@
           </div>
         </div>
 
-        <!-- ✅ Perihal - Max 100 karakter -->
+        <!-- Perihal -->
         <div>
           <Heading variant="heading11m" class="text-xs">
             Perihal <span class="text-red-500">*</span>
           </Heading>
-
           <input
             v-model="form.perihal"
             placeholder="Masukkan perihal"
@@ -146,22 +138,21 @@
             @input="validatePerihal"
             class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
-
           <div class="flex justify-between mt-1 mb-0">
             <p v-if="perihalError" class="text-xs text-red-500">
               {{ perihalError }}
             </p>
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-gray-500 ml-auto">
               {{ form.perihal.length }}/100 karakter
             </p>
           </div>
         </div>
 
-        <!-- ✅ Jumlah - Validasi min max (1-10) -->
+        <!-- Jumlah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Jumlah <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Jumlah <span class="text-red-500">*</span>
+          </Heading>
           <input
             type="number"
             v-model.number="form.jumlah"
@@ -172,7 +163,6 @@
             @input="validateJumlah"
             class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
           />
-
           <p v-if="jumlahError" class="text-xs text-red-500 mt-1">
             {{ jumlahError }}
           </p>
@@ -190,20 +180,41 @@
           >
             Batal
           </button>
-
           <button
             @click="openPreviewModal"
             class="px-5 py-2 text-xs border border-primary-500 hover:bg-primary-50 text-primary rounded-md"
           >
             Pratinjau
           </button>
-
           <button
             @click="submitAndClose"
-            class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md"
-            :disabled="isLoadingKlasifikasi || isLoadingPositions"
+            :disabled="
+              isSubmitting || isLoadingKlasifikasi || isLoadingPositions
+            "
+            class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Simpan Usulan
+            <svg
+              v-if="isSubmitting"
+              class="animate-spin h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isSubmitting ? "Menyimpan..." : "Simpan Usulan" }}
           </button>
         </div>
       </template>
@@ -229,45 +240,34 @@
         <p class="text-center text-xs text-gray-500 mb-1">
           {{ formatDateTime(new Date()) }}
         </p>
-
         <h3 class="text-center font-bold text-base mb-5">
           FORMULIR USULAN NOMOR
         </h3>
 
-        <!-- DATA FORM -->
         <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
           <Heading variant="10sb">Nama</Heading>
-          <Heading variant="11sb">
-            {{ form.penandatanganName || "-" }}
-          </Heading>
+          <Heading variant="11sb">{{ user?.nama || "-" }}</Heading>
 
           <Heading variant="10sb">Jabatan</Heading>
-          <Heading variant="11sb">
-            {{ form.penandatanganJabatan || "-" }}
-          </Heading>
+          <Heading variant="11sb">{{ user?.position_text || "-" }}</Heading>
 
           <Heading variant="10sb">Jenis</Heading>
-          <Heading variant="11sb">
-            {{ form.jenisDisplay }}
-          </Heading>
+          <Heading variant="11sb">{{ form.jenisDisplay }}</Heading>
 
           <Heading variant="10sb">Klasifikasi</Heading>
-          <Heading variant="11sb">
-            {{ form.klasifikasiDisplay }}
-          </Heading>
+          <Heading variant="11sb">{{ form.klasifikasiDisplay }}</Heading>
 
           <Heading variant="10sb">Tanggal</Heading>
-          <Heading variant="11sb">
-            {{ formatDate(form.tanggal) }}
-          </Heading>
+          <Heading variant="11sb">{{ formatDate(form.tanggal) }}</Heading>
 
           <Heading variant="10sb">Jumlah</Heading>
-          <Heading variant="11sb"> {{ form.jumlah }} Nomor </Heading>
+          <Heading variant="11sb">{{ form.jumlah }} Nomor</Heading>
 
           <Heading variant="10sb">Perihal</Heading>
-          <Heading variant="11sb">
-            {{ form.perihal }}
-          </Heading>
+          <Heading variant="11sb">{{ form.perihal }}</Heading>
+
+          <Heading variant="10sb">Penandatangan</Heading>
+          <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
 
           <Heading variant="10sb">Nomor</Heading>
           <div class="text-gray-800 text-xs tracking-widest font-mono">
@@ -283,11 +283,8 @@
           <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
             >Pengusul</Heading
           >
-          <p class="font-semibold text-xs">
-            {{ user?.nama || "-" }}
-          </p>
+          <p class="font-semibold text-xs">{{ user?.nama || "-" }}</p>
         </div>
-
         <div class="text-right">
           <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
             >Diusulkan</Heading
@@ -319,8 +316,8 @@ const props = defineProps({
 
 const emit = defineEmits(["submit", "update:modelValue", "preview"]);
 const toast = useToast();
+const { post } = useApi();
 
-// ✅ Jenis Options dengan format "CODE - TEXT"
 const jenisOptions = [
   { code: "PER", display: "PER - Peraturan" },
   { code: "KEP", display: "KEP - Keputusan Direksi" },
@@ -356,50 +353,44 @@ const jenisOptions = [
   { code: "LAP", display: "LAP - Laporan" },
 ];
 
-/* STATE DASAR */
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref("");
 const klasifikasiRef = ref(null);
-
 const openPenandatangan = ref(false);
 const penandatanganSearch = ref("");
 const penandatanganRef = ref(null);
 const penandatanganOptions = ref([]);
 const isLoadingPositions = ref(false);
-
+const isSubmitting = ref(false);
 const jumlahError = ref("");
+const perihalError = ref("");
 
-// ✅ Date handling
 const today = new Date();
-const todayString = today.toISOString().split("T")[0]; // YYYY-MM-DD
+const todayString = today.toISOString().split("T")[0];
 const tanggalString = ref(todayString);
 
-/* COMPOSABLE */
-const { getKlasifikasi, getPersonWithPosition } = usePenomoran();
+const { getKlasifikasi } = usePenomoran();
 const { user, getProfile } = useAuth();
+const { get } = useApi();
 
-/* FORM STATE - ✅ Default tanggal = current date */
 const form = ref({
   tanggal: new Date(),
   klasifikasi: "",
   klasifikasiDisplay: "",
   jenis: "",
   jenisDisplay: "",
-  penandatanganName: "",
   penandatanganJabatan: "",
   id_position_penandatangan: null,
   perihal: "",
   jumlah: 1,
 });
 
-// Watch tanggalString and update form.tanggal
 watch(tanggalString, (newVal) => {
   if (newVal) {
     form.value.tanggal = new Date(newVal);
   }
 });
 
-// ✅ Close dropdowns when clicking outside
 const handleClickOutside = (e) => {
   if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target)) {
     openKlasifikasi.value = false;
@@ -409,7 +400,6 @@ const handleClickOutside = (e) => {
   }
 };
 
-// ✅ Toggle dropdowns - hanya buka jika ada data
 const toggleKlasifikasi = () => {
   if (klasifikasiOptions.value.length > 0) {
     openKlasifikasi.value = !openKlasifikasi.value;
@@ -430,8 +420,8 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
 });
 
-/* PRATINJAU */
 const previewModal = ref(false);
+
 function openPreviewModal() {
   if (
     !form.value.tanggal ||
@@ -447,12 +437,11 @@ function openPreviewModal() {
     toast.add({
       title: "Form tidak lengkap",
       description:
-        "Lengkapi form sebelum pratinjau. Perihal maksimal 500 karakter.",
+        "Lengkapi form sebelum pratinjau. Perihal maksimal 100 karakter.",
       color: "yellow",
     });
     return;
   }
-
   previewModal.value = true;
 }
 
@@ -460,7 +449,6 @@ function closePreview() {
   previewModal.value = false;
 }
 
-/* FILTER */
 const klasifikasiOptions = ref([]);
 const isLoadingKlasifikasi = ref(false);
 
@@ -480,13 +468,11 @@ const filteredPenandatangan = computed(() => {
   );
 });
 
-/* SELECT HANDLER */
 function selectKlasifikasi(item) {
   form.value.klasifikasi = item.code;
   form.value.klasifikasiDisplay = item.display;
   klasifikasiSearch.value = item.display;
   openKlasifikasi.value = false;
-
   console.log("✅ Klasifikasi selected:", {
     code: item.code,
     display: item.display,
@@ -494,15 +480,11 @@ function selectKlasifikasi(item) {
 }
 
 function selectPenandatangan(item) {
-  form.value.penandatanganName = item.nama;
   form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
-
   penandatanganSearch.value = item.displayText;
   openPenandatangan.value = false;
-
   console.log("✅ Penandatangan selected:", {
-    nama: item.nama,
     display_text: item.displayText,
     position_id: item.position,
   });
@@ -515,26 +497,20 @@ function updateJenisDisplay() {
   }
 }
 
-// PERIHAL LENGTH
-const perihalError = ref("");
 function validatePerihal() {
   if (form.value.perihal.length > 100) {
     form.value.perihal = form.value.perihal.slice(0, 100);
     perihalError.value = "Perihal maksimal 100 karakter";
     return;
   }
-
   if (form.value.perihal.length === 0) {
     perihalError.value = "Perihal wajib diisi";
     return;
   }
-
   perihalError.value = "";
 }
 
-/* ✅ VALIDASI JUMLAH (1-10) dengan error untuk minus dan 0 */
 function blockInvalidNumber(e) {
-  // blok: minus, plus, e, E, decimal
   if (
     e.key === "-" ||
     e.key === "+" ||
@@ -546,81 +522,41 @@ function blockInvalidNumber(e) {
     jumlahError.value = "Jumlah harus berupa angka positif (1-10)";
   }
 }
+
 function validateJumlah() {
   const val = Number(form.value.jumlah);
-
   if (!val || isNaN(val)) {
     jumlahError.value = "Jumlah harus antara 1 sampai 10";
     return;
   }
-
   if (val < 1) {
     jumlahError.value = "Jumlah minimal 1";
     form.value.jumlah = 1;
     return;
   }
-
   if (val > 10) {
     jumlahError.value = "Jumlah maksimal 10";
     form.value.jumlah = 10;
     return;
   }
-
-  // valid (1–10)
   jumlahError.value = "";
 }
 
-// function validateJumlah() {
-//   const val = Number(form.value.jumlah);
-
-//   if (isNaN(val)) {
-//     jumlahError.value = "Jumlah harus berupa angka";
-//     form.value.jumlah = 1;
-//     return;
-//   }
-
-//   if (val < 1) {
-//     jumlahError.value = "Jumlah tidak boleh kurang dari 1 atau minus";
-//     form.value.jumlah = 1;
-//   } else if (val > 10) {
-//     jumlahError.value = "Jumlah maksimal 10";
-//     form.value.jumlah = 10;
-//   } else {
-//     jumlahError.value = "";
-//   }
-// }
-
-/* FETCH DATA */
 const fetchPositions = async () => {
   isLoadingPositions.value = true;
   try {
-    const response = await getPersonWithPosition();
+    const response = await get("/person/with-position/all");
     console.log("📥 Raw response from API:", response);
 
     const raw = response?.data ?? response;
-    const list = Array.isArray(raw?.data)
-      ? raw.data
-      : Array.isArray(raw)
-        ? raw
-        : [];
+    const list = Array.isArray(raw) ? raw : [];
 
     console.log("📋 List to process:", list);
 
-    // ✅ Format: "Position Text (Sub Area Text)"
     penandatanganOptions.value = list.map((item) => {
       const positionText = item.position_text || "";
-      const subAreaText = item.sub_area_text || "";
-
-      // Format: "Manager Operasi 4 (Cabang Balikpapan)"
-      const displayText = subAreaText
-        ? `${positionText} (${subAreaText})`
-        : positionText;
-
       return {
-        nama: item.nama,
-        positionText: item.position_text,
-        subAreaText: item.sub_area_text,
-        displayText: displayText,
+        displayText: positionText,
         position: item.position,
       };
     });
@@ -644,7 +580,6 @@ const fetchKlasifikasi = async () => {
   try {
     const response = await getKlasifikasi();
     klasifikasiOptions.value = response;
-
     console.log("✅ Klasifikasi loaded:", klasifikasiOptions.value.length);
   } catch (err) {
     console.error("❌ Error fetch klasifikasi:", err);
@@ -658,7 +593,6 @@ const fetchKlasifikasi = async () => {
   }
 };
 
-/* RESET FORM */
 const resetForm = () => {
   tanggalString.value = todayString;
   form.value = {
@@ -668,22 +602,19 @@ const resetForm = () => {
     jenis: "",
     jenisDisplay: "",
     id_position_penandatangan: null,
-    penandatanganName: "",
     penandatanganJabatan: "",
     perihal: "",
     jumlah: 1,
   };
-
   klasifikasiSearch.value = "";
   penandatanganSearch.value = "";
   jumlahError.value = "";
+  perihalError.value = "";
   openKlasifikasi.value = false;
   openPenandatangan.value = false;
-
   console.log("🔄 Form reset");
 };
 
-/* HANDLE CLOSE & CANCEL */
 const handleClose = (value) => {
   if (!value) {
     resetForm();
@@ -696,9 +627,7 @@ const handleCancel = () => {
   emit("update:modelValue", false);
 };
 
-/* SUBMIT */
 const submitAndClose = async () => {
-  // Validasi form dengan validasi perihal
   if (
     !form.value.tanggal ||
     !form.value.jenis ||
@@ -713,7 +642,7 @@ const submitAndClose = async () => {
     toast.add({
       title: "Form tidak lengkap",
       description:
-        "Pastikan semua field diisi dengan benar. Perihal maksimal 500 karakter.",
+        "Pastikan semua field diisi dengan benar. Perihal maksimal 100 karakter.",
       color: "red",
     });
     return;
@@ -733,26 +662,20 @@ const submitAndClose = async () => {
     type: typeof form.value.id_position_penandatangan,
   });
 
-  // ✅ Payload dengan klasifikasi CODE dan jenis CODE
+  const tanggalFormatted =
+    form.value.tanggal instanceof Date
+      ? form.value.tanggal.toISOString().split("T")[0]
+      : String(form.value.tanggal);
+
   const payload = {
     position_id: Number(user.value.position),
-    tanggal: form.value.tanggal,
+    tanggal: tanggalFormatted,
     jenis: form.value.jenis,
     klasifikasi: form.value.klasifikasi,
     perihal: form.value.perihal,
     penandatangan: form.value.penandatanganJabatan,
-    id_position_penandatangan: parseInt(
-      form.value.id_position_penandatangan,
-      10,
-    ),
+    id_position_penandatangan: Number(form.value.id_position_penandatangan),
     jumlah: Number(form.value.jumlah),
-
-    penomoran: {
-      jenis: form.value.jenis,
-      klasifikasi: form.value.klasifikasi,
-      tanggal: form.value.tanggal,
-      jumlah: Number(form.value.jumlah),
-    },
   };
 
   console.log("📤 PAYLOAD SUBMIT:", JSON.stringify(payload, null, 2));
@@ -769,19 +692,50 @@ const submitAndClose = async () => {
     return;
   }
 
-  emit("submit", payload);
-  resetForm();
-  emit("update:modelValue", false);
+  isSubmitting.value = true;
+
+  try {
+    const res = await post("/nomor-request", payload);
+    console.log("✅ Response from POST /nomor-request:", res);
+
+    if (res?.success) {
+      toast.add({
+        title: "Berhasil",
+        description: "Usulan berhasil disimpan (Belum Diajukan).",
+        color: "green",
+      });
+
+      emit("submit", payload);
+      resetForm();
+      emit("update:modelValue", false);
+    } else {
+      throw new Error(res?.message || "Gagal menyimpan usulan");
+    }
+  } catch (error) {
+    console.error("❌ Error submit usulan:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Terjadi kesalahan saat menyimpan usulan";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
-/* INIT */
 onMounted(async () => {
   if (!user.value) await getProfile();
   await fetchKlasifikasi();
   await fetchPositions();
 });
 
-/* UTIL */
 function formatDate(dateStr) {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -793,7 +747,6 @@ function formatDate(dateStr) {
 
 function formatDateTime(date) {
   if (!date) return "-";
-
   return (
     date.toLocaleDateString("id-ID", {
       day: "2-digit",
@@ -814,7 +767,6 @@ function formatDateTime(date) {
 .fade-scale-leave-active {
   transition: all 0.22s ease;
 }
-
 .fade-scale-enter-from,
 .fade-scale-leave-to {
   opacity: 0;

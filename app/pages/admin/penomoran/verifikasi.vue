@@ -269,8 +269,6 @@
       v-if="selectedRow"
       class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
     >
-      <!-- Judul -->
-
       <!-- Detail Info -->
       <div class="space-y-4 text-base">
         <!-- Tanggal -->
@@ -283,10 +281,8 @@
 
         <!-- Pengirim -->
         <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-600 text-xs">Pengirim</p>
-          <p class="font-medium text-gray-900 mt-1">
-            {{ selectedRow.penandatangan }}
-          </p>
+          <p class="text-gray-500 text-xs">Penandatangan</p>
+          <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
         </div>
 
         <!-- Klasifikasi -->

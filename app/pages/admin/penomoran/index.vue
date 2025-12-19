@@ -293,50 +293,48 @@
             :key="idx"
             class="space-y-2"
           >
-            <!-- Nomor surat -->
-            <div class="flex items-center gap-2">
-              <input
-                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
-                :value="no"
-                readonly
-              />
+            <div class="border border-gray-300 rounded-lg p-4 bg-white">
+              <!-- Nomor surat -->
+              <div class="flex items-center gap-2">
+                <input class="flex-1 px-0 py-2 text-sm" :value="no" readonly />
 
-              <button
-                @click="handleCopy(no)"
-                class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
-              >
-                <Copy class="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
+                <button
+                  @click="handleCopy(no)"
+                  class="p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center"
+                >
+                  <Copy class="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
 
-            <!-- Upload dengan ICON -->
-            <label
-              class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
-            >
-              <svg
-                class="w-5 h-5 text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <!-- Upload dengan ICON -->
+              <label
+                class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50 mt-1"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                <svg
+                  class="w-5 h-5 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+
+                <span class="text-gray-600">
+                  {{ files[idx]?.file_name || "Upload File" }}
+                </span>
+
+                <input
+                  type="file"
+                  class="hidden"
+                  @change="handleFile(idx, $event)"
                 />
-              </svg>
-
-              <span class="text-gray-600">
-                {{ files[idx]?.file_name || "Upload File" }}
-              </span>
-
-              <input
-                type="file"
-                class="hidden"
-                @change="handleFile(idx, $event)"
-              />
-            </label>
+              </label>
+            </div>
           </div>
         </div>
 
