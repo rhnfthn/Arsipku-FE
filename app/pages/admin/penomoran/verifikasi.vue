@@ -142,8 +142,38 @@
               <td class="px-5 py-4 text-xs">{{ row.id }}</td>
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penandatangan }}</td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[350px]">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 cursor-help"
+                  >
+                    {{ row.perihal }}
+                  </p>
+
+                  <!-- Tooltip -->
+                  <div
+                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
+                  >
+                    {{ row.perihal }}
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[300px]">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 cursor-help"
+                  >
+                    {{ row.penandatangan }}
+                  </p>
+
+                  <!-- Tooltip -->
+                  <div
+                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
+                  >
+                    {{ row.penandatangan }}
+                  </div>
+                </div>
+              </td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>

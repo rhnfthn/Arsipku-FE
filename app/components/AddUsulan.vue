@@ -133,22 +133,28 @@
           </div>
         </div>
 
-        <!-- ✅ Perihal - Validasi panjang karakter -->
+        <!-- ✅ Perihal - Max 100 karakter -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium focus:primary-500"
-            >Perihal <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="heading11m" class="text-xs">
+            Perihal <span class="text-red-500">*</span>
+          </Heading>
+
           <input
             v-model="form.perihal"
             placeholder="Masukkan perihal"
-            maxlength="500"
-            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            maxlength="100"
+            @input="validatePerihal"
+            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            {{ form.perihal.length }}/500 karakter
-          </p>
+
+          <div class="flex justify-between mt-1 mb-0">
+            <p v-if="perihalError" class="text-xs text-red-500">
+              {{ perihalError }}
+            </p>
+            <p class="text-xs text-gray-500">
+              {{ form.perihal.length }}/100 karakter
+            </p>
+          </div>
         </div>
 
         <!-- ✅ Jumlah - Validasi min max (1-10) -->
@@ -210,65 +216,63 @@
       v-if="previewModal"
       :model-value="previewModal"
       :hide-default-footer="true"
+      size="lg"
       @update:model-value="closePreview"
     >
       <template #title>
-        <div class="flex justify-between items-center px-6 pt-6 pb-2">
+        <div class="flex justify-between items-center px-6 pt-4 pb-2">
           <h2 class="text-lg font-semibold">Pratinjau</h2>
         </div>
       </template>
 
-      <div class="p-3 max-w-5xl w-full max-h-[150vh] overflow-y-auto text-sm">
-        <p class="text-center text-xs text-gray-500">
+      <div class="w-full px-5 py-2 text-sm">
+        <p class="text-center text-xs text-gray-500 mb-1">
           {{ formatDateTime(new Date()) }}
         </p>
 
-        <h3 class="text-center font-bold text-base mt-1 mb-3">
+        <h3 class="text-center font-bold text-base mb-5">
           FORMULIR USULAN NOMOR
         </h3>
 
-        <div class="flex justify-between mb-1">
+        <!-- DATA FORM -->
+        <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
           <Heading variant="10sb">Nama</Heading>
-          <Heading variant="11sb"> {{ form.penandatanganName || "-" }}</Heading>
-        </div>
+          <Heading variant="11sb">
+            {{ form.penandatanganName || "-" }}
+          </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jabatan</Heading>
           <Heading variant="11sb">
-            {{ form.penandatanganJabatan || "-" }}</Heading
-          >
-        </div>
+            {{ form.penandatanganJabatan || "-" }}
+          </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jenis</Heading>
-          <Heading variant="11sb"> {{ form.jenisDisplay }}</Heading>
-        </div>
+          <Heading variant="11sb">
+            {{ form.jenisDisplay }}
+          </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Klasifikasi</Heading>
-          <Heading variant="11sb"> {{ form.klasifikasiDisplay }}</Heading>
-        </div>
+          <Heading variant="11sb">
+            {{ form.klasifikasiDisplay }}
+          </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Tanggal</Heading>
-          <Heading variant="11sb"> {{ formatDate(form.tanggal) }}</Heading>
-        </div>
+          <Heading variant="11sb">
+            {{ formatDate(form.tanggal) }}
+          </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jumlah</Heading>
-          <Heading variant="11sb"> {{ form.jumlah }} Nomor</Heading>
-        </div>
+          <Heading variant="11sb"> {{ form.jumlah }} Nomor </Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Perihal</Heading>
-          <Heading variant="11sb"> {{ form.perihal }}</Heading>
-        </div>
+          <Heading variant="11sb">
+            {{ form.perihal }}
+          </Heading>
 
-        <div class="flex justify-between">
-          <Heading variant="10sb">Nomor </Heading>
-          <span class="text-gray-800 text-xs tracking-widest font-mono">
+          <Heading variant="10sb">Nomor</Heading>
+          <div class="text-gray-800 text-xs tracking-widest font-mono">
             {{ form.jenis }}....../O/00/LPPNPI/{{ form.klasifikasi }}/XII/2025
-          </span>
+          </div>
         </div>
       </div>
 
@@ -276,22 +280,28 @@
 
       <div class="flex justify-between items-start px-5 pb-2">
         <div>
-          <p class="text-gray-500 uppercase text-xs mb-1">Pengusul</p>
+          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+            >Pengusul</Heading
+          >
           <p class="font-semibold text-xs">
             {{ user?.nama || "-" }}
           </p>
         </div>
 
         <div class="text-right">
-          <p class="text-gray-500 uppercase text-xs mb-1">Diusulkan</p>
-          <p class="text-xs">{{ formatDateTime(new Date()) }}</p>
+          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+            >Diusulkan</Heading
+          >
+          <p class="font-semibold text-xs">{{ formatDateTime(new Date()) }}</p>
         </div>
       </div>
 
       <div
-        class="bg-gray-50 border border-gray-200 text-xs p-3 rounded-md mt-4 mx-8 mb-4"
+        class="bg-gray-50 border border-gray-200 text-xs p-3 rounded-md mt-1 mx-8 mb-4"
       >
-        Cetak formulir dan lampirkan naskah final yang akan diberikan nomor...
+        Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
+        kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
+        arsip
       </div>
     </Modal>
   </transition>
@@ -312,12 +322,38 @@ const toast = useToast();
 
 // ✅ Jenis Options dengan format "CODE - TEXT"
 const jenisOptions = [
-  { code: "BAC", display: "BAC - Berita Acara" },
-  { code: "SPR", display: "SPR - Surat Perintah" },
-  { code: "SK", display: "SK - Surat Keputusan" },
-  { code: "MOU", display: "MOU - Memorandum of Understanding" },
-  { code: "INS", display: "INS - Instruksi" },
   { code: "PER", display: "PER - Peraturan" },
+  { code: "KEP", display: "KEP - Keputusan Direksi" },
+  { code: "INS", display: "INS - Instruksi" },
+  { code: "SPR", display: "SPR - Surat Perintah" },
+  { code: "SOP", display: "S0P - Standar Operasional Prosedur" },
+  { code: "EDR", display: "EDR - Surat Edaran" },
+  { code: "ND", display: "ND - Nota Dinas" },
+  { code: "SDI", display: "SDI - Surat Dinas Internal" },
+  { code: "DI", display: "DI - Disposisi" },
+  { code: "SDE", display: "SDE - Surat Dinas Eksternal" },
+  { code: "MOU", display: "MOU - Memorandum of Understanding" },
+  { code: "PKS", display: "PKS - Perjanjian Kerja Sama" },
+  { code: "LOA", display: "LOA - Letter of Agreement" },
+  { code: "LOCA", display: "LOCA - Letter of Coordination Agreement" },
+  { code: "PROC", display: "PROC - Kontrak Pengadaan" },
+  { code: "PJJ", display: "PJJ - Perjanjian Lainnya" },
+  { code: "ADD-PJJ", display: "ADD-PJJ - Adendum Perjanjian" },
+  { code: "ADD-PROC", display: "ADD-PROC - Kontrak Pengadaan Adendum" },
+  { code: "SPK", display: "SPK - Surat Perintah Kerja Pengadaan" },
+  {
+    code: "ADD-SPK",
+    display: "ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan",
+  },
+  { code: "SKU", display: "SKU - Surat Kuasa" },
+  { code: "BAC", display: "BAC - Berita Acara" },
+  { code: "UND", display: "UND - Surat Undangan" },
+  { code: "KET", display: "KET - Surat Keterangan" },
+  { code: "SPE", display: "SPE - Surat Pengantar" },
+  { code: "RPT", display: "RPT - Risalah Rapat" },
+  { code: "PEN", display: "PEN - Pengumuman" },
+  { code: "PGM", display: "PGM - Sertifikat atau Piagam" },
+  { code: "LAP", display: "LAP - Laporan" },
 ];
 
 /* STATE DASAR */
@@ -404,7 +440,7 @@ function openPreviewModal() {
     !form.value.penandatanganJabatan ||
     !form.value.perihal ||
     form.value.perihal.length === 0 ||
-    form.value.perihal.length > 500 ||
+    form.value.perihal.length > 100 ||
     Number(form.value.jumlah) < 1 ||
     Number(form.value.jumlah) > 10
   ) {
@@ -479,6 +515,23 @@ function updateJenisDisplay() {
   }
 }
 
+// PERIHAL LENGTH
+const perihalError = ref("");
+function validatePerihal() {
+  if (form.value.perihal.length > 100) {
+    form.value.perihal = form.value.perihal.slice(0, 100);
+    perihalError.value = "Perihal maksimal 100 karakter";
+    return;
+  }
+
+  if (form.value.perihal.length === 0) {
+    perihalError.value = "Perihal wajib diisi";
+    return;
+  }
+
+  perihalError.value = "";
+}
+
 /* ✅ VALIDASI JUMLAH (1-10) dengan error untuk minus dan 0 */
 function blockInvalidNumber(e) {
   // blok: minus, plus, e, E, decimal
@@ -493,26 +546,49 @@ function blockInvalidNumber(e) {
     jumlahError.value = "Jumlah harus berupa angka positif (1-10)";
   }
 }
-
 function validateJumlah() {
   const val = Number(form.value.jumlah);
 
-  if (isNaN(val)) {
-    jumlahError.value = "Jumlah harus berupa angka";
-    form.value.jumlah = 1;
+  if (!val || isNaN(val)) {
+    jumlahError.value = "Jumlah harus antara 1 sampai 10";
     return;
   }
 
   if (val < 1) {
-    jumlahError.value = "Jumlah tidak boleh kurang dari 1 atau minus";
+    jumlahError.value = "Jumlah minimal 1";
     form.value.jumlah = 1;
-  } else if (val > 10) {
+    return;
+  }
+
+  if (val > 10) {
     jumlahError.value = "Jumlah maksimal 10";
     form.value.jumlah = 10;
-  } else {
-    jumlahError.value = "";
+    return;
   }
+
+  // valid (1–10)
+  jumlahError.value = "";
 }
+
+// function validateJumlah() {
+//   const val = Number(form.value.jumlah);
+
+//   if (isNaN(val)) {
+//     jumlahError.value = "Jumlah harus berupa angka";
+//     form.value.jumlah = 1;
+//     return;
+//   }
+
+//   if (val < 1) {
+//     jumlahError.value = "Jumlah tidak boleh kurang dari 1 atau minus";
+//     form.value.jumlah = 1;
+//   } else if (val > 10) {
+//     jumlahError.value = "Jumlah maksimal 10";
+//     form.value.jumlah = 10;
+//   } else {
+//     jumlahError.value = "";
+//   }
+// }
 
 /* FETCH DATA */
 const fetchPositions = async () => {
@@ -630,7 +706,7 @@ const submitAndClose = async () => {
     !form.value.penandatanganJabatan ||
     !form.value.perihal ||
     form.value.perihal.length === 0 ||
-    form.value.perihal.length > 500 ||
+    form.value.perihal.length > 100 ||
     Number(form.value.jumlah) < 1 ||
     Number(form.value.jumlah) > 10
   ) {
