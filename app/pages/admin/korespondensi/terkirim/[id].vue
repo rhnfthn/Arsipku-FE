@@ -33,7 +33,10 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const getInitial = (name: string) => name ? name.substring(0, 2).toUpperCase() : 'NA';
+const getInitial = (name: string) => {
+  if (!name) return 'NA';
+  return name.substring(0, 2).toUpperCase();
+};
 
 const getSifatColor = (sifat: string) => {
   switch (sifat?.toLowerCase()) {
@@ -104,7 +107,7 @@ onMounted(async () => {
           <div class="flex flex-wrap items-center gap-2">
             <span
               class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-600/20">
-              {{ detail.jenis_label }}
+              {{ detail.jenis === 'ND' ? 'Nota Dinas' : detail.jenis }}
             </span>
 
             <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ring-inset ring-current/20 capitalize"
@@ -126,16 +129,15 @@ onMounted(async () => {
         </div>
 
         <div class="flex items-start gap-4 mb-8">
-          <UAvatar :alt="detail.pengirim.nama_sirkuler" size="md" class="mt-1 ring-1 ring-gray-200 dark:ring-gray-700"
+          <UAvatar :alt="detail.pengirim.nama" size="md" class="mt-1 ring-1 ring-gray-200 dark:ring-gray-700"
             :ui="{ background: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300', text: 'font-medium text-sm' }">
-            {{ getInitial(detail.pengirim.nama_sirkuler) }}
+            {{ getInitial(detail.pengirim.nama) }}
           </UAvatar>
 
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-baseline">
               <span class="text-base font-semibold text-gray-900 dark:text-white">
-                {{ detail.pengirim.nama_sirkuler }}
-              </span>
+                {{ detail.pengirim.nama }} </span>
               <div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4 font-medium">
                 {{ formatDate(detail.tanggal) }}
                 <span class="hidden sm:inline text-gray-300 mx-1">|</span>
@@ -144,49 +146,28 @@ onMounted(async () => {
             </div>
 
             <div class="text-xs text-gray-500 dark:text-gray-400 -mt-0.5 mb-1">
-              {{ detail.pengirim.position_text }}
-            </div>
+              {{ detail.pengirim.positionText }} </div>
 
             <div class="mt-3">
-
               <span class="block text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2 select-none">
                 Kepada:
               </span>
 
-              <div v-if="detail.penerima.length > 1" class="flex flex-col gap-1">
+              <div class="flex flex-col gap-1">
                 <div v-for="(penerima, index) in detail.penerima" :key="penerima.id"
-                  class="flex items-start gap-2.5 text-sm leading-snug group">
-
+                  class="flex items-start gap-2.5 text-sm leading-snug">
                   <span class="text-xs text-gray-400 mt-0.5 select-none w-3 text-right shrink-0">
                     {{ index + 1 }}.
                   </span>
-
                   <span class="hover:text-gray-900 dark:hover:text-white transition-colors cursor-default">
                     <span class="font-medium text-gray-800 dark:text-gray-200">
-                      {{ penerima.nama_sirkuler }}
-                    </span>
+                      {{ penerima.nama }} </span>
                     <span class="text-gray-500 text-xs font-normal">
-                      ({{ penerima.position_text }})
-                    </span>
+                      ({{ penerima.positionText }}) </span>
                   </span>
                 </div>
               </div>
-
-              <div v-else class="text-sm leading-snug">
-                <template v-for="penerima in detail.penerima" :key="penerima.id">
-                  <span class="hover:text-gray-900 dark:hover:text-white transition-colors cursor-default">
-                    <span class="font-medium text-gray-800 dark:text-gray-200">
-                      {{ penerima.nama_sirkuler }}
-                    </span>
-                    <span class="text-gray-500 text-xs font-normal">
-                      ({{ penerima.position_text }})
-                    </span>
-                  </span>
-                </template>
-              </div>
-
             </div>
-
           </div>
         </div>
 
@@ -224,7 +205,7 @@ onMounted(async () => {
           <div v-if="detail.lampiran_files && detail.lampiran_files.length > 0">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Lampiran</h3>
             <div class="flex flex-wrap gap-2">
-              <a v-for="file in detail.lampiran_files" :key="file.id" :href="file.file_pdf" target="_blank"
+              <a v-for="file in detail.lampiran_files" :key="file.id" :href="file.fileUrl" target="_blank"
                 class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                 <div
                   class="w-6 h-6 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 shrink-0">
@@ -232,7 +213,7 @@ onMounted(async () => {
                 </div>
                 <span
                   class="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 transition-colors">
-                  {{ file.file_name }}
+                  {{ file.fileName }}
                 </span>
               </a>
             </div>

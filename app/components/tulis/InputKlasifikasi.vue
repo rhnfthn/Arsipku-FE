@@ -5,10 +5,9 @@
       Klasifikasi
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
-      <USelectMenu v-model="model" :items="items" :loading="loading" value-key="id"
-        :search-attributes="['klasifikasi', 'klasifikasi_text', 'deskripsi']" placeholder="Pilih Klasifikasi"
-        :search-input="{ placeholder: 'Cari kode atau nama klasifikasi...', size: 'lg' }" variant="none" class="w-full"
-        :ui="{
+      <USelectMenu v-model="model" :items="computedItems" value-key="id" label-key="searchLabel" searchable
+        :search-attributes="['searchLabel']" placeholder="Pilih Klasifikasi"
+        :search-input="{ placeholder: 'Cari kode atau nama klasifikasi...' }" variant="none" class="w-full" :ui="{
           base: '!px-0 !bg-transparent w-full dark:text-white',
           ring: 'ring-0',
           shadow: 'shadow-none',
@@ -29,7 +28,7 @@
             {{ selectedObj.klasifikasi }} - {{ selectedObj.klasifikasi_text }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">
-            Pilih klasifikasi surat...
+            Pilih klasifikasi
           </span>
         </template>
       </USelectMenu>
@@ -52,4 +51,11 @@ const model = defineModel<string | null>();
 const selectedObj = computed(() => {
   return props.items.find((b) => b.id === model.value);
 });
+
+const computedItems = computed(() =>
+  props.items.map(item => ({
+    ...item,
+    searchLabel: `${item.klasifikasi} - ${item.klasifikasi_text}`
+  }))
+)
 </script>

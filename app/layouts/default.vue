@@ -24,6 +24,7 @@
         &copy; 2025 ArsipKu System
       </footer>
     </div>
+    <Alert />
     <UNotifications />
   </div>
 </template>

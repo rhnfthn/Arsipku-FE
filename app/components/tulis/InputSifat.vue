@@ -1,0 +1,61 @@
+<template>
+  <div
+    class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+    <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+      Sifat
+    </span>
+    <div class="flex flex-wrap gap-1 w-full items-center">
+      <USelectMenu v-model="selected" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
+        variant="none" :search="false" value-attribute="value">
+        <template #default="{ label }">
+          <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
+            <span v-if="selected" class="text-sm font-medium text-left truncate text-gray-900 dark:text-white">
+              {{ getLabel(selected) }}
+            </span>
+            <span v-else class="text-sm text-gray-400">Pilih sifat</span>
+          </div>
+        </template>
+      </USelectMenu>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
+
+const props = defineProps({
+  modelValue: {
+    type: [Object, String, null],
+    default: null
+  }
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+const sifatOptions = [
+  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Rahasia", value: "rahasia" },
+  { label: "Terbatas", value: "terbatas" },
+  { label: "Biasa / Terbuka", value: "biasa" }
+]
+
+// Helper untuk mendapatkan label dari value jika v-model isinya string
+const getLabel = (val: any) => {
+  if (typeof val === 'string') {
+    return sifatOptions.find(opt => opt.value === val)?.label || val
+  }
+  return val?.label || val
+}
+
+const selected = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
+onMounted(() => {
+  if (!props.modelValue) {
+    // Set default string 'biasa' agar sinkron dengan getBasePayload
+    emit('update:modelValue', 'biasa')
+  }
+})
+</script>

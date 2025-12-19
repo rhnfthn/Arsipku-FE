@@ -24,7 +24,7 @@ const formatDateTime = (value: string | null | undefined) => {
 };
 
 export function useInbox(positionId: any) {
-  const { apiGet, apiPut } = useApi();
+  const { apiGet, apiPut, apiPatch } = useApi();
 
   const items = ref<any[]>([]);
   const pending = ref(false);
@@ -126,5 +126,33 @@ export function useInbox(positionId: any) {
     }
   };
 
-  return { items, pending, error, refresh, markAsRead };
+  const toggleFlag = async (
+    mail: any,
+    flagType: "favorit" | "arsip" | "note",
+  ) => {
+    try {
+      const res: any = await apiPatch("/naskah_sirkulasi/toggle-flag", {
+        id_sirkulasi: mail.id,
+        flag_type: flagType,
+      });
+
+      const newValue = res?.data?.new_value;
+
+      // Update state lokal
+      if (flagType === "favorit") mail.isStarred = newValue;
+      if (flagType === "arsip") mail.isArsip = newValue;
+      if (flagType === "note") mail.isNote = newValue;
+
+      // sync raw
+      if (mail.raw) {
+        if (flagType === "favorit") mail.raw.is_favorit = newValue;
+        if (flagType === "arsip") mail.raw.is_arsip = newValue;
+        if (flagType === "note") mail.raw.is_note = newValue;
+      }
+    } catch (err) {
+      console.error("Gagal toggle flag:", flagType, err);
+    }
+  };
+
+  return { items, pending, error, refresh, markAsRead, toggleFlag };
 }

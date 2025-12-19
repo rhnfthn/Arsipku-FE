@@ -84,20 +84,27 @@ const loadData = async () => {
   const posId = user.value?.position;
   const rawData = await fetchSentBox(posId);
 
-  emails.value = rawData.map((item: NaskahItem) => {
-    const firstPenerima = item.penerima[0];
+  emails.value = rawData.map((item: any) => {
+    // 1. Ambil penerima pertama untuk display list di sidebar
+    const firstPenerima = item.penerima && item.penerima.length > 0 ? item.penerima[0] : null;
 
-    const displayJobTitle = firstPenerima?.position_text || 'Tanpa Jabatan';
+    // 2. Tentukan Jabatan dan Nama untuk tampilan ringkas
+    const displayJobTitle = firstPenerima?.positionText || 'Tanpa Jabatan';
     const displayName = firstPenerima?.nama || 'Tanpa Nama';
     const initial = firstPenerima?.nama?.substring(0, 2).toUpperCase() || 'NA';
 
+    // 3. Format Tanggal (Support format YYYY-MM-DD dari JSON baru)
     const dateObj = new Date(item.tanggal);
     const dateStr = dateObj.toLocaleDateString('id-ID', {
       day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
     });
 
+    // 4. Hitung jumlah yang sudah membaca dari array penerima
+    const terbacaCount = item.penerima ? item.penerima.filter((p: any) => p.status === 'terbaca').length : 0;
+
     return {
-      id: item.id_naskah,
+      // FIX: Gunakan item.id sesuai respons JSON terbaru
+      id: item.id,
       from: displayJobTitle,
       email: displayName,
       subject: item.perihal,
@@ -108,15 +115,17 @@ const loadData = async () => {
       initial: initial,
       color: getCategoryStyle(item.jenis === 'DI' ? 'DISPOSISI' : item.jenis).split(' ')[0] + ' text-white',
       isRead: true,
-      viewCount: item.summary_baca?.terbaca || 0,
+      // FIX: Mapping viewCount dari status di array penerima
+      viewCount: terbacaCount,
       isFlagged: item.sifat === 'penting' || item.sifat === 'segera',
       isStarred: false,
-      isLocked: item.status === 'final',
+      isLocked: item.status === 'final_tte' || item.status === 'final',
       hasNote: false,
       isArchived: false,
       canOpenTab: true,
-      recipient: item.penerima.map(p => p.nama).join(', '),
-      disposition: item.jenis_label,
+      // FIX: Gabungkan semua nama penerima untuk detail view
+      recipient: item.penerima ? item.penerima.map((p: any) => p.nama).join(', ') : '-',
+      disposition: item.jenis_label || item.jenis,
       note: item.sifat,
       originalData: item
     };
@@ -524,10 +533,10 @@ onMounted(() => { loadData(); });
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Penerima</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.recipient || '-' }}</div>
             </div>
-            <div v-if="selected.disposition">
+            <!-- <div v-if="selected.disposition">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Disposisi</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.disposition }}</div>
-            </div>
+            </div> -->
             <div v-if="selected.note">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Sifat</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200 capitalize">{{ selected.note }}</div>
