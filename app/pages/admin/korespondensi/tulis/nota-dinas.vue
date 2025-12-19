@@ -1,10 +1,10 @@
 <template>
-  <div class="">
+  <div class="relative">
     <div v-if="isLoadingData"
-      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[1px] rounded-lg">
       <div class="flex flex-col items-center gap-2">
         <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-600 font-medium">Proses Pratinjau...</span>
+        <span class="text-gray-600 dark:text-gray-300 font-medium">{{ loadingMessage }}</span>
       </div>
     </div>
 
@@ -16,6 +16,7 @@
       root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
     }">
       <div class="flex-1 overflow-y-auto space-y-1">
+
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
 
@@ -37,7 +38,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik perihal" />
+                placeholder="Ketik Perihal" />
 
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
@@ -281,6 +282,7 @@ const breadcrumbs = [
 const isOpenPreview = ref(false);
 const loading = ref(false);
 const isLoadingData = ref(false);
+const loadingMessage = ref("");
 
 // --- Form Data State ---
 const editDraftId = ref<string | null>(null);
@@ -465,6 +467,7 @@ const handlePreview = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
+  loadingMessage.value = "Proses Pratinjau";
   isLoadingData.value = true;
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
@@ -575,8 +578,13 @@ const handleSaveDraft = async () => {
 /* -------------------------------------------------------------------------- */
 /* 9. LIFECYCLE HOOKS                                                         */
 /* -------------------------------------------------------------------------- */
-// --- LIFECYCLE HOOKS ---
 onMounted(async () => {
+  loadingMessage.value = "Memuat data naskah...";
+  isLoadingData.value = true;
+
+  // Mulai loading global
+  isLoadingData.value = true;
+
   // 1. Load Essentials (Classification & Recipients)
   if (!user.value) await getProfile();
 
@@ -593,70 +601,77 @@ onMounted(async () => {
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
-  } catch { klasifikasiStatus.value = "error"; }
+  } catch {
+    klasifikasiStatus.value = "error";
+  }
 
   // 2. Populate Draft Data
   const draftId = route.query.draft_id as string;
   if (draftId) {
-    editDraftId.value = draftId;
-    const resDraft = await getDraftDetail(draftId);
+    try {
+      editDraftId.value = draftId;
+      const resDraft = await getDraftDetail(draftId);
 
-    if (resDraft.success && resDraft.data) {
-      const d = resDraft.data;
-      subject.value = d.perihal || "";
-      editorContent.value = d.konten || "";
-      english.value = Boolean(d.english);
+      if (resDraft.success && resDraft.data) {
+        const d = resDraft.data;
+        subject.value = d.perihal || "";
+        editorContent.value = d.konten || "";
+        english.value = Boolean(d.english);
 
-      // FIX KLASIFIKASI: Cari ID berdasarkan kode klasifikasi string (misal: "AUD.02.02")
-      if (d.klasifikasi) {
-        const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
-        if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
-      }
+        // FIX KLASIFIKASI
+        if (d.klasifikasi) {
+          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
+          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+        }
 
-      // FIX PENERIMA & TEMBUSAN: Map format API ke format UBadge/Dropdown
-      const mapApiToUI = (list: any[]) => {
-        return list?.map(item => {
-          // Cek apakah sudah ada di master list 'items'
-          const posId = String(item.position_id || item.position || item.value);
-          const master = items.value.find(m => m.value === posId);
-          if (master) return master;
+        // FIX PENERIMA & TEMBUSAN
+        const mapApiToUI = (list: any[]) => {
+          return list?.map(item => {
+            const posId = String(item.position_id || item.position || item.value);
+            const master = items.value.find(m => m.value === posId);
+            if (master) return master;
+            return {
+              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
+              labelJob: item.positionText || item.labelJob || '',
+              value: posId,
+              raw: item
+            };
+          }) || [];
+        };
 
-          // Fallback jika tidak ada di master list
-          return {
-            label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-            labelJob: item.positionText || item.labelJob || '',
-            value: posId,
-            raw: item
-          };
-        }) || [];
-      };
+        selectedTertuju.value = mapApiToUI(d.penerima);
+        selectedTembusan.value = mapApiToUI(d.tembusan);
 
-      selectedTertuju.value = mapApiToUI(d.penerima);
-      selectedTembusan.value = mapApiToUI(d.tembusan);
+        // FIX LAMPIRAN
+        if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
+          existingFiles.value = d.lampiran_files.map((f: any) => ({
+            id: f.id,
+            fileName: f.fileName || f.file_name,
+            filePath: f.fileUrl || f.file_path,
+            fileSize: f.fileSize || 0
+          }));
+        }
 
-      // FIX LAMPIRAN: Map lampiran_files API ke existingFiles component
-      if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
-        existingFiles.value = d.lampiran_files.map((f: any) => ({
-          id: f.id,
-          fileName: f.fileName || f.file_name,
-          filePath: f.fileUrl || f.file_path,
-          fileSize: f.fileSize || 0
-        }));
-      }
+        // Sifat Mapping
+        const draftSifat = String(d.sifat || 'biasa').toLowerCase();
+        selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
 
-      // Sifat Mapping
-      const draftSifat = String(d.sifat || 'biasa').toLowerCase();
-      selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
-
-      // Tanggal Mapping
-      if (d.tanggal) {
-        const dateParts = d.tanggal.split('-'); // Asumsi YYYY-MM-DD
-        if (dateParts.length === 3) {
-          date.value = new CalendarDate(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
+        // Tanggal Mapping
+        if (d.tanggal) {
+          const dateParts = d.tanggal.split('-');
+          if (dateParts.length === 3) {
+            date.value = new CalendarDate(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
+          }
         }
       }
+    } catch (error) {
+      console.error("Error loading draft detail:", error);
+      toast.add({ title: 'Gagal memuat data draft', color: 'red' });
     }
   }
+
+  // Matikan loading setelah semua selesai (Essentials + Draft Data)
+  isLoadingData.value = false;
 });
 </script>
 

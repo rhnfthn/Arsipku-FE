@@ -176,13 +176,15 @@ onMounted(async () => {
           <div class="w-full">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Berita</h3>
             <div class="dark:border-gray-800">
-              <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 break-words"
+              <!-- <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 break-words"
                 v-html="detail.konten || '<p class=\'text-gray-400 italic\'>Tidak ada konten</p>'">
-              </div>
+              </div> -->
+              <iframe :srcdoc="detail.konten" class="w-full"
+                style="height: 150px; pointer-events: none;" />
             </div>
           </div>
 
-          <div class="w-full">
+          <!-- <div class="w-full">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Dokumen</h3>
             <div @click="openPdfPreview"
               class="group flex items-center gap-4 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/20 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer">
@@ -200,7 +202,7 @@ onMounted(async () => {
                 <p class="text-[10px] text-gray-500 mt-0.5">PDF &bull; Klik untuk pratinjau</p>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div v-if="detail.lampiran_files && detail.lampiran_files.length > 0">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Lampiran</h3>

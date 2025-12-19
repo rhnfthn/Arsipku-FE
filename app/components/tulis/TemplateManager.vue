@@ -20,22 +20,32 @@
         <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
       </div>
       <div class="p-4 overflow-y-auto">
-        <UAccordion multiple :items="publicTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
-          <template #default="{ item, open }">
-            <div
-              class="w-full flex justify-between items-center py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded-md border border-transparent hover:border-gray-200 dark:border-gray-700">
-              <div class="flex items-center gap-2 flex-1 w-full">
-                <UIcon name="i-heroicons-chevron-right" :class="[open && 'transform rotate-90']"
-                  class="w-4 h-4 transition-transform text-gray-500" />
-                <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.label }}</span>
-              </div>
-              <UButton label="Gunakan" size="xs" color="primary" class="ml-5" variant="solid"
-                @click.stop="selectTemplate(item)" />
-            </div>
+        <UAccordion type="multiple" :items="publicTemplatesAccordion" :ui="{
+          wrapper: 'space-y-2',
+          default: {
+            base: 'w-full flex justify-between items-center',
+            padding: 'px-4 py-3'
+          }
+        }">
+
+          <template #trailing="{ item, open }">
+            <UIcon name="i-heroicons-chevron-down-20-solid"
+              class="w-5 h-5 transition-transform duration-200 text-gray-400"
+              :class="[open ? 'rotate-180' : 'rotate-0']" />
+            <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
+              {{ item.label }}
+            </span>
+            <UButton label="Gunakan" size="xs" color="primary" variant="solid" class="shrink-0"
+              @click.stop="selectTemplate(item)" />
           </template>
+
+          <template #default>
+            <span />
+          </template>
+
           <template #template-body="{ item }">
-            <div class="p-2">
-              <iframe :srcdoc="item.content" class="w-full rounded bg-white shadow-sm border border-gray-200"
+            <div class="pb-4">
+              <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
                 style="height: 150px; pointer-events: none;" />
             </div>
           </template>
@@ -97,7 +107,7 @@
           Belum ada template tersimpan.
         </div>
         <div v-else class="space-y-3">
-          <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
+          <!-- <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
             <template #default="{ item, open }">
               <div
                 class="w-full flex justify-between items-center py-3 px-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded-md">
@@ -126,7 +136,46 @@
                   style="height: 150px; pointer-events: none;" />
               </div>
             </template>
+          </UAccordion> -->
+
+          <UAccordion type="multiple" :items="myTemplatesAccordion" :ui="{
+            wrapper: 'space-y-2',
+            default: {
+              base: 'w-full flex justify-between items-center',
+              padding: 'px-4 py-3'
+            }
+          }">
+
+            <template #trailing="{ item, open }">
+              <UIcon name="i-heroicons-chevron-down-20-solid"
+                class="w-5 h-5 transition-transform duration-200 text-gray-400"
+                :class="[open ? 'rotate-180' : 'rotate-0']" />
+              <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
+                {{ item.label }}
+              </span>
+              <div class="flex items-center gap-2">
+                <UButton icon="i-lucide-pencil" color="warning" variant="soft" size="xs" @click="openEditModal(item)" />
+                <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
+                  @click="handleDeleteTemplate(item.id)" />
+                <!-- Vertical divider -->
+                <div class="h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
+              </div>
+
+            </template>
+
+            <template #default>
+              <span />
+            </template>
+
+            <template #template-body="{ item }">
+              <div class="pb-4">
+                <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
+                  style="height: 150px; pointer-events: none;" />
+              </div>
+            </template>
           </UAccordion>
+
         </div>
       </div>
     </div>
