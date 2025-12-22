@@ -19,21 +19,21 @@
 
     <!-- HERO -->
     <div
-      class="relative w-full h-64 bg-gradient-to-r from-primary-50 to-primary rounded-3xl shadow-md flex items-center px-10 overflow-hidden"
+      class="relative w-full h-64 bg-gradient-to-r from-primary-50 to-primary rounded-3xl shadow-md flex items-center px-10 overflow-visible"
     >
       <div class="flex flex-col z-10">
-        <Heading variant="heading6b" class="text-primary-600"
-          >Halo, {{ user?.nama || "User" }}</Heading
-        >
-        <Heading variant="heading9m" class="mt-1 text-primary-400"
-          >Semoga hari anda menyenangkan</Heading
-        >
+        <Heading variant="heading6b" class="text-primary-600">
+          Halo, {{ user?.nama || "User" }}
+        </Heading>
+        <Heading variant="heading9m" class="mt-1 text-primary-400">
+          Semoga hari anda menyenangkan
+        </Heading>
       </div>
 
-      <!-- Pesawat Membesar Keluar Card -->
+      <!-- Pesawat keluar card -->
       <img
         src="/dashboard.png"
-        class="absolute right-0 bottom-0 top-1 h-70 translate-x-0 translate-y-6 opacity-90"
+        class="absolute -right-5 bottom-0 h-72 translate-y-10 opacity-90 pointer-events-none"
         alt="Dashboard illustration"
       />
     </div>
