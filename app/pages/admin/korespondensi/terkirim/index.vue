@@ -14,6 +14,19 @@ import * as XLSX from 'xlsx'; // Import library xlsx
 const { user } = useAuth();
 const { fetchSentBox, isLoading } = useSirkulasi();
 
+// --- HELPER: ROUTING ---
+const getDetailRoute = (item: UIMailItem) => {
+  // Kita kirim 'jenis' sebagai query parameter
+  // Contoh hasil: /admin/korespondensi/terkirim/123?jenis=ND
+  // Contoh hasil: /admin/korespondensi/terkirim/456?jenis=INTERNAL
+  return {
+    path: `/admin/korespondensi/terkirim/${item.id}`,
+    query: {
+      jenis: item.category // berisi 'ND', 'INTERNAL', 'EXTERNAL', 'DI', dll
+    }
+  };
+};
+
 // --- STATE ---
 const selected = ref<UIMailItem | null>(null);
 const selectedIds = ref(new Set<string>());
@@ -433,7 +446,7 @@ onMounted(() => { loadData(); });
           </div>
         </div>
 
-        <div class="flex-1 pb-10 w-full relative">
+        <div class="flex-1 w-full relative">
           <div v-if="isLoading"
             class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-20">
             <Loader2 class="w-8 h-8 text-primary animate-spin" />
@@ -565,11 +578,14 @@ onMounted(() => { loadData(); });
 
         <div
           class="p-6 pt-0 mt-auto bg-white dark:bg-gray-900 shrink-0 border-t border-gray-100 dark:border-gray-800 pt-4">
-          <NuxtLink :to="`/admin/korespondensi/terkirim/${selected.id}`"
-            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px]">
+
+          <NuxtLink :to="getDetailRoute(selected)"
+            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px] hover:bg-primary-600">
             Lihat Detail Lengkap
           </NuxtLink>
+
         </div>
+
       </div>
 
     </div>

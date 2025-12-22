@@ -26,11 +26,11 @@
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju (Rekan)"
+          :items="tertujuItems" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+          :items="tembusanItems" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -253,7 +253,8 @@ const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<any[]>([]);
 
 // Selection
-const items = ref<any[]>([]); // Recipient list
+const tertujuItems = ref<any[]>([]);
+const tembusanItems = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
 const selectedSifat = ref<any>(null); // {label: 'Biasa', value: 'biasa'}
@@ -449,7 +450,6 @@ onMounted(async () => {
   isLoadingData.value = true;
   if (!user.value) await getProfile();
 
-  // Load Initial Data
   try {
     klasifikasiStatus.value = "loading";
     const [klasRes, recRes] = await Promise.all([
@@ -458,20 +458,57 @@ onMounted(async () => {
     ]);
 
     klasifikasiList.value = klasRes;
-    const rawRec = recRes.recipients || recRes.data || [];
 
-    // Mapping Recipients
-    items.value = rawRec.map((r: any) => ({
+    // recRes.recipients sudah berupa array flat dengan property 'group' (REKAN, TEMBUSAN, dll)
+    // hasil dari normalizeRecipients di useSDI
+    const rawRec = recRes.recipients || [];
+
+    // 1. Helper Mapping ke format UI Dropdown
+    const mapToOption = (r: any) => ({
       label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
+      group: r.group, // Penting untuk filtering
       raw: r
-    }));
+    });
+
+    // 2. Map semua data dulu
+    const allMapped = rawRec.map(mapToOption);
+
+    // 3. Filter untuk TERTUJU (Hanya REKAN)
+    // Sesuaikan string 'REKAN' dengan key JSON response Anda
+    tertujuItems.value = allMapped.filter(i => i.group === 'REKAN');
+
+    // 4. Filter untuk TEMBUSAN (Merge REKAN + TEMBUSAN)
+    tembusanItems.value = allMapped.filter(i => i.group === 'REKAN' || i.group === 'TEMBUSAN');
 
     klasifikasiStatus.value = "success";
+
+    // ... (Logika load draft biarkan sama, tapi perbaiki pencarian masternya)
+    // ...
+    // Saat mapping draft, cari di 'allMapped' agar ketemu semua kemungkinan
+    const mapApiToUI = (list: any[]) => {
+      if (!list || list.length === 0) return [];
+      return list.map(item => {
+        const posId = String(item.position_id || item.position || item.value || item.id);
+        // Cari di master list lengkap (allMapped)
+        const master = allMapped.find(m => m.value === posId);
+        if (master) return master;
+
+        // Fallback
+        return {
+          label: `${item.persnum || ''} - ${item.positionText || item.labelJob || ''}`,
+          labelJob: item.positionText || item.labelJob || item.label || '',
+          value: posId,
+          raw: item
+        };
+      });
+    };
+    // ...
+
   } catch (e) {
     console.error(e);
-    klasifikasiStatus.value = "error";
+    // ...
   } finally {
     isLoadingData.value = false;
   }

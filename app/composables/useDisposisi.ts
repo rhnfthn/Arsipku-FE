@@ -36,16 +36,28 @@ export const useDisposisi = () => {
     const list: RecipientItem[] = [];
 
     Object.keys(groups).forEach((groupName) => {
-      groups[groupName].forEach((item) => {
-        // Mapping agar sesuai dengan format dropdown UI umum (value, label)
-        list.push({
-          ...item,
-          value: String(item.position_id || item.position || item.id),
-          label: `${item.persnum || ""} - ${item.position_text || item.positionText || ""}`,
-          labelJob: item.position_text || item.positionText || "",
-          group: groupName,
+      // Pastikan groups[groupName] adalah array sebelum di-loop
+      if (Array.isArray(groups[groupName])) {
+        groups[groupName].forEach((item) => {
+          list.push({
+            ...item, // Menyalin semua data asli
+
+            // 1. Value: Mengambil 'position' (ID unik di JSON Anda)
+            value: String(item.position),
+
+            // 2. Label: Format "NAMA - JABATAN"
+            // Menggunakan 'persnum_person_text' dan 'position_text'
+            label: `${item.persnum_person_text || "Tanpa Nama"} - ${item.position_text || ""}`,
+
+            // 3. LabelJob: Mengambil singkatan jabatan 'position_abbreviation'
+            // Jika kosong, fallback ke 'position_text'
+            labelJob: item.position_abbreviation || item.position_text || "",
+
+            // 4. Group: ATASAN / BAWAHAN
+            group: groupName,
+          });
         });
-      });
+      }
     });
 
     return list;

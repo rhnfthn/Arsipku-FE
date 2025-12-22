@@ -35,7 +35,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refNumber"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Contoh: UM.01/..." />
+                placeholder="Ketik disini" />
             </div>
           </div>
         </div>
@@ -50,15 +50,15 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Contoh: Undangan Rapat..." />
+                placeholder="Ketik disini" />
             </div>
           </div>
         </div>
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
-          placeholder="Pilih Penerima Disposisi" :items="recipientList" />
+          placeholder="Pilih Tertuju" :items="recipientList" />
 
-        <div class="flex flex-col py-3 border-b border-gray-200 gap-3 mb-6">
+        <div class="flex flex-col py-3 gap-3 mb-6">
           <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start">
@@ -72,9 +72,9 @@
         </div>
 
         <ClientOnly>
-          <div class="text-center mb-2">
+          <!-- <div class="text-center mb-2">
             <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pratinjau Lembar Disposisi</span>
-          </div>
+          </div> -->
 
           <div class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto">
             <div
@@ -165,10 +165,10 @@
 
                   <div class="relative" v-if="showEditor">
                     <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
-                    <div v-if="!editorContent"
+                    <!-- <div v-if="!editorContent"
                       class="absolute top-10 left-4 text-gray-400 pointer-events-none italic z-0 text-sm">
                       Ketik catatan disposisi di sini...
-                    </div>
+                    </div> -->
                   </div>
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
@@ -306,23 +306,17 @@ const sifatOptions = [
 const tinyMceInit = {
   base_url: '/tinymce',
   suffix: '.min',
-  height: 300,
+  height: 400,
   menubar: false,
-  plugins: 'lists advlist link image code table fullscreen autoresize',
-  toolbar: 'undo redo | bold italic underline | bullist numlist | code | fullscreen',
-  // Style disamakan dengan kertas preview
-  content_style: `
-    body {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 14px;
-      line-height: 1.4;
-      border: none !important;
-      margin: 0;
-      padding: 10px;
-      background: transparent;
-    }
-  `,
-  setup(editor: TinyMCEEditor) { tinymceEditor.value = editor; }
+  promotion: false,
+  branding: false,
+  placeholder: 'Ketik konten disini...',
+  plugins: 'lists advlist link image code table fullscreen',
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
+  setup(editor: TinyMCEEditor) {
+    tinymceEditor.value = editor;
+  }
 };
 
 // --- COMPUTED ---
