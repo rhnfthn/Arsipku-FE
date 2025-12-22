@@ -1,5 +1,4 @@
 // types/klasifikasi.ts
-
 export interface Klasifikasi {
   id: string;
   company: string;

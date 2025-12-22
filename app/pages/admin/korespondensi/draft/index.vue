@@ -70,8 +70,34 @@ const getRandomColor = (id) => {
 };
 
 const handleEdit = (mail) => {
+  // Debugging: Lihat output ini di Console Browser (F12) untuk memastikan kodenya apa
+  console.log("DEBUG EDIT - ID:", mail.id, "Jenis:", mail.category);
+
+  // Default ke Nota Dinas jika tidak dikenali
+  let path = '/admin/korespondensi/tulis/nota-dinas';
+
+  // Ambil kategori dan ubah ke huruf besar semua biar aman
+  const jenis = (mail.category || '').toUpperCase();
+
+  // 1. DISPOSISI (Kode API biasanya 'DI')
+  if (['DISPOSISI', 'DI'].includes(jenis)) {
+    path = '/admin/korespondensi/tulis/disposisi';
+  }
+  // 2. SURAT DINAS INTERNAL (Kode API biasanya 'SDI' atau 'KA')
+  else if (['INTERNAL', 'SDI', 'KA', 'SURAT DINAS INTERNAL'].includes(jenis)) {
+    path = '/admin/korespondensi/tulis/surat-dinas-internal';
+  }
+  // 3. SURAT DINAS EKSTERNAL (Kode API biasanya 'SDE')
+  else if (['EXTERNAL', 'EKSTERNAL', 'SDE', 'SURAT DINAS EKSTERNAL'].includes(jenis)) {
+    path = '/admin/korespondensi/tulis/surat-dinas-eksternal';
+  }
+  // 4. NOTA DINAS (Kode API biasanya 'ND')
+  else if (['ND', 'NOTA DINAS'].includes(jenis)) {
+    path = '/admin/korespondensi/tulis/nota-dinas';
+  }
+
   router.push({
-    path: '/admin/korespondensi/tulis/nota-dinas',
+    path: path,
     query: {
       draft_id: mail.id,
       mode: 'edit'
@@ -232,8 +258,8 @@ const handleDelete = async () => {
 
   // Pastikan user position ada sebelum menghapus
   if (!user.value?.position) {
-      alert("Gagal menghapus: Data user tidak ditemukan.");
-      return;
+    alert("Gagal menghapus: Data user tidak ditemukan.");
+    return;
   }
 
   isDeleting.value = true;
@@ -311,7 +337,7 @@ const getCategoryLabel = (cat) => {
             class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
             <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
               class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-              :class="{'text-primary font-semibold bg-gray-50': activeDateLabel === opt}">
+              :class="{ 'text-primary font-semibold bg-gray-50': activeDateLabel === opt }">
               {{ opt }}
             </button>
           </div>
@@ -328,7 +354,7 @@ const getCategoryLabel = (cat) => {
             class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
             <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
               class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-              :class="{'text-primary font-semibold bg-gray-50': activeSortLabel === opt}">
+              :class="{ 'text-primary font-semibold bg-gray-50': activeSortLabel === opt }">
               {{ opt }}
             </button>
           </div>
@@ -341,13 +367,13 @@ const getCategoryLabel = (cat) => {
             <button @click="showPageMenu = !showPageMenu"
               class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
               <Layers class="w-4 h-4" />
-              </button>
+            </button>
 
-             <div v-if="showPageMenu"
+            <div v-if="showPageMenu"
               class="absolute top-full right-0 mt-1 w-24 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
               <button v-for="opt in pageOptions" :key="opt" @click="selectPageOption(opt)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-                :class="{'text-primary font-semibold bg-gray-50': itemsPerPage === opt}">
+                :class="{ 'text-primary font-semibold bg-gray-50': itemsPerPage === opt }">
                 {{ opt }} Item
               </button>
             </div>
@@ -372,8 +398,7 @@ const getCategoryLabel = (cat) => {
 
     <div class="flex-1 flex overflow-hidden relative w-full">
 
-      <div
-        class="flex flex-col bg-white transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
+      <div class="flex flex-col bg-white transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
 
         <div class="px-3 py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
@@ -448,7 +473,7 @@ const getCategoryLabel = (cat) => {
         </div>
       </div>
 
-      </div>
+    </div>
 
     <div v-if="showDeleteModal"
       class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">

@@ -313,11 +313,11 @@ const submitTemplate = async () => {
     if (isEditMode.value && editingId.value) {
       // --- UPDATE ---
       await updateTemplate(editingId.value, payload);
-      toast.add({ title: 'Sukses', description: 'Template berhasil diperbarui.', color: 'green' });
+      toast.add({ title: 'Sukses', description: 'Template berhasil diperbarui.', color: 'success' });
     } else {
       // --- CREATE ---
       await createTemplate(payload);
-      toast.add({ title: 'Sukses', description: 'Template berhasil disimpan.', color: 'green' });
+      toast.add({ title: 'Sukses', description: 'Template berhasil disimpan.', color: 'success' });
     }
 
     // Refresh list & Close modals
@@ -359,7 +359,7 @@ const handleDeleteTemplate = async (id: any) => {
     toast.add({
       title: 'Terhapus',
       description: 'Template berhasil dihapus.',
-      color: 'green'
+      color: 'success'
     });
 
     await fetchMyTemplates();
