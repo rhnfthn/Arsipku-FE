@@ -1,647 +1,283 @@
 <template>
-  <div>
-    <div
-      v-if="isLoadingData || isSdiLoading"
-      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white/80 backdrop-blur-sm"
-    >
-      <div class="flex flex-col items-center gap-2">
-        <UIcon
-          name="i-lucide-loader-2"
-          class="w-10 h-10 animate-spin text-primary"
-        />
-        <span class="text-gray-600 font-medium">Memproses...</span>
+  <div class="relative">
+
+    <div v-if="isLoadingData"
+      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
+      <div
+        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+          {{ loadingMessage || 'Mohon Tunggu...' }}
+        </span>
       </div>
     </div>
 
-    <div
-      class="bg-white dark:bg-gray-900 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden"
-    >
+    <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
     </div>
 
-    <UCard
-      variant="soft"
-      :ui="{ root: 'rounded-t-none ring-0 shadow-none bg-white print:hidden' }"
-    >
-      <div class="flex-1 overflow-y-auto space-y-1">
-        <div class="grid grid-cols-1 gap-x-6 gap-y-2 mb-6">
-          <div class="space-y-2">
-            <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
+    <UCard variant="soft" :ui="{
+      root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
+    }">
+      <div class="flex-1 overflow-y-auto space-y-4">
 
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0"
-            >
-              <span
-                class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0"
-                >Sifat</span
-              >
-              <div class="flex flex-wrap gap-1 w-full items-center">
-                <USelectMenu
-                  v-model="selectedSifat"
-                  :items="sifatOptions"
-                  placeholder="Pilih sifat ..."
-                  class="w-full p-0"
-                  variant="none"
-                >
-                  <template #default>
-                    <span v-if="selectedSifat" class="text-sm font-medium">{{
-                      selectedSifat.label
-                    }}</span>
-                    <span v-else class="text-sm text-gray-400"
-                      >Pilih sifat</span
-                    >
-                  </template>
-                </USelectMenu>
-              </div>
-            </div>
-          </div>
+        <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
 
-          <div class="space-y-2">
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0"
-            >
-              <span
-                class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0"
-                >Ref. Nomor</span
-              >
-              <input
-                type="text"
-                v-model="refNumber"
-                class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
-                placeholder="Nomor Surat Masuk"
-              />
-            </div>
+        <TulisInputSifat v-model="selectedSifat" />
 
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0"
-            >
-              <span
-                class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0"
-                >Ref. Perihal</span
-              >
-              <input
-                type="text"
-                v-model="subject"
-                class="flex-1 outline-none text-gray-900 py-1 bg-transparent text-sm w-full"
-                placeholder="Perihal Surat Masuk"
-              />
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+              Ref. Nomor Surat
+              <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
+            </span>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <input type="text" v-model="refNumber"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                placeholder="Ketik disini" />
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col py-3 border-b border-gray-200 gap-3 mb-6">
-          <span class="text-sm font-medium text-gray-500"
-            >Instruksi / Disposisi</span
-          >
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+              Ref. Perihal
+              <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
+            </span>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <input type="text" v-model="refPerihal"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                placeholder="Ketik disini" />
+            </div>
+          </div>
+        </div>
+
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
+          placeholder="Pilih Tertuju" :items="recipientList" />
+
+        <div class="flex flex-col py-3 gap-3 mb-6">
+          <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div
-              v-for="opt in checklistOptions"
-              :key="opt"
-              class="flex gap-2 items-start"
-            >
-              <input
-                type="checkbox"
-                :id="opt"
-                :value="opt"
-                v-model="selectedChecklist"
-                class="mt-0.5 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
-              />
-              <label
-                :for="opt"
-                class="text-sm text-gray-700 cursor-pointer select-none leading-tight"
-              >
+            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start">
+              <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
+                class="mt-0.5 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
+              <label :for="opt" class="text-sm text-gray-700 cursor-pointer select-none leading-tight">
                 {{ opt }}
               </label>
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col py-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-gray-700">Preview Layout</h3>
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              size="md"
-              label="Preview"
-              @click="openPreview"
-            />
-          </div>
+        <ClientOnly>
+          <!-- <div class="text-center mb-2">
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pratinjau Lembar Disposisi</span>
+          </div> -->
 
-          <ClientOnly>
+          <div class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto">
             <div
-              class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto"
-            >
-              <div
-                class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-['Times_New_Roman'] relative">
+              class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-['Times_New_Roman'] relative">
 
-                <div class="border-2 border-black mb-0">
-                  <div class="flex border-b-2 border-black">
-                    <div
-                      class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black"
-                    >
-                      <img
-                        src="/logoAirnav.png"
-                        alt="Logo"
-                        class="h-12 w-auto object-contain"
-                      />
-                      <span class="font-bold text-xl tracking-wide"
-                        >AirNav Indonesia</span
-                      >
-                    </div>
-                    <div
-                      class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm"
-                    >
-                      <div>LEMBAR DISPOSISI</div>
-                      <div class="uppercase">
-                        {{ user?.positionText || "NAMA JABATAN" }}
-                      </div>
-                    </div>
+              <div class="border-2 border-black mb-0">
+                <div class="flex border-b-2 border-black">
+                  <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
+                    <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
+                    <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
-
-                  <div class="flex border-b-2 border-black">
-                    <div
-                      class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between"
-                    >
-                      <div class="font-bold underline mb-4">AGENDA</div>
-                      <div class="text-xs font-bold space-y-2">
-                        <div>No: ........</div>
-                        <div>Tgl: ........</div>
-                      </div>
-                    </div>
-
-                    <div class="w-[55%] border-r-2 border-black p-2 text-xs">
-                      <table class="w-full">
-                        <tr>
-                          <td class="w-16 py-1">Surat dari</td>
-                          <td class="py-1">
-                            :
-                            {{
-                              selectedSender?.label || "....................."
-                            }}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="py-1">Tanggal</td>
-                          <td class="py-1">: {{ formattedDate }}</td>
-                        </tr>
-                        <tr>
-                          <td class="py-1">Nomor</td>
-                          <td class="py-1">
-                            : {{ refNumber || "....................." }}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="py-1 align-top">Perihal</td>
-                          <td class="py-1 align-top">
-                            : {{ subject || "....................." }}
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-
-                    <div class="w-[30%] p-2 text-xs">
-                      <div class="font-bold underline mb-2">KLASIFIKASI</div>
-                      <div class="space-y-1">
-                        <div
-                          v-for="s in sifatOptions"
-                          :key="s.value"
-                          class="flex items-center gap-2"
-                        >
-                          <div
-                            class="w-4 h-4 border border-black flex items-center justify-center text-[10px]"
-                          >
-                            {{ selectedSifat?.value === s.value ? "✓" : "" }}
-                          </div>
-                          <span>{{ s.label }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="border-b-2 border-black p-2 text-xs">
-                    <div class="font-bold underline mb-1">Kepada Yth. :</div>
-                    <div class="pl-4 italic text-gray-500">
-                      (Pilih penerima pada tahap selanjutnya / sistem)
-                    </div>
-                  </div>
-
-                  <div class="border-b-2 border-black p-2 text-xs flex">
-                    <div class="w-20 font-bold underline shrink-0">
-                      DISPOSISI :
-                    </div>
-                    <div class="flex-1 grid grid-cols-3 gap-2">
-                      <div
-                        v-for="opt in checklistOptions"
-                        :key="opt"
-                        class="flex items-start gap-1"
-                      >
-                        <div
-                          class="w-3 h-3 border border-black flex items-center justify-center text-[8px] mt-0.5 shrink-0"
-                        >
-                          {{ selectedChecklist.includes(opt) ? "✓" : "" }}
-                        </div>
-                        <span class="leading-tight">{{ opt }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="p-0 min-h-[300px] relative">
-                    <div
-                      class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200"
-                    >
-                      CATATAN :
-                    </div>
-
-                    <div v-if="showEditor" class="relative">
-                      <Editor
-                        api-key="no-api-key"
-                        v-model="editorContent"
-                        :init="tinyMceInit"
-                      />
-                    </div>
-                    <div v-else class="h-[300px] bg-white w-full"></div>
-
-                    <div
-                      class="absolute bottom-4 right-4 z-10 pointer-events-none"
-                    >
-                      <div
-                        class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50"
-                      >
-                        Paraf
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50"
-                  >
-                    Lembar disposisi ini menjadi bagian yang tidak terpisahkan
-                    dari nomor dan tanggal surat pada agenda ini.
+                  <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
+                    <div>LEMBAR DISPOSISI</div>
+                    <div class="uppercase">{{ user?.positionText || "NAMA JABATAN" }}</div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </ClientOnly>
 
-          <div class="flex flex-col py-3 gap-2 mt-4">
-            <label class="text-sm font-medium text-gray-700"
-              >Lampiran File Tambahan</label
-            >
-            <FileUpload
-              v-model="uploadedFiles"
-              accept="application/pdf"
-              :multiple="true"
-              description="Klik atau drag & drop untuk upload file PDF"
-            />
+                <div class="flex border-b-2 border-black">
+                  <div class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between">
+                    <div class="font-bold underline mb-4">AGENDA</div>
+                    <div class="text-xs font-bold space-y-2">
+                      <div>No: ........</div>
+                      <div>Tgl: ........</div>
+                    </div>
+                  </div>
+
+                  <div class="w-[55%] border-r-2 border-black p-2 text-xs">
+                    <table class="w-full">
+                      <tr>
+                        <td class="w-16 py-1">Surat dari</td>
+                        <td class="py-1">: {{ user?.positionText || "....................." }}</td>
+                      </tr>
+                      <tr>
+                        <td class="py-1">Tanggal</td>
+                        <td class="py-1">: {{ formattedDate }}</td>
+                      </tr>
+                      <tr>
+                        <td class="py-1">Nomor</td>
+                        <td class="py-1">: {{ refNumber || "-" }}</td>
+                      </tr>
+                      <tr>
+                        <td class="py-1 align-top">Perihal</td>
+                        <td class="py-1 align-top">: {{ refPerihal || "-" }}</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <div class="w-[30%] p-2 text-xs">
+                    <div class="font-bold underline mb-2">KLASIFIKASI</div>
+                    <div class="space-y-1">
+                      <div v-for="s in sifatOptions" :key="s.value" class="flex items-center gap-2">
+                        <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px]">
+                          {{ selectedSifat?.value === s.value ? "✓" : "" }}
+                        </div>
+                        <span class="capitalize">{{ s.label }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-b-2 border-black p-2 text-xs">
+                  <div class="font-bold underline mb-1">Kepada Yth. :</div>
+                  <div v-if="selectedTertuju.length > 0" class="pl-4">
+                    <ol class="list-decimal ml-4">
+                      <li v-for="t in selectedTertuju" :key="t.value">{{ t.labelJob || t.label }}</li>
+                    </ol>
+                  </div>
+                  <div v-else class="pl-4 italic text-gray-500">
+                    (Pilih penerima pada form di atas)
+                  </div>
+                </div>
+
+                <div class="border-b-2 border-black p-2 text-xs flex">
+                  <div class="w-20 font-bold underline shrink-0">DISPOSISI :</div>
+                  <div class="flex-1 grid grid-cols-3 gap-2">
+                    <div v-for="opt in checklistOptions" :key="opt" class="flex items-start gap-1">
+                      <div
+                        class="w-3 h-3 border border-black flex items-center justify-center text-[8px] mt-0.5 shrink-0">
+                        {{ selectedChecklist.includes(opt) ? "✓" : "" }}
+                      </div>
+                      <span class="leading-tight">{{ opt }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-0 min-h-[300px] relative group">
+                  <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
+
+                  <div class="relative" v-if="showEditor">
+                    <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                    <!-- <div v-if="!editorContent"
+                      class="absolute top-10 left-4 text-gray-400 pointer-events-none italic z-0 text-sm">
+                      Ketik catatan disposisi di sini...
+                    </div> -->
+                  </div>
+                  <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
+                    <div
+                      class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
+                      Paraf
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
+                  Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
+                  ini.
+                </div>
+              </div>
+
+            </div>
           </div>
-        </div>
+        </ClientOnly>
+
+        <TulisInputLampiran v-model:existingFiles="existingFiles" />
 
         <div
-          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800"
-        >
-          <UButton
-            label="Preview Dokumen"
-            color="primary"
-            size="lg"
-            icon="i-lucide-eye"
-            class="px-8 font-bold"
-            @click="openPreview"
-          />
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau PDF" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
+
       </div>
     </UCard>
 
-    <ClientOnly>
-      <div
-        class="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden"
-      >
-        <div
-          ref="pdfSourceRef"
-          style="
-            width: 800px;
-            padding: 20px;
-            background-color: #ffffff;
-            color: #000000;
-            font-family: &quot;Times New Roman&quot;, serif;
-          "
-        >
-          <table
-            style="
-              width: 100%;
-              border-collapse: collapse;
-              border: 2px solid #000000;
-            "
-          >
-            <tr style="border-bottom: 2px solid #000000">
-              <td
-                colspan="2"
-                style="
-                  padding: 10px;
-                  border-right: 2px solid #000000;
-                  width: 60%;
-                "
-              >
-                <div style="display: flex; align-items: center; gap: 10px">
-                  <img src="/logoAirnav.png" style="height: 50px" />
-                  <span
-                    style="font-size: 18px; font-weight: bold; color: #000000"
-                    >AirNav Indonesia</span
-                  >
-                </div>
-              </td>
-              <td
-                style="
-                  padding: 10px;
-                  text-align: center;
-                  font-weight: bold;
-                  font-size: 12px;
-                  color: #000000;
-                "
-              >
-                <div>LEMBAR DISPOSISI</div>
-                <div style="text-transform: uppercase">
-                  {{ user?.positionText || "NAMA JABATAN" }}
-                </div>
-              </td>
-            </tr>
-
-            <tr style="border-bottom: 2px solid #000000">
-              <td
-                style="
-                  width: 15%;
-                  padding: 5px;
-                  border-right: 2px solid #000000;
-                  vertical-align: top;
-                "
-              >
-                <div
-                  style="
-                    font-weight: bold;
-                    text-decoration: underline;
-                    margin-bottom: 20px;
-                    color: #000000;
-                  "
-                >
-                  AGENDA
-                </div>
-                <div style="font-size: 11px; color: #000000">No: .........</div>
-                <div style="font-size: 11px; color: #000000">
-                  Tgl: .........
-                </div>
-              </td>
-              <td
-                style="
-                  width: 55%;
-                  padding: 5px;
-                  border-right: 2px solid #000000;
-                  vertical-align: top;
-                "
-              >
-                <table style="width: 100%; font-size: 11px; color: #000000">
-                  <tr>
-                    <td style="width: 60px">Surat dari</td>
-                    <td>: {{ selectedSender?.label || "-" }}</td>
-                  </tr>
-                  <tr>
-                    <td>Tanggal</td>
-                    <td>: {{ formattedDate }}</td>
-                  </tr>
-                  <tr>
-                    <td>Nomor</td>
-                    <td>: {{ refNumber || "-" }}</td>
-                  </tr>
-                  <tr>
-                    <td style="vertical-align: top">Perihal</td>
-                    <td style="vertical-align: top">: {{ subject || "-" }}</td>
-                  </tr>
-                </table>
-              </td>
-              <td style="width: 30%; padding: 5px; vertical-align: top">
-                <div
-                  style="
-                    font-weight: bold;
-                    text-decoration: underline;
-                    font-size: 11px;
-                    margin-bottom: 5px;
-                    color: #000000;
-                  "
-                >
-                  KLASIFIKASI
-                </div>
-                <div style="font-size: 11px; color: #000000">
-                  <div v-for="s in sifatOptions" :key="s.value">
-                    [ {{ selectedSifat?.value === s.value ? "X" : " " }} ]
-                    {{ s.label }}
-                  </div>
-                </div>
-              </td>
-            </tr>
-
-            <tr style="border-bottom: 2px solid #000000">
-              <td
-                colspan="3"
-                style="padding: 5px; font-size: 11px; color: #000000"
-              >
-                <span style="font-weight: bold; text-decoration: underline"
-                  >Kepada Yth. :</span
-                >
-                <div style="margin-left: 10px; margin-top: 5px">
-                  (Daftar Penerima)
-                </div>
-              </td>
-            </tr>
-
-            <tr style="border-bottom: 2px solid #000000">
-              <td colspan="3" style="padding: 5px">
-                <div style="display: flex">
-                  <div
-                    style="
-                      width: 80px;
-                      font-weight: bold;
-                      text-decoration: underline;
-                      font-size: 11px;
-                      color: #000000;
-                    "
-                  >
-                    DISPOSISI :
-                  </div>
-                  <div
-                    style="flex: 1; display: flex; flex-wrap: wrap; gap: 10px"
-                  >
-                    <div
-                      v-for="opt in checklistOptions"
-                      :key="opt"
-                      style="font-size: 10px; width: 30%; color: #000000"
-                    >
-                      [ {{ selectedChecklist.includes(opt) ? "X" : " " }} ]
-                      {{ opt }}
-                    </div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td
-                colspan="3"
-                style="
-                  padding: 10px;
-                  min-height: 300px;
-                  vertical-align: top;
-                  position: relative;
-                "
-              >
-                <div
-                  style="
-                    font-weight: bold;
-                    text-decoration: underline;
-                    font-size: 11px;
-                    margin-bottom: 10px;
-                    color: #000000;
-                  "
-                >
-                  CATATAN :
-                </div>
-
-                <div
-                  v-if="showEditor"
-                  v-html="editorContent"
-                  style="
-                    font-size: 12px;
-                    line-height: 1.5;
-                    min-height: 200px;
-                    color: #000000;
-                  "
-                ></div>
-                <div v-else style="min-height: 200px"></div>
-
-                <div
-                  style="
-                    text-align: right;
-                    margin-top: 50px;
-                    margin-right: 20px;
-                  "
-                >
-                  <div
-                    style="
-                      border: 2px solid #000000;
-                      width: 80px;
-                      height: 50px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      font-weight: bold;
-                      font-size: 10px;
-                      margin-left: auto;
-                      color: #000000;
-                    "
-                  >
-                    Paraf
-                  </div>
-                </div>
-              </td>
-            </tr>
-
-            <tr style="border-top: 2px solid #000000;">
-              <td colspan="3"
-                style="font-size: 9px; font-weight: bold; padding: 2px; color: #000000;">
-                Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda ini.
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-    </ClientOnly>
-
-    <USlideover
-      v-model:open="isOpenPreview"
-      title="Preview PDF"
-      side="bottom"
-      :ui="{
-        content: 'h-screen max-h-screen',
-        body: 'p-0',
-        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-      }"
-    >
+    <USlideover v-model:open="isOpenPreview" title="Pratinjau Disposisi" side="bottom"
+      :ui="{ content: 'h-screen max-h-screen', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
       <template #body>
-        <div class="h-full w-full flex items-center justify-center bg-gray-100">
-          <iframe
-            v-if="pdfUrl"
-            :src="pdfUrl"
-            class="w-full h-full rounded-lg shadow-lg border border-gray-200"
-          />
+        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
           <div v-else class="flex flex-col items-center gap-2">
-            <UIcon
-              name="i-lucide-loader-2"
-              class="animate-spin w-8 h-8 text-primary-500"
-            />
+            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
             <span class="text-gray-500">Memuat PDF...</span>
           </div>
         </div>
       </template>
-
       <template #footer>
-        <div class="flex justify-end gap-4 w-full">
-          <UButton
-            label="Simpan Draft"
-            color="neutral"
-            variant="outline"
-            size="lg"
-            icon="i-heroicons-document-text"
-            class="px-8"
-            :loading="isSdiLoading"
-            @click="handleSaveDraft"
-          />
-          <UButton
-            label="Kirim Dokumen"
-            color="primary"
-            size="lg"
-            icon="i-heroicons-paper-airplane"
-            class="px-8 font-bold"
-            @click="handleKirimDokumen"
-          />
+        <div class="flex gap-4 w-full">
+          <UButton label="Simpan Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+            class="px-8" :loading="isLoadingData" @click="confirmSaveDraft" />
+          <UButton label="Kirim Disposisi" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            class="px-8 font-bold" :loading="isLoadingData" @click="confirmKirimDokumen" />
         </div>
       </template>
     </USlideover>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
-import Editor from "@tinymce/tinymce-vue";
-import { useAuth } from "@/composables/useAuth";
-import type { Editor as TinyMCEEditor } from "tinymce";
-import { useSdi } from "~/composables/useSdi";
-import { type SdiPayload } from "~/types/sdi";
+import Editor from '@tinymce/tinymce-vue';
+import type { Editor as TinyMCEEditor } from 'tinymce';
 
-const { user, getProfile } = useAuth();
+// Components
+import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
+import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
+import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
+import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
+
+// Types & Logic
+import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
+
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 
-const { saveDraft, sendMessage, isLoading: isSdiLoading } = useSdi();
+const { user, getProfile } = useAuth();
+const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Tulis Disposisi", to: "#" },
+];
 
 // --- STATE ---
-const pdfSourceRef = ref<HTMLElement | null>(null);
+const isLoadingData = ref(false);
+const loadingMessage = ref("");
+const isOpenPreview = ref(false);
+const editDraftId = ref<string | null>(null);
+
+const today = new Date();
+const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
+
+const selectedSifat = ref<any>(null);
+const refNumber = ref("");
+const refPerihal = ref("");
+
+const recipientList = ref<any[]>([]);
+const selectedTertuju = ref<any[]>([]);
+const existingFiles = ref<any[]>([]);
+
+// Menggunakan Array string untuk checkbox
+const selectedChecklist = ref<string[]>([]);
+
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
-const date = ref<CalendarDate>();
-const senders_selected = ref("");
-const subject = ref("");
-const refNumber = ref("");
-const isLoadingData = ref(false);
-
-// --- PREVIEW STATE ---
-const isOpenPreview = ref(false);
-const pdfUrl = ref("");
 const pdfBlob = ref<Blob | null>(null);
+const pdfUrl = ref("");
 
-// --- UPLOAD STATE ---
-const uploadedFiles = ref<File[]>([]);
-
-// --- CHECKBOX STATE & OPTIONS ---
-const selectedChecklist = ref<string[]>([]);
+// --- CONSTANTS ---
 const checklistOptions = [
   "Untuk Diketahui",
   "Proses Lanjut",
@@ -660,250 +296,237 @@ const checklistOptions = [
   "Lainnya",
 ];
 
-const showEditor = computed(() => selectedChecklist.value.includes("Lainnya"));
-
-// --- MOCK DATA ---
-const senders = [
-  { label: "Internal - Divisi SDM", value: "tes1" },
-  { label: "Eksternal - Kemenhub", value: "tes2" },
-];
-const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Tulis Disposisi", to: "#" },
-];
 const sifatOptions = [
-  { label: "Sangat Rahasia", value: "sangat_rahasia" },
+  { label: "Sangat Rahasia", value: "sangat rahasia" },
   { label: "Rahasia", value: "rahasia" },
   { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa", value: "biasa" },
+  { label: "Biasa", value: "biasa" }
 ];
-const selectedSifat = ref();
 
-// --- TINYMCE CONFIG ---
 const tinyMceInit = {
-  base_url: "/tinymce",
-  suffix: ".min",
-  height: 300,
+  base_url: '/tinymce',
+  suffix: '.min',
+  height: 400,
   menubar: false,
   promotion: false,
   branding: false,
-  statusbar: false,
-  placeholder: 'Ketik catatan disposisi disini...',
-  plugins: 'lists advlist link table fullscreen',
-  toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | table | code fullscreen',
-  content_style: `
-    body { font-family: "Times New Roman", Times, serif; font-size: 11pt; margin: 10px; }
-    p { margin: 0; padding: 0; line-height: 1.4; }
-  `,
+  placeholder: 'Ketik konten disini...',
+  plugins: 'lists advlist link image code table fullscreen',
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
-  },
+  }
 };
 
-onMounted(async () => {
-  const now = new Date();
-  date.value = new CalendarDate(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate(),
-  );
-  if (!user.value) await getProfile();
-});
-
+// --- COMPUTED ---
 const formattedDate = computed(() => {
   if (!date.value) return "-";
-  const jsDate = new Date(
-    date.value.year,
-    date.value.month - 1,
-    date.value.day,
-  );
-  return jsDate.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
+  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
-const selectedSender = computed(() =>
-  senders.find((s) => s.value === senders_selected.value),
-);
 
-// --- PAYLOAD PREPARATION ---
-const getPayload = () => {
-  const tglStr = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : new Date().toISOString().split("T")[0];
+// LOGIC BARU: Editor hanya muncul jika "Lainnya" dipilih
+const showEditor = computed(() => {
+  return selectedChecklist.value.includes("Lainnya");
+});
+
+// --- METHODS ---
+const getPayload = (): DisposisiPayload => {
+  const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
+  const tglUi = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
 
   return {
-    pengirim: user.value?.position || "70000000",
-    penerima: [],
-    tembusan: [],
-    klasifikasi: "DISPOSISI",
-    klasifikasi_text: "Lembar Disposisi",
-    sifat: selectedSifat.value?.value || "biasa",
-    perihal: subject.value,
-    konten: showEditor.value ? editorContent.value : "-",
-    english: false,
-    nama_tempat: user.value?.areaText || "Tangerang",
-    nama_jabatan: user.value?.positionText || "Jabatan",
-    tanda_tangan: "hash_ttd_placeholder",
-    nama_lengkap: user.value?.nama || "User",
-    tgl: tglStr,
-    lampiran: uploadedFiles.value.length > 0 ? "Terlampir" : "-",
-    final_pdf: null,
-  } as SdiPayload;
+    id_naskah: editDraftId.value || null,
+    pengirim: user.value?.position || "",
+    tertuju: selectedTertuju.value.map(i => i.value),
+
+    tanggal_disposisi: tglDb,
+    tanggal_ui: tglUi, // Helper
+
+    sifat: selectedSifat.value?.label || "Biasa",
+
+    ref_nomor: refNumber.value || "-",
+    ref_perihal: refPerihal.value || "-",
+
+    // Jika editor tidak aktif, kosongkan catatan (atau biarkan sesuai kebutuhan)
+    catatan: showEditor.value ? editorContent.value : "",
+    htmlContent: showEditor.value ? editorContent.value : "",
+
+    disposisi: selectedChecklist.value,
+    lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean)
+  };
 };
 
-const createFormData = (payload: SdiPayload, includePdf: boolean = false) => {
+const createFormData = (payload: DisposisiPayload, includePdf: boolean = false) => {
   const formData = new FormData();
-  formData.append("pengirim", String(payload.pengirim));
-  formData.append("sifat", payload.sifat);
-  formData.append("perihal", payload.perihal);
-  formData.append("konten", payload.konten);
-  formData.append("tgl", payload.tgl);
+  Object.keys(payload).forEach((key) => {
+    const k = key as keyof DisposisiPayload;
+    if (k === 'tanggal_ui') return; // Skip helper UI
 
-  formData.append("checklist", JSON.stringify(selectedChecklist.value));
-  formData.append("ref_number", refNumber.value);
-
-  if (uploadedFiles.value.length > 0) {
-    uploadedFiles.value.forEach((file) =>
-      formData.append("lampiran_files", file, file.name),
-    );
-  }
+    const value = payload[k];
+    if (Array.isArray(value)) {
+      formData.append(k, JSON.stringify(value));
+    } else if (value !== null && value !== undefined) {
+      formData.append(k, String(value));
+    }
+  });
 
   if (includePdf && pdfBlob.value) {
-    formData.append("final_pdf", pdfBlob.value, `Disposisi_${payload.tgl}.pdf`);
+    const safeName = (payload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+    formData.append("final_pdf", pdfBlob.value, `DI_${safeName}.pdf`);
   }
   return formData;
 };
 
+const validateAndToast = (payload: DisposisiPayload) => {
+  const check = validateDisposisiPayload(payload);
+  if (!check.isValid) {
+    const firstKey = Object.keys(check.errors)[0];
+    toast.add({ title: 'Validasi Gagal', description: check.errors[firstKey], color: 'error' });
+    return false;
+  }
+  return true;
+};
+
 // --- ACTIONS ---
-const handleSaveDraft = async () => {
-  if (!user.value) await getProfile();
+
+const handlePreview = async () => {
   const payload = getPayload();
-  const formData = createFormData(payload, false);
-  try {
-    await saveDraft(formData);
-    toast.add({
-      title: "Berhasil",
-      description: "Draft Disposisi disimpan",
-      color: "green",
-    });
-    isOpenPreview.value = false;
-  } catch (e) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal simpan draft",
-      color: "red",
-    });
-  }
-};
-
-const handleKirimDokumen = async () => {
-  if (!user.value) await getProfile();
-  const payload = getPayload();
-
-  if (!pdfBlob.value) {
-    toast.add({
-      title: "PDF Belum Siap",
-      description: "Tunggu preview selesai",
-      color: "orange",
-    });
-    return;
-  }
-
-  const formData = createFormData(payload, true);
-  try {
-    await sendMessage(formData);
-    toast.add({
-      title: "Terkirim",
-      description: "Disposisi berhasil dikirim",
-      color: "green",
-    });
-    isOpenPreview.value = false;
-  } catch (e) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal kirim disposisi",
-      color: "red",
-    });
-  }
-};
-
-// --- PDF GENERATOR ---
-async function openPreview() {
-  const element = pdfSourceRef.value;
-  if (!element) return;
+  if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
-  isOpenPreview.value = true;
-  if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-  pdfUrl.value = "";
-  pdfBlob.value = null;
-
+  loadingMessage.value = "Membuat PDF...";
   try {
-    const html2pdf = (await import("html2pdf.js")).default;
-    const { PDFDocument } = await import("pdf-lib");
-
-    const opt = {
-      margin: 10,
-      filename: `Disposisi_${Date.now()}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-
-    const mainPdfBuffer = await html2pdf()
-      .set(opt)
-      .from(element)
-      .output("arraybuffer");
-
-    const mergedPdf = await PDFDocument.create();
-    const mainPdfDoc = await PDFDocument.load(mainPdfBuffer);
-    const mainPages = await mergedPdf.copyPages(
-      mainPdfDoc,
-      mainPdfDoc.getPageIndices(),
-    );
-    mainPages.forEach((page) => mergedPdf.addPage(page));
-
-    if (uploadedFiles.value && uploadedFiles.value.length > 0) {
-      for (const file of uploadedFiles.value) {
-        if (file.type === "application/pdf") {
-          try {
-            const fileBuffer = await file.arrayBuffer();
-            const attachmentDoc = await PDFDocument.load(fileBuffer);
-            const attachmentPages = await mergedPdf.copyPages(
-              attachmentDoc,
-              attachmentDoc.getPageIndices(),
-            );
-            attachmentPages.forEach((page) => mergedPdf.addPage(page));
-          } catch (err) {
-            console.error(`Gagal merge file ${file.name}`, err);
-          }
-        }
-      }
-    }
-
-    const mergedPdfBytes = await mergedPdf.save();
-    const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
-    pdfBlob.value = blob;
-    pdfUrl.value = URL.createObjectURL(blob);
-  } catch (err: any) {
-    console.error("PDF Error:", err);
-    alert("Gagal generate PDF: " + err.message);
-    isOpenPreview.value = false;
+    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+    const fd = createFormData(payload, false);
+    const blob = await generatePdf(fd);
+    pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
+    pdfUrl.value = URL.createObjectURL(pdfBlob.value);
+    isOpenPreview.value = true;
+  } catch (err) {
+    console.error(err);
+    toast.add({ title: 'Gagal Preview', color: 'error' });
   } finally {
     isLoadingData.value = false;
   }
-}
+};
+
+const confirmKirimDokumen = async () => {
+  if (!confirm("Kirim Disposisi ini?")) return;
+  const payload = getPayload();
+  isLoadingData.value = true;
+
+  try {
+    // Regenerate PDF
+    const fdPreview = createFormData(payload, false);
+    const blob = await generatePdf(fdPreview);
+    pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
+
+    const fdFinal = createFormData(payload, true);
+    let res;
+
+    if (editDraftId.value) {
+      res = await sendDraft(fdFinal, editDraftId.value);
+    } else {
+      res = await sendDisposisi(fdFinal);
+    }
+
+    if (res?.success || res?.data?.success) {
+      toast.add({ title: 'Berhasil', description: 'Disposisi Terkirim', color: 'success' });
+      router.push("/admin/korespondensi/terkirim");
+    }
+  } catch (e: any) {
+    toast.add({ title: 'Gagal', description: e.response?.data?.message, color: 'error' });
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+const confirmSaveDraft = async () => {
+  const payload = getPayload();
+  isLoadingData.value = true;
+  try {
+    const fd = createFormData(payload, false);
+    if (editDraftId.value) {
+      await updateDraft(fd, editDraftId.value);
+    } else {
+      await saveDraft(fd);
+    }
+    toast.add({ title: 'Draft Disimpan', color: 'success' });
+    router.push("/admin/korespondensi/draft");
+  } catch (e: any) {
+    toast.add({ title: 'Gagal Simpan', description: e.response?.data?.message, color: 'error' });
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+// --- LIFECYCLE ---
+onMounted(async () => {
+  isLoadingData.value = true;
+  if (!user.value) await getProfile();
+
+  try {
+    // Get Recipient List
+    const res = await getRecipients(user.value?.position);
+    recipientList.value = res.recipients;
+
+    // Load Draft if exists
+    const draftId = route.query.draft_id as string;
+    if (draftId) {
+      editDraftId.value = draftId;
+      loadingMessage.value = "Memuat Draft...";
+      const resDraft = await getDraftDetail(draftId);
+
+      if (resDraft.data) {
+        const d = resDraft.data;
+        refNumber.value = d.ref_nomor !== '-' ? d.ref_nomor : '';
+        refPerihal.value = d.ref_perihal !== '-' ? d.ref_perihal : '';
+        editorContent.value = d.catatan || d.htmlContent || "";
+        if (tinymceEditor.value) tinymceEditor.value.setContent(editorContent.value);
+
+        selectedChecklist.value = d.disposisi || [];
+
+        // Map Sifat
+        const foundSifat = sifatOptions.find(s => s.label.toLowerCase() === (d.sifat || '').toLowerCase());
+        selectedSifat.value = foundSifat || sifatOptions[3];
+
+        // Map Tertuju
+        const mapApiToUI = (list: any[]) => {
+          if (!list) return [];
+          return list.map(idOrObj => {
+            const val = typeof idOrObj === 'object' ? (idOrObj.value || idOrObj.id) : idOrObj;
+            const found = recipientList.value.find(r => r.value === String(val));
+            return found || { value: val, label: val, labelJob: val };
+          });
+        };
+        selectedTertuju.value = mapApiToUI(d.tertuju);
+
+        // Map Files
+        if (d.lampiran_files) {
+          existingFiles.value = d.lampiran_files.map((f: any) => ({
+            id: f.id, fileName: f.file_name, filePath: f.file_path, fileSize: 0
+          }));
+        }
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    toast.add({ title: 'Gagal memuat data', color: 'error' });
+  } finally {
+    isLoadingData.value = false;
+  }
+});
 </script>
 
 <style scoped>
 :deep(.tox-tinymce) {
   border: none !important;
+  background: transparent !important;
 }
 
-input[type="text"]::placeholder {
-  color: #9ca3af;
-  font-style: italic;
+:deep(.tox-editor-container) {
+  background: transparent !important;
 }
 </style>

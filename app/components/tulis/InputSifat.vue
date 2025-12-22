@@ -33,10 +33,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const sifatOptions = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
+  { label: "Biasa / Terbuka", value: "biasa" },
   { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" }
+  { label: "Rahasia", value: "rahasia" },
+  { label: "Sangat Rahasia", value: "sangat rahasia" }
 ]
 
 // Helper untuk mendapatkan label dari value jika v-model isinya string

@@ -1,27 +1,61 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref, watch, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import {
-  ArrowLeft, Printer, MoreVertical,
-  Paperclip, Calendar, Hash, Loader2, FileText, User, X, Eye
+  ArrowLeft, Printer,
+  Paperclip, Loader2, FileText
 } from 'lucide-vue-next';
 import { useTerkirimDetail } from '@/composables/useTerkirimDetail';
 
 // --- STATE & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
+
+// 1. Ambil ID dan Jenis dari URL
 const idNaskah = route.params.id as string;
+// Default ke 'ND' jika tidak ada parameter jenis
+const jenisNaskah = (route.query.jenis as string)?.toUpperCase() || 'ND';
 
 const {
   detail,
   isLoading,
   fetchDetail,
   openPdfPreview,
-  closePdfPreview,
   pdfUrl,
   isPdfLoading,
   showPdfModal
 } = useTerkirimDetail();
+
+// --- STATE LOKAL ---
+const iframe = ref<HTMLIFrameElement | null>(null);
+const showAllRecipients = ref(false);
+const LIMIT = 2;
+
+// --- COMPUTED PROPERTIES ---
+
+// Logic Label Kategori (ND, SDI, SDE, Disposisi)
+const categoryLabel = computed(() => {
+  const j = detail.value?.jenis || jenisNaskah;
+  if (j === 'ND') return 'Nota Dinas';
+  if (j === 'INTERNAL' || j === 'SDI') return 'Surat Dinas Internal';
+  if (j === 'EXTERNAL' || j === 'SDE') return 'Surat Dinas Eksternal';
+  if (j === 'DI' || j === 'DISPOSISI') return 'Disposisi';
+  return j;
+});
+
+const visiblePenerima = computed(() => {
+  if (!detail.value?.penerima) return [];
+  if (showAllRecipients.value) {
+    return detail.value.penerima;
+  } else {
+    return detail.value.penerima.slice(0, LIMIT);
+  }
+});
+
+const remainingCount = computed(() => {
+  if (!detail.value?.penerima) return 0;
+  return detail.value.penerima.length - LIMIT;
+});
 
 // --- METHODS ---
 const goBack = () => router.back();
@@ -46,21 +80,42 @@ const getSifatColor = (sifat: string) => {
   }
 };
 
+// --- IFRAME RESIZING ---
+function resizeIframe() {
+  if (!iframe.value) return;
+  const adjust = () => {
+    if (!iframe.value?.contentWindow) return;
+    const doc = iframe.value.contentWindow.document;
+    const height = doc.body.scrollHeight;
+    if (height > 0) {
+      iframe.value.style.height = height + 'px';
+    }
+  };
+  iframe.value.onload = adjust;
+  adjust();
+}
+
+watch(() => detail.value?.konten, async () => {
+  await nextTick();
+  resizeIframe();
+});
+
 // --- LIFECYCLE ---
 onMounted(async () => {
   if (idNaskah) {
-    await fetchDetail(idNaskah);
+    // LOGIC UTAMA: Panggil fetchDetail dengan parameter jenis
+    // Composable akan menangani endpoint yang berbeda (SDI/SDE/ND)
+    await fetchDetail(idNaskah, jenisNaskah);
   }
 });
 </script>
 
 <template>
-  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
-    :class="['glass-blue']">
+  <div
+    class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg glass-blue">
 
     <div
       class="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
-
       <div class="flex items-center gap-3 min-w-0">
         <button @click="goBack"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 shrink-0">
@@ -68,25 +123,14 @@ onMounted(async () => {
         </button>
         <div class="flex flex-col min-w-0">
           <h1 class="text-base font-semibold text-gray-900 dark:text-white truncate">Kembali</h1>
-          <!-- <h1 class="text-base font-semibold text-gray-900 dark:text-white truncate">
-            {{ detail?.perihal || 'Memuat...' }}
-          </h1>
-          <span v-if="detail" class="text-xs text-gray-500 dark:text-gray-400 truncate">
-            {{ detail.nomor }}
-          </span> -->
         </div>
       </div>
 
       <div class="flex items-center gap-1 shrink-0">
         <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400"
-          title="Cetak" @click="openPdfPreview">
+          title="Cetak / Preview PDF" @click="openPdfPreview">
           <Printer class="w-4 h-4" />
         </button>
-        <!-- <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div> -->
-        <!-- <button
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 hidden sm:block">
-          <MoreVertical class="w-4 h-4" />
-        </button> -->
       </div>
     </div>
 
@@ -107,37 +151,28 @@ onMounted(async () => {
           <div class="flex flex-wrap items-center gap-2">
             <span
               class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-600/20">
-              {{ detail.jenis === 'ND' ? 'Nota Dinas' : detail.jenis }}
+              {{ categoryLabel }}
             </span>
 
             <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ring-1 ring-inset ring-current/20 capitalize"
               :class="getSifatColor(detail.sifat).replace('bg-', 'bg-opacity-10 text-')">
               {{ detail.sifat }}
             </span>
-            <span
-              class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-400/20">
-              {{
-                detail.status === 'final'
-                  ? 'Belum Ditandatangani'
-                  : detail.status === 'final_tte'
-                    ? 'Sudah Ditandatangani'
-                    : detail.status
-              }}
-            </span>
-
           </div>
         </div>
 
         <div class="flex items-start gap-4 mb-8">
-          <UAvatar :alt="detail.pengirim.nama" size="md" class="mt-1 ring-1 ring-gray-200 dark:ring-gray-700"
+          <UAvatar :alt="detail.pengirim?.nama || 'Unknown'" size="md"
+            class="mt-1 ring-1 ring-gray-200 dark:ring-gray-700"
             :ui="{ background: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300', text: 'font-medium text-sm' }">
-            {{ getInitial(detail.pengirim.nama) }}
+            {{ getInitial(detail.pengirim?.nama || '') }}
           </UAvatar>
 
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-baseline">
               <span class="text-base font-semibold text-gray-900 dark:text-white">
-                {{ detail.pengirim.nama }} </span>
+                {{ detail.pengirim?.positionText || detail.pengirim?.position_text || 'Pengirim' }}
+              </span>
               <div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4 font-medium">
                 {{ formatDate(detail.tanggal) }}
                 <span class="hidden sm:inline text-gray-300 mx-1">|</span>
@@ -146,7 +181,8 @@ onMounted(async () => {
             </div>
 
             <div class="text-xs text-gray-500 dark:text-gray-400 -mt-0.5 mb-1">
-              {{ detail.pengirim.positionText }} </div>
+              {{ detail.pengirim?.nama }}
+            </div>
 
             <div class="mt-3">
               <span class="block text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2 select-none">
@@ -154,17 +190,35 @@ onMounted(async () => {
               </span>
 
               <div class="flex flex-col gap-1">
-                <div v-for="(penerima, index) in detail.penerima" :key="penerima.id"
+                <div v-for="(penerima, index) in visiblePenerima" :key="penerima.id || index"
                   class="flex items-start gap-2.5 text-sm leading-snug">
-                  <span class="text-xs text-gray-400 mt-0.5 select-none w-3 text-right shrink-0">
+
+                  <span v-if="detail.penerima && detail.penerima.length > 1"
+                    class="text-xs text-gray-400 mt-0.5 select-none w-4 text-right shrink-0">
                     {{ index + 1 }}.
                   </span>
-                  <span class="hover:text-gray-900 dark:hover:text-white transition-colors cursor-default">
-                    <span class="font-medium text-gray-800 dark:text-gray-200">
-                      {{ penerima.nama }} </span>
-                    <span class="text-gray-500 text-xs font-normal">
-                      ({{ penerima.positionText }}) </span>
-                  </span>
+
+                  <div class="flex items-center">
+                    <span class="font-medium text-gray-800 dark:text-gray-200 pe-2">
+                      {{ penerima.positionText || penerima.position_text || penerima.nama }}
+                    </span>
+                    <span v-if="penerima.positionText || penerima.position_text"
+                      class="text-gray-500 text-xs font-normal">
+                      ({{ penerima.nama }})
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="detail.penerima && detail.penerima.length > LIMIT" class="ml-[26px] mt-1">
+                  <button @click="showAllRecipients = !showAllRecipients"
+                    class="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline flex items-center gap-1 outline-none rounded">
+                    <span v-if="!showAllRecipients">
+                      +{{ remainingCount }} lebih banyak
+                    </span>
+                    <span v-else>
+                      Sembunyikan
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -176,29 +230,8 @@ onMounted(async () => {
           <div class="w-full">
             <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Berita</h3>
             <div class="dark:border-gray-800">
-              <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 break-words"
-                v-html="detail.konten || '<p class=\'text-gray-400 italic\'>Tidak ada konten</p>'">
-              </div>
-            </div>
-          </div>
-
-          <div class="w-full">
-            <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Dokumen</h3>
-            <div @click="openPdfPreview"
-              class="group flex items-center gap-4 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/20 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer">
-
-              <div
-                class="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 shrink-0">
-                <FileText class="w-5 h-5" />
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <p
-                  class="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
-                  Dokumen
-                </p>
-                <p class="text-[10px] text-gray-500 mt-0.5">PDF &bull; Klik untuk pratinjau</p>
-              </div>
+              <iframe ref="iframe" :srcdoc="detail.konten" class="w-full" style="border: none; overflow: hidden;"
+                scrolling="no"></iframe>
             </div>
           </div>
 
@@ -245,13 +278,11 @@ onMounted(async () => {
     }">
       <template #body>
         <div class="flex flex-col h-full bg-white dark:bg-gray-900">
-
           <div class="flex-1 bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
-
             <div v-if="isPdfLoading"
               class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <Loader2 class="w-10 h-10 text-primary animate-spin mb-3" />
-              <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Membuat Preview PDF...</span>
+              <Loader2 class="w-10 h-10 text-blue-600 animate-spin mb-3" />
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Memuat Preview PDF...</span>
             </div>
 
             <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full border-none" />
@@ -289,5 +320,14 @@ onMounted(async () => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.8);
+}
+
+.glass-blue {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.dark .glass-blue {
+  background: rgba(17, 24, 39, 0.7);
 }
 </style>

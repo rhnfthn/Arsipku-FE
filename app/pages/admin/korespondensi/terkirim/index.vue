@@ -14,6 +14,19 @@ import * as XLSX from 'xlsx'; // Import library xlsx
 const { user } = useAuth();
 const { fetchSentBox, isLoading } = useSirkulasi();
 
+// --- HELPER: ROUTING ---
+const getDetailRoute = (item: UIMailItem) => {
+  // Kita kirim 'jenis' sebagai query parameter
+  // Contoh hasil: /admin/korespondensi/terkirim/123?jenis=ND
+  // Contoh hasil: /admin/korespondensi/terkirim/456?jenis=INTERNAL
+  return {
+    path: `/admin/korespondensi/terkirim/${item.id}`,
+    query: {
+      jenis: item.category // berisi 'ND', 'INTERNAL', 'EXTERNAL', 'DI', dll
+    }
+  };
+};
+
 // --- STATE ---
 const selected = ref<UIMailItem | null>(null);
 const selectedIds = ref(new Set<string>());
@@ -85,47 +98,64 @@ const loadData = async () => {
   const rawData = await fetchSentBox(posId);
 
   emails.value = rawData.map((item: any) => {
-    // 1. Ambil penerima pertama untuk display list di sidebar
-    const firstPenerima = item.penerima && item.penerima.length > 0 ? item.penerima[0] : null;
+    // 1. Logic Penerima untuk Sidebar
+    const daftarPenerima = item.penerima || [];
+    let displayRecipient = "Tanpa Penerima";
+    let firstRecipientTitle = "Tanpa Jabatan";
 
-    // 2. Tentukan Jabatan dan Nama untuk tampilan ringkas
-    const displayJobTitle = firstPenerima?.positionText || 'Tanpa Jabatan';
-    const displayName = firstPenerima?.nama || 'Tanpa Nama';
-    const initial = firstPenerima?.nama?.substring(0, 2).toUpperCase() || 'NA';
+    if (daftarPenerima.length > 0) {
+      const firstPerson = daftarPenerima[0];
+      firstRecipientTitle = firstPerson.position_text || 'Tanpa Jabatan';
 
-    // 3. Format Tanggal (Support format YYYY-MM-DD dari JSON baru)
-    const dateObj = new Date(item.tanggal);
+      if (daftarPenerima.length > 1) {
+        displayRecipient = `${firstPerson.nama} +${daftarPenerima.length - 1} lainnya`;
+      } else {
+        displayRecipient = firstPerson.nama;
+      }
+    }
+
+    // 2. Logic Waktu (Gunakan created_at agar Jam tidak 00:00)
+    // created_at: "2025-12-18T01:23:29.000Z"
+    const dateObj = new Date(item.created_at || item.tanggal);
     const dateStr = dateObj.toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      day: 'numeric',
+      month: 'short'
+    }) + ' ' + dateObj.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
 
-    // 4. Hitung jumlah yang sudah membaca dari array penerima
-    const terbacaCount = item.penerima ? item.penerima.filter((p: any) => p.status === 'terbaca').length : 0;
-
     return {
-      // FIX: Gunakan item.id sesuai respons JSON terbaru
-      id: item.id,
-      from: displayJobTitle,
-      email: displayName,
+      // mapping id_naskah sesuai JSON
+      id: item.id_naskah,
+
+      // Properti 'from' diisi Penerima agar Sidebar berubah
+      from: displayRecipient,
+
+      // Properti 'email' diisi Jabatan (untuk logic detail view lama)
+      email: firstRecipientTitle,
+
       subject: item.perihal,
       body: item.nomor || '-',
-      category: item.jenis === 'DI' ? 'DISPOSISI' : item.jenis,
+      category: item.jenis,
       date: dateStr,
-      fullDate: item.tanggal,
-      initial: initial,
-      color: getCategoryStyle(item.jenis === 'DI' ? 'DISPOSISI' : item.jenis).split(' ')[0] + ' text-white',
+      fullDate: item.created_at || item.tanggal,
+
+      // Initial dari penerima pertama
+      initial: daftarPenerima[0]?.nama?.substring(0, 1).toUpperCase() || '?',
+
+      color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
       isRead: true,
-      // FIX: Mapping viewCount dari status di array penerima
-      viewCount: terbacaCount,
-      isFlagged: item.sifat === 'penting' || item.sifat === 'segera',
-      isStarred: false,
+
+      // Ambil dari summary_baca API
+      viewCount: item.summary_baca?.terbaca || 0,
+
+      isFlagged: ['rahasia', 'penting', 'segera'].includes(item.sifat?.toLowerCase()),
       isLocked: item.status === 'final_tte' || item.status === 'final',
-      hasNote: false,
-      isArchived: false,
-      canOpenTab: true,
-      // FIX: Gabungkan semua nama penerima untuk detail view
-      recipient: item.penerima ? item.penerima.map((p: any) => p.nama).join(', ') : '-',
-      disposition: item.jenis_label || item.jenis,
+
+      // Gabungan semua nama untuk detail
+      recipient: daftarPenerima.map((p: any) => p.nama).join(', '),
+
       note: item.sifat,
       originalData: item
     };
@@ -416,7 +446,7 @@ onMounted(() => { loadData(); });
           </div>
         </div>
 
-        <div class="flex-1 pb-10 w-full relative">
+        <div class="flex-1 w-full relative">
           <div v-if="isLoading"
             class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-20">
             <Loader2 class="w-8 h-8 text-primary animate-spin" />
@@ -442,8 +472,8 @@ onMounted(() => { loadData(); });
             </div>
 
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
-              <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">
+              <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
+                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate" :title="mail.from">
                   {{ mail.from }}
                 </div>
               </div>
@@ -504,13 +534,12 @@ onMounted(() => { loadData(); });
               <div class="flex-1 min-w-0">
                 <div class="flex flex-col leading-tight">
                   <div class="font-bold text-gray-900 dark:text-white text-[14px] whitespace-normal break-words">
-                    {{ selected.from }}
+                    Kepada: {{ selected.to }}
                   </div>
                   <div class="text-gray-500 dark:text-gray-400 font-normal text-[13px]">
-                    {{ selected.email }}
+                    Pengirim: {{ selected.senderName }}
                   </div>
                 </div>
-                <div class="text-[13px] text-gray-500 dark:text-gray-500 mt-1">kepada (Lihat Penerima)</div>
               </div>
             </div>
 
@@ -549,11 +578,14 @@ onMounted(() => { loadData(); });
 
         <div
           class="p-6 pt-0 mt-auto bg-white dark:bg-gray-900 shrink-0 border-t border-gray-100 dark:border-gray-800 pt-4">
-          <NuxtLink :to="`/admin/korespondensi/terkirim/${selected.id}`"
-            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px]">
+
+          <NuxtLink :to="getDetailRoute(selected)"
+            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px] hover:bg-primary-600">
             Lihat Detail Lengkap
           </NuxtLink>
+
         </div>
+
       </div>
 
     </div>

@@ -1,120 +1,119 @@
-// ~/composables/useSdi.ts
-import { ref } from "vue";
-import { useApi } from "~/composables/useApi";
-import type { SdiRecipientRaw, SdiApiResponse } from "~/types/sdi";
+// composables/useSDI.ts
+import type {
+  RecipientApiData,
+  RecipientApiResponse,
+  RecipientItem,
+} from "~/types/recipient";
+import type { SDIPayload } from "~/types/sdi";
 
-export const useSdi = () => {
-  const { apiGet, apiPost, apiPut } = useApi();
-  const isLoading = ref(false);
+export const useSDI = () => {
+  const { api, apiGet, apiPost, apiPut } = useApi();
 
-  // --- 1. NORMALIZE LOGIC ---
-  // Fungsi ini menerima object { sender:..., recipients:... }
-  const normalizeRecipients = (rawData: any): SdiRecipientRaw[] => {
-    if (!rawData || !rawData.recipients) return [];
+  // Helper untuk header FormData (agar browser set boundary otomatis)
+  const formDataConfig = {
+    headers: { "Content-Type": "multipart/form-data" }, // Biasanya axios auto-detect, tapi explicit lebih aman di beberapa case
+  };
 
-    const groups = rawData.recipients;
-    const list: SdiRecipientRaw[] = [];
+  /**
+   * Mengambil daftar recipient berdasarkan posisi user
+   */
+  // const getRecipients = async (positionId: string) => {
+  //   // Endpoint: GET /SDI/get-recipient/{{positionId}}
+  //   return await apiGet(`/SDI/get-recipient/${positionId}`);
+  // };
 
-    // Loop semua key (REKAN, BAWAHAN, ATASAN, dll)
+  const normalizeRecipients = (
+    raw: RecipientApiData | undefined,
+  ): RecipientItem[] => {
+    if (!raw || !raw.recipients) return [];
+
+    const groups = raw.recipients;
+    const list: RecipientItem[] = [];
+
     Object.keys(groups).forEach((groupName) => {
-      const groupItems = groups[groupName];
-      if (Array.isArray(groupItems)) {
-        groupItems.forEach((item: any) => {
-          list.push({
-            ...item,
-            group: groupName, // Tambahkan info group jika perlu
-          });
+      groups[groupName].forEach((item) => {
+        list.push({
+          ...item,
+          group: groupName,
         });
-      }
+      });
     });
 
     return list;
   };
 
-  // --- 2. GET RECIPIENTS (FIXED) ---
-  const getRecipients = async (positionId: string | number) => {
-    isLoading.value = true;
-    try {
-      // 1. Request API
-      // Response strukturnya: { success: true, data: { sender:..., recipients:... } }
-      const response = await apiGet<any>(`/SDI/get-recipient/${positionId}`);
+  const getRecipients = async (
+    positionId: number,
+  ): Promise<{
+    sender: RecipientApiData["sender"] | null;
+    recipients: RecipientItem[];
+  }> => {
+    if (!positionId) throw new Error("positionId kosong");
 
-      // 2. Ambil isi 'data'
-      const content = response?.data;
+    // tipe otomatis jadi RecipientApiResponse
+    const res = await apiGet<RecipientApiResponse>(
+      `/SDI/get-recipient/${positionId}`,
+    );
 
-      // 3. Normalize
-      return {
-        success: true,
-        sender: content?.sender ?? null,
-        data: normalizeRecipients(content), // Kirim content (yang berisi recipients) ke normalizer
-      };
-    } catch (error) {
-      console.error("Failed to fetch SDI recipients:", error);
-      return { success: false, data: [], sender: null };
-    } finally {
-      isLoading.value = false;
-    }
+    return {
+      sender: res?.data?.sender ?? null,
+      recipients: normalizeRecipients(res?.data),
+    };
   };
 
-  // --- 3. GET DRAFT DETAIL ---
-  const getDraftDetail = async (id: string) => {
-    isLoading.value = true;
-    try {
-      const response = await apiGet<any>(`/SDI/${id}`);
-      // Asumsi response detail juga dibungkus { success: true, data: {...} }
-      return { success: true, data: response?.data || response };
-    } catch (error) {
-      return { success: false, error };
-    } finally {
-      isLoading.value = false;
-    }
+  /**
+   * Preview PDF (Generate PDF dari HTML/Data)
+   */
+  // const generatePdf = async (formData: FormData) => {
+  //   // Endpoint: POST /SDI/preview-pdf
+  //   // ResponseType blob penting untuk PDF preview
+  //   return await apiPost("/SDI/preview-pdf", formData, {
+  //     responseType: "blob",
+  //     ...formDataConfig,
+  //   });
+  // };
+
+  const generatePdf = async (formData: FormData) => {
+    const response = await api.post("/SDI/preview-pdf", formData, {
+      responseType: "blob",
+    });
+    return response.data;
   };
 
-  // --- 4. SEND MESSAGE ---
-  const sendMessage = async (formData: FormData) => {
-    isLoading.value = true;
-    try {
-      const response = await apiPost("/SDI/send-message", formData);
-      return { success: true, data: response };
-    } catch (error) {
-      throw error;
-    } finally {
-      isLoading.value = false;
-    }
+  /**
+   * Kirim Surat Dinas Internal (Baru)
+   */
+  const sendSDI = async (formData: FormData) => {
+    // Endpoint: POST /SDI/send-message
+    return await apiPost("/SDI/send-message", formData, formDataConfig);
   };
 
-  // --- 5. SAVE DRAFT ---
-  const saveDraft = async (formData: FormData) => {
-    isLoading.value = true;
-    try {
-      const response = await apiPost("/SDI/save-draft", formData);
-      return { success: true, data: response };
-    } catch (error) {
-      throw error;
-    } finally {
-      isLoading.value = false;
-    }
+  /**
+   * Simpan sebagai Draft
+   */
+  const saveDraft = async (formData: FormData, id?: string | null) => {
+    // Endpoint: POST /SDI/save-draft
+    // Biasanya draft endpoint juga menerima ID jika update, atau endpoint terpisah
+    return await apiPost("/SDI/save-draft", formData, formDataConfig);
   };
 
-  // --- 6. UPDATE DRAFT ---
-  const updateDraft = async (id: string, formData: FormData) => {
-    isLoading.value = true;
-    try {
-      const response = await apiPut(`/SDI/update-draft/${id}`, formData);
-      return { success: true, data: response };
-    } catch (error) {
-      throw error;
-    } finally {
-      isLoading.value = false;
-    }
+  /**
+   * Kirim Draft yang sudah ada (Finalize)
+   */
+  const sendDraft = async (formData: FormData, idNaskah: string) => {
+    // Endpoint: PUT /SDI/send-draft/{{id_naskah}}
+    return await apiPut(
+      `/SDI/send-draft/${idNaskah}`,
+      formData,
+      formDataConfig,
+    );
   };
 
   return {
-    isLoading,
     getRecipients,
-    getDraftDetail,
-    sendMessage,
+    generatePdf,
+    sendSDI,
     saveDraft,
-    updateDraft,
+    sendDraft,
   };
 };
