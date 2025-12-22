@@ -104,9 +104,48 @@
             >
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.jabatan }}</td>
-              <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.tanggal_nomor }}</td>
-              <td class="px-5 py-4">{{ row.pengusul }}</td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[350px]">
+                  <p class="whitespace-normal break-words line-clamp-3">
+                    {{ row.perihal }}
+                  </p>
+
+                  <!-- Tooltip -->
+                  <div
+                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
+                  >
+                    {{ row.perihal }}
+                  </div>
+                </div>
+              </td>
+
+              <!-- ✅ Tampilkan semua nomor dalam satu cell -->
+              <td class="px-5 py-4">
+                <div class="flex flex-col gap-0.5">
+                  <div class="text-sm text-gray-900">{{ row.tanggal }}</div>
+                  <div class="text-xs text-gray-600 space-y-0.5">
+                    <div
+                      v-for="(nomor, idx) in row.nomor_surat.slice(0, 3)"
+                      :key="idx"
+                    >
+                      {{ nomor }}
+                    </div>
+                    <div
+                      v-if="row.nomor_surat.length > 3"
+                      class="text-primary font-medium"
+                    >
+                      +{{ row.nomor_surat.length - 3 }} nomor lainnya
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[350px]">
+                  <p class="whitespace-normal break-words line-clamp-3">
+                    {{ row.pengusul }}
+                  </p>
+                </div>
+              </td>
               <td class="px-5 py-4">{{ row.waktu }}</td>
             </tr>
           </tbody>
@@ -162,7 +201,12 @@
   </div>
 
   <!-- ✅ MODAL ROW DETAIL (Untuk preview data existing) -->
-  <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
+  <Modal
+    :model-value="openPreview"
+    @update:model-value="openPreview = $event"
+    :hideDefaultFooter="true"
+    size="xl"
+  >
     <template #title>
       <div class="flex justify-between items-center w-full px-6 pt-10"></div>
     </template>
@@ -240,48 +284,101 @@
 
       <div class="mt-2">
         <label class="text-xs">Nomor Surat</label>
-
-        <div class="flex flex-col gap-4 mt-2">
+        <div
+          v-if="Array.isArray(selectedRow.nomor_surat)"
+          class="space-y-4 mt-2"
+        >
           <div
-            v-for="(nomor, idx) in selectedRow.nomor_surat"
+            v-for="(no, idx) in selectedRow.nomor_surat"
             :key="idx"
-            class="flex flex-col border border-gray-300 rounded-lg p-4 bg-gray-50"
+            class="space-y-2"
           >
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-medium w-5">{{ idx + 1 }}.</span>
+            <div class="border border-gray-300 rounded-lg p-4 bg-white">
+              <!-- Nomor surat -->
+              <div class="flex items-center gap-2">
+                <input class="flex-1 px-0 py-2 text-sm" :value="no" readonly />
 
-              <input
-                type="text"
-                v-model="selectedRow.nomor_surat[idx]"
-                class="flex-1 bg-transparent outline-none text-sm"
-                readonly
-              />
+                <button
+                  @click="handleCopy(no)"
+                  class="p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center"
+                >
+                  <Copy class="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
 
-              <button
-                @click="handleCopy(nomor)"
-                class="p-1 hover:bg-gray-200 rounded"
+              <!-- Upload dengan ICON -->
+              <label
+                class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50 mt-1"
               >
-                <i class="fas fa-copy text-gray-500"></i>
-              </button>
-            </div>
+                <svg
+                  class="w-5 h-5 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
 
-            <div class="flex items-center gap-2 ml-7 mt-2">
-              <button
-                class="px-3 py-1 bg-primary text-white text-xs rounded-md"
-              >
-                Terpakai
-              </button>
+                <span class="text-gray-600">
+                  {{ files[idx]?.file_name || "Upload File" }}
+                </span>
 
-              <label class="px-3 py-1 border rounded-md text-xs cursor-pointer">
-                Upload File
-                <input type="file" class="hidden" @change="onUpload(idx)" />
+                <input
+                  type="file"
+                  class="hidden"
+                  @change="handleFile(idx, $event)"
+                />
               </label>
             </div>
-
-            <div class="mt-2 text-sm ml-7 text-gray-700">
-              {{ selectedRow.files?.[idx] || "Belum ada file" }}
-            </div>
           </div>
+        </div>
+
+        <!-- Single nomor surat -->
+        <div v-else class="mt-2 space-y-2">
+          <div class="flex items-center gap-2">
+            <input
+              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
+              :value="selectedRow.nomor_surat"
+              readonly
+            />
+
+            <button
+              @click="handleCopy(selectedRow.nomor_surat)"
+              class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
+            >
+              <Copy class="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          <!-- Upload tunggal -->
+          <label
+            class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            <svg
+              class="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+
+            <span class="text-gray-600">
+              {{ files[0]?.file_name || "Upload File" }}
+            </span>
+
+            <input type="file" class="hidden" @change="handleFile(0, $event)" />
+          </label>
         </div>
       </div>
     </div>
@@ -290,7 +387,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { Search, ArrowUpDown, Plus } from "lucide-vue-next";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
@@ -299,10 +396,16 @@ import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
 
 const toast = useToast();
+const files = ref<any[]>([]);
 
 // ✅ Composable
-const { savePenomoran, isLoadingPenomoran, getKlasifikasi, deleteUsulan } =
-  usePenomoran();
+const {
+  createPenomoranFinal,
+  getPersonWithPosition,
+  isLoadingPenomoran,
+  getKlasifikasi,
+  deleteUsulan,
+} = usePenomoran();
 const { get } = useApi();
 
 // ✅ Klasifikasi mapping untuk display
@@ -315,7 +418,6 @@ const fetchKlasifikasiMap = async () => {
 
     if (Array.isArray(response)) {
       response.forEach((item) => {
-        // Map dari code ke display text
         klasifikasiMap.value.set(item.code, item.display);
       });
     }
@@ -327,6 +429,26 @@ const fetchKlasifikasiMap = async () => {
     );
   } catch (error) {
     console.error("❌ Error fetch klasifikasi map:", error);
+  }
+};
+
+const personMap = ref(new Map());
+
+const fetchPersonMap = async () => {
+  try {
+    const response = await getPersonWithPosition();
+    const list = Array.isArray(response) ? response : (response.data ?? []);
+
+    list.forEach((item) => {
+      personMap.value.set(item.persnum, {
+        nama: item.nama,
+        position_text: item.position_text,
+      });
+    });
+
+    console.log("✅ Person map loaded:", personMap.value.size, "items");
+  } catch (error) {
+    console.error("❌ Error fetch person map:", error);
   }
 };
 
@@ -371,8 +493,8 @@ const currentPage = ref<number>(1);
 const loading = ref<boolean>(true);
 
 /* SORT STATE */
-const sortBy = ref<string>("id");
-const sortDir = ref<"asc" | "desc">("asc");
+const sortBy = ref<string>("created_at");
+const sortDir = ref<"asc" | "desc">("desc");
 
 const sort = (col: string) => {
   if (sortBy.value === col) {
@@ -396,16 +518,12 @@ const handleSubmitFromModal = async (payload) => {
   console.log("📥 Received payload from AddUsulan:", payload);
 
   try {
-    // Kirim ke backend
-    const response = await savePenomoran(payload);
-
+    const response = await createPenomoranFinal(payload);
     console.log("✅ Response dari backend:", response);
 
-    // ✅ Get klasifikasi display
     const klasifikasiDisplay =
       klasifikasiMap.value.get(payload.klasifikasi) || payload.klasifikasi;
 
-    // ✅ Tambahkan ke tabel lokal dengan data dari BE
     rows.value.unshift({
       id: response.data?.id || response.id,
       jenis: response.data?.jenis || payload.jenis,
@@ -418,13 +536,12 @@ const handleSubmitFromModal = async (payload) => {
       waktu: formatWaktu(response.data?.created_at || new Date().toISOString()),
       tanggal: formatTanggal(response.data?.tanggal || payload.tanggal),
       klasifikasi: response.data?.klasifikasi || payload.klasifikasi,
-      klasifikasiDisplay: klasifikasiDisplay, // ✅ Format "AUD - AUDIT"
+      klasifikasiDisplay: klasifikasiDisplay,
       jenis_naskah: `${response.data?.jenis || payload.jenis} - ${response.data?.perihal || payload.perihal}`,
       nomor_surat: [],
       files: [],
     });
 
-    // Reset pagination
     currentPage.value = 1;
 
     toast.add({
@@ -446,6 +563,7 @@ const handleSubmitFromModal = async (payload) => {
 /* Function saat klik row */
 function openRowModal(row) {
   selectedRow.value = row;
+  files.value = row.files || [];
   openPreview.value = true;
 }
 
@@ -458,14 +576,17 @@ const submitUsulan = () => {
     color: "green",
   });
 };
+
 const refreshList = async () => {
   loading.value = true;
   const data = await getListNomor();
-  rows.value = data;
+  rows.value = data.sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at),
+  );
+
   loading.value = false;
 };
 
-// ✅ Hapus usulan dari database
 const hapusUsulan = async () => {
   if (!selectedRow.value?.id) return;
 
@@ -475,11 +596,9 @@ const hapusUsulan = async () => {
   try {
     await deleteUsulan(selectedRow.value.id);
 
-    // Tutup modal & reset state
     openPreview.value = false;
     selectedRow.value = null;
 
-    // 🔄 Refresh data dari backend
     await refreshList();
 
     toast.add({
@@ -501,8 +620,16 @@ const handleCopy = (value: string) => {
   });
 };
 
-const onUpload = (idx: number) => {
-  console.log("Upload file untuk index:", idx);
+const handleFile = (idx: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (file) {
+    if (!files.value[idx]) {
+      files.value[idx] = {};
+    }
+    files.value[idx].file_name = file.name;
+  }
 };
 
 /* FILTER + SEARCH */
@@ -563,6 +690,45 @@ function formatTanggalNomor(tanggal) {
   return `${formatTanggal(tanggal)} / -`;
 }
 
+// ✅ FUNGSI UNTUK GROUPING DATA DUPLIKAT
+function groupDuplicateRows(dataArray) {
+  const grouped = new Map();
+
+  dataArray.forEach((item) => {
+    // Buat key unik berdasarkan: jenis, jabatan, perihal, tanggal, pengusul
+    const key = `${item.jenis}|${item.jabatan}|${item.perihal}|${item.tanggal}|${item.pengusul}`;
+
+    if (grouped.has(key)) {
+      // Jika sudah ada, tambahkan nomor surat ke array
+      const existing = grouped.get(key);
+      if (Array.isArray(item.nomor_surat)) {
+        existing.nomor_surat.push(...item.nomor_surat);
+      } else if (item.nomor_surat) {
+        existing.nomor_surat.push(item.nomor_surat);
+      }
+
+      // Merge files jika ada
+      if (item.files && item.files.length > 0) {
+        existing.files.push(...item.files);
+      }
+    } else {
+      // Jika belum ada, buat entry baru
+      grouped.set(key, {
+        ...item,
+        nomor_surat: Array.isArray(item.nomor_surat)
+          ? [...item.nomor_surat]
+          : item.nomor_surat
+            ? [item.nomor_surat]
+            : [],
+        files: item.files ? [...item.files] : [],
+      });
+    }
+  });
+
+  // Convert Map ke Array
+  return Array.from(grouped.values());
+}
+
 /* ✅ GET DATA DARI API */
 const getListNomor = async () => {
   try {
@@ -570,31 +736,30 @@ const getListNomor = async () => {
 
     if (!res?.success || !Array.isArray(res.data)) return [];
 
-    return res.data.map((item) => {
-      // ✅ Get klasifikasi display dari map
+    const mappedData = res.data.map((item) => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
       return {
         id: item.id,
-
-        // TABLE
         jenis: item.jenis,
         jabatan: item.jabatan || "-",
         perihal: item.perihal || "-",
         tanggal_nomor: `${formatTanggal(item.tanggal)} / ${item.nomor || "-"}`,
         pengusul: item.nama_pengirim || "-",
         waktu: formatWaktu(item.waktu),
-
-        // PREVIEW
         tanggal: formatTanggal(item.tanggal),
         klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay: klasifikasiDisplay, // ✅ Format "AUD - AUDIT"
+        klasifikasiDisplay: klasifikasiDisplay,
         jenis_naskah: item.jenis,
-        nomor_surat: item.nomor ? [item.nomor] : [],
+        nomor_surat: Array.isArray(item.nomor) ? item.nomor : [item.nomor],
         files: [],
+        created_at: item.created_at || item.waktu,
       };
     });
+
+    // ✅ GROUPING data yang duplikat
+    return groupDuplicateRows(mappedData);
   } catch (error) {
     console.error("❌ Error fetch data nomor:", error);
     toast.add({
@@ -610,10 +775,8 @@ const getListNomor = async () => {
 onMounted(async () => {
   loading.value = true;
 
-  // ✅ Fetch klasifikasi map terlebih dahulu
   await fetchKlasifikasiMap();
 
-  // ✅ Fetch data dari API
   const data = await getListNomor();
   rows.value = data;
 

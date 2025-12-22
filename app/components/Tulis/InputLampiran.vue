@@ -22,19 +22,19 @@
         class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md transition-colors hover:bg-gray-50">
 
         <div class="flex items-center gap-2 overflow-hidden">
-          <UIcon name="i-lucide-file-text" class="w-4 h-4 text-red-500 shrink-0" />
+          <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
           <div class="flex flex-col min-w-0">
             <a :href="file.filePath || '#'" target="_blank"
               class="text-sm text-gray-700 truncate font-medium hover:underline hover:text-primary">
               {{ file.fileName || file.name }}
             </a>
-            <span class="text-xs text-gray-400">
+            <!-- <span class="text-xs text-gray-400">
               {{ formatFileSize(file.fileSize || file.size) }}
-            </span>
+            </span> -->
           </div>
         </div>
 
-        <UButton icon="i-lucide-trash-2" size="2xs" color="red" variant="ghost" :disabled="isProcessing"
+        <UButton icon="i-lucide-trash-2" color="error" variant="ghost" :disabled="isProcessing"
           @click="handleRemove(idx, file)" />
       </div>
     </div>
@@ -92,8 +92,7 @@ const validateAndUpload = async (files: File[]) => {
     toast.add({
       title: 'Ukuran File Terlalu Besar',
       description: `${invalidFiles.length} file melebihi ${MAX_SIZE_MB}MB dan dilewati.`,
-      color: 'orange',
-      timeout: 5000
+      color: 'warning',
     });
     // Reset input jika tidak ada file valid sama sekali
     if (validFiles.length === 0) {
@@ -132,14 +131,14 @@ const validateAndUpload = async (files: File[]) => {
       const newExisting = [...props.existingFiles, ...newUploadedFiles];
       emit('update:existingFiles', newExisting);
 
-      toast.add({ title: 'Berhasil upload lampiran', color: 'green' });
+      toast.add({ title: 'Berhasil upload lampiran', color: 'success' });
     } else {
       throw new Error('Format response tidak sesuai');
     }
 
   } catch (error) {
     console.error(error);
-    toast.add({ title: 'Gagal upload lampiran', description: 'Terjadi kesalahan server', color: 'red' });
+    toast.add({ title: 'Gagal upload lampiran', description: 'Terjadi kesalahan server', color: 'success' });
   } finally {
     selectedFiles.value = []; // Reset input selalu
     setTimeout(() => {
@@ -157,8 +156,16 @@ const handleRemove = async (index: number, file: any) => {
     return;
   }
 
-  // Konfirmasi (Opsional, tapi disarankan)
-  if (!confirm('Apakah Anda yakin ingin menghapus lampiran ini?')) return;
+  const isConfirmed = await Alert.confirm(
+    'Hapus Lampiran?',
+    'Apakah Anda yakin ingin menghapus lampiran ini?',
+    'Ya, Hapus',
+    'Batal',
+    true // Ini akan mengeset type menjadi 'danger'
+  );
+
+  // 2. Jika user klik Batal (isConfirmed = false), hentikan proses
+  if (!isConfirmed) return;
 
   isDeleting.value = true;
   try {
@@ -167,11 +174,11 @@ const handleRemove = async (index: number, file: any) => {
 
     // Jika sukses API, hapus dari list UI
     removeFromList(index);
-    toast.add({ title: 'File berhasil dihapus', color: 'green' });
+    toast.add({ title: 'File berhasil dihapus', color: 'success' });
 
   } catch (error) {
     console.error(error);
-    toast.add({ title: 'Gagal menghapus file', description: 'Silakan coba lagi', color: 'red' });
+    toast.add({ title: 'Gagal menghapus file', description: 'Silakan coba lagi', color: 'error' });
   } finally {
     isDeleting.value = false;
   }
@@ -185,10 +192,10 @@ const removeFromList = (index: number) => {
 };
 
 // Formatter Size
-const formatFileSize = (bytes?: number) => {
-  if (!bytes) return '0 B'; // Handle 0 atau undefined
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
+// const formatFileSize = (bytes?: number) => {
+//   if (!bytes) return '0 B'; // Handle 0 atau undefined
+//   if (bytes < 1024) return `${bytes} B`;
+//   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+//   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+// };
 </script>

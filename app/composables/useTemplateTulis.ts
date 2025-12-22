@@ -9,7 +9,7 @@ export const useTemplateTulis = () => {
     positionId: string,
   ): Promise<TemplateSurat[]> => {
     try {
-      const res = await apiGet<any>(`/templates/position/${positionId}`);
+      const res = await apiGet<any>(`/persuratan/template/position/${positionId}`);
       return Array.isArray(res) ? res : res.data || [];
     } catch (error) {
       console.error("Gagal mengambil template:", error);
@@ -19,17 +19,17 @@ export const useTemplateTulis = () => {
 
   // POST: Simpan template baru
   const createTemplate = async (payload: TemplatePayload) => {
-    return await apiPost("/templates", payload);
+    return await apiPost("/persuratan/template", payload);
   };
 
   // PUT: Edit template
   const updateTemplate = async (id: string, payload: TemplatePayload) => {
-    return await apiPut(`/templates/${id}`, payload);
+    return await apiPut(`/persuratan/template/${id}`, payload);
   };
 
   // DELETE: Hapus template
   const deleteTemplateById = async (id: string) => {
-    return await apiDelete(`/templates/${id}`);
+    return await apiDelete(`/persuratan/template/${id}`);
   };
 
   return {

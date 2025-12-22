@@ -84,39 +84,65 @@ const loadData = async () => {
   const posId = user.value?.position;
   const rawData = await fetchSentBox(posId);
 
-  emails.value = rawData.map((item: NaskahItem) => {
-    const firstPenerima = item.penerima[0];
+  emails.value = rawData.map((item: any) => {
+    // 1. Logic Penerima untuk Sidebar
+    const daftarPenerima = item.penerima || [];
+    let displayRecipient = "Tanpa Penerima";
+    let firstRecipientTitle = "Tanpa Jabatan";
 
-    const displayJobTitle = firstPenerima?.position_text || 'Tanpa Jabatan';
-    const displayName = firstPenerima?.nama || 'Tanpa Nama';
-    const initial = firstPenerima?.nama?.substring(0, 2).toUpperCase() || 'NA';
+    if (daftarPenerima.length > 0) {
+      const firstPerson = daftarPenerima[0];
+      firstRecipientTitle = firstPerson.position_text || 'Tanpa Jabatan';
 
-    const dateObj = new Date(item.tanggal);
+      if (daftarPenerima.length > 1) {
+        displayRecipient = `${firstPerson.nama} +${daftarPenerima.length - 1} lainnya`;
+      } else {
+        displayRecipient = firstPerson.nama;
+      }
+    }
+
+    // 2. Logic Waktu (Gunakan created_at agar Jam tidak 00:00)
+    // created_at: "2025-12-18T01:23:29.000Z"
+    const dateObj = new Date(item.created_at || item.tanggal);
     const dateStr = dateObj.toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      day: 'numeric',
+      month: 'short'
+    }) + ' ' + dateObj.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
 
     return {
+      // mapping id_naskah sesuai JSON
       id: item.id_naskah,
-      from: displayJobTitle,
-      email: displayName,
+
+      // Properti 'from' diisi Penerima agar Sidebar berubah
+      from: displayRecipient,
+
+      // Properti 'email' diisi Jabatan (untuk logic detail view lama)
+      email: firstRecipientTitle,
+
       subject: item.perihal,
       body: item.nomor || '-',
-      category: item.jenis === 'DI' ? 'DISPOSISI' : item.jenis,
+      category: item.jenis,
       date: dateStr,
-      fullDate: item.tanggal,
-      initial: initial,
-      color: getCategoryStyle(item.jenis === 'DI' ? 'DISPOSISI' : item.jenis).split(' ')[0] + ' text-white',
+      fullDate: item.created_at || item.tanggal,
+
+      // Initial dari penerima pertama
+      initial: daftarPenerima[0]?.nama?.substring(0, 1).toUpperCase() || '?',
+
+      color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
       isRead: true,
+
+      // Ambil dari summary_baca API
       viewCount: item.summary_baca?.terbaca || 0,
-      isFlagged: item.sifat === 'penting' || item.sifat === 'segera',
-      isStarred: false,
-      isLocked: item.status === 'final',
-      hasNote: false,
-      isArchived: false,
-      canOpenTab: true,
-      recipient: item.penerima.map(p => p.nama).join(', '),
-      disposition: item.jenis_label,
+
+      isFlagged: ['rahasia', 'penting', 'segera'].includes(item.sifat?.toLowerCase()),
+      isLocked: item.status === 'final_tte' || item.status === 'final',
+
+      // Gabungan semua nama untuk detail
+      recipient: daftarPenerima.map((p: any) => p.nama).join(', '),
+
       note: item.sifat,
       originalData: item
     };
@@ -433,8 +459,8 @@ onMounted(() => { loadData(); });
             </div>
 
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
-              <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">
+              <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
+                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate" :title="mail.from">
                   {{ mail.from }}
                 </div>
               </div>
@@ -495,13 +521,12 @@ onMounted(() => { loadData(); });
               <div class="flex-1 min-w-0">
                 <div class="flex flex-col leading-tight">
                   <div class="font-bold text-gray-900 dark:text-white text-[14px] whitespace-normal break-words">
-                    {{ selected.from }}
+                    Kepada: {{ selected.to }}
                   </div>
                   <div class="text-gray-500 dark:text-gray-400 font-normal text-[13px]">
-                    {{ selected.email }}
+                    Pengirim: {{ selected.senderName }}
                   </div>
                 </div>
-                <div class="text-[13px] text-gray-500 dark:text-gray-500 mt-1">kepada (Lihat Penerima)</div>
               </div>
             </div>
 
@@ -524,10 +549,10 @@ onMounted(() => { loadData(); });
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Penerima</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.recipient || '-' }}</div>
             </div>
-            <div v-if="selected.disposition">
+            <!-- <div v-if="selected.disposition">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Disposisi</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.disposition }}</div>
-            </div>
+            </div> -->
             <div v-if="selected.note">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Sifat</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200 capitalize">{{ selected.note }}</div>

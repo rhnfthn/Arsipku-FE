@@ -82,11 +82,8 @@ export function useInbox(positionId: any) {
           isNote: it.is_note,
 
           pengirim: it.pengirim,
-          penerima: it.penerima
-            ? Array.isArray(it.penerima)
-              ? it.penerima
-              : [it.penerima]
-            : [],
+          kepada: Array.isArray(it.kepada) ? it.kepada : [],
+          penerimaAktif: it.penerima || null,
 
           raw: it,
         };

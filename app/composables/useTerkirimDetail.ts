@@ -20,7 +20,7 @@ export const useTerkirimDetail = () => {
   const fetchDetail = async (id: string) => {
     isLoading.value = true;
     try {
-      const response = await get(`/persuratan/naskah/detail/${id}`);
+      const response = await get(`/ND/${id}`);
       if (response.success) {
         detail.value = response.data;
       }
