@@ -15,7 +15,12 @@ const triggerFileInput = () => fileInputRef.value?.click()
 
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
-  if (input.files) processFiles(input.files)
+  if (input.files && input.files.length > 0) {
+    processFiles(input.files)
+
+    // Reset value input agar bisa memilih file yang sama berulang kali
+    input.value = ''
+  }
 }
 
 const handleDrop = (event: DragEvent) => {
