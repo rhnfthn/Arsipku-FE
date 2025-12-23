@@ -119,6 +119,10 @@ const emails = items;
 const filteredEmails = computed(() => {
   let result = items.value;
 
+  if (activeFilterType.value !== "Arsip") {
+    result = result.filter((mail) => !mail.isArsip);
+  }
+
   if (activeTab.value !== "ALL")
     result = result.filter((mail) => mail.category === activeTab.value);
 
@@ -132,11 +136,39 @@ const filteredEmails = computed(() => {
   }
 
   // filter tambahan...
-  if (activeFilterType.value === "Favorite")
-    result = result.filter((a) => a.isStarred);
+  switch (activeFilterType.value) {
+    case "Favorite":
+      result = result.filter((mail) => mail.isStarred);
+      break;
+
+    case "Note":
+      result = result.filter((mail) => mail.isNote);
+      break;
+
+    case "Arsip":
+      result = result.filter((mail) => mail.isArsip);
+      break;
+
+    case "Sudah Dibaca":
+      result = result.filter((mail) => mail.isRead);
+      break;
+
+    case "Belum Dibaca":
+      result = result.filter((mail) => !mail.isRead);
+      break;
+
+    case "Sudah Tinjut":
+      result = result.filter((mail) => mail.isTinjut);
+      break;
+
+    case "Belum Tinjut":
+      result = result.filter((mail) => !mail.isTinjut);
+      break;
+  }
 
   return result;
 });
+
 const totalItems = computed(() => filteredEmails.value.length);
 const totalPages = computed(
   () => Math.ceil(totalItems.value / itemsPerPage.value) || 1,
@@ -489,108 +521,117 @@ const penerimaDetail = computed(() => {
         </div>
 
         <div class="flex-1 pb-10 w-full">
+          <!-- EMPTY STATE -->
           <div
-            v-for="mail in paginatedEmails"
-            :key="mail.id"
-            @click="selectMail(mail)"
-            class="group flex gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px]"
-            :class="
-              selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-            "
+            v-if="paginatedEmails.length === 0"
+            class="flex flex-col items-center justify-center h-full text-neutral-400 mt-10"
           >
-            <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
-              <div
-                class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
-                :class="
-                  selectedIds.has(mail.id)
-                    ? 'bg-primary border-primary'
-                    : 'bg-white'
-                "
-                @click="toggleSelection(mail.id)"
-              >
-                <Check
-                  v-if="selectedIds.has(mail.id)"
-                  class="w-3 h-3 text-white"
-                />
-              </div>
-            </div>
+            <Inbox class="w-12 h-12 mb-2 opacity-50" />
+            <span class="text-sm">Tidak ada kotak masuk</span>
+          </div>
 
+          <!-- LIST DATA -->
+          <div v-else>
             <div
-              class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-4 overflow-hidden pt-0.5"
+              v-for="mail in paginatedEmails"
+              :key="mail.id"
+              @click="selectMail(mail)"
+              class="group flex gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px]"
+              :class="
+                selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'
+              "
             >
-              <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
+              <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
                 <div
-                  v-if="!mail.isRead"
-                  class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
-                  title="Belum Dibaca"
-                ></div>
-
-                <div
-                  class="text-[11px] text-neutral-500 uppercase truncate font-bold"
+                  class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
+                  :class="
+                    selectedIds.has(mail.id)
+                      ? 'bg-primary border-primary'
+                      : 'bg-white'
+                  "
+                  @click="toggleSelection(mail.id)"
                 >
-                  {{ mail.from }}
+                  <Check
+                    v-if="selectedIds.has(mail.id)"
+                    class="w-3 h-3 text-white"
+                  />
                 </div>
               </div>
 
               <div
-                class="text-[13px] text-neutral-900 truncate flex-1"
-                :class="!mail.isRead ? 'font-bold' : 'font-normal'"
+                class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-4 overflow-hidden pt-0.5"
               >
-                {{ mail.subject }}
+                <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
+                  <div
+                    v-if="!mail.isRead"
+                    class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
+                    title="Belum Dibaca"
+                  ></div>
+
+                  <div
+                    class="text-[11px] text-neutral-500 uppercase truncate font-bold"
+                  >
+                    {{ mail.from }}
+                  </div>
+                </div>
+
+                <div
+                  class="text-[13px] text-neutral-900 truncate flex-1"
+                  :class="!mail.isRead ? 'font-bold' : 'font-normal'"
+                >
+                  {{ mail.subject }}
+                </div>
               </div>
-            </div>
 
-            <div class="pl-2 shrink-0 pt-0.5 text-right">
-              <span
-                v-if="mail.category_label"
-                class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm"
+              <div class="pl-2 shrink-0 pt-0.5 text-right">
+                <span
+                  v-if="mail.category_label"
+                  class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm"
+                >
+                  {{ mail.category_label }}
+                </span>
+              </div>
+
+              <div class="pl-2 shrink-0 pt-0.5 text-right">
+                <span
+                  class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap"
+                >
+                  {{ mail.date }}
+                </span>
+              </div>
+
+              <div
+                class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
               >
-                {{ mail.category_label }}
-              </span>
-            </div>
-            <div class="pl-2 shrink-0 pt-0.5 text-right">
-              <span
-                class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap"
-              >
-                {{ mail.date }}
-              </span>
-            </div>
-
-            <div
-              class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
-            >
-              <div class="flex items-center gap-2 p-1">
-                <Star
-                  class="w-4 h-4 transition-colors hover:text-yellow-400"
-                  :class="
-                    mail.isStarred
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-neutral-300'
-                  "
-                  @click.stop="toggleFlag(mail, 'favorit')"
-                  title="Favorite"
-                />
-                <StickyNote
-                  class="w-4 h-4 transition-colors hover:text-orange-400"
-                  :class="
-                    mail.isNote
-                      ? 'text-orange-400 fill-orange-400'
-                      : 'text-neutral-300'
-                  "
-                  @click.stop="toggleFlag(mail, 'note')"
-                  title="Note"
-                />
-
-                <Archive
-                  class="w-4 h-4 transition-colors hover:text-purple-600"
-                  :class="
-                    mail.isArsip
-                      ? 'text-purple-500 fill-purple-500'
-                      : 'text-neutral-300'
-                  "
-                  @click.stop="toggleFlag(mail, 'arsip')"
-                  title="Arsip Flag"
-                />
+                <div class="flex items-center gap-2 p-1">
+                  <Star
+                    class="w-4 h-4 transition-colors hover:text-yellow-400"
+                    :class="
+                      mail.isStarred
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : 'text-neutral-300'
+                    "
+                    @click.stop="toggleFlag(mail, 'favorit')"
+                  />
+                  <StickyNote
+                    class="w-4 h-4 transition-colors hover:text-orange-400"
+                    :class="
+                      mail.isNote
+                        ? 'text-orange-400 fill-orange-400'
+                        : 'text-neutral-300'
+                    "
+                    @click.stop="toggleFlag(mail, 'note')"
+                  />
+                  <Archive
+                    class="w-4 h-4 transition-colors hover:text-purple-600"
+                    :class="
+                      mail.isArsip
+                        ? 'text-purple-500 fill-purple-500'
+                        : 'text-neutral-300'
+                    "
+                    @click.stop="toggleFlag(mail, 'arsip')"
+                  />
+                </div>
               </div>
             </div>
           </div>
