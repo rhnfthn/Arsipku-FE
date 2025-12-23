@@ -351,7 +351,7 @@
 
                 <div class="flex-1">
                   <span class="text-gray-700 font-medium block">
-                    {{ files[idx]?.name || "Pilih file untuk diupload" }}
+                    {{ file[idx]?.name || "Pilih file untuk diupload" }}
                   </span>
                   <span class="text-xs text-gray-500 mt-0.5 block">
                     PDF, DOC, DOCX (Max 5MB)
@@ -368,7 +368,7 @@
 
               <!-- File info if uploaded -->
               <div
-                v-if="files[idx]"
+                v-if="file[idx]"
                 class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
               >
                 <div class="flex items-center gap-2">
@@ -386,9 +386,7 @@
                     />
                   </svg>
                   <span class="text-xs text-gray-700">
-                    {{ files[idx].name }} ({{
-                      formatFileSize(files[idx].size)
-                    }})
+                    {{ file[idx].name }} ({{ formatFileSize(file[idx].size) }})
                   </span>
                 </div>
                 <button
@@ -444,7 +442,7 @@
 
               <div class="flex-1">
                 <span class="text-gray-700 font-medium block">
-                  {{ files[0]?.name || "Pilih file untuk diupload" }}
+                  {{ file[0]?.name || "Pilih file untuk diupload" }}
                 </span>
                 <span class="text-xs text-gray-500 mt-0.5 block">
                   PDF, DOC, DOCX (Max 5MB)
@@ -461,7 +459,7 @@
 
             <!-- File info if uploaded -->
             <div
-              v-if="files[0]"
+              v-if="file[0]"
               class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
             >
               <div class="flex items-center gap-2">
@@ -479,7 +477,7 @@
                   />
                 </svg>
                 <span class="text-xs text-gray-700">
-                  {{ files[0].name }} ({{ formatFileSize(files[0].size) }})
+                  {{ file[0].name }} ({{ formatFileSize(file[0].size) }})
                 </span>
               </div>
               <button
@@ -629,7 +627,7 @@ const isDeletingUsulan = ref(false);
 const selectedRow = ref(null);
 const rows = ref([]);
 const loading = ref<boolean>(true);
-const files = ref([]);
+const file = ref([]);
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const idToDelete = ref<string | null>(null);
@@ -641,7 +639,7 @@ const klasifikasiMap = ref(new Map());
 
 // Computed: Check if at least one file uploaded
 const hasUploadedFiles = computed(() => {
-  return files.value.some((f) => f instanceof File);
+  return file.value.some((f) => f instanceof File);
 });
 
 // Format file size
@@ -655,7 +653,7 @@ const formatFileSize = (bytes: number) => {
 
 // Remove file
 const removeFile = (index: number) => {
-  files.value[index] = null;
+  file.value[index] = null;
 };
 
 const fetchPersonMap = async () => {
@@ -786,7 +784,7 @@ const openRowModal = async (row) => {
       template_nomor: detail.template_nomor || "",
     };
 
-    files.value = Array(nomorSuratArray.length).fill(null);
+    file.value = Array(nomorSuratArray.length).fill(null);
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
@@ -802,7 +800,7 @@ const openRowModal = async (row) => {
 
 // HANDLE FILE UPLOAD
 const handleFile = (index: number, e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0];
+  const file = (e.target as HTMLInputElement).file?.[0];
   if (!file) return;
 
   // Validate file size (5MB max)
@@ -832,7 +830,7 @@ const handleFile = (index: number, e: Event) => {
     return;
   }
 
-  files.value[index] = file;
+  file.value[index] = file;
 
   console.log(
     "✅ File uploaded at index",
@@ -871,7 +869,7 @@ function handlePreview(data: any) {
 
   const length = Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1;
 
-  files.value = Array(length).fill(null);
+  file.value = Array(length).fill(null);
 }
 
 // SUBMIT USULAN - Updates status to "Menunggu Verifikasi"
@@ -879,7 +877,7 @@ const submitUsulan = async () => {
   if (!selectedRow.value) return;
 
   // Validate: at least one file must be uploaded
-  const uploadedFiles = files.value.filter((f) => f instanceof File);
+  const uploadedFiles = file.value.filter((f) => f instanceof File);
 
   if (uploadedFiles.length === 0) {
     toast.add({
@@ -891,10 +889,10 @@ const submitUsulan = async () => {
   }
 
   try {
-    console.log("📤 Submitting usulan with", uploadedFiles.length, "files");
+    console.log("📤 Submitting usulan with", uploadedFiles.length, "file");
 
     const response = await submitBooking(selectedRow.value.id_usulan, {
-      files: uploadedFiles,
+      file: uploadedFiles,
     });
 
     console.log("✅ Booking response:", response);
