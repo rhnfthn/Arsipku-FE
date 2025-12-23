@@ -524,23 +524,29 @@ onMounted(() => { loadData(); });
           </div>
 
           <div class="px-6 pb-4 pt-2">
-            <div class="flex gap-4 items-start">
+            <div class="flex gap-3 items-center">
               <div
-                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0 mt-1"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0 shadow-sm"
                 :class="selected.color.replace('text-white', '')">
-                {{ selected.initial }}
+                {{ selected.originalData.pengirim.nama?.substring(0, 1).toUpperCase() || '?' }}
               </div>
 
               <div class="flex-1 min-w-0">
-                <div class="flex flex-col leading-tight">
-                  <div class="font-bold text-gray-900 dark:text-white text-[14px] whitespace-normal break-words">
-                    Kepada: {{ selected.to }}
+                <div class="flex flex-col items-start leading-snug">
+
+                  <div class="text-[14px] text-gray-900 dark:text-gray-100">
+                    <span class="text-gray-500 dark:text-gray-400 font-normal mr-1">Pengirim:</span>
+                    <span class="font-semibold">{{ selected.originalData.pengirim.nama }}</span>
                   </div>
-                  <div class="text-gray-500 dark:text-gray-400 font-normal text-[13px]">
-                    Pengirim: {{ selected.senderName }}
+
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full text-left"
+                    :title="selected.originalData.pengirim.position_text">
+                    {{ selected.originalData.pengirim.position_text }}
                   </div>
+
                 </div>
               </div>
+
             </div>
 
             <div class="mt-4">
