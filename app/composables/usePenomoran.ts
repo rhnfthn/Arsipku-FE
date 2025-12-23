@@ -112,31 +112,31 @@ export const usePenomoran = () => {
   /** ===========================
    * SUBMIT BOOKING WITH FILES
    * =========================== */
-  interface BookingPayload {
-    files: File[];
-  }
-
   const submitBooking = async (
-    id_request: number | string,
-    payload: BookingPayload,
+    id_request: string | number,
+    formData: FormData,
   ) => {
     isLoadingBooking.value = true;
 
     try {
-      const formData = new FormData();
+      console.log("📤 Submitting booking for request:", id_request);
 
-      if (payload.files?.length) {
-        payload.files.forEach((file) => {
-          if (file instanceof File) {
-            formData.append("file", file); // ⬅️ SINGULAR
-          }
-        });
+      // Log FormData contents for debugging
+      for (const pair of formData.entries()) {
+        console.log(`📎 FormData: ${pair[0]} =`, pair[1]);
       }
 
       const response = await api.post(
         `/nomor-request/${id_request}/booking`,
-        formData, // ⬅️ kirim FormData langsung
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
+
+      console.log("✅ Booking response:", response.data);
 
       toast.add({
         title: "Berhasil",
@@ -148,6 +148,8 @@ export const usePenomoran = () => {
 
       return response.data;
     } catch (error: any) {
+      console.error("❌ Error submit booking:", error);
+
       const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -190,6 +192,7 @@ export const usePenomoran = () => {
       return null;
     }
   };
+
   const getListNomor = async () => {
     isLoadingList.value = true;
     try {
