@@ -33,7 +33,7 @@
               <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="refNumber"
+              <input type="text" v-model="refNumber" readonly=""
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 placeholder="Ketik disini" />
             </div>
@@ -48,7 +48,7 @@
               <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="refPerihal"
+              <input type="text" v-model="refPerihal" readonly=""
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 placeholder="Ketik disini" />
             </div>
@@ -261,8 +261,8 @@ const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
 
 const selectedSifat = ref<any>(null);
-const refNumber = ref("");
-const refPerihal = ref("");
+const refNumber = ref("-");
+const refPerihal = ref("-");
 
 const recipientList = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);

@@ -81,23 +81,48 @@ const getSifatColor = (sifat: string) => {
 };
 
 // --- IFRAME RESIZING ---
+// --- IFRAME RESIZING ---
 function resizeIframe() {
   if (!iframe.value) return;
+
   const adjust = () => {
-    if (!iframe.value?.contentWindow) return;
-    const doc = iframe.value.contentWindow.document;
-    const height = doc.body.scrollHeight;
-    if (height > 0) {
-      iframe.value.style.height = height + 'px';
+    const iWindow = iframe.value?.contentWindow;
+    if (!iWindow) return;
+
+    const doc = iWindow.document;
+
+    // 1. Reset height ke 'auto' dulu supaya bisa menghitung ulang jika konten memendek
+    iframe.value!.style.height = 'auto';
+
+    // 2. Ambil nilai maksimum dari berbagai properti tinggi untuk akurasi
+    const contentHeight = Math.max(
+      doc.body.scrollHeight,
+      doc.body.offsetHeight,
+      doc.documentElement.clientHeight,
+      doc.documentElement.scrollHeight,
+      doc.documentElement.offsetHeight
+    );
+
+    // 3. Tambahkan buffer (misal 30px) untuk menghindari scrollbar muncul karena margin body
+    if (contentHeight > 0) {
+      iframe.value!.style.height = (contentHeight + 30) + 'px';
     }
   };
+
+  // Event listener saat iframe selesai loading
   iframe.value.onload = adjust;
-  adjust();
+
+  // Panggil manual dengan delay untuk memastikan rendering visual selesai
+  // (Browser butuh waktu 1 frame untuk paint layout baru)
+  setTimeout(adjust, 50);
+  setTimeout(adjust, 300); // Safety check kedua jika ada gambar
 }
 
+// Update Watcher
 watch(() => detail.value?.konten, async () => {
   await nextTick();
-  resizeIframe();
+  // Beri sedikit delay agar DOM Vue selesai update srcdoc
+  setTimeout(resizeIframe, 100);
 });
 
 // --- LIFECYCLE ---

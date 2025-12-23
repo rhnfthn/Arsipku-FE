@@ -26,10 +26,10 @@
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan (Internal)" placeholder="Pilih Tembusan Internal"
-          :items="internalItems" />
-
         <TulisInputSifat v-model="selectedSifat" />
+
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+          :items="internalItems" />
 
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
@@ -38,10 +38,26 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal Surat..." />
+                placeholder="Ketik Perihal" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <input type="text" v-model="lampiranText" :maxlength="maxPerihal"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                placeholder="Ketik Lampiran" />
+              <span class="text-[10px] font-mono shrink-0 transition-colors"
+                :class="lampiranText.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
+                {{ lampiranText.length }}/{{ maxPerihal }}
               </span>
             </div>
           </div>
@@ -97,7 +113,7 @@
                           <td class="align-top">Lampiran</td>
                           <td class="align-top">:</td>
                           <td class="align-top">
-                            {{ existingFiles.length > 0 ? `${existingFiles.length} Berkas` : '-' }}
+                            {{ lampiranText || '-' }}
                           </td>
                         </tr>
                         <tr>
@@ -118,7 +134,7 @@
                   </div>
                 </div>
 
-                <div class="min-h-[300px] relative group px-10">
+                <div class="min-h-[300px] relative group">
                   <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   <div v-if="!editorContent"
                     class="absolute top-0 left-10 text-gray-400 pointer-events-none italic z-0 mt-2">
@@ -230,6 +246,7 @@ const editDraftId = ref<string | null>(null);
 
 // Form Basic
 const subject = ref("");
+const lampiranText = ref(""); // State untuk teks lampiran manual
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -261,6 +278,9 @@ const tinyMceInit = {
   suffix: '.min',
   height: 400,
   menubar: false,
+  promotion: false,
+  branding: false,
+  placeholder: 'Ketik konten disini...',
   plugins: 'lists advlist link image code table fullscreen',
   toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
@@ -268,6 +288,7 @@ const tinyMceInit = {
     tinymceEditor.value = editor;
   }
 };
+
 
 // --- COMPUTED ---
 const selectedKlasifikasi = computed(() =>
@@ -297,6 +318,7 @@ const getPayload = (): SDEPayload => {
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
+    lampiran: lampiranText.value, // Kirim teks lampiran manual
     konten: editorContent.value,
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
@@ -461,6 +483,7 @@ onMounted(async () => {
         const d = resDraft.data;
 
         subject.value = d.perihal || "";
+        lampiranText.value = d.lampiran || ""; // Load teks lampiran dari draft
         editorContent.value = d.konten || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 

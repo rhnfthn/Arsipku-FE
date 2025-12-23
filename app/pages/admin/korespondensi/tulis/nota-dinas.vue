@@ -1,16 +1,18 @@
 <template>
   <div class="relative">
 
-    <div v-if="isLoadingData"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-      <div
-        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-          {{ loadingMessage || 'Mohon Tunggu...' }}
-        </span>
+    <Teleport to="body">
+      <div v-if="isLoadingData"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 backdrop-blur-[2px] transition-all">
+        <div
+          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+            {{ loadingMessage || 'Mohon Tunggu...' }}
+          </span>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
@@ -104,8 +106,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                    ${i + 1}. ${s.labelJob || s.label}
-                                  </div>`
+                                                                    ${i + 1}. ${s.labelJob || s.label}
+                                                                  </div>`
                               )
                               .join('')
                             : '................................................'
@@ -232,7 +234,8 @@
       <template #footer>
         <div class="flex gap-4 w-full">
           <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" :loading="isLoadingDraft" @click="confirmSaveDraft" />
+            class="px-8" @click="confirmSaveDraft" />
+
           <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="confirmKirimDokumen" />
         </div>
