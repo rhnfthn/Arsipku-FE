@@ -123,50 +123,32 @@ export const usePenomoran = () => {
     isLoadingBooking.value = true;
 
     try {
-      console.log("📤 Submitting booking for request:", id_request);
-      console.log("📎 Files to upload:", payload.files?.length || 0);
-
       const formData = new FormData();
 
-      // ✅ Append files ke FormData
-      if (payload.files && payload.files.length > 0) {
+      if (payload.files?.length) {
         payload.files.forEach((file) => {
-          if (file) {
-            formData.append("files", file);
-            console.log("📄 Appending file:", file.name, file.size, "bytes");
+          if (file instanceof File) {
+            formData.append("file", file); // ⬅️ SINGULAR
           }
         });
       }
 
-      console.log("📤 POST to /nomor-request/" + id_request + "/booking");
-
-      // ✅ Use axios directly for multipart/form-data
       const response = await api.post(
         `/nomor-request/${id_request}/booking`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
+        formData, // ⬅️ kirim FormData langsung
       );
-
-      console.log("✅ Booking response:", response.data);
 
       toast.add({
         title: "Berhasil",
         description:
           response.data?.message ||
           "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
-        icon: "i-heroicons-check-circle",
         color: "green",
       });
 
       return response.data;
     } catch (error: any) {
-      console.error("❌ Error submit booking:", error);
-
-      const errorMessage =
+      const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
@@ -174,10 +156,7 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Gagal",
-        description: Array.isArray(errorMessage)
-          ? errorMessage.join(", ")
-          : errorMessage,
-        icon: "i-heroicons-exclamation-circle",
+        description: Array.isArray(msg) ? msg.join(", ") : msg,
         color: "red",
       });
 

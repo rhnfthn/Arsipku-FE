@@ -526,7 +526,7 @@
         <button
           v-if="selectedRow?.status === 'Belum Diajukan'"
           @click="submitUsulan"
-          :disabled="isLoadingBooking || isDeletingUsulan || !hasUploadedFiles"
+          :disabled="isLoadingBooking || isDeletingUsulan"
           class="px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <span v-if="isLoadingBooking" class="flex items-center gap-2">
@@ -876,26 +876,20 @@ function handlePreview(data: any) {
 const submitUsulan = async () => {
   if (!selectedRow.value) return;
 
-  // Validate: at least one file must be uploaded
-  const uploadedFiles = file.value.filter((f) => f instanceof File);
-
-  if (uploadedFiles.length === 0) {
-    toast.add({
-      title: "File belum diupload",
-      description: "Minimal satu file harus diupload sebelum mengirim usulan",
-      color: "yellow",
-    });
-    return;
-  }
-
   try {
-    console.log("📤 Submitting usulan with", uploadedFiles.length, "file");
+    const formData = new FormData();
 
-    const response = await submitBooking(selectedRow.value.id_usulan, {
-      file: uploadedFiles,
-    });
+    // ambil file yang valid saja
+    const uploadedFiles = file.value.filter((f) => f instanceof File);
 
-    console.log("✅ Booking response:", response);
+    // 👉 file OPSIONAL
+    if (uploadedFiles.length > 0) {
+      uploadedFiles.forEach((f) => {
+        formData.append("file", f); // sesuai backend
+      });
+    }
+
+    const response = await submitBooking(selectedRow.value.id_usulan, formData);
 
     openDetail.value = false;
     await fetchData();
@@ -903,13 +897,13 @@ const submitUsulan = async () => {
     toast.add({
       title: "Berhasil",
       description:
-        response?.message ||
-        "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'",
+        uploadedFiles.length > 0
+          ? "Usulan berhasil dikirim dengan file"
+          : "Usulan berhasil dikirim tanpa file",
       color: "green",
     });
   } catch (e) {
-    console.error("❌ Gagal submit usulan:", e);
-    // Error handling already in composable
+    console.error("❌ Upload gagal:", e);
   }
 };
 
