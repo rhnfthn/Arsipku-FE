@@ -293,47 +293,93 @@
             :key="idx"
             class="space-y-2"
           >
-            <div class="border border-gray-300 rounded-lg p-4 bg-white">
+            <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
               <!-- Nomor surat -->
-              <div class="flex items-center gap-2">
-                <input class="flex-1 px-0 py-2 text-sm" :value="no" readonly />
+              <div class="flex items-center gap-2 mb-3">
+                <input
+                  class="flex-1 bg-white border border-gray-200 rounded-md text-sm font-mono px-3 py-2"
+                  :value="`${idx + 1}. ${no}`"
+                  readonly
+                />
 
                 <button
                   @click="handleCopy(no)"
-                  class="p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center"
+                  class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
+                  title="Copy nomor surat"
                 >
                   <Copy class="w-4 h-4 text-gray-600" />
                 </button>
               </div>
 
               <!-- Upload dengan ICON -->
-              <label
-                class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50 mt-1"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div class="relative">
+                <label
+                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  <svg
+                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+
+                  <div class="flex-1">
+                    <span class="text-gray-700 font-medium block">
+                      {{ files[idx]?.name || "Pilih file untuk diupload" }}
+                    </span>
+                    <span class="text-xs text-gray-500 mt-0.5 block">
+                      PDF, DOC, DOCX (Max 5MB)
+                    </span>
+                  </div>
+
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".pdf,.doc,.docx"
+                    @change="handleFile(idx, $event)"
                   />
-                </svg>
+                </label>
 
-                <span class="text-gray-600">
-                  {{ files[idx]?.file_name || "Upload File" }}
-                </span>
-
-                <input
-                  type="file"
-                  class="hidden"
-                  @change="handleFile(idx, $event)"
-                />
-              </label>
+                <!-- File info if uploaded -->
+                <div
+                  v-if="files[idx]"
+                  class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span class="text-xs text-gray-700">
+                      {{ files[idx].name }} ({{
+                        formatFileSize(files[idx].size)
+                      }})
+                    </span>
+                  </div>
+                  <button
+                    @click.prevent="removeFile(idx)"
+                    class="text-red-500 hover:text-red-700 text-xs"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -343,7 +389,7 @@
           <div class="flex items-center gap-2">
             <input
               class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
-              :value="selectedRow.nomor_surat"
+              :value="`1. ${selectedRow.nomor_surat}`"
               readonly
             />
 
@@ -379,6 +425,32 @@
 
             <input type="file" class="hidden" @change="handleFile(0, $event)" />
           </label>
+        </div>
+        <!-- File upload warning -->
+        <div
+          v-if="selectedRow?.status === 'Belum Diajukan'"
+          class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2"
+        >
+          <svg
+            class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div class="text-xs text-blue-800">
+            <p class="font-medium">Upload file sebelum mengirim usulan</p>
+            <p class="mt-1 text-blue-700">
+              Pastikan file yang diupload sesuai dengan nomor surat yang akan
+              diajukan.
+            </p>
+          </div>
         </div>
       </div>
     </div>

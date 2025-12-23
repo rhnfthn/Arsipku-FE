@@ -270,8 +270,17 @@
           <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
 
           <Heading variant="10sb">Nomor</Heading>
-          <div class="text-gray-800 text-xs tracking-widest font-mono">
-            {{ form.jenis }}....../O/00/LPPNPI/{{ form.klasifikasi }}/XII/2025
+          <div class="text-gray-800 text-xs font-mono space-y-1">
+            <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
+              <span class="text-gray-400">
+                {{ String(n).padStart(2, "0") }}.
+              </span>
+              <span class="tracking-widest">
+                {{ form.jenis }}....../O/00/LPPNPI/{{
+                  form.klasifikasi
+                }}/XII/2025
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -316,7 +325,6 @@ const props = defineProps({
 
 const emit = defineEmits(["submit", "update:modelValue", "preview"]);
 const toast = useToast();
-const { post } = useApi();
 
 const jenisOptions = [
   { code: "PER", display: "PER - Peraturan" },
@@ -627,108 +635,23 @@ const handleCancel = () => {
   emit("update:modelValue", false);
 };
 
-const submitAndClose = async () => {
-  if (
-    !form.value.tanggal ||
-    !form.value.jenis ||
-    !form.value.klasifikasi ||
-    !form.value.penandatanganJabatan ||
-    !form.value.perihal ||
-    form.value.perihal.length === 0 ||
-    form.value.perihal.length > 100 ||
-    Number(form.value.jumlah) < 1 ||
-    Number(form.value.jumlah) > 10
-  ) {
-    toast.add({
-      title: "Form tidak lengkap",
-      description:
-        "Pastikan semua field diisi dengan benar. Perihal maksimal 100 karakter.",
-      color: "red",
-    });
-    return;
-  }
-
-  if (!user.value) {
-    toast.add({
-      title: "Error",
-      description: "User belum login",
-      color: "red",
-    });
-    return;
-  }
-
-  console.log("🔍 Form values before payload:", {
-    id_position_penandatangan: form.value.id_position_penandatangan,
-    type: typeof form.value.id_position_penandatangan,
-  });
-
-  const tanggalFormatted =
-    form.value.tanggal instanceof Date
-      ? form.value.tanggal.toISOString().split("T")[0]
-      : String(form.value.tanggal);
-
+function submitAndClose() {
   const payload = {
-    position_id: Number(user.value.position),
-    tanggal: tanggalFormatted,
+    position_id: Number(user.value.position), // pengusul
+    tanggal: form.value.tanggal,
     jenis: form.value.jenis,
     klasifikasi: form.value.klasifikasi,
     perihal: form.value.perihal,
-    penandatangan: form.value.penandatanganJabatan,
-    id_position_penandatangan: Number(form.value.id_position_penandatangan),
     jumlah: Number(form.value.jumlah),
+    penandatangan: form.value.penandatanganJabatan,
+    id_position_penandatangan: form.value.id_position_penandatangan,
   };
 
-  console.log("📤 PAYLOAD SUBMIT:", JSON.stringify(payload, null, 2));
+  console.log("🚀 PAYLOAD:", payload);
 
-  if (
-    !payload.id_position_penandatangan ||
-    isNaN(payload.id_position_penandatangan)
-  ) {
-    toast.add({
-      title: "Error",
-      description: "ID Position Penandatangan tidak valid",
-      color: "red",
-    });
-    return;
-  }
-
-  isSubmitting.value = true;
-
-  try {
-    const res = await post("/nomor-request", payload);
-    console.log("✅ Response from POST /nomor-request:", res);
-
-    if (res?.success) {
-      toast.add({
-        title: "Berhasil",
-        description: "Usulan berhasil disimpan (Belum Diajukan).",
-        color: "green",
-      });
-
-      emit("submit", payload);
-      resetForm();
-      emit("update:modelValue", false);
-    } else {
-      throw new Error(res?.message || "Gagal menyimpan usulan");
-    }
-  } catch (error) {
-    console.error("❌ Error submit usulan:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Terjadi kesalahan saat menyimpan usulan";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+  emit("submit", payload);
+  handleClose();
+}
 
 onMounted(async () => {
   if (!user.value) await getProfile();

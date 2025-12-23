@@ -4,7 +4,7 @@ import { useApi } from "./useApi";
 import type { PenomoranPayload, PenomoranResponse } from "~/types/penomoran";
 
 export const usePenomoran = () => {
-  const { get, post, del } = useApi();
+  const { get, post, del, api } = useApi();
   const toast = useToast();
 
   const isLoadingPenomoran = ref(false);
@@ -37,117 +37,41 @@ export const usePenomoran = () => {
         id_position_penandatangan: Number(payload.id_position_penandatangan),
       };
 
+      console.log("📤 POST to /admin/nomor:", formattedPayload);
+
       const response = await post("/admin/nomor", formattedPayload);
+
+      console.log("✅ Response from /admin/nomor:", response);
 
       toast.add({
         title: "Berhasil",
-        description: "Penomoran final berhasil dibuat.",
+        description: response?.message || "Penomoran final berhasil dibuat.",
         color: "green",
       });
 
-      return response.data ?? response;
+      return response;
+    } catch (error: any) {
+      console.error("❌ Error create penomoran:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal membuat penomoran";
+
+      toast.add({
+        title: "Gagal",
+        description: Array.isArray(errorMessage)
+          ? errorMessage.join(", ")
+          : errorMessage,
+        color: "red",
+      });
+
+      throw error;
     } finally {
       isLoadingPenomoran.value = false;
     }
   };
-
-  /** ===========================
-   * SAVE PENOMORAN - NEW ENDPOINT
-   * =========================== */
-  // const createPenomoranFinal = async (
-  //   payload: PenomoranPayload,
-  // ): Promise<PenomoranResponse> => {
-  //   isLoadingPenomoran.value = true;
-
-  //   try {
-  //     console.log(
-  //       "🚀 createPenomoranFinaln called with:",
-  //       JSON.stringify(payload, null, 2),
-  //     );
-
-  //     if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
-
-  //     // ✅ Format payload untuk endpoint baru: /admin/nomor
-  //     const formattedPayload = {
-  //       position_id: parseInt(String(payload.position_id), 10),
-  //       tanggal:
-  //         payload.tanggal instanceof Date
-  //           ? payload.tanggal.toISOString().split("T")[0]
-  //           : String(payload.tanggal),
-  //       jenis: String(payload.jenis),
-  //       klasifikasi: String(payload.klasifikasi),
-  //       perihal: String(payload.perihal),
-  //       jumlah: parseInt(String(payload.jumlah), 10),
-  //       penandatangan: String(payload.penandatangan),
-  //       id_position_penandatangan: parseInt(
-  //         String(payload.id_position_penandatangan),
-  //         10,
-  //       ),
-  //     };
-
-  //     // Validasi final
-  //     if (isNaN(formattedPayload.id_position_penandatangan)) {
-  //       throw new Error(
-  //         `id_position_penandatangan tidak valid: ${payload.id_position_penandatangan}`,
-  //       );
-  //     }
-
-  //     if (isNaN(formattedPayload.position_id)) {
-  //       throw new Error(`position_id tidak valid: ${payload.position_id}`);
-  //     }
-
-  //     console.log(
-  //       "📤 POST to /admin/nomor:",
-  //       JSON.stringify(formattedPayload, null, 2),
-  //     );
-  //     console.log("🔍 Types check:", {
-  //       position_id: typeof formattedPayload.position_id,
-  //       id_position_penandatangan:
-  //         typeof formattedPayload.id_position_penandatangan,
-  //       jumlah: typeof formattedPayload.jumlah,
-  //       tanggal: typeof formattedPayload.tanggal,
-  //     });
-
-  //     // ✅ Call NEW endpoint
-  //     const response = await post("/admin/nomor", formattedPayload);
-
-  //     console.log("✅ Response from backend:", response);
-
-  //     toast.add({
-  //       title: "Berhasil",
-  //       description: "Penomoran berhasil disimpan.",
-  //       icon: "i-heroicons-check-circle",
-  //       color: "green",
-  //       timeout: 2500,
-  //     });
-
-  //     return response.data ?? response;
-  //   } catch (error: any) {
-  //     console.error("❌ savePenomoran error:", error);
-  //     console.error("❌ Error response:", error.response);
-  //     console.error("❌ Error data:", error.response?.data);
-  //     console.error("❌ Error status:", error.response?.status);
-
-  //     const errorMessage =
-  //       error.response?.data?.message ||
-  //       error.response?.data?.error ||
-  //       error.message ||
-  //       "Gagal menyimpan penomoran.";
-
-  //     toast.add({
-  //       title: "Gagal",
-  //       description: Array.isArray(errorMessage)
-  //         ? errorMessage.join(", ")
-  //         : errorMessage,
-  //       icon: "i-heroicons-exclamation-circle",
-  //       color: "red",
-  //     });
-
-  //     throw error;
-  //   } finally {
-  //     isLoadingPenomoran.value = false;
-  //   }
-  // };
 
   /** ===========================
    * CREATE USULAN (DRAFT)
@@ -186,94 +110,10 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * SAVE PENOMORAN REQUEST - OLD ENDPOINT (Keep for backward compatibility)
+   * SUBMIT BOOKING WITH FILES
    * =========================== */
-  // const savePenomoranRequest = async (
-  //   payload: PenomoranPayload,
-  // ): Promise<PenomoranResponse> => {
-  //   isLoadingPenomoran.value = true;
-
-  //   try {
-  //     console.log(
-  //       "🚀 savePenomoranRequest called with:",
-  //       JSON.stringify(payload, null, 2),
-  //     );
-
-  //     if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
-
-  //     // ✅ Pastikan semua field adalah tipe data yang benar
-  //     const formattedPayload = {
-  //       position_id: parseInt(String(payload.position_id), 10),
-  //       tanggal: String(payload.tanggal),
-  //       jenis: String(payload.jenis),
-  //       klasifikasi: String(payload.klasifikasi),
-  //       perihal: String(payload.perihal),
-  //       penandatangan: String(payload.penandatangan),
-  //       id_position_penandatangan: parseInt(
-  //         String(payload.id_position_penandatangan),
-  //         10,
-  //       ),
-  //       jumlah: parseInt(String(payload.jumlah), 10),
-  //     };
-
-  //     // Validasi final
-  //     if (isNaN(formattedPayload.id_position_penandatangan)) {
-  //       throw new Error(
-  //         `id_position_penandatangan tidak valid: ${payload.id_position_penandatangan}`,
-  //       );
-  //     }
-
-  //     console.log(
-  //       "📤 POST to /nomor-request:",
-  //       JSON.stringify(formattedPayload, null, 2),
-  //     );
-
-  //     const response = await post("/nomor-request", formattedPayload);
-
-  //     console.log("✅ Response from backend:", response);
-
-  //     toast.add({
-  //       title: "Berhasil",
-  //       description: "Penomoran berhasil disimpan.",
-  //       icon: "i-heroicons-check-circle",
-  //       color: "green",
-  //       timeout: 2500,
-  //     });
-
-  //     return response.data ?? response;
-  //   } catch (error: any) {
-  //     console.error("❌ savePenomoranRequest error:", error);
-
-  //     const errorMessage =
-  //       error.response?.data?.message ||
-  //       error.response?.data?.error ||
-  //       error.message ||
-  //       "Gagal menyimpan penomoran.";
-
-  //     toast.add({
-  //       title: "Gagal",
-  //       description: Array.isArray(errorMessage)
-  //         ? errorMessage.join(", ")
-  //         : errorMessage,
-  //       icon: "i-heroicons-exclamation-circle",
-  //       color: "red",
-  //     });
-
-  //     throw error;
-  //   } finally {
-  //     isLoadingPenomoran.value = false;
-  //   }
-  // };
-
-  /** ===========================
-   * SUBMIT BOOKING
-   * =========================== */
-  interface BookingFile {
-    file_name: string;
-    file_text: string;
-  }
   interface BookingPayload {
-    files: BookingFile[];
+    files: File[];
   }
 
   const submitBooking = async (
@@ -283,44 +123,49 @@ export const usePenomoran = () => {
     isLoadingBooking.value = true;
 
     try {
+      console.log("📤 Submitting booking for request:", id_request);
+      console.log("📎 Files to upload:", payload.files?.length || 0);
+
       const formData = new FormData();
 
-      payload.files.forEach((file) => {
-        if (file?.file_text) {
-          const byteString = atob(file.file_text);
-          const arrayBuffer = new ArrayBuffer(byteString.length);
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          for (let i = 0; i < byteString.length; i++) {
-            uint8Array[i] = byteString.charCodeAt(i);
+      // ✅ Append files ke FormData
+      if (payload.files && payload.files.length > 0) {
+        payload.files.forEach((file) => {
+          if (file) {
+            formData.append("files", file);
+            console.log("📄 Appending file:", file.name, file.size, "bytes");
           }
+        });
+      }
 
-          const blob = new Blob([uint8Array], {
-            type: "application/octet-stream",
-          });
+      console.log("📤 POST to /nomor-request/" + id_request + "/booking");
 
-          formData.append("files", blob, file.file_name);
-        }
-      });
-
-      const response = await post(
-        `/admin/nomor-request/${id_request}/booking`,
+      // ✅ Use axios directly for multipart/form-data
+      const response = await api.post(
+        `/nomor-request/${id_request}/booking`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
       );
+
+      console.log("✅ Booking response:", response.data);
 
       toast.add({
         title: "Berhasil",
         description:
+          response.data?.message ||
           "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
         icon: "i-heroicons-check-circle",
         color: "green",
       });
 
-      return response.data ?? response;
+      return response.data;
     } catch (error: any) {
+      console.error("❌ Error submit booking:", error);
+
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -329,7 +174,9 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Gagal",
-        description: errorMessage,
+        description: Array.isArray(errorMessage)
+          ? errorMessage.join(", ")
+          : errorMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -341,8 +188,29 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * GET LIST NOMOR (For Table)
+   * GET DETAIL NOMOR BY ID
    * =========================== */
+  const getDetailNomor = async (id: string) => {
+    try {
+      const res = await get(`/nomor/${id}`);
+
+      console.log("✅ Detail nomor loaded:", res);
+
+      if (!res?.success) {
+        throw new Error("Gagal mengambil detail nomor");
+      }
+
+      return res.data;
+    } catch (e: any) {
+      console.error("❌ Error fetch detail nomor:", e);
+      toast.add({
+        title: "Gagal fetch detail",
+        description: e.message || "Gagal memuat detail nomor",
+        color: "red",
+      });
+      return null;
+    }
+  };
   const getListNomor = async () => {
     isLoadingList.value = true;
     try {
@@ -389,7 +257,6 @@ export const usePenomoran = () => {
     try {
       const res = await get(`/admin/nomor-request/${id}`);
 
-      // Handle berbagai struktur response
       if (res?.data?.data) {
         return res.data.data;
       } else if (res?.data) {
@@ -415,11 +282,9 @@ export const usePenomoran = () => {
     try {
       const res = await get("/persuratan/klasifikasi");
 
-      // Response sudah dalam format { success: true, data: [...] }
       const rawData = res.data ?? res;
       const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? []);
 
-      // Transform data untuk menampilkan "CODE - TEXT"
       return dataArray.map((item: any) => ({
         code: item.klasifikasi,
         text: item.klasifikasi_text,
@@ -562,6 +427,7 @@ export const usePenomoran = () => {
     // PENOMORAN FINAL
     createPenomoranFinal,
     getListNomor,
+    getDetailNomor,
     deleteNomor,
 
     // MASTER DATA

@@ -11,7 +11,7 @@ import type {
 } from "~/types/template";
 
 export const useTemplate = () => {
-  const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
+  const { apiGet, apiDelete, api } = useApi();
   const toast = useToast();
 
   const isLoadingList = ref(false);
@@ -100,16 +100,13 @@ export const useTemplate = () => {
       formData.append("nama_template", payload.nama_template);
       formData.append("file", payload.file);
 
-      // Tambahkan tanggal jika ada, jika tidak gunakan tanggal hari ini
-      const tanggal = payload.tanggal || new Date().toISOString().split("T")[0];
-      formData.append("tanggal", tanggal);
+      // ❌ JANGAN kirim field tanggal - API tidak menerima field ini
 
       console.log("📤 POST to /templates with FormData");
       console.log("Form data:", {
         nama_template: payload.nama_template,
         file_name: payload.file.name,
         file_size: payload.file.size,
-        tanggal: tanggal,
       });
 
       // Gunakan axios langsung untuk multipart/form-data
@@ -142,9 +139,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal menambahkan template";
 
+      // Jika error message adalah array, join jadi string
+      const finalMessage = Array.isArray(errorMessage)
+        ? errorMessage.join(", ")
+        : errorMessage;
+
       toast.add({
         title: "Gagal",
-        description: errorMessage,
+        description: finalMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -196,15 +198,10 @@ export const useTemplate = () => {
           },
         );
       } else {
-        // Jika tidak ada file baru, kirim JSON biasa
-        const jsonData: any = {
+        // Jika tidak ada file baru, kirim JSON biasa (hanya nama template)
+        const jsonData = {
           nama_template: payload.nama_template,
         };
-
-        // Hanya kirim file jika ada (file path string)
-        if (payload.file && typeof payload.file === "string") {
-          jsonData.file = payload.file;
-        }
 
         console.log("📤 PUT to /templates/" + id + " (JSON only)");
         console.log("JSON data:", jsonData);
@@ -234,9 +231,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal memperbarui template";
 
+      // Jika error message adalah array, join jadi string
+      const finalMessage = Array.isArray(errorMessage)
+        ? errorMessage.join(", ")
+        : errorMessage;
+
       toast.add({
         title: "Gagal",
-        description: errorMessage,
+        description: finalMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
@@ -278,9 +280,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal menghapus template";
 
+      // Jika error message adalah array, join jadi string
+      const finalMessage = Array.isArray(errorMessage)
+        ? errorMessage.join(", ")
+        : errorMessage;
+
       toast.add({
         title: "Gagal",
-        description: errorMessage,
+        description: finalMessage,
         icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
