@@ -160,18 +160,9 @@
               </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
-                  <p
-                    class="whitespace-normal break-words line-clamp-3 cursor-help"
-                  >
+                  <p class="whitespace-normal break-words line-clamp-3">
                     {{ row.penandatangan }}
                   </p>
-
-                  <!-- Tooltip -->
-                  <div
-                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
-                  >
-                    {{ row.penandatangan }}
-                  </div>
                 </div>
               </td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
@@ -247,9 +238,7 @@
   <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
     <!-- HEADER -->
     <template #title>
-      <div
-        class="flex items-center justify-between w-full px-6 pt-6 pb-4 border-b border-gray-200"
-      >
+      <div class="flex items-center justify-between w-full px-6 pt-6 pb-4">
         <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
           {{ selectedRow?.perihal }}
         </h2>
@@ -339,76 +328,149 @@
         </div>
       </div>
 
-      <!-- Nomor Surat Section -->
+      <!-- Nomor Surat Section dengan Upload File -->
       <div class="pt-2">
         <label class="block text-base font-medium text-gray-900 mb-3"
-          >Nomor</label
+          >Nomor Surat</label
         >
 
         <div class="space-y-3">
           <div
             v-for="(detail, idx) in selectedRow.details"
             :key="detail.id || idx"
-            class="flex items-center gap-3"
+            class="space-y-2"
           >
-            <!-- Checkbox - Default ter-check -->
-            <input
-              type="checkbox"
-              v-model="detail.checked"
-              :disabled="
-                detail.status === 'terpakai' ||
-                detail.status === 'ditolak' ||
-                detail.status === 'hangus' ||
-                isProcessing
-              "
-              class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+              <!-- Row: Checkbox + Nomor + Status + Copy -->
+              <div class="flex items-center gap-2 mb-3">
+                <!-- Checkbox -->
+                <input
+                  type="checkbox"
+                  v-model="detail.checked"
+                  :disabled="
+                    detail.status === 'terpakai' ||
+                    detail.status === 'ditolak' ||
+                    detail.status === 'hangus' ||
+                    isProcessing
+                  "
+                  class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
+                />
 
-            <!-- Nomor Container -->
-            <div
-              class="relative flex flex-1 bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 items-center"
-            >
-              <span class="text-sm text-gray-600 font-medium mr-3">{{
-                idx + 1
-              }}</span>
+                <!-- Nomor Container -->
+                <div class="relative flex flex-1 items-center gap-2">
+                  <span class="text-sm text-gray-600 font-medium">{{
+                    idx + 1
+                  }}</span>
 
-              <input
-                type="text"
-                :value="displayNomor(detail)"
-                class="flex-1 bg-transparent outline-none text-sm text-gray-900 font-mono"
-                readonly
-              />
+                  <input
+                    type="text"
+                    :value="displayNomor(detail)"
+                    class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-sm font-mono"
+                    readonly
+                  />
+                  <!-- Copy Button -->
+                  <button
+                    v-if="detail.nomor && detail.status === 'terpakai'"
+                    @click="handleCopy(detail.nomor)"
+                    class="p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center flex-shrink-0"
+                  >
+                    <Copy class="w-4 h-4 text-gray-600" />
+                  </button>
 
-              <!-- Status Badge -->
-              <span
-                v-if="detail.status"
-                :class="[
-                  'ml-3 px-2 py-1 rounded-full text-xs font-medium',
-                  {
-                    'bg-yellow-100 text-yellow-700':
-                      detail.status === 'pending' ||
-                      detail.status === 'menunggu',
-                    'bg-blue-100 text-blue-700': detail.status === 'booking',
-                    'bg-green-100 text-green-700': detail.status === 'terpakai',
-                    'bg-red-100 text-red-700': detail.status === 'ditolak',
-                    'bg-gray-100 text-gray-700': detail.status === 'hangus',
-                  },
-                ]"
-              >
-                {{ detail.status }}
-              </span>
+                  <div v-else class="w-[44px]"></div>
+                  <!-- Status Badge -->
+                  <span
+                    v-if="detail.status"
+                    :class="[
+                      'px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0',
+                      {
+                        'bg-yellow-100 text-yellow-700':
+                          detail.status === 'pending' ||
+                          detail.status === 'menunggu',
+                        'bg-blue-100 text-blue-700':
+                          detail.status === 'booking',
+                        'bg-green-100 text-green-700':
+                          detail.status === 'terpakai',
+                        'bg-red-100 text-red-700': detail.status === 'ditolak',
+                        'bg-gray-100 text-gray-700': detail.status === 'hangus',
+                      },
+                    ]"
+                  >
+                    {{ detail.status }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Upload File -->
+              <div class="relative">
+                <label
+                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+                >
+                  <svg
+                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+
+                  <div class="flex-1">
+                    <span class="text-gray-700 font-medium block">
+                      {{ files[idx]?.name || "Pilih file untuk diupload" }}
+                    </span>
+                    <span class="text-xs text-gray-500 mt-0.5 block">
+                      PDF, DOC, DOCX (Max 5MB)
+                    </span>
+                  </div>
+
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".pdf,.doc,.docx"
+                    @change="handleFile(idx, $event)"
+                  />
+                </label>
+
+                <!-- File info if uploaded -->
+                <div
+                  v-if="files[idx]"
+                  class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span class="text-xs text-gray-700">
+                      {{ files[idx].name }} ({{
+                        formatFileSize(files[idx].size)
+                      }})
+                    </span>
+                  </div>
+                  <button
+                    @click.prevent="removeFile(idx)"
+                    class="text-red-500 hover:text-red-700 text-xs"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <!-- Copy Button -->
-            <button
-              v-if="detail.nomor && detail.status === 'terpakai'"
-              @click="handleCopy(detail.nomor)"
-              class="p-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center flex-shrink-0"
-            >
-              <Copy class="w-4 h-4 text-gray-600" />
-            </button>
-
-            <div v-else class="w-[52px]"></div>
           </div>
         </div>
       </div>
@@ -509,40 +571,6 @@ const toast = useToast();
 const { getPersonWithPosition } = usePenomoran();
 const { get, post, del } = useApi();
 
-// Get user role
-// const userStore = useUserStore();
-// const userRole = computed(() => userStore.getRole);
-
-/* Breadcrumb - Dynamic based on role */
-// const breadcrumbs = computed(() => {
-//   const role = userRole.value;
-
-//   if (role === "admin") {
-//     return [
-//       { label: "Dashboard", to: "/admin/dashboard" },
-//       {
-//         label: "Daftar Verifikasi Penomoran",
-//         to: "/admin/penomoran/verifikasi",
-//       },
-//     ];
-//   } else if (role === "superadmin") {
-//     return [
-//       { label: "Dashboard", to: "/superadmin/dashboard" },
-//       {
-//         label: "Daftar Verifikasi Penomoran",
-//         to: "/superadmin/penomoran/verifikasi",
-//       },
-//     ];
-//   } else {
-//     return [
-//       { label: "Dashboard", to: "/user/dashboard" },
-//       {
-//         label: "Daftar Verifikasi Penomoran",
-//         to: "/user/penomoran/verifikasi",
-//       },
-//     ];
-//   }
-// });
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Verifikasi", to: "/admin/verifikasi" },
@@ -579,8 +607,8 @@ const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
 
 /* SORT STATE */
-const sortBy = ref<string>("tglUsulan"); // Default sort by tanggal usulan
-const sortDir = ref<"asc" | "desc">("asc"); // Default ascending
+const sortBy = ref<string>("tglUsulan");
+const sortDir = ref<"asc" | "desc">("asc");
 
 const sort = (col: string) => {
   if (sortBy.value === col) {
@@ -592,7 +620,7 @@ const sort = (col: string) => {
 };
 
 /* STATUS FILTER */
-const filterStatus = ref<string>("Menunggu Verifikasi"); // Default filter
+const filterStatus = ref<string>("Menunggu Verifikasi");
 const openFilterStatus = ref<boolean>(false);
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
@@ -607,6 +635,9 @@ const rows = ref<any[]>([]);
 
 // Person Map
 const personMap = ref(new Map());
+
+// ✅ Files state untuk upload
+const files = ref<any[]>([]);
 
 const fetchPersonMap = async () => {
   try {
@@ -692,23 +723,20 @@ const showPreview = async (row: any) => {
       ? detailRes.data?.details || []
       : [];
 
-    // ✅ Gunakan jumlah dari tabel
     const jumlah = row.jumlah || mainData.jumlah || 0;
     const template_nomor = mainData.template_nomor || null;
 
     let details = [];
 
     if (existingDetails.length > 0) {
-      // ✅ Ambil sejumlah 'jumlah' dari existing details
       details = existingDetails.slice(0, jumlah).map((d: any) => ({
         id: d.id,
         nomor: d.nomor || null,
         template_nomor: template_nomor,
         status: d.status || "booking",
-        checked: true, // ✅ Default ter-check
+        checked: true,
       }));
 
-      // ✅ Jika kurang, tambahkan pending
       const remaining = jumlah - details.length;
       for (let i = 0; i < remaining; i++) {
         details.push({
@@ -716,18 +744,17 @@ const showPreview = async (row: any) => {
           nomor: null,
           template_nomor: template_nomor,
           status: "pending",
-          checked: true, // ✅ Default ter-check
+          checked: true,
         });
       }
     } else {
-      // ✅ Generate sejumlah 'jumlah'
       for (let i = 0; i < jumlah; i++) {
         details.push({
           id: null,
           nomor: null,
           template_nomor: template_nomor,
           status: "pending",
-          checked: true, // ✅ Default ter-check
+          checked: true,
         });
       }
     }
@@ -738,6 +765,9 @@ const showPreview = async (row: any) => {
       jumlah: jumlah,
       details: details,
     };
+
+    // ✅ Reset files state
+    files.value = Array(jumlah).fill(null);
 
     keterangan_ditolak.value = "";
     openPreview.value = true;
@@ -752,6 +782,21 @@ const showPreview = async (row: any) => {
       color: "red",
     });
   }
+};
+
+/* ✅ Handle File Upload */
+const handleFile = (idx: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  files.value[idx] = {
+    file: file,
+    file_name: file.name,
+  };
+
+  console.log(`📎 File uploaded for index ${idx}:`, file.name);
 };
 
 /* Display nomor */
@@ -837,13 +882,11 @@ const processApproval = async () => {
   isProcessing.value = true;
 
   try {
-    // ✅ Step 1: Collect existing detail IDs
     const detailsWithId = approvedDetails.filter((d) => d.id !== null);
     const detailsWithoutId = approvedDetails.filter((d) => d.id === null);
 
     let allDetailIds = detailsWithId.map((d) => d.id);
 
-    // ✅ Step 2: Booking nomor yang belum punya ID
     if (detailsWithoutId.length > 0) {
       console.log(`📞 Booking ${detailsWithoutId.length} nomor baru...`);
 
@@ -878,7 +921,6 @@ const processApproval = async () => {
 
     console.log("📝 Detail IDs untuk approve:", allDetailIds);
 
-    // ✅ Step 3: Approve SATU PER SATU (backend tidak terima array)
     let successCount = 0;
     let failedCount = 0;
     const results: any[] = [];
@@ -987,7 +1029,7 @@ const confirmRejection = () => {
   showConfirmReject.value = true;
 };
 
-/* ✅ PROSES REJECTION - UPDATE STATUS JADI DITOLAK */
+/* ✅ PROSES REJECTION */
 const processRejection = async () => {
   showConfirmReject.value = false;
 

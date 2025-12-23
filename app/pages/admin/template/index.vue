@@ -2,14 +2,13 @@
   <div
     class="w-full min-h-screen flex flex-col text-gray-800 dark:text-gray-100"
   >
+    <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
-      <!-- KIRI -->
       <div>
         <Heading variant="heading6b" class="text-mobile-md"> Template </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <!-- KANAN -->
       <button
         @click="openAdd"
         :disabled="isLoadingCreate"
@@ -68,7 +67,7 @@
             <tr class="bg-primary-400 text-white dark:bg-gray-800">
               <th
                 class="text-left text-[14px] p-4 border-b border-gray-300 cursor-pointer"
-                @click="toggleSort('nama_template')"
+                @click="col.sortable && sort(col.key)"
               >
                 Nama Template
                 <ArrowUpDown class="inline w-3 h-3 ml-2" />
@@ -181,6 +180,82 @@
     </div>
 
     <!-- ========================= -->
+    <!-- MODAL TAMBAH TEMPLATE -->
+    <!-- ========================= -->
+    <Modal v-model="addModal" @save="saveAdd">
+      <template #title>
+        <Heading
+          variant="heading9b"
+          class="font-semibold text-xl mb-2 mt-5 ml-7"
+        >
+          Tambah Template
+        </Heading>
+      </template>
+
+      <div class="px-2 py-3 flex flex-col gap-6">
+        <!-- Nama Template -->
+        <div class="flex flex-col">
+          <Heading variant="body2m" class="font-semibold mb-1">
+            Nama Template <span class="text-red-500">*</span>
+          </Heading>
+
+          <input
+            v-model="addData.nama_template"
+            class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
+            placeholder="Masukkan nama template"
+          />
+        </div>
+
+        <!-- Upload File -->
+        <div class="flex flex-col">
+          <Heading variant="body2m" class="font-semibold mb-1">
+            File Dokumen <span class="text-red-500">*</span>
+          </Heading>
+
+          <label
+            class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+          >
+            <FileCheck class="w-6 h-6 text-gray-500" />
+            <span class="font-medium">Pilih File</span>
+            <span class="ml-2 text-gray-500">
+              {{ addData.fileName || "Belum ada file dipilih" }}
+            </span>
+
+            <input
+              type="file"
+              class="hidden"
+              accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
+              @change="handleAddFile"
+            />
+          </label>
+
+          <!-- Preview file -->
+          <div
+            v-if="addData.file"
+            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <FileCheck class="w-6 h-6 text-primary-500" />
+              <div>
+                <p class="text-sm font-medium">{{ addData.fileName }}</p>
+                <p class="text-xs text-gray-500">
+                  {{ formatFileSize(addData.file.size) }}
+                </p>
+              </div>
+            </div>
+            <button
+              @click="clearAddFile"
+              class="text-red-500 hover:text-red-700"
+              title="Hapus file"
+            >
+              <Trash2 class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- ========================= -->
     <!-- MODAL EDIT TEMPLATE -->
     <!-- ========================= -->
     <Modal v-model="editModal" @save="saveEdit">
@@ -271,82 +346,6 @@
     </Modal>
 
     <!-- ========================= -->
-    <!-- MODAL TAMBAH TEMPLATE -->
-    <!-- ========================= -->
-    <Modal v-model="addModal" @save="saveAdd">
-      <template #title>
-        <Heading
-          variant="heading9b"
-          class="font-semibold text-xl mb-2 mt-5 ml-7"
-        >
-          Tambah Template
-        </Heading>
-      </template>
-
-      <div class="px-2 py-3 flex flex-col gap-6">
-        <!-- Nama Template -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            Nama Template <span class="text-red-500">*</span>
-          </Heading>
-
-          <input
-            v-model="addData.nama_template"
-            class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
-            placeholder="Masukkan nama template"
-          />
-        </div>
-
-        <!-- Upload File -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            File Dokumen <span class="text-red-500">*</span>
-          </Heading>
-
-          <label
-            class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
-          >
-            <FileCheck class="w-6 h-6 text-gray-500" />
-            <span class="font-medium">Pilih File</span>
-            <span class="ml-2 text-gray-500">
-              {{ addData.fileName || "Belum ada file dipilih" }}
-            </span>
-
-            <input
-              type="file"
-              class="hidden"
-              accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
-              @change="handleAddFile"
-            />
-          </label>
-
-          <!-- Preview file -->
-          <div
-            v-if="addData.file"
-            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
-          >
-            <div class="flex items-center gap-3">
-              <FileCheck class="w-6 h-6 text-primary-500" />
-              <div>
-                <p class="text-sm font-medium">{{ addData.fileName }}</p>
-                <p class="text-xs text-gray-500">
-                  {{ formatFileSize(addData.file.size) }}
-                </p>
-              </div>
-            </div>
-            <button
-              @click="clearAddFile"
-              class="text-red-500 hover:text-red-700"
-              title="Hapus file"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </Modal>
-
-    <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->
     <ConfirmPopup
@@ -384,6 +383,7 @@ const toast = useToast();
 // ✅ Composable
 const {
   getTemplates,
+  getTemplateById,
   createTemplate,
   updateTemplate,
   deleteTemplate,
@@ -396,8 +396,7 @@ const {
 // State
 const templates = ref<Template[]>([]);
 const search = ref("");
-const sortBy = ref("nama_template");
-const sortDir = ref<"asc" | "desc">("asc");
+
 const editModal = ref(false);
 const addModal = ref(false);
 const confirmDeleteOpen = ref(false);
@@ -417,6 +416,11 @@ const addData = ref<any>({
   fileName: "",
 });
 
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Template", to: "/admin/template" },
+];
+
 // ✅ Fetch Data dari API
 const fetchData = async () => {
   try {
@@ -429,6 +433,8 @@ const fetchData = async () => {
 };
 
 // Filter & Sort
+const sortBy = ref("nama_template");
+const sortDir = ref<"asc" | "desc">("asc");
 const filteredTemplates = computed(() => {
   const s = search.value.toLowerCase();
   return templates.value.filter(
@@ -440,14 +446,22 @@ const filteredTemplates = computed(() => {
 
 const sortedTemplates = computed(() => {
   return [...filteredTemplates.value].sort((a, b) => {
-    const colA = String(a[sortBy.value] || "").toLowerCase();
-    const colB = String(b[sortBy.value] || "").toLowerCase();
+    const A = a[sortBy.value];
+    const B = b[sortBy.value];
 
-    if (colA < colB) return sortDir.value === "asc" ? -1 : 1;
-    if (colA > colB) return sortDir.value === "asc" ? 1 : -1;
+    if (A < B) return sortDir.value === "asc" ? -1 : 1;
+    if (A > B) return sortDir.value === "asc" ? 1 : -1;
     return 0;
   });
 });
+const sort = (col: string) => {
+  if (sortBy.value === col) {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = col;
+    sortDir.value = "asc";
+  }
+};
 
 const toggleSort = (column: string) => {
   if (sortBy.value === column) {
@@ -457,47 +471,6 @@ const toggleSort = (column: string) => {
     sortDir.value = "asc";
   }
 };
-// Pagination
-const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Template", to: "/admin/template" },
-];
-
-// ==============================
-// DELETE (existing)
-// ==============================
-// const confirmDeleteOpen = ref(false);
-// const itemToDelete = ref < any > null;
-
-// const openDelete = (item) => {
-//   itemToDelete.value = item;
-//   confirmDeleteOpen.value = true;
-// };
-
-// const deleteNow = () => {
-//   listDelegasi.value = listDelegasi.value.filter(
-//     (i) => i.id !== itemToDelete.value.id,
-//   );
-//   confirmDeleteOpen.value = false;
-// };
-
-// const confirmDeleteOpen = ref(false);
-// const itemToDelete = ref<any>(null);
-
-// const openDelete = (item: any) => {
-//   itemToDelete.value = item;
-//   confirmDeleteOpen.value = true;
-// };
-
-// const deleteNow = () => {
-//   if (!itemToDelete.value) return;
-
-//   listDelegasi.value = listDelegasi.value.filter(
-//     (i) => i.id !== itemToDelete.value.id,
-//   );
-
-//   confirmDeleteOpen.value = false;
-// };
 
 // ================================
 // PAGINATION
@@ -575,16 +548,26 @@ const saveAdd = async () => {
 };
 
 // ✅ OPEN EDIT MODAL
-const openEdit = (template: Template) => {
-  editData.value = {
-    id: template.id,
-    nama_template: template.nama_template,
-    file: template.file,
-    newFile: null,
-    newFileName: "",
-  };
-  editModal.value = true;
-  console.log("✏️ Editing template:", template.nama_template);
+const openEdit = async (template: Template) => {
+  try {
+    // Fetch detail template untuk memastikan data terbaru
+    const detail = await getTemplateById(template.id);
+
+    if (detail) {
+      editData.value = {
+        id: detail.id,
+        nama_template: detail.nama_template,
+        file: detail.file,
+        file_url: detail.file_url,
+        newFile: null,
+        newFileName: "",
+      };
+      editModal.value = true;
+      console.log("✏️ Editing template:", detail.nama_template);
+    }
+  } catch (error) {
+    console.error("❌ Error opening edit modal:", error);
+  }
 };
 
 // ✅ HANDLE EDIT FILE
@@ -626,8 +609,6 @@ const saveEdit = async () => {
     if (editData.value.newFile) {
       payload.file = editData.value.newFile;
     }
-    // Jika tidak ada file baru, biarkan backend gunakan file lama
-    // (tidak perlu kirim file path string)
 
     await updateTemplate(editData.value.id, payload);
 

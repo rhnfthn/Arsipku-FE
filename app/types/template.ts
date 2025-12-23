@@ -1,11 +1,9 @@
 // types/template.ts
-
 export interface Template {
   id: string;
-  tanggal: string | null;
   nama_template: string;
   file: string;
-  file_url?: string;
+  file_url: string;
   create_at: string;
   update_at: string;
 }
