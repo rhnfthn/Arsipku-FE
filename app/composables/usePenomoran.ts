@@ -173,6 +173,7 @@ export const usePenomoran = () => {
    * =========================== */
   const getDetailNomor = async (id: string) => {
     try {
+      // Try admin endpoint first
       const res = await get(`/nomor/${id}`);
 
       console.log("✅ Detail nomor loaded:", res);
@@ -184,11 +185,8 @@ export const usePenomoran = () => {
       return res.data;
     } catch (e: any) {
       console.error("❌ Error fetch detail nomor:", e);
-      toast.add({
-        title: "Gagal fetch detail",
-        description: e.message || "Gagal memuat detail nomor",
-        color: "red",
-      });
+
+      // Don't show toast, just return null to handle gracefully
       return null;
     }
   };
@@ -196,7 +194,7 @@ export const usePenomoran = () => {
   const getListNomor = async () => {
     isLoadingList.value = true;
     try {
-      const res = await get("/admin/nomor");
+      const res = await get("/nomor");
       return res.data ?? [];
     } catch (e: any) {
       console.error("❌ Error ambil list nomor:", e);
@@ -395,6 +393,114 @@ export const usePenomoran = () => {
     }
   };
 
+  /** ===========================
+   * APPROVE BULK NOMOR
+   * =========================== */
+  const approveBulkNomor = async (detailIds: string[]) => {
+    try {
+      if (!detailIds || detailIds.length === 0) {
+        throw new Error("Detail IDs tidak boleh kosong");
+      }
+
+      // Filter out null/undefined IDs
+      const validIds = detailIds.filter(
+        (id) => id !== null && id !== undefined && id !== "",
+      );
+
+      if (validIds.length === 0) {
+        throw new Error("Tidak ada detail ID yang valid");
+      }
+
+      console.log("📤 Approve bulk nomor:", validIds);
+
+      const response = await post("/admin/nomor-request-detail/approve-bulk", {
+        detail_ids: validIds,
+      });
+
+      console.log("✅ Approve bulk response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil disetujui",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error approve bulk:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menyetujui nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * REJECT NOMOR REQUEST
+   * =========================== */
+  const rejectNomorRequest = async (
+    requestId: string,
+    detailIds: string[],
+    keterangan: string,
+  ) => {
+    try {
+      if (!requestId) {
+        throw new Error("Request ID tidak boleh kosong");
+      }
+
+      if (!keterangan || !keterangan.trim()) {
+        throw new Error("Keterangan penolakan harus diisi");
+      }
+
+      console.log("📤 Reject nomor request:", {
+        requestId,
+        detailIds,
+        keterangan,
+      });
+
+      const response = await post(`/admin/nomor-request/${requestId}/reject`, {
+        detail_ids: detailIds,
+        keterangan: keterangan,
+      });
+
+      console.log("✅ Reject response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil ditolak",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error reject nomor:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menolak nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
   return {
     // USULAN FLOW
     createUsulanDraft,
@@ -405,6 +511,8 @@ export const usePenomoran = () => {
 
     // VERIFIKASI
     getListSubmitted,
+    approveBulkNomor,
+    rejectNomorRequest,
 
     // PENOMORAN FINAL
     createPenomoranFinal,

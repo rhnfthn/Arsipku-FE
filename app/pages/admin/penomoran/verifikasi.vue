@@ -334,6 +334,33 @@
           >Nomor Surat</label
         >
 
+        <!-- Warning jika ada nomor tanpa ID -->
+        <div
+          v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
+          class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2"
+        >
+          <svg
+            class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-yellow-800">Peringatan</p>
+            <p class="text-xs text-yellow-700 mt-1">
+              Beberapa nomor belum memiliki ID (status pending). Nomor tersebut
+              tidak dapat diproses sampai memiliki ID yang valid.
+            </p>
+          </div>
+        </div>
+
         <div class="space-y-3">
           <div
             v-for="(detail, idx) in selectedRow.details"
@@ -431,10 +458,14 @@
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
+                      <!-- Use file_url if available, otherwise use file_text with apiBaseUrl -->
                       <a
-                        v-if="detail.file_text"
-                        :href="`${apiBaseUrl}/${detail.file_text}`"
+                        v-if="detail.file_url || detail.file_text"
+                        :href="
+                          detail.file_url || `${apiBaseUrl}/${detail.file_text}`
+                        "
                         target="_blank"
+                        rel="noopener noreferrer"
                         class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
                       >
                         Lihat
@@ -474,7 +505,7 @@
                         {{
                           fileStates[idx]?.file?.name ||
                           files[idx]?.name ||
-                          "Pilih file untuk diupload"
+                          "Pilih file untuk diupload (Opsional)"
                         }}
                       </span>
                       <span class="text-xs text-gray-500 mt-0.5 block">
@@ -656,7 +687,8 @@ const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
 
 // Composable & API
-const { getPersonWithPosition } = usePenomoran();
+const { getPersonWithPosition, approveBulkNomor, rejectNomorRequest } =
+  usePenomoran();
 const { get, post, del, patch, api } = useApi();
 
 const breadcrumbs = [
@@ -724,10 +756,10 @@ const rows = ref<any[]>([]);
 // Person Map
 const personMap = ref(new Map());
 
-// ✅ Files state untuk upload
+// Files state untuk upload
 const files = ref<any[]>([]);
 
-// ✅ File states untuk tracking replace
+// File states untuk tracking replace
 interface FileState {
   isReplacing: boolean;
   isUploading: boolean;
@@ -832,7 +864,7 @@ const showPreview = async (row: any) => {
         nomor: d.nomor || null,
         template_nomor: template_nomor,
         status: d.status || "booking",
-        checked: true,
+        checked: d.status !== "ditolak" && d.status !== "hangus",
         file_name: d.file_name || null,
         file_text: d.file_text || null,
       }));
@@ -870,7 +902,6 @@ const showPreview = async (row: any) => {
       details: details,
     };
 
-    // ✅ Reset files state
     files.value = Array(jumlah).fill(null);
     fileStates.value = {};
 
@@ -889,7 +920,7 @@ const showPreview = async (row: any) => {
   }
 };
 
-/* ✅ Start replacing file */
+/* Start replacing file */
 const startReplacingFile = (idx: number) => {
   const detail = selectedRow.value.details[idx];
   fileStates.value[idx] = {
@@ -900,12 +931,12 @@ const startReplacingFile = (idx: number) => {
   };
 };
 
-/* ✅ Cancel replace */
+/* Cancel replace */
 const cancelReplace = (idx: number, detail: any) => {
   delete fileStates.value[idx];
 };
 
-/* ✅ Handle File Upload */
+/* Handle File Upload */
 const handleFile = (idx: number, event: Event, detail: any) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -923,17 +954,15 @@ const handleFile = (idx: number, event: Event, detail: any) => {
   }
 
   if (fileStates.value[idx]?.isReplacing) {
-    // If in replace mode
     fileStates.value[idx].file = file;
   } else {
-    // Normal upload
     files.value[idx] = file;
   }
 
   console.log(`📎 File selected for index ${idx}:`, file.name);
 };
 
-/* ✅ Upload replace file */
+/* Upload replace file */
 const uploadReplaceFile = async (idx: number, detail: any) => {
   if (!detail.id) {
     toast.add({
@@ -975,7 +1004,6 @@ const uploadReplaceFile = async (idx: number, detail: any) => {
     console.log("✅ File replace response:", response.data);
 
     if (response.data?.success) {
-      // Update detail dengan data baru
       detail.file_name = response.data.data.file_name;
       detail.file_text = response.data.data.file_text;
 
@@ -985,7 +1013,6 @@ const uploadReplaceFile = async (idx: number, detail: any) => {
         color: "green",
       });
 
-      // Reset replace state
       delete fileStates.value[idx];
     } else {
       throw new Error(response.data?.message || "Gagal mengganti file");
@@ -1056,22 +1083,38 @@ const formatFileSize = (bytes: number) => {
 
 // Computed untuk validasi dan counting
 const hasAnyChecked = computed(() => {
-  return selectedRow.value?.details?.some((d: any) => d.checked) || false;
+  return (
+    selectedRow.value?.details?.some(
+      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
+    ) || false
+  );
 });
 
 const hasUnchecked = computed(() => {
-  return selectedRow.value?.details?.some((d: any) => !d.checked) || false;
+  return (
+    selectedRow.value?.details?.some(
+      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
+    ) || false
+  );
 });
 
 const checkedCount = computed(() => {
-  return selectedRow.value?.details?.filter((d: any) => d.checked).length || 0;
+  return (
+    selectedRow.value?.details?.filter(
+      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
+    ).length || 0
+  );
 });
 
 const uncheckedCount = computed(() => {
-  return selectedRow.value?.details?.filter((d: any) => !d.checked).length || 0;
+  return (
+    selectedRow.value?.details?.filter(
+      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
+    ).length || 0
+  );
 });
 
-/* ✅ KONFIRMASI APPROVAL */
+/* KONFIRMASI APPROVAL */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
     toast.add({
@@ -1084,20 +1127,26 @@ const confirmApproval = () => {
   showConfirmApprove.value = true;
 };
 
-/* ✅ PROSES APPROVAL */
+/* PROSES APPROVAL menggunakan composable */
 const processApproval = async () => {
   showConfirmApprove.value = false;
-
   if (!selectedRow.value) return;
 
+  // Filter detail yang checked dan memiliki ID yang valid
   const approvedDetails = selectedRow.value.details.filter(
-    (d: any) => d.checked,
+    (d) =>
+      d.checked &&
+      d.id &&
+      d.id !== null &&
+      d.id !== "null" &&
+      d.id !== undefined,
   );
 
   if (approvedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description: "Pilih minimal 1 nomor untuk disetujui!",
+      description:
+        "Tidak ada nomor yang dapat disetujui. Pastikan nomor memiliki ID yang valid.",
       color: "yellow",
     });
     return;
@@ -1106,107 +1155,22 @@ const processApproval = async () => {
   isProcessing.value = true;
 
   try {
-    const detailsWithId = approvedDetails.filter((d) => d.id !== null);
-    const detailsWithoutId = approvedDetails.filter((d) => d.id === null);
+    const detailIds = approvedDetails.map((d) => d.id);
 
-    let allDetailIds = detailsWithId.map((d) => d.id);
+    console.log("📤 Approving detail IDs:", detailIds);
 
-    if (detailsWithoutId.length > 0) {
-      console.log(`📞 Booking ${detailsWithoutId.length} nomor baru...`);
-
-      for (let i = 0; i < detailsWithoutId.length; i++) {
-        try {
-          const bookingRes = await post(
-            `/admin/nomor-request/${selectedRow.value.id}/booking`,
-            {},
-          );
-
-          if (bookingRes?.success && bookingRes?.data?.details) {
-            bookingRes.data.details.forEach((detail: any) => {
-              if (detail.id) {
-                allDetailIds.push(detail.id);
-              }
-            });
-          }
-        } catch (err) {
-          console.error("❌ Error booking:", err);
-        }
-      }
-    }
-
-    if (allDetailIds.length === 0) {
-      toast.add({
-        title: "Gagal",
-        description: "Tidak dapat mengambil detail ID untuk approve",
-        color: "red",
-      });
-      return;
-    }
-
-    console.log("📝 Detail IDs untuk approve:", allDetailIds);
-
-    let successCount = 0;
-    let failedCount = 0;
-
-    for (const detailId of allDetailIds) {
-      try {
-        console.log(`📤 Approving detail ID: ${detailId}`);
-
-        const approveRes = await post(
-          `/admin/nomor-request-detail/${detailId}/approve`,
-          {},
-        );
-
-        if (approveRes?.success) {
-          successCount++;
-          console.log(`✅ Detail ${detailId} approved`);
-        } else {
-          failedCount++;
-          console.log(`❌ Detail ${detailId} failed`);
-        }
-      } catch (err: any) {
-        failedCount++;
-        console.error(`❌ Error approve detail ${detailId}:`, err);
-      }
-    }
-
-    if (successCount > 0) {
-      toast.add({
-        title: "Berhasil",
-        description: `${successCount} nomor berhasil disetujui dan digenerate`,
-        color: "green",
-      });
-    }
-
-    if (failedCount > 0) {
-      toast.add({
-        title: "Peringatan",
-        description: `${failedCount} nomor gagal digenerate`,
-        color: "yellow",
-      });
-    }
+    await approveBulkNomor(detailIds);
 
     openPreview.value = false;
-    fetchData();
+    await fetchData();
   } catch (error: any) {
-    console.error("❌ Error approve:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      "Terjadi kesalahan saat menyetujui nomor";
-
-    toast.add({
-      title: "Gagal",
-      description: Array.isArray(errorMsg) ? errorMsg.join(", ") : errorMsg,
-      color: "red",
-    });
+    console.error("❌ Error approval:", error);
   } finally {
     isProcessing.value = false;
   }
 };
 
-/* ✅ KONFIRMASI REJECTION */
+/* KONFIRMASI REJECTION */
 const confirmRejection = () => {
   if (!hasUnchecked.value) {
     toast.add({
@@ -1229,20 +1193,27 @@ const confirmRejection = () => {
   showConfirmReject.value = true;
 };
 
-/* ✅ PROSES REJECTION */
+/* PROSES REJECTION menggunakan composable */
 const processRejection = async () => {
   showConfirmReject.value = false;
 
   if (!selectedRow.value) return;
 
+  // Filter detail yang tidak checked dan memiliki ID yang valid
   const rejectedDetails = selectedRow.value.details.filter(
-    (d: any) => !d.checked,
+    (d: any) =>
+      !d.checked &&
+      d.id &&
+      d.id !== null &&
+      d.id !== "null" &&
+      d.id !== undefined,
   );
 
   if (rejectedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description: "Tidak ada nomor yang akan ditolak!",
+      description:
+        "Tidak ada nomor yang dapat ditolak. Pastikan nomor memiliki ID yang valid.",
       color: "yellow",
     });
     return;
@@ -1260,44 +1231,20 @@ const processRejection = async () => {
   isProcessing.value = true;
 
   try {
-    const detailIdsToReject = rejectedDetails
-      .filter((d) => d.id !== null)
-      .map((d) => d.id);
+    const detailIds = rejectedDetails.map((d) => d.id);
 
-    const rejectRes = await post(
-      `/admin/nomor-request/${selectedRow.value.id}/reject`,
-      {
-        keterangan: keterangan_ditolak.value,
-        detail_ids: detailIdsToReject,
-      },
+    console.log("📤 Rejecting detail IDs:", detailIds);
+
+    await rejectNomorRequest(
+      selectedRow.value.id,
+      detailIds,
+      keterangan_ditolak.value,
     );
 
-    if (rejectRes?.success) {
-      toast.add({
-        title: "Berhasil",
-        description: `Usulan berhasil ditolak dengan ${rejectedDetails.length} nomor ditolak`,
-        color: "green",
-      });
-
-      openPreview.value = false;
-      await fetchData();
-    } else {
-      throw new Error(rejectRes?.message || "Gagal menolak usulan");
-    }
+    openPreview.value = false;
+    await fetchData();
   } catch (error: any) {
     console.error("❌ Error rejection:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Terjadi kesalahan saat menolak nomor";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }

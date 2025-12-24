@@ -298,12 +298,165 @@
 
       <!-- Nomor Surat & File Upload Section -->
       <div class="mt-4">
-        <label class="text-xs font-medium text-gray-700 mb-2 block">
-          Nomor Surat
+        <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+          Nomor Surat (
+          {{ detailData?.jumlah ?? selectedRow?.jumlah ?? 0 }}
+          nomor)
         </label>
 
         <div
-          v-if="Array.isArray(selectedRow.nomor_surat)"
+          v-if="
+            Array.isArray(selectedRow.details) && selectedRow.details.length > 0
+          "
+          class="space-y-4 mt-2"
+        >
+          <div
+            v-for="(detail, idx) in selectedRow.details"
+            :key="detail.id || idx"
+            class="border border-gray-300 rounded-lg p-4 bg-gray-50"
+          >
+            <!-- Nomor surat dengan status badge -->
+            <div class="flex items-center gap-2 mb-3">
+              <div
+                class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-mono text-gray-700">
+                    {{ idx + 1 }}.
+                    {{ detail.nomor || selectedRow.template_nomor || "-" }}
+                  </span>
+
+                  <!-- Status Badge -->
+                  <span
+                    v-if="detail.status"
+                    :class="[
+                      'px-2 py-1 rounded-lg text-xs font-medium',
+                      {
+                        'bg-yellow-100 text-yellow-700':
+                          detail.status === 'booking',
+                        'bg-green-100 text-green-700':
+                          detail.status === 'terpakai',
+                        'bg-red-100 text-red-700': detail.status === 'ditolak',
+                      },
+                    ]"
+                  >
+                    {{ detail.status }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Copy button if nomor exists -->
+              <button
+                v-if="detail.nomor"
+                @click="handleCopy(detail.nomor)"
+                class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
+                title="Copy nomor surat"
+              >
+                <Copy class="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+
+            <!-- Show existing file if available -->
+            <div
+              v-if="detail.file_name || files[idx]"
+              class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+            >
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+
+                <span class="text-xs text-gray-700">
+                  {{ files[idx]?.name || detail.file_name }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <!-- ✅ BUTTON LIHAT (SEKARANG SELALU MUNCUL) -->
+                <button
+                  type="button"
+                  @click="previewFile(detail, idx)"
+                  class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+                >
+                  Lihat
+                </button>
+
+                <!-- Hapus hanya jika belum submit -->
+                <button
+                  v-if="selectedRow?.status === 'Belum Diajukan'"
+                  @click.prevent="removeFile(idx)"
+                  class="text-red-500 hover:text-red-700 text-xs"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+
+            <!-- Upload area if status is "Belum Diajukan" and no file -->
+            <div
+              v-else-if="selectedRow?.status === 'Belum Diajukan'"
+              class="relative"
+            >
+              <label
+                class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+              >
+                <svg
+                  class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+
+                <div class="flex-1">
+                  <span class="text-gray-700 font-medium block">
+                    Pilih file untuk diupload
+                  </span>
+                  <span class="text-xs text-gray-500 block">
+                    PDF, DOC, DOCX (Max 5MB)
+                  </span>
+                </div>
+
+                <input
+                  type="file"
+                  class="hidden"
+                  accept=".pdf,.doc,.docx"
+                  @change="handleFile(idx, $event)"
+                />
+              </label>
+            </div>
+
+            <!-- No file message for other statuses -->
+            <div
+              v-else
+              class="bg-gray-100 border border-gray-200 rounded-lg p-3"
+            >
+              <p class="text-sm text-gray-600">
+                <span v-if="!detail.file_name">Tidak ada file</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback: Old format (array of nomor_surat strings) -->
+        <div
+          v-else-if="Array.isArray(selectedRow.nomor_surat)"
           class="space-y-4 mt-2"
         >
           <div
@@ -331,7 +484,10 @@
             </div>
 
             <!-- Upload file area -->
-            <div class="relative">
+            <div
+              v-if="selectedRow?.status === 'Belum Diajukan'"
+              class="relative"
+            >
               <label
                 class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
               >
@@ -402,7 +558,7 @@
           </div>
         </div>
 
-        <!-- Single nomor surat -->
+        <!-- Single nomor surat (backward compatibility) -->
         <div v-else class="border border-gray-300 rounded-lg p-4 bg-gray-50">
           <!-- Nomor surat dengan copy button -->
           <div class="flex items-center gap-2 mb-3">
@@ -410,11 +566,15 @@
               class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
             >
               <span class="text-sm font-mono text-gray-700">
-                1. {{ selectedRow.nomor_surat }}
+                1.
+                {{
+                  selectedRow.nomor_surat || selectedRow.template_nomor || "-"
+                }}
               </span>
             </div>
 
             <button
+              v-if="selectedRow.nomor_surat"
               @click="handleCopy(selectedRow.nomor_surat)"
               class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
               title="Copy nomor surat"
@@ -424,7 +584,7 @@
           </div>
 
           <!-- Upload file area -->
-          <div class="relative">
+          <div v-if="selectedRow?.status === 'Belum Diajukan'" class="relative">
             <label
               class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
             >
@@ -647,6 +807,22 @@ const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
+const previewFile = (detail: any, idx: number) => {
+  // File dari backend
+  if (detail?.file_url) {
+    window.open(detail.file_url, "_blank");
+    return;
+  }
+
+  // File baru (belum submit)
+  if (files.value?.[idx]) {
+    const url = URL.createObjectURL(files.value[idx]);
+    window.open(url, "_blank");
+
+    // optional cleanup
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+};
 
 // Remove file
 const removeFile = (index: number) => {
@@ -766,6 +942,12 @@ const openRowModal = async (row) => {
 
     console.log(`📊 Modal: Status from backend="${detail.status}"`);
 
+    const normalizedDetails = normalizeDetails(
+      detail.details || [],
+      detail.jumlah,
+      detail.template_nomor || "",
+    );
+
     selectedRow.value = {
       id_usulan: detail.id_usulan ?? detail.id,
       jenis: detail.jenis,
@@ -775,13 +957,13 @@ const openRowModal = async (row) => {
       jumlah: detail.jumlah,
       penandatangan: detail.penandatangan || detail.nama || "-",
       klasifikasi: detail.klasifikasi || "-",
-      klasifikasiDisplay: klasifikasiDisplay,
+      klasifikasiDisplay,
       status: mappedStatus,
-      nomor_surat: nomorSuratArray,
       template_nomor: detail.template_nomor || "",
+      details: normalizedDetails,
     };
 
-    files.value = Array(nomorSuratArray.length).fill(null);
+    files.value = Array(normalizedDetails.length).fill(null);
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
@@ -846,6 +1028,23 @@ const handleFile = (index: number, e: Event) => {
   });
 };
 
+// JUMLAH SURAT
+const normalizeDetails = (details: any[], jumlah: number, template: string) => {
+  const result = [...(details || [])];
+
+  while (result.length < jumlah) {
+    result.push({
+      id: `temp-${result.length}`,
+      nomor: null,
+      status: "booking",
+      file_name: null,
+      file_url: null,
+    });
+  }
+
+  return result.slice(0, jumlah);
+};
+
 // HANDLE COPY
 const handleCopy = (value: string) => {
   if (!value) return;
@@ -896,8 +1095,24 @@ const submitUsulan = async () => {
 
     console.log("✅ Booking response:", response);
 
+    const id = selectedRow.value.id_usulan;
+
     openDetail.value = false;
     await fetchData();
+
+    // 🔁 refetch detail supaya file_url muncul
+    const updatedDetail = await getDetailUsulan(id);
+
+    const normalizedDetails = normalizeDetails(
+      updatedDetail.details || [],
+      selectedRow.value.jumlah,
+      selectedRow.value.template_nomor,
+    );
+
+    selectedRow.value.details = normalizedDetails;
+    files.value = Array(normalizedDetails.length).fill(null);
+
+    openDetail.value = true;
 
     toast.add({
       title: "Berhasil",
