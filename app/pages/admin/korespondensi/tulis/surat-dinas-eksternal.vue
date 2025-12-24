@@ -152,6 +152,13 @@
                 </div>
 
                 <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
+                  <div class="font-bold underline mb-1">Tertuju :</div>
+                  <ol class="list-decimal ml-4 pl-2">
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+                  </ol>
+                </div>
+
+                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
                   <div class="font-bold underline mb-1">Tembusan :</div>
                   <ol class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
