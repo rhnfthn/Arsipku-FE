@@ -1,7 +1,7 @@
 // composables/useSDE.ts
 import type { SdeRecipientApiResponse, SdeActionResponse } from "~/types/sde";
 
-export const useSDE = () => {
+export const useSde = () => {
   const { api, apiGet, apiPost, apiPatch } = useApi();
 
   // Config untuk upload file / multipart

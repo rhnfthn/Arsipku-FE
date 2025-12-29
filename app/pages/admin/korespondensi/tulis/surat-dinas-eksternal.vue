@@ -226,7 +226,7 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import type { ExternalRecipient, SDEPayload } from "~/types/sde";
 import { validateSDEPayload } from "~/types/sde";
-import { useSDE } from "~/composables/useSde";
+import { useSde } from "~/composables/useSde";
 
 // --- CONFIG ---
 const route = useRoute();
@@ -236,7 +236,7 @@ const toast = useToast();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useSDI();
-const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf } = useSDE();
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf } = useSde();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
