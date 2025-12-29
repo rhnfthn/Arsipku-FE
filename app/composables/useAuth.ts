@@ -1,98 +1,101 @@
+// composers/useAuth.ts
+import type { UserProfile } from "~/types/auth";
+
 export const useAuth = () => {
-
   const { apiGet, apiPost } = useApi();
+  const user = useState<UserProfile | null>("user", () => null);
+  const setUser = (data: UserProfile | null) => {
+    user.value = data;
+  };
 
-
-  // Global state user
-  const user = useState("user", () => null)
-
-  const setUser = (data: any) => {
-    user.value = data
-  }
-
-  // Ambil profil dari backend
-  const getProfile = async () => {
+  const getProfile = async (): Promise<UserProfile | null> => {
     try {
-
       const token = localStorage.getItem("token");
       if (!token) return null;
-      const res = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+
+      const res: any = await apiGet("/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       // Normalisasi struktur respons
-      const profile =
-        res?.data?.user ||   // case: { data: { user: {...} } }
-        res?.user ||         // case: { user: {...} }
-        res || null          // case: langsung {persnum, role, ...}
+      const profileData =
+        res?.data?.user || // case: { data: { user: {...} } }
+        res?.user || // case: { user: {...} }
+        res || // case: langsung {persnum, role, ...}
+        null;
 
-      if (profile) setUser(profile)
+      if (profileData) {
+        // Casting ke UserProfile agar TS yakin strukturnya cocok
+        const normalizedProfile = profileData as UserProfile;
+        setUser(normalizedProfile);
+        return normalizedProfile;
+      }
 
-      return profile
+      return null;
     } catch (error) {
-      console.error("[AUTH] getProfile error:", error)
-      return null
+      console.error("[AUTH] getProfile error:", error);
+      return null;
     }
-  }
+  };
 
-  // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      const res = await apiGet("/auth/sso-redirect-local")
-      // const res = await apiGet("/auth/sso-redirect")
-      return res?.url ?? null
+      const res: any = await apiGet("/auth/sso-redirect-local");
+      return (res?.url as string) ?? null;
     } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error)
-      return null
+      console.error("[AUTH] getSSORedirectUrl error:", error);
+      return null;
     }
-  }
+  };
 
-  // Verifikasi token SSO
   const verifyToken = async (token: string) => {
     try {
-      return await apiPost("/auth/verify-token", { token })
+      return await apiPost("/auth/verify-token", { token });
     } catch (error) {
-      console.error("[AUTH] verifyToken error:", error)
-      throw error
+      console.error("[AUTH] verifyToken error:", error);
+      throw error;
     }
-  }
+  };
 
-  // Logout
   const logout = async () => {
     try {
-      const sessionId = localStorage.getItem("sessionId")
-      const token = localStorage.getItem("token")
+      const sessionId = localStorage.getItem("sessionId");
+      const token = localStorage.getItem("token");
 
-      await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (s) => s < 400
-      })
+      if (sessionId && token) {
+        await apiGet(`/auth/logout?sessionId=${sessionId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          validateStatus: (s: number) => s < 400,
+        });
+      }
     } catch (error) {
-      console.warn("[AUTH] logout error (ignored):", error)
+      console.warn("[AUTH] logout error (ignored):", error);
     }
 
     // Bersihkan localStorage & state
-    localStorage.removeItem("token")
-    localStorage.removeItem("sessionId")
-    user.value = null
+    if (process.client) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("sessionId");
+    }
+    user.value = null; // Type aman karena null diizinkan
 
-    return true
-  }
+    return true;
+  };
 
   const refreshToken = async () => {
-    const sessionId = localStorage.getItem("sessionId")
-    if (!sessionId) throw new Error("No sessionId")
+    const sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) throw new Error("No sessionId");
 
-    const res = await apiPost("/auth/refresh-token", {
-      sessionId
-    })
+    const res: any = await apiPost("/auth/refresh-token", {
+      sessionId,
+    });
 
-    const newAccessToken = res?.data?.accessToken
-    if (!newAccessToken) throw new Error("Refresh token failed")
+    const newAccessToken = res?.data?.accessToken;
+    if (!newAccessToken) throw new Error("Refresh token failed");
 
-    localStorage.setItem("token", newAccessToken)
-    return newAccessToken
-  }
+    localStorage.setItem("token", newAccessToken);
+    return newAccessToken as string;
+  };
 
   return {
     user,
@@ -101,56 +104,6 @@ export const useAuth = () => {
     getSSORedirectUrl,
     verifyToken,
     logout,
-    refreshToken
-
+    refreshToken,
   };
 };
-
-// export const useAuth = () => {
-//   const { apiGet } = useApi();
-//   const user = useState<any | null>("user", () => null);
-
-//   const getProfile = async () => {
-//     try {
-
-//       if (process.server) return null;
-
-//       const token = localStorage.getItem("token");
-//       if (!token) return null;
-
-//       const res = await apiGet("/auth/profile", {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-
-//       const profile = res?.data?.user;
-
-//       if (profile) {
-//         user.value = profile;
-//       }
-
-//       return profile;
-//     } catch (err) {
-//       console.error("[AUTH] getProfile failed:", err);
-//       user.value = null;
-//       return null;
-//     }
-//   };
-
-//   const logout = async () => {
-//     if (process.client) {
-//       localStorage.removeItem("token");
-//       localStorage.removeItem("sessionId");
-//     }
-//     user.value = null;
-//     return true;
-//   };
-
-//   return {
-//     user,
-//     getProfile,
-//     logout,
-//   };
-// };
-

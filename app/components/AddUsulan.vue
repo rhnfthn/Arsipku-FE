@@ -5,7 +5,8 @@
       v-if="modelValue"
       :model-value="modelValue"
       :hide-default-footer="true"
-      @update:model-value="emit('update:modelValue', $event)"
+      size="xl"
+      @update:model-value="handleClose"
     >
       <template #title>
         <Heading
@@ -18,179 +19,153 @@
 
       <!-- FORM -->
       <div class="px-5 flex flex-col gap-4 pb-4">
+        <!-- Tanggal Surat -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Tanggal Surat</Heading
-          >
-
-          <ClientOnly>
-            <UPopover
-              v-model:open="open"
-              :max="today"
-              :content="{ align: 'start', side: 'bottom', sideOffset: 8 }"
-            >
-              <div
-                class="mt-1 flex w-full items-center px-2 py-2 border border-gray-300 rounded-lg gap-2 cursor-pointer focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-700 pr-2"
-                @click="open = true"
-              >
-                <UInputDate
-                  locale="id-ID"
-                  v-model="form.tanggal"
-                  variant="none"
-                  size="sm"
-                  format="DD MMMM YYYY"
-                  readonly
-                  class="flex-1"
-                  :ui="{
-                    base: '!bg-transparent !text-sm !px-0 select-none inline-flex items-center h-3',
-                  }"
-                />
-
-                <UIcon
-                  name="i-lucide-calendar"
-                  class="size-4 text-gray-400 shrink-0 mr-1"
-                />
-              </div>
-              <template #content>
-                <UCalendar
-                  v-model="form.tanggal"
-                  class="p-2"
-                  @update:model-value="open = false"
-                />
-              </template>
-            </UPopover>
-          </ClientOnly>
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Tanggal Surat <span class="text-red-500">*</span>
+          </Heading>
+          <input
+            type="date"
+            v-model="tanggalString"
+            :max="todayString"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+          />
         </div>
 
-        <!-- ✅ DROPDOWN KLASIFIKASI DARI API -->
+        <!-- Klasifikasi -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium">
             Klasifikasi <span class="text-red-500">*</span>
           </Heading>
-
-          <UPopover
-            v-model:open="openKlasifikasi"
-            :content="{ side: 'bottom', sideOffset: 6 }"
-          >
-            <div @click="openKlasifikasi = true" class="mt-1">
-              <UInput
-                v-model="klasifikasiSearch"
-                placeholder="Cari klasifikasi..."
-                class="w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <template #content>
-              <div
-                class="max-h-52 overflow-y-auto bg-white border border-gray-100 rounded-md p-1 w-100"
+          <div class="relative" ref="klasifikasiRef">
+            <input
+              v-model="klasifikasiSearch"
+              @click="toggleKlasifikasi"
+              @input="openKlasifikasi = true"
+              :placeholder="form.klasifikasiDisplay || 'Cari klasifikasi...'"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+            <div
+              v-if="openKlasifikasi && filteredKlasifikasi.length > 0"
+              class="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
+            >
+              <button
+                v-for="item in filteredKlasifikasi"
+                :key="item.code"
+                @click="selectKlasifikasi(item)"
+                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100"
               >
-                <button
-                  v-for="item in filteredKlasifikasi"
-                  :key="item"
-                  @click="selectKlasifikasi(item)"
-                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 rounded"
-                >
-                  {{ item }}
-                </button>
-
-                <p
-                  v-if="filteredKlasifikasi.length === 0"
-                  class="text-xs text-center text-gray-400 py-2"
-                >
-                  Tidak ada hasil
-                </p>
-              </div>
-            </template>
-          </UPopover>
+                {{ item.display }}
+              </button>
+            </div>
+            <p
+              v-if="openKlasifikasi && filteredKlasifikasi.length === 0"
+              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+            >
+              {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
+            </p>
+          </div>
         </div>
 
+        <!-- Jenis Naskah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Jenis Naskah <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Jenis Naskah <span class="text-red-500">*</span>
+          </Heading>
           <select
             v-model="form.jenis"
-            @click.stop
-            @mousedown.stop
+            @change="updateJenisDisplay"
             class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
           >
             <option disabled value="">Pilih jenis naskah</option>
-            <option v-for="item in jenisOptions" :key="item" :value="item">
-              {{ item }}
+            <option
+              v-for="item in jenisOptions"
+              :key="item.code"
+              :value="item.code"
+            >
+              {{ item.display }}
             </option>
           </select>
         </div>
 
-        <!-- ✅ DROPDOWN PENANDATANGAN DENGAN API -->
+        <!-- Penandatangan -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Penandatangan <span class="text-red-500">*</span></Heading
-          >
-
-          <div>
-            <UPopover
-              v-model:open="openPenandatangan"
-              :content="{ side: 'bottom', sideOffset: 6 }"
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Penandatangan <span class="text-red-500">*</span>
+          </Heading>
+          <div class="relative" ref="penandatanganRef">
+            <input
+              v-model="penandatanganSearch"
+              @click="togglePenandatangan"
+              @input="openPenandatangan = true"
+              :placeholder="
+                form.penandatanganJabatan || 'Cari penandatangan...'
+              "
+              :disabled="isLoadingPositions"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+            />
+            <div
+              v-if="openPenandatangan && filteredPenandatangan.length > 0"
+              class="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
             >
-              <!-- Input pencarian -->
-              <div @click="openPenandatangan = true" class="mt-1">
-                <UInput
-                  v-model="penandatanganSearch"
-                  placeholder="Cari penandatangan..."
-                  class="w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  :loading="isLoadingPositions"
-                />
-              </div>
-
-              <!-- Dropdown -->
-              <template #content>
-                <div
-                  class="max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-md p-1 w-100"
-                >
-                  <button
-                    v-for="item in filteredPenandatangan"
-                    :key="item.position"
-                    @click="selectPenandatangan(item)"
-                    class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 rounded leading-tight"
-                  >
-                    {{ item.positionText }}
-                  </button>
-
-                  <p
-                    v-if="filteredPenandatangan.length === 0"
-                    class="text-xs text-center text-gray-400 py-2"
-                  >
-                    {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
-                  </p>
-                </div>
-              </template>
-            </UPopover>
+              <button
+                v-for="item in filteredPenandatangan"
+                :key="item.position"
+                @click="selectPenandatangan(item)"
+                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100"
+              >
+                {{ item.displayText }}
+              </button>
+            </div>
+            <p
+              v-if="openPenandatangan && filteredPenandatangan.length === 0"
+              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+            >
+              {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
+            </p>
           </div>
         </div>
 
+        <!-- Perihal -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium focus:primary-500"
-            >Perihal <span class="text-red-500">*</span></Heading
-          >
-          <UInput
-            class="mt-1 w-full focus:ring-primary-500 focus:border-primary-500"
+          <Heading variant="heading11m" class="text-xs">
+            Perihal <span class="text-red-500">*</span>
+          </Heading>
+          <input
             v-model="form.perihal"
             placeholder="Masukkan perihal"
+            maxlength="100"
+            @input="validatePerihal"
+            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
+          <div class="flex justify-between mt-1 mb-0">
+            <p v-if="perihalError" class="text-xs text-red-500">
+              {{ perihalError }}
+            </p>
+            <p class="text-xs text-gray-500 ml-auto">
+              {{ form.perihal.length }}/100 karakter
+            </p>
+          </div>
         </div>
 
+        <!-- Jumlah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium"
-            >Jumlah <span class="text-red-500">*</span></Heading
-          >
-          <UInput
+          <Heading variant="heading11m" class="text-xs font-medium">
+            Jumlah <span class="text-red-500">*</span>
+          </Heading>
+          <input
             type="number"
-            class="mt-1 w-full"
-            v-model="form.jumlah"
-            placeholder="Masukkan jumlah"
+            v-model.number="form.jumlah"
+            placeholder="Masukkan jumlah (1-10)"
+            min="1"
+            max="10"
+            @keydown="blockInvalidNumber"
+            @input="validateJumlah"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
           />
+          <p v-if="jumlahError" class="text-xs text-red-500 mt-1">
+            {{ jumlahError }}
+          </p>
         </div>
       </div>
 
@@ -200,25 +175,46 @@
           class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4 w-full"
         >
           <button
-            @click="emit('update:modelValue', false)"
+            @click="handleCancel"
             class="px-5 py-2 text-xs border border-gray-300 hover:bg-gray-100 rounded-md"
           >
             Batal
           </button>
-
           <button
             @click="openPreviewModal"
             class="px-5 py-2 text-xs border border-primary-500 hover:bg-primary-50 text-primary rounded-md"
           >
             Pratinjau
           </button>
-
           <button
             @click="submitAndClose"
-            class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md"
-            :disabled="isLoadingKlasifikasi || isLoadingPositions"
+            :disabled="
+              isSubmitting || isLoadingKlasifikasi || isLoadingPositions
+            "
+            class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Simpan Usulan
+            <svg
+              v-if="isSubmitting"
+              class="animate-spin h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isSubmitting ? "Menyimpan..." : "Simpan Usulan" }}
           </button>
         </div>
       </template>
@@ -231,65 +227,61 @@
       v-if="previewModal"
       :model-value="previewModal"
       :hide-default-footer="true"
+      size="lg"
       @update:model-value="closePreview"
     >
       <template #title>
-        <div class="flex justify-between items-center px-6 pt-6 pb-2">
+        <div class="flex justify-between items-center px-6 pt-4 pb-2">
           <h2 class="text-lg font-semibold">Pratinjau</h2>
         </div>
       </template>
 
-      <div class="p-3 max-w-5xl w-full max-h-[150vh] overflow-y-auto text-sm">
-        <p class="text-center text-xs text-gray-500">
+      <div class="w-full px-5 py-2 text-sm">
+        <p class="text-center text-xs text-gray-500 mb-1">
           {{ formatDateTime(new Date()) }}
         </p>
-
-        <h3 class="text-center font-bold text-base mt-1 mb-3">
+        <h3 class="text-center font-bold text-base mb-5">
           FORMULIR USULAN NOMOR
         </h3>
 
-        <div class="flex justify-between mb-1">
+        <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
           <Heading variant="10sb">Nama</Heading>
-          <Heading variant="11sb"> {{ form.penandatanganName || "-" }}</Heading>
-        </div>
+          <Heading variant="11sb">{{ user?.nama || "-" }}</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jabatan</Heading>
-          <Heading variant="11sb">
-            {{ form.penandatanganJabatan || "-" }}</Heading
-          >
-        </div>
+          <Heading variant="11sb">{{ user?.position_text || "-" }}</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jenis</Heading>
-          <Heading variant="11sb"> {{ form.jenis }}</Heading>
-        </div>
+          <Heading variant="11sb">{{ form.jenisDisplay }}</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Klasifikasi</Heading>
-          <Heading variant="11sb"> {{ form.klasifikasi }}</Heading>
-        </div>
+          <Heading variant="11sb">{{ form.klasifikasiDisplay }}</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Tanggal</Heading>
-          <Heading variant="11sb"> {{ formatDate(form.tanggal) }}</Heading>
-        </div>
+          <Heading variant="11sb">{{ formatDate(form.tanggal) }}</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Jumlah</Heading>
-          <Heading variant="11sb"> {{ form.jumlah }} Nomor</Heading>
-        </div>
+          <Heading variant="11sb">{{ form.jumlah }} Nomor</Heading>
 
-        <div class="flex justify-between mb-1">
           <Heading variant="10sb">Perihal</Heading>
-          <Heading variant="11sb"> {{ form.perihal }}</Heading>
-        </div>
+          <Heading variant="11sb">{{ form.perihal }}</Heading>
 
-        <div class="flex justify-between">
-          <Heading variant="10sb">Nomor </Heading>
-          <span class="text-gray-800 text-xs tracking-widest font-mono">
-            {{ form.jenis }}....../O/00/LPPNPI/{{ form.klasifikasi }}/XII/2025
-          </span>
+          <Heading variant="10sb">Penandatangan</Heading>
+          <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
+
+          <Heading variant="10sb">Nomor</Heading>
+          <div class="text-gray-800 text-xs font-mono space-y-1">
+            <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
+              <span class="text-gray-400">
+                {{ String(n).padStart(2, "0") }}.
+              </span>
+              <span class="tracking-widest">
+                {{ form.jenis }}....../O/00/LPPNPI/{{
+                  form.klasifikasi
+                }}/XII/2025
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -297,31 +289,33 @@
 
       <div class="flex justify-between items-start px-5 pb-2">
         <div>
-          <p class="text-gray-500 uppercase text-xs mb-1">Pengusul</p>
-          <p class="font-semibold text-xs">
-            {{ user?.nama || "-" }}
-          </p>
+          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+            >Pengusul</Heading
+          >
+          <p class="font-semibold text-xs">{{ user?.nama || "-" }}</p>
         </div>
-
         <div class="text-right">
-          <p class="text-gray-500 uppercase text-xs mb-1">Diusulkan</p>
-          <p class="text-xs">{{ formatDateTime(new Date()) }}</p>
+          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+            >Diusulkan</Heading
+          >
+          <p class="font-semibold text-xs">{{ formatDateTime(new Date()) }}</p>
         </div>
       </div>
 
       <div
-        class="bg-gray-50 border border-gray-200 text-xs p-3 rounded-md mt-4 mx-8 mb-4"
+        class="bg-gray-50 border border-gray-200 text-xs p-3 rounded-md mt-1 mx-8 mb-4"
       >
-        Cetak formulir dan lampirkan naskah final yang akan diberikan nomor...
+        Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
+        kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
+        arsip
       </div>
     </Modal>
   </transition>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
 import Heading from "~/components/Heading.vue";
-import { UInput } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
 
@@ -331,36 +325,111 @@ const props = defineProps({
 
 const emit = defineEmits(["submit", "update:modelValue", "preview"]);
 const toast = useToast();
-const jenisOptions = ["BAC", "SPR", "SK", "MOU", "INS", "PER"];
 
-/* STATE DASAR */
-const open = ref(false);
+const jenisOptions = [
+  { code: "PER", display: "PER - Peraturan" },
+  { code: "KEP", display: "KEP - Keputusan Direksi" },
+  { code: "INS", display: "INS - Instruksi" },
+  { code: "SPR", display: "SPR - Surat Perintah" },
+  { code: "SOP", display: "S0P - Standar Operasional Prosedur" },
+  { code: "EDR", display: "EDR - Surat Edaran" },
+  { code: "ND", display: "ND - Nota Dinas" },
+  { code: "SDI", display: "SDI - Surat Dinas Internal" },
+  { code: "DI", display: "DI - Disposisi" },
+  { code: "SDE", display: "SDE - Surat Dinas Eksternal" },
+  { code: "MOU", display: "MOU - Memorandum of Understanding" },
+  { code: "PKS", display: "PKS - Perjanjian Kerja Sama" },
+  { code: "LOA", display: "LOA - Letter of Agreement" },
+  { code: "LOCA", display: "LOCA - Letter of Coordination Agreement" },
+  { code: "PROC", display: "PROC - Kontrak Pengadaan" },
+  { code: "PJJ", display: "PJJ - Perjanjian Lainnya" },
+  { code: "ADD-PJJ", display: "ADD-PJJ - Adendum Perjanjian" },
+  { code: "ADD-PROC", display: "ADD-PROC - Kontrak Pengadaan Adendum" },
+  { code: "SPK", display: "SPK - Surat Perintah Kerja Pengadaan" },
+  {
+    code: "ADD-SPK",
+    display: "ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan",
+  },
+  { code: "SKU", display: "SKU - Surat Kuasa" },
+  { code: "BAC", display: "BAC - Berita Acara" },
+  { code: "UND", display: "UND - Surat Undangan" },
+  { code: "KET", display: "KET - Surat Keterangan" },
+  { code: "SPE", display: "SPE - Surat Pengantar" },
+  { code: "RPT", display: "RPT - Risalah Rapat" },
+  { code: "PEN", display: "PEN - Pengumuman" },
+  { code: "PGM", display: "PGM - Sertifikat atau Piagam" },
+  { code: "LAP", display: "LAP - Laporan" },
+];
+
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref("");
-
+const klasifikasiRef = ref(null);
 const openPenandatangan = ref(false);
 const penandatanganSearch = ref("");
+const penandatanganRef = ref(null);
 const penandatanganOptions = ref([]);
 const isLoadingPositions = ref(false);
+const isSubmitting = ref(false);
+const jumlahError = ref("");
+const perihalError = ref("");
 
-/* COMPOSABLE */
-const { getKlasifikasi, getPersonWithPosition } = usePenomoran();
+const today = new Date();
+const todayString = today.toISOString().split("T")[0];
+const tanggalString = ref(todayString);
+
+const { getKlasifikasi } = usePenomoran();
 const { user, getProfile } = useAuth();
+const { get } = useApi();
 
-/* FORM STATE */
 const form = ref({
-  tanggal: null,
+  tanggal: new Date(),
   klasifikasi: "",
+  klasifikasiDisplay: "",
   jenis: "",
-  penandatanganName: "",
+  jenisDisplay: "",
   penandatanganJabatan: "",
   id_position_penandatangan: null,
   perihal: "",
   jumlah: 1,
 });
 
-/* PRATINJAU */
+watch(tanggalString, (newVal) => {
+  if (newVal) {
+    form.value.tanggal = new Date(newVal);
+  }
+});
+
+const handleClickOutside = (e) => {
+  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target)) {
+    openKlasifikasi.value = false;
+  }
+  if (penandatanganRef.value && !penandatanganRef.value.contains(e.target)) {
+    openPenandatangan.value = false;
+  }
+};
+
+const toggleKlasifikasi = () => {
+  if (klasifikasiOptions.value.length > 0) {
+    openKlasifikasi.value = !openKlasifikasi.value;
+  }
+};
+
+const togglePenandatangan = () => {
+  if (penandatanganOptions.value.length > 0) {
+    openPenandatangan.value = !openPenandatangan.value;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+
 const previewModal = ref(false);
+
 function openPreviewModal() {
   if (
     !form.value.tanggal ||
@@ -368,16 +437,19 @@ function openPreviewModal() {
     !form.value.klasifikasi ||
     !form.value.penandatanganJabatan ||
     !form.value.perihal ||
-    Number(form.value.jumlah) < 1
+    form.value.perihal.length === 0 ||
+    form.value.perihal.length > 100 ||
+    Number(form.value.jumlah) < 1 ||
+    Number(form.value.jumlah) > 10
   ) {
     toast.add({
       title: "Form tidak lengkap",
-      description: "Lengkapi form sebelum pratinjau",
+      description:
+        "Lengkapi form sebelum pratinjau. Perihal maksimal 100 karakter.",
       color: "yellow",
     });
     return;
   }
-
   previewModal.value = true;
 }
 
@@ -385,71 +457,127 @@ function closePreview() {
   previewModal.value = false;
 }
 
-/* FILTER */
 const klasifikasiOptions = ref([]);
 const isLoadingKlasifikasi = ref(false);
 
 const filteredKlasifikasi = computed(() => {
   if (!klasifikasiSearch.value) return klasifikasiOptions.value;
-  return klasifikasiOptions.value.filter((i) =>
-    i.toLowerCase().includes(klasifikasiSearch.value.toLowerCase()),
+  return klasifikasiOptions.value.filter((item) =>
+    item.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase()),
   );
 });
 
 const filteredPenandatangan = computed(() => {
   if (!penandatanganSearch.value) return penandatanganOptions.value;
   return penandatanganOptions.value.filter((item) =>
-    (item.nama + " " + item.positionText)
+    item.displayText
       .toLowerCase()
       .includes(penandatanganSearch.value.toLowerCase()),
   );
 });
 
-/* SELECT HANDLER */
 function selectKlasifikasi(item) {
-  form.value.klasifikasi = item;
-  klasifikasiSearch.value = item;
+  form.value.klasifikasi = item.code;
+  form.value.klasifikasiDisplay = item.display;
+  klasifikasiSearch.value = item.display;
   openKlasifikasi.value = false;
-}
-
-function selectPenandatangan(item) {
-  form.value.penandatanganName = item.nama;
-  form.value.penandatanganJabatan = item.positionText;
-  form.value.id_position_penandatangan = Number(item.position);
-
-  penandatanganSearch.value = item.positionText;
-  openPenandatangan.value = false;
-
-  console.log("✅ Penandatangan selected:", {
-    nama: item.nama,
-    position_text: item.positionText,
-    position_id: item.position,
-    position_id_type: typeof Number(item.position),
+  console.log("✅ Klasifikasi selected:", {
+    code: item.code,
+    display: item.display,
   });
 }
 
-/* FETCH DATA */
+function selectPenandatangan(item) {
+  form.value.penandatanganJabatan = item.displayText;
+  form.value.id_position_penandatangan = Number(item.position);
+  penandatanganSearch.value = item.displayText;
+  openPenandatangan.value = false;
+  console.log("✅ Penandatangan selected:", {
+    display_text: item.displayText,
+    position_id: item.position,
+  });
+}
+
+function updateJenisDisplay() {
+  const selected = jenisOptions.find((item) => item.code === form.value.jenis);
+  if (selected) {
+    form.value.jenisDisplay = selected.display;
+  }
+}
+
+function validatePerihal() {
+  if (form.value.perihal.length > 100) {
+    form.value.perihal = form.value.perihal.slice(0, 100);
+    perihalError.value = "Perihal maksimal 100 karakter";
+    return;
+  }
+  if (form.value.perihal.length === 0) {
+    perihalError.value = "Perihal wajib diisi";
+    return;
+  }
+  perihalError.value = "";
+}
+
+function blockInvalidNumber(e) {
+  if (
+    e.key === "-" ||
+    e.key === "+" ||
+    e.key === "e" ||
+    e.key === "E" ||
+    e.key === "."
+  ) {
+    e.preventDefault();
+    jumlahError.value = "Jumlah harus berupa angka positif (1-10)";
+  }
+}
+
+function validateJumlah() {
+  const val = Number(form.value.jumlah);
+  if (!val || isNaN(val)) {
+    jumlahError.value = "Jumlah harus antara 1 sampai 10";
+    return;
+  }
+  if (val < 1) {
+    jumlahError.value = "Jumlah minimal 1";
+    form.value.jumlah = 1;
+    return;
+  }
+  if (val > 10) {
+    jumlahError.value = "Jumlah maksimal 10";
+    form.value.jumlah = 10;
+    return;
+  }
+  jumlahError.value = "";
+}
+
 const fetchPositions = async () => {
   isLoadingPositions.value = true;
   try {
-    const response = await getPersonWithPosition();
+    const response = await get("/person/with-position/all");
+    console.log("📥 Raw response from API:", response);
+
     const raw = response?.data ?? response;
+    const list = Array.isArray(raw) ? raw : [];
 
-    const list = Array.isArray(raw?.data)
-      ? raw.data
-      : Array.isArray(raw)
-        ? raw
-        : [];
+    console.log("📋 List to process:", list);
 
-    penandatanganOptions.value = list.map((item) => ({
-      nama: item.nama,
-      positionText: item.position_text,
-      position: item.position,
-    }));
+    penandatanganOptions.value = list.map((item) => {
+      const positionText = item.position_text || "";
+      return {
+        displayText: positionText,
+        position: item.position,
+      };
+    });
 
     console.log("✅ Positions loaded:", penandatanganOptions.value.length);
+    console.log("📋 Sample data:", penandatanganOptions.value.slice(0, 3));
   } catch (err) {
     console.error("❌ Error fetch positions:", err);
+    toast.add({
+      title: "Gagal memuat data",
+      description: "Tidak dapat memuat daftar penandatangan",
+      color: "red",
+    });
   } finally {
     isLoadingPositions.value = false;
   }
@@ -459,125 +587,78 @@ const fetchKlasifikasi = async () => {
   isLoadingKlasifikasi.value = true;
   try {
     const response = await getKlasifikasi();
-    const list = Array.isArray(response) ? response : (response.data ?? []);
-
-    klasifikasiOptions.value = [
-      ...new Set(list.map((item) => item.klasifikasi)),
-    ].sort();
-
+    klasifikasiOptions.value = response;
     console.log("✅ Klasifikasi loaded:", klasifikasiOptions.value.length);
   } catch (err) {
+    console.error("❌ Error fetch klasifikasi:", err);
     toast.add({
       title: "Gagal memuat klasifikasi",
-      description: "Menggunakan data default",
+      description: "Coba lagi nanti",
       color: "yellow",
     });
-    klasifikasiOptions.value = ["Biasa", "Terbatas", "Rahasia"];
   } finally {
     isLoadingKlasifikasi.value = false;
   }
 };
 
-/* SUBMIT */
-const submitAndClose = async () => {
-  if (
-    !form.value.tanggal ||
-    !form.value.jenis ||
-    !form.value.klasifikasi ||
-    !form.value.penandatanganJabatan ||
-    !form.value.perihal ||
-    Number(form.value.jumlah) < 1
-  ) {
-    toast.add({
-      title: "Form tidak lengkap",
-      description: "Pastikan semua field diisi",
-      color: "red",
-    });
-    return;
-  }
-
-  if (!user.value) {
-    toast.add({
-      title: "Error",
-      description: "User belum login",
-      color: "red",
-    });
-    return;
-  }
-
-  console.log("🔍 Form values before payload:", {
-    id_position_penandatangan: form.value.id_position_penandatangan,
-    type: typeof form.value.id_position_penandatangan,
-  });
-
-  // ✅ Payload dengan PENOMORAN yang akan digenerate
-  const payload = {
-    position_id: Number(user.value.position),
-    tanggal: form.value.tanggal,
-    jenis: form.value.jenis,
-    klasifikasi: form.value.klasifikasi,
-    perihal: form.value.perihal,
-    penandatangan: form.value.penandatanganJabatan,
-    id_position_penandatangan: parseInt(
-      form.value.id_position_penandatangan,
-      10,
-    ),
-    jumlah: Number(form.value.jumlah),
-
-    // ✅ TAMBAHAN: Data penomoran untuk generate nomor
-    penomoran: {
-      jenis: form.value.jenis,
-      klasifikasi: form.value.klasifikasi,
-      tanggal: form.value.tanggal,
-      jumlah: Number(form.value.jumlah),
-    },
-  };
-
-  console.log("📤 PAYLOAD SUBMIT:", JSON.stringify(payload, null, 2));
-
-  // Validasi final
-  if (
-    !payload.id_position_penandatangan ||
-    isNaN(payload.id_position_penandatangan)
-  ) {
-    toast.add({
-      title: "Error",
-      description: "ID Position Penandatangan tidak valid",
-      color: "red",
-    });
-    return;
-  }
-
-  emit("submit", payload);
-  resetForm();
-  emit("update:modelValue", false);
-};
-
 const resetForm = () => {
+  tanggalString.value = todayString;
   form.value = {
-    tanggal: null,
+    tanggal: new Date(),
     klasifikasi: "",
+    klasifikasiDisplay: "",
     jenis: "",
+    jenisDisplay: "",
     id_position_penandatangan: null,
-    penandatanganText: "",
-    penandatanganName: "",
     penandatanganJabatan: "",
     perihal: "",
     jumlah: 1,
   };
-
   klasifikasiSearch.value = "";
   penandatanganSearch.value = "";
+  jumlahError.value = "";
+  perihalError.value = "";
+  openKlasifikasi.value = false;
+  openPenandatangan.value = false;
+  console.log("🔄 Form reset");
 };
 
-/* INIT */
+const handleClose = (value) => {
+  if (!value) {
+    resetForm();
+  }
+  emit("update:modelValue", value);
+};
+
+const handleCancel = () => {
+  resetForm();
+  emit("update:modelValue", false);
+};
+
+function submitAndClose() {
+  const payload = {
+    position_id: Number(user.value.position), // pengusul
+    tanggal: form.value.tanggal,
+    jenis: form.value.jenis,
+    klasifikasi: form.value.klasifikasi,
+    perihal: form.value.perihal,
+    jumlah: Number(form.value.jumlah),
+    penandatangan: form.value.penandatanganJabatan,
+    id_position_penandatangan: form.value.id_position_penandatangan,
+  };
+
+  console.log("🚀 PAYLOAD:", payload);
+
+  emit("submit", payload);
+  handleClose();
+}
+
 onMounted(async () => {
   if (!user.value) await getProfile();
   await fetchKlasifikasi();
   await fetchPositions();
 });
 
-/* UTIL */
 function formatDate(dateStr) {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -589,7 +670,6 @@ function formatDate(dateStr) {
 
 function formatDateTime(date) {
   if (!date) return "-";
-
   return (
     date.toLocaleDateString("id-ID", {
       day: "2-digit",
@@ -610,7 +690,6 @@ function formatDateTime(date) {
 .fade-scale-leave-active {
   transition: all 0.22s ease;
 }
-
 .fade-scale-enter-from,
 .fade-scale-leave-to {
   opacity: 0;

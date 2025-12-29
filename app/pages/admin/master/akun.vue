@@ -1,59 +1,44 @@
 <template>
-  <div class="space-y-6 flex flex-wrap justify-between">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-      <PageHeader title="Manajemen Akun" :items="items" />  
+  <div class="flex flex-wrap justify-between">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <PageHeader title="Manajemen Akun" :items="items" />
     </div>
     <UButton
       @click="showAddModal = true"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
-      >
+      class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
+    >
       <Plus class="w-4 h-4" />
-        Tambah
+      Tambah
     </UButton>
   </div>
 
-  <div class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto mt-5">
+  <div
+    class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white mt-5"
+  >
+    <div class="flex flex-wrap gap-4 items-center p-3">
+      <button
+        @click="refreshData"
+        class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+      >
+        <RotateCcw class="w-4 h-4" />
+      </button>
 
-    <!-- Controls -->
-    <div class="sticky top-0 bg-white z-40 flex flex-wrap justify-between p-3">
-      <div class="flex flex-wrap gap-3 items-center">
-
-        <button
-          @click="resetFilter"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-
-        <!-- Search with Icon -->
-        <div class="relative">
-          <Search class="w-4 h-4 text-gray-400 absolute left-2 top-2.5" />
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Cari username / nama / email..."
-            class="bg-gray-50 border border-gray-200 text-sm pl-8 pr-3 py-1.5 rounded-lg"
-          />
-        </div>
-
-        <!-- Select Filter -->
-        <select v-model="filters.role" class="bg-gray-100 text-sm px-3 py-1.5 rounded-lg">
-          <option value="">Semua Role</option>
-          <option value="Admin">Admin</option>
-          <option value="User">User</option>
-        </select>
-
-        <select v-model="filters.status" class="bg-gray-100 text-sm px-3 py-1.5 rounded-lg">
-          <option value="">Semua Status</option>
-          <option value="Aktif">Aktif</option>
-          <option value="Tidak Aktif">Tidak Aktif</option>
-        </select>
+      <div class="relative flex-1 w-full px-2">
+        <Search
+          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          v-model="filters.search"
+          type="text"
+          placeholder="Cari perihal / nomor..."
+          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+        />
       </div>
 
-      <!-- Export Button - Right Side -->
       <button
-        class="flex items-center gap-2 bg-primary text-white text-sm font-medium px-4 py-1.5 rounded-lg transition"
-        @click="exportData"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
       >
         <FileDown class="w-4 h-4" />
         Export
@@ -67,7 +52,9 @@
           <th class="px-4 py-3 border-primary-600 font-semibold">Username</th>
           <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
           <th class="px-4 py-3 border-primary-600 font-semibold">Status</th>
-          <th class="px-4 py-3 border-primary-600 font-semibold text-center">Aksi</th>
+          <th class="px-4 py-3 border-primary-600 font-semibold text-center">
+            Aksi
+          </th>
         </tr>
       </thead>
 
@@ -88,21 +75,29 @@
           </td>
 
           <td class="px-4 py-3">
-            <span class="px-3 py-1 text-xs rounded-full font-medium flex items-center gap-1 w-fit"
-                  :class="getRoleColor(user.role)">
+            <span
+              class="px-3 py-1 text-xs rounded-full font-medium flex items-center gap-1 w-fit"
+              :class="getRoleColor(user.role)"
+            >
               <Shield class="w-3 h-3" />
               {{ user.role }}
             </span>
           </td>
 
           <td class="px-4 py-3">
-            <span class="px-3 py-1 text-xs rounded-full font-medium" :class="getStatusColor(user.status)">
+            <span
+              class="px-3 py-1 text-xs rounded-full font-medium"
+              :class="getStatusColor(user.status)"
+            >
               {{ user.status }}
             </span>
           </td>
 
           <td class="px-4 py-3 text-center space-x-3">
-            <button class="text-red-600 hover:text-red-800 transition-colors" @click="openDelete(user)">
+            <button
+              class="text-red-600 hover:text-red-800 transition-colors"
+              @click="openDelete(user)"
+            >
               <Trash2 class="w-4 h-4" />
             </button>
           </td>
@@ -112,55 +107,63 @@
   </div>
 
   <Modal v-model="showAddModal" @save="saveAccount">
-  <template #title>
-    <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
-      Tambah Akun
-    </Heading>
-  </template>
+    <template #title>
+      <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
+        Tambah Akun
+      </Heading>
+    </template>
 
-  <!-- FIELD PERSNUM -->
-  <div class="flex flex-col gap-2">
-    <label class="text-xs font-semibold text-gray-700">Persnum</label>
-    <input
-      v-model="form.persnum"
-      type="text"
-      placeholder="Masukkan persnum"
-      class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-    />
-  </div>
+    <!-- FIELD PERSNUM -->
+    <div class="flex flex-col gap-2">
+      <label class="text-xs font-semibold text-gray-700">Persnum</label>
+      <input
+        v-model="form.persnum"
+        type="text"
+        placeholder="Masukkan persnum"
+        class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+      />
+    </div>
 
-  <!-- FIELD ROLE -->
-  <div class="flex flex-col gap-2">
-    <label class="text-xs font-semibold text-gray-700">Role</label>
-    <select
-      v-model="form.role"
-      class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-    >
-      <option value="" disabled>Pilih role</option>
-      <option value="admin">Admin</option>
-      <option value="superadmin">Super Admin</option>
-    </select>
-  </div>
-</Modal>
+    <!-- FIELD ROLE -->
+    <div class="flex flex-col gap-2">
+      <label class="text-xs font-semibold text-gray-700">Role</label>
+      <select
+        v-model="form.role"
+        class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+      >
+        <option value="" disabled>Pilih role</option>
+        <option value="admin">Admin</option>
+        <option value="superadmin">Super Admin</option>
+      </select>
+    </div>
+  </Modal>
 
-    <ConfirmPopup
-      v-model="confirmDeleteOpen"
-      title="Hapus Data?"
-      description="Data yang dihapus tidak dapat dikembalikan."
-      confirmText="Hapus"
-      cancelText="Batal"
-      @confirm="deleteNow"
-    />
-
+  <ConfirmPopup
+    v-model="confirmDeleteOpen"
+    title="Hapus Data?"
+    description="Data yang dihapus tidak dapat dikembalikan."
+    confirmText="Hapus"
+    cancelText="Batal"
+    @confirm="deleteNow"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue"
-import { Trash2, UserRound, Shield, RotateCcw, FileDown, Search,Plus } from "lucide-vue-next"
-import Modal from '@/components/Modal.vue'
-import { useManajemenAkun } from '@/composables/useManajemenAkun'
+import { ref, computed } from "vue";
+import {
+  Trash2,
+  UserRound,
+  Shield,
+  RotateCcw,
+  FileDown,
+  Search,
+  Plus,
+} from "lucide-vue-next";
+import Modal from "@/components/Modal.vue";
+import { useManajemenAkun } from "@/composables/useManajemenAkun";
 
-const { accounts, fetchAccounts, loading, addAccount, deleteAccount } = useManajemenAkun()
+const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
+  useManajemenAkun();
 
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref<any>(null);
@@ -170,95 +173,95 @@ const openDelete = (user) => {
   confirmDeleteOpen.value = true;
 };
 
-
 const items = [
   { label: "Dashboard", to: "/" },
-  { label: "Akun", to: "/admin/master/akun" },
-]
+  { label: "Manajemen Akun", to: "/admin/master/akun" },
+];
 
 const filters = ref({
   search: "",
   role: "",
   status: "",
-})
+});
 
 const saveAccount = async () => {
   if (!form.value.persnum || !form.value.role) {
-    alert("Persnum dan role wajib diisi")
-    return
+    alert("Persnum dan role wajib diisi");
+    return;
   }
 
   try {
-    await addAccount(form.value.persnum, form.value.role)
+    await addAccount(form.value.persnum, form.value.role);
 
-    showAddModal.value = false
-    form.value = { persnum: "", role: "" }
+    showAddModal.value = false;
+    form.value = { persnum: "", role: "" };
 
-    alert("Role berhasil diberikan kepada user!")
+    alert("Role berhasil diberikan kepada user!");
   } catch (error) {
-    alert("Gagal memberikan role!")
+    alert("Gagal memberikan role!");
   }
-}
+};
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return
+  if (!itemToDelete.value) return;
 
   try {
-    await deleteAccount(itemToDelete.value.persnum)
+    await deleteAccount(itemToDelete.value.persnum);
 
-    alert("Role berhasil dihapus. Pengguna kembali menjadi user biasa.")
+    alert("Role berhasil dihapus. Pengguna kembali menjadi user biasa.");
 
-    confirmDeleteOpen.value = false
-    itemToDelete.value = null
-
+    confirmDeleteOpen.value = false;
+    itemToDelete.value = null;
   } catch (err) {
-    alert("Gagal menghapus role!")
+    alert("Gagal menghapus role!");
   }
-}
+};
 
-const showAddModal = ref(false)
+const showAddModal = ref(false);
 const form = ref({
   persnum: "",
   role: "",
-})
+});
 
 onMounted(() => {
-  fetchAccounts()
-})
-
+  fetchAccounts();
+});
 
 const filteredUsers = computed(() => {
-  const searchText = filters.value.search.toLowerCase()
+  const searchText = filters.value.search.toLowerCase();
 
   return accounts.value.filter((user) => {
-    const userRole = (user.role || "").toLowerCase()
-    const userStatus = (user.status || "").toLowerCase()
+    const userRole = (user.role || "").toLowerCase();
+    const userStatus = (user.status || "").toLowerCase();
 
     const matchesSearch =
       !searchText ||
       `${user.persnum} ${user.name} ${user.email}`
         .toLowerCase()
-        .includes(searchText)
+        .includes(searchText);
 
     const matchesRole =
-      !filters.value.role ||
-      userRole === filters.value.role.toLowerCase()
+      !filters.value.role || userRole === filters.value.role.toLowerCase();
 
     const matchesStatus =
       !filters.value.status ||
-      userStatus === filters.value.status.toLowerCase()
+      userStatus === filters.value.status.toLowerCase();
 
-    return matchesSearch && matchesRole && matchesStatus
-  })
-})
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+});
 
 const resetFilter = () => {
-  filters.value = { search: "", role: "", status: "" }
-}
+  filters.value = { search: "", role: "", status: "" };
+};
 
 const getRoleColor = (role: string) =>
-  role === "admin" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"
+  role === "admin"
+    ? "bg-yellow-100 text-yellow-700"
+    : "bg-blue-100 text-blue-700";
 
 const getStatusColor = (status: string) =>
-  status === "aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+  status === "aktif"
+    ? "bg-green-100 text-green-700"
+    : "bg-red-100 text-red-600";
 </script>

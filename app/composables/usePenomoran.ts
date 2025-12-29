@@ -4,7 +4,7 @@ import { useApi } from "./useApi";
 import type { PenomoranPayload, PenomoranResponse } from "~/types/penomoran";
 
 export const usePenomoran = () => {
-  const { get, post, del } = useApi();
+  const { get, post, del, api } = useApi();
   const toast = useToast();
 
   const isLoadingPenomoran = ref(false);
@@ -13,85 +13,57 @@ export const usePenomoran = () => {
   const isLoadingSubmitted = ref(false);
 
   /** ===========================
-   * SAVE PENOMORAN
+   * CREATE PENOMORAN FINAL
    * =========================== */
-  const savePenomoran = async (
+  const createPenomoranFinal = async (
     payload: PenomoranPayload,
   ): Promise<PenomoranResponse> => {
     isLoadingPenomoran.value = true;
 
     try {
-      console.log(
-        "🚀 savePenomoran called with:",
-        JSON.stringify(payload, null, 2),
-      );
-
       if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
 
-      // ✅ Pastikan semua field adalah tipe data yang benar
       const formattedPayload = {
-        position_id: parseInt(String(payload.position_id), 10),
-        tanggal: String(payload.tanggal),
+        position_id: Number(payload.position_id),
+        tanggal:
+          payload.tanggal instanceof Date
+            ? payload.tanggal.toISOString().split("T")[0]
+            : String(payload.tanggal),
         jenis: String(payload.jenis),
         klasifikasi: String(payload.klasifikasi),
         perihal: String(payload.perihal),
+        jumlah: Number(payload.jumlah),
         penandatangan: String(payload.penandatangan),
-        id_position_penandatangan: parseInt(
-          String(payload.id_position_penandatangan),
-          10,
-        ),
-        jumlah: parseInt(String(payload.jumlah), 10),
+        id_position_penandatangan: Number(payload.id_position_penandatangan),
       };
 
-      // Validasi final
-      if (isNaN(formattedPayload.id_position_penandatangan)) {
-        throw new Error(
-          `id_position_penandatangan tidak valid: ${payload.id_position_penandatangan}`,
-        );
-      }
+      console.log("📤 POST to /admin/nomor:", formattedPayload);
 
-      console.log(
-        "📤 POST to /nomor-request:",
-        JSON.stringify(formattedPayload, null, 2),
-      );
-      console.log("🔍 Types check:", {
-        position_id: typeof formattedPayload.position_id,
-        id_position_penandatangan:
-          typeof formattedPayload.id_position_penandatangan,
-        jumlah: typeof formattedPayload.jumlah,
-      });
+      const response = await post("/admin/nomor", formattedPayload);
 
-      const response = await post("/nomor-request", formattedPayload);
-
-      console.log("✅ Response from backend:", response);
+      console.log("✅ Response from /admin/nomor:", response);
 
       toast.add({
         title: "Berhasil",
-        description: "Penomoran berhasil disimpan.",
-        icon: "i-heroicons-check-circle",
+        description: response?.message || "Penomoran final berhasil dibuat.",
         color: "green",
-        timeout: 2500,
       });
 
-      return response.data ?? response;
+      return response;
     } catch (error: any) {
-      console.error("❌ savePenomoran error:", error);
-      console.error("❌ Error response:", error.response);
-      console.error("❌ Error data:", error.response?.data);
-      console.error("❌ Error status:", error.response?.status);
+      console.error("❌ Error create penomoran:", error);
 
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        "Gagal menyimpan penomoran.";
+        "Gagal membuat penomoran";
 
       toast.add({
         title: "Gagal",
         description: Array.isArray(errorMessage)
           ? errorMessage.join(", ")
           : errorMessage,
-        icon: "i-heroicons-exclamation-circle",
         color: "red",
       });
 
@@ -102,62 +74,83 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * SUBMIT BOOKING
+   * CREATE USULAN (DRAFT)
    * =========================== */
-  interface BookingFile {
-    file_name: string;
-    file_text: string;
-  }
-  interface BookingPayload {
-    files: BookingFile[];
-  }
-
-  const submitBooking = async (
-    id_request: number | string,
-    payload: BookingPayload,
-  ) => {
-    isLoadingBooking.value = true;
+  const createUsulanDraft = async (
+    payload: PenomoranPayload,
+  ): Promise<PenomoranResponse> => {
+    isLoadingPenomoran.value = true;
 
     try {
-      const formData = new FormData();
+      if (!payload.tanggal) throw new Error("Tanggal tidak boleh kosong");
 
-      payload.files.forEach((file) => {
-        if (file?.file_text) {
-          const byteString = atob(file.file_text);
-          const arrayBuffer = new ArrayBuffer(byteString.length);
-          const uint8Array = new Uint8Array(arrayBuffer);
+      const formattedPayload = {
+        position_id: Number(payload.position_id),
+        tanggal: String(payload.tanggal),
+        jenis: String(payload.jenis),
+        klasifikasi: String(payload.klasifikasi),
+        perihal: String(payload.perihal),
+        penandatangan: String(payload.penandatangan),
+        id_position_penandatangan: Number(payload.id_position_penandatangan),
+        jumlah: Number(payload.jumlah),
+      };
 
-          for (let i = 0; i < byteString.length; i++) {
-            uint8Array[i] = byteString.charCodeAt(i);
-          }
-
-          const blob = new Blob([uint8Array], {
-            type: "application/octet-stream",
-          });
-
-          formData.append("files", blob, file.file_name);
-        }
-      });
-
-      const response = await post(
-        `/admin/nomor-request/${id_request}/booking`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const response = await post("/nomor-request", formattedPayload);
 
       toast.add({
         title: "Berhasil",
-        description:
-          "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
-        icon: "i-heroicons-check-circle",
+        description: "Usulan berhasil disimpan (Belum Diajukan).",
         color: "green",
       });
 
       return response.data ?? response;
+    } finally {
+      isLoadingPenomoran.value = false;
+    }
+  };
+
+  /** ===========================
+   * SUBMIT BOOKING WITH FILES
+   * =========================== */
+  const submitBooking = async (
+    id_request: string | number,
+    formData: FormData,
+  ) => {
+    isLoadingBooking.value = true;
+
+    try {
+      console.log("📤 Submitting booking for request:", id_request);
+
+      // Log FormData contents for debugging
+      for (const pair of formData.entries()) {
+        console.log(`📎 FormData: ${pair[0]} =`, pair[1]);
+      }
+
+      const response = await api.post(
+        `/nomor-request/${id_request}/booking`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      console.log("✅ Booking response:", response.data);
+
+      toast.add({
+        title: "Berhasil",
+        description:
+          response.data?.message ||
+          "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
+        color: "green",
+      });
+
+      return response.data;
     } catch (error: any) {
-      const errorMessage =
+      console.error("❌ Error submit booking:", error);
+
+      const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
@@ -165,14 +158,54 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Gagal",
-        description: errorMessage,
-        icon: "i-heroicons-exclamation-circle",
+        description: Array.isArray(msg) ? msg.join(", ") : msg,
         color: "red",
       });
 
       throw error;
     } finally {
       isLoadingBooking.value = false;
+    }
+  };
+
+  /** ===========================
+   * GET DETAIL NOMOR BY ID
+   * =========================== */
+  const getDetailNomor = async (id: string) => {
+    try {
+      // Try admin endpoint first
+      const res = await get(`/nomor/${id}`);
+
+      console.log("✅ Detail nomor loaded:", res);
+
+      if (!res?.success) {
+        throw new Error("Gagal mengambil detail nomor");
+      }
+
+      return res.data;
+    } catch (e: any) {
+      console.error("❌ Error fetch detail nomor:", e);
+
+      // Don't show toast, just return null to handle gracefully
+      return null;
+    }
+  };
+
+  const getListNomor = async () => {
+    isLoadingList.value = true;
+    try {
+      const res = await get("/nomor");
+      return res.data ?? [];
+    } catch (e: any) {
+      console.error("❌ Error ambil list nomor:", e);
+      toast.add({
+        title: "Gagal fetch data",
+        description: e.message || "Gagal mengambil daftar nomor",
+        color: "red",
+      });
+      return [];
+    } finally {
+      isLoadingList.value = false;
     }
   };
 
@@ -204,7 +237,6 @@ export const usePenomoran = () => {
     try {
       const res = await get(`/admin/nomor-request/${id}`);
 
-      // Handle berbagai struktur response
       if (res?.data?.data) {
         return res.data.data;
       } else if (res?.data) {
@@ -229,7 +261,16 @@ export const usePenomoran = () => {
   const getKlasifikasi = async () => {
     try {
       const res = await get("/persuratan/klasifikasi");
-      return res.data ?? [];
+
+      const rawData = res.data ?? res;
+      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? []);
+
+      return dataArray.map((item: any) => ({
+        code: item.klasifikasi,
+        text: item.klasifikasi_text,
+        display: `${item.klasifikasi} - ${item.klasifikasi_text}`,
+        id: item.id,
+      }));
     } catch (e: any) {
       console.error("❌ Error fetch klasifikasi:", e);
       toast.add({
@@ -286,36 +327,207 @@ export const usePenomoran = () => {
   const deleteUsulan = async (id: string) => {
     try {
       const res = await del(`/admin/nomor-request/${id}`);
+
+      console.log("✅ Delete response:", res);
+
       toast.add({
         title: "Berhasil",
-        description: "Usulan berhasil dihapus",
+        description: res?.data?.message || "Usulan berhasil dihapus",
         icon: "i-heroicons-check-circle",
         color: "green",
       });
+
       return res.data ?? res;
     } catch (e: any) {
       console.error("❌ Error delete usulan:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menghapus usulan";
+
       toast.add({
         title: "Gagal",
-        description: e.response?.data?.message || "Gagal menghapus usulan",
+        description: errorMsg,
         color: "red",
       });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * DELETE NOMOR
+   * =========================== */
+  const deleteNomor = async (id: string) => {
+    try {
+      const res = await del(`/admin/nomor/${id}`);
+
+      console.log("✅ Delete nomor response:", res);
+
+      toast.add({
+        title: "Berhasil",
+        description: res?.data?.message || "Nomor berhasil dihapus",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+
+      return res.data ?? res;
+    } catch (e: any) {
+      console.error("❌ Error delete nomor:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menghapus nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * APPROVE BULK NOMOR
+   * =========================== */
+  const approveBulkNomor = async (detailIds: string[]) => {
+    try {
+      if (!detailIds || detailIds.length === 0) {
+        throw new Error("Detail IDs tidak boleh kosong");
+      }
+
+      // Filter out null/undefined IDs
+      const validIds = detailIds.filter(
+        (id) => id !== null && id !== undefined && id !== "",
+      );
+
+      if (validIds.length === 0) {
+        throw new Error("Tidak ada detail ID yang valid");
+      }
+
+      console.log("📤 Approve bulk nomor:", validIds);
+
+      const response = await post("/admin/nomor-request-detail/approve-bulk", {
+        detail_ids: validIds,
+      });
+
+      console.log("✅ Approve bulk response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil disetujui",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error approve bulk:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menyetujui nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * REJECT NOMOR REQUEST
+   * =========================== */
+  const rejectNomorRequest = async (
+    requestId: string,
+    detailIds: string[],
+    keterangan: string,
+  ) => {
+    try {
+      if (!requestId) {
+        throw new Error("Request ID tidak boleh kosong");
+      }
+
+      if (!keterangan || !keterangan.trim()) {
+        throw new Error("Keterangan penolakan harus diisi");
+      }
+
+      console.log("📤 Reject nomor request:", {
+        requestId,
+        detailIds,
+        keterangan,
+      });
+
+      const response = await post(`/admin/nomor-request/${requestId}/reject`, {
+        detail_ids: detailIds,
+        keterangan: keterangan,
+      });
+
+      console.log("✅ Reject response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil ditolak",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error reject nomor:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menolak nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
       throw e;
     }
   };
 
   return {
-    savePenomoran,
-    isLoadingPenomoran,
+    // USULAN FLOW
+    createUsulanDraft,
     submitBooking,
-    isLoadingBooking,
     getListUsulan,
-    isLoadingList,
     getDetailUsulan,
-    getKlasifikasi,
-    getListSubmitted,
-    isLoadingSubmitted,
-    getPersonWithPosition,
     deleteUsulan,
+
+    // VERIFIKASI
+    getListSubmitted,
+    approveBulkNomor,
+    rejectNomorRequest,
+
+    // PENOMORAN FINAL
+    createPenomoranFinal,
+    getListNomor,
+    getDetailNomor,
+    deleteNomor,
+
+    // MASTER DATA
+    getKlasifikasi,
+    getPersonWithPosition,
+
+    // LOADING
+    isLoadingPenomoran,
+    isLoadingBooking,
+    isLoadingList,
+    isLoadingSubmitted,
   };
 };

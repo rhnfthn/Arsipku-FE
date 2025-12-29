@@ -8,11 +8,13 @@ import {
   User,
   Pencil,
   Trash2,
-  FileDown
+  FileDown,
 } from "lucide-vue-next";
 
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useNaskahDinas } from "~/composables/useNaskahDinas";
+import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 
 // ==============================
 // STATE (existing)
@@ -24,33 +26,33 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 
 const items = [
-    {
-        label: 'Dashboard',
-        to: '/admin/dashboard'
-    },
-    {
-        label: 'Naskah Dinas',
-        to: '/admin/naskah-dinas'
-    },
-
-] satisfies BreadcrumbItem[]
-
-
-const listDelegasi = ref([
   {
-    id: 1,
-    jenisnaskah: "UND-Surat Undangan",
-    sifatnaskah: "Biasa/Terbuka",
-    tertuju: "Direktur Operasi PT Garuda",
-    noasalnaskah: "Garuda/Jktd0/2012/2025",
-    tanggal: "26/11/2025",
-    asalnaskah:"Devy yunita",
-    jabatan:"Direktur Operasi",
-    perihal:"Permohonan kunjungan ke bandara internasional kertajati (kjt)",
-    jam:"16.00",
-    file:"example.pdf"
+    label: "Dashboard",
+    to: "/admin/dashboard",
   },
-]);
+  {
+    label: "Naskah Dinas",
+    to: "/admin/naskah-dinas",
+  },
+] satisfies BreadcrumbItem[];
+
+const {
+  items: listDelegasi,
+  pending,
+  error,
+  fetchNaskahDinas,
+} = useNaskahDinas();
+
+const {
+  data: asalNaskahList,
+  loading: loadingAsalNaskah,
+  fetchTertujuEksternal,
+} = useTertujuEksternal();
+
+onMounted(() => {
+  fetchNaskahDinas();
+  fetchTertujuEksternal();
+});
 
 // ==============================
 // SORT & REFRESH (existing)
@@ -98,7 +100,7 @@ const openDelete = (item) => {
 
 const deleteNow = () => {
   listDelegasi.value = listDelegasi.value.filter(
-    (i) => i.id !== itemToDelete.value.id
+    (i) => i.id !== itemToDelete.value.id,
   );
   confirmDeleteOpen.value = false;
 };
@@ -109,7 +111,8 @@ const deleteNow = () => {
 const newDelegasi = ref({
   jenisnaskah: "",
   sifataskah: "",
-
+  asalnaskah_id: null as number | null,
+  asalnaskah_nama: "",
 });
 
 const saveDelegasi = () => {
@@ -128,10 +131,10 @@ const saveDelegasi = () => {
     tertuju: "",
     noasalnaskah: "",
     tanggal: "",
-    asalnaskah:"",
-    jabatan:"",
-    perihal:"",
-    jam:""
+    asalnaskah: "",
+    jabatan: "",
+    perihal: "",
+    jam: "",
   };
 };
 
@@ -153,7 +156,7 @@ const openEdit = (item) => {
 
 const saveEditDelegasi = () => {
   const index = listDelegasi.value.findIndex(
-    (x) => x.id === editDelegasi.value.id
+    (x) => x.id === editDelegasi.value.id,
   );
   if (index !== -1) {
     listDelegasi.value[index] = {
@@ -179,7 +182,7 @@ const jenisnaskahList = [
     id: 2,
     label: "SDE - Surat Dinas Eksternal",
     value: "Surat Dinas Eksternal",
-  }
+  },
 ];
 
 const sifatnaskahList = [
@@ -209,6 +212,7 @@ const openNewJabatan = ref(false);
 const openEditJenisNaskah = ref(false);
 const openEditSifatNaskah = ref(false);
 const openEditJabatan = ref(false);
+const openNewAsalNaskah = ref(false);
 
 // click outside handling
 function handleDocumentClick(e: MouseEvent) {
@@ -227,6 +231,7 @@ function handleDocumentClick(e: MouseEvent) {
   openNewSifatNaskah.value = false;
   openEditJenisNaskah.value = false;
   openEditSifatNaskah.value = false;
+  openNewAsalNaskah.value = false;
 }
 
 onMounted(() => {
@@ -260,27 +265,34 @@ function selectEditSifatNaskah(val: string) {
   openEditSifatNaskah.value = false;
 }
 
+function selectNewAsalNaskah(item: { id: number; nama: string }) {
+  newDelegasi.value.asalnaskah_id = item.id;
+  newDelegasi.value.asalnaskah_nama = item.nama;
+  openNewAsalNaskah.value = false;
+}
 </script>
 
 <template>
-    <div class="mb-3 flex flex-wrap justify-between">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <!-- Left Section - Title & Breadcrumb -->
-            <PageHeader title="Naskah Dinas" :items="items" />
-        </div>
-        <UButton
-            @click="showAddModal = true"
-            class="flex items-center gap-1 bg-primary hover:bg-primary-800 text-white h-10 rounded-lg text-xs"
-          >
-            <Plus class="w-4 h-4" />
-            Tambah Naskah Dinas
-        </UButton>        
+  <div class="mb-3 flex flex-wrap justify-between">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <!-- Left Section - Title & Breadcrumb -->
+      <PageHeader title="Naskah Dinas" :items="items" />
     </div>
+    <UButton
+      @click="showAddModal = true"
+      class="flex items-center gap-1 bg-primary hover:bg-primary-800 text-white h-10 rounded-lg text-xs"
+    >
+      <Plus class="w-4 h-4" />
+      Tambah Naskah Dinas
+    </UButton>
+  </div>
   <div class="w-full min-w-0 min-h-screen bg-gray-50">
     <div
       class="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-200"
     >
-      <div class=" border-b border-gray-200">
+      <div class="border-b border-gray-200">
         <!-- FILTER BAR -->
         <div class="flex gap-4 p-3 items-center flex-wrap">
           <button
@@ -366,57 +378,73 @@ function selectEditSifatNaskah(val: string) {
           >
             <FileDown class="w-4 h-4" />
             Export
-          </button> 
+          </button>
         </div>
-<!-- LIST TABLE -->
-<div class="overflow-x-auto">
-  <table class="w-full border-collapse text-sm">
-    <thead>
-      <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
-        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Tertuju</th>
-        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Asal Naskah</th>
-        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Jabatan</th>
-        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Perihal</th>
-        <th class="px-4 py-3 border-b-2 border-b-gray-100 ">Jam Dibuat</th>
-      </tr>
-    </thead>
+        <!-- LIST TABLE -->
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-sm">
+            <thead>
+              <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
+                <th class="px-4 py-3 border-b-2 border-b-gray-100">
+                  Asal Naskah
+                </th>
+                <th class="px-4 py-3 border-b-2 border-b-gray-100">Tertuju</th>
+                <th class="px-4 py-3 border-b-2 border-b-gray-100">Perihal</th>
+                <th class="px-4 py-3 border-b-2 border-b-gray-100">Nama</th>
+                <th class="px-4 py-3 border-b-2 border-b-gray-100">
+                  Jam Dibuat
+                </th>
+              </tr>
+            </thead>
 
-    <tbody>
-      <tr
-        v-for="item in filteredData"
-        :key="item.id"
-        class="hover:bg-blue-50 transition-colors"
-      >
-        <td class="px-4 py-3 text-black uppercase">
-          {{ item.tertuju }} <br>
-          {{ item.noasalnaskah }} <br>
-          {{ item.tanggal}}
-        </td>
+            <tbody>
+              <tr
+                v-for="item in filteredData"
+                :key="item.id"
+                class="hover:bg-blue-50 transition-colors"
+              >
+                <td class="px-4 py-3 text-black">
+                  <div class="font-medium">
+                    {{ item.pengirim?.nama || "-" }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ item.nomor || "-" }}
+                  </div>
+                  <div class="text-xs text-gray-400">
+                    {{ item.tanggal }}
+                  </div>
+                </td>
 
-        <td class="px-4 py-3 text-black uppercase">
-          {{ item.asalnaskah }}
-        </td>
-        <td class="px-4 py-3 text-black uppercase">
-          {{ item.jabatan }}
-        </td>
-        <td class="px-4 py-3 text-black">
-          <div class="flex flex-wrap">
-            <div class="uppercase">
-              {{ item.perihal }}
-            </div>
-            <div class="bg-emerald-200 text-green-500  px-2 border border-gray-100 rounded-md">
-              {{ item.file }}
-            </div>
-          </div>
-        </td>
-        <td class="px-4 py-3 text-black uppercase">
-          {{ item.jam }}
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+                <td class="px-4 py-3 text-black">
+                  <div v-if="item.penerima?.length">
+                    {{ item.penerima[0].position_text }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ item.penerima?.[0]?.nama }}
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-black">
+                  <div class="flex flex-col gap-1">
+                    <div class="font-medium">
+                      {{ item.perihal }}
+                    </div>
 
+                    <div
+                      v-if="item.final_pdf_url"
+                      class="inline-flex w-fit items-center gap-1 bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded text-xs"
+                    >
+                      Final
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-black">namauser</td>
+                <td class="px-4 py-3 text-black">
+                  {{ item.jam }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     <!-- ======= -->
@@ -430,11 +458,10 @@ function selectEditSifatNaskah(val: string) {
       </template>
 
       <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-        <div>
+        <!-- <div>
           <label class="text-xs font-semibold"
             >Jenis Naskah <span class="text-red-500">*</span></label
           >
-          <!-- custom select -->
           <div class="relative" data-custom-dropdown>
             <button
               class="w-full text-left bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 mt-1 flex items-center justify-between"
@@ -459,13 +486,16 @@ function selectEditSifatNaskah(val: string) {
               </button>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >Tanggal Surat <span class="text-red-500">*</span></label
           >
-          <input type="date" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="date"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
 
         <div>
@@ -502,44 +532,106 @@ function selectEditSifatNaskah(val: string) {
           <label class="text-xs font-semibold"
             >Nomor Asal Naskah <span class="text-red-500">*</span></label
           >
-          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="text"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
 
         <div class="flex flex-wrap flex-col">
-          <label class="text-xs font-semibold"
-            >Asal Naskah <span class="text-red-500">*</span></label
-          >
-          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <div>
+            <label class="text-xs font-semibold">
+              Asal Naskah <span class="text-red-500">*</span>
+            </label>
+
+            <div class="relative mt-1" data-custom-dropdown>
+              <button
+                type="button"
+                class="w-full text-left bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openNewAsalNaskah = !openNewAsalNaskah"
+              >
+                <span class="text-sm text-gray-600">
+                  {{ newDelegasi.asalnaskah_nama || "Pilih Asal Naskah" }}
+                </span>
+
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              <div
+                v-if="openNewAsalNaskah"
+                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <div
+                  v-if="loadingAsalNaskah"
+                  class="px-4 py-3 text-xs text-gray-400"
+                >
+                  Memuat data...
+                </div>
+
+                <button
+                  v-for="item in asalNaskahList"
+                  :key="item.id"
+                  class="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm"
+                  @click.prevent="selectNewAsalNaskah(item)"
+                >
+                  {{ item.nama }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >Perihal <span class="text-red-500">*</span></label
           >
-          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="text"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
 
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >Lampiran<span class="text-red-500">*</span></label
           >
-          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="text"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
 
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >Tertuju<span class="text-red-500">*</span></label
           >
-          <input type="text" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="text"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
 
         <div class="flex flex-wrap flex-col">
           <label class="text-xs font-semibold"
             >File<span class="text-red-500">*</span></label
           >
-          <input type="file" class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3">
+          <input
+            type="file"
+            class="bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3"
+          />
         </div>
-
       </div>
     </Modal>
     <!-- ======= -->

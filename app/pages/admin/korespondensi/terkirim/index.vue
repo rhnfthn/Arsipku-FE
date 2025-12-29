@@ -2,17 +2,28 @@
 import { ref, computed, watch, onMounted } from "vue";
 import {
   Inbox, FileText, Send, Building, Building2, FilePen,
-  Check, X, RotateCcw, MoreVertical, History, ArrowUpDown, Layers, Download,
+  Check, X, RotateCw, MoreVertical, History, ArrowUpDown, Layers, Download,
   Archive, Trash2, ChevronLeft, ChevronRight, Eye, Loader2
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useSirkulasi } from '@/composables/useTerkirim';
 import type { NaskahItem, UIMailItem } from '~/types/terkirim';
-import * as XLSX from 'xlsx'; // Import library xlsx
+import * as XLSX from 'xlsx';
 
 // --- COMPOSABLES ---
 const { user } = useAuth();
 const { fetchSentBox, isLoading } = useSirkulasi();
+const route = useRoute();
+
+// --- HELPER: ROUTING ---
+const getDetailRoute = (item: UIMailItem) => {
+  return {
+    path: `/admin/korespondensi/terkirim/${item.id}`,
+    query: {
+      jenis: item.category
+    }
+  };
+};
 
 // --- STATE ---
 const selected = ref<UIMailItem | null>(null);
@@ -58,25 +69,39 @@ const currentReaderData = ref({
   unreadList: [] as any[]
 });
 
-// --- HELPER: COLOR MAPPING ---
+// --- HELPER: COLOR MAPPING (SESUAI REFERENSI) ---
 const getCategoryStyle = (cat: string) => {
-  switch (cat) {
-    case 'ND': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300';
-    case 'DI':
-    case 'DISPOSISI': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300';
-    case 'INTERNAL': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300';
-    case 'EXTERNAL': return 'bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300';
-    case 'KONSEP': return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-    default: return 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+  const c = (cat || '').toUpperCase();
+
+  // Nota Dinas (Biru)
+  if (['ND', 'NOTA DINAS'].includes(c)) {
+    return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
   }
+  // Disposisi (Ungu)
+  if (['DI', 'DISPOSISI'].includes(c)) {
+    return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
+  }
+  // Internal (Hijau)
+  if (['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'].includes(c)) {
+    return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
+  }
+  // Eksternal (Orange)
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) {
+    return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
+  }
+
+  // Default/Konsep
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
 };
 
+// --- HELPER: LABEL MAPPING (SESUAI REFERENSI) ---
 const getCategoryLabel = (cat: string) => {
-  if (cat === 'INTERNAL') return 'Surat Dinas Internal';
-  if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
-  if (cat === 'ND') return 'Nota Dinas';
-  if (cat === 'DI' || cat === 'DISPOSISI') return 'Disposisi';
-  return cat;
+  const c = (cat || '').toUpperCase();
+  if (['SDI', 'INTERNAL', 'KA'].includes(c)) return 'Surat Dinas Internal';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'Surat Dinas Eksternal';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'Nota Dinas';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'Disposisi';
+  return 'Konsep';
 };
 
 // --- API FETCH & MAPPING ---
@@ -84,39 +109,52 @@ const loadData = async () => {
   const posId = user.value?.position;
   const rawData = await fetchSentBox(posId);
 
-  emails.value = rawData.map((item: NaskahItem) => {
-    const firstPenerima = item.penerima[0];
+  emails.value = rawData.map((item: any) => {
+    // 1. Logic Penerima untuk Sidebar
+    const daftarPenerima = item.penerima || [];
+    let displayRecipient = "Tanpa Penerima";
+    let firstRecipientTitle = "Tanpa Jabatan";
 
-    const displayJobTitle = firstPenerima?.position_text || 'Tanpa Jabatan';
-    const displayName = firstPenerima?.nama || 'Tanpa Nama';
-    const initial = firstPenerima?.nama?.substring(0, 2).toUpperCase() || 'NA';
+    if (daftarPenerima.length > 0) {
+      const firstPerson = daftarPenerima[0];
+      firstRecipientTitle = firstPerson.position_text || 'Tanpa Jabatan';
 
-    const dateObj = new Date(item.tanggal);
+      if (daftarPenerima.length > 1) {
+        displayRecipient = `${firstPerson.position_text} +${daftarPenerima.length - 1} lainnya`;
+      } else {
+        displayRecipient = firstPerson.position_text;
+      }
+    }
+
+    // 2. Logic Waktu
+    const dateObj = new Date(item.created_at || item.tanggal);
     const dateStr = dateObj.toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      day: 'numeric',
+      month: 'short'
+    }) + ' ' + dateObj.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
 
     return {
       id: item.id_naskah,
-      from: displayJobTitle,
-      email: displayName,
+      from: displayRecipient,
+      email: firstRecipientTitle,
       subject: item.perihal,
       body: item.nomor || '-',
-      category: item.jenis === 'DI' ? 'DISPOSISI' : item.jenis,
+      category: item.jenis, // API mungkin return 'INTERNAL', 'ND', dll
       date: dateStr,
-      fullDate: item.tanggal,
-      initial: initial,
-      color: getCategoryStyle(item.jenis === 'DI' ? 'DISPOSISI' : item.jenis).split(' ')[0] + ' text-white',
+      fullDate: item.created_at || item.tanggal,
+      initial: daftarPenerima[0]?.nama?.substring(0, 1).toUpperCase() || '?',
+
+      // Ambil warna base (tanpa dark mode) untuk avatar bulat
+      color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
+
       isRead: true,
       viewCount: item.summary_baca?.terbaca || 0,
-      isFlagged: item.sifat === 'penting' || item.sifat === 'segera',
-      isStarred: false,
-      isLocked: item.status === 'final',
-      hasNote: false,
-      isArchived: false,
-      canOpenTab: true,
-      recipient: item.penerima.map(p => p.nama).join(', '),
-      disposition: item.jenis_label,
+      isFlagged: ['rahasia', 'penting', 'segera'].includes(item.sifat?.toLowerCase()),
+      isLocked: item.status === 'final_tte' || item.status === 'final',
+      recipient: daftarPenerima.map((p: any) => p.position_text).join(', '),
       note: item.sifat,
       originalData: item
     };
@@ -126,10 +164,22 @@ const loadData = async () => {
 // --- FILTERING LOGIC ---
 const filteredEmails = computed(() => {
   let result = emails.value;
+
+  // Filter Tab (Logic disesuaikan agar bisa membaca kode API lama & kode Tab baru)
   if (activeTab.value !== "ALL") {
-    const searchCat = activeTab.value === 'DISPOSISI' ? ['DISPOSISI', 'DI'] : [activeTab.value];
-    result = result.filter(mail => searchCat.includes(mail.category));
+    const tab = activeTab.value;
+    let targetCats = [tab];
+
+    if (tab === 'SDI') targetCats = ['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'];
+    else if (tab === 'SDE') targetCats = ['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'];
+    else if (tab === 'DI') targetCats = ['DI', 'DISPOSISI'];
+    else if (tab === 'ND') targetCats = ['ND', 'NOTA DINAS'];
+    else if (tab === 'KONSEP') targetCats = ['KONSEP'];
+
+    result = result.filter(mail => targetCats.includes((mail.category || '').toUpperCase()));
   }
+
+  // Filter Search
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     result = result.filter(mail =>
@@ -139,10 +189,14 @@ const filteredEmails = computed(() => {
       mail.body.toLowerCase().includes(q)
     );
   }
+
+  // Filter Status Baca
   switch (activeFilterType.value) {
     case "Sudah Dibaca": result = result.filter(mail => mail.viewCount > 0); break;
     case "Belum Dibaca": result = result.filter(mail => mail.viewCount === 0); break;
   }
+
+  // Filter Tanggal
   if (activeDateLabel.value !== "Semua") {
     const now = new Date();
     let days = 30;
@@ -152,6 +206,8 @@ const filteredEmails = computed(() => {
     const pastDate = new Date(now.setDate(now.getDate() - days));
     result = result.filter(mail => new Date(mail.fullDate) >= pastDate);
   }
+
+  // Sorting
   if (activeSortLabel.value === 'Terbaru') {
     result.sort((a, b) => new Date(b.fullDate).getTime() - new Date(a.fullDate).getTime());
   } else {
@@ -193,12 +249,14 @@ const openReaderModal = (mail: UIMailItem) => {
   const item = mail.originalData;
   const read = item.penerima.filter(p => p.status_baca === 'terbaca').map(p => ({
     name: p.nama,
-    date: p.read_time ? new Date(p.read_time).toLocaleString('id-ID') : '-',
+    position: p.position_text,
+    date: p.read_time ? new Date(p.read_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date(p.read_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-',
     initial: p.nama.substring(0, 1),
     bg: 'bg-blue-500'
   }));
   const unread = item.penerima.filter(p => p.status_baca !== 'terbaca').map(p => ({
     name: p.nama,
+    position: p.position_text,
     status: 'Belum membaca',
     initial: p.nama.substring(0, 1),
     bg: 'bg-gray-400'
@@ -211,8 +269,6 @@ const refreshData = () => { loadData(); selectedIds.value.clear(); };
 
 const downloadExcel = () => {
   if (filteredEmails.value.length === 0) return;
-
-  // Mapping data untuk Excel
   const excelData = filteredEmails.value.map(mail => {
     const item = mail.originalData;
     return {
@@ -224,41 +280,42 @@ const downloadExcel = () => {
       'Tanggal Kirim': new Date(item.tanggal).toLocaleString('id-ID'),
       'Pengirim Nama': item.pengirim.nama,
       'Pengirim Jabatan': item.pengirim.position_text,
-      'Pengirim Divisi': item.pengirim.organization_text,
       'Penerima (List)': item.penerima.map(p => `${p.nama} (${p.position_text})`).join('; '),
       'Total Penerima': item.summary_baca.total,
       'Sudah Dibaca': item.summary_baca.terbaca,
       'Belum Dibaca': item.summary_baca.belum_terbaca
     };
   });
-
-  // Buat Worksheet & Workbook
   const ws = XLSX.utils.json_to_sheet(excelData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Kotak Keluar");
-
-  // Download File
   XLSX.writeFile(wb, `Laporan_Terkirim_${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
+// --- TABS DEFINITION (Updated) ---
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DISPOSISI", icon: Send },
-  { label: "Surat Dinas Internal", value: "INTERNAL", icon: Building },
-  { label: "Surat Dinas Eksternal", value: "EXTERNAL", icon: Building2 },
+  { label: "Disposisi", value: "DI", icon: Send },
+  { label: "Internal", value: "SDI", icon: Building },
+  { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
 ];
 
 onMounted(() => { loadData(); });
+
+watch(() => route.query.q, (newVal) => {
+  searchQuery.value = (newVal as string) || "";
+}, { immediate: true });
 </script>
 
 <template>
-  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
+  <div
+    class="w-full h-[calc(100vh-100px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm"
     :class="['glass-blue']">
 
     <div
-      class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 dark:border-gray-800 transition-colors">
+      class="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 dark:border-gray-800 transition-colors">
       <div class="flex items-center gap-1 shrink-0 relative">
         <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
           @click="toggleSelectAll">
@@ -290,7 +347,7 @@ onMounted(() => { loadData(); });
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
           title="Muat Ulang">
-          <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
+          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
         </button>
 
         <template v-if="selectedIds.size > 0">
@@ -313,7 +370,7 @@ onMounted(() => { loadData(); });
           <button @click="showDateMenu = !showDateMenu" title="Periode Data"
             class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
             <History class="w-4 h-4 shrink-0" />
-            <span class="text-xs hidden lg:inline truncate">{{ activeDateLabel }}</span>
+            <span class="text-xs font-medium hidden lg:inline truncate">{{ activeDateLabel }}</span>
           </button>
 
           <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -394,10 +451,10 @@ onMounted(() => { loadData(); });
         :class="selected ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0' : 'flex-1 w-full'">
 
         <div
-          class="px-3 py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
+          class="py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
-              class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="activeTab === tab.value
                 ? 'bg-primary-400 text-white border-primary-400'
                 : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'">
@@ -407,7 +464,7 @@ onMounted(() => { loadData(); });
           </div>
         </div>
 
-        <div class="flex-1 pb-10 w-full relative">
+        <div class="flex-1 w-full relative">
           <div v-if="isLoading"
             class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-20">
             <Loader2 class="w-8 h-8 text-primary animate-spin" />
@@ -433,8 +490,8 @@ onMounted(() => { loadData(); });
             </div>
 
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
-              <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">
+              <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
+                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate" :title="mail.from">
                   {{ mail.from }}
                 </div>
               </div>
@@ -485,24 +542,28 @@ onMounted(() => { loadData(); });
           </div>
 
           <div class="px-6 pb-4 pt-2">
-            <div class="flex gap-4 items-start">
+            <div class="flex gap-3 items-center">
               <div
-                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0 mt-1"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0 shadow-sm"
                 :class="selected.color.replace('text-white', '')">
-                {{ selected.initial }}
+                {{ selected.originalData.pengirim.nama?.substring(0, 1).toUpperCase() || '?' }}
               </div>
 
               <div class="flex-1 min-w-0">
-                <div class="flex flex-col leading-tight">
-                  <div class="font-bold text-gray-900 dark:text-white text-[14px] whitespace-normal break-words">
-                    {{ selected.from }}
+                <div class="flex flex-col items-start leading-snug">
+
+                  <div class="text-[14px] text-gray-900 dark:text-gray-100">
+                    <span class="font-semibold">{{ selected.originalData.pengirim.nama }}</span>
                   </div>
-                  <div class="text-gray-500 dark:text-gray-400 font-normal text-[13px]">
-                    {{ selected.email }}
+
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full text-left"
+                    :title="selected.originalData.pengirim.position_text">
+                    {{ selected.originalData.pengirim.position_text }}
                   </div>
+
                 </div>
-                <div class="text-[13px] text-gray-500 dark:text-gray-500 mt-1">kepada (Lihat Penerima)</div>
               </div>
+
             </div>
 
             <div class="mt-4">
@@ -524,27 +585,27 @@ onMounted(() => { loadData(); });
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Penerima</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.recipient || '-' }}</div>
             </div>
-            <div v-if="selected.disposition">
+            <!-- <div v-if="selected.disposition">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Disposisi</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.disposition }}</div>
-            </div>
+            </div> -->
             <div v-if="selected.note">
               <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Sifat</div>
               <div class="text-[15px] text-gray-900 dark:text-gray-200 capitalize">{{ selected.note }}</div>
             </div>
           </div>
-          <div class="text-gray-800 dark:text-gray-300 leading-relaxed text-[15px] whitespace-pre-wrap">
-            Perihal: {{ selected.subject }}
-          </div>
         </div>
 
         <div
           class="p-6 pt-0 mt-auto bg-white dark:bg-gray-900 shrink-0 border-t border-gray-100 dark:border-gray-800 pt-4">
-          <NuxtLink :to="`/admin/korespondensi/terkirim/${selected.id}`"
-            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px]">
+
+          <NuxtLink :to="getDetailRoute(selected)"
+            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px] hover:bg-primary-600">
             Lihat Detail Lengkap
           </NuxtLink>
+
         </div>
+
       </div>
 
     </div>
@@ -578,7 +639,8 @@ onMounted(() => { loadData(); });
                   <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
                     :class="reader.bg">{{ reader.initial }}</div>
                   <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.name }}</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Dibaca pada: {{ reader.date }}</div>
                   </div>
                 </div>
@@ -599,8 +661,8 @@ onMounted(() => { loadData(); });
                   <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
                     :class="reader.bg">{{ reader.initial }}</div>
                   <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.name }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.status }}</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
                   </div>
                 </div>
                 <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
