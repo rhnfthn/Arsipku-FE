@@ -26,13 +26,13 @@
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju (Rekan)"
-          :items="tertujuItems" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputSifat v-model="selectedSifat" />
+
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
+          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
           :items="tembusanItems" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
-
-        <TulisInputSifat v-model="selectedSifat" />
 
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
@@ -46,6 +46,25 @@
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
               </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+            <div class="flex items-center flex-1 w-full gap-2">
+
+              <input type="text" v-model="lampiranText" :maxlength="maxPerihal"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                placeholder="Ketik Lampiran" />
+
+              <span class="text-[10px] font-mono shrink-0 transition-colors"
+                :class="lampiranText.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
+                {{ lampiranText.length }}/{{ maxPerihal }}
+              </span>
+
             </div>
           </div>
         </div>
@@ -99,7 +118,7 @@
                         <tr>
                           <td class="align-top">Lampiran</td>
                           <td class="align-top">:</td>
-                          <td class="align-top">-</td>
+                          <td class="align-top">{{ lampiranText || '-' }}</td>
                         </tr>
                         <tr>
                           <td class="align-top">Perihal</td>
@@ -239,6 +258,7 @@ const isOpenPreview = ref(false);
 
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
+const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -279,7 +299,6 @@ const tinyMceInit = {
   }
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* 3. COMPUTED & HELPERS                                                      */
 /* -------------------------------------------------------------------------- */
@@ -309,6 +328,7 @@ const getPayload = (): SDIPayload => {
 
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
+    lampiran: lampiranText.value,
     konten: editorContent.value,
     english: false,
 
@@ -534,6 +554,7 @@ onMounted(async () => {
 
           // 1. Basic Fields (Perihal, Konten)
           subject.value = d.perihal || "";
+          lampiranText.value = d.lampiran || "";
           editorContent.value = d.konten || "";
           // Update TinyMCE jika editor sudah siap
           if (tinymceEditor.value) {

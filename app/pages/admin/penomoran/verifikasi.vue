@@ -334,6 +334,33 @@
           >Nomor Surat</label
         >
 
+        <!-- Warning jika ada nomor tanpa ID -->
+        <div
+          v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
+          class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2"
+        >
+          <svg
+            class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-yellow-800">Peringatan</p>
+            <p class="text-xs text-yellow-700 mt-1">
+              Beberapa nomor belum memiliki ID (status pending). Nomor tersebut
+              tidak dapat diproses sampai memiliki ID yang valid.
+            </p>
+          </div>
+        </div>
+
         <div class="space-y-3">
           <div
             v-for="(detail, idx) in selectedRow.details"
@@ -401,50 +428,66 @@
                 </div>
               </div>
 
-              <!-- Upload File -->
+              <!-- File Upload/Replace Section -->
               <div class="relative">
-                <label
-                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
-                >
-                  <svg
-                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-
-                  <div class="flex-1">
-                    <span class="text-gray-700 font-medium block">
-                      {{ files[idx]?.name || "Pilih file untuk diupload" }}
-                    </span>
-                    <span class="text-xs text-gray-500 mt-0.5 block">
-                      PDF, DOC, DOCX (Max 5MB)
-                    </span>
-                  </div>
-
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf,.doc,.docx"
-                    @change="handleFile(idx, $event)"
-                  />
-                </label>
-
-                <!-- File info if uploaded -->
+                <!-- Show existing file if available -->
                 <div
-                  v-if="files[idx]"
-                  class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+                  v-if="detail.file_name && !fileStates[idx]?.isReplacing"
+                  class="bg-white border border-gray-200 rounded-lg p-3"
                 >
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <svg
+                        class="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">
+                          {{ detail.file_name }}
+                        </p>
+                        <p class="text-xs text-gray-500">File sudah diupload</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <!-- Use file_url if available, otherwise use file_text with apiBaseUrl -->
+                      <a
+                        v-if="detail.file_url || detail.file_text"
+                        :href="
+                          detail.file_url || `${apiBaseUrl}/${detail.file_text}`
+                        "
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+                      >
+                        Lihat
+                      </a>
+                      <button
+                        @click="startReplacingFile(idx)"
+                        :disabled="isProcessing || fileStates[idx]?.isUploading"
+                        class="px-3 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50"
+                      >
+                        Ganti
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Upload/Replace form -->
+                <div v-else class="space-y-2">
+                  <label
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+                  >
                     <svg
-                      class="w-4 h-4 text-green-600"
+                      class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -453,21 +496,95 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-                    <span class="text-xs text-gray-700">
-                      {{ files[idx].name }} ({{
-                        formatFileSize(files[idx].size)
-                      }})
-                    </span>
-                  </div>
-                  <button
-                    @click.prevent="removeFile(idx)"
-                    class="text-red-500 hover:text-red-700 text-xs"
+
+                    <div class="flex-1">
+                      <span class="text-gray-700 font-medium block">
+                        {{
+                          fileStates[idx]?.file?.name ||
+                          files[idx]?.name ||
+                          "Pilih file untuk diupload (Opsional)"
+                        }}
+                      </span>
+                      <span class="text-xs text-gray-500 mt-0.5 block">
+                        PDF, DOC, DOCX (Max 5MB)
+                      </span>
+                    </div>
+
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.doc,.docx"
+                      @change="handleFile(idx, $event, detail)"
+                      :disabled="fileStates[idx]?.isUploading"
+                    />
+                  </label>
+
+                  <!-- File info if selected -->
+                  <div
+                    v-if="fileStates[idx]?.file || files[idx]"
+                    class="flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
                   >
-                    Hapus
-                  </button>
+                    <div class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span class="text-xs text-gray-700">
+                        {{
+                          fileStates[idx]?.file?.name ||
+                          files[idx]?.name ||
+                          "File baru"
+                        }}
+                        ({{
+                          formatFileSize(
+                            fileStates[idx]?.file?.size ||
+                              files[idx]?.size ||
+                              0,
+                          )
+                        }})
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <!-- Upload button (for replace) -->
+                      <button
+                        v-if="
+                          fileStates[idx]?.isReplacing && fileStates[idx]?.file
+                        "
+                        @click.prevent="uploadReplaceFile(idx, detail)"
+                        :disabled="fileStates[idx]?.isUploading"
+                        class="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {{
+                          fileStates[idx]?.isUploading
+                            ? "Uploading..."
+                            : "Upload"
+                        }}
+                      </button>
+                      <button
+                        @click.prevent="
+                          fileStates[idx]?.isReplacing
+                            ? cancelReplace(idx, detail)
+                            : removeFile(idx)
+                        "
+                        :disabled="fileStates[idx]?.isUploading"
+                        class="text-red-500 hover:text-red-700 text-xs disabled:opacity-50"
+                      >
+                        {{ fileStates[idx]?.isReplacing ? "Batal" : "Hapus" }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -566,10 +683,13 @@ import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
 
 const toast = useToast();
+const config = useRuntimeConfig();
+const apiBaseUrl = config.public.apiBaseUrl;
 
 // Composable & API
-const { getPersonWithPosition } = usePenomoran();
-const { get, post, del } = useApi();
+const { getPersonWithPosition, approveBulkNomor, rejectNomorRequest } =
+  usePenomoran();
+const { get, post, del, patch, api } = useApi();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -636,8 +756,18 @@ const rows = ref<any[]>([]);
 // Person Map
 const personMap = ref(new Map());
 
-// ✅ Files state untuk upload
+// Files state untuk upload
 const files = ref<any[]>([]);
+
+// File states untuk tracking replace
+interface FileState {
+  isReplacing: boolean;
+  isUploading: boolean;
+  file: File | null;
+  originalFileName: string | null;
+}
+
+const fileStates = ref<Record<number, FileState>>({});
 
 const fetchPersonMap = async () => {
   try {
@@ -734,7 +864,9 @@ const showPreview = async (row: any) => {
         nomor: d.nomor || null,
         template_nomor: template_nomor,
         status: d.status || "booking",
-        checked: true,
+        checked: d.status !== "ditolak" && d.status !== "hangus",
+        file_name: d.file_name || null,
+        file_text: d.file_text || null,
       }));
 
       const remaining = jumlah - details.length;
@@ -745,6 +877,8 @@ const showPreview = async (row: any) => {
           template_nomor: template_nomor,
           status: "pending",
           checked: true,
+          file_name: null,
+          file_text: null,
         });
       }
     } else {
@@ -755,6 +889,8 @@ const showPreview = async (row: any) => {
           template_nomor: template_nomor,
           status: "pending",
           checked: true,
+          file_name: null,
+          file_text: null,
         });
       }
     }
@@ -766,8 +902,8 @@ const showPreview = async (row: any) => {
       details: details,
     };
 
-    // ✅ Reset files state
     files.value = Array(jumlah).fill(null);
+    fileStates.value = {};
 
     keterangan_ditolak.value = "";
     openPreview.value = true;
@@ -784,19 +920,125 @@ const showPreview = async (row: any) => {
   }
 };
 
-/* ✅ Handle File Upload */
-const handleFile = (idx: number, event: Event) => {
+/* Start replacing file */
+const startReplacingFile = (idx: number) => {
+  const detail = selectedRow.value.details[idx];
+  fileStates.value[idx] = {
+    isReplacing: true,
+    isUploading: false,
+    file: null,
+    originalFileName: detail.file_name,
+  };
+};
+
+/* Cancel replace */
+const cancelReplace = (idx: number, detail: any) => {
+  delete fileStates.value[idx];
+};
+
+/* Handle File Upload */
+const handleFile = (idx: number, event: Event, detail: any) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
 
   if (!file) return;
 
-  files.value[idx] = {
-    file: file,
-    file_name: file.name,
-  };
+  // Validate file size (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.add({
+      title: "File terlalu besar",
+      description: "Ukuran file maksimal 5MB",
+      color: "red",
+    });
+    return;
+  }
 
-  console.log(`📎 File uploaded for index ${idx}:`, file.name);
+  if (fileStates.value[idx]?.isReplacing) {
+    fileStates.value[idx].file = file;
+  } else {
+    files.value[idx] = file;
+  }
+
+  console.log(`📎 File selected for index ${idx}:`, file.name);
+};
+
+/* Upload replace file */
+const uploadReplaceFile = async (idx: number, detail: any) => {
+  if (!detail.id) {
+    toast.add({
+      title: "Gagal",
+      description: "Detail ID tidak ditemukan",
+      color: "red",
+    });
+    return;
+  }
+
+  const fileState = fileStates.value[idx];
+  if (!fileState || !fileState.file) {
+    toast.add({
+      title: "Peringatan",
+      description: "Pilih file terlebih dahulu",
+      color: "yellow",
+    });
+    return;
+  }
+
+  fileState.isUploading = true;
+
+  try {
+    const formData = new FormData();
+    formData.append("file", fileState.file);
+
+    console.log(`📤 Replacing file for detail ID: ${detail.id}`);
+
+    const response = await api.patch(
+      `/admin/nomor-request-detail/${detail.id}/file`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    console.log("✅ File replace response:", response.data);
+
+    if (response.data?.success) {
+      detail.file_name = response.data.data.file_name;
+      detail.file_text = response.data.data.file_text;
+
+      toast.add({
+        title: "Berhasil",
+        description: "File berhasil diganti",
+        color: "green",
+      });
+
+      delete fileStates.value[idx];
+    } else {
+      throw new Error(response.data?.message || "Gagal mengganti file");
+    }
+  } catch (error: any) {
+    console.error("❌ Error replace file:", error);
+
+    const errorMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Gagal mengganti file";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
+  } finally {
+    fileState.isUploading = false;
+  }
+};
+
+/* Remove file */
+const removeFile = (idx: number) => {
+  files.value[idx] = null;
 };
 
 /* Display nomor */
@@ -830,24 +1072,49 @@ const getFileName = (path: string) => {
   return path.split("/").pop() || path;
 };
 
+/* Format file size */
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+};
+
 // Computed untuk validasi dan counting
 const hasAnyChecked = computed(() => {
-  return selectedRow.value?.details?.some((d: any) => d.checked) || false;
+  return (
+    selectedRow.value?.details?.some(
+      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
+    ) || false
+  );
 });
 
 const hasUnchecked = computed(() => {
-  return selectedRow.value?.details?.some((d: any) => !d.checked) || false;
+  return (
+    selectedRow.value?.details?.some(
+      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
+    ) || false
+  );
 });
 
 const checkedCount = computed(() => {
-  return selectedRow.value?.details?.filter((d: any) => d.checked).length || 0;
+  return (
+    selectedRow.value?.details?.filter(
+      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
+    ).length || 0
+  );
 });
 
 const uncheckedCount = computed(() => {
-  return selectedRow.value?.details?.filter((d: any) => !d.checked).length || 0;
+  return (
+    selectedRow.value?.details?.filter(
+      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
+    ).length || 0
+  );
 });
 
-/* ✅ KONFIRMASI APPROVAL */
+/* KONFIRMASI APPROVAL */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
     toast.add({
@@ -860,20 +1127,26 @@ const confirmApproval = () => {
   showConfirmApprove.value = true;
 };
 
-/* ✅ PROSES APPROVAL - APPROVE SATU PER SATU */
+/* PROSES APPROVAL menggunakan composable */
 const processApproval = async () => {
   showConfirmApprove.value = false;
-
   if (!selectedRow.value) return;
 
+  // Filter detail yang checked dan memiliki ID yang valid
   const approvedDetails = selectedRow.value.details.filter(
-    (d: any) => d.checked,
+    (d) =>
+      d.checked &&
+      d.id &&
+      d.id !== null &&
+      d.id !== "null" &&
+      d.id !== undefined,
   );
 
   if (approvedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description: "Pilih minimal 1 nomor untuk disetujui!",
+      description:
+        "Tidak ada nomor yang dapat disetujui. Pastikan nomor memiliki ID yang valid.",
       color: "yellow",
     });
     return;
@@ -882,131 +1155,22 @@ const processApproval = async () => {
   isProcessing.value = true;
 
   try {
-    const detailsWithId = approvedDetails.filter((d) => d.id !== null);
-    const detailsWithoutId = approvedDetails.filter((d) => d.id === null);
+    const detailIds = approvedDetails.map((d) => d.id);
 
-    let allDetailIds = detailsWithId.map((d) => d.id);
+    console.log("📤 Approving detail IDs:", detailIds);
 
-    if (detailsWithoutId.length > 0) {
-      console.log(`📞 Booking ${detailsWithoutId.length} nomor baru...`);
-
-      for (let i = 0; i < detailsWithoutId.length; i++) {
-        try {
-          const bookingRes = await post(
-            `/admin/nomor-request/${selectedRow.value.id}/booking`,
-            {},
-          );
-
-          if (bookingRes?.success && bookingRes?.data?.details) {
-            bookingRes.data.details.forEach((detail: any) => {
-              if (detail.id) {
-                allDetailIds.push(detail.id);
-              }
-            });
-          }
-        } catch (err) {
-          console.error("❌ Error booking:", err);
-        }
-      }
-    }
-
-    if (allDetailIds.length === 0) {
-      toast.add({
-        title: "Gagal",
-        description: "Tidak dapat mengambil detail ID untuk approve",
-        color: "red",
-      });
-      return;
-    }
-
-    console.log("📝 Detail IDs untuk approve:", allDetailIds);
-
-    let successCount = 0;
-    let failedCount = 0;
-    const results: any[] = [];
-
-    for (const detailId of allDetailIds) {
-      try {
-        console.log(`📤 Approving detail ID: ${detailId}`);
-
-        const approveRes = await post(
-          `/admin/nomor-request-detail/${detailId}/approve`,
-          {},
-        );
-
-        if (approveRes?.success) {
-          successCount++;
-          results.push({
-            id: detailId,
-            nomor: approveRes.data?.nomor || null,
-            status: approveRes.data?.status || "terpakai",
-            success: true,
-          });
-          console.log(`✅ Detail ${detailId} approved:`, approveRes.data);
-        } else {
-          failedCount++;
-          results.push({
-            id: detailId,
-            success: false,
-            error: approveRes?.message || "Unknown error",
-          });
-          console.log(`❌ Detail ${detailId} failed:`, approveRes?.message);
-        }
-      } catch (err: any) {
-        failedCount++;
-        results.push({
-          id: detailId,
-          success: false,
-          error: err.response?.data?.message || err.message,
-        });
-        console.error(`❌ Error approve detail ${detailId}:`, err);
-      }
-    }
-
-    console.log("✅ Approval selesai:", {
-      total: allDetailIds.length,
-      success: successCount,
-      failed: failedCount,
-      results: results,
-    });
-
-    if (successCount > 0) {
-      toast.add({
-        title: "Berhasil",
-        description: `${successCount} nomor berhasil disetujui dan digenerate`,
-        color: "green",
-      });
-    }
-
-    if (failedCount > 0) {
-      toast.add({
-        title: "Peringatan",
-        description: `${failedCount} nomor gagal digenerate`,
-        color: "yellow",
-      });
-    }
+    await approveBulkNomor(detailIds);
 
     openPreview.value = false;
-    fetchData();
+    await fetchData();
   } catch (error: any) {
-    console.error("❌ Error approve:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      "Terjadi kesalahan saat menyetujui nomor";
-
-    toast.add({
-      title: "Gagal",
-      description: Array.isArray(errorMsg) ? errorMsg.join(", ") : errorMsg,
-      color: "red",
-    });
+    console.error("❌ Error approval:", error);
   } finally {
     isProcessing.value = false;
   }
 };
 
-/* ✅ KONFIRMASI REJECTION */
+/* KONFIRMASI REJECTION */
 const confirmRejection = () => {
   if (!hasUnchecked.value) {
     toast.add({
@@ -1029,20 +1193,27 @@ const confirmRejection = () => {
   showConfirmReject.value = true;
 };
 
-/* ✅ PROSES REJECTION */
+/* PROSES REJECTION menggunakan composable */
 const processRejection = async () => {
   showConfirmReject.value = false;
 
   if (!selectedRow.value) return;
 
+  // Filter detail yang tidak checked dan memiliki ID yang valid
   const rejectedDetails = selectedRow.value.details.filter(
-    (d: any) => !d.checked,
+    (d: any) =>
+      !d.checked &&
+      d.id &&
+      d.id !== null &&
+      d.id !== "null" &&
+      d.id !== undefined,
   );
 
   if (rejectedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description: "Tidak ada nomor yang akan ditolak!",
+      description:
+        "Tidak ada nomor yang dapat ditolak. Pastikan nomor memiliki ID yang valid.",
       color: "yellow",
     });
     return;
@@ -1060,49 +1231,20 @@ const processRejection = async () => {
   isProcessing.value = true;
 
   try {
-    const detailIdsToReject = rejectedDetails
-      .filter((d) => d.id !== null)
-      .map((d) => d.id);
+    const detailIds = rejectedDetails.map((d) => d.id);
 
-    console.log("📝 Detail IDs yang akan ditolak:", detailIdsToReject);
-    console.log("📝 ID Usulan utama:", selectedRow.value.id);
+    console.log("📤 Rejecting detail IDs:", detailIds);
 
-    const rejectRes = await post(
-      `/admin/nomor-request/${selectedRow.value.id}/reject`,
-      {
-        keterangan: keterangan_ditolak.value,
-        detail_ids: detailIdsToReject,
-      },
+    await rejectNomorRequest(
+      selectedRow.value.id,
+      detailIds,
+      keterangan_ditolak.value,
     );
 
-    console.log("✅ Response reject:", rejectRes);
-
-    if (rejectRes?.success) {
-      toast.add({
-        title: "Berhasil",
-        description: `Usulan berhasil ditolak dengan ${rejectedDetails.length} nomor ditolak`,
-        color: "green",
-      });
-
-      openPreview.value = false;
-      await fetchData();
-    } else {
-      throw new Error(rejectRes?.message || "Gagal menolak usulan");
-    }
+    openPreview.value = false;
+    await fetchData();
   } catch (error: any) {
     console.error("❌ Error rejection:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Terjadi kesalahan saat menolak nomor";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }

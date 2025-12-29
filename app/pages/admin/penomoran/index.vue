@@ -98,7 +98,7 @@
           <tbody>
             <tr
               v-for="row in paginatedRows"
-              :key="row.id"
+              :key="row.id_request"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
               @click="openRowModal(row)"
             >
@@ -119,22 +119,22 @@
                 </div>
               </td>
 
-              <!-- ✅ Tampilkan semua nomor dalam satu cell -->
+              <!-- Tampilkan nomor dalam satu cell -->
               <td class="px-5 py-4">
                 <div class="flex flex-col gap-0.5">
                   <div class="text-sm text-gray-900">{{ row.tanggal }}</div>
                   <div class="text-xs text-gray-600 space-y-0.5">
                     <div
-                      v-for="(nomor, idx) in row.nomor_surat.slice(0, 3)"
+                      v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
                       :key="idx"
                     >
                       {{ nomor }}
                     </div>
                     <div
-                      v-if="row.nomor_surat.length > 3"
+                      v-if="row.nomor_list.length > 3"
                       class="text-primary font-medium"
                     >
-                      +{{ row.nomor_surat.length - 3 }} nomor lainnya
+                      +{{ row.nomor_list.length - 3 }} nomor lainnya
                     </div>
                   </div>
                 </div>
@@ -196,11 +196,11 @@
       </div>
     </div>
 
-    <!-- ✅ COMPONENT ADD USULAN (Include modal sendiri) -->
+    <!-- COMPONENT ADD USULAN -->
     <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
   </div>
 
-  <!-- ✅ MODAL ROW DETAIL (Untuk preview data existing) -->
+  <!-- MODAL ROW DETAIL -->
   <Modal
     :model-value="openPreview"
     @update:model-value="openPreview = $event"
@@ -208,102 +208,127 @@
     size="xl"
   >
     <template #title>
-      <div class="flex justify-between items-center w-full px-6 pt-10"></div>
+      <div
+        class="flex justify-between items-center w-full px-6 pt-0 pb-10"
+      ></div>
     </template>
 
     <div
       v-if="selectedRow"
-      class="px-6 pb-2 space-y-6 text-[15px] overflow-y-auto"
+      class="px-6 pb-3 space-y-6 text-sm overflow-y-auto overflow-x-hidden overflow-y-auto max-h-[70vh]"
     >
-      <div class="flex items-center justify-between">
-        <div class="flex-1">
-          <template v-if="!isEditingTitle">
-            <Heading
-              variant="heading8sb"
-              class="text-xl font-semibold leading-relaxed"
+      <!-- Loading state saat fetch detail -->
+      <div v-if="loadingDetail" class="space-y-3">
+        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+      </div>
+
+      <template v-else>
+        <!-- Judul -->
+        <div class="flex items-center justify-between">
+          <div class="flex-1 min-w-0">
+            <template v-if="!isEditingTitle">
+              <h3
+                class="text-xl font-bold leading-relaxed text-gray-900 break-words"
+              >
+                {{ detailData?.perihal || selectedRow?.perihal }}
+              </h3>
+            </template>
+
+            <template v-else>
+              <input
+                v-model="editedTitle"
+                class="border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 w-full text-sm"
+              />
+            </template>
+          </div>
+
+          <div class="ml-4">
+            <button
+              v-if="!isEditingTitle"
+              class="text-primary text-sm flex items-center gap-1"
+              @click="startEditTitle"
             >
-              {{ selectedRow?.perihal }}
-            </Heading>
-          </template>
+              <i class="fas fa-pen text-xs"></i> Edit
+            </button>
 
-          <template v-else>
-            <input
-              v-model="editedTitle"
-              class="border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 w-full text-sm"
-            />
-          </template>
+            <button
+              v-else
+              class="text-primary text-sm flex items-center gap-1"
+              @click="saveTitle"
+            >
+              <i class="fas fa-save text-xs"></i> Simpan
+            </button>
+          </div>
         </div>
 
-        <div class="ml-4">
-          <button
-            v-if="!isEditingTitle"
-            class="text-primary text-sm flex items-center gap-1"
-            @click="startEditTitle"
-          >
-            <i class="fas fa-pen text-xs"></i> Edit
-          </button>
-
-          <button
-            v-else
-            class="text-primary text-sm flex items-center gap-1"
-            @click="saveTitle"
-          >
-            <i class="fas fa-save text-xs"></i> Simpan
-          </button>
+        <!-- Tanggal -->
+        <div class="pb-1 border-b border-gray-200">
+          <p class="text-gray-500 text-xs">Tanggal</p>
+          <p class="font-medium mt-1">
+            {{ formatTanggal(detailData?.tanggal || selectedRow?.tanggal) }}
+          </p>
         </div>
-      </div>
 
-      <div class="pb-2 border-b border-gray-200 space-y-1">
-        <p class="text-gray-600 text-xs mt-1">Tanggal</p>
-        <p class="font-medium text-gray-900">
-          {{ selectedRow.tanggal }}
-        </p>
-      </div>
+        <!-- Penandatangan -->
+        <div class="pb-1 border-b border-gray-200">
+          <p class="text-gray-500 text-xs">Penandatangan</p>
+          <p class="font-medium mt-1">
+            {{ detailData?.jabatan || selectedRow?.jabatan }}
+          </p>
+        </div>
 
-      <div class="pb-2 border-b border-gray-200 space-y-1">
-        <p class="text-gray-600 text-xs mt-1">Pengirim</p>
-        <p class="font-medium text-gray-900">
-          {{ selectedRow.pengusul }}
-        </p>
-      </div>
+        <!-- Klasifikasi -->
+        <div class="pb-1 border-b border-gray-200">
+          <p class="text-gray-500 text-xs">Klasifikasi</p>
+          <p class="font-medium mt-1 break-words">
+            {{
+              detailData?.klasifikasiDisplay ||
+              selectedRow?.klasifikasiDisplay ||
+              detailData?.klasifikasi ||
+              selectedRow?.klasifikasi
+            }}
+          </p>
+        </div>
 
-      <!-- ✅ Klasifikasi dengan format "CODE - TEXT" -->
-      <div class="pb-3 border-b border-gray-200 space-y-1">
-        <p class="text-gray-500 text-xs">Klasifikasi</p>
-        <p class="font-medium text-gray-900 mt-1">
-          {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi }}
-        </p>
-      </div>
+        <!-- Jenis Naskah -->
+        <div class="pb-1 border-b border-gray-200">
+          <p class="text-gray-500 text-xs">Jenis Naskah</p>
+          <p class="font-medium mt-1 break-words">
+            {{ detailData?.jenis || selectedRow?.jenis }}
+          </p>
+        </div>
 
-      <div class="pb-2 border-b border-gray-200 space-y-1">
-        <p class="text-gray-600 text-xs">Jenis Naskah</p>
-        <p class="font-medium text-gray-900 mt-1">
-          {{ selectedRow.jenis_naskah }}
-        </p>
-      </div>
+        <!-- Nomor Surat & Files -->
+        <div class="mt-2">
+          <label
+            class="text-xs font-medium text-gray-700 mb-2 justify-between break-words"
+          >
+            Nomor Surat & File ({{ detailData?.nomor_list?.length || 0 }} nomor)
+          </label>
 
-      <div class="mt-2">
-        <label class="text-xs">Nomor Surat</label>
-        <div
-          v-if="Array.isArray(selectedRow.nomor_surat)"
-          class="space-y-4 mt-2"
-        >
           <div
-            v-for="(no, idx) in selectedRow.nomor_surat"
-            :key="idx"
-            class="space-y-2"
+            v-if="detailData?.nomor_list && detailData.nomor_list.length > 0"
+            class="space-y-4 mt-2"
           >
-            <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
-              <!-- Nomor surat -->
+            <div
+              v-for="(item, idx) in detailData.nomor_list"
+              :key="idx"
+              class="border border-gray-300 rounded-lg p-4 bg-gray-50"
+            >
+              <!-- Nomor surat dengan copy button -->
               <div class="flex items-center gap-2 mb-3">
-                <input
-                  class="flex-1 bg-white border border-gray-200 rounded-md text-sm font-mono px-3 py-2"
-                  :value="`${idx + 1}. ${no}`"
-                  readonly
-                />
+                <div
+                  class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+                >
+                  <span class="text-sm font-mono text-gray-700 break-words">
+                    {{ idx + 1 }}. {{ item.nomor }}
+                  </span>
+                </div>
 
                 <button
-                  @click="handleCopy(no)"
+                  @click="handleCopy(item.nomor)"
                   class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
                   title="Copy nomor surat"
                 >
@@ -311,50 +336,15 @@
                 </button>
               </div>
 
-              <!-- Upload dengan ICON -->
-              <div class="relative">
-                <label
-                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
-                >
-                  <svg
-                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-
-                  <div class="flex-1">
-                    <span class="text-gray-700 font-medium block">
-                      {{ files[idx]?.name || "Pilih file untuk diupload" }}
-                    </span>
-                    <span class="text-xs text-gray-500 mt-0.5 block">
-                      PDF, DOC, DOCX (Max 5MB)
-                    </span>
-                  </div>
-
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf,.doc,.docx"
-                    @change="handleFile(idx, $event)"
-                  />
-                </label>
-
-                <!-- File info if uploaded -->
-                <div
-                  v-if="files[idx]"
-                  class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
-                >
-                  <div class="flex items-center gap-2">
+              <!-- File info -->
+              <div
+                v-if="item.file_name"
+                class="bg-white border border-green-200 rounded-md p-3 break-words"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
                     <svg
-                      class="w-4 h-4 text-green-600"
+                      class="w-5 h-5 text-green-600 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -363,98 +353,128 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    <span class="text-xs text-gray-700">
-                      {{ files[idx].name }} ({{
-                        formatFileSize(files[idx].size)
-                      }})
-                    </span>
+
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
+                      >
+                        {{ item.file_name }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        Status:
+                        <span class="capitalize">{{ item.status }}</span>
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    @click.prevent="removeFile(idx)"
-                    class="text-red-500 hover:text-red-700 text-xs"
+
+                  <!-- <div class="flex items-center gap-2 flex-1">
+                    <svg
+                      class="w-5 h-5 text-green-600 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
+                      >
+                        {{ item.file_name }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        Status:
+                        <span class="capitalize">{{ item.status }}</span>
+                      </p>
+                    </div>
+                  </div> -->
+
+                  <a
+                    v-if="item.file_text"
+                    :href="getFileUrl(item.file_text)"
+                    target="_blank"
+                    class="ml-2 px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-800 transition flex-shrink-0"
                   >
-                    Hapus
-                  </button>
+                    Download
+                  </a>
+                </div>
+              </div>
+
+              <!-- No file uploaded -->
+              <div
+                v-else
+                class="bg-yellow-50 border border-yellow-200 rounded-md p-3"
+              >
+                <div class="flex items-center gap-2">
+                  <svg
+                    class="w-5 h-5 text-yellow-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <span class="text-sm text-yellow-800">
+                    Belum ada file diupload
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Single nomor surat -->
-        <div v-else class="mt-2 space-y-2">
-          <div class="flex items-center gap-2">
-            <input
-              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50"
-              :value="`1. ${selectedRow.nomor_surat}`"
-              readonly
-            />
-
-            <button
-              @click="handleCopy(selectedRow.nomor_surat)"
-              class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center"
-            >
-              <Copy class="w-4 h-4 text-gray-600" />
-            </button>
-          </div>
-
-          <!-- Upload tunggal -->
-          <label
-            class="w-full flex items-center gap-3 cursor-pointer border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
-          >
-            <svg
-              class="w-5 h-5 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-              />
-            </svg>
-
-            <span class="text-gray-600">
-              {{ files[0]?.file_name || "Upload File" }}
-            </span>
-
-            <input type="file" class="hidden" @change="handleFile(0, $event)" />
-          </label>
-        </div>
-        <!-- File upload warning -->
-        <div
-          v-if="selectedRow?.status === 'Belum Diajukan'"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2"
-        >
-          <svg
-            class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div class="text-xs text-blue-800">
-            <p class="font-medium">Upload file sebelum mengirim usulan</p>
-            <p class="mt-1 text-blue-700">
-              Pastikan file yang diupload sesuai dengan nomor surat yang akan
-              diajukan.
-            </p>
+          <!-- Fallback jika tidak ada detail -->
+          <div v-else class="text-center py-4 text-gray-500 text-sm">
+            Tidak ada data nomor surat
           </div>
         </div>
-      </div>
+      </template>
     </div>
+
+    <!-- FOOTER -->
+    <!-- <template #footer>
+      <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <button
+          @click="openPreview = false"
+          class="px-5 py-2 text-xs border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
+        >
+          Tutup
+        </button>
+
+        <button
+          @click="hapusNomor"
+          :disabled="isDeletingNomor"
+          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {{ isDeletingNomor ? "Menghapus..." : "Hapus" }}
+        </button>
+      </div>
+    </template> -->
   </Modal>
+
+  <!-- CONFIRM DELETE POPUP -->
+  <ConfirmPopup
+    v-model="openConfirmDelete"
+    type="danger"
+    title="Hapus Penomoran?"
+    message="Data penomoran yang dihapus tidak dapat dikembalikan. Apakah Anda yakin?"
+    confirm-text="Ya, Hapus"
+    cancel-text="Batal"
+    :is-loading="isDeletingNomor"
+    @confirm="confirmDeleteNomor"
+  />
 </template>
 
 <script setup lang="ts">
@@ -464,26 +484,65 @@ import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
 
 const toast = useToast();
-const files = ref<any[]>([]);
+const config = useRuntimeConfig();
 
-// ✅ Composable
+// Composable
 const {
   createPenomoranFinal,
   getPersonWithPosition,
   isLoadingPenomoran,
   getKlasifikasi,
-  deleteUsulan,
+  deleteNomor,
+  getDetailNomor,
 } = usePenomoran();
 const { get } = useApi();
 
-// ✅ Klasifikasi mapping untuk display
+// State
 const klasifikasiMap = ref(new Map());
+const personMap = ref(new Map());
+const loading = ref<boolean>(true);
+const loadingDetail = ref<boolean>(false);
+const isDeletingNomor = ref(false);
+const openAdd = ref<boolean>(false);
+const openPreview = ref(false);
+const openConfirmDelete = ref(false);
+const selectedRow = ref(null);
+const detailData = ref(null);
+const rows = ref<any[]>([]);
+const idToDelete = ref<string | null>(null);
 
-// ✅ Fetch klasifikasi map untuk display
+// Edit title
+const isEditingTitle = ref(false);
+const editedTitle = ref("");
+
+// Table config
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const search = ref<string>("");
+const currentPage = ref<number>(1);
+const sortBy = ref<string>("created_at");
+const sortDir = ref<"asc" | "desc">("desc");
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Penomoran", to: "/admin/penomoran" },
+];
+
+const headers = [
+  { label: "Jenis", key: "jenis", sortable: true },
+  { label: "Penandatangan", key: "jabatan", sortable: false },
+  { label: "Perihal", key: "perihal", sortable: false },
+  { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
+  { label: "Pengusul", key: "pengusul", sortable: false },
+  { label: "Waktu", key: "waktu", sortable: true },
+];
+
+// Fetch klasifikasi map
 const fetchKlasifikasiMap = async () => {
   try {
     const response = await getKlasifikasi();
@@ -504,8 +563,7 @@ const fetchKlasifikasiMap = async () => {
   }
 };
 
-const personMap = ref(new Map());
-
+// Fetch person map
 const fetchPersonMap = async () => {
   try {
     const response = await getPersonWithPosition();
@@ -524,50 +582,41 @@ const fetchPersonMap = async () => {
   }
 };
 
-/* Breadcrumb */
-const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Penomoran", to: "/admin/penomoran" },
-];
+// Get file URL
+const getFileUrl = (filePath: string) => {
+  return `${config.public.apiBaseUrl}/${filePath}`;
+};
 
-/* TABLE CONFIG */
-const headers = [
-  { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Penandatangan", key: "penandatangan", sortable: false },
-  { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Tanggal & Nomor", key: "tanggal_nomor", sortable: true },
-  { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Waktu", key: "waktu", sortable: true },
-];
-
-/* EDIT JUDUL */
-const isEditingTitle = ref(false);
-const editedTitle = ref("");
-
+// Edit title functions
 function startEditTitle() {
-  if (!selectedRow.value) return;
-  editedTitle.value = selectedRow.value.perihal;
+  if (!detailData.value) return;
+  editedTitle.value = detailData.value.perihal;
   isEditingTitle.value = true;
 }
 
 function saveTitle() {
-  if (!selectedRow.value) return;
-  selectedRow.value.perihal = editedTitle.value;
+  if (!detailData.value) return;
+  detailData.value.perihal = editedTitle.value;
   isEditingTitle.value = false;
+
+  toast.add({
+    title: "Berhasil",
+    description: "Judul berhasil diperbarui",
+    color: "green",
+  });
 }
 
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [5, 10, 20, 50];
-const search = ref<string>("");
-const currentPage = ref<number>(1);
+// Handle copy
+const handleCopy = (value: string) => {
+  navigator.clipboard.writeText(value);
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+  });
+};
 
-/* Loading */
-const loading = ref<boolean>(true);
-
-/* SORT STATE */
-const sortBy = ref<string>("created_at");
-const sortDir = ref<"asc" | "desc">("desc");
-
+// Sort function
 const sort = (col: string) => {
   if (sortBy.value === col) {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -577,15 +626,112 @@ const sort = (col: string) => {
   }
 };
 
-/* Modal control */
-const openAdd = ref<boolean>(false);
-const openPreview = ref(false);
-const selectedRow = ref(null);
+// Grouping duplicate rows by id_request
+function groupDuplicateRows(dataArray) {
+  const grouped = new Map();
 
-/* Data rows */
-const rows = ref<any[]>([]);
+  dataArray.forEach((item) => {
+    const key = item.id_request;
 
-// ✅ HANDLER SUBMIT DARI MODAL ADD USULAN
+    if (grouped.has(key)) {
+      const existing = grouped.get(key);
+      existing.nomor_list.push(item.nomor);
+    } else {
+      const klasifikasiDisplay =
+        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+
+      grouped.set(key, {
+        id_request: item.id_request,
+        jenis: item.jenis,
+        jabatan: item.jabatan || "-",
+        perihal: item.perihal || "-",
+        tanggal: formatTanggal(item.tanggal),
+        pengusul: item.nama_pengirim || "-",
+        waktu: formatWaktu(item.waktu),
+        klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay: klasifikasiDisplay,
+        nomor_list: [item.nomor],
+        created_at: item.waktu,
+      });
+    }
+  });
+
+  return Array.from(grouped.values());
+}
+
+// Get list nomor
+const getListNomor = async () => {
+  try {
+    const res = await get("/nomor");
+
+    console.log("📦 Response from /nomor:", res);
+
+    if (!res?.success || !Array.isArray(res.data)) return [];
+
+    return groupDuplicateRows(res.data);
+  } catch (error) {
+    console.error("❌ Error fetch data nomor:", error);
+    toast.add({
+      title: "Gagal memuat data",
+      description: "Tidak dapat mengambil data penomoran",
+      color: "red",
+    });
+    return [];
+  }
+};
+
+// Open row modal
+const openRowModal = async (row) => {
+  selectedRow.value = row;
+  openPreview.value = true;
+  loadingDetail.value = true;
+  detailData.value = null;
+
+  try {
+    console.log("🔍 Fetching detail for ID:", row.id_request);
+    const detail = await getDetailNomor(row.id_request);
+
+    console.log("📦 Detail response:", detail);
+
+    if (detail) {
+      const klasifikasiDisplay =
+        klasifikasiMap.value.get(detail.klasifikasi) || detail.klasifikasi;
+
+      detailData.value = {
+        ...detail,
+        klasifikasiDisplay: klasifikasiDisplay,
+      };
+    } else {
+      detailData.value = {
+        ...row,
+        nomor_list: row.nomor_list.map((nomor, idx) => ({
+          id: `${row.id_request}-${idx}`,
+          nomor: nomor,
+          status: "terpakai",
+          file_name: null,
+          file_text: null,
+        })),
+      };
+    }
+  } catch (error) {
+    console.error("❌ Error fetching detail:", error);
+
+    detailData.value = {
+      ...row,
+      nomor_list: row.nomor_list.map((nomor, idx) => ({
+        id: `${row.id_request}-${idx}`,
+        nomor: nomor,
+        status: "terpakai",
+        file_name: null,
+        file_text: null,
+      })),
+    };
+  } finally {
+    loadingDetail.value = false;
+  }
+};
+
+// Handle submit from modal
 const handleSubmitFromModal = async (payload) => {
   console.log("📥 Received payload from AddUsulan:", payload);
 
@@ -593,32 +739,12 @@ const handleSubmitFromModal = async (payload) => {
     const response = await createPenomoranFinal(payload);
     console.log("✅ Response dari backend:", response);
 
-    const klasifikasiDisplay =
-      klasifikasiMap.value.get(payload.klasifikasi) || payload.klasifikasi;
-
-    rows.value.unshift({
-      id: response.data?.id || response.id,
-      jenis: response.data?.jenis || payload.jenis,
-      jabatan: response.data?.penandatangan || payload.penandatangan || "-",
-      perihal: response.data?.perihal || payload.perihal,
-      tanggal_nomor: formatTanggalNomor(
-        response.data?.tanggal || payload.tanggal,
-      ),
-      pengusul: "Anda",
-      waktu: formatWaktu(response.data?.created_at || new Date().toISOString()),
-      tanggal: formatTanggal(response.data?.tanggal || payload.tanggal),
-      klasifikasi: response.data?.klasifikasi || payload.klasifikasi,
-      klasifikasiDisplay: klasifikasiDisplay,
-      jenis_naskah: `${response.data?.jenis || payload.jenis} - ${response.data?.perihal || payload.perihal}`,
-      nomor_surat: [],
-      files: [],
-    });
-
+    await refreshList();
     currentPage.value = 1;
 
     toast.add({
       title: "Berhasil",
-      description: "Data penomoran berhasil ditambahkan ke tabel",
+      description: "Data penomoran berhasil ditambahkan",
       color: "green",
     });
   } catch (error) {
@@ -632,79 +758,51 @@ const handleSubmitFromModal = async (payload) => {
   }
 };
 
-/* Function saat klik row */
-function openRowModal(row) {
-  selectedRow.value = row;
-  files.value = row.files || [];
-  openPreview.value = true;
-}
-
-/* Submit & Hapus */
-const submitUsulan = () => {
-  openPreview.value = false;
-  toast.add({
-    title: "Usulan berhasil dikirim",
-    description: "Data usulan nomor surat telah dikirim.",
-    color: "green",
-  });
-};
-
+// Refresh list
 const refreshList = async () => {
   loading.value = true;
   const data = await getListNomor();
   rows.value = data.sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at),
   );
-
   loading.value = false;
 };
 
-const hapusUsulan = async () => {
-  if (!selectedRow.value?.id) return;
+// Delete functions
+const hapusNomor = () => {
+  if (!selectedRow.value?.id_request) return;
+  idToDelete.value = selectedRow.value.id_request;
+  openConfirmDelete.value = true;
+};
 
-  const confirmed = confirm("Apakah Anda yakin ingin menghapus usulan ini?");
-  if (!confirmed) return;
+const confirmDeleteNomor = async () => {
+  if (!idToDelete.value) return;
+
+  isDeletingNomor.value = true;
 
   try {
-    await deleteUsulan(selectedRow.value.id);
+    await deleteNomor(idToDelete.value);
 
+    openConfirmDelete.value = false;
     openPreview.value = false;
     selectedRow.value = null;
+    idToDelete.value = null;
 
     await refreshList();
 
     toast.add({
       title: "Berhasil",
-      description: "Usulan berhasil dihapus",
+      description: "Data penomoran berhasil dihapus",
       color: "green",
     });
   } catch (error) {
-    console.error("❌ Error hapus usulan:", error);
+    console.error("❌ Error hapus nomor:", error);
+  } finally {
+    isDeletingNomor.value = false;
   }
 };
 
-const handleCopy = (value: string) => {
-  navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-  });
-};
-
-const handleFile = (idx: number, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (file) {
-    if (!files.value[idx]) {
-      files.value[idx] = {};
-    }
-    files.value[idx].file_name = file.name;
-  }
-};
-
-/* FILTER + SEARCH */
+// Filter & Search
 const filteredRows = computed(() => {
   return rows.value.filter((row) => {
     const matchesSearch =
@@ -717,19 +815,17 @@ const filteredRows = computed(() => {
   });
 });
 
-/* SORT */
+// Sort
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
-    const A = a[sortBy.value];
-    const B = b[sortBy.value];
+    const A = new Date(a[sortBy.value]).getTime();
+    const B = new Date(b[sortBy.value]).getTime();
 
-    if (A < B) return sortDir.value === "asc" ? -1 : 1;
-    if (A > B) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
+    return sortDir.value === "asc" ? A - B : B - A;
   });
 });
 
-/* PAGINATION */
+// Pagination
 const totalPages = computed(() =>
   Math.ceil(sortedRows.value.length / rowsPerPage.value),
 );
@@ -739,115 +835,38 @@ const paginatedRows = computed(() => {
   return sortedRows.value.slice(start, start + rowsPerPage.value);
 });
 
-/* Reset page saat filter/search berubah */
-watch([search, rowsPerPage], () => {
-  currentPage.value = 1;
-});
-
-/* Format helpers */
+// Format helpers
 function formatTanggal(dateStr) {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("id-ID");
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function formatWaktu(dateStr) {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleTimeString("id-ID", {
+  return new Date(dateStr).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function formatTanggalNomor(tanggal) {
-  return `${formatTanggal(tanggal)} / -`;
-}
+// Watchers
+watch([search, rowsPerPage], () => {
+  currentPage.value = 1;
+});
 
-// ✅ FUNGSI UNTUK GROUPING DATA DUPLIKAT
-function groupDuplicateRows(dataArray) {
-  const grouped = new Map();
-
-  dataArray.forEach((item) => {
-    // Buat key unik berdasarkan: jenis, jabatan, perihal, tanggal, pengusul
-    const key = `${item.jenis}|${item.jabatan}|${item.perihal}|${item.tanggal}|${item.pengusul}`;
-
-    if (grouped.has(key)) {
-      // Jika sudah ada, tambahkan nomor surat ke array
-      const existing = grouped.get(key);
-      if (Array.isArray(item.nomor_surat)) {
-        existing.nomor_surat.push(...item.nomor_surat);
-      } else if (item.nomor_surat) {
-        existing.nomor_surat.push(item.nomor_surat);
-      }
-
-      // Merge files jika ada
-      if (item.files && item.files.length > 0) {
-        existing.files.push(...item.files);
-      }
-    } else {
-      // Jika belum ada, buat entry baru
-      grouped.set(key, {
-        ...item,
-        nomor_surat: Array.isArray(item.nomor_surat)
-          ? [...item.nomor_surat]
-          : item.nomor_surat
-            ? [item.nomor_surat]
-            : [],
-        files: item.files ? [...item.files] : [],
-      });
-    }
-  });
-
-  // Convert Map ke Array
-  return Array.from(grouped.values());
-}
-
-/* ✅ GET DATA DARI API */
-const getListNomor = async () => {
-  try {
-    const res = await get("/nomor");
-
-    if (!res?.success || !Array.isArray(res.data)) return [];
-
-    const mappedData = res.data.map((item) => {
-      const klasifikasiDisplay =
-        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
-
-      return {
-        id: item.id,
-        jenis: item.jenis,
-        jabatan: item.jabatan || "-",
-        perihal: item.perihal || "-",
-        tanggal_nomor: `${formatTanggal(item.tanggal)} / ${item.nomor || "-"}`,
-        pengusul: item.nama_pengirim || "-",
-        waktu: formatWaktu(item.waktu),
-        tanggal: formatTanggal(item.tanggal),
-        klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay: klasifikasiDisplay,
-        jenis_naskah: item.jenis,
-        nomor_surat: Array.isArray(item.nomor) ? item.nomor : [item.nomor],
-        files: [],
-        created_at: item.created_at || item.waktu,
-      };
-    });
-
-    // ✅ GROUPING data yang duplikat
-    return groupDuplicateRows(mappedData);
-  } catch (error) {
-    console.error("❌ Error fetch data nomor:", error);
-    toast.add({
-      title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data penomoran",
-      color: "red",
-    });
-    return [];
-  }
-};
-
-/* Load initial data */
+// Mounted
 onMounted(async () => {
   loading.value = true;
 
   await fetchKlasifikasiMap();
+  await fetchPersonMap();
 
   const data = await getListNomor();
   rows.value = data;

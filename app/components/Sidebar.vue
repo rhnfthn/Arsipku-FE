@@ -256,7 +256,7 @@ const adminMenuUtama = computed(() => [
     label: "Kotak Masuk",
     to: "/admin/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
-    // badge: 2,
+    badge: 2,
   },
   {
     label: "Terkirim",

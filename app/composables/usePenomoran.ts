@@ -112,35 +112,20 @@ export const usePenomoran = () => {
   /** ===========================
    * SUBMIT BOOKING WITH FILES
    * =========================== */
-  interface BookingPayload {
-    files: File[];
-  }
-
   const submitBooking = async (
-    id_request: number | string,
-    payload: BookingPayload,
+    id_request: string | number,
+    formData: FormData,
   ) => {
     isLoadingBooking.value = true;
 
     try {
       console.log("📤 Submitting booking for request:", id_request);
-      console.log("📎 Files to upload:", payload.files?.length || 0);
 
-      const formData = new FormData();
-
-      // ✅ Append files ke FormData
-      if (payload.files && payload.files.length > 0) {
-        payload.files.forEach((file) => {
-          if (file) {
-            formData.append("files", file);
-            console.log("📄 Appending file:", file.name, file.size, "bytes");
-          }
-        });
+      // Log FormData contents for debugging
+      for (const pair of formData.entries()) {
+        console.log(`📎 FormData: ${pair[0]} =`, pair[1]);
       }
 
-      console.log("📤 POST to /nomor-request/" + id_request + "/booking");
-
-      // ✅ Use axios directly for multipart/form-data
       const response = await api.post(
         `/nomor-request/${id_request}/booking`,
         formData,
@@ -158,7 +143,6 @@ export const usePenomoran = () => {
         description:
           response.data?.message ||
           "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
-        icon: "i-heroicons-check-circle",
         color: "green",
       });
 
@@ -166,7 +150,7 @@ export const usePenomoran = () => {
     } catch (error: any) {
       console.error("❌ Error submit booking:", error);
 
-      const errorMessage =
+      const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
@@ -174,10 +158,7 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Gagal",
-        description: Array.isArray(errorMessage)
-          ? errorMessage.join(", ")
-          : errorMessage,
-        icon: "i-heroicons-exclamation-circle",
+        description: Array.isArray(msg) ? msg.join(", ") : msg,
         color: "red",
       });
 
@@ -192,6 +173,7 @@ export const usePenomoran = () => {
    * =========================== */
   const getDetailNomor = async (id: string) => {
     try {
+      // Try admin endpoint first
       const res = await get(`/nomor/${id}`);
 
       console.log("✅ Detail nomor loaded:", res);
@@ -203,18 +185,16 @@ export const usePenomoran = () => {
       return res.data;
     } catch (e: any) {
       console.error("❌ Error fetch detail nomor:", e);
-      toast.add({
-        title: "Gagal fetch detail",
-        description: e.message || "Gagal memuat detail nomor",
-        color: "red",
-      });
+
+      // Don't show toast, just return null to handle gracefully
       return null;
     }
   };
+
   const getListNomor = async () => {
     isLoadingList.value = true;
     try {
-      const res = await get("/admin/nomor");
+      const res = await get("/nomor");
       return res.data ?? [];
     } catch (e: any) {
       console.error("❌ Error ambil list nomor:", e);
@@ -413,6 +393,114 @@ export const usePenomoran = () => {
     }
   };
 
+  /** ===========================
+   * APPROVE BULK NOMOR
+   * =========================== */
+  const approveBulkNomor = async (detailIds: string[]) => {
+    try {
+      if (!detailIds || detailIds.length === 0) {
+        throw new Error("Detail IDs tidak boleh kosong");
+      }
+
+      // Filter out null/undefined IDs
+      const validIds = detailIds.filter(
+        (id) => id !== null && id !== undefined && id !== "",
+      );
+
+      if (validIds.length === 0) {
+        throw new Error("Tidak ada detail ID yang valid");
+      }
+
+      console.log("📤 Approve bulk nomor:", validIds);
+
+      const response = await post("/admin/nomor-request-detail/approve-bulk", {
+        detail_ids: validIds,
+      });
+
+      console.log("✅ Approve bulk response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil disetujui",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error approve bulk:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menyetujui nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * REJECT NOMOR REQUEST
+   * =========================== */
+  const rejectNomorRequest = async (
+    requestId: string,
+    detailIds: string[],
+    keterangan: string,
+  ) => {
+    try {
+      if (!requestId) {
+        throw new Error("Request ID tidak boleh kosong");
+      }
+
+      if (!keterangan || !keterangan.trim()) {
+        throw new Error("Keterangan penolakan harus diisi");
+      }
+
+      console.log("📤 Reject nomor request:", {
+        requestId,
+        detailIds,
+        keterangan,
+      });
+
+      const response = await post(`/admin/nomor-request/${requestId}/reject`, {
+        detail_ids: detailIds,
+        keterangan: keterangan,
+      });
+
+      console.log("✅ Reject response:", response);
+
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil ditolak",
+        color: "green",
+      });
+
+      return response;
+    } catch (e: any) {
+      console.error("❌ Error reject nomor:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menolak nomor";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
   return {
     // USULAN FLOW
     createUsulanDraft,
@@ -423,6 +511,8 @@ export const usePenomoran = () => {
 
     // VERIFIKASI
     getListSubmitted,
+    approveBulkNomor,
+    rejectNomorRequest,
 
     // PENOMORAN FINAL
     createPenomoranFinal,
