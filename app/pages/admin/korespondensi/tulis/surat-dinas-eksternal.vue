@@ -226,7 +226,7 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import type { ExternalRecipient, SDEPayload } from "~/types/sde";
 import { validateSDEPayload } from "~/types/sde";
-import { useSDE } from "~/composables/useSDE";
+import { useSDE } from "~/composables/useSde";
 
 // --- CONFIG ---
 const route = useRoute();
