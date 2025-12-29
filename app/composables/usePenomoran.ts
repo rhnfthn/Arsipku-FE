@@ -501,6 +501,142 @@ export const usePenomoran = () => {
     }
   };
 
+  /** ===========================
+   * GET DETAIL VERIFIKASI REQUEST
+   * =========================== */
+  const getDetailVerifikasiRequest = async (requestId: string) => {
+    try {
+      const mainRes = await get(`/admin/nomor-request/${requestId}`);
+
+      if (!mainRes?.success) {
+        toast.add({
+          title: "Gagal",
+          description: "Tidak dapat mengambil detail usulan",
+          color: "red",
+        });
+        return null;
+      }
+
+      const mainData = mainRes.data;
+
+      const detailRes = await get(`/admin/detail-nomor-request/${requestId}`);
+      const existingDetails = detailRes?.success
+        ? detailRes.data?.details || []
+        : [];
+
+      const jumlah = mainData.jumlah || 0;
+      const template_nomor = mainData.template_nomor || null;
+
+      let details = [];
+
+      if (existingDetails.length > 0) {
+        details = existingDetails.slice(0, jumlah).map((d: any) => ({
+          id: d.id,
+          nomor: d.nomor || null,
+          template_nomor: template_nomor,
+          status: d.status || "booking",
+          checked: d.status !== "ditolak" && d.status !== "hangus",
+          file_name: d.file_name || null,
+          file_text: d.file_text || null,
+          file_url: d.file_url || null,
+        }));
+
+        const remaining = jumlah - details.length;
+        for (let i = 0; i < remaining; i++) {
+          details.push({
+            id: null,
+            nomor: null,
+            template_nomor: template_nomor,
+            status: "pending",
+            checked: true,
+            file_name: null,
+            file_text: null,
+            file_url: null,
+          });
+        }
+      } else {
+        for (let i = 0; i < jumlah; i++) {
+          details.push({
+            id: null,
+            nomor: null,
+            template_nomor: template_nomor,
+            status: "pending",
+            checked: true,
+            file_name: null,
+            file_text: null,
+            file_url: null,
+          });
+        }
+      }
+
+      return {
+        ...mainData,
+        jumlah: jumlah,
+        details: details,
+      };
+    } catch (error) {
+      console.error("❌ Error fetch detail verifikasi:", error);
+      toast.add({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat mengambil detail",
+        color: "red",
+      });
+      return null;
+    }
+  };
+
+  /** ===========================
+   * UPLOAD DETAIL FILE
+   * =========================== */
+  const uploadDetailFile = async (detailId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log(`📤 Uploading file for detail ID: ${detailId}`);
+
+      const response = await api.patch(
+        `/admin/nomor-request-detail/${detailId}/file`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      console.log("✅ File upload response:", response.data);
+
+      if (response.data?.success) {
+        toast.add({
+          title: "Berhasil",
+          description: "File berhasil diganti",
+          color: "green",
+        });
+
+        return response.data.data;
+      } else {
+        throw new Error(response.data?.message || "Gagal mengganti file");
+      }
+    } catch (error: any) {
+      console.error("❌ Error upload file:", error);
+
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal mengganti file";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw error;
+    }
+  };
+
   return {
     // USULAN FLOW
     createUsulanDraft,
@@ -511,8 +647,10 @@ export const usePenomoran = () => {
 
     // VERIFIKASI
     getListSubmitted,
+    getDetailVerifikasiRequest,
     approveBulkNomor,
     rejectNomorRequest,
+    uploadDetailFile,
 
     // PENOMORAN FINAL
     createPenomoranFinal,
