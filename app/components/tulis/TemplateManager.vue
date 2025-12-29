@@ -340,20 +340,23 @@ const handleDeleteTemplate = async (id: any) => {
     return;
   }
 
-  // 1. Tampilkan Confirm dan tunggu hasilnya
+  // 1. Tampilkan Confirm
+  // Saat user klik "Ya, Hapus", tombol akan berubah jadi loading spinner & modal tetap terbuka
   const isConfirmed = await Alert.confirm(
     'Hapus Template?',
     'Template yang dihapus tidak dapat dikembalikan.',
     'Ya, Hapus',
     'Batal',
-    true // Ini akan mengeset type menjadi 'danger'
+    true
   );
 
-  // 2. Jika user klik Batal (isConfirmed = false), hentikan proses
+  // 2. Jika user klik Batal, proses berhenti (Modal sudah tertutup otomatis oleh onCancel)
   if (!isConfirmed) return;
 
   try {
     isLoadingList.value = true;
+
+    // 3. Lakukan proses delete ke API
     await deleteTemplateById(String(id));
 
     toast.add({
@@ -362,13 +365,22 @@ const handleDeleteTemplate = async (id: any) => {
       color: 'success'
     });
 
+    // Refresh data
     await fetchMyTemplates();
+
   } catch (error) {
     console.error('Error saat delete:', error);
-    // Jika Alert.error belum ada di composable, gunakan Alert.warning
-    Alert.warning('Gagal', 'Gagal menghapus template.');
+    // Tampilkan pesan error (bisa pakai toast atau alert warning)
+    toast.add({
+      title: 'Gagal',
+      description: 'Gagal menghapus template.',
+      color: 'error'
+    });
   } finally {
     isLoadingList.value = false;
+
+    // 4. WAJIB: Tutup Alert manual untuk menghentikan loading spinner
+    Alert.close();
   }
 };
 
@@ -386,6 +398,24 @@ const selectTemplate = async (template: any) => {
   );
 
   if (!isConfirmed) return;
+
+  // --- MODAL SEDANG LOADING DISINI ---
+
+  try {
+    // 1. Jalankan logika utama Anda di sini (contoh: set content editor)
+    // await applyTemplateToEditor(templateName);
+    // console.log("Template diterapkan");
+
+    // Simulasi proses async (hapus ini jika kode Anda sinkron)
+    await new Promise(r => setTimeout(r, 500));
+
+  } catch (error) {
+    console.error("Gagal menerapkan template:", error);
+    // Opsional: Tampilkan error alert lain jika perlu
+  } finally {
+    // 2. WAJIB: Perintah tutup modal setelah proses selesai (sukses/gagal)
+    Alert.close();
+  }
 
   emit("apply", template.content);
 

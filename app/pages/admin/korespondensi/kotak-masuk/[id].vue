@@ -1,121 +1,145 @@
 <script setup lang="ts">
-const icons = [
-  'i-heroicons-arrow-left',
-  'i-heroicons-archive-box',
-  'i-heroicons-exclamation-circle',
-  'i-heroicons-trash',
-  'i-heroicons-envelope',
-  'i-heroicons-clock',
-  'i-heroicons-folder-arrow-down',
-  'i-heroicons-tag',
-  'i-heroicons-ellipsis-vertical'
-]
+import { ref, onMounted, computed } from "vue";
 
-// Ambil ID dari URL
-const route = useRoute()
-const id = route.params.id
+const route = useRoute();
+const id = route.params.id as string;
 
-// Ambil posisi user dari store
-const user = useUserStore()
-const positionId = computed(() => user?.position_id)
+const { fetchInboxDetail, pending, error } = useInbox(null);
 
-// Ambil inbox berdasarkan posisi user
-const { items, pending, error, refresh } = useInbox(positionId)
+const selected = ref<any>(null);
 
-// Item yang sedang dibuka
-const selected = computed(() =>
-  items.value.find(it => it.id === id)
-)
+onMounted(async () => {
+  selected.value = await fetchInboxDetail(id);
+});
+
+// format tanggal
+const formatDate = (value?: string) => {
+  if (!value) return "-";
+  return new Date(value).toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
+
+// list kepada
+const kepadaList = computed(() => {
+  return Array.isArray(selected.value?.kepada) ? selected.value.kepada : [];
+});
+
+onMounted(async () => {
+  selected.value = await fetchInboxDetail(id);
+  console.log("SELECTED:", selected.value);
+});
 </script>
 
-
 <template>
-    <div
-      class="w-full flex flex-col bg-white overflow-hidden rounded-xl shadow-lg border-gray-100 py-5">
+  <div
+    class="w-full flex flex-col bg-white overflow-hidden rounded-xl shadow-lg border-gray-100 py-5"
+  >
+    <UContainer>
+      <!-- judul -->
+      <div class="flex justify-between items-start mb-2">
+        <h1 class="text-2xl font-normal text-gray-900">
+          {{ selected?.perihal }}
+        </h1>
+        <UButton icon="i-heroicons-printer" variant="ghost" color="gray" />
+      </div>
 
-        <UContainer class="">
+      <!-- badge -->
+      <div class="flex gap-2 mb-8">
+        <UBadge
+          color="yellow"
+          variant="subtle"
+          :ui="{ rounded: 'rounded-md' }"
+          class="px-3 py-1 bg-yellow-100 text-yellow-800"
+        >
+          {{ selected }}
+        </UBadge>
+        <UBadge
+          color="gray"
+          variant="subtle"
+          :ui="{ rounded: 'rounded-md' }"
+          class="px-3 py-1 bg-gray-200 text-gray-700"
+        >
+          {{ selected?.sifat || "-" }}
+        </UBadge>
+      </div>
 
-            <div class="flex items-center gap-1 mb-6 text-gray-500">
-                <UButton v-for="(icon, index) in icons" :key="index" :icon="icon" variant="ghost" color="gray"
-                    class="hover:bg-gray-100" />
+      <!-- pengirim -->
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex gap-4">
+          <UAvatar
+            size="md"
+            class="bg-purple-600 text-white"
+            :ui="{ background: 'bg-purple-600' }"
+          >
+            {{ selected?.pengirim?.nama?.charAt(0) || "?" }}
+          </UAvatar>
+
+          <div>
+            <div class="flex flex-col">
+              <span class="font-bold text-gray-900">
+                {{ selected?.pengirim?.nama || "-" }} ini jabatan pengirim
+              </span>
+              <span class="text-gray-500 text-sm">
+                {{ selected?.pengirim?.position_text || "-" }} ini nama pengirim
+              </span>
             </div>
 
-            <div class="flex justify-between items-start mb-2">
-                <h1 class="text-2xl font-normal text-gray-900">Undangan Rapat Koordinasi</h1>
-                <UButton icon="i-heroicons-printer" variant="ghost" color="gray" />
+            <div>
+              <div class="text-sm text-gray-500 mb-1">Kepada</div>
+
+              <!-- jika lebih dari satu -->
+              <ol
+                v-if="kepadaList.length > 1"
+                class="list-decimal pl-5 text-gray-900"
+              >
+                <li v-for="(k, i) in kepadaList" :key="i">
+                  {{ k.nama }} – {{ k.position_text }}
+                </li>
+              </ol>
+
+              <!-- jika satu -->
+              <div v-else class="text-gray-900">
+                {{ kepadaList[0]?.nama || "-" }}
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div class="flex gap-2 mb-8">
-                <UBadge color="yellow" variant="subtle" :ui="{ rounded: 'rounded-md' }"
-                    class="px-3 py-1 bg-yellow-100 text-yellow-800">Internal</UBadge>
-                <UBadge color="gray" variant="subtle" :ui="{ rounded: 'rounded-md' }"
-                    class="px-3 py-1 bg-gray-200 text-gray-700">Kotak Masuk</UBadge>
-            </div>
+        <div class="flex items-center gap-3 text-gray-500 text-sm">
+          <span>{{ formatDate(selected?.tanggal) }} ini tanggal</span>
+          <span>{{ formatDate(selected?.tanggal) }} ini no surat</span>
+        </div>
+      </div>
 
-            <div class="flex items-start justify-between mb-6">
-                <div class="flex gap-4">
-                    <UAvatar alt="Siti Rahma" size="md" class="bg-purple-600 text-white"
-                        :ui="{ background: 'bg-purple-600' }">S</UAvatar>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-gray-900">Siti Rahma</span>
-                            <span class="text-gray-500 text-sm">&lt;siti.rahma@email.com&gt;</span>
-                        </div>
-                        <div class="text-sm text-gray-500">kepada saya</div>
-                    </div>
-                </div>
+      <!-- isi berita -->
+      <div class="text-gray-800 leading-relaxed mb-8 text-[15px]">
+        <p>catatan</p>
+        <p>{{ selected?.perihal || "-" }}</p>
+      </div>
 
-                <div class="flex items-center gap-3 text-gray-500 text-sm">
-                    <span>2025-11-21 08:15</span>
-                    <UIcon name="i-heroicons-star" class="w-5 h-5 cursor-pointer hover:text-yellow-400" />
-                    <UIcon name="i-heroicons-arrow-uturn-left" class="w-5 h-5 cursor-pointer hover:text-gray-700" />
-                    <UIcon name="i-heroicons-ellipsis-vertical" class="w-5 h-5 cursor-pointer hover:text-gray-700" />
-                </div>
-            </div>
+      <!-- lampiran -->
+      <div class="text-gray-800 leading-relaxed mb-8 text-[15px]">
+        <p>lampiran</p>
+        <p>{{ selected?.perihal || "-" }}</p>
+      </div>
 
-            <div class="text-gray-800 leading-relaxed mb-8 text-[15px]">
-                <p>
-                    Sehubungan dengan rapat koordinasi tim operasional, dimohon kehadiran seluruh anggota tim pada:
-                    Hari/Tanggal: Jumat, 22 November 2025, Waktu: 09.00 - 12.00 WIB, Tempat: Ruang Rapat Lantai 3.
-                    Agenda: Evaluasi kinerja bulan November dan perencanaan Desember 2025.
-                </p>
-            </div>
-
-            <UDivider class="mb-6 border-gray-100" />
-
-            <div class="space-y-6 mb-10">
-                <div>
-                    <div class="text-sm text-gray-500 mb-1">Tertuju</div>
-                    <div class="text-gray-900">{{ selected.recipientName }}</div>
-                </div>
-
-                <div>
-                    <div class="text-sm text-gray-500 mb-1">Disposisi</div>
-                    <div class="text-gray-900">Harap hadir</div>
-                </div>
-
-                <div>
-                    <div class="text-sm text-gray-500 mb-1">Catatan</div>
-                    <div class="text-gray-900">Rapat akan dilaksanakan besok pagi</div>
-                </div>
-
-                <div>
-                    <div class="text-sm text-gray-500 mb-2">Jenis Surat</div>
-                    <UBadge color="blue" variant="subtle"
-                        class="rounded-full px-4 py-1 bg-blue-100 text-blue-700 font-normal">
-                        Disposisi
-                    </UBadge>
-                </div>
-            </div>
-
-            <div class="mt-8">
-                <UButton to="/admin/korespondensi/tulis/konsep" block size="md" color="primary" variant="solid" icon="i-heroicons-document-text"
-                    :ui="{ rounded: 'rounded-lg', font: 'font-semibold' }"
-                    class="bg-primary hover:bg-primary-600 text-white h-12">
-                    Lanjut Konsep
-                </UButton>
-            </div>
-
-        </UContainer>
-    </div>
+      <!-- action -->
+      <div class="mt-8">
+        <UButton
+          to="/admin/korespondensi/tulis/konsep"
+          block
+          size="md"
+          color="primary"
+          variant="solid"
+          icon="i-heroicons-document-text"
+          :ui="{ rounded: 'rounded-lg', font: 'font-semibold' }"
+          class="bg-primary hover:bg-primary-600 text-white h-12"
+        >
+          Lanjut Konsep
+        </UButton>
+      </div>
+    </UContainer>
+  </div>
 </template>

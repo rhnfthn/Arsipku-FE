@@ -3,85 +3,165 @@
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
     >
-      <!-- Left Section - Title & Breadcrumb -->
       <PageHeader title="Rekap Naskah Dinas" :items="items" />
     </div>
   </div>
+
   <div
     class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
   >
     <div class="sticky top-0 z-40 bg-white flex-wrap flex justify-between p-3">
       <div class="flex flex-wrap gap-3">
+        <!-- Refresh -->
         <button
           @click="refreshData"
           class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
-        <select
-          v-model="selectedType"
-          class="rounded-md p-2 text-sm bg-gray-100"
-        >
-          <option value="">Semua Jenis</option>
-          <option v-for="item in data" :key="item.id" :value="item.naskah">
-            {{ item.naskah }}
-          </option>
-        </select>
 
-        <select
-          v-model="selectedMonth"
-          class="rounded-md p-2 text-sm bg-gray-100"
-        >
-          <option value="">Semua Bulan</option>
-          <option
-            v-for="bulan in monthOptions"
-            :key="bulan.value"
-            :value="bulan.value"
-          >
-            {{ bulan.label }}
-          </option>
-        </select>
-
-        <select
-          v-model="selectedYear"
-          class="rounded-md p-2 text-sm bg-gray-100"
-        >
-          <option v-for="tahun in yearOptions" :key="tahun" :value="tahun">
-            {{ tahun }}
-          </option>
-        </select>
-
-        <select
-          v-model="selectedLokasi"
-          class="rounded-md p-2 text-sm bg-gray-100"
-        >
-          <option value="">Semua Lokasi</option>
-          <option value="cabang jakarta">Cabang Jakarta</option>
-          <option value="cabang banten">Cabang Banten</option>
-          <option value="cabang bali">Cabang Bali</option>
-        </select>
-
+        <!-- JENIS NASKAH -->
         <div class="relative">
-          <!-- Trigger (mirip select) -->
           <button
-            type="button"
-            @click="isStatusOpen = !isStatusOpen"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[180px]"
+            @click="toggle('type')"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
           >
-            <span v-if="selectedStatuses.length === 0"> Semua Status </span>
-            <span v-else> {{ selectedStatuses.length }} status dipilih </span>
+            <span>{{ selectedType || "Semua Jenis" }}</span>
+            <ChevronDown class="w-4 h-4 ml-auto" />
           </button>
 
-          <!-- Dropdown -->
           <div
-            v-if="isStatusOpen"
-            class="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-md p-3 w-[260px]"
+            v-if="openDropdown === 'type'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+          >
+            <button
+              @click="selectedType = ''"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Semua Jenis
+            </button>
+            <button
+              v-for="item in data"
+              :key="item.id"
+              @click="selectedType = item.naskah"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              {{ item.naskah }}
+            </button>
+          </div>
+        </div>
+
+        <!-- BULAN -->
+        <div class="relative">
+          <button
+            @click="toggle('month')"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+          >
+            <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
+            <ChevronDown class="w-4 h-4 ml-auto" />
+          </button>
+
+          <div
+            v-if="openDropdown === 'month'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+          >
+            <button
+              @click="selectedMonth = ''"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Semua Bulan
+            </button>
+            <button
+              v-for="bulan in monthOptions"
+              :key="bulan.value"
+              @click="selectedMonth = bulan.value"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              {{ bulan.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- TAHUN -->
+        <div class="relative">
+          <button
+            @click="toggle('year')"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+          >
+            <span>{{ selectedYear }}</span>
+            <ChevronDown class="w-4 h-4 ml-auto" />
+          </button>
+
+          <div
+            v-if="openDropdown === 'year'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+          >
+            <button
+              v-for="tahun in yearOptions"
+              :key="tahun"
+              @click="selectedYear = tahun"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              {{ tahun }}
+            </button>
+          </div>
+        </div>
+
+        <!-- LOKASI -->
+        <div class="relative">
+          <button
+            @click="toggle('lokasi')"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+          >
+            <span>{{ selectedLokasi || "Semua Lokasi" }}</span>
+            <ChevronDown class="w-4 h-4 ml-auto" />
+          </button>
+
+          <div
+            v-if="openDropdown === 'lokasi'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+          >
+            <button
+              @click="selectedLokasi = ''"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Semua Lokasi
+            </button>
+            <button
+              v-for="lokasi in lokasiOptions"
+              :key="lokasi"
+              @click="selectedLokasi = lokasi"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              {{ lokasi }}
+            </button>
+          </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="relative">
+          <button
+            @click="toggle('status')"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+          >
+            <span>
+              {{
+                selectedStatuses.length === 0
+                  ? "Semua Status"
+                  : `${selectedStatuses.length} status dipilih`
+              }}
+            </span>
+            <ChevronDown class="w-4 h-4 ml-auto" />
+          </button>
+
+          <div
+            v-if="openDropdown === 'status'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="status in statusOptions"
                 :key="status.value"
-                type="button"
                 @click="toggleStatus(status.value)"
                 class="px-3 py-1 rounded-full text-xs transition-colors"
                 :class="
@@ -96,17 +176,16 @@
           </div>
         </div>
       </div>
-      <div>
-        <button
-          @click="exportExcel"
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
-        >
-          <FileDown class="w-4 h-4" />
-          Export
-        </button>
-      </div>
-    </div>
 
+      <!-- EXPORT -->
+      <button
+        @click="exportExcel"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+      >
+        <FileDown class="w-4 h-4" />
+        Export
+      </button>
+    </div>
     <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
       <table class="text-center">
         <thead class="sticky top-0 z-30 bg-primary-400">
@@ -182,7 +261,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
-import { FileDown, RotateCcw } from "lucide-vue-next";
+import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
 import { useToast } from "#imports";
 
 const items = [
@@ -202,6 +281,7 @@ const selectedMonth = ref("");
 const selectedLokasi = ref("");
 const selectedStatuses = ref<string[]>([]);
 const isStatusOpen = ref(false);
+const openDropdown = ref<null | string>(null);
 
 const toast = useToast();
 
@@ -503,10 +583,21 @@ const statusOptions = [
   { label: "Booking", value: "booking" },
 ];
 
+const toggle = (key: string) => {
+  openDropdown.value = openDropdown.value === key ? null : key;
+};
+
+const lokasiOptions = [
+  "cabang jakarta",
+  "cabang banten",
+  "cabang bali",
+  "cabang makasar",
+];
+
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (!target.closest(".relative")) {
-    isStatusOpen.value = false;
+    openDropdown.value = null;
   }
 };
 

@@ -262,90 +262,51 @@ const penerimaDetail = computed(() => {
 </script>
 
 <template>
-  <div
-    class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
-    :class="['glass-blue']"
-  >
+  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
+    :class="['glass-blue']">
     <div
-      class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white"
-    >
+      class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
       <div class="flex items-center gap-1 shrink-0 relative">
-        <div
-          class="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition-colors group"
-          @click="toggleSelectAll"
-        >
+        <div class="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition-colors group" @click="toggleSelectAll">
           <div
             class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
             :class="{
               'bg-primary border-primary': isAllSelected,
               'group-hover:border-gray-600': !isAllSelected,
-            }"
-          >
-            <Check
-              v-if="isAllSelected"
-              class="w-3 h-3 text-white"
-              stroke-width="3"
-            />
+            }">
+            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
           </div>
         </div>
         <div class="relative">
-          <button
-            @click="showFilterMenu = !showFilterMenu"
+          <button @click="showFilterMenu = !showFilterMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-            :class="{ 'bg-gray-100 text-neutral-900': showFilterMenu }"
-            title="Opsi Filter"
-          >
+            :class="{ 'bg-gray-100 text-neutral-900': showFilterMenu }" title="Opsi Filter">
             <MoreVertical class="w-4 h-4" />
           </button>
-          <div
-            v-if="showFilterMenu"
-            @click="showFilterMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showFilterMenu"
-            class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in filterMenuOptions"
-              :key="opt.value"
-              @click="applyFilter(opt.value)"
-              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-between group transition-colors"
-            >
-              <span
-                :class="
-                  activeFilterType === opt.value
-                    ? 'font-semibold text-primary'
-                    : ''
-                "
-                >{{ opt.label }}</span
-              >
-              <Check
-                v-if="activeFilterType === opt.value"
-                class="w-3.5 h-3.5 text-primary"
-              />
+          <div v-if="showFilterMenu" @click="showFilterMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showFilterMenu"
+            class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
+              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-between group transition-colors">
+              <span :class="activeFilterType === opt.value
+                  ? 'font-semibold text-primary'
+                  : ''
+                ">{{ opt.label }}</span>
+              <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
             </button>
           </div>
         </div>
-        <button
-          class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-          title="Muat Ulang"
-        >
+        <button class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
+          title="Muat Ulang">
           <RotateCcw class="w-4 h-4" />
         </button>
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
-          <div
-            class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200"
-          >
-            <button
-              class="p-1.5 text-neutral-500 hover:bg-red-50 hover:text-error rounded"
-            >
+          <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
+            <button class="p-1.5 text-neutral-500 hover:bg-red-50 hover:text-error rounded">
               <Trash2 class="w-4 h-4" />
             </button>
-            <button
-              class="p-1.5 text-neutral-500 hover:bg-blue-50 hover:text-primary rounded hidden sm:block"
-            >
+            <button class="p-1.5 text-neutral-500 hover:bg-blue-50 hover:text-primary rounded hidden sm:block">
               <Archive class="w-4 h-4" />
             </button>
           </div>
@@ -370,118 +331,66 @@ const penerimaDetail = computed(() => {
             class="pl-8 pr-3 py-1.5 text-caption1 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-100 focus:border-primary transition-all w-32 lg:w-48 placeholder:text-neutral-400">
         </div> -->
         <div class="relative">
-          <button
-            @click="showDateMenu = !showDateMenu"
+          <button @click="showDateMenu = !showDateMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-            title="Periode Data"
-          >
+            title="Periode Data">
             <History class="w-4 h-4" />
           </button>
-          <div
-            v-if="showDateMenu"
-            @click="showDateMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showDateMenu"
-            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in dateOptions"
-              :key="opt"
-              @click="selectDateFilter(opt)"
-              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-100 flex items-center justify-between"
-            >
+          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showDateMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
+              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-100 flex items-center justify-between">
               <span>{{ opt }}</span>
-              <Check
-                v-if="activeDateLabel === opt"
-                class="w-3 h-3 text-primary"
-              />
+              <Check v-if="activeDateLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
         </div>
         <div class="relative">
-          <button
-            @click="showSortMenu = !showSortMenu"
+          <button @click="showSortMenu = !showSortMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-            title="Urutkan"
-          >
+            title="Urutkan">
             <ArrowUpDown class="w-4 h-4" />
           </button>
-          <div
-            v-if="showSortMenu"
-            @click="showSortMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showSortMenu"
-            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in sortOptions"
-              :key="opt"
-              @click="selectSortOption(opt)"
-              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-between"
-            >
+          <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showSortMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
+              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-between">
               <span>{{ opt }}</span>
-              <Check
-                v-if="activeSortLabel === opt"
-                class="w-3 h-3 text-primary"
-              />
+              <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
         </div>
         <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
         <div class="flex items-center gap-1">
           <div class="relative">
-            <button
-              @click="showPageMenu = !showPageMenu"
+            <button @click="showPageMenu = !showPageMenu"
               class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-              title="Jumlah per halaman"
-            >
+              title="Jumlah per halaman">
               <Layers class="w-4 h-4" />
             </button>
-            <div
-              v-if="showPageMenu"
-              @click="showPageMenu = false"
-              class="fixed inset-0 z-40 bg-transparent"
-            ></div>
-            <div
-              v-if="showPageMenu"
-              class="absolute top-full right-0 mt-1 w-20 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-            >
-              <button
-                v-for="size in pageOptions"
-                :key="size"
-                @click="selectPageSize(size)"
-                class="w-full text-center px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <span
-                  :class="itemsPerPage === size ? 'font-bold text-primary' : ''"
-                  >{{ size }}</span
-                >
+            <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+            <div v-if="showPageMenu"
+              class="absolute top-full right-0 mt-1 w-20 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+              <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
+                class="w-full text-center px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-center gap-2">
+                <span :class="itemsPerPage === size ? 'font-bold text-primary' : ''">{{ size }}</span>
               </button>
             </div>
           </div>
-          <div
-            class="flex items-center gap-1 text-caption1 text-neutral-600 shrink-0 h-[34px]"
-          >
-            <span
-              class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500"
-              >{{ paginationInfo }}</span
-            >
+          <div class="flex items-center gap-1 text-caption1 text-neutral-600 shrink-0 h-[34px]">
+            <span class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500">{{
+              paginationInfo
+              }}</span>
             <button
               class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30 disabled:hover:bg-transparent"
-              @click="prevPage"
-              :disabled="currentPage === 1"
-            >
+              @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30 disabled:hover:bg-transparent"
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-            >
+              @click="nextPage" :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
           </div>
@@ -492,28 +401,18 @@ const penerimaDetail = computed(() => {
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div
         class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden"
-        :class="
-          selected
+        :class="selected
             ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
             : 'flex-1 w-full'
-        "
-      >
-        <div
-          class="px-3 py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden"
-        >
+          ">
+        <div class="py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
-            <UButton
-              v-for="tab in tabs"
-              :key="tab.value"
-              @click="activeTab = tab.value"
-              color="primary"
+            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 active:bg-primary-100 active:text-primary-500"
-              :class="
-                activeTab === tab.value
+              :class="activeTab === tab.value
                   ? 'bg-primary-400 text-white border-primary-400'
                   : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'
-              "
-            >
+                ">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
             </UButton>
@@ -522,115 +421,72 @@ const penerimaDetail = computed(() => {
 
         <div class="flex-1 pb-10 w-full">
           <!-- EMPTY STATE -->
-          <div
-            v-if="paginatedEmails.length === 0"
-            class="flex flex-col items-center justify-center h-full text-neutral-400 mt-10"
-          >
+          <div v-if="paginatedEmails.length === 0"
+            class="flex flex-col items-center justify-center h-full text-neutral-400 mt-10">
             <Inbox class="w-12 h-12 mb-2 opacity-50" />
             <span class="text-sm">Tidak ada kotak masuk</span>
           </div>
 
           <!-- LIST DATA -->
           <div v-else>
-            <div
-              v-for="mail in paginatedEmails"
-              :key="mail.id"
-              @click="selectMail(mail)"
+            <div v-for="mail in paginatedEmails" :key="mail.id" @click="selectMail(mail)"
               class="group flex gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px]"
-              :class="
-                selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-              "
-            >
+              :class="selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'
+                ">
               <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
                 <div
                   class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
-                  :class="
-                    selectedIds.has(mail.id)
+                  :class="selectedIds.has(mail.id)
                       ? 'bg-primary border-primary'
                       : 'bg-white'
-                  "
-                  @click="toggleSelection(mail.id)"
-                >
-                  <Check
-                    v-if="selectedIds.has(mail.id)"
-                    class="w-3 h-3 text-white"
-                  />
+                    " @click="toggleSelection(mail.id)">
+                  <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                 </div>
               </div>
 
-              <div
-                class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-4 overflow-hidden pt-0.5"
-              >
+              <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-4 overflow-hidden pt-0.5">
                 <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                  <div
-                    v-if="!mail.isRead"
-                    class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
-                    title="Belum Dibaca"
-                  ></div>
+                  <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2" title="Belum Dibaca">
+                  </div>
 
-                  <div
-                    class="text-[11px] text-neutral-500 uppercase truncate font-bold"
-                  >
+                  <div class="text-[11px] text-neutral-500 uppercase truncate font-bold">
                     {{ mail.from }}
                   </div>
                 </div>
 
-                <div
-                  class="text-[13px] text-neutral-900 truncate flex-1"
-                  :class="!mail.isRead ? 'font-bold' : 'font-normal'"
-                >
+                <div class="text-[13px] text-neutral-900 truncate flex-1"
+                  :class="!mail.isRead ? 'font-bold' : 'font-normal'">
                   {{ mail.subject }}
                 </div>
               </div>
 
               <div class="pl-2 shrink-0 pt-0.5 text-right">
-                <span
-                  v-if="mail.category_label"
-                  class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm"
-                >
+                <span v-if="mail.category_label" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm">
                   {{ mail.category_label }}
                 </span>
               </div>
 
               <div class="pl-2 shrink-0 pt-0.5 text-right">
-                <span
-                  class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap"
-                >
+                <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap">
                   {{ mail.date }}
                 </span>
               </div>
 
               <div
-                class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
-              >
+                class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                 <div class="flex items-center gap-2 p-1">
-                  <Star
-                    class="w-4 h-4 transition-colors hover:text-yellow-400"
-                    :class="
-                      mail.isStarred
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-neutral-300'
-                    "
-                    @click.stop="toggleFlag(mail, 'favorit')"
-                  />
-                  <StickyNote
-                    class="w-4 h-4 transition-colors hover:text-orange-400"
-                    :class="
-                      mail.isNote
-                        ? 'text-orange-400 fill-orange-400'
-                        : 'text-neutral-300'
-                    "
-                    @click.stop="toggleFlag(mail, 'note')"
-                  />
-                  <Archive
-                    class="w-4 h-4 transition-colors hover:text-purple-600"
-                    :class="
-                      mail.isArsip
-                        ? 'text-purple-500 fill-purple-500'
-                        : 'text-neutral-300'
-                    "
-                    @click.stop="toggleFlag(mail, 'arsip')"
-                  />
+                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'favorit')" />
+                  <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
+                      ? 'text-orange-400 fill-orange-400'
+                      : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'note')" />
+                  <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
+                      ? 'text-purple-500 fill-purple-500'
+                      : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'arsip')" />
                 </div>
               </div>
             </div>
@@ -638,20 +494,13 @@ const penerimaDetail = computed(() => {
         </div>
       </div>
 
-      <div
-        v-if="selected"
-        class="flex flex-col bg-white absolute inset-0 z-40 lg:static lg:flex-1 lg:z-0 animate-in slide-in-from-right-8 duration-200 overflow-hidden border-l border-gray-200"
-      >
-        <div
-          class="flex items-start justify-between px-6 py-5 border-b border-transparent shrink-0"
-        >
+      <div v-if="selected"
+        class="flex flex-col bg-white absolute inset-0 z-40 lg:static lg:flex-1 lg:z-0 animate-in slide-in-from-right-8 duration-200 overflow-hidden border-l border-gray-200">
+        <div class="flex items-start justify-between px-6 py-5 border-b border-transparent shrink-0">
           <h2 class="text-xl font-bold text-gray-900 leading-tight pr-4">
             {{ selected.subject }}
           </h2>
-          <button
-            class="p-1 hover:bg-gray-100 rounded text-gray-400"
-            @click="closeDetail"
-          >
+          <button class="p-1 hover:bg-gray-100 rounded text-gray-400" @click="closeDetail">
             <X class="w-5 h-5" />
           </button>
         </div>
@@ -660,8 +509,7 @@ const penerimaDetail = computed(() => {
           <div class="flex gap-4 mb-5">
             <div
               class="w-10 h-10 rounded-full flex bg-primary-400 text-white items-center justify-center text-lg font-bold shadow-sm shrink-0"
-              :class="selected.color"
-            >
+              :class="selected.color">
               {{ selected.initial }}
             </div>
             <div>
@@ -671,32 +519,33 @@ const penerimaDetail = computed(() => {
               <div class="text-sm text-gray-600">
                 {{ selected.fromName }}
               </div>
-              <div class="text-sm text-gray-500">
-                &lt;{{ selected.email }}&gt;
-              </div>
-              <div class="text-xs text-gray-400 mt-0.5">kepada saya</div>
             </div>
           </div>
 
           <div class="mb-6">
-            <span
-              class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm font-medium inline-block"
-            >
+            <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm font-medium inline-block">
               {{ getCategoryLabel(selected.category) }}
             </span>
           </div>
 
           <div class="space-y-4 mb-8">
             <div>
-              <div class="text-sm text-gray-500 mb-0.5">Kepada</div>
+              <div class="text-sm text-gray-500 mb-0.5">No Surat</div>
+              <div class="text-sm text-gray-900">
+                {{ selected.nomor || "-" }}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-sm text-gray-500 mb-0.5">Penerima</div>
               <div v-for="(p, i) in selected.kepada" :key="i" class="mb-2">
-                <div class="text-xs">{{ p.position_text }}</div>
+                <div class="text-xs">{{ p.position_text }},</div>
               </div>
             </div>
             <div>
-              <div class="text-base text-gray-500 mb-0.5">Catatan</div>
-              <div class="text-sm text-gray-900">
-                {{ selected.subject || "-" }}
+              <div class="text-sm text-gray-500 mb-0.5">Sifat</div>
+              <div class="text-sm text-gray-900 capitalize">
+                {{ selected.sifat || "-" }}
               </div>
             </div>
           </div>
@@ -704,7 +553,7 @@ const penerimaDetail = computed(() => {
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">
           <NuxtLink
-            :to="`/admin/korespondensi/kotak-masuk/${selected.id}`"
+            :to="`/admin/korespondensi/kotak-masuk/${selected.naskahId}`"
             class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors"
           >
             Lihat Detail Lengkap

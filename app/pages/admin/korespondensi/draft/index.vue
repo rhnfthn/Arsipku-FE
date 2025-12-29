@@ -1,39 +1,27 @@
 <script setup>
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ref, computed, watch, onMounted } from "vue";
 import {
-  Inbox, FileText, Send, Building, Building2, FilePen,
-  Search, Archive, Trash2, ChevronLeft, ChevronRight,
-  RotateCcw, Star, Check, X, Calendar,
-  Printer, Mail, AlertCircle, SquareArrowOutUpRight, Clock, Edit,
-  MoreVertical, History, ArrowUpDown, Layers, Download, Loader2, AlertTriangle
+  Inbox, FileText, Send, Building, Building2, FilePen, Trash2, ChevronLeft, ChevronRight, RotateCw, Check, Edit, History, ArrowUpDown, Layers, Loader2, AlertTriangle
 } from 'lucide-vue-next';
 
-// 1. IMPORT USEAUTH
 import { useAuth } from '@/composables/useAuth';
+import { useDraft } from '@/composables/useDraft';
 
-// Import Composable Draft (Asumsi path sudah benar)
-// import { useDraft } from '~/composables/useDraft';
-
-// --- STATE ---
-// 2. AMBIL USER DARI AUTH
 const { user } = useAuth();
-const { drafts, fetchDrafts, deleteDraft, isLoadingDraft } = useDraft();
-
-// const USER_POSITION_ID = "70016786";
+const { drafts, fetchDrafts, deleteDraft, bulkDeleteDrafts, isLoadingDraft } = useDraft();
 
 const router = useRouter();
+const route = useRoute();
+
 const selected = ref(null);
 const selectedIds = ref(new Set());
 const activeTab = ref("ALL");
 const searchQuery = ref("");
-
-// State Modal Delete
 const showDeleteModal = ref(false);
 const itemToDelete = ref(null);
 const isDeleting = ref(false);
 
-// ... (State Toolbar lainnya tetap sama) ...
 const showFilterMenu = ref(false);
 const activeFilterType = ref("Semua");
 const showDateMenu = ref(false);
@@ -49,11 +37,11 @@ const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [5, 10, 25, 50];
 
 const tabs = [
-  { label: "All", value: "ALL", icon: Inbox },
+  { label: "Semua", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DISPOSISI", icon: Send },
-  { label: "Internal", value: "INTERNAL", icon: Building },
-  { label: "Eksternal", value: "EXTERNAL", icon: Building2 },
+  { label: "Disposisi", value: "DI", icon: Send },
+  { label: "Internal", value: "SDI", icon: Building },
+  { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
 ];
 
@@ -70,28 +58,19 @@ const getRandomColor = (id) => {
 };
 
 const handleEdit = (mail) => {
-  // Debugging: Lihat output ini di Console Browser (F12) untuk memastikan kodenya apa
   console.log("DEBUG EDIT - ID:", mail.id, "Jenis:", mail.category);
-
-  // Default ke Nota Dinas jika tidak dikenali
   let path = '/admin/korespondensi/tulis/nota-dinas';
 
-  // Ambil kategori dan ubah ke huruf besar semua biar aman
   const jenis = (mail.category || '').toUpperCase();
-
-  // 1. DISPOSISI (Kode API biasanya 'DI')
   if (['DISPOSISI', 'DI'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/disposisi';
   }
-  // 2. SURAT DINAS INTERNAL (Kode API biasanya 'SDI' atau 'KA')
   else if (['INTERNAL', 'SDI', 'KA', 'SURAT DINAS INTERNAL'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/surat-dinas-internal';
   }
-  // 3. SURAT DINAS EKSTERNAL (Kode API biasanya 'SDE')
   else if (['EXTERNAL', 'EKSTERNAL', 'SDE', 'SURAT DINAS EKSTERNAL'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/surat-dinas-eksternal';
   }
-  // 4. NOTA DINAS (Kode API biasanya 'ND')
   else if (['ND', 'NOTA DINAS'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/nota-dinas';
   }
@@ -114,47 +93,50 @@ const formatDateShort = (isoString) => {
 const formatFullDate = (isoString, time) => {
   if (!isoString) return '-';
   const date = new Date(isoString);
-  const d = date.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+  const d = date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+
   return `${d} ${time || ''}`;
 }
 
-// 3. UPDATE LOGIC FETCH DATA
 const refreshData = async () => {
-  // Cek apakah user sudah ada
   if (user.value?.position) {
     await fetchDrafts(user.value.position || "70016786");
-  } else {
-    console.warn("User position belum tersedia, menunggu data user...");
+    selectedIds.value.clear(); // Reset selection on refresh
   }
 };
 
 onMounted(async () => {
-  // Jika user sudah ada (navigasi client), langsung fetch
   if (user.value) {
     await refreshData();
   }
 });
 
-// 4. TAMBAHKAN WATCHER (PENTING UNTUK REFRESH PAGE)
-// Jika halaman direfresh, user.value awalnya null.
-// Watcher ini akan memanggil refreshData otomatis begitu data user tiba dari API/Middleware.
 watch(user, (newUser) => {
   if (newUser?.position) {
     refreshData();
   }
-}, { immediate: true }); // immediate: true agar cek juga saat pertama kali component mount
+}, { immediate: true });
+
+watch(() => route.query.q, (newVal) => {
+  searchQuery.value = (newVal || "").toString();
+}, { immediate: true });
 
 // MAPPING DATA
 const mappedEmails = computed(() => {
   if (!drafts.value) return [];
-  // ... mapping logic sama ...
   return drafts.value.map(item => ({
     id: item.id_naskah,
     from: item.penerima || 'Tanpa Penerima',
     email: 'user@internal.com',
     subject: item.isi_pesan || 'Tanpa Subjek',
     body: item.isi_pesan,
-    category: item.jenis || 'KONSEP',
+    category: item.jenis || '',
+    category_text: item.jenis_text || '',
     date: formatDateShort(item.tanggal),
     fullDate: formatFullDate(item.tanggal, item.waktu),
     rawDate: new Date(item.tanggal),
@@ -166,8 +148,7 @@ const mappedEmails = computed(() => {
   }));
 });
 
-// ... (Logic Filtering & Pagination TETAP SAMA) ...
-// ... Copy paste logic filteredEmails, totalItems, paginatedEmails, paginationInfo ...
+// FILTER LOGIC
 const filteredEmails = computed(() => {
   let result = [...mappedEmails.value];
 
@@ -242,34 +223,46 @@ const toggleSelectAll = () => {
 };
 
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
-
 const selectDateFilter = (option) => { activeDateLabel.value = option; showDateMenu.value = false; }
 const selectSortOption = (option) => { activeSortLabel.value = option; showSortMenu.value = false; }
 const selectPageOption = (option) => { itemsPerPage.value = option; showPageMenu.value = false; }
 
+// LOGIC MODAL & DELETE
 const confirmDeleteModal = (mail) => {
-  itemToDelete.value = mail;
+  itemToDelete.value = mail; // Jika mail ada, mode single delete
   showDeleteModal.value = true;
 };
 
-// 5. UPDATE DELETE HANDLER
-const handleDelete = async () => {
-  if (!itemToDelete.value) return;
+const confirmBulkDelete = () => {
+  itemToDelete.value = null; // null menandakan mode bulk delete
+  showDeleteModal.value = true;
+};
 
-  // Pastikan user position ada sebelum menghapus
-  if (!user.value?.position) {
-    alert("Gagal menghapus: Data user tidak ditemukan.");
-    return;
-  }
+const handleDelete = async () => {
+  if (!user.value?.position) { alert("Gagal menghapus: Data user tidak ditemukan."); return; }
 
   isDeleting.value = true;
   try {
-    // Gunakan user.value.position
-    await deleteDraft(itemToDelete.value.id, user.value.position);
-    await refreshData();
+    if (itemToDelete.value) {
+      // Single Delete
+      // Tambahkan Number() di sini
+      await deleteDraft(itemToDelete.value.id, Number(user.value.position));
+      selectedIds.value.delete(itemToDelete.value.id);
+    } else {
+      // Bulk Delete
+      const idsArray = Array.from(selectedIds.value);
+      if (idsArray.length > 0) {
+        // Tambahkan Number() di sini
+        await bulkDeleteDrafts(Number(user.value.position), idsArray);
+        selectedIds.value.clear();
+      }
+    }
+
+    // Refresh opsional karena state local sudah diupdate di useDraft, tapi untuk memastikan sinkronisasi:
+    if (drafts.value.length === 0) await refreshData();
+
     showDeleteModal.value = false;
     itemToDelete.value = null;
-    selectedIds.value.delete(itemToDelete.value?.id);
   } catch (e) {
     console.error(e);
   } finally {
@@ -277,24 +270,21 @@ const handleDelete = async () => {
   }
 };
 
+// --- STYLE KATEGORI SESUAI GAMBAR ---
 const getCategoryStyle = (cat) => {
-  switch (cat) {
-    case 'ND': return 'bg-blue-100 text-blue-700';
-    case 'DISPOSISI': return 'bg-purple-100 text-purple-700';
-    case 'INTERNAL': case 'KA': return 'bg-blue-100 text-blue-700';
-    case 'EXTERNAL': return 'bg-indigo-100 text-indigo-700';
-    case 'KONSEP': return 'bg-gray-100 text-gray-700';
-    default: return 'bg-gray-50 text-gray-600';
-  }
-};
+  const c = (cat || '').toUpperCase();
+  // Nota Dinas (Biru)
+  if (['ND'].includes(c)) return 'bg-blue-100 text-blue-600';
+  // Disposisi (Ungu)
+  if (['DI'].includes(c)) return 'bg-purple-100 text-purple-600';
+  // Internal (Hijau)
+  if (['SDI'].includes(c)) return 'bg-green-100 text-green-600';
+  // Eksternal (Orange/Kuning)
+  if (['SDE'].includes(c)) return 'bg-orange-100 text-orange-600';
 
-const getCategoryLabel = (cat) => {
-  if (cat === 'INTERNAL' || cat === 'KA') return 'Surat Dinas Internal';
-  if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
-  if (cat === 'ND') return 'Nota Dinas';
-  if (cat === 'DISPOSISI') return 'Disposisi';
-  return cat;
-}
+  // Default/Konsep
+  return 'bg-gray-100 text-gray-700';
+};
 </script>
 
 <template>
@@ -314,12 +304,17 @@ const getCategoryLabel = (cat) => {
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
           title="Muat Ulang" :disabled="isLoadingDraft">
-          <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoadingDraft }" />
+          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isLoadingDraft }" />
         </button>
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
           <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
             <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
+            <button @click="confirmBulkDelete"
+              class="p-1.5 ml-1 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"
+              title="Hapus Terpilih">
+              <Trash2 class="w-4 h-4" />
+            </button>
           </div>
         </template>
       </div>
@@ -347,7 +342,6 @@ const getCategoryLabel = (cat) => {
           <button @click="showSortMenu = !showSortMenu"
             class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
             <ArrowUpDown class="w-4 h-4" />
-            <!-- <span class="text-xs font-medium hidden sm:inline">{{ activeSortLabel }}</span> -->
           </button>
 
           <div v-if="showSortMenu"
@@ -400,10 +394,11 @@ const getCategoryLabel = (cat) => {
 
       <div class="flex flex-col bg-white transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
 
-        <div class="px-3 py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
+        <div
+          class="py-2.5 border-b border-t border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary" class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0
-                active:bg-primary-100 active:text-primary-500" :class="activeTab === tab.value
+                active:bg-primary-100 active:text-primary-500 first:ms-2 last:me-2" :class="activeTab === tab.value
                   ? 'bg-primary-400 text-white border-primary-400'
                   : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'">
               <component :is="tab.icon" class="w-4 h-4" />
@@ -424,9 +419,9 @@ const getCategoryLabel = (cat) => {
           </div>
 
           <div v-else v-for="mail in paginatedEmails" :key="mail.id"
-            class="group flex gap-2 items-center px-4 py-3 border-b border-gray-100 hover:shadow-sm transition-colors relative w-full h-[54px] hover:bg-gray-50">
+            class="group flex gap-2 items-start md:items-center px-4 py-3 border-b border-gray-100 hover:shadow-sm transition-colors relative w-full h-auto min-h-[54px] hover:bg-gray-50">
 
-            <div class="flex items-center gap-3 pr-2 shrink-0">
+            <div class="flex items-center gap-3 pr-2 shrink-0 mt-1.5 md:mt-0">
               <div
                 class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors cursor-pointer"
                 :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white'"
@@ -435,30 +430,47 @@ const getCategoryLabel = (cat) => {
               </div>
             </div>
 
-            <div class="flex-1 min-w-0 flex items-center gap-3 overflow-hidden">
-              <span class="w-28 md:w-40 xl:w-44 truncate text-[13px] text-neutral-900 shrink-0 font-semibold">
+            <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3 overflow-hidden">
+
+              <div class="flex md:hidden w-full mb-0.5">
+                <span class="text-caption2b text-neutral-500 text-[10px] whitespace-nowrap">
+                  {{ mail.fullDate }}
+                </span>
+              </div>
+
+              <div class="flex md:hidden w-full mb-1">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ mail.category_text }}
+                </span>
+              </div>
+
+              <span class="w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 shrink-0 font-semibold">
                 {{ mail.from }}
               </span>
-              <div class="flex-1 min-w-0 flex items-center text-caption1 text-neutral-500 overflow-hidden">
-                <span class="text-neutral-900 truncate mr-1 max-w-[60%] md:max-w-none text-[13px] font-medium">
+
+              <div class="flex-1 min-w-0 flex items-center text-caption1 text-neutral-500 overflow-hidden w-full">
+                <span class="text-neutral-900 truncate mr-1 w-full md:w-auto text-[13px] font-medium">
                   {{ mail.subject }}
                 </span>
               </div>
-              <div class="hidden xl:flex shrink-0">
-                <span class="px-2 py-[1px] rounded-full text-[11px] font-semibold whitespace-nowrap"
+
+              <div class="hidden md:flex shrink-0 w-[140px]">
+                <span class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap"
                   :class="getCategoryStyle(mail.category)">
-                  {{ getCategoryLabel(mail.category) }}
+                  {{ mail.category_text }}
                 </span>
               </div>
+
             </div>
 
-            <div class="pl-2 shrink-0 flex justify-end w-[65px] md:w-[75px]">
-              <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap">
-                {{ mail.date }}
+            <div class="hidden md:flex pl-2 shrink-0 justify-end w-[130px]">
+              <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap truncate">
+                {{ mail.fullDate }}
               </span>
             </div>
 
-            <div class="pl-5 shrink-0 flex justify-end gap-2">
+            <div class="pl-2 sm:pl-5 shrink-0 flex justify-end gap-1 sm:gap-2 mt-0.5 md:mt-0">
               <button class="text-primary hover:text-neutral-800 transition-colors p-1" title="Edit"
                 @click.stop="handleEdit(mail)">
                 <Edit class="w-4 h-4" />
@@ -470,24 +482,32 @@ const getCategoryLabel = (cat) => {
               </button>
             </div>
           </div>
+
         </div>
       </div>
 
     </div>
 
     <div v-if="showDeleteModal"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      class="fixed inset-0 z-99 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
         <div class="p-5 text-center">
           <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle class="w-6 h-6 text-red-600" />
           </div>
           <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draft?</h3>
-          <p class="text-sm text-gray-500 mb-6">
+
+          <p class="text-sm text-gray-500 mb-6" v-if="itemToDelete">
             Apakah Anda yakin ingin menghapus draft <br>
             <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>? <br>
-            Tindakan ini tidak dapat dibatalkan.
           </p>
+          <p class="text-sm text-gray-500 mb-6" v-else>
+            Apakah Anda yakin ingin menghapus <br>
+            <span class="font-bold text-gray-800">{{ selectedIds.size }} item terpilih</span>?
+          </p>
+
+          <p class="text-xs text-red-500 mb-4 font-medium">Tindakan ini tidak dapat dibatalkan.</p>
+
           <div class="flex gap-3 justify-center">
             <button @click="showDeleteModal = false" :disabled="isDeleting"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors disabled:opacity-50">

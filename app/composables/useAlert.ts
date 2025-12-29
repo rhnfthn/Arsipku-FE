@@ -1,3 +1,4 @@
+// composables/useAlert.ts
 import { reactive } from "vue";
 
 const state = reactive({
@@ -7,7 +8,8 @@ const state = reactive({
   message: "",
   confirmText: "Confirm",
   cancelText: "Cancel",
-  isAlert: false, // Tambahkan ini
+  isAlert: false,
+  isLoading: false,
   resolve: null as ((value: boolean) => void) | null,
 });
 
@@ -24,7 +26,8 @@ export const Alert = {
     state.message = message;
     state.confirmText = confirmText;
     state.cancelText = cancelText;
-    state.isAlert = false; // Mode Konfirmasi (2 tombol)
+    state.isAlert = false;
+    state.isLoading = false;
     state.isOpen = true;
 
     return new Promise<boolean>((res) => {
@@ -37,12 +40,19 @@ export const Alert = {
     state.title = title;
     state.message = message;
     state.confirmText = "OK";
-    state.isAlert = true; // Mode Alert (1 tombol)
+    state.isAlert = true;
+    state.isLoading = false;
     state.isOpen = true;
 
     return new Promise<boolean>((res) => {
       state.resolve = res;
     });
+  },
+
+  // TAMBAHKAN INI: Fungsi untuk menutup alert manual
+  close() {
+    state.isOpen = false;
+    state.isLoading = false;
   },
 };
 

@@ -53,6 +53,7 @@ export function useInbox(positionId: any) {
         return {
           id: it.id_sirkulasi,
           naskahId: it.id_naskah,
+          sifat: it.sifat || null,
 
           category: it.jenis,
           category_label: it.jenis_label,
@@ -151,5 +152,55 @@ export function useInbox(positionId: any) {
     }
   };
 
-  return { items, pending, error, refresh, markAsRead, toggleFlag };
+  const fetchInboxDetail = async (idNaskah: string) => {
+    pending.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet(
+        `/persuratan/naskah/detail/${encodeURIComponent(idNaskah)}`,
+      );
+
+      const d = res?.data?.data;
+      if (!d) return null;
+
+      const mapped = {
+        id: d.id,
+
+        // 🔴 INI YANG KITA KEJAR
+        jenis: d.jenis,
+        jenis_label: d.jenis_label,
+        sifat: d.sifat,
+
+        nomor: d.nomor,
+        tanggal: d.tanggal,
+        perihal: d.perihal,
+
+        pengirim: d.pengirim,
+        kepada: Array.isArray(d.penerima) ? d.penerima : [],
+
+        raw: d,
+      };
+
+      console.log("DETAIL MAPPED:", mapped); // 🔥 WAJIB ADA
+
+      return mapped;
+    } catch (err) {
+      console.error("fetchInboxDetail error:", err);
+      error.value = err;
+      return null;
+    } finally {
+      pending.value = false;
+    }
+  };
+
+  return {
+    items,
+    pending,
+    error,
+    refresh,
+    markAsRead,
+    toggleFlag,
+    fetchInboxDetail,
+  };
 }

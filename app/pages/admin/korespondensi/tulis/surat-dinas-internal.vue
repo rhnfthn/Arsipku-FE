@@ -56,14 +56,9 @@
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
 
-              <input type="text" v-model="lampiranText" :maxlength="maxPerihal"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Lampiran" />
-
-              <span class="text-[10px] font-mono shrink-0 transition-colors"
-                :class="lampiranText.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
-                {{ lampiranText.length }}/{{ maxPerihal }}
-              </span>
+              <input type="text" v-model="lampiranText" readonly tabindex="-1"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+                placeholder="Otomatis terisi saat upload file..." />
 
             </div>
           </div>
@@ -213,7 +208,7 @@
 /* -------------------------------------------------------------------------- */
 /* 1. IMPORTS & SETUP                                                         */
 /* -------------------------------------------------------------------------- */
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
@@ -627,6 +622,17 @@ onMounted(async () => {
         toast.add({ title: 'Gagal memuat data draft', color: 'error' });
       }
     }
+
+    watch(existingFiles, (newFiles) => {
+      const jumlah = newFiles ? newFiles.length : 0;
+
+      if (jumlah > 0) {
+        lampiranText.value = `${jumlah} Berkas`;
+      } else {
+        // Jika kosong, set tanda strip
+        lampiranText.value = "-";
+      }
+    }, { deep: true, immediate: true });
 
     // Matikan loading setelah semua selesai
     isLoadingData.value = false;

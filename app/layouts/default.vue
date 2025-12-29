@@ -10,18 +10,18 @@
       :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'">
 
       <div
-        class="sticky top-0 z-40 px-4 md:px-6 py-1 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md">
+        class="sticky top-0 px-4 md:px-6 py-1 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-91">
         <Navbar @open-mobile-sidebar="openMobileSidebar" />
       </div>
 
-      <main class="flex-1 w-full px-4 md:px-6">
+      <main class="flex-1 w-full px-4 md:px-6 z-91">
         <div class="mx-auto w-full">
           <NuxtPage />
         </div>
       </main>
 
-      <footer class="p-4 mt-7 text-center text-xs text-gray-400 dark:text-gray-600">
-        &copy; 2025 ArsipKu System
+      <footer class="p-4 mt-2 text-center text-xs text-gray-400 dark:text-gray-600">
+        &copy; 2025 ArsipKu
       </footer>
     </div>
     <Alert />
