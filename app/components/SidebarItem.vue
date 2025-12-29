@@ -4,9 +4,12 @@
     <div v-if="hasChildren" @click="toggle" :class="containerClasses">
       <UIcon v-if="item.icon" :name="item.icon" :class="iconClasses" />
       <span class="flex-1 text-[14px] truncate leading-5">{{ item.label }}</span>
-      <span v-if="item.badge" class="text-xs font-semibold" :class="isActive ? 'text-gray-900' : 'text-gray-600'">
+
+      <span v-if="item.badge"
+        class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm min-w-[20px] h-5 flex items-center justify-center leading-none">
         {{ item.badge }}
       </span>
+
       <UIcon name="i-heroicons-chevron-down"
         :class="['w-3 h-3 transition-transform duration-200 text-gray-500', isOpen && 'rotate-180']" />
     </div>
@@ -14,12 +17,13 @@
     <NuxtLink v-else :to="item.to" :class="containerClasses">
       <UIcon v-if="item.icon" :name="item.icon" :class="iconClasses" />
       <span class="flex-1 text-[14px] truncate leading-5">{{ item.label }}</span>
-      <span v-if="item.badge" class="text-xs font-semibold" :class="isActive ? 'text-gray-900' : 'text-gray-600'">
+
+      <span v-if="item.badge"
+        class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm min-w-[20px] h-5 flex items-center justify-center leading-none">
         {{ item.badge }}
       </span>
     </NuxtLink>
 
-    <!-- <div v-if="hasChildren && isOpen" class="mt-1 mx-3 space-y-0.5"> -->
     <div v-if="hasChildren && isOpen" class="mt-0.5 mx-3 space-y-0.5">
       <NuxtLink v-for="(child, i) in item.children" :key="i" :to="child.to"
         class="whitespace-nowrap flex items-center px-4 py-2.5 my-1 pl-12 rounded-full text-[14px] transition-colors dark:text-gray-400"

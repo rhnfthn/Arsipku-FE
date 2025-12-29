@@ -47,7 +47,7 @@ export const useDisposisi = () => {
 
             // 2. Label: Format "NAMA - JABATAN"
             // Menggunakan 'persnum_person_text' dan 'position_text'
-            label: `${item.persnum_person_text || "Tanpa Nama"} - ${item.position_text || ""}`,
+            label: `${item.persnum_person_text || "Empty"} - ${item.position_text || ""}`,
 
             // 3. LabelJob: Mengambil singkatan jabatan 'position_abbreviation'
             // Jika kosong, fallback ke 'position_text'

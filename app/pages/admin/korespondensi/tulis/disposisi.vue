@@ -33,9 +33,9 @@
               <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="refNumber" readonly=""
+              <input type="text" v-model="refNumber"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik disini" />
+                placeholder="Ketik Ref. Nomor Surat" />
             </div>
           </div>
         </div>
@@ -48,15 +48,15 @@
               <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="refPerihal" readonly=""
+              <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik disini" />
+                placeholder="Ketik Ref. Perihal" />
             </div>
           </div>
         </div>
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
-          placeholder="Pilih Tertuju" :items="recipientList" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju"
+          :items="recipientList" />
 
         <div class="flex flex-col py-3 gap-3 mb-6">
           <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
@@ -481,32 +481,68 @@ onMounted(async () => {
 
       if (resDraft.data) {
         const d = resDraft.data;
-        refNumber.value = d.ref_nomor !== '-' ? d.ref_nomor : '';
-        refPerihal.value = d.ref_perihal !== '-' ? d.ref_perihal : '';
+
+        // 1. Ref Nomor & Perihal (Handle null)
+        refNumber.value = d.ref_nomor || "-";
+        refPerihal.value = d.ref_perihal || "-";
+
+        // 2. Tanggal (Parse YYYY-MM-DD)
+        if (d.tanggal) {
+          const [y, m, day] = d.tanggal.split('-').map(Number);
+          date.value = new CalendarDate(y, m, day);
+        }
+
+        // 3. Catatan Editor
         editorContent.value = d.catatan || d.htmlContent || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(editorContent.value);
 
-        selectedChecklist.value = d.disposisi || [];
+        // 4. Disposisi Checkbox (Split string by \n karena data API berupa string enter-separated)
+        if (d.disposisi && typeof d.disposisi === 'string') {
+          selectedChecklist.value = d.disposisi.split('\n');
+        } else if (Array.isArray(d.disposisi)) {
+          selectedChecklist.value = d.disposisi;
+        } else {
+          selectedChecklist.value = [];
+        }
 
-        // Map Sifat
-        const foundSifat = sifatOptions.find(s => s.label.toLowerCase() === (d.sifat || '').toLowerCase());
+        // 5. Map Sifat
+        // Mencari berdasarkan value (misal: 'biasa')
+        const foundSifat = sifatOptions.find(s => s.value.toLowerCase() === (d.sifat || '').toLowerCase());
         selectedSifat.value = foundSifat || sifatOptions[3];
 
-        // Map Tertuju
-        const mapApiToUI = (list: any[]) => {
-          if (!list) return [];
-          return list.map(idOrObj => {
-            const val = typeof idOrObj === 'object' ? (idOrObj.value || idOrObj.id) : idOrObj;
-            const found = recipientList.value.find(r => r.value === String(val));
-            return found || { value: val, label: val, labelJob: val };
-          });
-        };
-        selectedTertuju.value = mapApiToUI(d.tertuju);
+        // 6. Map Tertuju / Penerima
+        // API mengembalikan key 'penerima', bukan 'tertuju'
+        const rawPenerima = d.penerima || []; // Menggunakan d.penerima sesuai JSON
 
-        // Map Files
+        selectedTertuju.value = rawPenerima.map((item: any) => {
+          // Ambil ID dari position_id (API structure) atau value
+          const val = String(item.position_id || item.value || item.id);
+
+          // Cari data lengkap di recipientList agar labelnya sesuai format dropdown
+          const found = recipientList.value.find(r => r.value === val);
+
+          if (found) return found;
+
+          // Fallback manual jika tidak ada di list master
+          return {
+            value: val,
+            label: item.nama || item.positionText || item.label,
+            labelJob: item.positionText || item.labelJob
+          };
+        });
+
+        // 7. Map Files Lampiran
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
-            id: f.id, fileName: f.file_name, filePath: f.file_path, fileSize: 0
+            id: f.id,
+            // API mengembalikan 'fileName' (camelCase), bukan 'file_name'
+            fileName: f.fileName,
+
+            // Gunakan 'fileUrl' (link http lengkap) dan masukkan ke property 'filePath'
+            // agar komponen anak mendeteksi "startsWith('http')" dan tidak menambahkan "/storage/"
+            filePath: f.fileUrl || f.filePath,
+
+            fileSize: 0
           }));
         }
       }

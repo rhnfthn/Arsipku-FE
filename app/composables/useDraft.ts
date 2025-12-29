@@ -34,7 +34,7 @@ export const useDraft = () => {
         title: "Berhasil",
         description: id_draft ? "Draft diperbarui." : "Draft disimpan.",
         icon: "i-heroicons-check-circle",
-        color: "green",
+        color: "success",
       });
       return response.data;
     } catch (error: any) {
@@ -43,7 +43,7 @@ export const useDraft = () => {
         title: "Gagal",
         description: error.response?.data?.message || "Gagal menyimpan draft.",
         icon: "i-heroicons-exclamation-circle",
-        color: "red",
+        color: "error",
       });
       throw error;
     } finally {
@@ -65,7 +65,7 @@ export const useDraft = () => {
         title: "Terkirim",
         description: "Nota Dinas berhasil dikirim.",
         icon: "i-heroicons-paper-airplane",
-        color: "green",
+        color: "success",
       });
 
       return response.data;
@@ -77,7 +77,7 @@ export const useDraft = () => {
           error.response?.data?.message ||
           "Terjadi kesalahan saat mengirim data.",
         icon: "i-heroicons-exclamation-circle",
-        color: "red",
+        color: "error",
       });
       throw error;
     } finally {
@@ -101,7 +101,7 @@ export const useDraft = () => {
       toast.add({
         title: "Gagal Memuat",
         description: "Gagal mengambil daftar draft.",
-        color: "red",
+        color: "error",
       });
     } finally {
       isLoadingDraft.value = false;
@@ -119,7 +119,7 @@ export const useDraft = () => {
         title: "Berhasil",
         description: "Draft berhasil dihapus.",
         icon: "i-heroicons-trash",
-        color: "green",
+        color: "success",
       });
 
       drafts.value = drafts.value.filter(
@@ -132,7 +132,7 @@ export const useDraft = () => {
       toast.add({
         title: "Gagal",
         description: error.response?.data?.message || "Gagal menghapus draft.",
-        color: "red",
+        color: "error",
       });
       throw error;
     } finally {
@@ -150,7 +150,7 @@ export const useDraft = () => {
       toast.add({
         title: "Error",
         description: "Gagal memuat data draft.",
-        color: "red",
+        color: "error",
       });
       throw error;
     } finally {
@@ -182,6 +182,44 @@ export const useDraft = () => {
     }
   };
 
+  const bulkDeleteDrafts = async (positionId: number, naskahIds: string[]) => {
+    isLoadingDraft.value = true;
+    try {
+      const url = `/draft/bulk-delete`;
+      const payload = {
+        position_id: positionId,
+        naskah_ids: naskahIds,
+      };
+
+      const response = await post(url, payload);
+
+      toast.add({
+        title: "Berhasil",
+        description: `${naskahIds.length} Draft berhasil dihapus.`,
+        icon: "i-heroicons-trash",
+        color: "success",
+      });
+
+      // Update local state: hapus item yang ada di list naskahIds
+      drafts.value = drafts.value.filter(
+        (item: any) => !naskahIds.includes(item.id_naskah),
+      );
+      totalDrafts.value -= naskahIds.length;
+
+      return response;
+    } catch (error: any) {
+      toast.add({
+        title: "Gagal",
+        description:
+          error.response?.data?.message || "Gagal menghapus beberapa draft.",
+        color: "error",
+      });
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
   return {
     drafts,
     totalDrafts,
@@ -191,6 +229,7 @@ export const useDraft = () => {
     deleteDraft,
     getDraftDetail,
     generatePdf,
-    sendMessage
+    sendMessage,
+    bulkDeleteDrafts,
   };
 };

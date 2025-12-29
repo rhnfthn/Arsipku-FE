@@ -1,9 +1,6 @@
 <template>
-  <div
-    v-if="isMobileOpen"
-    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-    @click="closeMobile"
-  ></div>
+  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" @click="closeMobile">
+  </div>
 
   <aside
     class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
@@ -12,110 +9,64 @@
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       // Lebar Sidebar
       collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
-    ]"
-  >
+    ]">
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
-    >
-      <button
-        @click="handleMenuClick"
-        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors"
-      >
-        <UIcon
-          :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
-          class="w-6 h-6 text-gray-700 dark:text-gray-200"
-        />
+      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800">
+      <button @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
+        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
       </button>
 
       <div class="flex flex-col gap-4 w-full items-center">
-        <div
-          v-for="app in apps"
-          :key="app.id"
-          @click="setActiveApp(app.id)"
-          @mouseenter="hoveredApp = app.id"
-          @mouseleave="hoveredApp = null"
-          class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
-        >
-          <div
-            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
-            :class="
-              activeApp === app.id
-                ? 'bg-blue-200 dark:bg-gray-800'
-                : 'hover:bg-white/50 bg-transparent'
-            "
-          >
-            <UIcon
-              :name="app.icon"
-              class="w-6 h-6 transition-colors"
-              :class="
-                activeApp === app.id
-                  ? 'text-gray-800 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              "
-            />
-            <div
-              v-if="app.badge"
-              class="absolute -top-1 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-primary-50 dark:border-gray-900"
-            >
+        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
+          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="activeApp === app.id
+              ? 'bg-blue-200 dark:bg-gray-800'
+              : 'hover:bg-white/50 bg-transparent'
+              ">
+            <UIcon :name="app.icon" class="w-6 h-6 transition-colors" :class="activeApp === app.id
+              ? 'text-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400'
+              " />
+
+            <!-- <div v-if="app.badge"
+              class="absolute -top-1.5 -right-1 min-w-[20px] h-[20px] flex items-center justify-center bg-red-600 text-white text-[10px] font-bold px-1 rounded-full border-[2px] border-white dark:border-gray-900 shadow-md z-10 transform scale-100 group-hover:scale-110 transition-transform">
               {{ app.badge }}
-            </div>
+            </div> -->
+
           </div>
-          <span
-            class="text-[10px] font-medium transition-colors"
-            :class="
-              activeApp === app.id
-                ? 'text-gray-900 font-bold dark:text-white'
-                : 'text-gray-600 dark:text-gray-400'
-            "
-            >{{ app.label }}
+          <span class="text-[10px] font-medium transition-colors" :class="activeApp === app.id
+            ? 'text-gray-900 font-bold dark:text-white'
+            : 'text-gray-600 dark:text-gray-400'
+            ">{{ app.label }}
           </span>
 
-          <div
-            v-if="collapsed && hoveredApp === app.id && !isMobile"
-            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
-          >
-            <div
-              class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3"
-            >
-              <h3
-                class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
-              >
+          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
+            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                 {{ app.label }}
               </h3>
             </div>
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
-              <SidebarItem
-                v-for="(item, idx) in app.menus"
-                :key="idx"
-                :item="item"
-                :collapsed="false"
-              />
+              <SidebarItem v-for="(item, idx) in app.menus" :key="idx" :item="item" :collapsed="false" />
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div
-      v-show="!collapsed || isMobile"
-      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
-    >
+    <div v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900">
       <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
-        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium"
-          >ArsipKu</span
-        >
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
       </div>
 
-      <div
-        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2"
-      >
-        <SidebarItem
-          v-for="(item, index) in currentAppData.menus"
-          :key="index"
-          :item="item"
-          :collapsed="false"
-        />
+      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2">
+        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
       </div>
     </div>
   </aside>
@@ -126,8 +77,10 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 
 import { useAuth } from "~/composables/useAuth";
+import { useDraft } from "~/composables/useDraft";
 
 const { user, getProfile } = useAuth();
+const { totalDrafts, fetchDrafts } = useDraft();
 
 // import SidebarItem from './SidebarItem.vue'
 
@@ -135,7 +88,16 @@ onMounted(async () => {
   if (!user.value) {
     await getProfile();
   }
+  checkScreenSize();
+  window.addEventListener("resize", checkScreenSize);
 });
+
+// Watch user untuk fetch draft
+watch(() => user.value, (u) => {
+  if (u && u.position) {
+    fetchDrafts(u.position);
+  }
+}, { immediate: true });
 
 // --- 1. SETUP & PROPS ---
 const props = defineProps({
@@ -151,14 +113,14 @@ const isMobile = ref(false);
 const activeApp = ref("");
 const hoveredApp = ref(null);
 
-// --- 3. DATA MENU STATIS ---
+// --- 3. DATA MENU (COMPUTED AGAR REAKTIF) ---
 
 // =======================
 // A. DATA MENU USER
 // =======================
 
-// 1. User - Utama (Fokus Korespondensi)
-const userMenuUtama = [
+// User - Utama (COMPUTED)
+const userMenuUtama = computed(() => [
   {
     label: "Dashboard",
     to: "/user/dashboard",
@@ -168,7 +130,6 @@ const userMenuUtama = [
     label: "Kotak Masuk",
     to: "/user/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
-    badge: 2,
   },
   {
     label: "Terkirim",
@@ -179,11 +140,11 @@ const userMenuUtama = [
     label: "Draft",
     to: "/user/korespondensi/draft",
     icon: "i-lucide-file-text",
-    badge: 1,
+    badge: totalDrafts.value > 0 ? totalDrafts.value : null,
   },
-];
+]);
 
-// 2. User - Utilitas (Alat Bantu)
+// User - Utilitas (Static)
 const userMenuUtilitas = [
   { label: "Short URL", to: "/user/short-url", icon: "i-lucide-link" },
   { label: "Template", to: "/user/template", icon: "i-lucide-copy" },
@@ -203,8 +164,8 @@ const userMenuUtilitas = [
 // B. DATA MENU ADMIN
 // =======================
 
-// 1. Admin - Utama (Harian)
-const adminMenuUtama = [
+// Admin - Utama (COMPUTED)
+const adminMenuUtama = computed(() => [
   {
     label: "Dashboard",
     to: "/admin/dashboard",
@@ -231,7 +192,6 @@ const adminMenuUtama = [
     label: "Kotak Masuk",
     to: "/admin/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
-    badge: 2,
   },
   {
     label: "Terkirim",
@@ -242,11 +202,11 @@ const adminMenuUtama = [
     label: "Draft",
     to: "/admin/korespondensi/draft",
     icon: "i-lucide-file-text",
-    // badge: 1,
+    badge: totalDrafts.value > 0 ? totalDrafts.value : null,
   },
-];
+]);
 
-// 2. Admin - Utilitas
+// Admin - Utilitas (Static)
 const adminMenuUtilitas = [
   {
     label: "Digsig",
@@ -263,7 +223,7 @@ const adminMenuUtilitas = [
   { label: "Template", to: "/admin/template", icon: "i-lucide-copy" },
 ];
 
-// 3. Admin - Administrasi
+// Admin - Administrasi (Ref)
 const adminMenuAdministrasi = ref([]);
 
 watch(
@@ -312,7 +272,7 @@ watch(
   { immediate: true },
 );
 
-// 4. Admin - Laporan (FLAT / Tanpa Submenu)
+// Admin - Laporan (Static)
 const adminMenuLaporan = [
   {
     label: "Rekap Naskah",
@@ -341,7 +301,8 @@ const apps = computed(() => {
         id: "admin-utama",
         label: "Utama",
         icon: "i-heroicons-squares-2x2",
-        menus: adminMenuUtama,
+        menus: adminMenuUtama.value, // Gunakan .value
+        badge: totalDrafts.value > 0 ? totalDrafts.value : null, // Badge di Parent Icon
       },
       {
         id: "admin-utilitas",
@@ -370,7 +331,8 @@ const apps = computed(() => {
         icon: "i-heroicons-home",
         actionLabel: "Tulis",
         actionIcon: "i-heroicons-pencil",
-        menus: userMenuUtama,
+        menus: userMenuUtama.value, // Gunakan .value
+        badge: totalDrafts.value > 0 ? totalDrafts.value : null, // Badge di Parent Icon
       },
       {
         id: "user-utilitas",
@@ -420,12 +382,6 @@ const handleMenuClick = () => {
 
 const closeMobile = () => (isMobileOpen.value = false);
 const openMobile = () => (isMobileOpen.value = true);
-
-// Lifecycle Hooks
-onMounted(() => {
-  checkScreenSize();
-  window.addEventListener("resize", checkScreenSize);
-});
 
 onUnmounted(() => {
   window.removeEventListener("resize", checkScreenSize);

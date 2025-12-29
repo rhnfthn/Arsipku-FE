@@ -127,7 +127,7 @@ const openPdfPreview = () => {
     const filename = detail.value.final_pdf_name
       || detail.value.final_pdf_filename
       || (detail.value.final_pdf_url.split('?')[0].split('/').pop() || 'document.pdf');
-    openDocumentPreview(detail.value.final_pdf_url, 'Dokumen Final', filename);
+    openDocumentPreview(detail.value.final_pdf_url, 'Pratinjau', filename);
   } else {
     alert('Dokumen PDF belum tersedia');
   }
@@ -332,12 +332,12 @@ onMounted(async () => {
           <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Paperclip class="w-3.5 h-3.5" /> Lampiran
           </h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
             <button v-for="file in detail.lampiran_files" :key="file.id"
               @click="openDocumentPreview(file.fileUrl, file.fileName)"
-              class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 transition-all text-left">
+              class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 transition-all text-center">
               <!-- Preview box -->
-              <div class="p-4">
+              <div class="p-3">
                 <div
                   class="h-36 rounded-xl bg-gray-100 dark:bg-gray-700/40 flex flex-col items-center justify-center gap-2">
                   <FileText class="w-8 h-8 text-red-500" />
@@ -348,7 +348,7 @@ onMounted(async () => {
               </div>
 
               <!-- Filename -->
-              <div class="px-4 pb-4">
+              <div class="px-3 pb-4">
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug line-clamp-2">
                   {{ file.fileName }}
                 </p>

@@ -63,7 +63,7 @@
                 :alt="item.label"
                 class="w-3.5 h-3.5 rounded-full object-cover shrink-0"
               />
-              <span class="text-xs font-medium text-left truncate max-w-[150px] sm:max-w-[220px]">
+              <span class="text-xs font-medium text-left truncate">
                 {{ item.label }}
               </span>
               <UButton

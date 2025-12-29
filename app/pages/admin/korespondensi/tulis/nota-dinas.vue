@@ -263,6 +263,7 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 // Types & Validation (Dari file Zod kamu)
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
+import { Alert } from "@/composables/useAlert";
 
 /* -------------------------------------------------------------------------- */
 /* 2. LOCAL TYPES (Helper UI)                                                 */
@@ -508,8 +509,20 @@ const confirmSaveDraft = async () => {
     'Batal',
     false
   );
+
   if (!isConfirmed) return;
-  await handleSaveDraft();
+
+  try {
+    // Loading spinner sedang berputar di sini...
+    await handleSaveDraft();
+
+    // SUKSES: Panggil ini untuk menutup modal & mematikan loading
+    Alert.close();
+  } catch (error) {
+    console.error(error);
+    // JIKA ERROR: Tetap tutup alert, atau matikan loading saja
+    Alert.close();
+  }
 };
 
 const confirmKirimDokumen = async () => {
@@ -520,8 +533,16 @@ const confirmKirimDokumen = async () => {
     'Batal',
     false
   );
+
   if (!isConfirmed) return;
-  await handleKirimDokumen();
+
+  try {
+    await handleKirimDokumen();
+    Alert.close(); // <--- INI KUNCI UTAMANYA
+  } catch (error) {
+    console.error(error);
+    Alert.close();
+  }
 };
 
 const handleKirimDokumen = async () => {
