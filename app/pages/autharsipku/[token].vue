@@ -15,73 +15,70 @@
 </template>
 
 <script setup>
-import { useRoute, navigateTo } from '#imports'
+import { useRoute, navigateTo } from "#imports";
 
-const { verifyToken } = useAuth()
-const route = useRoute()
+const { verifyToken } = useAuth();
+const route = useRoute();
 
-const visible = ref(true)
+const visible = ref(true);
 
 onMounted(async () => {
-  const token = route.params.token
-  console.log("ROUTE FULL:", route.fullPath)
-  console.log("TOKEN:", token)
-
+  const token = route.params.token;
+  console.log("ROUTE FULL:", route.fullPath);
+  console.log("TOKEN:", token);
 
   if (!token) {
-    await delayWithFade()
-    return navigateTo('/')
+    await delayWithFade();
+    return navigateTo("/");
   }
 
-try {
-  const result = await verifyToken(token)
+  try {
+    const result = await verifyToken(token);
 
-  console.log("VERIFY RESULT:", result)
+    console.log("VERIFY RESULT:", result);
 
-  await delayWithFade()
+    await delayWithFade();
 
-if (result?.success) {
+    if (result?.success) {
+      const accessToken = result?.data?.accessToken;
+      const sessionId = result?.data?.sessionId;
+      const role = result?.data?.user?.role; // ⬅️ ambil role
 
-  const accessToken = result?.data?.accessToken
-  const sessionId = result?.data?.sessionId
-  const role = result?.data?.user?.role   // ⬅️ ambil role
+      if (!accessToken || !sessionId) {
+        console.error("Token/sessionId missing from API response:", result);
+        return navigateTo("/login");
+      }
 
-  if (!accessToken || !sessionId) {
-    console.error("Token/sessionId missing from API response:", result)
-    return navigateTo('/login')
+      // Simpan token
+      localStorage.setItem("token", accessToken);
+      localStorage.setItem("sessionId", sessionId);
+
+      // ⬅️ ROUTING DINAMIS
+      if (role === "admin" || role === "superadmin") {
+        return navigateTo("/admin/dashboard");
+      }
+
+      if (role === "user") {
+        return navigateTo("/admin/dashboard");
+      }
+
+      // fallback jika role tidak dikenal
+      return navigateTo("/");
+    }
+  } catch (error) {
+    console.error("Verify token gagal:", error);
+    await delayWithFade();
+    return navigateTo("/login");
   }
-
-  // Simpan token
-  localStorage.setItem("token", accessToken)
-  localStorage.setItem("sessionId", sessionId)
-
-  // ⬅️ ROUTING DINAMIS
-  if (role === "admin" || role === "superadmin") {
-    return navigateTo('/admin/dashboard')
-  }
-
-  if (role === "user") {
-    return navigateTo('/user/dashboard')
-  }
-
-  // fallback jika role tidak dikenal
-  return navigateTo('/')
-}
-
-} catch (error) {
-  console.error("Verify token gagal:", error)
-  await delayWithFade()
-  return navigateTo('/login')
-}
-})
+});
 
 function delayWithFade() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(() => {
-      visible.value = false
-      setTimeout(resolve, 300)
-    }, 3000)
-  })
+      visible.value = false;
+      setTimeout(resolve, 300);
+    }, 3000);
+  });
 }
 </script>
 
@@ -90,13 +87,15 @@ function delayWithFade() {
   width: 45px;
   height: 45px;
   border: 4px solid #ddd;
-  border-top-color: #457FB6;
+  border-top-color: #457fb6;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .fade-enter-active,

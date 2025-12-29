@@ -519,10 +519,6 @@ const penerimaDetail = computed(() => {
               <div class="text-sm text-gray-600">
                 {{ selected.fromName }}
               </div>
-              <div class="text-sm text-gray-500">
-                &lt;{{ selected.email }}&gt;
-              </div>
-              <div class="text-xs text-gray-400 mt-0.5">kepada saya</div>
             </div>
           </div>
 
@@ -534,23 +530,32 @@ const penerimaDetail = computed(() => {
 
           <div class="space-y-4 mb-8">
             <div>
-              <div class="text-sm text-gray-500 mb-0.5">Kepada</div>
+              <div class="text-sm text-gray-500 mb-0.5">No Surat</div>
+              <div class="text-sm text-gray-900">
+                {{ selected.nomor || "-" }}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-sm text-gray-500 mb-0.5">Penerima</div>
               <div v-for="(p, i) in selected.kepada" :key="i" class="mb-2">
-                <div class="text-xs">{{ p.position_text }}</div>
+                <div class="text-xs">{{ p.position_text }},</div>
               </div>
             </div>
             <div>
-              <div class="text-base text-gray-500 mb-0.5">Catatan</div>
-              <div class="text-sm text-gray-900">
-                {{ selected.subject || "-" }}
+              <div class="text-sm text-gray-500 mb-0.5">Sifat</div>
+              <div class="text-sm text-gray-900 capitalize">
+                {{ selected.sifat || "-" }}
               </div>
             </div>
           </div>
         </div>
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">
-          <NuxtLink :to="`/admin/korespondensi/kotak-masuk/${selected.id}`"
-            class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors">
+          <NuxtLink
+            :to="`/admin/korespondensi/kotak-masuk/${selected.naskahId}`"
+            class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors"
+          >
             Lihat Detail Lengkap
           </NuxtLink>
         </div>
