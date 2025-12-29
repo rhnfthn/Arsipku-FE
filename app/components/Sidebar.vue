@@ -203,8 +203,44 @@ const userMenuUtilitas = [
 // B. DATA MENU ADMIN
 // =======================
 
-// 1. Admin - Utama (Harian)
-const adminMenuUtama = [
+// 1. Admin - Utama
+const tulisChildrenByBod = computed(() => {
+  const tag = user.value?.bodTag ?? "";
+
+  // Semua menu dasar
+  const all = [
+    { label: "Nota Dinas", to: "/admin/korespondensi/tulis/nota-dinas" },
+    { label: "Disposisi", to: "/admin/korespondensi/tulis/disposisi" },
+    {
+      label: "Surat Dinas Internal",
+      to: "/admin/korespondensi/tulis/surat-dinas-internal",
+    },
+    {
+      label: "Surat Dinas Eksternal",
+      to: "/admin/korespondensi/tulis/surat-dinas-eksternal",
+    },
+    { label: "Kajian", to: "/admin/korespondensi/tulis/kajian" },
+  ];
+
+  // === RULES ===
+  if (tag === "BOD" || tag === "BOD-1") {
+    return all;
+  }
+
+  if (tag === "BOD-2" || tag === "BOD-3") {
+    return all.filter(
+      (i) =>
+        !["Surat Dinas Internal", "Surat Dinas Eksternal", "Kajian"].includes(
+          i.label,
+        ),
+    );
+  }
+
+  // bodTag kosong → hanya kajian
+  return all.filter((i) => i.label === "Kajian");
+});
+
+const adminMenuUtama = computed(() => [
   {
     label: "Dashboard",
     to: "/admin/dashboard",
@@ -214,18 +250,7 @@ const adminMenuUtama = [
     label: "Tulis",
     to: "/admin/korespondensi/tulis",
     icon: "i-lucide-edit",
-    children: [
-      { label: "Nota Dinas", to: "/admin/korespondensi/tulis/nota-dinas" },
-      { label: "Disposisi", to: "/admin/korespondensi/tulis/disposisi" },
-      {
-        label: "Surat Dinas Internal",
-        to: "/admin/korespondensi/tulis/surat-dinas-internal",
-      },
-      {
-        label: "Surat Dinas Eksternal",
-        to: "/admin/korespondensi/tulis/surat-dinas-eksternal",
-      },
-    ],
+    children: tulisChildrenByBod.value,
   },
   {
     label: "Kotak Masuk",
@@ -244,7 +269,7 @@ const adminMenuUtama = [
     icon: "i-lucide-file-text",
     // badge: 1,
   },
-];
+]);
 
 // 2. Admin - Utilitas
 const adminMenuUtilitas = [
@@ -264,6 +289,10 @@ const adminMenuUtilitas = [
 ];
 
 // 3. Admin - Administrasi
+const isAdminRole = computed(() => {
+  return user.value?.role === "admin" || user.value?.role === "superadmin";
+});
+
 const adminMenuAdministrasi = ref([]);
 
 watch(
@@ -333,15 +362,18 @@ const adminMenuLaporan = [
 
 // --- 4. COMPUTED: APPS (DINAMIS BY ROUTE) ---
 const apps = computed(() => {
-  const isAdmin = route.path.startsWith("/admin");
+  const isAdminRoute = route.path.startsWith("/admin");
 
-  if (isAdmin) {
-    return [
+  // ======================
+  // ADMIN AREA
+  // ======================
+  if (isAdminRoute) {
+    const baseApps = [
       {
         id: "admin-utama",
         label: "Utama",
         icon: "i-heroicons-squares-2x2",
-        menus: adminMenuUtama,
+        menus: adminMenuUtama.value,
       },
       {
         id: "admin-utilitas",
@@ -349,37 +381,48 @@ const apps = computed(() => {
         icon: "i-heroicons-briefcase",
         menus: adminMenuUtilitas,
       },
-      {
-        id: "admin-administrasi",
-        label: "Administrasi",
-        icon: "i-heroicons-cog-6-tooth",
-        menus: adminMenuAdministrasi.value,
-      },
-      {
-        id: "admin-laporan",
-        label: "Laporan",
-        icon: "i-heroicons-presentation-chart-line",
-        menus: adminMenuLaporan,
-      },
     ];
-  } else {
-    return [
-      {
-        id: "user-utama",
-        label: "Utama",
-        icon: "i-heroicons-home",
-        actionLabel: "Tulis",
-        actionIcon: "i-heroicons-pencil",
-        menus: userMenuUtama,
-      },
-      {
-        id: "user-utilitas",
-        label: "Utilitas",
-        icon: "i-heroicons-squares-plus",
-        menus: userMenuUtilitas,
-      },
-    ];
+
+    // 🔐 HANYA ADMIN / SUPERADMIN
+    if (isAdminRole.value) {
+      baseApps.push(
+        {
+          id: "admin-administrasi",
+          label: "Administrasi",
+          icon: "i-heroicons-cog-6-tooth",
+          menus: adminMenuAdministrasi.value,
+        },
+        {
+          id: "admin-laporan",
+          label: "Laporan",
+          icon: "i-heroicons-presentation-chart-line",
+          menus: adminMenuLaporan,
+        },
+      );
+    }
+
+    return baseApps;
   }
+
+  // ======================
+  // USER AREA
+  // ======================
+  return [
+    {
+      id: "user-utama",
+      label: "Utama",
+      icon: "i-heroicons-home",
+      actionLabel: "Tulis",
+      actionIcon: "i-heroicons-pencil",
+      menus: userMenuUtama,
+    },
+    {
+      id: "user-utilitas",
+      label: "Utilitas",
+      icon: "i-heroicons-squares-plus",
+      menus: userMenuUtilitas,
+    },
+  ];
 });
 
 // --- 5. LOGIC SWITCHING & WATCHER ---
