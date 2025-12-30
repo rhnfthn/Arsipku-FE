@@ -375,19 +375,10 @@
                     <button
                       v-if="item.file_text || item.file_url"
                       @click="previewFile(item)"
-                      class="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                      class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700 transition"
                     >
                       Lihat
                     </button>
-                    <a
-                      v-if="item.file_text"
-                      :href="getFileUrl(item.file_text)"
-                      target="_blank"
-                      download
-                      class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-800 transition"
-                    >
-                      Download
-                    </a>
                   </div>
                 </div>
               </div>
@@ -493,7 +484,7 @@ const sortBy = ref<string>("created_at");
 const sortDir = ref<"asc" | "desc">("desc");
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/user/dashboard" },
   { label: "Penomoran", to: "/admin/penomoran" },
 ];
 

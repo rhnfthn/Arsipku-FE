@@ -31,12 +31,11 @@
       </div>
 
       <!-- Pesawat Membesar Keluar Card -->
-      <img
-        src="/dashboard.png"
-        class="absolute right-0 bottom-0 top-1 h-70 translate-x-0 translate-y-6 opacity-90"
-        alt="Dashboard illustration"
-      />
     </div>
+    <img
+      src="/dashboard.png"
+      class="absolute right-0 bottom-0 top-18 h-70 translate-x-0 translate-y-6 opacity-90"
+    />
 
     <!-- Loading State -->
     <div

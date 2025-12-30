@@ -237,7 +237,7 @@
             <div class="flex items-center gap-3">
               <FileCheck class="w-6 h-6 text-primary-500" />
               <div>
-                <p class="text-sm font-medium">{{ addData.fileName }}</p>
+                <p class="text-xs font-medium">{{ addData.fileName }}</p>
                 <p class="text-xs text-gray-500">
                   {{ formatFileSize(addData.file.size) }}
                 </p>
