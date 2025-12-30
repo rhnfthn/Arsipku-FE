@@ -87,7 +87,13 @@ export const useSde = () => {
     );
   };
 
+  const getExternalRecipients = async () => {
+    // Return any atau tipe data spesifik jika ada interface-nya
+    return await apiGet<any>('/persuratan/eksternal');
+  };
+
   return {
+    getExternalRecipients,
     getRecipientInfo,
     getSDEDetail,
     generatePdf,
