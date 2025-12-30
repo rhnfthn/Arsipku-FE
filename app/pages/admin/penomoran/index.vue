@@ -69,16 +69,16 @@
       </div>
 
       <!-- TABLE -->
-      <div v-else class="overflow-x-auto">
+      <div v-else class="overflow-x-auto relative">
         <table class="w-full bg-white text-sm">
-          <thead class="bg-primary text-white text-[15px]">
+          <thead class="bg-primary text-white text-[15px] sticky top-0 z-10">
             <tr>
               <th
                 v-for="col in headers"
                 :key="col.key"
                 @click="col.sortable && sort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary',
                   col.sortable
                     ? 'cursor-pointer select-none'
                     : 'cursor-default',
@@ -146,7 +146,7 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.waktu }}</td>
+              <td class="px-5 py-4 sticky right-0 bg-white">{{ row.waktu }}</td>
             </tr>
           </tbody>
         </table>
@@ -359,7 +359,7 @@
 
                     <div class="flex-1 min-w-0">
                       <p
-                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
+                        class="text-xs font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
                       >
                         {{ item.file_name }}
                       </p>
@@ -370,52 +370,36 @@
                     </div>
                   </div>
 
-                  <!-- <div class="flex items-center gap-2 flex-1">
-                    <svg
-                      class="w-5 h-5 text-green-600 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <!-- Preview & Download Buttons -->
+                  <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <button
+                      v-if="item.file_text || item.file_url"
+                      @click="previewFile(item)"
+                      class="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
-                      >
-                        {{ item.file_name }}
-                      </p>
-                      <p class="text-xs text-gray-500">
-                        Status:
-                        <span class="capitalize">{{ item.status }}</span>
-                      </p>
-                    </div>
-                  </div> -->
-
-                  <a
-                    v-if="item.file_text"
-                    :href="getFileUrl(item.file_text)"
-                    target="_blank"
-                    class="ml-2 px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-800 transition flex-shrink-0"
-                  >
-                    Download
-                  </a>
+                      Lihat
+                    </button>
+                    <a
+                      v-if="item.file_text"
+                      :href="getFileUrl(item.file_text)"
+                      target="_blank"
+                      download
+                      class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-800 transition"
+                    >
+                      Download
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- No file uploaded -->
               <div
                 v-else
-                class="bg-yellow-50 border border-yellow-200 rounded-md p-3"
+                class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
               >
                 <div class="flex items-center gap-2">
                   <svg
-                    class="w-5 h-5 text-yellow-600"
+                    class="w-3 h-3 text-yellow-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -427,7 +411,7 @@
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span class="text-sm text-yellow-800">
+                  <span class="text-xs text-yellow-800">
                     Belum ada file diupload
                   </span>
                 </div>
@@ -442,26 +426,6 @@
         </div>
       </template>
     </div>
-
-    <!-- FOOTER -->
-    <!-- <template #footer>
-      <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
-        <button
-          @click="openPreview = false"
-          class="px-5 py-2 text-xs border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
-        >
-          Tutup
-        </button>
-
-        <button
-          @click="hapusNomor"
-          :disabled="isDeletingNomor"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {{ isDeletingNomor ? "Menghapus..." : "Hapus" }}
-        </button>
-      </div>
-    </template> -->
   </Modal>
 
   <!-- CONFIRM DELETE POPUP -->
@@ -585,6 +549,25 @@ const fetchPersonMap = async () => {
 // Get file URL
 const getFileUrl = (filePath: string) => {
   return `${config.public.apiBaseUrl}/${filePath}`;
+};
+
+// Preview file
+const previewFile = (item: any) => {
+  if (item.file_url) {
+    window.open(item.file_url, "_blank");
+    return;
+  }
+
+  if (item.file_text) {
+    window.open(getFileUrl(item.file_text), "_blank");
+    return;
+  }
+
+  toast.add({
+    title: "File tidak ditemukan",
+    description: "File tidak tersedia untuk ditampilkan",
+    color: "yellow",
+  });
 };
 
 // Edit title functions
@@ -888,5 +871,22 @@ onMounted(async () => {
 }
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* Sticky column styling */
+thead th:last-child,
+tbody td:last-child {
+  position: sticky;
+  right: 0;
+  background-color: inherit;
+  z-index: 1;
+}
+
+thead th:last-child {
+  z-index: 11;
+}
+
+tbody tr:hover td:last-child {
+  background-color: rgb(249 250 251);
 }
 </style>

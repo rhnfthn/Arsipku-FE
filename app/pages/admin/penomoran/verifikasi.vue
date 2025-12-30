@@ -129,6 +129,15 @@
                   />
                 </div>
               </th>
+              <th
+                @click="sort('status')"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+              >
+                <div class="flex items-center gap-1">
+                  <span>Status</span>
+                  <ArrowUpDown class="w-3 h-3 opacity-70" />
+                </div>
+              </th>
             </tr>
           </thead>
 
@@ -169,10 +178,12 @@
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
 
-              <td class="px-5 py-3">
+              <td
+                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+              >
                 <span
                   :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium',
+                    'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap',
                     {
                       'bg-yellow-100 text-yellow-700':
                         row.status === 'Menunggu Verifikasi',
@@ -291,7 +302,7 @@
         </div>
       </div>
 
-      <!-- File Lampiran -->
+      <!-- File Lampiran Utama (dari request) -->
       <div v-if="selectedRow.file_path" class="pt-2">
         <label class="block text-base font-medium text-gray-900 mb-2"
           >File Lampiran Pengusul</label
@@ -319,8 +330,9 @@
             <p class="text-xs text-gray-500">Dokumen lampiran</p>
           </div>
           <a
-            :href="selectedRow.file_path"
+            :href="`${apiBaseUrl}/${selectedRow.file_path}`"
             target="_blank"
+            rel="noopener noreferrer"
             class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
           >
             Lihat
@@ -433,12 +445,12 @@
                 <!-- Show existing file if available -->
                 <div
                   v-if="detail.file_name && !fileStates[idx]?.isReplacing"
-                  class="bg-white border border-gray-200 rounded-lg p-3"
+                  class="bg-white border border-gray-200 rounded-lg p-2"
                 >
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                       <svg
-                        class="w-5 h-5 text-green-600"
+                        class="w-3 h-3 text-green-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -451,25 +463,21 @@
                         />
                       </svg>
                       <div>
-                        <p class="text-sm font-medium text-gray-900">
+                        <p class="text-xs font-medium text-gray-900">
                           {{ detail.file_name }}
                         </p>
                         <p class="text-xs text-gray-500">File sudah diupload</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <!-- Use file_url if available, otherwise use file_text with apiBaseUrl -->
-                      <a
+                      <!-- Preview Button -->
+                      <button
                         v-if="detail.file_url || detail.file_text"
-                        :href="
-                          detail.file_url || `${apiBaseUrl}/${detail.file_text}`
-                        "
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        @click="previewFile(detail)"
                         class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
                       >
                         Lihat
-                      </a>
+                      </button>
                       <button
                         @click="startReplacingFile(idx)"
                         :disabled="isProcessing || fileStates[idx]?.isUploading"
@@ -681,15 +689,21 @@ import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
+import type { NomorDetail } from "~/types/penomoran";
 
 const toast = useToast();
 const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
 
-// Composable & API
-const { getPersonWithPosition, approveBulkNomor, rejectNomorRequest } =
-  usePenomoran();
-const { get, post, del, patch, api } = useApi();
+// Composable
+const {
+  getPersonWithPosition,
+  approveBulkNomor,
+  rejectNomorRequest,
+  getListSubmitted,
+  getDetailVerifikasiRequest,
+  uploadDetailFile,
+} = usePenomoran();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -706,7 +720,6 @@ const headers = [
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
-  { label: "Status", key: "status", sortable: true },
 ];
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
@@ -790,9 +803,9 @@ const fetchData = async () => {
   loading.value = true;
 
   try {
-    const res = await get("/admin/nomor-request-submitted");
+    const res = await getListSubmitted();
 
-    if (!res?.success) {
+    if (!Array.isArray(res)) {
       toast.add({
         title: "Gagal",
         description: "Tidak dapat mengambil data verifikasi",
@@ -801,7 +814,7 @@ const fetchData = async () => {
       return;
     }
 
-    rows.value = res.data.map((item: any) => {
+    rows.value = res.map((item: any) => {
       const person = personMap.value.get(item.persnum);
 
       return {
@@ -835,89 +848,48 @@ const fetchData = async () => {
 /* Show Preview Modal */
 const showPreview = async (row: any) => {
   try {
-    const mainRes = await get(`/admin/nomor-request/${row.id}`);
+    const detailData = await getDetailVerifikasiRequest(row.id);
 
-    if (!mainRes?.success) {
-      toast.add({
-        title: "Gagal",
-        description: "Tidak dapat mengambil detail usulan",
-        color: "red",
-      });
+    if (!detailData) {
       return;
-    }
-
-    const mainData = mainRes.data;
-
-    const detailRes = await get(`/admin/detail-nomor-request/${row.id}`);
-    const existingDetails = detailRes?.success
-      ? detailRes.data?.details || []
-      : [];
-
-    const jumlah = row.jumlah || mainData.jumlah || 0;
-    const template_nomor = mainData.template_nomor || null;
-
-    let details = [];
-
-    if (existingDetails.length > 0) {
-      details = existingDetails.slice(0, jumlah).map((d: any) => ({
-        id: d.id,
-        nomor: d.nomor || null,
-        template_nomor: template_nomor,
-        status: d.status || "booking",
-        checked: d.status !== "ditolak" && d.status !== "hangus",
-        file_name: d.file_name || null,
-        file_text: d.file_text || null,
-      }));
-
-      const remaining = jumlah - details.length;
-      for (let i = 0; i < remaining; i++) {
-        details.push({
-          id: null,
-          nomor: null,
-          template_nomor: template_nomor,
-          status: "pending",
-          checked: true,
-          file_name: null,
-          file_text: null,
-        });
-      }
-    } else {
-      for (let i = 0; i < jumlah; i++) {
-        details.push({
-          id: null,
-          nomor: null,
-          template_nomor: template_nomor,
-          status: "pending",
-          checked: true,
-          file_name: null,
-          file_text: null,
-        });
-      }
     }
 
     selectedRow.value = {
       ...row,
-      ...mainData,
-      jumlah: jumlah,
-      details: details,
+      ...detailData,
     };
 
-    files.value = Array(jumlah).fill(null);
+    files.value = Array(detailData.jumlah || 0).fill(null);
     fileStates.value = {};
 
     keterangan_ditolak.value = "";
     openPreview.value = true;
 
-    console.log("✅ Jumlah nomor:", jumlah);
-    console.log("✅ Details loaded:", details);
+    console.log("✅ Jumlah nomor:", detailData.jumlah);
+    console.log("✅ Details loaded:", detailData.details);
   } catch (error) {
     console.error("❌ Error fetch detail:", error);
-    toast.add({
-      title: "Gagal",
-      description: "Terjadi kesalahan saat mengambil detail",
-      color: "red",
-    });
   }
+};
+
+/* Preview file */
+const previewFile = (detail: NomorDetail) => {
+  // Prioritas: file_url > file_text > fallback
+  if (detail.file_url) {
+    window.open(detail.file_url, "_blank");
+    return;
+  }
+
+  if (detail.file_text) {
+    window.open(`${apiBaseUrl}/${detail.file_text}`, "_blank");
+    return;
+  }
+
+  toast.add({
+    title: "File tidak ditemukan",
+    description: "File tidak tersedia untuk ditampilkan",
+    color: "yellow",
+  });
 };
 
 /* Start replacing file */
@@ -986,51 +958,17 @@ const uploadReplaceFile = async (idx: number, detail: any) => {
   fileState.isUploading = true;
 
   try {
-    const formData = new FormData();
-    formData.append("file", fileState.file);
+    const result = await uploadDetailFile(detail.id, fileState.file);
 
-    console.log(`📤 Replacing file for detail ID: ${detail.id}`);
-
-    const response = await api.patch(
-      `/admin/nomor-request-detail/${detail.id}/file`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-
-    console.log("✅ File replace response:", response.data);
-
-    if (response.data?.success) {
-      detail.file_name = response.data.data.file_name;
-      detail.file_text = response.data.data.file_text;
-
-      toast.add({
-        title: "Berhasil",
-        description: "File berhasil diganti",
-        color: "green",
-      });
+    if (result) {
+      detail.file_name = result.file_name;
+      detail.file_text = result.file_text;
+      detail.file_url = result.file_url;
 
       delete fileStates.value[idx];
-    } else {
-      throw new Error(response.data?.message || "Gagal mengganti file");
     }
   } catch (error: any) {
     console.error("❌ Error replace file:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Gagal mengganti file";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
   } finally {
     fileState.isUploading = false;
   }
@@ -1127,12 +1065,11 @@ const confirmApproval = () => {
   showConfirmApprove.value = true;
 };
 
-/* PROSES APPROVAL menggunakan composable */
+/* PROSES APPROVAL */
 const processApproval = async () => {
   showConfirmApprove.value = false;
   if (!selectedRow.value) return;
 
-  // Filter detail yang checked dan memiliki ID yang valid
   const approvedDetails = selectedRow.value.details.filter(
     (d) =>
       d.checked &&
@@ -1156,9 +1093,6 @@ const processApproval = async () => {
 
   try {
     const detailIds = approvedDetails.map((d) => d.id);
-
-    console.log("📤 Approving detail IDs:", detailIds);
-
     await approveBulkNomor(detailIds);
 
     openPreview.value = false;
@@ -1193,13 +1127,12 @@ const confirmRejection = () => {
   showConfirmReject.value = true;
 };
 
-/* PROSES REJECTION menggunakan composable */
+/* PROSES REJECTION */
 const processRejection = async () => {
   showConfirmReject.value = false;
 
   if (!selectedRow.value) return;
 
-  // Filter detail yang tidak checked dan memiliki ID yang valid
   const rejectedDetails = selectedRow.value.details.filter(
     (d: any) =>
       !d.checked &&
@@ -1232,9 +1165,6 @@ const processRejection = async () => {
 
   try {
     const detailIds = rejectedDetails.map((d) => d.id);
-
-    console.log("📤 Rejecting detail IDs:", detailIds);
-
     await rejectNomorRequest(
       selectedRow.value.id,
       detailIds,

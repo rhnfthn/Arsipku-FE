@@ -138,6 +138,15 @@
                   />
                 </div>
               </th>
+              <th
+                @click="sortStatus"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+              >
+                <div class="flex items-center gap-1">
+                  <span>Status</span>
+                  <ArrowUpDown class="inline w-3 h-3 opacity-70" />
+                </div>
+              </th>
             </tr>
           </thead>
 
@@ -178,22 +187,40 @@
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
 
-              <td class="px-5 py-3">
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium',
-                    {
-                      'bg-gray-200 text-gray-700':
-                        row.status === 'Belum Diajukan',
-                      'bg-yellow-100 text-yellow-700':
-                        row.status === 'Menunggu Verifikasi',
-                      'bg-green-100 text-green-700': row.status === 'Disetujui',
-                      'bg-red-100 text-red-700': row.status === 'Ditolak',
-                    },
-                  ]"
+              <td
+                @click.stop
+                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+              >
+                <button
+                  @click="toggleStatus(row.id_usulan)"
+                  class="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                  :class="{
+                    'bg-gray-200 text-gray-700':
+                      row.status === 'Belum Diajukan',
+                    'bg-yellow-100 text-yellow-700':
+                      row.status === 'Menunggu Verifikasi',
+                    'bg-green-100 text-green-700': row.status === 'Disetujui',
+                    'bg-red-100 text-red-700': row.status === 'Ditolak',
+                  }"
                 >
                   {{ row.status }}
-                </span>
+                  <ChevronDown class="w-3 h-3" />
+                </button>
+                <div
+                  v-if="openStatusId === row.id_usulan"
+                  class="absolute right-5 mt-2 z-50 w-44 rounded-md bg-white border shadow-lg"
+                >
+                  <ul class="py-1 text-xs">
+                    <li
+                      v-for="status in statusOptions"
+                      :key="status"
+                      @click="updateStatus(row, status)"
+                      class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    >
+                      {{ status }}
+                    </li>
+                  </ul>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -442,14 +469,29 @@
               </label>
             </div>
 
-            <!-- No file message for other statuses -->
+            <!-- No file uploaded -->
             <div
               v-else
-              class="bg-gray-100 border border-gray-200 rounded-lg p-3"
+              class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
             >
-              <p class="text-sm text-gray-600">
-                <span v-if="!detail.file_name">Tidak ada file</span>
-              </p>
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-3 h-3 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span class="text-xs text-yellow-800">
+                  Belum ada file diupload
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1264,16 +1306,33 @@ const headers = [
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
-  { label: "Status", key: "status", sortable: true },
 ];
 
-const filterOptions = [
-  "Semua",
-  "Belum Diajukan",
-  "Menunggu Verifikasi",
-  "Disetujui",
-  "Ditolak",
-];
+/* SORT STATUS */
+const isSortingStatus = ref(false);
+const sortStatus = () => {
+  if (sortBy.value === "status") {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = "status";
+    sortDir.value = "asc";
+  }
+};
+
+const statusOrder = {
+  "Belum Diajukan": 1,
+  "Menunggu Verifikasi": 2,
+  Disetujui: 3,
+  Ditolak: 4,
+};
+
+// const filterOptions = [
+//   "Semua",
+//   "Belum Diajukan",
+//   "Menunggu Verifikasi",
+//   "Disetujui",
+//   "Ditolak",
+// ];
 
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -1323,8 +1382,17 @@ const filteredRows = computed(() => {
 /* SORT */
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
+    // 🔥 SORT STATUS (custom order)
+    if (sortBy.value === "status") {
+      const A = statusOrder[a.status] ?? 99;
+      const B = statusOrder[b.status] ?? 99;
+      return sortDir.value === "asc" ? A - B : B - A;
+    }
+
+    // 🔹 SORT NORMAL
     const A = String(a[sortBy.value] ?? "").toLowerCase();
     const B = String(b[sortBy.value] ?? "").toLowerCase();
+
     if (A < B) return sortDir.value === "asc" ? -1 : 1;
     if (A > B) return sortDir.value === "asc" ? 1 : -1;
     return 0;

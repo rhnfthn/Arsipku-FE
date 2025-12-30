@@ -28,6 +28,9 @@
 
         <TulisInputSifat v-model="selectedSifat" />
 
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tujuan Eksternal"
+          :items="externalItems" />
+
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
           :items="internalItems" />
 
@@ -74,21 +77,21 @@
                 class="bg-white dark:bg-gray-900 pt-10 pb-10 border-b border-gray-100 dark:border-gray-700 select-none text-black dark:text-white min-h-[1000px]">
 
                 <div class="flex items-center pb-4 mb-6 px-10">
-                  <div class="flex items-end gap-4">
+                   <div class="flex items-end gap-4">
                     <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
                     <div class="flex flex-col mb-1">
                       <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
                     </div>
                   </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-right">
-                    <div class="font-bold">{{ user?.areaText || 'Kantor Pusat Perum LPPNPI' }}</div>
-                    <div>Gedung AirNav Indonesia</div>
-                    <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                    <div>Banten – Indonesia</div>
-                    <div>Telp: 021-5591 5000</div>
-                    <div>Fax: 021-5591 5100</div>
-                    <div>www.airnavindonesia.co.id</div>
-                  </div>
+                   <div class="ml-auto text-[10px] leading-[1.1] text-right">
+                     <div class="font-bold">{{ user?.areaText || 'Kantor Pusat Perum LPPNPI' }}</div>
+                     <div>Gedung AirNav Indonesia</div>
+                     <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
+                     <div>Banten – Indonesia</div>
+                     <div>Telp: 021-5591 5000</div>
+                     <div>Fax: 021-5591 5100</div>
+                     <div>www.airnavindonesia.co.id</div>
+                   </div>
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
@@ -128,7 +131,14 @@
 
                     <div class="mt-5">Kepada Yth.</div>
                     <div class="font-bold mb-1">
-                      <div>................................................</div>
+                      <div v-if="selectedTertuju.length > 0">
+                         <div v-for="(t, index) in selectedTertuju" :key="t.value">
+                           {{ t.label }}
+                         </div>
+                      </div>
+                      <div v-else>
+                        <div>................................................</div>
+                      </div>
                     </div>
                     <div class="mb-1">Di Tempat</div>
                   </div>
@@ -149,13 +159,6 @@
                     </div>
                     <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
                   </div>
-                </div>
-
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
-                  <div class="font-bold underline mb-1">Tertuju :</div>
-                  <ol class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
-                  </ol>
                 </div>
 
                 <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
@@ -224,8 +227,7 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 // --- TYPES & COMPOSABLES ---
 import type { Klasifikasi } from "~/types/klasifikasi";
-import type { ExternalRecipient, SDEPayload } from "~/types/sde";
-import { validateSDEPayload } from "~/types/sde";
+import type { SDEPayload } from "~/types/sde";
 import { useSde } from "~/composables/useSde";
 
 // --- CONFIG ---
@@ -236,7 +238,8 @@ const toast = useToast();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useSDI();
-const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf } = useSde();
+// Import getExternalRecipients dari composable
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients } = useSde();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -253,7 +256,7 @@ const editDraftId = ref<string | null>(null);
 
 // Form Basic
 const subject = ref("");
-const lampiranText = ref(""); // State untuk teks lampiran manual
+const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -272,8 +275,9 @@ const internalItems = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
 const selectedSifat = ref<any>(null);
 
-// --- SDE RECIPIENT (SEMENTARA KOSONG) ---
-const externalRecipients = ref<ExternalRecipient[]>([]);
+// --- NEW SDE RECIPIENT STATE ---
+const externalItems = ref<any[]>([]); // Data dropdown
+const selectedTertuju = ref<any[]>([]); // Model input
 
 // PDF State
 const pdfBlob = ref<Blob | null>(null);
@@ -317,15 +321,15 @@ const getPayload = (): SDEPayload => {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
 
-    // Tetap kirim array kosong sesuai request
-    penerima: externalRecipients.value,
+    // UPDATE: Kirim Array of IDs dari Selected Tertuju
+    penerima: selectedTertuju.value.map(item => item.value),
 
     tembusan: selectedTembusan.value.map(i => i.value),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
-    lampiran: lampiranText.value, // Kirim teks lampiran manual
+    lampiran: lampiranText.value,
     konten: editorContent.value,
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
@@ -345,9 +349,8 @@ const createFormData = (payload: SDEPayload, includePdf: boolean = false) => {
 
     const value = payload[k];
 
-    if (k === 'penerima') {
-      formData.append(k, JSON.stringify(value));
-    } else if (k === 'tembusan' || k === 'lampiran_temp_ids') {
+    // Penerima dan Tembusan dikirim sebagai stringified array (standard multipart)
+    if (k === 'penerima' || k === 'tembusan' || k === 'lampiran_temp_ids') {
       formData.append(k, JSON.stringify(value));
     } else if (value !== null && value !== undefined) {
       formData.append(k, String(value));
@@ -371,11 +374,6 @@ const handleApplyTemplate = (content: string) => {
 
 const handlePreview = async () => {
   const payload = getPayload();
-
-  // Skip validasi penerima jika kosong karena memang dinonaktifkan sementara
-  // const check = validateSDEPayload(payload);
-  // if (!check.isValid) { ... }
-
   isLoadingData.value = true;
   loadingMessage.value = "Membuat Pratinjau PDF...";
 
@@ -455,13 +453,27 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, internalRecRes] = await Promise.all([
+    // UPDATE: Ambil External Recipients juga
+    const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(user.value?.position)
+      getRecipients(user.value?.position),
+      getExternalRecipients()
     ]);
 
     klasifikasiList.value = klasRes;
 
+    // --- MAPPING EXTERNAL (TERTUJU) ---
+    if(externalRecRes?.success && Array.isArray(externalRecRes.data)) {
+      externalItems.value = externalRecRes.data.map((item: any) => ({
+        label: item.nama, // Menampilkan Nama PT/Orang
+        value: item.id,   // Value yang dikirim adalah ID
+        raw: item,
+        // Optional: bisa tambahkan alamat di label jika mau detail
+        // label: `${item.nama} - ${item.alamat}`
+      }));
+    }
+
+    // --- MAPPING INTERNAL (TEMBUSAN) ---
     const rawRec = internalRecRes.recipients || [];
     const mapInternalItems = (list: any[]) => list.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
@@ -480,6 +492,7 @@ onMounted(async () => {
 
     klasifikasiStatus.value = "success";
 
+    // --- LOAD DRAFT ---
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
@@ -490,7 +503,7 @@ onMounted(async () => {
         const d = resDraft.data;
 
         subject.value = d.perihal || "";
-        lampiranText.value = d.lampiran || ""; // Load teks lampiran dari draft
+        lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 
@@ -499,7 +512,16 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        // Mapping Files
+        // Logic Re-Populate Tembusan & Tertuju jika ada di data draft
+        // Note: Logic ini butuh penyesuaian tergantung format data yg disimpan di backend untuk penerima
+        // Contoh sederhana jika backend balikin array ID:
+        /*
+        if (d.penerima) {
+           const penerimaIds = JSON.parse(d.penerima);
+           selectedTertuju.value = externalItems.value.filter(i => penerimaIds.includes(i.value));
+        }
+        */
+
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
