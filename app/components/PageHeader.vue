@@ -6,21 +6,18 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="space-y-1">
+  <div class="space-y-1 mb-5">
     <!-- TITLE -->
-    <Heading variant="heading6b" class="text-gray-900 dark:text-white">
+    <Heading variant="heading6sb" class="text-gray-900 dark:text-white">
       {{ title }}
     </Heading>
 
     <!-- BREADCRUMB -->
-    <UBreadcrumb
-      :items="items"
-      :ui="{
-        link: 'hover:text-primary transition-colors text-xs',
-        linkLeadingIcon: 'text-primary size-4',
-        linkLabel: 'text-xs',
-      }"
-    >
+    <UBreadcrumb :items="items" :ui="{
+      link: 'hover:text-primary transition-colors text-xs',
+      linkLeadingIcon: 'text-primary size-4',
+      linkLabel: 'text-xs',
+    }">
       <!-- SEPARATOR -->
       <template #separator>
         <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs">/</span>
@@ -29,13 +26,7 @@ const props = defineProps({
       <!-- DROPDOWN -->
       <template #dropdown="{ item }">
         <UDropdownMenu :items="item.children">
-          <UButton
-            :icon="item.icon"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            class="p-0.5"
-          />
+          <UButton :icon="item.icon" color="neutral" variant="ghost" size="xs" class="p-0.5" />
         </UDropdownMenu>
       </template>
     </UBreadcrumb>

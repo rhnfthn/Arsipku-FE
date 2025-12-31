@@ -57,31 +57,49 @@ const getRandomColor = (id) => {
   return colors[id.charCodeAt(0) % colors.length] || colors[0];
 };
 
+// Ganti fungsi handleEdit yang lama dengan yang ini
 const handleEdit = (mail) => {
-  console.log("DEBUG EDIT - ID:", mail.id, "Jenis:", mail.category);
-  let path = '/admin/korespondensi/tulis/nota-dinas';
+  // 1. Bersihkan string (trim spasi) dan uppercase agar validasi akurat
+  const jenis = (mail.category || '').trim().toUpperCase();
 
-  const jenis = (mail.category || '').toUpperCase();
-  if (['DISPOSISI', 'DI'].includes(jenis)) {
+  console.log("DEBUG EDIT - ID:", mail.id, "Jenis Raw:", mail.category, "Jenis Parsed:", jenis);
+
+  let path = '';
+
+  // 2. Logic Routing yang lebih strict
+  if (['ND', 'NOTA DINAS', 'NOTA_DINAS'].includes(jenis)) {
+    path = '/admin/korespondensi/tulis/nota-dinas';
+  }
+  else if (['DI', 'DISPOSISI'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/disposisi';
   }
-  else if (['INTERNAL', 'SDI', 'KA', 'SURAT DINAS INTERNAL'].includes(jenis)) {
+  else if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL', 'SURAT_DINAS_INTERNAL'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/surat-dinas-internal';
   }
-  else if (['EXTERNAL', 'EKSTERNAL', 'SDE', 'SURAT DINAS EKSTERNAL'].includes(jenis)) {
+  else if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL', 'SURAT_DINAS_EKSTERNAL'].includes(jenis)) {
     path = '/admin/korespondensi/tulis/surat-dinas-eksternal';
   }
-  else if (['ND', 'NOTA DINAS'].includes(jenis)) {
+  else if (['KA', 'KAJIAN'].includes(jenis)) {
+    // KA diarahkan ke halaman Kajian (sesuai history sebelumnya)
+    path = '/admin/korespondensi/tulis/kajian';
+  }
+  else {
+    // 3. Fallback jika jenis tidak dikenali
+    console.warn("Jenis surat tidak dikenali, default ke Nota Dinas. Jenis:", jenis);
+    // Opsional: Tetap arahkan ke ND atau tampilkan error
     path = '/admin/korespondensi/tulis/nota-dinas';
   }
 
-  router.push({
-    path: path,
-    query: {
-      draft_id: mail.id,
-      mode: 'edit'
-    }
-  });
+  // 4. Eksekusi Router
+  if (path) {
+    router.push({
+      path: path,
+      query: {
+        draft_id: mail.id,
+        mode: 'edit'
+      }
+    });
+  }
 };
 
 const formatDateShort = (isoString) => {
@@ -127,25 +145,57 @@ watch(() => route.query.q, (newVal) => {
 }, { immediate: true });
 
 // MAPPING DATA
+// MAPPING DATA
 const mappedEmails = computed(() => {
   if (!drafts.value) return [];
-  return drafts.value.map(item => ({
-    id: item.id_naskah,
-    from: item.penerima || 'Tanpa Penerima',
-    email: 'user@internal.com',
-    subject: item.isi_pesan || 'Tanpa Subjek',
-    body: item.isi_pesan,
-    category: item.jenis || '',
-    category_text: item.jenis_text || '',
-    date: formatDateShort(item.tanggal),
-    fullDate: formatFullDate(item.tanggal, item.waktu),
-    rawDate: new Date(item.tanggal),
-    initial: getInitial(item.penerima),
-    color: getRandomColor(item.id_naskah),
-    isRead: true,
-    recipient: item.penerima,
-    originalData: item
-  }));
+
+  return drafts.value.map(item => {
+    // --- LOGIC DISPLAY PENERIMA ---
+    const listPenerima = item.penerima || [];
+    let displayRecipient = 'Tanpa Penerima';
+
+    if (listPenerima.length > 0) {
+      const firstPerson = listPenerima[0];
+      const jenisSurat = (item.jenis || '').toUpperCase();
+      const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(jenisSurat);
+
+      // Jika SDE: Tampilkan Nama
+      // Jika Lainnya: Tampilkan Jabatan (position_text), fallback ke Nama jika jabatan kosong
+      let displayName = isSDE
+        ? firstPerson.nama
+        : (firstPerson.position_text || firstPerson.nama);
+
+      // Safety check jika data kosong/null
+      if (!displayName) displayName = 'Tanpa Nama';
+
+      if (listPenerima.length > 1) {
+        // Contoh: Direktur Operasi +2 lainnya
+        displayRecipient = `${displayName} +${listPenerima.length - 1} lainnya`;
+      } else {
+        // Contoh: Direktur Operasi
+        displayRecipient = displayName;
+      }
+    }
+    // -----------------------------
+
+    return {
+      id: item.id_naskah,
+      from: displayRecipient, // Hasil logic di atas
+      email: 'user@internal.com', // Placeholder jika tidak ada di API
+      subject: item.isi_pesan || 'Tanpa Subjek',
+      body: item.isi_pesan,
+      category: item.jenis || '',
+      category_text: item.jenis_text || '',
+      date: formatDateShort(item.tanggal),
+      fullDate: formatFullDate(item.tanggal, item.waktu),
+      rawDate: new Date(item.tanggal),
+      initial: getInitial(displayRecipient), // Initial ambil dari displayRecipient
+      color: getRandomColor(item.id_naskah),
+      isRead: true,
+      recipient: item.penerima, // Simpan raw data untuk kebutuhan lain
+      originalData: item
+    };
+  });
 });
 
 // FILTER LOGIC
@@ -288,8 +338,8 @@ const getCategoryStyle = (cat) => {
 </script>
 
 <template>
-  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
-    :class="['glass-blue']">
+  <div
+    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
       class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
 
@@ -309,12 +359,12 @@ const getCategoryStyle = (cat) => {
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
           <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
-            <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
             <button @click="confirmBulkDelete"
-              class="p-1.5 ml-1 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"
+              class="p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"
               title="Hapus Terpilih">
               <Trash2 class="w-4 h-4" />
             </button>
+            <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
           </div>
         </template>
       </div>
@@ -323,9 +373,12 @@ const getCategoryStyle = (cat) => {
 
         <div class="relative">
           <button @click="showDateMenu = !showDateMenu"
-            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
+            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center justify-center relative">
             <History class="w-4 h-4" />
-            <span class="text-xs font-medium hidden sm:inline">{{ activeDateLabel }}</span>
+
+            <span v-if="activeDateLabel !== 'Semua'"
+              class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white">
+            </span>
           </button>
 
           <div v-if="showDateMenu"

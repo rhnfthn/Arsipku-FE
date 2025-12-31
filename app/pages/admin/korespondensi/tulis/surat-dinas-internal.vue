@@ -1,16 +1,18 @@
 <template>
   <div class="relative">
 
-    <div v-if="isLoadingData"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-      <div
-        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-          {{ loadingMessage || 'Mohon Tunggu...' }}
-        </span>
+    <Teleport to="body">
+      <div v-if="isLoadingData"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
+        <div
+          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+            {{ loadingMessage || 'Mohon Tunggu...' }}
+          </span>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Surat Dinas Internal" :items="breadcrumbs" />
@@ -127,9 +129,14 @@
 
                     <div class="mt-5">Kepada Yth.</div>
                     <div class="font-bold mb-1">
-                      <div v-if="selectedTertuju.length > 0">
+
+                      <div v-if="selectedTertuju.length > 5">
+                        Periksa Alamat Terlampir
+                      </div>
+                      <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
-                          {{ p.labelJob || p.label }}
+                          <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
+                          {{ p.labelJob || p.label }} {{ p.organization ? ' - ' + p.organization : '' }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -156,13 +163,59 @@
                   </div>
                 </div>
 
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
+                <div class="mt-8 text-[12px] text-black dark:text-white px-10">
                   <div class="font-bold underline mb-1">Tembusan :</div>
-                  <ol class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                    Periksa Alamat Terlampir
+                  </div>
+                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                    <li v-for="t in selectedTembusan" :key="t.value">
+                      {{ t.labelJob || t.label }} {{ t.organization ? ' - ' + t.organization : '' }}
+                    </li>
                   </ol>
+                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page mt-10">
+
+                  <div class="flex justify-end mb-10 text-[14px]">
+                    <div class="text-left min-w-[300px]">
+                      <table class="w-full">
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedTertuju.length > 5" class="mb-8">
+                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTertuju" :key="item.value">
+                        {{ item.labelJob || item.label }} {{ item.organization ? ' - ' + item.organization : '' }}
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div v-if="selectedTembusan.length > 5">
+                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTembusan" :key="item.value">
+                        {{ item.labelJob || item.label }} {{ item.organization ? ' - ' + item.organization : '' }}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           </ClientOnly>
@@ -235,7 +288,7 @@ const alertState = useAlertState(); // Asumsi ada global alert state
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getDraftDetail } = useDraft(); // Asumsi generic draft logic
-const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf } = useSDI();
+const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -482,6 +535,7 @@ onMounted(async () => {
     const mapToOption = (r: any) => ({
       label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
+      organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),
       group: r.group, // Penting untuk filtering
       raw: r
@@ -531,113 +585,105 @@ onMounted(async () => {
   // Load Draft if exists (Logic similar to ND)
   const draftId = route.query.draft_id as string;
   if (draftId) {
-    editDraftId.value = draftId;
-    // ... (kode sebelumnya di dalam onMounted)
+    try {
+      loadingMessage.value = "Memuat data draft...";
+      editDraftId.value = draftId;
 
-    // Load Draft Data if exists
-    const draftId = route.query.draft_id as string;
-    if (draftId) {
-      try {
-        loadingMessage.value = "Memuat data draft...";
-        editDraftId.value = draftId;
+      // Ambil detail draft
+      const resDraft = await getSDIDetail(draftId);
 
-        // Ambil detail draft
-        const resDraft = await getDraftDetail(draftId);
+      if (resDraft.success && resDraft.data) {
+        const d = resDraft.data;
 
-        if (resDraft.success && resDraft.data) {
-          const d = resDraft.data;
+        // 1. Basic Fields (Perihal, Konten)
+        subject.value = d.perihal || "";
+        lampiranText.value = d.lampiran || "";
+        editorContent.value = d.konten || "";
+        // Update TinyMCE jika editor sudah siap
+        if (tinymceEditor.value) {
+          tinymceEditor.value.setContent(d.konten || "");
+        }
 
-          // 1. Basic Fields (Perihal, Konten)
-          subject.value = d.perihal || "";
-          lampiranText.value = d.lampiran || "";
-          editorContent.value = d.konten || "";
-          // Update TinyMCE jika editor sudah siap
-          if (tinymceEditor.value) {
-            tinymceEditor.value.setContent(d.konten || "");
-          }
+        // 2. Klasifikasi
+        // Mencari ID klasifikasi berdasarkan kode yang tersimpan
+        if (d.klasifikasi) {
+          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
+          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+        }
 
-          // 2. Klasifikasi
-          // Mencari ID klasifikasi berdasarkan kode yang tersimpan
-          if (d.klasifikasi) {
-            const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
-            if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
-          }
+        // 3. Helper Mapping Recipient (API Object -> UI Dropdown Item)
+        // Fungsi ini menangani jika data user belum ada di list 'items' awal
+        const mapApiToUI = (list: any[]) => {
+          if (!list || list.length === 0) return [];
+          return list.map(item => {
+            // Coba cari di master list 'items'
+            const posId = String(item.position_id || item.position || item.value || item.id);
+            const master = tertujuItems.value.find(m => m.value === posId) || tembusanItems.value.find(m => m.value === posId);
 
-          // 3. Helper Mapping Recipient (API Object -> UI Dropdown Item)
-          // Fungsi ini menangani jika data user belum ada di list 'items' awal
-          const mapApiToUI = (list: any[]) => {
-            if (!list || list.length === 0) return [];
-            return list.map(item => {
-              // Coba cari di master list 'items'
-              const posId = String(item.position_id || item.position || item.value || item.id);
-              const master = items.value.find(m => m.value === posId);
+            if (master) return master;
 
-              if (master) return master;
+            // Jika tidak ada di master list (misal pejabat lama), construct manual
+            return {
+              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
+              labelJob: item.positionText || item.labelJob || item.label || '',
+              value: posId,
+              raw: item
+            };
+          });
+        };
 
-              // Jika tidak ada di master list (misal pejabat lama), construct manual
-              return {
-                label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-                labelJob: item.positionText || item.labelJob || item.label || '',
-                value: posId,
-                raw: item
-              };
-            });
-          };
+        // 4. Set Tertuju & Tembusan
+        selectedTertuju.value = mapApiToUI(d.tertuju);
+        selectedTembusan.value = mapApiToUI(d.tembusan);
 
-          // 4. Set Tertuju & Tembusan
-          selectedTertuju.value = mapApiToUI(d.tertuju);
-          selectedTembusan.value = mapApiToUI(d.tembusan);
+        // 5. Lampiran Files
+        if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
+          existingFiles.value = d.lampiran_files.map((f: any) => ({
+            id: f.id,
+            fileName: f.fileName || f.file_name,
+            filePath: f.fileUrl || f.file_path,
+            fileSize: f.fileSize || 0
+          }));
+        }
 
-          // 5. Lampiran Files
-          if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
-            existingFiles.value = d.lampiran_files.map((f: any) => ({
-              id: f.id,
-              fileName: f.fileName || f.file_name,
-              filePath: f.fileUrl || f.file_path,
-              fileSize: f.fileSize || 0
-            }));
-          }
+        // 6. Sifat Surat
+        // Kita definisikan opsi manual disini jika 'sifatOptions' tidak global
+        const opsiSifat = [
+          { label: "Sangat Rahasia", value: "sangat rahasia" },
+          { label: "Rahasia", value: "rahasia" },
+          { label: "Terbatas", value: "terbatas" },
+          { label: "Biasa / Terbuka", value: "biasa" }
+        ];
+        const draftSifat = String(d.sifat || 'biasa').toLowerCase();
+        selectedSifat.value = opsiSifat.find(opt => opt.value === draftSifat) || opsiSifat[3];
 
-          // 6. Sifat Surat
-          // Kita definisikan opsi manual disini jika 'sifatOptions' tidak global
-          const opsiSifat = [
-            { label: "Sangat Rahasia", value: "sangat rahasia" },
-            { label: "Rahasia", value: "rahasia" },
-            { label: "Terbatas", value: "terbatas" },
-            { label: "Biasa / Terbuka", value: "biasa" }
-          ];
-          const draftSifat = String(d.sifat || 'biasa').toLowerCase();
-          selectedSifat.value = opsiSifat.find(opt => opt.value === draftSifat) || opsiSifat[3];
-
-          // 7. Tanggal (Format: YYYY-MM-DD -> CalendarDate)
-          if (d.tgl) {
-            const parts = d.tgl.split('-');
-            if (parts.length === 3) {
-              date.value = new CalendarDate(Number(parts[0]), Number(parts[1]), Number(parts[2]));
-            }
+        // 7. Tanggal (Format: YYYY-MM-DD -> CalendarDate)
+        if (d.tgl) {
+          const parts = d.tgl.split('-');
+          if (parts.length === 3) {
+            date.value = new CalendarDate(Number(parts[0]), Number(parts[1]), Number(parts[2]));
           }
         }
-      } catch (error) {
-        console.error("Error loading draft detail:", error);
-        toast.add({ title: 'Gagal memuat data draft', color: 'error' });
       }
+    } catch (error) {
+      console.error("Error loading draft detail:", error);
+      toast.add({ title: 'Gagal memuat data draft', color: 'error' });
     }
-
-    watch(existingFiles, (newFiles) => {
-      const jumlah = newFiles ? newFiles.length : 0;
-
-      if (jumlah > 0) {
-        lampiranText.value = `${jumlah} Berkas`;
-      } else {
-        // Jika kosong, set tanda strip
-        lampiranText.value = "-";
-      }
-    }, { deep: true, immediate: true });
-
-    // Matikan loading setelah semua selesai
-    isLoadingData.value = false;
   }
+
+  // Matikan loading setelah semua selesai
+  isLoadingData.value = false;
 });
+
+// Watch Existing Files untuk update text lampiran
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  if (jumlah > 0) {
+    lampiranText.value = `${jumlah} Lampiran`;
+  } else {
+    lampiranText.value = "0 Lampiran";
+  }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

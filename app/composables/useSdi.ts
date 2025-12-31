@@ -6,7 +6,7 @@ import type {
 } from "~/types/recipient";
 import type { SDIPayload } from "~/types/sdi";
 
-export const useSDI = () => {
+export const useSdi = () => {
   const { api, apiGet, apiPost, apiPut } = useApi();
 
   // Helper untuk header FormData (agar browser set boundary otomatis)
@@ -59,6 +59,11 @@ export const useSDI = () => {
       sender: res?.data?.sender ?? null,
       recipients: normalizeRecipients(res?.data),
     };
+  };
+
+  const getSDIDetail = async (id: string) => {
+    // Sesuaikan path ini dengan controller backend Anda
+    return await apiGet(`/SDI/${id}`);
   };
 
   /**
@@ -115,5 +120,6 @@ export const useSDI = () => {
     sendSDI,
     saveDraft,
     sendDraft,
+    getSDIDetail
   };
 };

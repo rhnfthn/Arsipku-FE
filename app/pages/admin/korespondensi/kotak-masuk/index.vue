@@ -106,7 +106,7 @@ const filterMenuOptions = [
 
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun"];
 const tabs = [
-  { label: "All", value: "ALL", icon: Inbox },
+  { label: "Semua", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
   { label: "Disposisi", value: "DI", icon: Send },
   { label: "Internal", value: "SDI", icon: Building },
@@ -262,8 +262,8 @@ const penerimaDetail = computed(() => {
 </script>
 
 <template>
-  <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
-    :class="['glass-blue']">
+  <div
+    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
       class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
       <div class="flex items-center gap-1 shrink-0 relative">
@@ -289,8 +289,8 @@ const penerimaDetail = computed(() => {
             <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
               class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-between group transition-colors">
               <span :class="activeFilterType === opt.value
-                  ? 'font-semibold text-primary'
-                  : ''
+                ? 'font-semibold text-primary'
+                : ''
                 ">{{ opt.label }}</span>
               <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
             </button>
@@ -375,7 +375,7 @@ const penerimaDetail = computed(() => {
               class="absolute top-full right-0 mt-1 w-20 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
               <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-center px-3 py-2 text-[13px] text-neutral-700 hover:bg-gray-50 flex items-center justify-center gap-2">
-                <span :class="itemsPerPage === size ? 'font-bold text-primary' : ''">{{ size }}</span>
+                <span :class="itemsPerPage === size ? 'font-bold text-primary' : ''">{{ size }} item</span>
               </button>
             </div>
           </div>
@@ -402,17 +402,16 @@ const penerimaDetail = computed(() => {
       <div
         class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden"
         :class="selected
-            ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
-            : 'flex-1 w-full'
+          ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
+          : 'flex-1 w-full'
           ">
-        <div class="py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
+        <div
+          class="py-2.5 border-b border-t border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
-            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
-              class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 active:bg-primary-100 active:text-primary-500"
-              :class="activeTab === tab.value
+            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary" class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0
+                active:bg-primary-100 active:text-primary-500 first:ms-2 last:me-2" :class="activeTab === tab.value
                   ? 'bg-primary-400 text-white border-primary-400'
-                  : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'
-                ">
+                  : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
             </UButton>
@@ -437,8 +436,8 @@ const penerimaDetail = computed(() => {
                 <div
                   class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
                   :class="selectedIds.has(mail.id)
-                      ? 'bg-primary border-primary'
-                      : 'bg-white'
+                    ? 'bg-primary border-primary'
+                    : 'bg-white'
                     " @click="toggleSelection(mail.id)">
                   <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                 </div>
@@ -476,16 +475,16 @@ const penerimaDetail = computed(() => {
                 class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                 <div class="flex items-center gap-2 p-1">
                   <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-neutral-300'
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-neutral-300'
                     " @click.stop="toggleFlag(mail, 'favorit')" />
                   <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
-                      ? 'text-orange-400 fill-orange-400'
-                      : 'text-neutral-300'
+                    ? 'text-orange-400 fill-orange-400'
+                    : 'text-neutral-300'
                     " @click.stop="toggleFlag(mail, 'note')" />
                   <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
-                      ? 'text-purple-500 fill-purple-500'
-                      : 'text-neutral-300'
+                    ? 'text-purple-500 fill-purple-500'
+                    : 'text-neutral-300'
                     " @click.stop="toggleFlag(mail, 'arsip')" />
                 </div>
               </div>
@@ -552,10 +551,8 @@ const penerimaDetail = computed(() => {
         </div>
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">
-          <NuxtLink
-            :to="`/admin/korespondensi/kotak-masuk/${selected.naskahId}`"
-            class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors"
-          >
+          <NuxtLink :to="`/admin/korespondensi/kotak-masuk/${selected.naskahId}`"
+            class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors">
             Lihat Detail Lengkap
           </NuxtLink>
         </div>

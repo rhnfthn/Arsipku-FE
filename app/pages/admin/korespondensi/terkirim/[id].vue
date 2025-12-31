@@ -8,6 +8,12 @@ import {
 } from 'lucide-vue-next';
 import { useTerkirimDetail } from '@/composables/useTerkirimDetail';
 
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Terkirim", to: "/admin/korespondensi/terkirim" },
+  { label: "Detail Surat", to: "#" },
+];
+
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
@@ -155,8 +161,36 @@ const resizeIframe = () => {
   setTimeout(adjust, 500);
 };
 
+const contentToDisplay = computed(() => {
+  if (!detail.value) return '';
+  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+
+  if (type === 'DI' || type === 'DISPOSISI') {
+    return detail.value.catatan || '';
+  }
+  return detail.value.konten || '';
+});
+
+// 2. LOGIC DATA INSTRUKSI
+// Mengambil teks instruksi (misal: "Tunjuk Perwakilan")
+const dispositionData = computed(() => {
+  if (!detail.value) return null;
+  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+
+  if (type === 'DI' || type === 'DISPOSISI') {
+    if (detail.value.disposisi) {
+      return { instruksi: detail.value.disposisi };
+    }
+    // Fallback untuk struktur lama
+    if (detail.value.detail_disposisi) {
+      return { instruksi: detail.value.detail_disposisi.disposisi };
+    }
+  }
+  return null;
+});
+
 // --- LIFECYCLE ---
-watch(() => detail.value?.konten, async () => {
+watch(contentToDisplay, async () => {
   await nextTick();
   setTimeout(resizeIframe, 100);
 });
@@ -175,16 +209,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden font-sans text-sm">
-    <div class="flex-1 pb-6">
 
-      <div v-if="isLoading" class="flex flex-col items-center justify-center h-full gap-3">
+  <PageHeader title="Detail Terkirim" :items="breadcrumbs" />
+ <div
+    class="w-full flex flex-col rounded-xl shadow-sm glass-blue">
+    <div class="flex-1 ">
+
+      <div v-if="isLoading" class="flex flex-col items-center justify-center h-full gap-3 py-10">
         <Loader2 class="w-8 h-8 text-blue-600 animate-spin" />
         <span class="text-xs text-gray-500">Memuat data...</span>
       </div>
 
       <div v-else-if="detail"
-        class="max-w-5xl mx-auto w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden mb-10">
+        class="max-w-5xl mx-auto w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
@@ -296,6 +333,18 @@ onMounted(async () => {
                     </button>
                   </div>
                 </div>
+
+                <div class="flex flex-col md:flex-row" v-if="dispositionData">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">
+                    Instruksi
+                  </div>
+                  <div class="flex flex-col">
+                    <div class="text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm whitespace-pre-line">
+                      <span class="font-medium">{{ dispositionData.instruksi }}</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -305,7 +354,7 @@ onMounted(async () => {
           <div class="relative overflow-hidden transition-all duration-500 ease-in-out"
             :class="[isContentExpanded ? 'max-h-full pb-6' : 'max-h-[300px]']">
 
-            <iframe ref="iframe" :srcdoc="detail.konten" class="w-full bg-transparent block" style="border: none;"
+            <iframe ref="iframe" :srcdoc="contentToDisplay" class="w-full bg-transparent block" style="border: none;"
               scrolling="no">
             </iframe>
 
@@ -380,6 +429,8 @@ onMounted(async () => {
 
       </div>
     </div>
+
+
 
     <USlideover v-model:open="showPdfModal" :title="previewTitle" side="bottom" :ui="{
       content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',

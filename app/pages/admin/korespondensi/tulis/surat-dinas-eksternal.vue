@@ -1,16 +1,18 @@
 <template>
   <div class="relative">
 
-    <div v-if="isLoadingData"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-      <div
-        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-          {{ loadingMessage || 'Mohon Tunggu...' }}
-        </span>
+    <Teleport to="body">
+      <div v-if="isLoadingData"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
+        <div
+          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+            {{ loadingMessage || 'Mohon Tunggu...' }}
+          </span>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
@@ -57,11 +59,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="lampiranText" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Lampiran" />
-              <span class="text-[10px] font-mono shrink-0 transition-colors"
-                :class="lampiranText.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
-                {{ lampiranText.length }}/{{ maxPerihal }}
-              </span>
+                placeholder="Otomatis terisi saat upload file..." />
             </div>
           </div>
         </div>
@@ -77,21 +75,21 @@
                 class="bg-white dark:bg-gray-900 pt-10 pb-10 border-b border-gray-100 dark:border-gray-700 select-none text-black dark:text-white min-h-[1000px]">
 
                 <div class="flex items-center pb-4 mb-6 px-10">
-                   <div class="flex items-end gap-4">
+                  <div class="flex items-end gap-4">
                     <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
                     <div class="flex flex-col mb-1">
                       <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
                     </div>
                   </div>
-                   <div class="ml-auto text-[10px] leading-[1.1] text-right">
-                     <div class="font-bold">{{ user?.areaText || 'Kantor Pusat Perum LPPNPI' }}</div>
-                     <div>Gedung AirNav Indonesia</div>
-                     <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                     <div>Banten – Indonesia</div>
-                     <div>Telp: 021-5591 5000</div>
-                     <div>Fax: 021-5591 5100</div>
-                     <div>www.airnavindonesia.co.id</div>
-                   </div>
+                  <div class="ml-auto text-[10px] leading-[1.1] text-right">
+                    <div class="font-bold">{{ user?.areaText || 'Kantor Pusat Perum LPPNPI' }}</div>
+                    <div>Gedung AirNav Indonesia</div>
+                    <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
+                    <div>Banten – Indonesia</div>
+                    <div>Telp: 021-5591 5000</div>
+                    <div>Fax: 021-5591 5100</div>
+                    <div>www.airnavindonesia.co.id</div>
+                  </div>
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
@@ -131,10 +129,14 @@
 
                     <div class="mt-5">Kepada Yth.</div>
                     <div class="font-bold mb-1">
-                      <div v-if="selectedTertuju.length > 0">
-                         <div v-for="(t, index) in selectedTertuju" :key="t.value">
-                           {{ t.label }}
-                         </div>
+
+                      <div v-if="selectedTertuju.length > 5">
+                        Periksa Alamat Terlampir
+                      </div>
+                      <div v-else-if="selectedTertuju.length > 0">
+                        <div v-for="(t, index) in selectedTertuju" :key="t.value">
+                          {{ t.label }}
+                        </div>
                       </div>
                       <div v-else>
                         <div>................................................</div>
@@ -161,13 +163,57 @@
                   </div>
                 </div>
 
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
+                <div class="mt-8 text-[12px] text-black dark:text-white px-10">
                   <div class="font-bold underline mb-1">Tembusan :</div>
-                  <ol class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                    Periksa Alamat Terlampir
+                  </div>
+                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + " - " + t.raw.area_text }}</li>
                   </ol>
+                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page mt-10">
+
+                  <div class="flex justify-end mb-10 text-[14px]">
+                    <div class="text-left min-w-[300px]">
+                      <table class="w-full">
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedTertuju.length > 5" class="mb-8">
+                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTertuju" :key="item.value">
+                        {{ item.label }}
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div v-if="selectedTembusan.length > 5">
+                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTembusan" :key="item.value">
+                        {{ item.labelJob + " - " + item.raw.area_text }}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           </ClientOnly>
@@ -211,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
@@ -453,7 +499,6 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    // UPDATE: Ambil External Recipients juga
     const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
       getRecipients(user.value?.position),
@@ -463,13 +508,11 @@ onMounted(async () => {
     klasifikasiList.value = klasRes;
 
     // --- MAPPING EXTERNAL (TERTUJU) ---
-    if(externalRecRes?.success && Array.isArray(externalRecRes.data)) {
+    if (externalRecRes?.success && Array.isArray(externalRecRes.data)) {
       externalItems.value = externalRecRes.data.map((item: any) => ({
-        label: item.nama, // Menampilkan Nama PT/Orang
-        value: item.id,   // Value yang dikirim adalah ID
+        label: item.nama,
+        value: item.id,
         raw: item,
-        // Optional: bisa tambahkan alamat di label jika mau detail
-        // label: `${item.nama} - ${item.alamat}`
       }));
     }
 
@@ -512,15 +555,27 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        // Logic Re-Populate Tembusan & Tertuju jika ada di data draft
-        // Note: Logic ini butuh penyesuaian tergantung format data yg disimpan di backend untuk penerima
-        // Contoh sederhana jika backend balikin array ID:
-        /*
-        if (d.penerima) {
-           const penerimaIds = JSON.parse(d.penerima);
-           selectedTertuju.value = externalItems.value.filter(i => penerimaIds.includes(i.value));
+        // --- POPULATE TERTUJU & TEMBUSAN ---
+
+        // 1. Populate Tertuju (External)
+        if (d.penerima && Array.isArray(d.penerima)) {
+          selectedTertuju.value = d.penerima.map((item: any) => ({
+            label: item.nama,
+            value: item.id,
+            raw: item
+          }));
         }
-        */
+
+        // 2. Populate Tembusan (Internal)
+        if (d.tembusan && Array.isArray(d.tembusan)) {
+          const tembusanIds = d.tembusan.map((t: any) =>
+            typeof t === 'object' ? String(t.id || t.position_id || t.value) : String(t)
+          );
+
+          selectedTembusan.value = internalItems.value.filter(item =>
+            tembusanIds.includes(String(item.value))
+          );
+        }
 
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
@@ -540,6 +595,16 @@ onMounted(async () => {
     isLoadingData.value = false;
   }
 });
+
+// Watch Existing Files untuk update text lampiran otomatis
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  if (jumlah > 0) {
+    lampiranText.value = `${jumlah} Lampiran`;
+  } else {
+    lampiranText.value = "0 Lampiran";
+  }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

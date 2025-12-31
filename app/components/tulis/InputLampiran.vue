@@ -98,20 +98,24 @@ const processMessage = computed(() => {
   return '';
 });
 
-// --- LOGIC PREVIEW PDF ---
+// --- LOGIC PREVIEW PDF (UPDATED) ---
 
 const getFileUrlString = (file: any): string => {
   if (!file) return '';
 
-  // 1. File mentah (baru dipilih, belum upload selesai/refresh)
+  // 1. File mentah (baru dipilih dari komputer, belum upload) -> Blob Local
   if (file instanceof File) {
     return URL.createObjectURL(file);
   }
 
-  // 2. File dari server (sudah ada filePath)
+  // 2. File dari server (Sudah punya ID) -> Gunakan Link Preview Server
+  if (file.id) {
+    return `http://172.20.16.115:3011/preview-file/${file.id}`;
+  }
+
+  // 3. Fallback (Jika data lama ada filePath tapi tidak ada ID)
   if (file.filePath) {
     if (file.filePath.startsWith('http')) return file.filePath;
-    // Relative path tanpa localhost
     return `/storage/${file.filePath}`;
   }
 
@@ -133,19 +137,16 @@ const handlePreview = async (file: any) => {
   activePdfUrl.value = null;
 
   try {
+    // Jika URL adalah Blob (Local File), langsung pakai
     if (url.startsWith('blob:')) {
       activePdfUrl.value = url;
     } else {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('File not found');
-
-      const buffer = await response.arrayBuffer();
-      const blob = new Blob([buffer], { type: 'application/pdf' });
-      activePdfUrl.value = URL.createObjectURL(blob);
+      // Jika URL adalah Link Server (http...), langsung set ke iframe
+      // Browser akan menangani loadingnya
+      activePdfUrl.value = url;
     }
   } catch (error) {
     console.error("Gagal memuat dokumen:", error);
-    // Fallback URL jika fetch gagal
     activePdfUrl.value = url;
   } finally {
     isLocalPdfLoading.value = false;
@@ -153,6 +154,7 @@ const handlePreview = async (file: any) => {
 };
 
 onUnmounted(() => {
+  // Hanya revoke jika itu blob local, bukan link http server
   if (activePdfUrl.value && activePdfUrl.value.startsWith('blob:') && !activePdfUrl.value.includes('http')) {
     URL.revokeObjectURL(activePdfUrl.value);
   }
@@ -182,7 +184,7 @@ const validateAndUpload = async (files: File[]) => {
     toast.add({
       title: 'File Terlalu Besar',
       description: `${invalidFiles.length} file melebihi ${MAX_SIZE_MB}MB.`,
-      color: 'warning', // Ganti yellow -> warning
+      color: 'warning',
     });
     if (validFiles.length === 0) {
       selectedFiles.value = [];
@@ -211,11 +213,11 @@ const validateAndUpload = async (files: File[]) => {
 
       const newExisting = [...props.existingFiles, ...newUploadedFiles];
       emit('update:existingFiles', newExisting);
-      toast.add({ title: 'Berhasil upload lampiran', color: 'success' }); // Ganti green -> success
+      toast.add({ title: 'Berhasil upload lampiran', color: 'success' });
     }
   } catch (error) {
     console.error('Upload Error:', error);
-    toast.add({ title: 'Gagal upload', description: 'Cek koneksi atau server', color: 'error' }); // Ganti red -> error
+    toast.add({ title: 'Gagal upload', description: 'Cek koneksi atau server', color: 'error' });
   } finally {
     selectedFiles.value = [];
     setTimeout(() => {
@@ -235,21 +237,19 @@ const handleRemove = async (index: number, file: any) => {
     true
   );
 
-  // Jika user pilih Batal, stop.
   if (!isConfirmed) return;
 
-  // KASUS A: Menghapus file lokal (belum di-upload ke server / tidak ada ID)
+  // KASUS A: Menghapus file lokal
   if (!file.id) {
     removeFromList(index);
-    Alert.close(); // <--- WAJIB: Tutup alert manual karena prosesnya instan
+    Alert.close();
     return;
   }
 
-  // KASUS B: Menghapus file di server (Async)
-  // Saat ini tombol di Alert sedang LOADING...
+  // KASUS B: Menghapus file di server
   isDeleting.value = true;
   try {
-    await deleteLampiran(file.id); // Proses hapus ke API
+    await deleteLampiran(file.id);
     removeFromList(index);
     toast.add({ title: 'File berhasil dihapus', color: 'success' });
   } catch (error) {

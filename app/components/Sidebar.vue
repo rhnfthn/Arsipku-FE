@@ -140,7 +140,7 @@ const userMenuUtama = computed(() => [
     label: "Draft",
     to: "/user/korespondensi/draft",
     icon: "i-lucide-file-text",
-    badge: totalDrafts.value > 0 ? totalDrafts.value : null,
+    // badge: totalDrafts.value > 0 ? totalDrafts.value : null,
   },
 ]);
 
@@ -227,7 +227,7 @@ const adminMenuUtama = computed(() => [
     label: "Draft",
     to: "/admin/korespondensi/draft",
     icon: "i-lucide-file-text",
-    badge: totalDrafts.value > 0 ? totalDrafts.value : null,
+    // badge: totalDrafts.value > 0 ? totalDrafts.value : null,
   },
 ]);
 

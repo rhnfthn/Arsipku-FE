@@ -1,16 +1,18 @@
 <template>
   <div class="relative">
 
-    <div v-if="isLoadingData"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-      <div
-        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-          {{ loadingMessage || 'Mohon Tunggu...' }}
-        </span>
+    <Teleport to="body">
+      <div v-if="isLoadingData"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
+        <div
+          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+            {{ loadingMessage || 'Mohon Tunggu...' }}
+          </span>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
       <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
@@ -139,7 +141,7 @@
                   <div class="font-bold underline mb-1">Kepada Yth. :</div>
                   <div v-if="selectedTertuju.length > 0" class="pl-4">
                     <ol class="list-decimal ml-4">
-                      <li v-for="t in selectedTertuju" :key="t.value">{{ t.labelJob || t.label }}</li>
+                      <li v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</li>
                     </ol>
                   </div>
                   <div v-else class="pl-4 italic text-gray-500">
