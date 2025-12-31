@@ -372,9 +372,9 @@ const deleteNow = async () => {
     <!-- ========================= -->
     <!-- MODAL EDIT -->
     <!-- ========================= -->
-    <Modal v-model="showEditModal" @save="saveEdit">
+    <Modal v-model="showEditModal" @save="saveEdit" size="xl">
       <template #title>
-        <div class="mt-5 ml-5 mb-3">
+        <div class="mt-5 ml-5 mb-5">
           <Heading variant="heading9b" class="font-semibold text-sm">
             Edit Titelatur
           </Heading>
@@ -385,13 +385,13 @@ const deleteNow = async () => {
         </div>
       </template>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2 mt-1">
         <Heading variant="body2m"
           >Titelatur Indonesia <span class="text-red-500">*</span></Heading
         >
         <input
           v-model="editForm.long_text"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
+          class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
         />
 
         <Heading variant="body2m"
@@ -399,7 +399,7 @@ const deleteNow = async () => {
         >
         <input
           v-model="editForm.long_text_en"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
+          class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
         />
       </div>
     </Modal>
@@ -407,9 +407,9 @@ const deleteNow = async () => {
     <!-- ========================= -->
     <!-- MODAL ADD -->
     <!-- ========================= -->
-    <Modal v-model="showAddModal" @save="saveAdd">
+    <Modal v-model="showAddModal" @save="saveAdd" size="xl">
       <template #title>
-        <div class="mt-5 ml-5 mb-3">
+        <div class="mt-5 ml-5 mb-5">
           <Heading variant="heading9b" class="font-semibold text-sm">
             Tambah Titelatur
           </Heading>
@@ -420,14 +420,14 @@ const deleteNow = async () => {
         </div>
       </template>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2 mt-1">
         <Heading variant="body2m"
           >Titelatur Indonesia <span class="text-red-500">*</span></Heading
         >
         <input
           v-model="addForm.long_text"
           placeholder="Masukkan Titelatur Indonesia"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
+          class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
         />
 
         <Heading variant="body2m"
@@ -436,7 +436,7 @@ const deleteNow = async () => {
         <input
           v-model="addForm.long_text_en"
           placeholder="Masukkan Titelatur Inggris"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
+          class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
         />
       </div>
     </Modal>
