@@ -524,7 +524,7 @@ export const usePenomoran = () => {
    * =========================== */
   const deleteUsulanUser = async (id: string) => {
     try {
-      const res = await del(`/nomor-request/${id}`);
+      const res = await del(`/admin/nomor-request/${id}`);
 
       console.log("✅ Delete response:", res);
 

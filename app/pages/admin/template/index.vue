@@ -182,11 +182,11 @@
     <!-- ========================= -->
     <!-- MODAL TAMBAH TEMPLATE -->
     <!-- ========================= -->
-    <Modal v-model="addModal" @save="saveAdd">
+    <Modal v-model="addModal" @save="saveAdd" size="xl">
       <template #title>
         <Heading
-          variant="heading9b"
-          class="font-semibold text-xl mb-2 mt-5 ml-7"
+          variant="heading8b"
+          class="font-semibold text-xl mb-5 mt-5 ml-7"
         >
           Tambah Template
         </Heading>
@@ -195,7 +195,7 @@
       <div class="px-2 py-3 flex flex-col gap-6">
         <!-- Nama Template -->
         <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
+          <Heading variant="heading10sb" class="mb-2">
             Nama Template <span class="text-red-500">*</span>
           </Heading>
 
@@ -208,7 +208,7 @@
 
         <!-- Upload File -->
         <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
+          <Heading variant="heading10sb" class="mb-2">
             File Dokumen <span class="text-red-500">*</span>
           </Heading>
 
@@ -258,7 +258,7 @@
     <!-- ========================= -->
     <!-- MODAL EDIT TEMPLATE -->
     <!-- ========================= -->
-    <Modal v-model="editModal" @save="saveEdit">
+    <Modal v-model="editModal" @save="saveEdit" size="xl">
       <template #title>
         <Heading
           variant="heading9b"
@@ -271,7 +271,7 @@
       <div class="px-2 py-3 flex flex-col gap-6">
         <!-- Nama Template -->
         <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
+          <Heading variant="heading10sb" class="font-semibold mb-2">
             Nama Template <span class="text-red-500">*</span>
           </Heading>
 
@@ -284,7 +284,7 @@
 
         <!-- Upload File -->
         <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
+          <Heading variant="heading10sb" class="font-semibold mb-2">
             File Dokumen <span class="text-xs text-gray-500">(Opsional)</span>
           </Heading>
 

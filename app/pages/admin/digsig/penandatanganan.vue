@@ -18,7 +18,7 @@
     >
       <!-- TOP BAR -->
       <div
-        class="flex flex-col p-4 md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col p-4 md:flex-row justify-between items-center gap-4 pt-3 mb-0 pr-3"
       >
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
@@ -165,7 +165,7 @@
         <!------------------------->
         <!-- MODAL LIHAT DETAIL -->
         <!------------------------->
-        <Modal v-model="openDetail" :hideDefaultFooter="true">
+        <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
           <template #title>
             <h2 class="text-xl font-semibold ml-5 mt-5 mb-4">
               {{ detailDokumen.title }}
@@ -242,7 +242,7 @@
         <!------------------------->
         <!-- MODAL SIGNATURE -->
         <!------------------------->
-        <Modal v-model="openSign" :hideDefaultFooter="true" width="500px">
+        <Modal v-model="openSign" :hideDefaultFooter="true" size="xl">
           <!-- TITLE -->
           <template #title>
             <h2 class="text-lg font-semibold ml-5 mt-5 mb-3">

@@ -662,7 +662,8 @@
   <!-- CONFIRM MODAL APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
-    title="Konfirmasi Persetujuan"
+    title="Konfirmasi Verifikasi"
+    message="Apakah Anda yakin ingin menyetujui nomor yang dipilih?"
     :description="`Apakah Anda yakin ingin menyetujui ${checkedCount} nomor yang dipilih?`"
     confirmText="Ya, Setujui"
     cancelText="Batal"
@@ -817,15 +818,29 @@ const fetchData = async () => {
     rows.value = res.map((item: any) => {
       const person = personMap.value.get(item.persnum);
 
+      // Format tanggal: DD/MM/YYYY (UTC)
+      const tanggalDate = new Date(item.tanggal);
+      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
+
+      // Format tgl usulan: DD/MM/YY HH:MM (WIB = UTC+7)
+      const createdDate = new Date(item.created_at);
+      const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
+      const day = String(wibTime.getDate()).padStart(2, "0");
+      const month = String(wibTime.getMonth() + 1).padStart(2, "0");
+      const year = String(wibTime.getFullYear()).slice(-2);
+      const hours = String(wibTime.getHours()).padStart(2, "0");
+      const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+      const formattedTglUsulan = `${day}/${month}/${year} ${hours}:${minutes}`;
+
       return {
         id: item.id,
         jenis: item.jenis,
-        tanggal: formatTanggal(item.tanggal),
+        tanggal: formattedTanggal,
         perihal: item.perihal,
         penandatangan: item.penandatangan || person?.position_text || "-",
         jumlah: item.jumlah,
         pengusul: person?.nama || item.nama || "-",
-        tglUsulan: formatDateTime(item.created_at),
+        tglUsulan: formattedTglUsulan,
         status: item.status,
         klasifikasi: item.klasifikasi,
         file_path: item.file_path,
