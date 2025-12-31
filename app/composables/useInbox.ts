@@ -23,6 +23,13 @@ const formatDateTime = (value: string | null | undefined) => {
   return `${tanggal} ${jam}`;
 };
 
+const DETAIL_ENDPOINT_BY_JENIS: Record<string, string> = {
+  ND: "/ND",
+  DI: "/DI",
+  SDI: "/SDI",
+  SDE: "/SDE",
+};
+
 export function useInbox(positionId: any) {
   const { apiGet, apiPut, apiPatch } = useApi();
 
@@ -152,39 +159,49 @@ export function useInbox(positionId: any) {
     }
   };
 
-  const fetchInboxDetail = async (idNaskah: string) => {
+  const fetchInboxDetail = async (idNaskah: string, jenis: string) => {
+    const JENIS_LABEL_MAP: Record<string, string> = {
+      ND: "Nota Dinas",
+      DI: "Disposisi",
+      SDI: "Surat Dinas Internal",
+      SDE: "Surat Dinas Eksternal",
+    };
+
     pending.value = true;
     error.value = null;
 
     try {
-      const res = await apiGet(
-        `/persuratan/naskah/detail/${encodeURIComponent(idNaskah)}`,
-      );
+      const basePath = DETAIL_ENDPOINT_BY_JENIS[jenis];
 
-      const d = res?.data?.data;
+      if (!basePath) {
+        throw new Error(`Jenis naskah tidak dikenali: ${jenis}`);
+      }
+
+      const res = await apiGet(`${basePath}/${encodeURIComponent(idNaskah)}`);
+
+      const d = res?.data;
       if (!d) return null;
 
-      const mapped = {
+      return {
         id: d.id,
-
-        // 🔴 INI YANG KITA KEJAR
         jenis: d.jenis,
-        jenis_label: d.jenis_label,
+        jenis_label:
+          d.jenis_label ||
+          d.jenisLabel ||
+          d.jenis_text ||
+          JENIS_LABEL_MAP[d.jenis] ||
+          "-",
         sifat: d.sifat,
-
         nomor: d.nomor,
         tanggal: d.tanggal,
         perihal: d.perihal,
-
+        konten: d.konten,
+        lampiran_files: d.lampiran_files || [],
         pengirim: d.pengirim,
         kepada: Array.isArray(d.penerima) ? d.penerima : [],
-
+        tembusan: d.tembusan || [],
         raw: d,
       };
-
-      console.log("DETAIL MAPPED:", mapped); // 🔥 WAJIB ADA
-
-      return mapped;
     } catch (err) {
       console.error("fetchInboxDetail error:", err);
       error.value = err;
