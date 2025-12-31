@@ -1326,13 +1326,13 @@ const statusOrder = {
   Ditolak: 4,
 };
 
-// const filterOptions = [
-//   "Semua",
-//   "Belum Diajukan",
-//   "Menunggu Verifikasi",
-//   "Disetujui",
-//   "Ditolak",
-// ];
+const filterOptions = [
+  "Semua",
+  "Belum Diajukan",
+  "Menunggu Verifikasi",
+  "Disetujui",
+  "Ditolak",
+];
 
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
