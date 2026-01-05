@@ -1,24 +1,25 @@
 <template>
   <div class="relative">
 
-    <div v-if="isLoadingData"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-      <div
-        class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-        <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-        <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-          {{ loadingMessage || 'Mohon Tunggu...' }}
-        </span>
+    <Teleport to="body">
+      <div v-if="isLoadingData"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
+        <div
+          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
+          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
+            {{ loadingMessage || 'Mohon Tunggu...' }}
+          </span>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
-    <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
-      <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
-    </div>
+    <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
-      root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
+      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
+
       <div class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
@@ -27,6 +28,9 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputSifat v-model="selectedSifat" />
+
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tujuan Eksternal"
+          :items="externalItems" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
           :items="internalItems" />
@@ -54,11 +58,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="lampiranText" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Lampiran" />
-              <span class="text-[10px] font-mono shrink-0 transition-colors"
-                :class="lampiranText.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
-                {{ lampiranText.length }}/{{ maxPerihal }}
-              </span>
+                placeholder="Otomatis terisi saat upload file..." />
             </div>
           </div>
         </div>
@@ -128,7 +128,18 @@
 
                     <div class="mt-5">Kepada Yth.</div>
                     <div class="font-bold mb-1">
-                      <div>................................................</div>
+
+                      <div v-if="selectedTertuju.length > 5">
+                        Periksa Alamat Terlampir
+                      </div>
+                      <div v-else-if="selectedTertuju.length > 0">
+                        <div v-for="(t, index) in selectedTertuju" :key="t.value">
+                          {{ t.label }}
+                        </div>
+                      </div>
+                      <div v-else>
+                        <div>................................................</div>
+                      </div>
                     </div>
                     <div class="mb-1">Di Tempat</div>
                   </div>
@@ -151,20 +162,57 @@
                   </div>
                 </div>
 
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
-                  <div class="font-bold underline mb-1">Tertuju :</div>
-                  <ol class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
-                  </ol>
-                </div>
-
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10" v-if="selectedTembusan.length > 0">
+                <div class="mt-8 text-[12px] text-black dark:text-white px-10">
                   <div class="font-bold underline mb-1">Tembusan :</div>
-                  <ol class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                    Periksa Alamat Terlampir
+                  </div>
+                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + " - " + t.raw.area_text }}</li>
                   </ol>
+                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page mt-10">
+
+                  <div class="flex justify-end mb-10 text-[14px]">
+                    <div class="text-left min-w-[300px]">
+                      <table class="w-full">
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedTertuju.length > 5" class="mb-8">
+                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTertuju" :key="item.value">
+                        {{ item.label }}
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div v-if="selectedTembusan.length > 5">
+                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTembusan" :key="item.value">
+                        {{ item.labelJob + " - " + item.raw.area_text }}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           </ClientOnly>
@@ -208,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
@@ -224,8 +272,7 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 // --- TYPES & COMPOSABLES ---
 import type { Klasifikasi } from "~/types/klasifikasi";
-import type { ExternalRecipient, SDEPayload } from "~/types/sde";
-import { validateSDEPayload } from "~/types/sde";
+import type { SDEPayload } from "~/types/sde";
 import { useSde } from "~/composables/useSde";
 
 // --- CONFIG ---
@@ -235,8 +282,9 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useSDI();
-const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf } = useSde();
+const { getRecipients } = useSdi();
+// Import getExternalRecipients dari composable
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -253,7 +301,7 @@ const editDraftId = ref<string | null>(null);
 
 // Form Basic
 const subject = ref("");
-const lampiranText = ref(""); // State untuk teks lampiran manual
+const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -272,8 +320,9 @@ const internalItems = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
 const selectedSifat = ref<any>(null);
 
-// --- SDE RECIPIENT (SEMENTARA KOSONG) ---
-const externalRecipients = ref<ExternalRecipient[]>([]);
+// --- NEW SDE RECIPIENT STATE ---
+const externalItems = ref<any[]>([]); // Data dropdown
+const selectedTertuju = ref<any[]>([]); // Model input
 
 // PDF State
 const pdfBlob = ref<Blob | null>(null);
@@ -317,15 +366,15 @@ const getPayload = (): SDEPayload => {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
 
-    // Tetap kirim array kosong sesuai request
-    penerima: externalRecipients.value,
+    // UPDATE: Kirim Array of IDs dari Selected Tertuju
+    penerima: selectedTertuju.value.map(item => item.value),
 
     tembusan: selectedTembusan.value.map(i => i.value),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
-    lampiran: lampiranText.value, // Kirim teks lampiran manual
+    lampiran: lampiranText.value,
     konten: editorContent.value,
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
@@ -345,9 +394,8 @@ const createFormData = (payload: SDEPayload, includePdf: boolean = false) => {
 
     const value = payload[k];
 
-    if (k === 'penerima') {
-      formData.append(k, JSON.stringify(value));
-    } else if (k === 'tembusan' || k === 'lampiran_temp_ids') {
+    // Penerima dan Tembusan dikirim sebagai stringified array (standard multipart)
+    if (k === 'penerima' || k === 'tembusan' || k === 'lampiran_temp_ids') {
       formData.append(k, JSON.stringify(value));
     } else if (value !== null && value !== undefined) {
       formData.append(k, String(value));
@@ -371,11 +419,6 @@ const handleApplyTemplate = (content: string) => {
 
 const handlePreview = async () => {
   const payload = getPayload();
-
-  // Skip validasi penerima jika kosong karena memang dinonaktifkan sementara
-  // const check = validateSDEPayload(payload);
-  // if (!check.isValid) { ... }
-
   isLoadingData.value = true;
   loadingMessage.value = "Membuat Pratinjau PDF...";
 
@@ -455,13 +498,24 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, internalRecRes] = await Promise.all([
+    const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(user.value?.position)
+      getRecipientInfo(user.value?.position),
+      getExternalRecipients()
     ]);
 
     klasifikasiList.value = klasRes;
 
+    // --- MAPPING EXTERNAL (TERTUJU) ---
+    if (externalRecRes?.success && Array.isArray(externalRecRes.data)) {
+      externalItems.value = externalRecRes.data.map((item: any) => ({
+        label: item.nama,
+        value: item.id,
+        raw: item,
+      }));
+    }
+
+    // --- MAPPING INTERNAL (TEMBUSAN) ---
     const rawRec = internalRecRes.recipients || [];
     const mapInternalItems = (list: any[]) => list.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
@@ -480,6 +534,7 @@ onMounted(async () => {
 
     klasifikasiStatus.value = "success";
 
+    // --- LOAD DRAFT ---
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
@@ -490,7 +545,7 @@ onMounted(async () => {
         const d = resDraft.data;
 
         subject.value = d.perihal || "";
-        lampiranText.value = d.lampiran || ""; // Load teks lampiran dari draft
+        lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 
@@ -499,7 +554,28 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        // Mapping Files
+        // --- POPULATE TERTUJU & TEMBUSAN ---
+
+        // 1. Populate Tertuju (External)
+        if (d.penerima && Array.isArray(d.penerima)) {
+          selectedTertuju.value = d.penerima.map((item: any) => ({
+            label: item.nama,
+            value: item.id,
+            raw: item
+          }));
+        }
+
+        // 2. Populate Tembusan (Internal)
+        if (d.tembusan && Array.isArray(d.tembusan)) {
+          const tembusanIds = d.tembusan.map((t: any) =>
+            typeof t === 'object' ? String(t.id || t.position_id || t.value) : String(t)
+          );
+
+          selectedTembusan.value = internalItems.value.filter(item =>
+            tembusanIds.includes(String(item.value))
+          );
+        }
+
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
@@ -518,6 +594,16 @@ onMounted(async () => {
     isLoadingData.value = false;
   }
 });
+
+// Watch Existing Files untuk update text lampiran otomatis
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  if (jumlah > 0) {
+    lampiranText.value = `${jumlah} Lampiran`;
+  } else {
+    lampiranText.value = "0 Lampiran";
+  }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

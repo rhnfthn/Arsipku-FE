@@ -9,6 +9,13 @@ import {
   Lock, Flag, StickyNote, Eye // Tambah Icon Eye
 } from 'lucide-vue-next';
 
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Tulis Surat Dinas Eksternal", to: "#" },
+];
+
+
 // --- STATE ---
 const selected = ref(null);
 const selectedIds = ref(new Set());
@@ -222,15 +229,16 @@ const getCategoryStyle = (cat) => {
 };
 // Update Label agar sesuai gambar
 const getCategoryLabel = (cat) => {
-    if (cat === 'INTERNAL') return 'Surat Dinas Internal';
-    if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
-    if (cat === 'ND') return 'Nota Dinas';
-    if (cat === 'DISPOSISI') return 'Disposisi';
-    return cat;
+  if (cat === 'INTERNAL') return 'Surat Dinas Internal';
+  if (cat === 'EXTERNAL') return 'Surat Dinas Eksternal';
+  if (cat === 'ND') return 'Nota Dinas';
+  if (cat === 'DISPOSISI') return 'Disposisi';
+  return cat;
 }
 </script>
 
 <template>
+  <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
   <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-lg"
     :class="['glass-blue']">
 
@@ -319,7 +327,7 @@ const getCategoryLabel = (cat) => {
         </div>
 
         <button class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors">
-           <Download class="w-3.5 h-3.5" />
+          <Download class="w-3.5 h-3.5" />
         </button>
 
         <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
@@ -392,9 +400,9 @@ const getCategoryLabel = (cat) => {
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
 
               <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
-                  <div class="text-[13px] font-semibold text-gray-900 truncate">
-                    {{ mail.from }}
-                  </div>
+                <div class="text-[13px] font-semibold text-gray-900 truncate">
+                  {{ mail.from }}
+                </div>
               </div>
 
               <div class="text-[13px] text-gray-900 truncate flex-1">
@@ -402,9 +410,9 @@ const getCategoryLabel = (cat) => {
               </div>
 
               <div class="hidden xl:flex shrink-0 w-32 justify-start">
-                 <span class="px-2 py-0.5 rounded text-[11px] font-medium" :class="getCategoryStyle(mail.category)">
-                    {{ getCategoryLabel(mail.category) }}
-                 </span>
+                <span class="px-2 py-0.5 rounded text-[11px] font-medium" :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
+                </span>
               </div>
 
             </div>
@@ -416,15 +424,18 @@ const getCategoryLabel = (cat) => {
             </div>
 
             <div class="pl-2 shrink-0 text-right w-8 flex items-center justify-end gap-1 text-neutral-500">
-               <Eye class="w-3.5 h-3.5 text-primary" />
-               <span class="text-[12px] font-medium text-primary">{{ mail.viewCount }}</span>
+              <Eye class="w-3.5 h-3.5 text-primary" />
+              <span class="text-[12px] font-medium text-primary">{{ mail.viewCount }}</span>
             </div>
 
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/95 backdrop-blur-sm pl-2 py-1 shadow-sm rounded-l-md border border-gray-100 z-10">
-              <button class="p-1.5 text-neutral-500 hover:text-primary hover:bg-blue-50 rounded transition-colors" title="Arsip">
+            <div
+              class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-white/95 backdrop-blur-sm pl-2 py-1 shadow-sm rounded-l-md border border-gray-100 z-10">
+              <button class="p-1.5 text-neutral-500 hover:text-primary hover:bg-blue-50 rounded transition-colors"
+                title="Arsip">
                 <Archive class="w-4 h-4" />
               </button>
-              <button class="p-1.5 text-neutral-500 hover:text-error hover:bg-red-50 rounded transition-colors" title="Hapus">
+              <button class="p-1.5 text-neutral-500 hover:text-error hover:bg-red-50 rounded transition-colors"
+                title="Hapus">
                 <Trash2 class="w-4 h-4" />
               </button>
               <!-- <button class="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-gray-100 rounded transition-colors" title="Tandai">
@@ -443,48 +454,47 @@ const getCategoryLabel = (cat) => {
             {{ selected.subject }}
           </h2>
           <button class="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors" @click="closeDetail">
-             <X class="w-5 h-5" />
+            <X class="w-5 h-5" />
           </button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-6 pb-6">
-           <div class="flex gap-3 mb-3 items-center">
-              <div
-                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0"
-                :class="selected.color">
-                {{ selected.initial }}
+          <div class="flex gap-3 mb-3 items-center">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0"
+              :class="selected.color">
+              {{ selected.initial }}
+            </div>
+            <div class="leading-tight">
+              <div class="font-bold text-gray-900 text-[14px]">
+                {{ selected.from }}
+                <span class="text-gray-500 font-normal text-[13px]">&lt;{{ selected.email }}&gt;</span>
               </div>
-              <div class="leading-tight">
-                 <div class="font-bold text-gray-900 text-[14px]">
-                    {{ selected.from }}
-                    <span class="text-gray-500 font-normal text-[13px]">&lt;{{ selected.email }}&gt;</span>
-                 </div>
-                 <div class="text-[13px] text-gray-500 mt-0.5">kepada saya</div>
-              </div>
-           </div>
-           <div class="mb-5 ml-[52px]">
-              <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-[13px] font-medium inline-block">
-                 {{ getCategoryLabel(selected.category) }}
-              </span>
-           </div>
-           <hr class="border-gray-100 mb-6">
-           <div class="space-y-4 mb-8">
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Kepada</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.recipient || '-' }}</div>
-              </div>
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Disposisi</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.disposition || '-' }}</div>
-              </div>
-              <div>
-                 <div class="text-[13px] text-gray-500 mb-0.5">Catatan</div>
-                 <div class="text-[15px] text-gray-900">{{ selected.note || '-' }}</div>
-              </div>
-           </div>
-           <div class="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap">
-              {{ selected.body }}
-           </div>
+              <div class="text-[13px] text-gray-500 mt-0.5">kepada saya</div>
+            </div>
+          </div>
+          <div class="mb-5 ml-[52px]">
+            <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-[13px] font-medium inline-block">
+              {{ getCategoryLabel(selected.category) }}
+            </span>
+          </div>
+          <hr class="border-gray-100 mb-6">
+          <div class="space-y-4 mb-8">
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Kepada</div>
+              <div class="text-[15px] text-gray-900">{{ selected.recipient || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Disposisi</div>
+              <div class="text-[15px] text-gray-900">{{ selected.disposition || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-[13px] text-gray-500 mb-0.5">Catatan</div>
+              <div class="text-[15px] text-gray-900">{{ selected.note || '-' }}</div>
+            </div>
+          </div>
+          <div class="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap">
+            {{ selected.body }}
+          </div>
         </div>
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">

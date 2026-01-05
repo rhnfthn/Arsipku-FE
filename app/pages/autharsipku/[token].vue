@@ -2,7 +2,7 @@
   <transition name="fade">
     <div
       v-if="visible"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
+      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white"
     >
       <div class="text-center">
         <div class="loader mx-auto mb-4"></div>

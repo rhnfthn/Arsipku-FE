@@ -15,10 +15,10 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Penomoran
+        Tambah Dokumen
       </button>
     </div>
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white rounded-xl shadow-sm w-full">
       <!-- TOP ACTION BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"

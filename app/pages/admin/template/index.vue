@@ -182,169 +182,171 @@
     <!-- ========================= -->
     <!-- MODAL TAMBAH TEMPLATE -->
     <!-- ========================= -->
-    <Modal v-model="addModal" @save="saveAdd">
-      <template #title>
-        <Heading
-          variant="heading9b"
-          class="font-semibold text-xl mb-2 mt-5 ml-7"
-        >
-          Tambah Template
-        </Heading>
-      </template>
-
-      <div class="px-2 py-3 flex flex-col gap-6">
-        <!-- Nama Template -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            Nama Template <span class="text-red-500">*</span>
-          </Heading>
-
-          <input
-            v-model="addData.nama_template"
-            class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
-            placeholder="Masukkan nama template"
-          />
-        </div>
-
-        <!-- Upload File -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            File Dokumen <span class="text-red-500">*</span>
-          </Heading>
-
-          <label
-            class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+    <Teleport to="body">
+      <Modal v-model="addModal" @save="saveAdd" size="xl">
+        <template #title>
+          <Heading
+            variant="heading8b"
+            class="font-semibold text-xl mb-5 mt-5 ml-7"
           >
-            <FileCheck class="w-6 h-6 text-gray-500" />
-            <span class="font-medium">Pilih File</span>
-            <span class="ml-2 text-gray-500">
-              {{ addData.fileName || "Belum ada file dipilih" }}
-            </span>
+            Tambah Template
+          </Heading>
+        </template>
+
+        <div class="px-2 py-3 flex flex-col gap-6">
+          <!-- Nama Template -->
+          <div class="flex flex-col">
+            <Heading variant="heading10sb" class="mb-2">
+              Nama Template <span class="text-red-500">*</span>
+            </Heading>
 
             <input
-              type="file"
-              class="hidden"
-              accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
-              @change="handleAddFile"
+              v-model="addData.nama_template"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
+              placeholder="Masukkan nama template"
             />
-          </label>
+          </div>
 
-          <!-- Preview file -->
-          <div
-            v-if="addData.file"
-            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
-          >
-            <div class="flex items-center gap-3">
-              <FileCheck class="w-6 h-6 text-primary-500" />
-              <div>
-                <p class="text-sm font-medium">{{ addData.fileName }}</p>
-                <p class="text-xs text-gray-500">
-                  {{ formatFileSize(addData.file.size) }}
-                </p>
-              </div>
-            </div>
-            <button
-              @click="clearAddFile"
-              class="text-red-500 hover:text-red-700"
-              title="Hapus file"
+          <!-- Upload File -->
+          <div class="flex flex-col">
+            <Heading variant="heading10sb" class="mb-2">
+              File Dokumen <span class="text-red-500">*</span>
+            </Heading>
+
+            <label
+              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
             >
-              <Trash2 class="w-4 h-4" />
-            </button>
+              <FileCheck class="w-6 h-6 text-gray-500" />
+              <span class="font-medium">Pilih File</span>
+              <span class="ml-2 text-gray-500">
+                {{ addData.fileName || "Belum ada file dipilih" }}
+              </span>
+
+              <input
+                type="file"
+                class="hidden"
+                accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
+                @change="handleAddFile"
+              />
+            </label>
+
+            <!-- Preview file -->
+            <div
+              v-if="addData.file"
+              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <FileCheck class="w-6 h-6 text-primary-500" />
+                <div>
+                  <p class="text-xs font-medium">{{ addData.fileName }}</p>
+                  <p class="text-xs text-gray-500">
+                    {{ formatFileSize(addData.file.size) }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="clearAddFile"
+                class="text-red-500 hover:text-red-700"
+                title="Hapus file"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
-
+      </Modal>
+    </Teleport>
     <!-- ========================= -->
     <!-- MODAL EDIT TEMPLATE -->
     <!-- ========================= -->
-    <Modal v-model="editModal" @save="saveEdit">
-      <template #title>
-        <Heading
-          variant="heading9b"
-          class="font-semibold text-xl mb-2 mt-5 ml-7"
-        >
-          Edit Template
-        </Heading>
-      </template>
-
-      <div class="px-2 py-3 flex flex-col gap-6">
-        <!-- Nama Template -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            Nama Template <span class="text-red-500">*</span>
-          </Heading>
-
-          <input
-            v-model="editData.nama_template"
-            class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
-            placeholder="Masukkan nama template"
-          />
-        </div>
-
-        <!-- Upload File -->
-        <div class="flex flex-col">
-          <Heading variant="body2m" class="font-semibold mb-1">
-            File Dokumen <span class="text-xs text-gray-500">(Opsional)</span>
-          </Heading>
-
-          <label
-            class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+    <Teleport to="body">
+      <Modal v-model="editModal" @save="saveEdit" size="xl">
+        <template #title>
+          <Heading
+            variant="heading9b"
+            class="font-semibold text-xl mb-2 mt-5 ml-7"
           >
-            <FileCheck class="w-6 h-6 text-gray-500" />
-            <span class="font-medium">Pilih File Baru</span>
-            <span class="ml-2 text-gray-500">
-              {{ editData.newFileName || "Tidak ada file baru" }}
-            </span>
+            Edit Template
+          </Heading>
+        </template>
 
-            <input type="file" class="hidden" @change="handleEditFile" />
-          </label>
+        <div class="px-2 py-3 flex flex-col gap-6">
+          <!-- Nama Template -->
+          <div class="flex flex-col">
+            <Heading variant="heading10sb" class="font-semibold mb-2">
+              Nama Template <span class="text-red-500">*</span>
+            </Heading>
 
-          <!-- Current file info -->
-          <div
-            v-if="!editData.newFileName && editData.file"
-            class="mt-3 px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
-          >
-            <FileCheck class="w-6 h-6 text-gray-400" />
-            <div>
-              <p class="text-xs text-gray-500">File saat ini:</p>
-              <p class="text-sm font-medium">
-                {{ getFileName(editData.file) }}
-              </p>
-            </div>
+            <input
+              v-model="editData.nama_template"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
+              placeholder="Masukkan nama template"
+            />
           </div>
 
-          <!-- Preview new file -->
-          <div
-            v-if="editData.newFileName"
-            class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
-          >
-            <div class="flex items-center gap-3">
-              <FileCheck class="w-6 h-6 text-primary-500" />
+          <!-- Upload File -->
+          <div class="flex flex-col">
+            <Heading variant="heading10sb" class="font-semibold mb-2">
+              File Dokumen <span class="text-xs text-gray-500">(Opsional)</span>
+            </Heading>
+
+            <label
+              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+            >
+              <FileCheck class="w-6 h-6 text-gray-500" />
+              <span class="font-medium">Pilih File Baru</span>
+              <span class="ml-2 text-gray-500">
+                {{ editData.newFileName || "Tidak ada file baru" }}
+              </span>
+
+              <input type="file" class="hidden" @change="handleEditFile" />
+            </label>
+
+            <!-- Current file info -->
+            <div
+              v-if="!editData.newFileName && editData.file"
+              class="mt-3 px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
+            >
+              <FileCheck class="w-6 h-6 text-gray-400" />
               <div>
-                <p class="text-xs text-primary-600">File baru:</p>
-                <p class="text-sm font-medium">{{ editData.newFileName }}</p>
-                <p class="text-xs text-gray-500">
-                  {{
-                    editData.newFile
-                      ? formatFileSize(editData.newFile.size)
-                      : "-"
-                  }}
+                <p class="text-xs text-gray-500">File saat ini:</p>
+                <p class="text-sm font-medium">
+                  {{ getFileName(editData.file) }}
                 </p>
               </div>
             </div>
-            <button
-              @click="clearEditFile"
-              class="text-red-500 hover:text-red-700"
-              title="Hapus file baru"
+
+            <!-- Preview new file -->
+            <div
+              v-if="editData.newFileName"
+              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
             >
-              <Trash2 class="w-4 h-4" />
-            </button>
+              <div class="flex items-center gap-3">
+                <FileCheck class="w-6 h-6 text-primary-500" />
+                <div>
+                  <p class="text-xs text-primary-600">File baru:</p>
+                  <p class="text-sm font-medium">{{ editData.newFileName }}</p>
+                  <p class="text-xs text-gray-500">
+                    {{
+                      editData.newFile
+                        ? formatFileSize(editData.newFile.size)
+                        : "-"
+                    }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="clearEditFile"
+                class="text-red-500 hover:text-red-700"
+                title="Hapus file baru"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
-
+      </Modal>
+    </Teleport>
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->

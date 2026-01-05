@@ -69,16 +69,16 @@
       </div>
 
       <!-- TABLE -->
-      <div v-else class="overflow-x-auto">
+      <div v-else class="overflow-x-auto relative">
         <table class="w-full bg-white text-sm">
-          <thead class="bg-primary text-white text-[15px]">
+          <thead class="bg-primary text-white text-[15px] sticky top-0 z-10">
             <tr>
               <th
                 v-for="col in headers"
                 :key="col.key"
                 @click="col.sortable && sort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary',
                   col.sortable
                     ? 'cursor-pointer select-none'
                     : 'cursor-default',
@@ -146,7 +146,7 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.waktu }}</td>
+              <td class="px-5 py-4 sticky right-0 bg-white">{{ row.waktu }}</td>
             </tr>
           </tbody>
         </table>
@@ -155,315 +155,352 @@
       <!-- PAGINATION -->
       <div
         v-if="filteredRows.length > 0"
-        class="flex items-center justify-between p-4"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
           Menampilkan {{ paginatedRows.length }} dari
           {{ filteredRows.length }} data
         </div>
 
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-2">
+          <!-- Back Button -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
-            class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
-          >
-            &lt;
-          </button>
-
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            @click="currentPage = page"
             :class="[
-              'px-3 py-1 text-xs rounded-md',
-              currentPage === page
-                ? 'bg-primary text-white'
-                : 'hover:bg-gray-200',
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
           >
-            {{ page }}
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
           </button>
 
+          <!-- Page Numbers -->
+          <div class="flex items-center gap-1">
+            <!-- First page -->
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <!-- Left ellipsis -->
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- Visible pages -->
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- Right ellipsis -->
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- Last page -->
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- Next Button -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
           >
-            &gt;
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>
     </div>
 
     <!-- COMPONENT ADD USULAN -->
-    <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
+    <Teleport to="body">
+      <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal"
+    /></Teleport>
   </div>
 
   <!-- MODAL ROW DETAIL -->
-  <Modal
-    :model-value="openPreview"
-    @update:model-value="openPreview = $event"
-    :hideDefaultFooter="true"
-    size="xl"
-  >
-    <template #title>
-      <div
-        class="flex justify-between items-center w-full px-6 pt-0 pb-10"
-      ></div>
-    </template>
-
-    <div
-      v-if="selectedRow"
-      class="px-6 pb-3 space-y-6 text-sm overflow-y-auto overflow-x-hidden overflow-y-auto max-h-[70vh]"
+  <Teleport to="body">
+    <Modal
+      :model-value="openPreview"
+      @update:model-value="openPreview = $event"
+      :hideDefaultFooter="true"
+      size="xl"
     >
-      <!-- Loading state saat fetch detail -->
-      <div v-if="loadingDetail" class="space-y-3">
-        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
-        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
-        <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
-      </div>
+      <template #title>
+        <div
+          class="flex justify-between items-center w-full px-6 pt-0 pb-10"
+        ></div>
+      </template>
 
-      <template v-else>
-        <!-- Judul -->
-        <div class="flex items-center justify-between">
-          <div class="flex-1 min-w-0">
-            <template v-if="!isEditingTitle">
-              <h3
-                class="text-xl font-bold leading-relaxed text-gray-900 break-words"
-              >
-                {{ detailData?.perihal || selectedRow?.perihal }}
-              </h3>
-            </template>
-
-            <template v-else>
-              <input
-                v-model="editedTitle"
-                class="border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 w-full text-sm"
-              />
-            </template>
-          </div>
-
-          <div class="ml-4">
-            <button
-              v-if="!isEditingTitle"
-              class="text-primary text-sm flex items-center gap-1"
-              @click="startEditTitle"
-            >
-              <i class="fas fa-pen text-xs"></i> Edit
-            </button>
-
-            <button
-              v-else
-              class="text-primary text-sm flex items-center gap-1"
-              @click="saveTitle"
-            >
-              <i class="fas fa-save text-xs"></i> Simpan
-            </button>
-          </div>
+      <div
+        v-if="selectedRow"
+        class="px-6 pb-3 space-y-6 text-sm overflow-y-auto overflow-x-hidden overflow-y-auto max-h-[70vh]"
+      >
+        <!-- Loading state saat fetch detail -->
+        <div v-if="loadingDetail" class="space-y-3">
+          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
         </div>
 
-        <!-- Tanggal -->
-        <div class="pb-1 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Tanggal</p>
-          <p class="font-medium mt-1">
-            {{ formatTanggal(detailData?.tanggal || selectedRow?.tanggal) }}
-          </p>
-        </div>
-
-        <!-- Penandatangan -->
-        <div class="pb-1 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Penandatangan</p>
-          <p class="font-medium mt-1">
-            {{ detailData?.jabatan || selectedRow?.jabatan }}
-          </p>
-        </div>
-
-        <!-- Klasifikasi -->
-        <div class="pb-1 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Klasifikasi</p>
-          <p class="font-medium mt-1 break-words">
-            {{
-              detailData?.klasifikasiDisplay ||
-              selectedRow?.klasifikasiDisplay ||
-              detailData?.klasifikasi ||
-              selectedRow?.klasifikasi
-            }}
-          </p>
-        </div>
-
-        <!-- Jenis Naskah -->
-        <div class="pb-1 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Jenis Naskah</p>
-          <p class="font-medium mt-1 break-words">
-            {{ detailData?.jenis || selectedRow?.jenis }}
-          </p>
-        </div>
-
-        <!-- Nomor Surat & Files -->
-        <div class="mt-2">
-          <label
-            class="text-xs font-medium text-gray-700 mb-2 justify-between break-words"
-          >
-            Nomor Surat & File ({{ detailData?.nomor_list?.length || 0 }} nomor)
-          </label>
-
-          <div
-            v-if="detailData?.nomor_list && detailData.nomor_list.length > 0"
-            class="space-y-4 mt-2"
-          >
-            <div
-              v-for="(item, idx) in detailData.nomor_list"
-              :key="idx"
-              class="border border-gray-300 rounded-lg p-4 bg-gray-50"
-            >
-              <!-- Nomor surat dengan copy button -->
-              <div class="flex items-center gap-2 mb-3">
-                <div
-                  class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+        <template v-else>
+          <!-- Judul -->
+          <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <template v-if="!isEditingTitle">
+                <h3
+                  class="text-xl font-bold leading-relaxed text-gray-900 break-words"
                 >
-                  <span class="text-sm font-mono text-gray-700 break-words">
-                    {{ idx + 1 }}. {{ item.nomor }}
-                  </span>
-                </div>
+                  {{ detailData?.perihal || selectedRow?.perihal }}
+                </h3>
+              </template>
 
-                <button
-                  @click="handleCopy(item.nomor)"
-                  class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
-                  title="Copy nomor surat"
-                >
-                  <Copy class="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
+              <template v-else>
+                <input
+                  v-model="editedTitle"
+                  class="border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 w-full text-sm"
+                />
+              </template>
+            </div>
 
-              <!-- File info -->
-              <div
-                v-if="item.file_name"
-                class="bg-white border border-green-200 rounded-md p-3 break-words"
+            <div class="ml-4">
+              <button
+                v-if="!isEditingTitle"
+                class="text-primary text-sm flex items-center gap-1"
+                @click="startEditTitle"
               >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <svg
-                      class="w-5 h-5 text-green-600 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
+                <i class="fas fa-pen text-xs"></i> Edit
+              </button>
 
-                    <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
-                      >
-                        {{ item.file_name }}
-                      </p>
-                      <p class="text-xs text-gray-500">
-                        Status:
-                        <span class="capitalize">{{ item.status }}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- <div class="flex items-center gap-2 flex-1">
-                    <svg
-                      class="w-5 h-5 text-green-600 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
-                      >
-                        {{ item.file_name }}
-                      </p>
-                      <p class="text-xs text-gray-500">
-                        Status:
-                        <span class="capitalize">{{ item.status }}</span>
-                      </p>
-                    </div>
-                  </div> -->
-
-                  <a
-                    v-if="item.file_text"
-                    :href="getFileUrl(item.file_text)"
-                    target="_blank"
-                    class="ml-2 px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-800 transition flex-shrink-0"
-                  >
-                    Download
-                  </a>
-                </div>
-              </div>
-
-              <!-- No file uploaded -->
-              <div
+              <button
                 v-else
-                class="bg-yellow-50 border border-yellow-200 rounded-md p-3"
+                class="text-primary text-sm flex items-center gap-1"
+                @click="saveTitle"
               >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-5 h-5 text-yellow-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  <span class="text-sm text-yellow-800">
-                    Belum ada file diupload
-                  </span>
-                </div>
-              </div>
+                <i class="fas fa-save text-xs"></i> Simpan
+              </button>
             </div>
           </div>
 
-          <!-- Fallback jika tidak ada detail -->
-          <div v-else class="text-center py-4 text-gray-500 text-sm">
-            Tidak ada data nomor surat
+          <!-- Tanggal -->
+          <div class="pb-1 border-b border-gray-200">
+            <p class="text-gray-500 text-xs">Tanggal</p>
+            <p class="font-medium mt-1">
+              {{ formatTanggal(detailData?.tanggal || selectedRow?.tanggal) }}
+            </p>
           </div>
-        </div>
-      </template>
-    </div>
 
-    <!-- FOOTER -->
-    <!-- <template #footer>
-      <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
-        <button
-          @click="openPreview = false"
-          class="px-5 py-2 text-xs border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
-        >
-          Tutup
-        </button>
+          <!-- Penandatangan -->
+          <div class="pb-1 border-b border-gray-200">
+            <p class="text-gray-500 text-xs">Penandatangan</p>
+            <p class="font-medium mt-1">
+              {{ detailData?.jabatan || selectedRow?.jabatan }}
+            </p>
+          </div>
 
-        <button
-          @click="hapusNomor"
-          :disabled="isDeletingNomor"
-          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {{ isDeletingNomor ? "Menghapus..." : "Hapus" }}
-        </button>
+          <!-- Klasifikasi -->
+          <div class="pb-1 border-b border-gray-200">
+            <p class="text-gray-500 text-xs">Klasifikasi</p>
+            <p class="font-medium mt-1 break-words">
+              {{
+                detailData?.klasifikasiDisplay ||
+                selectedRow?.klasifikasiDisplay ||
+                detailData?.klasifikasi ||
+                selectedRow?.klasifikasi
+              }}
+            </p>
+          </div>
+
+          <!-- Jenis Naskah -->
+          <div class="pb-1 border-b border-gray-200">
+            <p class="text-gray-500 text-xs">Jenis Naskah</p>
+            <p class="font-medium mt-1 break-words">
+              {{ detailData?.jenis || selectedRow?.jenis }}
+            </p>
+          </div>
+
+          <!-- Nomor Surat & Files -->
+          <div class="mt-2">
+            <label
+              class="text-xs font-medium text-gray-700 mb-2 justify-between break-words"
+            >
+              Nomor Surat & File ({{ detailData?.nomor_list?.length || 0 }}
+              nomor)
+            </label>
+
+            <div
+              v-if="detailData?.nomor_list && detailData.nomor_list.length > 0"
+              class="space-y-4 mt-2"
+            >
+              <div
+                v-for="(item, idx) in detailData.nomor_list"
+                :key="idx"
+                class="border border-gray-300 rounded-lg p-4 bg-gray-50"
+              >
+                <!-- Nomor surat dengan copy button -->
+                <div class="flex items-center gap-2 mb-3">
+                  <div
+                    class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+                  >
+                    <span class="text-sm font-mono text-gray-700 break-words">
+                      {{ idx + 1 }}. {{ item.nomor }}
+                    </span>
+                  </div>
+
+                  <button
+                    @click="handleCopy(item.nomor)"
+                    class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
+                    title="Copy nomor surat"
+                  >
+                    <Copy class="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+
+                <!-- File info -->
+                <div
+                  v-if="item.file_name"
+                  class="bg-white border border-green-200 rounded-md p-3 break-words"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                      <svg
+                        class="w-5 h-5 text-green-600 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+
+                      <div class="flex-1 min-w-0">
+                        <p
+                          class="text-xs font-medium text-gray-900 break-words whitespace-normal leading-relaxed"
+                        >
+                          {{ item.file_name }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                          Status:
+                          <span class="capitalize">{{ item.status }}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Preview & Download Buttons -->
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <button
+                        v-if="item.file_text || item.file_url"
+                        @click="previewFile(item)"
+                        class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700 transition"
+                      >
+                        Lihat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- No file uploaded -->
+                <div
+                  v-else
+                  class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-3 h-3 text-yellow-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <span class="text-xs text-yellow-800">
+                      Belum ada file diupload
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fallback jika tidak ada detail -->
+            <div v-else class="text-center py-4 text-gray-500 text-sm">
+              Tidak ada data nomor surat
+            </div>
+          </div>
+        </template>
       </div>
-    </template> -->
-  </Modal>
-
+    </Modal>
+  </Teleport>
   <!-- CONFIRM DELETE POPUP -->
   <ConfirmPopup
     v-model="openConfirmDelete"
@@ -529,7 +566,7 @@ const sortBy = ref<string>("created_at");
 const sortDir = ref<"asc" | "desc">("desc");
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/user/dashboard" },
   { label: "Penomoran", to: "/admin/penomoran" },
 ];
 
@@ -585,6 +622,25 @@ const fetchPersonMap = async () => {
 // Get file URL
 const getFileUrl = (filePath: string) => {
   return `${config.public.apiBaseUrl}/${filePath}`;
+};
+
+// Preview file
+const previewFile = (item: any) => {
+  if (item.file_url) {
+    window.open(item.file_url, "_blank");
+    return;
+  }
+
+  if (item.file_text) {
+    window.open(getFileUrl(item.file_text), "_blank");
+    return;
+  }
+
+  toast.add({
+    title: "File tidak ditemukan",
+    description: "File tidak tersedia untuk ditampilkan",
+    color: "yellow",
+  });
 };
 
 // Edit title functions
@@ -818,21 +874,57 @@ const filteredRows = computed(() => {
 // Sort
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
-    const A = new Date(a[sortBy.value]).getTime();
-    const B = new Date(b[sortBy.value]).getTime();
+    // ✅ STATUS
+    if (sortBy.value === "status") {
+      const A = statusOrder[a.status] ?? 99;
+      const B = statusOrder[b.status] ?? 99;
+      return sortDir.value === "asc" ? A - B : B - A;
+    }
 
-    return sortDir.value === "asc" ? A - B : B - A;
+    // ✅ TANGGAL USULAN (REAL DATE SORT)
+    if (sortBy.value === "tglUsulan") {
+      const A = a.tglUsulanSort ?? 0;
+      const B = b.tglUsulanSort ?? 0;
+      return sortDir.value === "asc" ? A - B : B - A;
+    }
+
+    // 🔁 DEFAULT STRING SORT
+    const A = String(a[sortBy.value] ?? "").toLowerCase();
+    const B = String(b[sortBy.value] ?? "").toLowerCase();
+
+    if (A < B) return sortDir.value === "asc" ? -1 : 1;
+    if (A > B) return sortDir.value === "asc" ? 1 : -1;
+    return 0;
   });
 });
 
-// Pagination
-const totalPages = computed(() =>
-  Math.ceil(sortedRows.value.length / rowsPerPage.value),
-);
-
+/* PAGINATION */
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return sortedRows.value.slice(start, start + rowsPerPage.value);
+});
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
+);
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
 });
 
 // Format helpers
@@ -842,18 +934,22 @@ function formatTanggal(dateStr) {
     day: "2-digit",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Jakarta",
   });
 }
 
 function formatWaktu(dateStr) {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return (
+    new Date(dateStr).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }) + " WIB"
+  );
 }
 
 // Watchers
@@ -888,5 +984,22 @@ onMounted(async () => {
 }
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* Sticky column styling */
+thead th:last-child,
+tbody td:last-child {
+  position: sticky;
+  right: 0;
+  background-color: inherit;
+  z-index: 1;
+}
+
+thead th:last-child {
+  z-index: 11;
+}
+
+tbody tr:hover td:last-child {
+  background-color: rgb(249 250 251);
 }
 </style>

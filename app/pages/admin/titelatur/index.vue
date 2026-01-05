@@ -372,75 +372,77 @@ const deleteNow = async () => {
     <!-- ========================= -->
     <!-- MODAL EDIT -->
     <!-- ========================= -->
-    <Modal v-model="showEditModal" @save="saveEdit">
-      <template #title>
-        <div class="mt-5 ml-5 mb-3">
-          <Heading variant="heading9b" class="font-semibold text-sm">
-            Edit Titelatur
-          </Heading>
+    <Teleport to="body">
+      <Modal v-model="showEditModal" @save="saveEdit" size="xl">
+        <template #title>
+          <div class="mt-5 ml-5 mb-5">
+            <Heading variant="heading9b" class="font-semibold text-sm">
+              Edit Titelatur
+            </Heading>
 
-          <Heading variant="body2" class="text-xs text-gray-500 mt-1">
-            Isi form di bawah ini untuk mengedit titelatur
-          </Heading>
+            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+              Isi form di bawah ini untuk mengedit titelatur
+            </Heading>
+          </div>
+        </template>
+
+        <div class="flex flex-col gap-2 mt-1">
+          <Heading variant="body2m"
+            >Titelatur Indonesia <span class="text-red-500">*</span></Heading
+          >
+          <input
+            v-model="editForm.long_text"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
+          />
+
+          <Heading variant="body2m"
+            >Titelatur Inggris <span class="text-red-500">*</span></Heading
+          >
+          <input
+            v-model="editForm.long_text_en"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
+          />
         </div>
-      </template>
-
-      <div class="flex flex-col gap-3">
-        <Heading variant="body2m"
-          >Titelatur Indonesia <span class="text-red-500">*</span></Heading
-        >
-        <input
-          v-model="editForm.long_text"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
-        />
-
-        <Heading variant="body2m"
-          >Titelatur Inggris <span class="text-red-500">*</span></Heading
-        >
-        <input
-          v-model="editForm.long_text_en"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
-        />
-      </div>
-    </Modal>
-
+      </Modal>
+    </Teleport>
     <!-- ========================= -->
     <!-- MODAL ADD -->
     <!-- ========================= -->
-    <Modal v-model="showAddModal" @save="saveAdd">
-      <template #title>
-        <div class="mt-5 ml-5 mb-3">
-          <Heading variant="heading9b" class="font-semibold text-sm">
-            Tambah Titelatur
-          </Heading>
+    <Teleport to="body">
+      <Modal v-model="showAddModal" @save="saveAdd" size="xl">
+        <template #title>
+          <div class="mt-5 ml-5 mb-5">
+            <Heading variant="heading9b" class="font-semibold text-sm">
+              Tambah Titelatur
+            </Heading>
 
-          <Heading variant="body2" class="text-xs text-gray-500 mt-1">
-            Masukkan titelatur baru
-          </Heading>
+            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+              Masukkan titelatur baru
+            </Heading>
+          </div>
+        </template>
+
+        <div class="flex flex-col gap-2 mt-1">
+          <Heading variant="body2m"
+            >Titelatur Indonesia <span class="text-red-500">*</span></Heading
+          >
+          <input
+            v-model="addForm.long_text"
+            placeholder="Masukkan Titelatur Indonesia"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
+          />
+
+          <Heading variant="body2m"
+            >Titelatur Inggris <span class="text-red-500">*</span></Heading
+          >
+          <input
+            v-model="addForm.long_text_en"
+            placeholder="Masukkan Titelatur Inggris"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
+          />
         </div>
-      </template>
-
-      <div class="flex flex-col gap-3">
-        <Heading variant="body2m"
-          >Titelatur Indonesia <span class="text-red-500">*</span></Heading
-        >
-        <input
-          v-model="addForm.long_text"
-          placeholder="Masukkan Titelatur Indonesia"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
-        />
-
-        <Heading variant="body2m"
-          >Titelatur Inggris <span class="text-red-500">*</span></Heading
-        >
-        <input
-          v-model="addForm.long_text_en"
-          placeholder="Masukkan Titelatur Inggris"
-          class="border px-3 py-2 rounded-md text-sm bg-gray-50"
-        />
-      </div>
-    </Modal>
-
+      </Modal>
+    </Teleport>
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->

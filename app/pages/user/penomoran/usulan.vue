@@ -3,9 +3,9 @@
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md"
-          >Daftar Usulan Dokumen</Heading
-        >
+        <Heading variant="heading6b" class="text-mobile-md">
+          Daftar Usulan Penomoran
+        </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
 
@@ -45,7 +45,10 @@
             class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-1 rounded-lg min-w-[100px]"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <span class="text-sm">{{ filterStatus || "Semua" }}</span>
+            <span class="text-sm">
+              {{ filterStatus || "Semua" }}
+            </span>
+
             <svg
               :class="[
                 'w-4 h-4 transition-transform duration-200',
@@ -135,6 +138,15 @@
                   />
                 </div>
               </th>
+              <th
+                @click="sortStatus"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+              >
+                <div class="flex items-center gap-1">
+                  <span>Status</span>
+                  <ArrowUpDown class="inline w-3 h-3 opacity-70" />
+                </div>
+              </th>
             </tr>
           </thead>
 
@@ -143,29 +155,52 @@
               v-for="row in paginatedRows"
               :key="row.id"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
-              @click="openRowModal(row)"
+              @click="showPreview(row)"
             >
-              <td class="px-5 py-4 text-xs">{{ row.displayId }}</td>
+              <td class="px-5 py-4 text-xs">{{ row.id_usulan }}</td>
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">{{ row.perihal }}</td>
-              <td class="px-5 py-4">{{ row.penanda }}</td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[350px]">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 cursor-help"
+                  >
+                    {{ row.perihal }}
+                  </p>
+
+                  <!-- Tooltip -->
+                  <div
+                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
+                  >
+                    {{ row.perihal }}
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="relative group max-w-[300px]">
+                  <p class="whitespace-normal break-words line-clamp-3">
+                    {{ row.penandatangan }}
+                  </p>
+                </div>
+              </td>
               <td class="px-5 py-4">{{ row.jumlah }}</td>
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
-              <td class="px-5 py-3">
+
+              <td
+                @click.stop
+                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+              >
                 <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium',
-                    {
-                      'bg-gray-200 text-gray-700':
-                        row.status === 'Belum Diajukan',
-                      'bg-yellow-100 text-yellow-700':
-                        row.status === 'Menunggu Verifikasi',
-                      'bg-green-100 text-green-700': row.status === 'Disetujui',
-                      'bg-red-100 text-red-700': row.status === 'Ditolak',
-                    },
-                  ]"
+                  class="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                  :class="{
+                    'bg-gray-200 text-gray-700':
+                      row.status === 'Belum Diajukan',
+                    'bg-yellow-100 text-yellow-700':
+                      row.status === 'Menunggu Verifikasi',
+                    'bg-green-100 text-green-700': row.status === 'Disetujui',
+                    'bg-red-100 text-red-700': row.status === 'Ditolak',
+                  }"
                 >
                   {{ row.status }}
                 </span>
@@ -221,27 +256,20 @@
       <!-- MODAL TAMBAH -->
       <AddUsulan
         v-model="openAdd"
+        @submit="handleSubmitFromModal"
         @preview="handlePreview"
-        @submit="handleSubmitUsulan"
       />
     </div>
   </div>
 
   <!-- MODAL ROW DETAIL -->
-  <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
+  <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
     <!-- TITLE -->
     <template #title>
-      <div
-        class="flex items-center justify-between w-full px-6 pt-6 pb-4 border-b border-gray-200"
-      >
-        <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
-          {{ selectedRow?.perihal }}
+      <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
+        <h2 class="text-lg font-semibold uppercase">
+          {{ selectedRow?.jenis || "Detail" }}
         </h2>
-        <button
-          @click="openPreview = false"
-          class="text-gray-600 hover:text-gray-800"
-        ></button>
-
         <span class="text-sm text-gray-500">
           {{ formatDateTime(new Date()) }}
         </span>
@@ -251,191 +279,911 @@
     <!-- BODY -->
     <div
       v-if="selectedRow"
-      class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
+      class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
     >
-      <!-- Detail Info -->
-      <div class="space-y-4 text-base">
-        <!-- Tanggal -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-600 text-xs">Tanggal</p>
-          <p class="font-medium text-gray-900 mt-1">
-            {{ selectedRow.tanggal }}
-          </p>
-        </div>
-        <!-- Pengirim -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Penandatangan</p>
-          <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
-        </div>
-        <!-- Klasifikasi -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-600 text-xs">Klasifikasi</p>
-          <p class="font-medium text-gray-900 mt-1">
-            {{ selectedRow.klasifikasi }}
-          </p>
-        </div>
-        <!-- Jenis Naskah -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-600 text-xs">Jenis Naskah</p>
-          <p class="font-medium text-gray-900 mt-1">
-            {{ selectedRow.jenis }}
-          </p>
-        </div>
-        <!-- Pengusul-->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-600 text-xs">Penandatangan</p>
-          <p class="font-medium text-gray-900 mt-1">
-            {{ selectedRow.penanda }}
-          </p>
+      <!-- Judul Besar -->
+      <p class="text-gray-900 font-semibold leading-relaxed text-base">
+        {{ selectedRow.perihal }}
+      </p>
+
+      <!-- Tanggal -->
+      <div class="pb-2 border-b border-gray-200">
+        <p class="text-gray-500 text-xs">Tanggal</p>
+        <p class="font-medium mt-1">{{ selectedRow.tanggal }}</p>
+      </div>
+
+      <!-- Penandatangan -->
+      <div class="pb-2 border-b border-gray-200">
+        <p class="text-gray-500 text-xs">Penandatangan</p>
+        <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
+      </div>
+
+      <!-- Klasifikasi -->
+      <div class="pb-2 border-b border-gray-200">
+        <p class="text-gray-500 text-xs">Klasifikasi</p>
+        <p class="font-medium mt-1">
+          {{ selectedRow.klasifikasi }}
+        </p>
+      </div>
+
+      <!-- Jenis Naskah -->
+      <div class="pb-2 border-b border-gray-200">
+        <p class="text-gray-500 text-xs">Jenis Naskah</p>
+        <p class="font-medium mt-1">{{ selectedRow.jenis }}</p>
+      </div>
+
+      <!-- File Lampiran Utama (dari request) - jika ada -->
+      <div v-if="selectedRow.file_path" class="pt-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >File Lampiran Request</label
+        >
+        <div
+          class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-300 rounded-lg"
+        >
+          <svg
+            class="w-6 h-6 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-900">
+              {{ getFileName(selectedRow.file_path) }}
+            </p>
+            <p class="text-xs text-gray-500">Dokumen lampiran</p>
+          </div>
+          <a
+            :href="`${apiBaseUrl}/${selectedRow.file_path}`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+          >
+            Lihat
+          </a>
         </div>
       </div>
 
-      <!-- Nomor Surat Section -->
-      <div class="pt-4">
-        <label class="block text-base font-medium text-gray-900 mb-3"
-          >Nomor Surat</label
-        >
+      <!-- Nomor Surat & File Upload Section -->
+      <div class="mt-4">
+        <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+          Nomor Surat ({{ selectedRow.jumlah }} nomor)
+        </label>
 
-        <div class="space-y-3">
+        <div
+          v-if="
+            Array.isArray(selectedRow.details) && selectedRow.details.length > 0
+          "
+          class="space-y-4 mt-2"
+        >
           <div
             v-for="(detail, idx) in selectedRow.details"
             :key="detail.id || idx"
-            class="flex items-center gap-3"
+            class="border border-gray-300 rounded-lg p-4 bg-gray-50"
           >
-            <!-- Nomor Container -->
-            <div
-              class="relative flex flex-1 bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 items-center"
-            >
-              <span class="text-sm text-gray-600 font-medium mr-3">{{
-                idx + 1
-              }}</span>
-              <input
-                type="text"
-                :value="detail.nomor || '-'"
-                class="flex-1 bg-transparent outline-none text-sm text-gray-900 font-mono"
-                readonly
-              />
-
-              <!-- Status Badge -->
-              <span
-                v-if="detail.status"
-                :class="[
-                  'ml-3 px-2 py-1 rounded-full text-xs font-medium',
-                  {
-                    'bg-yellow-100 text-yellow-700':
-                      detail.status === 'pending' ||
-                      detail.status === 'menunggu',
-                    'bg-blue-100 text-blue-700': detail.status === 'booking',
-                    'bg-green-100 text-green-700': detail.status === 'terpakai',
-                    'bg-red-100 text-red-700': detail.status === 'ditolak',
-                    'bg-gray-100 text-gray-700': detail.status === 'hangus',
-                  },
-                ]"
+            <!-- Nomor surat dengan status badge -->
+            <div class="flex items-center gap-2 mb-3">
+              <div
+                class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
               >
-                {{ detail.status }}
-              </span>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-mono text-gray-700">
+                    {{ idx + 1 }}.
+                    {{ displayNomor(detail) }}
+                  </span>
+
+                  <!-- Status Badge -->
+                  <span
+                    v-if="detail.status"
+                    :class="[
+                      'px-2 py-1 rounded-lg text-xs font-medium',
+                      {
+                        'bg-yellow-100 text-yellow-700':
+                          detail.status === 'booking' ||
+                          detail.status === 'pending',
+                        'bg-green-100 text-green-700':
+                          detail.status === 'terpakai',
+                        'bg-red-100 text-red-700': detail.status === 'ditolak',
+                        'bg-gray-100 text-gray-700': detail.status === 'hangus',
+                      },
+                    ]"
+                  >
+                    {{ detail.status }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Copy button if nomor exists and approved -->
+              <button
+                v-if="detail.nomor && detail.status === 'terpakai'"
+                @click="handleCopy(detail.nomor)"
+                class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
+                title="Copy nomor surat"
+              >
+                <Copy class="w-4 h-4 text-gray-600" />
+              </button>
             </div>
 
-            <!-- Copy Button -->
-            <button
-              v-if="detail.nomor && detail.status === 'terpakai'"
-              @click="handleCopy(detail.nomor)"
-              class="p-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition flex items-center justify-center flex-shrink-0"
+            <!-- Show existing file if available -->
+            <div
+              v-if="detail.file_name || files[idx]"
+              class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
             >
-              <Copy class="w-4 h-4 text-gray-600" />
-            </button>
-            <div v-else class="w-[52px]"></div>
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+
+                <span class="text-xs text-gray-700">
+                  {{ files[idx]?.name || detail.file_name }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <!-- Preview Button -->
+                <button
+                  v-if="detail.file_url || detail.file_text || files[idx]"
+                  type="button"
+                  @click="previewFile(detail, idx)"
+                  class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+                >
+                  Lihat
+                </button>
+
+                <button
+                  v-if="selectedRow?.status === 'Belum Diajukan'"
+                  @click.prevent="removeFile(idx)"
+                  class="text-red-500 hover:text-red-700 text-xs"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+
+            <!-- Upload area if status is "Belum Diajukan" and no file -->
+            <div
+              v-else-if="selectedRow?.status === 'Belum Diajukan'"
+              class="relative"
+            >
+              <label
+                class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+              >
+                <svg
+                  class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+
+                <div class="flex-1">
+                  <span class="text-gray-700 font-medium block">
+                    Pilih file untuk diupload
+                  </span>
+                  <span class="text-xs text-gray-500 block">
+                    PDF, DOC, DOCX (Max 5MB)
+                  </span>
+                </div>
+
+                <input
+                  type="file"
+                  class="hidden"
+                  accept=".pdf,.doc,.docx"
+                  @change="handleFile(idx, $event)"
+                />
+              </label>
+            </div>
+
+            <!-- No file uploaded (for non-Belum Diajukan status) -->
+            <div
+              v-else
+              class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
+            >
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-3 h-3 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span class="text-xs text-yellow-800">
+                  Belum ada file diupload
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Jika tidak ada detail -->
-        <div
-          v-if="!selectedRow.details || selectedRow.details.length === 0"
-          class="text-center py-8 text-gray-500"
+      <!-- File upload warning -->
+      <div
+        v-if="selectedRow?.status === 'Belum Diajukan'"
+        class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2"
+      >
+        <svg
+          class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <p class="text-sm">Belum ada nomor yang dibooking</p>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div class="text-xs text-blue-800">
+          <p class="font-medium">Upload file (opsional)</p>
+          <p class="mt-1 text-blue-700">
+            File dapat diupload sekarang atau nanti. Usulan tetap dapat dikirim
+            tanpa file.
+          </p>
         </div>
       </div>
     </div>
 
     <!-- FOOTER -->
     <template #footer>
-      <div class="flex gap-3 px-5 py-4 border-t border-gray-200">
-        <!-- Tombol Kirim Usulan (hanya jika belum diajukan) -->
+      <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
         <button
           v-if="selectedRow?.status === 'Belum Diajukan'"
-          @click="submitUsulan"
-          :disabled="isProcessing"
-          class="flex-1 px-5 py-2 text-base font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+          @click="openConfirmSubmit = true"
+          :disabled="isLoadingBooking || isDeletingUsulan"
+          class="px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          <svg
-            v-if="isProcessing"
-            class="animate-spin h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          {{ isProcessing ? "Memproses..." : "Kirim Usulan" }}
+          Kirim Usulan
         </button>
 
-        <!-- Tombol Hapus (hanya jika belum diajukan) -->
+        <div v-else class="flex items-center gap-2">
+          <span
+            :class="[
+              'px-3 py-1 rounded-full text-xs font-medium',
+              {
+                'bg-yellow-100 text-yellow-700':
+                  selectedRow?.status === 'Menunggu Verifikasi',
+                'bg-green-100 text-green-700':
+                  selectedRow?.status === 'Disetujui',
+                'bg-red-100 text-red-700': selectedRow?.status === 'Ditolak',
+              },
+            ]"
+          >
+            {{ selectedRow?.status }}
+          </span>
+        </div>
+
         <button
-          v-if="selectedRow?.status === 'Belum Diajukan'"
-          @click="hapusUsulan"
-          :disabled="isProcessing"
-          class="flex-1 px-5 py-2 text-base font-medium bg-white text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          @click="openConfirmDelete = true"
+          :disabled="isLoadingBooking || isDeletingUsulan"
+          class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Hapus Usulan
         </button>
       </div>
     </template>
   </Modal>
+
+  <!-- CONFIRM SUBMIT POPUP -->
+  <ConfirmPopup
+    v-model="openConfirmSubmit"
+    type="question"
+    title="Kirim Usulan?"
+    message="Apakah Anda yakin ingin mengirim usulan ini? Usulan akan dikirim untuk diverifikasi."
+    confirm-text="Ya, Kirim"
+    cancel-text="Batal"
+    :is-loading="isLoadingBooking"
+    @confirm="confirmSubmitUsulan"
+    @cancel="openConfirmSubmit = false"
+  />
+
+  <!-- CONFIRM DELETE POPUP -->
+  <ConfirmPopup
+    v-model="openConfirmDelete"
+    type="danger"
+    title="Hapus Usulan?"
+    message="Usulan yang dihapus tidak dapat dikembalikan. Apakah Anda yakin?"
+    confirm-text="Ya, Hapus"
+    cancel-text="Batal"
+    :is-loading="isDeletingUsulan"
+    @confirm="confirmDeleteUsulan"
+    @cancel="openConfirmDelete = false"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
+import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
-import { useToast } from "#imports";
+import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
-import AddUsulan from "~/components/AddUsulan.vue";
+import ConfirmPopup from "~/components/ConfirmPopup.vue";
 
-const toast = useToast();
-const { get, post, del } = useApi();
+const config = useRuntimeConfig();
+const apiBaseUrl = config.public.apiBaseUrl;
+
 const { user, getProfile } = useAuth();
+const {
+  createUsulanDraft,
+  deleteUsulanUser,
+  getListUsulanByPosition,
+  getPersonWithPosition,
+  submitBooking,
+  isLoadingBooking,
+  getKlasifikasi,
+  getDetailVerifikasiRequest,
+  getNomorRequestCountUser,
+  userCounts,
+} = usePenomoran();
+const toast = useToast();
 
+const openDetail = ref(false);
+const isDeletingUsulan = ref(false);
+const selectedRow = ref(null);
+const rows = ref([]);
+const loading = ref<boolean>(true);
+const files = ref([]);
+const openAdd = ref<boolean>(false);
+const openConfirmDelete = ref(false);
+const openConfirmSubmit = ref(false);
+const idToDelete = ref<string | null>(null);
+
+// Person mapping
+const personMap = ref(new Map());
+// Klasifikasi mapping untuk display
+const klasifikasiMap = ref(new Map());
+
+// ⭐ Format DateTime dengan timezone Jakarta (WIB) - Format: DD/MM/YY HH:mm
+
+function formatDateTime(dateStr: string | Date) {
+  const date = new Date(dateStr);
+
+  const jakarta = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
+  );
+
+  const dd = String(jakarta.getDate()).padStart(2, "0");
+  const mm = String(jakarta.getMonth() + 1).padStart(2, "0");
+  const yy = String(jakarta.getFullYear()).slice(-2);
+  const hh = String(jakarta.getHours()).padStart(2, "0");
+  const min = String(jakarta.getMinutes()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yy} ${hh}:${min}`;
+}
+
+// Format tanggal tanpa waktu
+function formatTanggal(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+// ⭐ Refresh count function
+const refreshCount = async () => {
+  if (!user.value?.position) return;
+
+  const positionId =
+    typeof user.value.position === "object"
+      ? user.value.position.id
+      : user.value.position;
+
+  if (positionId) {
+    await getNomorRequestCountUser(positionId);
+    console.log("✅ Count refreshed:", userCounts.value);
+  }
+};
+
+// Format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+};
+
+// Preview file
+const previewFile = (detail: any, idx: number) => {
+  // 1. File lokal yang baru diupload
+  if (files.value?.[idx]) {
+    const url = URL.createObjectURL(files.value[idx]);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+
+  // 2. File URL dari backend
+  if (detail?.file_url) {
+    console.log("📄 Opening from file_url:", detail.file_url);
+    window.open(detail.file_url, "_blank");
+    return;
+  }
+
+  // 3. File path dari backend
+  if (detail?.file_text) {
+    const fileUrl = `${apiBaseUrl}/${detail.file_text}`;
+    console.log("📄 Opening from file_text:", fileUrl);
+    window.open(fileUrl, "_blank");
+    return;
+  }
+
+  // 4. Tidak ada file
+  toast.add({
+    title: "File tidak ditemukan",
+    description: "File tidak tersedia untuk ditampilkan",
+    color: "yellow",
+  });
+};
+
+// Remove file
+const removeFile = (index: number) => {
+  files.value[index] = null;
+};
+
+const fetchPersonMap = async () => {
+  try {
+    const response = await getPersonWithPosition();
+    const list = Array.isArray(response) ? response : (response.data ?? []);
+
+    list.forEach((item) => {
+      personMap.value.set(item.persnum, {
+        nama: item.nama,
+        position_text: item.position_text,
+      });
+    });
+
+    console.log("✅ Person map loaded:", personMap.value.size, "items");
+  } catch (error) {
+    console.error("❌ Error fetch person map:", error);
+  }
+};
+
+// Fetch klasifikasi map untuk display
+const fetchKlasifikasiMap = async () => {
+  try {
+    const response = await getKlasifikasi();
+
+    if (Array.isArray(response)) {
+      response.forEach((item) => {
+        klasifikasiMap.value.set(item.code, item.display);
+      });
+    }
+
+    console.log(
+      "✅ Klasifikasi map loaded:",
+      klasifikasiMap.value.size,
+      "items",
+    );
+  } catch (error) {
+    console.error("❌ Error fetch klasifikasi map:", error);
+  }
+};
+
+// ⭐ FETCH DATA - dengan refresh count
+const fetchData = async () => {
+  loading.value = true;
+
+  try {
+    if (!user.value?.position) {
+      rows.value = [];
+      return;
+    }
+
+    const data = await getListUsulanByPosition(String(user.value.position));
+    if (!Array.isArray(data)) {
+      rows.value = [];
+      return;
+    }
+
+    rows.value = data.map((item) => {
+      const pengusulInfo = personMap.value.get(item.persnum) || {};
+      const klasifikasiDisplay =
+        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+
+      return {
+        id_usulan: item.id_usulan ?? item.id,
+        jenis: item.jenis,
+        tanggal: formatDateTime(item.tanggal).split(" ")[0], // DD/MM/YY
+        perihal: item.perihal,
+        jumlah: item.jumlah,
+        penandatangan: item.penandatangan || "-",
+        klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay,
+        pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
+        tglUsulan: formatDateTime(item.created_at),
+        status: item.status || "Belum Diajukan",
+      };
+    });
+
+    console.log("✅ Data loaded:", rows.value.length, "rows");
+  } catch (err) {
+    console.error("❌ Gagal fetch data:", err);
+    rows.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// SHOW PREVIEW
+const showPreview = async (row: any) => {
+  try {
+    console.log("🔍 Opening preview for:", row.id);
+
+    const detailData = await getDetailVerifikasiRequest(row.id);
+
+    if (!detailData) {
+      return;
+    }
+
+    selectedRow.value = {
+      ...row,
+      ...detailData,
+      tanggal: formatDateTime(detailData.tanggal || row.tanggal),
+      tglUsulan: formatDateTime(detailData.created_at || row.tglUsulan),
+    };
+
+    files.value = Array(detailData.jumlah || 0).fill(null);
+
+    openDetail.value = true;
+    console.log("✅ Modal opened with status:", selectedRow.value.status);
+    console.log("✅ Details loaded:", detailData.details);
+  } catch (err) {
+    console.error("❌ Gagal load detail:", err);
+    toast.add({
+      title: "Gagal memuat detail",
+      description: "Silakan coba lagi",
+      color: "red",
+    });
+  }
+};
+
+// Display nomor
+const displayNomor = (detail: any) => {
+  if (detail.status === "terpakai" && detail.nomor) {
+    return detail.nomor;
+  }
+  if (detail.template_nomor) {
+    return detail.template_nomor;
+  }
+  if (selectedRow.value?.template_nomor) {
+    return selectedRow.value.template_nomor;
+  }
+  return "-";
+};
+
+// HANDLE FILE UPLOAD
+const handleFile = (index: number, e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const selectedFile = target.files?.[0];
+
+  if (!selectedFile) return;
+
+  // Validate file size (5MB max)
+  const maxSize = 5 * 1024 * 1024;
+  if (selectedFile.size > maxSize) {
+    toast.add({
+      title: "File terlalu besar",
+      description: "Ukuran file maksimal 5MB",
+      color: "red",
+    });
+    return;
+  }
+
+  // Validate file type
+  const allowedTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (!allowedTypes.includes(selectedFile.type)) {
+    toast.add({
+      title: "Tipe file tidak valid",
+      description: "Hanya file PDF, DOC, dan DOCX yang diperbolehkan",
+      color: "red",
+    });
+    return;
+  }
+
+  files.value[index] = selectedFile;
+
+  console.log(
+    "✅ File uploaded at index",
+    index,
+    ":",
+    selectedFile.name,
+    formatFileSize(selectedFile.size),
+  );
+
+  toast.add({
+    title: "File berhasil dipilih",
+    description: `${selectedFile.name} (${formatFileSize(selectedFile.size)})`,
+    color: "green",
+  });
+};
+
+// HANDLE COPY
+const handleCopy = (value: string) => {
+  if (!value) return;
+
+  navigator.clipboard.writeText(value);
+
+  toast.add({
+    title: "Tersalin",
+    description: `Nomor surat "${value}" berhasil disalin.`,
+    color: "success",
+    icon: "i-lucide-copy",
+  });
+};
+
+// HANDLE PREVIEW
+function handlePreview(data: any) {
+  selectedRow.value = data;
+  openAdd.value = false;
+  openDetail.value = true;
+
+  const length = Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1;
+
+  files.value = Array(length).fill(null);
+}
+
+// ⭐ CONFIRM SUBMIT USULAN - dengan refresh count
+const confirmSubmitUsulan = async () => {
+  if (!selectedRow.value) return;
+
+  try {
+    const formData = new FormData();
+
+    const uploadedFiles = files.value.filter((f) => f instanceof File);
+
+    console.log("📤 Submitting usulan with", uploadedFiles.length, "files");
+
+    if (uploadedFiles.length > 0) {
+      uploadedFiles.forEach((file) => {
+        formData.append("file", file);
+        console.log("📎 Appending file:", file.name);
+      });
+    }
+
+    const response = await submitBooking(
+      selectedRow.value.id_usulan || selectedRow.value.id,
+      formData,
+    );
+
+    console.log("✅ Booking response:", response);
+
+    openConfirmSubmit.value = false;
+    openDetail.value = false;
+
+    await fetchData(); // Ini sudah include refresh count
+
+    toast.add({
+      title: "Berhasil",
+      description:
+        uploadedFiles.length > 0
+          ? `Usulan berhasil dikirim dengan ${uploadedFiles.length} file`
+          : "Usulan berhasil dikirim tanpa file",
+      color: "green",
+    });
+  } catch (e) {
+    console.error("❌ Submit gagal:", e);
+    toast.add({
+      title: "Gagal",
+      description: "Gagal mengirim usulan. Silakan coba lagi.",
+      color: "red",
+    });
+  }
+};
+
+// ⭐ CONFIRM DELETE USULAN - dengan refresh count
+const confirmDeleteUsulan = async () => {
+  if (!selectedRow.value?.id_usulan && !selectedRow.value?.id) return;
+
+  const idToDelete = selectedRow.value.id_usulan || selectedRow.value.id;
+  isDeletingUsulan.value = true;
+
+  try {
+    await deleteUsulanUser(idToDelete);
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil dihapus",
+      color: "green",
+    });
+
+    openConfirmDelete.value = false;
+    openDetail.value = false;
+
+    await fetchData(); // Ini sudah include refresh count
+  } catch (error) {
+    console.error("❌ Delete gagal:", error);
+    toast.add({
+      title: "Gagal",
+      description: "Gagal menghapus usulan. Silakan coba lagi.",
+      color: "red",
+    });
+  } finally {
+    isDeletingUsulan.value = false;
+  }
+};
+
+// ⭐ HANDLE SUBMIT FROM MODAL - dengan refresh count
+const isSubmittingUsulan = ref(false);
+const handleSubmitFromModal = async (payload: any) => {
+  if (isSubmittingUsulan.value) return;
+  isSubmittingUsulan.value = true;
+
+  try {
+    console.log("📤 Payload diterima dari modal:", payload);
+
+    if (
+      !payload.tanggal ||
+      !payload.jenis ||
+      !payload.klasifikasi ||
+      !payload.perihal ||
+      !payload.jumlah
+    ) {
+      toast.add({
+        title: "Data Tidak Lengkap",
+        description: "Pastikan semua field terisi",
+        color: "yellow",
+      });
+      return;
+    }
+
+    const dateObj = new Date(payload.tanggal);
+    const formattedDate = dateObj.toISOString().split("T")[0];
+
+    const formattedPayload = {
+      position_id: Number(user.value?.position),
+      tanggal: formattedDate,
+      jenis: String(payload.jenis),
+      klasifikasi: String(payload.klasifikasi),
+      perihal: String(payload.perihal),
+      penandatangan: String(payload.penandatangan),
+      id_position_penandatangan: Number(payload.id_position_penandatangan),
+      jumlah: Number(payload.jumlah),
+    };
+
+    console.log("📦 Formatted payload:", formattedPayload);
+
+    await createUsulanDraft(formattedPayload);
+
+    await fetchData(); // Ini sudah include refresh count
+    currentPage.value = 1;
+
+    toast.add({
+      title: "Berhasil",
+      description: "Usulan berhasil ditambahkan",
+      color: "green",
+    });
+
+    openAdd.value = false;
+  } catch (err) {
+    console.error("❌ Error submit modal:", err);
+
+    toast.add({
+      title: "Gagal",
+      description:
+        err?.response?.data?.message || err?.message || "Usulan gagal dikirim",
+      color: "red",
+    });
+  } finally {
+    isSubmittingUsulan.value = false;
+  }
+};
+
+// Get filename from path
+const getFileName = (path: string) => {
+  if (!path) return "-";
+  return path.split("/").pop() || path;
+};
+
+// Close dropdown when click outside
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
+  for (const el of Array.from(dropdownEls)) {
+    if (el.contains(target)) return;
+  }
+  openFilterStatus.value = false;
+}
+
+// ⭐ Watch userCounts untuk debugging
+watch(
+  userCounts,
+  (newVal) => {
+    console.log("📊 User counts changed in Usulan page:", newVal);
+  },
+  { deep: true },
+);
+
+// INIT
+onMounted(async () => {
+  loading.value = true;
+
+  if (!user.value) {
+    await getProfile();
+  }
+
+  await fetchKlasifikasiMap();
+  await fetchPersonMap();
+  await fetchData(); // Ini sudah include initial refresh count
+
+  document.addEventListener("click", handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleDocumentClick);
+});
+
+/* Breadcrumb */
 const breadcrumbs = [
   { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Usulan", to: "/admin/penomoran/usulan" },
+  { label: "Usulan", to: "/user/penomoran/usulan" },
 ];
 
+/* TABLE CONFIG */
 const headers = [
-  { label: "ID", key: "displayId", sortable: true },
+  { label: "ID Usulan", key: "id_usulan", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penanda Tangan", key: "penanda", sortable: false },
+  { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
-  { label: "Status", key: "status", sortable: true },
 ];
+
+/* SORT STATUS */
+const sortStatus = () => {
+  if (sortBy.value === "status") {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = "status";
+    sortDir.value = "asc";
+  }
+};
+
+const statusOrder = {
+  "Belum Diajukan": 1,
+  "Menunggu Verifikasi": 2,
+  Disetujui: 3,
+  Ditolak: 4,
+};
 
 const filterOptions = [
   "Semua",
@@ -449,20 +1197,11 @@ const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
-const selectedRow = ref<any>(null);
-const isProcessing = ref(false);
-const loading = ref<boolean>(true);
 
-const filterStatus = ref<string>("Semua");
-const openFilterStatus = ref<boolean>(false);
-const openPreview = ref(false);
-const openAdd = ref(false);
-const rows = ref<any[]>([]);
-const personMap = ref(new Map());
-
-// SORTING
+/* SORT STATE */
 const sortBy = ref<string>("tglUsulan");
 const sortDir = ref<"asc" | "desc">("desc");
+
 const sort = (col: string) => {
   if (sortBy.value === col) {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -472,251 +1211,52 @@ const sort = (col: string) => {
   }
 };
 
+/* STATUS FILTER */
+const filterStatus = ref<string>("Semua");
+const openFilterStatus = ref<boolean>(false);
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
 };
 
-const fetchPersonMap = async () => {
-  try {
-    const response = await get("/person/with-position/all");
-    console.log("📥 Person Map Response:", response);
-
-    const list = response?.data || [];
-
-    list.forEach((item: any) => {
-      personMap.value.set(String(item.position), {
-        nama: item.nama,
-        position_text: item.position_text,
-      });
-    });
-
-    console.log("✅ Person Map loaded:", personMap.value.size, "entries");
-  } catch (error) {
-    console.error("❌ Error fetch person map:", error);
-  }
-};
-
-const fetchData = async () => {
-  loading.value = true;
-
-  try {
-    if (!user.value) {
-      await getProfile();
-    }
-
-    if (!user.value?.position) {
-      toast.add({
-        title: "Error",
-        description: "User position tidak ditemukan",
-        color: "red",
-      });
-      return;
-    }
-
-    const userPositionId = user.value.position;
-    console.log("🔍 Fetching usulan for position:", userPositionId);
-
-    const res = await get(`/nomor-request/${userPositionId}`);
-    console.log("📥 API Response:", res);
-
-    if (!res?.success) {
-      toast.add({
-        title: "Gagal",
-        description: res?.message || "Tidak dapat mengambil data usulan",
-        color: "red",
-      });
-      return;
-    }
-
-    const rawData = res.data || [];
-    console.log("📊 Raw data usulan:", rawData);
-
-    rows.value = rawData.map((item: any, index: number) => {
-      let status = "Belum Diajukan";
-
-      if (item.details && item.details.length > 0) {
-        const hasBooking = item.details.some((d: any) => d.status === "hangus");
-        const hasTerpakai = item.details.some(
-          (d: any) => d.status === "terpakai",
-        );
-        const hasDitolak = item.details.some(
-          (d: any) => d.status === "ditolak",
-        );
-
-        if (hasTerpakai) {
-          status = "Disetujui";
-        } else if (hasDitolak) {
-          status = "Ditolak";
-        } else if (hasBooking) {
-          status = "Menunggu Verifikasi";
-        }
-      }
-
-      const person = personMap.value.get(String(item.position));
-      console.log(`🔍 Looking up position ${item.position}:`, person);
-
-      return {
-        id: item.id,
-        displayId: `#${String(index + 1).padStart(3, "0")}`,
-        jenis: item.jenis,
-        tanggal: formatTanggal(item.tanggal),
-        perihal: item.perihal,
-        penanda: person?.position_text || "-",
-        jumlah: item.jumlah,
-        pengusul: person?.nama || user.value?.nama || "-",
-        tglUsulan: formatDateTime(item.created_at),
-        status: status,
-        klasifikasi: item.klasifikasi,
-        details: item.details || [],
-        _raw: item,
-      };
-    });
-
-    console.log("✅ Data usulan berhasil dimuat:", rows.value);
-  } catch (error: any) {
-    console.error("❌ Error fetch data usulan:", error);
-
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Tidak dapat mengambil data usulan";
-
-    toast.add({
-      title: "Gagal memuat data",
-      description: errorMsg,
-      color: "red",
-    });
-  } finally {
-    loading.value = false;
-  }
-};
-
-const openRowModal = (row: any) => {
-  selectedRow.value = { ...row };
-  openPreview.value = true;
-};
-
-const handleSubmitUsulan = async (data: any) => {
-  console.log("✅ Submit usulan baru:", data);
-  await fetchData();
-  openAdd.value = false;
-};
-
-const handlePreview = (data: any) => {
-  console.log("📄 Preview data:", data);
-};
-
-const submitUsulan = async () => {
-  if (!selectedRow.value) return;
-  isProcessing.value = true;
-
-  try {
-    const res = await post(
-      `/admin/nomor-request/${selectedRow.value.id}/booking`,
-      {},
-    );
-
-    if (res?.success) {
-      toast.add({
-        title: "Berhasil",
-        description: "Usulan berhasil dikirim ke verifikasi",
-        color: "green",
-      });
-      openPreview.value = false;
-      await fetchData();
-    } else {
-      throw new Error(res?.message || "Gagal mengirim usulan");
-    }
-  } catch (error: any) {
-    console.error("❌ Error submit usulan:", error);
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Terjadi kesalahan saat mengirim usulan";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
-  } finally {
-    isProcessing.value = false;
-  }
-};
-
-const hapusUsulan = async () => {
-  if (!selectedRow.value) return;
-  if (!confirm("Yakin ingin menghapus usulan ini?")) return;
-  isProcessing.value = true;
-
-  try {
-    const res = await del(`/nomor-request/${selectedRow.value.id}`);
-
-    if (res?.success) {
-      toast.add({
-        title: "Berhasil",
-        description: "Usulan berhasil dihapus",
-        color: "green",
-      });
-      openPreview.value = false;
-      await fetchData();
-    } else {
-      throw new Error(res?.message || "Gagal menghapus usulan");
-    }
-  } catch (error: any) {
-    console.error("❌ Error hapus usulan:", error);
-    const errorMsg =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Terjadi kesalahan saat menghapus usulan";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
-  } finally {
-    isProcessing.value = false;
-  }
-};
-
-const handleCopy = (value: string) => {
-  navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
-};
-
+/* FILTER + SEARCH */
 const filteredRows = computed(() => {
   const s = search.value.toLowerCase();
   const fs = filterStatus.value;
 
   return rows.value.filter((r) => {
+    if (!r || typeof r !== "object") return false;
+
     const matchSearch = Object.values(r).some((v) =>
-      String(v).toLowerCase().includes(s),
+      String(v ?? "")
+        .toLowerCase()
+        .includes(s),
     );
+
     const matchStatus = fs === "Semua" || r.status === fs;
     return matchSearch && matchStatus;
   });
 });
 
+/* SORT */
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
+    if (sortBy.value === "status") {
+      const A = statusOrder[a.status] ?? 99;
+      const B = statusOrder[b.status] ?? 99;
+      return sortDir.value === "asc" ? A - B : B - A;
+    }
+
     const A = String(a[sortBy.value] ?? "").toLowerCase();
     const B = String(b[sortBy.value] ?? "").toLowerCase();
+
     if (A < B) return sortDir.value === "asc" ? -1 : 1;
     if (A > B) return sortDir.value === "asc" ? 1 : -1;
     return 0;
   });
 });
 
+/* PAGINATION */
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return sortedRows.value.slice(start, start + rowsPerPage.value);
@@ -726,48 +1266,9 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
+/* WATCHERS */
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
-});
-
-function formatTanggal(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatDateTime(dateStr: string | Date) {
-  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return `${date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })} ${date.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
-}
-
-function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
-  for (const el of Array.from(dropdownEls)) {
-    if (el.contains(target)) return;
-  }
-  openFilterStatus.value = false;
-}
-
-onMounted(async () => {
-  if (!user.value) await getProfile();
-  await fetchPersonMap();
-  await fetchData();
-  document.addEventListener("click", handleDocumentClick);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
 });
 </script>
 

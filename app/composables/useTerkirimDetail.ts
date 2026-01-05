@@ -39,7 +39,7 @@ export const useTerkirimDetail = () => {
           break;
         case 'DI':
         case 'DISPOSISI':
-          endpoint = `/DISPOSISI/${id}`;
+          endpoint = `/DI/${id}`;
           break;
         default:
           endpoint = `/ND/${id}`;

@@ -1,5 +1,5 @@
 // composables/usePenomoran.ts
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useApi } from "./useApi";
 import type { PenomoranPayload, PenomoranResponse } from "~/types/penomoran";
 
@@ -12,8 +12,172 @@ export const usePenomoran = () => {
   const isLoadingList = ref(false);
   const isLoadingSubmitted = ref(false);
 
+  /* ===========================
+   * STATE - PISAHKAN ADMIN & USER
+   * =========================== */
+  const adminCounts = ref({
+    menunggu_verifikasi: 0,
+    disetujui: 0,
+    ditolak: 0,
+    belum_diajukan: 0,
+    total: 0,
+  });
+
+  const userCounts = ref({
+    position_id: null as number | null,
+    menunggu_verifikasi: 0,
+    disetujui: 0,
+    ditolak: 0,
+    belum_diajukan: 0,
+    total: 0,
+  });
+
+  // Computed untuk backward compatibility
+  const nomorCounts = computed(() => {
+    const { user } = useAuth();
+    const isAdmin =
+      user.value?.role === "admin" || user.value?.role === "superadmin";
+
+    console.log("📊 nomorCounts computed:", {
+      role: user.value?.role,
+      isAdmin,
+      adminCounts: adminCounts.value,
+      userCounts: userCounts.value,
+      returning: isAdmin ? "adminCounts" : "userCounts",
+    });
+
+    return isAdmin ? adminCounts.value : userCounts.value;
+  });
+
+  /* ===========================
+   * GET COUNT (ADMIN)
+   * endpoint: /admin/nomor-request-count
+   * =========================== */
+  const getNomorRequestCountAdmin = async () => {
+    try {
+      console.log("📤 Fetching admin counts...");
+      const res = await get("/admin/nomor-request-count");
+
+      console.log("📥 Admin count response:", res);
+
+      if (res?.success && res?.data) {
+        adminCounts.value = {
+          menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
+          disetujui: res.data.disetujui ?? 0,
+          ditolak: res.data.ditolak ?? 0,
+          belum_diajukan: res.data.belum_diajukan ?? 0,
+          total: res.data.total ?? 0,
+        };
+
+        console.log("✅ Admin counts updated:", adminCounts.value);
+      }
+
+      return adminCounts.value;
+    } catch (e) {
+      console.error("❌ Admin count error:", e);
+      return adminCounts.value;
+    }
+  };
+
+  /* ===========================
+   * GET COUNT (USER)
+   * endpoint: /admin/nomor-request-count/{{position_id}}
+   * =========================== */
+  const getNomorRequestCountUser = async (positionId: number | string) => {
+    try {
+      if (!positionId) {
+        console.warn("⚠️ Position ID is empty, skipping user count fetch");
+        return userCounts.value;
+      }
+
+      // Convert to number and validate
+      const numericPositionId = Number(positionId);
+
+      if (isNaN(numericPositionId) || numericPositionId <= 0) {
+        console.error(
+          "❌ Invalid position ID:",
+          positionId,
+          "Converted:",
+          numericPositionId,
+          "Type:",
+          typeof positionId,
+        );
+        return userCounts.value;
+      }
+
+      console.log("📤 Fetching user counts for position:", {
+        original: positionId,
+        originalType: typeof positionId,
+        numeric: numericPositionId,
+        numericType: typeof numericPositionId,
+      });
+
+      // ✅ GUNAKAN PATH PARAMETER (sesuai dokumentasi API user)
+      const endpoint = `/nomor-request-count/${numericPositionId}`;
+      console.log("📍 Calling endpoint:", endpoint);
+
+      const res = await get(endpoint);
+
+      console.log("📥 User count response:", res);
+
+      if (res?.success && res?.data) {
+        userCounts.value = {
+          position_id: res.data.position_id ?? numericPositionId,
+          menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
+          disetujui: res.data.disetujui ?? 0,
+          ditolak: res.data.ditolak ?? 0,
+          belum_diajukan: res.data.belum_diajukan ?? 0,
+          total: res.data.total ?? 0,
+        };
+
+        console.log("✅ User counts updated:", userCounts.value);
+      } else {
+        console.error("❌ Invalid response structure:", res);
+      }
+
+      return userCounts.value;
+    } catch (e: any) {
+      console.error("❌ User count error:", e);
+      console.error("❌ Error details:", {
+        status: e.response?.status,
+        statusText: e.response?.statusText,
+        message: e.response?.data?.message,
+        endpoint: `/admin/nomor-request-count/${positionId}`,
+      });
+
+      // Jangan tampilkan toast untuk error 404, hanya log
+      if (e.response?.status !== 404) {
+        toast.add({
+          title: "Gagal mengambil count",
+          description: e.response?.data?.message || "Silakan refresh halaman",
+          color: "red",
+        });
+      }
+
+      return userCounts.value;
+    }
+  };
+
+  /* ===========================
+   * HELPER UNIVERSAL
+   * =========================== */
+  const fetchNomorRequestCount = async (payload: {
+    role: "admin" | "user";
+    positionId?: number | string;
+  }) => {
+    if (payload.role === "admin") {
+      return await getNomorRequestCountAdmin();
+    }
+
+    if (payload.role === "user" && payload.positionId) {
+      return await getNomorRequestCountUser(payload.positionId);
+    }
+
+    return nomorCounts.value;
+  };
+
   /** ===========================
-   * CREATE PENOMORAN FINAL
+   * CREATE PENOMORAN FINAL (ADMIN ONLY)
    * =========================== */
   const createPenomoranFinal = async (
     payload: PenomoranPayload,
@@ -103,6 +267,12 @@ export const usePenomoran = () => {
         color: "green",
       });
 
+      // Refresh count sesuai role
+      const { user } = useAuth();
+      if (user.value?.position?.id) {
+        await getNomorRequestCountUser(user.value.position.id);
+      }
+
       return response.data ?? response;
     } finally {
       isLoadingPenomoran.value = false;
@@ -110,7 +280,7 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * SUBMIT BOOKING WITH FILES
+   * SUBMIT BOOKING WITH FILES (USER)
    * =========================== */
   const submitBooking = async (
     id_request: string | number,
@@ -121,7 +291,6 @@ export const usePenomoran = () => {
     try {
       console.log("📤 Submitting booking for request:", id_request);
 
-      // Log FormData contents for debugging
       for (const pair of formData.entries()) {
         console.log(`📎 FormData: ${pair[0]} =`, pair[1]);
       }
@@ -146,6 +315,14 @@ export const usePenomoran = () => {
         color: "green",
       });
 
+      // Refresh count sesuai role
+      const { user } = useAuth();
+      if (user.value?.role === "admin" || user.value?.role === "superadmin") {
+        await getNomorRequestCountAdmin();
+      } else if (user.value?.position?.id) {
+        await getNomorRequestCountUser(user.value.position.id);
+      }
+
       return response.data;
     } catch (error: any) {
       console.error("❌ Error submit booking:", error);
@@ -169,11 +346,10 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * GET DETAIL NOMOR BY ID
+   * GET DETAIL NOMOR BY ID (ADMIN)
    * =========================== */
   const getDetailNomor = async (id: string) => {
     try {
-      // Try admin endpoint first
       const res = await get(`/nomor/${id}`);
 
       console.log("✅ Detail nomor loaded:", res);
@@ -185,12 +361,13 @@ export const usePenomoran = () => {
       return res.data;
     } catch (e: any) {
       console.error("❌ Error fetch detail nomor:", e);
-
-      // Don't show toast, just return null to handle gracefully
       return null;
     }
   };
 
+  /** ===========================
+   * GET LIST NOMOR (ADMIN)
+   * =========================== */
   const getListNomor = async () => {
     isLoadingList.value = true;
     try {
@@ -210,7 +387,28 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * GET LIST USULAN
+   * GET LIST USULAN (USER - by position)
+   * =========================== */
+  const getListUsulanByPosition = async (positionId: string) => {
+    isLoadingList.value = true;
+    try {
+      const res = await get(`/nomor-request/${positionId}`);
+      return res.data ?? res;
+    } catch (e: any) {
+      console.error("❌ Error ambil list usulan:", e);
+      toast.add({
+        title: "Gagal fetch data",
+        description: e.message || "Gagal mengambil daftar usulan",
+        color: "red",
+      });
+      return [];
+    } finally {
+      isLoadingList.value = false;
+    }
+  };
+
+  /** ===========================
+   * GET LIST USULAN (ADMIN - all)
    * =========================== */
   const getListUsulan = async () => {
     isLoadingList.value = true;
@@ -231,7 +429,7 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * GET DETAIL USULAN
+   * GET DETAIL USULAN (ADMIN)
    * =========================== */
   const getDetailUsulan = async (id: string) => {
     try {
@@ -283,7 +481,7 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * GET LIST SUBMITTED
+   * GET LIST SUBMITTED (ADMIN)
    * =========================== */
   const getListSubmitted = async () => {
     isLoadingSubmitted.value = true;
@@ -322,9 +520,9 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * DELETE USULAN
+   * DELETE USULAN (USER - delete by ID)
    * =========================== */
-  const deleteUsulan = async (id: string) => {
+  const deleteUsulanUser = async (id: string) => {
     try {
       const res = await del(`/admin/nomor-request/${id}`);
 
@@ -332,10 +530,17 @@ export const usePenomoran = () => {
 
       toast.add({
         title: "Berhasil",
-        description: res?.data?.message || "Usulan berhasil dihapus",
+        description:
+          res?.data?.message || res?.message || "Usulan berhasil dihapus",
         icon: "i-heroicons-check-circle",
         color: "green",
       });
+
+      // Refresh user count
+      const { user } = useAuth();
+      if (user.value?.position?.id) {
+        await getNomorRequestCountUser(user.value.position.id);
+      }
 
       return res.data ?? res;
     } catch (e: any) {
@@ -358,7 +563,46 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * DELETE NOMOR
+   * DELETE USULAN (ADMIN)
+   * =========================== */
+  const deleteUsulan = async (id: string) => {
+    try {
+      const res = await del(`/admin/nomor-request/${id}`);
+
+      console.log("✅ Delete response:", res);
+
+      toast.add({
+        title: "Berhasil",
+        description: res?.data?.message || "Usulan berhasil dihapus",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+
+      // Refresh admin count
+      await getNomorRequestCountAdmin();
+
+      return res.data ?? res;
+    } catch (e: any) {
+      console.error("❌ Error delete usulan:", e);
+
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        "Gagal menghapus usulan";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw e;
+    }
+  };
+
+  /** ===========================
+   * DELETE NOMOR (ADMIN)
    * =========================== */
   const deleteNomor = async (id: string) => {
     try {
@@ -394,7 +638,7 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * APPROVE BULK NOMOR
+   * APPROVE BULK NOMOR (ADMIN)
    * =========================== */
   const approveBulkNomor = async (detailIds: string[]) => {
     try {
@@ -402,7 +646,6 @@ export const usePenomoran = () => {
         throw new Error("Detail IDs tidak boleh kosong");
       }
 
-      // Filter out null/undefined IDs
       const validIds = detailIds.filter(
         (id) => id !== null && id !== undefined && id !== "",
       );
@@ -425,6 +668,9 @@ export const usePenomoran = () => {
         color: "green",
       });
 
+      // Refresh admin count
+      await getNomorRequestCountAdmin();
+
       return response;
     } catch (e: any) {
       console.error("❌ Error approve bulk:", e);
@@ -446,7 +692,7 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * REJECT NOMOR REQUEST
+   * REJECT NOMOR REQUEST (ADMIN)
    * =========================== */
   const rejectNomorRequest = async (
     requestId: string,
@@ -468,10 +714,13 @@ export const usePenomoran = () => {
         keterangan,
       });
 
-      const response = await post(`/admin/nomor-request/${requestId}/reject`, {
-        detail_ids: detailIds,
-        keterangan: keterangan,
-      });
+      const response = await post(
+        `/admin/nomor-request/${requestId}/reject-nomor`,
+        {
+          detail_ids: detailIds,
+          keterangan: keterangan,
+        },
+      );
 
       console.log("✅ Reject response:", response);
 
@@ -480,6 +729,9 @@ export const usePenomoran = () => {
         description: response?.message || "Nomor berhasil ditolak",
         color: "green",
       });
+
+      // Refresh admin count
+      await getNomorRequestCountAdmin();
 
       return response;
     } catch (e: any) {
@@ -501,20 +753,172 @@ export const usePenomoran = () => {
     }
   };
 
+  /** ===========================
+   * GET DETAIL VERIFIKASI REQUEST (ADMIN)
+   * =========================== */
+  const getDetailVerifikasiRequest = async (requestId: string) => {
+    try {
+      const mainRes = await get(`/admin/nomor-request/${requestId}`);
+
+      if (!mainRes?.success) {
+        toast.add({
+          title: "Gagal",
+          description: "Tidak dapat mengambil detail usulan",
+          color: "red",
+        });
+        return null;
+      }
+
+      const mainData = mainRes.data;
+
+      const detailRes = await get(`/admin/detail-nomor-request/${requestId}`);
+      const existingDetails = detailRes?.success
+        ? detailRes.data?.details || []
+        : [];
+
+      const jumlah = mainData.jumlah || 0;
+      const template_nomor = mainData.template_nomor || null;
+
+      let details = [];
+
+      if (existingDetails.length > 0) {
+        details = existingDetails.slice(0, jumlah).map((d: any) => ({
+          id: d.id,
+          nomor: d.nomor || null,
+          template_nomor: template_nomor,
+          status: d.status || "booking",
+          checked: d.status !== "ditolak" && d.status !== "hangus",
+          file_name: d.file_name || null,
+          file_text: d.file_text || null,
+          file_url: d.file_url || null,
+        }));
+
+        const remaining = jumlah - details.length;
+        for (let i = 0; i < remaining; i++) {
+          details.push({
+            id: null,
+            nomor: null,
+            template_nomor: template_nomor,
+            status: "pending",
+            checked: true,
+            file_name: null,
+            file_text: null,
+            file_url: null,
+          });
+        }
+      } else {
+        for (let i = 0; i < jumlah; i++) {
+          details.push({
+            id: null,
+            nomor: null,
+            template_nomor: template_nomor,
+            status: "pending",
+            checked: true,
+            file_name: null,
+            file_text: null,
+            file_url: null,
+          });
+        }
+      }
+
+      return {
+        ...mainData,
+        jumlah: jumlah,
+        details: details,
+      };
+    } catch (error) {
+      console.error("❌ Error fetch detail verifikasi:", error);
+      toast.add({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat mengambil detail",
+        color: "red",
+      });
+      return null;
+    }
+  };
+
+  /** ===========================
+   * UPLOAD DETAIL FILE (ADMIN)
+   * =========================== */
+  const uploadDetailFile = async (detailId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log(`📤 Uploading file for detail ID: ${detailId}`);
+
+      const response = await api.patch(
+        `/admin/nomor-request-detail/${detailId}/file`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      console.log("✅ File upload response:", response.data);
+
+      if (response.data?.success) {
+        toast.add({
+          title: "Berhasil",
+          description: "File berhasil diganti",
+          color: "green",
+        });
+
+        return response.data.data;
+      } else {
+        throw new Error(response.data?.message || "Gagal mengganti file");
+      }
+    } catch (error: any) {
+      console.error("❌ Error upload file:", error);
+
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal mengganti file";
+
+      toast.add({
+        title: "Gagal",
+        description: errorMsg,
+        color: "red",
+      });
+
+      throw error;
+    }
+  };
+
   return {
-    // USULAN FLOW
+    // STATE - TERPISAH
+    adminCounts,
+    userCounts,
+    nomorCounts, // Computed untuk backward compatibility
+
+    // COUNT
+    getNomorRequestCountAdmin,
+    getNomorRequestCountUser,
+    fetchNomorRequestCount,
+
+    // USULAN FLOW (USER)
     createUsulanDraft,
     submitBooking,
+    getListUsulanByPosition,
+    deleteUsulanUser,
+
+    // USULAN FLOW (ADMIN)
     getListUsulan,
     getDetailUsulan,
     deleteUsulan,
 
-    // VERIFIKASI
+    // VERIFIKASI (ADMIN)
     getListSubmitted,
+    getDetailVerifikasiRequest,
     approveBulkNomor,
     rejectNomorRequest,
+    uploadDetailFile,
 
-    // PENOMORAN FINAL
+    // PENOMORAN FINAL (ADMIN)
     createPenomoranFinal,
     getListNomor,
     getDetailNomor,
