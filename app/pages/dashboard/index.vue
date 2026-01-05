@@ -121,7 +121,7 @@
                 Surat Masuk Terbaru
               </h3>
               <UButton
-                to="/admin/korespondensi/kotak-masuk"
+                to="/korespondensi/kotak-masuk"
                 size="xs"
                 color="primary"
                 variant="ghost"

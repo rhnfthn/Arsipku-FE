@@ -482,7 +482,7 @@ const confirmKirimDokumen = async () => {
 
     if (res?.success) {
       toast.add({ title: 'Berhasil', description: 'Surat Dinas Eksternal terkirim', color: 'success' });
-      router.push("/admin/korespondensi/terkirim");
+      router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     toast.add({ title: 'Gagal Mengirim', description: e.response?.data?.message, color: 'error' });

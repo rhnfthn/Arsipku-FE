@@ -1187,7 +1187,7 @@ onBeforeUnmount(() => {
 
 /* Breadcrumb */
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Usulan", to: "/admin/penomoran/usulan" },
 ];
 

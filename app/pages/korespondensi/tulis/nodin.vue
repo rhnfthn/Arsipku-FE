@@ -951,7 +951,7 @@ const handleSaveDraft = async () => {
   try {
     // Panggil saveDraft dari composable
     await saveDraft(formData);
-    // await navigateTo("/admin/korespondensi/terkirim"); // Redirect jika perlu
+    // await navigateTo("/korespondensi/terkirim"); // Redirect jika perlu
   } catch (e) {
     console.error(e);
   }

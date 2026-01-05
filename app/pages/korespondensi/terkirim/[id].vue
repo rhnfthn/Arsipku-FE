@@ -10,7 +10,7 @@ import { useTerkirimDetail } from '@/composables/useTerkirimDetail';
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Terkirim", to: "/admin/korespondensi/terkirim" },
+  { label: "Terkirim", to: "/korespondensi/terkirim" },
   { label: "Detail Surat", to: "#" },
 ];
 

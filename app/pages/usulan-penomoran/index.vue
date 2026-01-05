@@ -1139,8 +1139,8 @@ onMounted(async () => {
 
 /* Breadcrumb */
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
-  { label: "Usulan", to: "/user/penomoran/usulan" },
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Usulan", to: "/penomoran/usulan" },
 ];
 
 /* TABLE CONFIG */

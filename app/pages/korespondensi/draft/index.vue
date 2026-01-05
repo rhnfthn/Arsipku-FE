@@ -68,26 +68,26 @@ const handleEdit = (mail) => {
 
   // 2. Logic Routing yang lebih strict
   if (['ND', 'NOTA DINAS', 'NOTA_DINAS'].includes(jenis)) {
-    path = '/admin/korespondensi/tulis/nota-dinas';
+    path = '/korespondensi/tulis/nota-dinas';
   }
   else if (['DI', 'DISPOSISI'].includes(jenis)) {
-    path = '/admin/korespondensi/tulis/disposisi';
+    path = '/korespondensi/tulis/disposisi';
   }
   else if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL', 'SURAT_DINAS_INTERNAL'].includes(jenis)) {
-    path = '/admin/korespondensi/tulis/surat-dinas-internal';
+    path = '/korespondensi/tulis/surat-dinas-internal';
   }
   else if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL', 'SURAT_DINAS_EKSTERNAL'].includes(jenis)) {
-    path = '/admin/korespondensi/tulis/surat-dinas-eksternal';
+    path = '/korespondensi/tulis/surat-dinas-eksternal';
   }
   else if (['KA', 'KAJIAN'].includes(jenis)) {
     // KA diarahkan ke halaman Kajian (sesuai history sebelumnya)
-    path = '/admin/korespondensi/tulis/kajian';
+    path = '/korespondensi/tulis/kajian';
   }
   else {
     // 3. Fallback jika jenis tidak dikenali
     console.warn("Jenis surat tidak dikenali, default ke Nota Dinas. Jenis:", jenis);
     // Opsional: Tetap arahkan ke ND atau tampilkan error
-    path = '/admin/korespondensi/tulis/nota-dinas';
+    path = '/korespondensi/tulis/nota-dinas';
   }
 
   // 4. Eksekusi Router

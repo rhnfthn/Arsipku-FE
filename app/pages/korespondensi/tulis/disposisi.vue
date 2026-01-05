@@ -434,7 +434,7 @@ const confirmKirimDokumen = async () => {
 
     if (res?.success || res?.data?.success) {
       toast.add({ title: 'Berhasil', description: 'Disposisi Terkirim', color: 'success' });
-      router.push("/admin/korespondensi/terkirim");
+      router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     toast.add({ title: 'Gagal', description: e.response?.data?.message, color: 'error' });
@@ -454,7 +454,7 @@ const confirmSaveDraft = async () => {
       await saveDraft(fd);
     }
     toast.add({ title: 'Draft Disimpan', color: 'success' });
-    router.push("/admin/korespondensi/draft");
+    router.push("/korespondensi/draft");
   } catch (e: any) {
     toast.add({ title: 'Gagal Simpan', description: e.response?.data?.message, color: 'error' });
   } finally {
