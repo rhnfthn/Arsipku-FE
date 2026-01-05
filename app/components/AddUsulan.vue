@@ -246,10 +246,10 @@
 
         <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
           <Heading variant="10sb">Nama</Heading>
-          <Heading variant="11sb">{{ user?.nama || "-" }}</Heading>
+          <Heading variant="11sb">{{ penandatanganNama || "-" }}</Heading>
 
           <Heading variant="10sb">Jabatan</Heading>
-          <Heading variant="11sb">{{ user?.position_text || "-" }}</Heading>
+          <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
 
           <Heading variant="10sb">Jenis</Heading>
           <Heading variant="11sb">{{ form.jenisDisplay }}</Heading>
@@ -260,14 +260,11 @@
           <Heading variant="10sb">Tanggal</Heading>
           <Heading variant="11sb">{{ formatDate(form.tanggal) }}</Heading>
 
-          <Heading variant="10sb">Jumlah</Heading>
-          <Heading variant="11sb">{{ form.jumlah }} Nomor</Heading>
-
           <Heading variant="10sb">Perihal</Heading>
           <Heading variant="11sb">{{ form.perihal }}</Heading>
 
-          <Heading variant="10sb">Penandatangan</Heading>
-          <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
+          <Heading variant="10sb">Jumlah</Heading>
+          <Heading variant="11sb">{{ form.jumlah }} Nomor</Heading>
 
           <Heading variant="10sb">Nomor</Heading>
           <div class="text-gray-800 text-xs font-mono space-y-1">
@@ -368,6 +365,7 @@ const openPenandatangan = ref(false);
 const penandatanganSearch = ref("");
 const penandatanganRef = ref(null);
 const penandatanganOptions = ref([]);
+const penandatanganNama = ref("");
 const isLoadingPositions = ref(false);
 const isSubmitting = ref(false);
 const jumlahError = ref("");
@@ -490,11 +488,13 @@ function selectKlasifikasi(item) {
 function selectPenandatangan(item) {
   form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
+  penandatanganNama.value = item.nama; // ✅ Set nama penandatangan
   penandatanganSearch.value = item.displayText;
   openPenandatangan.value = false;
   console.log("✅ Penandatangan selected:", {
     display_text: item.displayText,
     position_id: item.position,
+    nama: item.nama,
   });
 }
 
@@ -563,9 +563,17 @@ const fetchPositions = async () => {
 
     penandatanganOptions.value = list.map((item) => {
       const positionText = item.position_text || "";
+      const subAreaText = item.sub_area_text || "";
+
+      // Gabungkan position_text dan sub_area_text
+      const displayText = subAreaText
+        ? `${positionText} - ${subAreaText}`
+        : positionText;
+
       return {
-        displayText: positionText,
+        displayText: displayText,
         position: item.position,
+        nama: item.nama, // ✅ Simpan nama untuk preview
       };
     });
 
@@ -616,6 +624,7 @@ const resetForm = () => {
   };
   klasifikasiSearch.value = "";
   penandatanganSearch.value = "";
+  penandatanganNama.value = ""; // ✅ Reset nama penandatangan
   jumlahError.value = "";
   perihalError.value = "";
   openKlasifikasi.value = false;

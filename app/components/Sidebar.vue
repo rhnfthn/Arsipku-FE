@@ -124,32 +124,7 @@ import { useRoute } from "vue-router";
 
 import { useAuth } from "~/composables/useAuth";
 import { usePenomoran } from "~/composables/usePenomoran";
-
 import { useInboxCount } from "~/composables/useInboxCount";
-
-const isAdminOrSuperadmin = computed(() =>
-  ["admin", "superadmin"].includes(user.value?.role),
-);
-
-const { unreadCount, fetchInboxCount } = useInboxCount();
-onMounted(async () => {
-  if (!user.value) {
-    await getProfile();
-  }
-
-  await nextTick();
-
-  const positionId = getPositionId(user.value);
-
-  if (positionId && !isNaN(positionId)) {
-    await fetchInboxCount(positionId);
-
-    setInterval(() => {
-      fetchInboxCount(positionId);
-    }, 30000);
-  }
-});
-const hasInboxUnread = computed(() => unreadCount.value > 0);
 
 const { user, getProfile } = useAuth();
 const {
@@ -159,7 +134,13 @@ const {
   getNomorRequestCountUser,
 } = usePenomoran();
 
+const { unreadCount, fetchInboxCount } = useInboxCount();
+
 const route = useRoute();
+
+const isAdminOrSuperadmin = computed(() =>
+  ["admin", "superadmin"].includes(user.value?.role),
+);
 
 // ✅ Helper untuk mendapatkan position ID yang valid
 const getPositionId = (userValue) => {
@@ -194,22 +175,6 @@ const getPositionId = (userValue) => {
   );
   return null;
 };
-
-// Get current counts based on role
-const currentCounts = computed(() => {
-  const isAdmin =
-    user.value?.role === "admin" || user.value?.role === "superadmin";
-
-  console.log("🎯 Getting current counts:", {
-    role: user.value?.role,
-    isAdmin,
-    adminCounts: adminCounts.value,
-    userCounts: userCounts.value,
-    returning: isAdmin ? "adminCounts" : "userCounts",
-  });
-
-  return isAdmin ? adminCounts.value : userCounts.value;
-});
 
 // Fetch counts based on role
 const fetchCounts = async () => {
@@ -278,6 +243,11 @@ onMounted(async () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
+    // Fetch inbox count
+    if (positionId && !isNaN(positionId)) {
+      await fetchInboxCount(positionId);
+    }
+
     // ✅ Only fetch if we have valid position or admin role
     const canFetch =
       user.value?.role === "admin" ||
@@ -295,6 +265,11 @@ onMounted(async () => {
       countInterval = setInterval(() => {
         console.log("🔄 Polling count update...");
         fetchCounts();
+
+        // Update inbox count juga
+        if (positionId && !isNaN(positionId)) {
+          fetchInboxCount(positionId);
+        }
       }, 30000);
     } else {
       console.warn("⚠️ Cannot fetch counts - invalid position or role:", {
@@ -334,18 +309,7 @@ watch(
     ) {
       console.log("🔄 Position changed, fetching counts...");
       await fetchCounts();
-
-      // ✅ FIX: Handle draft fetch - pastikan position adalah object dengan id yang valid
-      const positionForDraft = {
-        id: newPos,
-        position_text:
-          typeof newUser.position === "object"
-            ? newUser.position.position_text
-            : "",
-      };
-
-      console.log("📋 Fetching drafts for position:", positionForDraft);
-      fetchDrafts(positionForDraft);
+      await fetchInboxCount(newPos);
     }
   },
   { immediate: false, deep: true },
@@ -383,32 +347,41 @@ const hoveredApp = ref(null);
 // A. DATA MENU USER
 // =======================
 
-const userMenuUtama = computed(() => [
-  {
-    label: "Dashboard",
-    to: "/user/dashboard",
-    icon: "i-lucide-layout-dashboard",
-  },
-  {
-    label: "Kotak Masuk",
-    to: "/user/korespondensi/kotak-masuk",
-    icon: "i-lucide-inbox",
-    badge: unreadCount.value > 0 ? unreadCount.value : null,
-  },
-  {
-    label: "Terkirim",
-    to: "/user/korespondensi/terkirim",
-    icon: "i-lucide-send",
-  },
-  {
-    label: "Draft",
-    to: "/user/korespondensi/draft",
-    icon: "i-lucide-file-text",
-  },
-]);
+const hasInboxUnread = computed(() => unreadCount.value > 0);
+
+const userMenuUtama = computed(() => {
+  console.log("🔧 Building userMenuUtama, unreadCount:", unreadCount.value);
+
+  return [
+    {
+      label: "Dashboard",
+      to: "/user/dashboard",
+      icon: "i-lucide-layout-dashboard",
+    },
+    {
+      label: "Kotak Masuk",
+      to: "/user/korespondensi/kotak-masuk",
+      icon: "i-lucide-inbox",
+      badge: unreadCount.value > 0 ? unreadCount.value : null,
+    },
+    {
+      label: "Terkirim",
+      to: "/user/korespondensi/terkirim",
+      icon: "i-lucide-send",
+    },
+    {
+      label: "Draft",
+      to: "/user/korespondensi/draft",
+      icon: "i-lucide-file-text",
+    },
+  ];
+});
 
 const userMenuUtilitas = computed(() => {
   console.log("🔧 Building userMenuUtilitas, userCounts:", userCounts.value);
+
+  // Hitung badge dari userCounts
+  const badgeCount = userCounts.value.belum_diajukan || 0;
 
   return [
     { label: "Short URL", to: "/user/short-url", icon: "i-lucide-link" },
@@ -422,10 +395,7 @@ const userMenuUtilitas = computed(() => {
       label: "Usulan Penomoran",
       to: "/user/penomoran/usulan",
       icon: "i-lucide-hash",
-      badge:
-        userCounts.value.belum_diajukan > 0
-          ? userCounts.value.belum_diajukan
-          : null,
+      badge: badgeCount > 0 ? badgeCount : null,
     },
   ];
 });
@@ -625,15 +595,21 @@ const hasAdministrasiNotification = computed(() => {
 });
 
 // Check if Utilitas has notification (for user)
+// Hitung dari data rows yang memiliki status "Belum Diajukan"
 const hasUtilitasNotification = computed(() => {
-  const hasNotif = userCounts.value.belum_diajukan > 0;
+  // Jika di route user, hitung dari userCounts
+  if (route.path.startsWith("/user")) {
+    const hasNotif = userCounts.value.belum_diajukan > 0;
 
-  console.log("🔔 User utilitas notification check:", {
-    belum_diajukan: userCounts.value.belum_diajukan,
-    hasNotif,
-  });
+    console.log("🔔 User utilitas notification check:", {
+      belum_diajukan: userCounts.value.belum_diajukan,
+      hasNotif,
+    });
 
-  return hasNotif;
+    return hasNotif;
+  }
+
+  return false;
 });
 
 // --- 4. COMPUTED: APPS (DINAMIS BY ROUTE) ---
@@ -647,7 +623,7 @@ const apps = computed(() => {
         label: "Utama",
         icon: "i-heroicons-squares-2x2",
         menus: adminMenuUtama.value,
-        hasNotification: hasAdministrasiNotification.value,
+        hasNotification: hasInboxUnread.value,
       },
       {
         id: "admin-utilitas",
@@ -681,6 +657,12 @@ const apps = computed(() => {
   }
 
   // USER ROUTE
+  console.log("🎯 Building USER apps with counts:", {
+    hasInboxUnread: hasInboxUnread.value,
+    hasUtilitasNotification: hasUtilitasNotification.value,
+    userCounts: userCounts.value,
+  });
+
   return [
     {
       id: "user-utama",

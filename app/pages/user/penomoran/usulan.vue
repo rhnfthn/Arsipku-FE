@@ -643,6 +643,8 @@ const {
   isLoadingBooking,
   getKlasifikasi,
   getDetailVerifikasiRequest,
+  getNomorRequestCountUser,
+  userCounts,
 } = usePenomoran();
 const toast = useToast();
 
@@ -661,6 +663,48 @@ const idToDelete = ref<string | null>(null);
 const personMap = ref(new Map());
 // Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
+
+// ⭐ Format DateTime dengan timezone Jakarta (WIB) - Format: DD/MM/YY HH:mm
+
+function formatDateTime(dateStr: string | Date) {
+  const date = new Date(dateStr);
+
+  const jakarta = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
+  );
+
+  const dd = String(jakarta.getDate()).padStart(2, "0");
+  const mm = String(jakarta.getMonth() + 1).padStart(2, "0");
+  const yy = String(jakarta.getFullYear()).slice(-2);
+  const hh = String(jakarta.getHours()).padStart(2, "0");
+  const min = String(jakarta.getMinutes()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yy} ${hh}:${min}`;
+}
+
+// Format tanggal tanpa waktu
+function formatTanggal(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+// ⭐ Refresh count function
+const refreshCount = async () => {
+  if (!user.value?.position) return;
+
+  const positionId =
+    typeof user.value.position === "object"
+      ? user.value.position.id
+      : user.value.position;
+
+  if (positionId) {
+    await getNomorRequestCountUser(positionId);
+    console.log("✅ Count refreshed:", userCounts.value);
+  }
+};
 
 // Format file size
 const formatFileSize = (bytes: number) => {
@@ -748,19 +792,17 @@ const fetchKlasifikasiMap = async () => {
   }
 };
 
-// FETCH DATA
+// ⭐ FETCH DATA - dengan refresh count
 const fetchData = async () => {
   loading.value = true;
 
   try {
     if (!user.value?.position) {
-      console.error("❌ User position not available");
       rows.value = [];
       return;
     }
 
     const data = await getListUsulanByPosition(String(user.value.position));
-
     if (!Array.isArray(data)) {
       rows.value = [];
       return;
@@ -771,34 +813,18 @@ const fetchData = async () => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
-      let mappedStatus = "Belum Diajukan";
-
-      if (item.details?.length) {
-        if (item.details.some((d) => d.status === "terpakai")) {
-          mappedStatus = "Disetujui";
-        } else if (item.details.some((d) => d.status === "booking")) {
-          mappedStatus = "Menunggu Verifikasi";
-        } else if (item.details.some((d) => d.status === "ditolak")) {
-          mappedStatus = "Ditolak";
-        }
-      }
-
       return {
-        id: item.id,
-        id_usulan: item.id,
+        id_usulan: item.id_usulan ?? item.id,
         jenis: item.jenis,
-        tanggal: formatTanggal(item.tanggal),
+        tanggal: formatDateTime(item.tanggal).split(" ")[0], // DD/MM/YY
         perihal: item.perihal,
         jumlah: item.jumlah,
         penandatangan: item.penandatangan || "-",
         klasifikasi: item.klasifikasi || "-",
         klasifikasiDisplay,
-        pengusul: pengusulInfo.nama || user.value?.nama || "-",
+        pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
         tglUsulan: formatDateTime(item.created_at),
-        status: mappedStatus,
-        details: item.details || [],
-        template_nomor: item.template_nomor || "",
-        file_path: item.file_path || null,
+        status: item.status || "Belum Diajukan",
       };
     });
 
@@ -825,6 +851,8 @@ const showPreview = async (row: any) => {
     selectedRow.value = {
       ...row,
       ...detailData,
+      tanggal: formatDateTime(detailData.tanggal || row.tanggal),
+      tglUsulan: formatDateTime(detailData.created_at || row.tglUsulan),
     };
 
     files.value = Array(detailData.jumlah || 0).fill(null);
@@ -932,7 +960,7 @@ function handlePreview(data: any) {
   files.value = Array(length).fill(null);
 }
 
-// CONFIRM SUBMIT USULAN
+// ⭐ CONFIRM SUBMIT USULAN - dengan refresh count
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
@@ -959,7 +987,8 @@ const confirmSubmitUsulan = async () => {
 
     openConfirmSubmit.value = false;
     openDetail.value = false;
-    await fetchData();
+
+    await fetchData(); // Ini sudah include refresh count
 
     toast.add({
       title: "Berhasil",
@@ -979,7 +1008,7 @@ const confirmSubmitUsulan = async () => {
   }
 };
 
-// CONFIRM DELETE USULAN
+// ⭐ CONFIRM DELETE USULAN - dengan refresh count
 const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan && !selectedRow.value?.id) return;
 
@@ -998,7 +1027,7 @@ const confirmDeleteUsulan = async () => {
     openConfirmDelete.value = false;
     openDetail.value = false;
 
-    await fetchData();
+    await fetchData(); // Ini sudah include refresh count
   } catch (error) {
     console.error("❌ Delete gagal:", error);
     toast.add({
@@ -1011,7 +1040,7 @@ const confirmDeleteUsulan = async () => {
   }
 };
 
-// HANDLE SUBMIT FROM MODAL
+// ⭐ HANDLE SUBMIT FROM MODAL - dengan refresh count
 const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
@@ -1053,7 +1082,7 @@ const handleSubmitFromModal = async (payload: any) => {
 
     await createUsulanDraft(formattedPayload);
 
-    await fetchData();
+    await fetchData(); // Ini sudah include refresh count
     currentPage.value = 1;
 
     toast.add({
@@ -1083,27 +1112,6 @@ const getFileName = (path: string) => {
   return path.split("/").pop() || path;
 };
 
-// Format helpers
-function formatTanggal(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatDateTime(dateStr: string | Date) {
-  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return `${date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })} ${date.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
-}
-
 // Close dropdown when click outside
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -1113,6 +1121,15 @@ function handleDocumentClick(e: MouseEvent) {
   }
   openFilterStatus.value = false;
 }
+
+// ⭐ Watch userCounts untuk debugging
+watch(
+  userCounts,
+  (newVal) => {
+    console.log("📊 User counts changed in Usulan page:", newVal);
+  },
+  { deep: true },
+);
 
 // INIT
 onMounted(async () => {
@@ -1124,7 +1141,7 @@ onMounted(async () => {
 
   await fetchKlasifikasiMap();
   await fetchPersonMap();
-  await fetchData();
+  await fetchData(); // Ini sudah include initial refresh count
 
   document.addEventListener("click", handleDocumentClick);
 });
