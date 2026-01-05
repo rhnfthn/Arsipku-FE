@@ -210,7 +210,7 @@
         </table>
       </div>
 
-      <!-- ✅ NEW PAGINATION -->
+      <!-- PAGINATION -->
       <div
         v-if="filteredRows.length > 0"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
@@ -522,14 +522,14 @@
                       Pilih file untuk diupload
                     </span>
                     <span class="text-xs text-gray-500 block">
-                      PDF, DOC, DOCX (Max 5MB)
+                      PDF saja (Max 5MB)
                     </span>
                   </div>
 
                   <input
                     type="file"
                     class="hidden"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf"
                     @change="handleFile(idx, $event)"
                   />
                 </label>
@@ -584,8 +584,8 @@
           <div class="text-xs text-blue-800">
             <p class="font-medium">Upload file (opsional)</p>
             <p class="mt-1 text-blue-700">
-              File dapat diupload sekarang atau nanti. Usulan tetap dapat
-              dikirim tanpa file.
+              File harus dalam format PDF. Usulan tetap dapat dikirim tanpa
+              file.
             </p>
           </div>
         </div>
@@ -633,6 +633,7 @@
       </template>
     </Modal>
   </Teleport>
+
   <!-- CONFIRM SUBMIT POPUP -->
   <ConfirmPopup
     v-model="openConfirmSubmit"
@@ -727,6 +728,12 @@ const previewFile = (detail: any, idx: number) => {
 // Remove file
 const removeFile = (index: number) => {
   files.value[index] = null;
+
+  toast.add({
+    title: "File dihapus",
+    description: "File berhasil dihapus dari daftar upload",
+    color: "green",
+  });
 };
 
 const fetchPersonMap = async () => {
@@ -738,7 +745,6 @@ const fetchPersonMap = async () => {
       const positionText = item.position_text || "";
       const subAreaText = item.sub_area_text || "";
 
-      // Gabungkan position_text dan sub_area_text
       const displayText = subAreaText
         ? `${positionText} - ${subAreaText}`
         : positionText;
@@ -891,12 +897,23 @@ const openRowModal = async (row) => {
   }
 };
 
-// HANDLE FILE UPLOAD
+// HANDLE FILE UPLOAD - HANYA PDF
 const handleFile = (index: number, e: Event) => {
   const target = e.target as HTMLInputElement;
   const selectedFile = target.files?.[0];
 
   if (!selectedFile) return;
+
+  // Validate file type - HANYA PDF
+  if (selectedFile.type !== "application/pdf") {
+    toast.add({
+      title: "Tipe file tidak valid",
+      description: "Hanya file PDF yang diperbolehkan",
+      color: "red",
+    });
+    target.value = ""; // Reset input
+    return;
+  }
 
   // Validate file size (5MB max)
   const maxSize = 5 * 1024 * 1024;
@@ -906,22 +923,7 @@ const handleFile = (index: number, e: Event) => {
       description: "Ukuran file maksimal 5MB",
       color: "red",
     });
-    return;
-  }
-
-  // Validate file type
-  const allowedTypes = [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
-
-  if (!allowedTypes.includes(selectedFile.type)) {
-    toast.add({
-      title: "Tipe file tidak valid",
-      description: "Hanya file PDF, DOC, dan DOCX yang diperbolehkan",
-      color: "red",
-    });
+    target.value = ""; // Reset input
     return;
   }
 
@@ -984,21 +986,36 @@ function handlePreview(data: any) {
   files.value = Array(length).fill(null);
 }
 
-// CONFIRM SUBMIT USULAN
+// CONFIRM SUBMIT USULAN - IMPROVED ERROR HANDLING
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
   try {
     const formData = new FormData();
 
-    const uploadedFiles = files.value.filter((f) => f instanceof File);
+    // Filter hanya file yang valid (File object dan PDF)
+    const validFiles = files.value.filter((f) => {
+      if (!(f instanceof File)) return false;
 
-    console.log("📤 Submitting usulan with", uploadedFiles.length, "files");
+      // Double check tipe file
+      if (f.type !== "application/pdf") {
+        console.warn("⚠️ Skipping non-PDF file:", f.name, f.type);
+        return false;
+      }
 
-    if (uploadedFiles.length > 0) {
-      uploadedFiles.forEach((file) => {
+      return true;
+    });
+
+    console.log(
+      "📤 Submitting usulan with",
+      validFiles.length,
+      "valid PDF files",
+    );
+
+    if (validFiles.length > 0) {
+      validFiles.forEach((file) => {
         formData.append("file", file);
-        console.log("📎 Appending file:", file.name);
+        console.log("📎 Appending PDF file:", file.name, "Type:", file.type);
       });
     }
 
@@ -1006,39 +1023,38 @@ const confirmSubmitUsulan = async () => {
 
     console.log("✅ Booking response:", response);
 
-    const id = selectedRow.value.id_usulan;
-
+    // Close modals immediately after success
     openConfirmSubmit.value = false;
     openDetail.value = false;
-    await fetchData();
 
-    // Refetch detail supaya file_url muncul
-    const updatedDetail = await getDetailUsulan(id);
-
-    const normalizedDetails = normalizeDetails(
-      updatedDetail.details || [],
-      selectedRow.value.jumlah,
-      selectedRow.value.template_nomor,
-    );
-
-    selectedRow.value.details = normalizedDetails;
-    files.value = Array(normalizedDetails.length).fill(null);
-
-    openDetail.value = true;
-
+    // Show success toast
     toast.add({
       title: "Berhasil",
       description:
-        uploadedFiles.length > 0
-          ? `Usulan berhasil dikirim dengan ${uploadedFiles.length} file`
+        validFiles.length > 0
+          ? `Usulan berhasil dikirim dengan ${validFiles.length} file PDF`
           : "Usulan berhasil dikirim tanpa file",
       color: "green",
     });
+
+    // Refresh data in background
+    await fetchData();
   } catch (e) {
     console.error("❌ Submit gagal:", e);
+
+    // Close confirm popup but keep detail modal open on error
+    openConfirmSubmit.value = false;
+
+    // Improved error message handling
+    const errorMessage =
+      e?.response?.data?.message ||
+      e?.response?.data?.error ||
+      e?.message ||
+      "Gagal mengirim usulan. Silakan coba lagi.";
+
     toast.add({
       title: "Gagal",
-      description: "Gagal mengirim usulan. Silakan coba lagi.",
+      description: errorMessage,
       color: "red",
     });
   }
@@ -1118,7 +1134,6 @@ const handleSubmitFromModal = async (payload: any) => {
 
     await createUsulanDraft(formattedPayload);
 
-    // Set sort ke id_usulan descending agar data baru muncul di atas
     sortBy.value = "id_usulan";
     sortDir.value = "desc";
 
@@ -1276,21 +1291,18 @@ const filteredRows = computed(() => {
 /* SORT */
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
-    // ✅ STATUS
     if (sortBy.value === "status") {
       const A = statusOrder[a.status] ?? 99;
       const B = statusOrder[b.status] ?? 99;
       return sortDir.value === "asc" ? A - B : B - A;
     }
 
-    // ✅ TANGGAL USULAN (REAL DATE SORT)
     if (sortBy.value === "tglUsulan") {
       const A = a.tglUsulanSort ?? 0;
       const B = b.tglUsulanSort ?? 0;
       return sortDir.value === "asc" ? A - B : B - A;
     }
 
-    // 🔁 DEFAULT STRING SORT
     const A = String(a[sortBy.value] ?? "").toLowerCase();
     const B = String(b[sortBy.value] ?? "").toLowerCase();
 
@@ -1310,19 +1322,16 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
 
-// ✅ Computed untuk pagination pages (menampilkan max 3 halaman)
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
 
   if (total <= 5) {
-    // Jika total halaman <= 5, tampilkan semua
     for (let i = 1; i <= total; i++) {
       pages.push(i);
     }
   } else {
-    // Tampilkan max 5 halaman di sekitar current page
     if (current <= 2) {
       pages.push(1, 2, 3, 4, 5);
     } else if (current >= total - 1) {
