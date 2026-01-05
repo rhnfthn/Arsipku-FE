@@ -516,9 +516,11 @@ onMounted(async () => {
     }
 
     // --- MAPPING INTERNAL (TEMBUSAN) ---
-    const rawRec = internalRecRes.recipients || [];
+    const rawRec = internalRecRes.rawRecipients || [];
+
     const mapInternalItems = (list: any[]) => list.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+      // Mapping sudah sesuai dengan JSON response API
+      label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
       raw: r
@@ -568,7 +570,8 @@ onMounted(async () => {
         // 2. Populate Tembusan (Internal)
         if (d.tembusan && Array.isArray(d.tembusan)) {
           const tembusanIds = d.tembusan.map((t: any) =>
-            typeof t === 'object' ? String(t.id || t.position_id || t.value) : String(t)
+            // PERBAIKAN: Tambahkan 't.position' di sini sesuai JSON response
+            typeof t === 'object' ? String(t.position || t.position_id || t.id || t.value) : String(t)
           );
 
           selectedTembusan.value = internalItems.value.filter(item =>
