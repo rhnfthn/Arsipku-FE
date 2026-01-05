@@ -1,9 +1,6 @@
 <template>
   <transition name="fade">
-    <div
-      v-if="visible"
-      class="fixed inset-0 z-[99999] flex items-center justify-center bg-white"
-    >
+    <div v-if="visible" class="fixed inset-0 z-[99999] flex items-center justify-center bg-white">
       <div class="text-center">
         <div class="loader mx-auto mb-4"></div>
         <p class="text-gray-600 text-lg">
@@ -53,13 +50,11 @@ onMounted(async () => {
       localStorage.setItem("token", accessToken);
       localStorage.setItem("sessionId", sessionId);
 
-      // ⬅️ ROUTING DINAMIS
-      if (role === "admin" || role === "superadmin") {
-        return navigateTo("/admin/dashboard");
-      }
-
-      if (role === "user") {
-        return navigateTo("/admin/dashboard");
+      // ⬅️ ROUTING DINAMIS DIUBAH DISINI
+      // Karena folder admin dan user sudah digabung ke folder "app",
+      // maka semua role yang valid diarahkan ke /dashboard.
+      if (["admin", "superadmin", "user"].includes(role)) {
+        return navigateTo("/dashboard");
       }
 
       // fallback jika role tidak dikenal
@@ -102,6 +97,7 @@ function delayWithFade() {
 .fade-leave-active {
   transition: opacity 0.5s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
