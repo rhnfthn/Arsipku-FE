@@ -34,7 +34,7 @@ const toast = useToast();
 // --- HELPER: ROUTING ---
 const getDetailRoute = (item: UIMailItem) => {
   return {
-    path: `/admin/korespondensi/terkirim/${item.id}`,
+    path: `/korespondensi/terkirim/${item.id}`,
     query: {
       jenis: item.category
     }
@@ -83,6 +83,7 @@ const filterMenuOptions = [
   { label: "Semua", value: "Semua" },
   { label: "Sudah Dibaca", value: "Sudah Dibaca" },
   { label: "Belum Dibaca", value: "Belum Dibaca" },
+  { label: "Arsip", value: "Arsip" },
 ];
 
 // Data Holder
@@ -172,6 +173,7 @@ const loadData = async () => {
       isRead: true,
       isFlagged: ['rahasia', 'penting', 'segera'].includes(item.sifat?.toLowerCase()),
       isLocked: item.status === 'final_tte' || item.status === 'final',
+      isArchived: item.arsip,
       recipient: daftarPenerima.map((p: any) => p.position_text || p.nama).join(', '),
       note: item.sifat,
       originalData: item
@@ -207,6 +209,7 @@ const filteredEmails = computed(() => {
   switch (activeFilterType.value) {
     case "Sudah Dibaca": result = result.filter(mail => mail.viewCount > 0); break;
     case "Belum Dibaca": result = result.filter(mail => mail.viewCount === 0); break;
+    case "Arsip": result = result.filter(mail => mail.isArchived); break;
   }
 
   if (activeDateLabel.value === "Custom" && startDate.value && endDate.value) {

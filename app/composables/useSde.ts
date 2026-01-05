@@ -17,13 +17,13 @@ export const useSde = () => {
     if (!positionId) throw new Error("Position ID kosong");
 
     const res = await apiGet<SdeRecipientApiResponse>(
-      `/SDE/get-recipient/${positionId}`,
+      `/SDE/get-tembusan/${positionId}`,
     );
 
     return {
       sender: res?.data?.sender ?? null,
       // Jika backend SDE mengembalikan list kontak tersimpan, bisa diolah di sini
-      rawRecipients: res?.data?.recipients ?? [],
+      rawRecipients: res?.data?.tembusan ?? [],
     };
   };
 

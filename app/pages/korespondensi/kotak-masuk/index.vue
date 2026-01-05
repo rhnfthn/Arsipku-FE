@@ -774,7 +774,7 @@ const downloadExcel = () => {
 
         <div class="p-6 pt-0 mt-auto bg-white shrink-0">
           <NuxtLink
-            :to="`/admin/korespondensi/kotak-masuk/${selected.naskahId}?jenis=${selected.category}`"
+            :to="`/korespondensi/kotak-masuk/${selected.naskahId}?jenis=${selected.category}`"
             class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors"
           >
             Lihat Detail Lengkap

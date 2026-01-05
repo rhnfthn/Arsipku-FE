@@ -410,7 +410,7 @@ const confirmSaveDraft = async () => {
     if (res?.data?.success || res?.success) {
       toast.add({ title: 'Draft Berhasil Disimpan', color: 'success' });
       if (res.data?.id) editDraftId.value = res.data.id;
-      router.push("/admin/korespondensi/draft");
+      router.push("/korespondensi/draft");
     }
   } catch (e: any) {
     toast.add({ title: 'Gagal Simpan Draft', description: e.response?.data?.message, color: 'error' });
@@ -447,7 +447,7 @@ const confirmKirimDokumen = async () => {
 
     if (res?.data?.success || res?.success) {
       toast.add({ title: 'Berhasil', description: 'Kajian terkirim', color: 'success' });
-      router.push("/admin/korespondensi/terkirim");
+      router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     toast.add({ title: 'Gagal Kirim', description: e.response?.data?.message, color: 'error' });

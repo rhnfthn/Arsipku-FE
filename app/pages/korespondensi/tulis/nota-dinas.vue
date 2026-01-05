@@ -564,7 +564,7 @@ const handleKirimDokumen = async () => {
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
       toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      router.push("/admin/korespondensi/terkirim");
+      router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     console.error("Gagal mengirim:", e);
@@ -594,7 +594,7 @@ const handleSaveDraft = async () => {
     await saveND(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/admin/korespondensi/draft");
+    router.push("/korespondensi/draft");
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     toast.add({

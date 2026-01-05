@@ -566,7 +566,7 @@ const sortBy = ref<string>("created_at");
 const sortDir = ref<"asc" | "desc">("desc");
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/user/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Penomoran", to: "/admin/penomoran" },
 ];
 
