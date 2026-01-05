@@ -261,7 +261,7 @@ const userMenuUtilitas = computed(() => {
     },
     {
       label: "Usulan Penomoran",
-      to: "/penomoran/usulan",
+      to: "/usulan-penomoran",
       icon: "i-lucide-hash",
       badge: badgeCount > 0 ? badgeCount : null,
     },
@@ -357,7 +357,12 @@ const adminMenuUtilitas = computed(() => {
       label: "Usulan Penomoran",
       to: "/usulan-penomoran",
       icon: "i-lucide-hash",
+      hasNotification: false,
       onlyUser: true,
+      badge:
+        userCounts.value.belum_diajukan > 0
+          ? userCounts.value.belum_diajukan
+          : null,
     },
   ];
 
