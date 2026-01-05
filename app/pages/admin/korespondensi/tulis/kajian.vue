@@ -16,7 +16,7 @@
     <PageHeader title="Tulis Kajian" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
-      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
+      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
       <div class="flex-1 overflow-y-auto space-y-1">
 

@@ -4,23 +4,30 @@ import {
   Inbox, FileText, Send, Building, Building2, FilePen,
   Check, X, RotateCw, MoreVertical, History, Layers, Download,
   Archive, Trash2, ChevronLeft, ChevronRight, Eye, Loader2, BookOpen,
-  ArrowUpDown, Calendar as CalendarIcon
+  ArrowUpDown, Calendar as CalendarIcon, AlertTriangle
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useSirkulasi } from '@/composables/useTerkirim';
 import type { NaskahItem, UIMailItem } from '~/types/terkirim';
 import * as XLSX from 'xlsx';
-
+// Import CalendarDate untuk type safety (opsional, tergantung setup project)
+import { CalendarDate } from '@internationalized/date';
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Terkirim", to: "#" },
 ];
 
+// --- HELPER: GET INITIALS ---
+const getInitials = (name: string) => {
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+};
 
 // --- COMPOSABLES ---
 const { user } = useAuth();
-const { fetchSentBox, isLoading } = useSirkulasi();
+const { fetchSentBox, isLoading, bulkActionSent } = useSirkulasi();
 const route = useRoute();
 const toast = useToast();
 
@@ -44,15 +51,17 @@ const searchQuery = ref("");
 
 // Date Filter
 const showDateMenu = ref(false);
-const activeDateLabel = ref("Semua");
+// Default Filter 30 Hari Terakhir
+const activeDateLabel = ref("30 Hari Terakhir");
 const dateOptions = ["Hari ini", "7 Hari Terakhir", "30 Hari Terakhir", "Bulan Ini", "Tahun Ini", "Semua"];
 
 // Custom Date Range State
 const isCustomDate = ref(false);
-const startDate = ref(); // Ubah ke undefined/null agar kompatibel dengan Date Object UCalendar
-const endDate = ref();   // Ubah ke undefined/null agar kompatibel dengan Date Object UCalendar
+// Inisialisasi dengan CalendarDate hari ini jika perlu, atau undefined
+const startDate = ref();
+const endDate = ref();
 
-// State untuk Popover Kalender (Baru ditambahkan)
+// State untuk Popover Kalender
 const openStart = ref(false);
 const openEnd = ref(false);
 
@@ -78,6 +87,20 @@ const filterMenuOptions = [
 
 // Data Holder
 const emails = ref<UIMailItem[]>([]);
+
+// --- STATE BULK ACTION ---
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
+const currentBulkAction = ref<'archive' | 'delete'>('delete');
+
+const firstSelectedItem = computed(() => {
+  if (selectedIds.value.size === 0) return null;
+  const firstId = [...selectedIds.value][0];
+  return emails.value.find(e => e.id === firstId);
+});
+
+const modalTitle = computed(() => currentBulkAction.value === 'archive' ? 'Arsipkan Surat?' : 'Hapus Surat?');
+const actionLabel = computed(() => currentBulkAction.value === 'archive' ? 'Arsipkan' : 'Hapus');
 
 // --- MODAL READER STATE ---
 const showReaderModal = ref(false);
@@ -149,7 +172,7 @@ const loadData = async () => {
       isRead: true,
       isFlagged: ['rahasia', 'penting', 'segera'].includes(item.sifat?.toLowerCase()),
       isLocked: item.status === 'final_tte' || item.status === 'final',
-      recipient: daftarPenerima.map((p: any) => p.position_text).join(', '),
+      recipient: daftarPenerima.map((p: any) => p.position_text || p.nama).join(', '),
       note: item.sifat,
       originalData: item
     };
@@ -187,9 +210,12 @@ const filteredEmails = computed(() => {
   }
 
   if (activeDateLabel.value === "Custom" && startDate.value && endDate.value) {
-    // Convert Date object to comparable setup
-    const start = new Date(startDate.value); start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate.value); end.setHours(23, 59, 59, 999);
+    // Handling CalendarDate objects from UCalendar
+    const start = new Date(startDate.value.year, startDate.value.month - 1, startDate.value.day);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate.value.year, endDate.value.month - 1, endDate.value.day);
+    end.setHours(23, 59, 59, 999);
 
     result = result.filter(mail => {
       const d = new Date(mail.fullDate);
@@ -257,6 +283,47 @@ const toggleSelectAll = () => { if (selectedIds.value.size === paginatedEmails.v
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
 const selectMail = (mail: UIMailItem) => { selected.value = mail; };
 const closeDetail = () => { selected.value = null; };
+
+// --- METHODS BULK ACTION ---
+const confirmAction = (action: 'archive' | 'delete') => {
+  if (selectedIds.value.size === 0) return;
+  currentBulkAction.value = action;
+  showDeleteModal.value = true;
+};
+
+const handleBulkExecute = async () => {
+  if (!user.value?.position) return;
+
+  isDeleting.value = true;
+  try {
+    const payload = {
+      position_id: Number(user.value.position),
+      naskah_ids: Array.from(selectedIds.value),
+      action: currentBulkAction.value
+    };
+
+    await bulkActionSent(payload);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `${selectedIds.value.size} item berhasil di-${currentBulkAction.value === 'archive' ? 'arsipkan' : 'hapus'}.`,
+      color: 'success'
+    });
+
+    // Reset state
+    selectedIds.value.clear();
+    showDeleteModal.value = false;
+
+    // Refresh data
+    await loadData();
+
+  } catch (error: any) {
+    console.error(error);
+    toast.add({ title: 'Gagal', description: error.response?.data?.message || 'Terjadi kesalahan', color: 'error' });
+  } finally {
+    isDeleting.value = false;
+  }
+};
 
 const openReaderModal = (mail: UIMailItem) => {
   const item = mail.originalData;
@@ -349,7 +416,6 @@ watch(() => route.query.q, (newVal) => {
 </script>
 
 <template>
-  <!-- <PageHeader title="Terkirim" :items="breadcrumbs" /> -->
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
@@ -393,15 +459,20 @@ watch(() => route.query.q, (newVal) => {
 
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
-          <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded">
+          <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
+
+            <button @click="confirmAction('delete')"
+              class="p-1.5 text-red-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded transition-colors"
+              title="Hapus">
               <Trash2 class="w-4 h-4" />
             </button>
-            <button
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block">
+            <button @click="confirmAction('archive')"
+              class="p-1.5 text-primary dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
+              title="Arsipkan">
               <Archive class="w-4 h-4" />
             </button>
+
+            <span class="text-xs text-neutral-500 ms-2">{{ selectedIds.size }} dipilih</span>
           </div>
         </template>
       </div>
@@ -627,10 +698,10 @@ watch(() => route.query.q, (newVal) => {
           </div>
           <div class="px-6 pb-4 pt-2">
             <div class="flex gap-3 items-center">
-              <div
-                class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium text-white shrink-0 shadow-sm"
-                :class="selected.color.replace('text-white', '')">{{ selected.originalData.pengirim.nama?.substring(0,
-                  1).toUpperCase() || '?' }}</div>
+              <UAvatar size="md"
+                class="ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center shrink-0">
+                {{ getInitials(selected.originalData.pengirim.nama) }}
+              </UAvatar>
               <div class="flex-1 min-w-0">
                 <div class="flex flex-col items-start leading-snug">
                   <div class="text-[14px] text-gray-900 dark:text-gray-100"><span class="font-semibold">{{
@@ -672,69 +743,124 @@ watch(() => route.query.q, (newVal) => {
       </div>
     </div>
 
-    <div v-if="showReaderModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]">
-      <div
-        class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="flex items-start justify-between p-5 pb-2">
-          <div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Status Pembaca Pesan</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{{ currentReaderData.subject }}</p>
-          </div><button @click="showReaderModal = false"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-5 pt-2 flex-1 overflow-y-auto max-h-[60vh]">
-          <div class="mb-4">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-2 h-2 rounded-full bg-green-500"></div><span
-                class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Sudah Membaca ({{
-                  currentReaderData.readList.length }})</span>
-            </div>
-            <div class="space-y-2">
-              <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
-                class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
-                    :class="reader.bg">{{ reader.initial }}</div>
-                  <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Dibaca pada: {{ reader.date }}</div>
+    <Teleport to="body">
+      <div v-if="showReaderModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px] z-[999]">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div class="flex items-start justify-between p-5 pb-2">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Status Pembaca Pesan</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{{ currentReaderData.subject }}</p>
+            </div><button @click="showReaderModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-5 pt-2 flex-1 overflow-y-auto max-h-[60vh]">
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div><span
+                  class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Sudah Membaca ({{
+                    currentReaderData.readList.length }})</span>
+              </div>
+              <div class="space-y-2">
+                <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
+                  class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+                  <div class="flex items-center gap-3">
+                    <UAvatar size="md" :ui="{ background: reader.bg }"
+                      class="text-white font-semibold flex items-center justify-center shrink-0">
+                      {{ getInitials(reader.name) }}
+                    </UAvatar>
+                    <div>
+                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">Dibaca pada: {{ reader.date }}</div>
+                    </div>
                   </div>
+                  <div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
                 </div>
-                <div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-2 h-2 rounded-full bg-gray-400"></div><span
+                  class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Belum Membaca ({{
+                    currentReaderData.unreadList.length }})</span>
+              </div>
+              <div class="space-y-2">
+                <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
+                  class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                  <div class="flex items-center gap-3">
+                    <UAvatar size="md" :ui="{ background: reader.bg }"
+                      class="text-white font-semibold flex items-center justify-center shrink-0">
+                      {{ getInitials(reader.name) }}
+                    </UAvatar>
+                    <div>
+                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                    </div>
+                  </div>
+                  <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
+                </div>
               </div>
             </div>
           </div>
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-2 h-2 rounded-full bg-gray-400"></div><span
-                class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Belum Membaca ({{
-                  currentReaderData.unreadList.length }})</span>
-            </div>
-            <div class="space-y-2">
-              <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
-                class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
-                    :class="reader.bg">{{ reader.initial }}</div>
-                  <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
-                  </div>
-                </div>
-                <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
-              </div>
-            </div>
+          <div class="p-4 border-t border-gray-100 dark:border-gray-800"><button @click="showReaderModal = false"
+              class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Tutup</button>
           </div>
-        </div>
-        <div class="p-4 border-t border-gray-100 dark:border-gray-800"><button @click="showReaderModal = false"
-            class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Tutup</button>
         </div>
       </div>
-    </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showDeleteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+          <div class="p-5 text-center">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              :class="currentBulkAction === 'delete' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'">
+              <AlertTriangle class="w-6 h-6"
+                :class="currentBulkAction === 'delete' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'" />
+            </div>
+
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{{ modalTitle }}</h3>
+
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <div v-if="selectedIds.size === 1 && firstSelectedItem">
+                Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br>
+                <span class="font-semibold text-gray-700 dark:text-gray-200">"{{ firstSelectedItem.subject }}"</span>?
+              </div>
+              <div v-else>
+                Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br>
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
+
+                <div v-if="firstSelectedItem"
+                  class="mt-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
+                  Contoh: <span class="italic">"{{ firstSelectedItem.subject }}"</span>
+                  <span v-if="selectedIds.size > 1">...dan {{ selectedIds.size - 1 }} lainnya.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3 justify-center">
+              <button @click="showDeleteModal = false" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                Batal
+              </button>
+              <button @click="handleBulkExecute" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="currentBulkAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-600'">
+                <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+                {{ isDeleting ? 'Memproses...' : actionLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 

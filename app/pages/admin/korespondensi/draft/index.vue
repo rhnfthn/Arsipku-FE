@@ -541,40 +541,44 @@ const getCategoryStyle = (cat) => {
 
     </div>
 
-    <div v-if="showDeleteModal"
-      class="fixed inset-0 z-99 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="p-5 text-center">
-          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle class="w-6 h-6 text-red-600" />
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draft?</h3>
 
-          <p class="text-sm text-gray-500 mb-6" v-if="itemToDelete">
-            Apakah Anda yakin ingin menghapus draft <br>
-            <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>? <br>
-          </p>
-          <p class="text-sm text-gray-500 mb-6" v-else>
-            Apakah Anda yakin ingin menghapus <br>
-            <span class="font-bold text-gray-800">{{ selectedIds.size }} item terpilih</span>?
-          </p>
+    <Teleport to="body">
+      <div v-if="showDeleteModal"
+        class="fixed inset-0 z-99 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+          <div class="p-5 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle class="w-6 h-6 text-red-600" />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draft?</h3>
 
-          <p class="text-xs text-red-500 mb-4 font-medium">Tindakan ini tidak dapat dibatalkan.</p>
+            <p class="text-sm text-gray-500 mb-6" v-if="itemToDelete">
+              Apakah Anda yakin ingin menghapus draft <br>
+              <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>? <br>
+            </p>
+            <p class="text-sm text-gray-500 mb-6" v-else>
+              Apakah Anda yakin ingin menghapus <br>
+              <span class="font-bold text-gray-800">{{ selectedIds.size }} item terpilih</span>?
+            </p>
 
-          <div class="flex gap-3 justify-center">
-            <button @click="showDeleteModal = false" :disabled="isDeleting"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors disabled:opacity-50">
-              Batal
-            </button>
-            <button @click="handleDelete" :disabled="isDeleting"
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-              {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
-            </button>
+            <p class="text-xs text-red-500 mb-4 font-medium">Tindakan ini tidak dapat dibatalkan.</p>
+
+            <div class="flex gap-3 justify-center">
+              <button @click="showDeleteModal = false" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors disabled:opacity-50">
+                Batal
+              </button>
+              <button @click="handleDelete" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+                {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
+
   </div>
 </template>
 
