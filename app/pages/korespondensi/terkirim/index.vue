@@ -507,17 +507,19 @@ watch(() => route.query.q, (newVal) => {
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai
                     Tanggal</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openStart" :popper="{ placement: 'bottom-start' }">
-                      <div
-                        class="flex items-center gap-2 cursor-pointer w-full border border-gray-300 dark:border-gray-600 rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
-                        @click="openStart = true">
-                        <UInputDate v-model="startDate" variant="none" size="sm" format="DD/MM/YYYY" class="flex-1"
-                          :ui="{ base: '!bg-transparent !text-sm !p-0 !ring-0 pointer-events-none inline-flex items-center w-full' }" />
-                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                      </div>
-                      <template #panel>
+                    <UPopover v-model:open="openStart" :content="{ placement: 'bottom-start' }">
+                      <UButton color="neutral" variant="outline" block class="justify-start">
+                        <div class="flex items-center gap-2 w-full">
+                          <span class="flex-1 text-left text-sm">
+                            {{ startDate ? startDate.toString() : 'Pilih tanggal' }}
+                          </span>
+                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                        </div>
+                      </UButton>
+
+                      <template #content="{ close }">
                         <div class="p-2">
-                          <UCalendar v-model="startDate" @update:model-value="openStart = false" />
+                          <UCalendar v-model="startDate" @update:model-value="close" />
                         </div>
                       </template>
                     </UPopover>
@@ -528,17 +530,19 @@ watch(() => route.query.q, (newVal) => {
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai
                     Tanggal</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openEnd" :popper="{ placement: 'bottom-start' }">
-                      <div
-                        class="flex items-center gap-2 cursor-pointer w-full border border-gray-300 dark:border-gray-600 rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
-                        @click="openEnd = true">
-                        <UInputDate v-model="endDate" variant="none" size="sm" format="DD/MM/YYYY" class="flex-1"
-                          :ui="{ base: '!bg-transparent !text-sm !p-0 !ring-0 pointer-events-none inline-flex items-center w-full' }" />
-                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                      </div>
-                      <template #panel>
+                    <UPopover v-model:open="openEnd" :content="{ placement: 'bottom-start' }">
+                      <UButton color="neutral" variant="outline" block class="justify-start">
+                        <div class="flex items-center gap-2 w-full">
+                          <span class="flex-1 text-left text-sm">
+                            {{ endDate ? endDate.toString() : 'Pilih tanggal' }}
+                          </span>
+                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                        </div>
+                      </UButton>
+
+                      <template #content="{ close }">
                         <div class="p-2">
-                          <UCalendar v-model="endDate" @update:model-value="openEnd = false" />
+                          <UCalendar v-model="endDate" @update:model-value="close" />
                         </div>
                       </template>
                     </UPopover>
@@ -663,9 +667,10 @@ watch(() => route.query.q, (newVal) => {
                   mail.from }}</div>
               </div>
               <div class="text-[13px] text-gray-900 dark:text-gray-100 truncate flex-1">{{ mail.subject }}</div>
-              <div class="hidden xl:flex shrink-0 w-[150px] justify-start items-center"><span
-                  class="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full"
-                  :class="getCategoryStyle(mail.category)">{{ getCategoryLabel(mail.category) }}</span></div>
+              <div class="hidden xl:flex shrink-0 w-[150px] justify-start items-center">
+                <span class="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full"
+                  :class="getCategoryStyle(mail.category)">{{ getCategoryLabel(mail.category) }}</span>
+              </div>
             </div>
             <div class="pl-2 shrink-0 text-right w-24">
               <span class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap">
