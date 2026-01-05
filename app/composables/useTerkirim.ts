@@ -1,8 +1,8 @@
-import { useApi } from './useApi'; // Pastikan path sesuai struktur project
-import type { SirkulasiResponse, NaskahItem } from '~/types/terkirim';
+import { useApi } from "./useApi"; // Pastikan path sesuai struktur project
+import type { SirkulasiResponse, NaskahItem } from "~/types/terkirim";
 
 export const useSirkulasi = () => {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -10,7 +10,9 @@ export const useSirkulasi = () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await get<SirkulasiResponse>(`/naskah_sirkulasi/sent/${positionId}`);
+      const response = await get<SirkulasiResponse>(
+        `/naskah_sirkulasi/sent/${positionId}`,
+      );
       if (response.success) {
         return response.data.items;
       } else {
@@ -25,9 +27,29 @@ export const useSirkulasi = () => {
     }
   };
 
+  const bulkActionSent = async (payload: {
+    position_id: number;
+    naskah_ids: string[];
+    action: string;
+  }) => {
+    isLoading.value = true;
+    try {
+      const response = await post(
+        "/naskah_sirkulasi/sent/bulk-action",
+        payload,
+      );
+      return response;
+    } catch (err: any) {
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     isLoading,
     error,
-    fetchSentBox
+    fetchSentBox,
+    bulkActionSent,
   };
 };

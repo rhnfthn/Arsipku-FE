@@ -28,12 +28,14 @@ const {
 const idNaskah = route.params.id as string;
 const jenisNaskah = (route.query.jenis as string)?.toUpperCase() || 'ND';
 const LIMIT_DISPLAY = 2;
+const MAX_CONTENT_HEIGHT = 300;
 
 // --- LOCAL STATE ---
 const iframe = ref<HTMLIFrameElement | null>(null);
 const showAllRecipients = ref(false);
 const showAllCC = ref(false);
 const isContentExpanded = ref(false);
+const showReadMoreButton = ref(false);
 const activePdfUrl = ref<string | null>(null);
 const isLocalPdfLoading = ref(false);
 const previewTitle = ref('Preview Dokumen');
@@ -48,21 +50,71 @@ const categoryLabel = computed(() => {
     'EXTERNAL': 'Surat Dinas Eksternal',
     'SDE': 'Surat Dinas Eksternal',
     'DI': 'Disposisi',
-    'DISPOSISI': 'Disposisi'
+    'DISPOSISI': 'Disposisi',
+    'KAJIAN': 'Kajian'
   };
   return labels[j] || j;
 });
 
+// LOGIC WARNA LABEL
+const categoryStyle = computed(() => {
+  const c = (detail.value?.jenis || jenisNaskah || '').toUpperCase();
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
+  if (['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
+  if (['KAJIAN'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+});
+
+// LOGIC TOTAL COUNT (NEW)
+const totalRecipientCount = computed(() => {
+  if (!detail.value) return 0;
+  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    return detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
+  }
+  return detail.value.penerima?.length || 0;
+});
+
+const totalCCCount = computed(() => {
+  return detail.value?.tembusan?.length || 0;
+});
+
+// LOGIC VISIBLE PENERIMA
 const visiblePenerima = computed(() => {
-  if (!detail.value?.penerima) return [];
+  if (!detail.value) return [];
+
+  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+
+  // KHUSUS SDE
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    const list = detail.value.kepada_yth.split(';').map((nama: string) => ({
+      nama: nama.trim(),
+      positionText: ''
+    })).filter((i: any) => i.nama);
+
+    return showAllRecipients.value ? list : list.slice(0, LIMIT_DISPLAY);
+  }
+
+  // DEFAULT
+  if (!detail.value.penerima) return [];
   return showAllRecipients.value
     ? detail.value.penerima
     : detail.value.penerima.slice(0, LIMIT_DISPLAY);
 });
 
-const remainingCount = computed(() =>
-  (detail.value?.penerima?.length || 0) - LIMIT_DISPLAY
-);
+const remainingCount = computed(() => {
+  if (!detail.value) return 0;
+
+  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    const total = detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
+    return Math.max(0, total - LIMIT_DISPLAY);
+  }
+
+  return Math.max(0, (detail.value?.penerima?.length || 0) - LIMIT_DISPLAY);
+});
 
 const visibleTembusan = computed(() => {
   if (!detail.value?.tembusan) return [];
@@ -75,7 +127,7 @@ const remainingCCCount = computed(() =>
   (detail.value?.tembusan?.length || 0) - LIMIT_DISPLAY
 );
 
-// --- METHODS: NAVIGATION & UTILS ---
+// --- METHODS: UTILS ---
 const goBack = () => router.back();
 
 const formatDate = (dateString: string) => {
@@ -85,8 +137,11 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const getInitial = (name: string) =>
-  name ? name.substring(0, 2).toUpperCase() : 'NA';
+const getInitials = (name: string) => {
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+};
 
 const toggleContent = () => {
   isContentExpanded.value = !isContentExpanded.value;
@@ -108,7 +163,6 @@ const openDocumentPreview = async (url: string, title: string, filename?: string
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
 
-    // Tentukan MIME berdasarkan ekstensi atau default PDF
     let mime = 'application/pdf';
     const nameSource = (filename || url || '').toString();
     const ext = nameSource.split('?')[0].split('/').pop()?.split('.').pop()?.toLowerCase() || '';
@@ -121,7 +175,6 @@ const openDocumentPreview = async (url: string, title: string, filename?: string
     activePdfUrl.value = URL.createObjectURL(blob);
   } catch (error) {
     console.error("Gagal memuat dokumen blob:", error);
-    // fallback: gunakan URL langsung (kena kemungkinan download jika server memaksa)
     activePdfUrl.value = url;
   } finally {
     isLocalPdfLoading.value = false;
@@ -154,6 +207,13 @@ const resizeIframe = () => {
       doc.body.offsetHeight, doc.documentElement.offsetHeight
     );
     iframe.value!.style.height = (contentHeight + 20) + 'px';
+
+    if (contentHeight > MAX_CONTENT_HEIGHT) {
+      showReadMoreButton.value = true;
+    } else {
+      showReadMoreButton.value = false;
+      isContentExpanded.value = true;
+    }
   };
 
   iframe.value.onload = adjust;
@@ -171,8 +231,6 @@ const contentToDisplay = computed(() => {
   return detail.value.konten || '';
 });
 
-// 2. LOGIC DATA INSTRUKSI
-// Mengambil teks instruksi (misal: "Tunjuk Perwakilan")
 const dispositionData = computed(() => {
   if (!detail.value) return null;
   const type = (detail.value.jenis || jenisNaskah).toUpperCase();
@@ -181,7 +239,6 @@ const dispositionData = computed(() => {
     if (detail.value.disposisi) {
       return { instruksi: detail.value.disposisi };
     }
-    // Fallback untuk struktur lama
     if (detail.value.detail_disposisi) {
       return { instruksi: detail.value.detail_disposisi.disposisi };
     }
@@ -209,13 +266,11 @@ onMounted(async () => {
 </script>
 
 <template>
-
   <PageHeader title="Detail Terkirim" :items="breadcrumbs" />
- <div
-    class="w-full flex flex-col rounded-xl shadow-sm glass-blue">
+  <div class="w-full flex flex-col rounded-xl shadow-sm glass-blue">
     <div class="flex-1 ">
 
-      <div v-if="isLoading" class="flex flex-col items-center justify-center h-full gap-3 py-10">
+      <div v-if="isLoading" class="flex flex-col items-center bg-white rounded-xl justify-center h-full gap-3 py-10">
         <Loader2 class="w-8 h-8 text-blue-600 animate-spin" />
         <span class="text-xs text-gray-500">Memuat data...</span>
       </div>
@@ -245,33 +300,44 @@ onMounted(async () => {
 
         <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
-            {{ detail.perihal }}
+            {{ detail.perihal || '-' }}
           </h2>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <div
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50">
+          <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+            <!-- nomor -->
+            <div class="flex items-center gap-1">
               <Hash class="w-3.5 h-3.5" />
-              <span class="font-mono text-xs font-semibold">{{ detail.nomor }}</span>
+              <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
+                {{ detail.nomor }}
+              </span>
             </div>
-            <div
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700">
+
+            <span class="opacity-40">•</span>
+
+            <!-- tanggal -->
+            <div class="flex items-center gap-1">
               <Calendar class="w-3.5 h-3.5" />
-              <span class="text-xs font-medium">{{ formatDate(detail.tanggal) }}</span>
+              <span>{{ formatDate(detail.tanggal) }}</span>
             </div>
+
+            <span class="opacity-40">•</span>
+
+            <!-- kategori -->
             <div
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-800/50">
-              <Tag class="w-3.5 h-3.5" />
-              <span class="text-[10px] uppercase font-bold tracking-wider">{{ categoryLabel }}</span>
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              :class="categoryStyle">
+              <Tag class="w-3 h-3" />
+              {{ categoryLabel }}
             </div>
           </div>
+
         </div>
 
         <div class="p-5 sm:p-8 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-800">
           <div class="flex items-start gap-4">
-            <UAvatar :alt="detail.pengirim?.nama" size="md"
-              class="mt-1 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 font-bold shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 shrink-0">
-              {{ getInitial(detail.pengirim?.nama || '') }}
+            <UAvatar size="md"
+              class="group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center shrink-0">
+              {{ getInitials(detail.pengirim?.nama || '') }}
             </UAvatar>
 
             <div class="flex-1 min-w-0 space-y-6">
@@ -289,24 +355,44 @@ onMounted(async () => {
                   <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Kepada
                   </div>
                   <div class="flex flex-col">
-                    <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
-                      class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                      <span v-if="detail.penerima.length > 1"
-                        class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
-                        {{ idx + 1 }}.
-                      </span>
-                      <div class="break-words">
-                        <span class="font-medium">{{ penerima.positionText || penerima.nama }}</span>
-                        <span v-if="penerima.positionText" class="text-gray-500 font-normal ml-1 text-xs">
-                          ({{ penerima.nama }})
+                    <template
+                      v-if="['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((detail.jenis || jenisNaskah).toUpperCase())">
+                      <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
+                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
+                        <span v-if="totalRecipientCount > 2"
+                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+                          {{ idx + 1 }}.
                         </span>
+                        <div class="break-words">
+                          <span class="font-medium">{{ penerima.nama }}</span>
+                        </div>
                       </div>
-                    </div>
-                    <button v-if="detail.penerima.length > LIMIT_DISPLAY"
-                      @click="showAllRecipients = !showAllRecipients"
-                      class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
-                      {{ showAllRecipients ? 'Sembunyikan' : `+${remainingCount} lainnya` }}
-                    </button>
+                      <button v-if="remainingCount > 0" @click="showAllRecipients = !showAllRecipients"
+                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
+                        {{ showAllRecipients ? 'Sembunyikan' : `+${remainingCount} lainnya` }}
+                      </button>
+                    </template>
+
+                    <template v-else>
+                      <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
+                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
+                        <span v-if="totalRecipientCount > 2"
+                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+                          {{ idx + 1 }}.
+                        </span>
+                        <div class="break-words">
+                          <span class="font-medium">{{ penerima.positionText || penerima.nama }}</span>
+                          <span v-if="penerima.positionText" class="text-gray-500 font-normal ml-1 text-xs">
+                            ({{ penerima.nama }})
+                          </span>
+                        </div>
+                      </div>
+                      <button v-if="remainingCount > 0" @click="showAllRecipients = !showAllRecipients"
+                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
+                        {{ showAllRecipients ? 'Sembunyikan' : `+${remainingCount} lainnya` }}
+                      </button>
+                    </template>
+
                   </div>
                 </div>
 
@@ -316,8 +402,7 @@ onMounted(async () => {
                   <div class="flex flex-col">
                     <div v-for="(cc, idx) in visibleTembusan" :key="idx"
                       class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                      <span v-if="detail.tembusan.length > 1"
-                        class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+                      <span v-if="totalCCCount > 2" class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
                         {{ idx + 1 }}.
                       </span>
                       <div class="break-words">
@@ -327,7 +412,7 @@ onMounted(async () => {
                         </span>
                       </div>
                     </div>
-                    <button v-if="detail.tembusan.length > LIMIT_DISPLAY" @click="showAllCC = !showAllCC"
+                    <button v-if="remainingCCCount > 0" @click="showAllCC = !showAllCC"
                       class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
                       {{ showAllCC ? 'Sembunyikan' : `+${remainingCCCount} lainnya` }}
                     </button>
@@ -352,18 +437,18 @@ onMounted(async () => {
 
         <div class="p-5 sm:p-8 min-h-[150px] bg-white dark:bg-gray-900">
           <div class="relative overflow-hidden transition-all duration-500 ease-in-out"
-            :class="[isContentExpanded ? 'max-h-full pb-6' : 'max-h-[300px]']">
+            :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
 
             <iframe ref="iframe" :srcdoc="contentToDisplay" class="w-full bg-transparent block" style="border: none;"
               scrolling="no">
             </iframe>
 
-            <div v-show="!isContentExpanded"
+            <div v-show="showReadMoreButton && !isContentExpanded"
               class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 z-10 pointer-events-none flex items-end justify-center pb-2">
             </div>
           </div>
 
-          <div class="flex justify-center mt-[-20px] relative z-20">
+          <div v-if="showReadMoreButton" class="flex justify-center mt-[-20px] relative z-20">
             <button @click="toggleContent"
               class="flex items-center gap-1.5 px-5 py-2 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm transition-all">
               <span v-if="!isContentExpanded" class="flex items-center gap-1">
@@ -381,29 +466,23 @@ onMounted(async () => {
           <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Paperclip class="w-3.5 h-3.5" /> Lampiran
           </h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 items-stretch">
             <button v-for="file in detail.lampiran_files" :key="file.id"
               @click="openDocumentPreview(file.fileUrl, file.fileName)"
-              class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 transition-all text-center">
-              <!-- Preview box -->
-              <div class="p-3">
+              class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 transition-all text-center flex flex-col h-full overflow-hidden group">
+              <div class="p-2 w-full">
                 <div
-                  class="h-36 rounded-xl bg-gray-100 dark:bg-gray-700/40 flex flex-col items-center justify-center gap-2">
-                  <FileText class="w-8 h-8 text-red-500" />
-                  <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    PDF
-                  </span>
+                  class="h-24 rounded-lg bg-gray-100 dark:bg-gray-700/40 flex flex-col items-center justify-center gap-1 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/10 transition-colors">
+                  <FileText class="w-6 h-6 text-red-500" />
+                  <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">PDF</span>
                 </div>
               </div>
-
-              <!-- Filename -->
-              <div class="px-3 pb-4">
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug line-clamp-2">
+              <div class="px-3 pb-3 flex-1 flex items-center justify-center">
+                <p class="text-xs font-medium text-gray-700 dark:text-gray-200 leading-snug line-clamp-2 break-all">
                   {{ file.fileName }}
                 </p>
               </div>
             </button>
-
           </div>
         </div>
 
@@ -429,8 +508,6 @@ onMounted(async () => {
 
       </div>
     </div>
-
-
 
     <USlideover v-model:open="showPdfModal" :title="previewTitle" side="bottom" :ui="{
       content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',

@@ -14,12 +14,10 @@
       </div>
     </Teleport>
 
-    <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
-      <PageHeader title="Tulis Surat Dinas Internal" :items="breadcrumbs" />
-    </div>
+    <PageHeader title="Tulis Surat Dinas Internal" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
-      root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
+      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
       <div class="flex-1 overflow-y-auto space-y-1">
 

@@ -14,13 +14,12 @@
       </div>
     </Teleport>
 
-    <div class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors">
-      <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
-    </div>
+    <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
-      root: 'rounded-t-none ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors',
+      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
+
       <div class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
@@ -283,9 +282,9 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useSDI();
+const { getRecipients } = useSdi();
 // Import getExternalRecipients dari composable
-const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients } = useSde();
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -501,7 +500,7 @@ onMounted(async () => {
     klasifikasiStatus.value = "loading";
     const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(user.value?.position),
+      getRecipientInfo(user.value?.position),
       getExternalRecipients()
     ]);
 
