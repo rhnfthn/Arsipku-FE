@@ -62,22 +62,34 @@ export const useAuth = () => {
       const sessionId = localStorage.getItem("sessionId");
       const token = localStorage.getItem("token");
 
+      // 1️⃣ Logout internal (hapus sessionId)
       if (sessionId && token) {
-        await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        await apiGet(`/auth/logout-v2?sessionId=${sessionId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           validateStatus: (s: number) => s < 400,
         });
       }
     } catch (error) {
-      console.warn("[AUTH] logout error (ignored):", error);
+      // logout internal gagal TIDAK BOLEH menghalangi logout user
+      console.warn("[AUTH] logout-v2 error (ignored):", error);
     }
 
-    // Bersihkan localStorage & state
+    // 2️⃣ Bersihkan state lokal
     if (process.client) {
       localStorage.removeItem("token");
       localStorage.removeItem("sessionId");
     }
-    user.value = null; // Type aman karena null diizinkan
+    user.value = null;
+
+    // 3️⃣ Redirect ke SSO AirNav
+    if (process.client) {
+      const redirectTarget = "http://localhost:3000/autharsipku";
+      const encodedRedirect = btoa(redirectTarget);
+
+      window.location.href = `https://auth.airnavindonesia.co.id/user/logout?redirect_uri=${encodedRedirect}`;
+    }
 
     return true;
   };
