@@ -31,7 +31,7 @@
           :items="recipientItems" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -47,7 +47,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -78,14 +78,15 @@
                           Indonesia</span>
                       </div>
                     </div>
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 dark:text-gray-300 text-right">
-                      <div class="font-bold">Kantor Pusat Perum LPPNPI</div>
-                      <div>Gedung AirNav Indonesia</div>
-                      <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                      <div>Banten – Indonesia</div>
-                      <div>Telp: 021-5591 5000</div>
-                      <div>Fax: 021-5591 5100</div>
-                      <div>www.airnavindonesia.co.id</div>
+                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                      <div class="font-bold uppercase">
+                        {{ user?.alamatInfo?.kantor }}
+                      </div>
+                      <div>
+                        {{ user?.alamatInfo?.gedung }}
+                        {{ user?.alamatInfo?.kota }}
+                      </div>
+                      <div v-html="user?.alamatInfo?.alamat"></div>
                     </div>
                   </div>
 

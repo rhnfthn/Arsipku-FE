@@ -35,7 +35,7 @@
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -55,40 +55,41 @@
 
           <ClientOnly>
             <div
-              class="flex flex-col bg-gray-100 dark:bg-gray-800 transition-all duration-300 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
 
-              <div
-                class="bg-white dark:bg-gray-900 pt-10 pb-10 border-b border-gray-100 dark:border-gray-700 select-none text-black dark:text-white">
+              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
 
-                <div
-                  class="bg-white dark:bg-gray-900 px-8 pt-8 pb-4 border-b border-gray-100 dark:border-gray-700 select-none">
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <div class="flex items-center pb-2 mb-6">
                     <div class="flex items-end gap-4">
                       <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
                       <div class="flex flex-col mb-1">
-                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black dark:text-white">AirNav
-                          Indonesia</span>
+                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">
+                          AirNav Indonesia
+                        </span>
                       </div>
                     </div>
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 dark:text-gray-300 text-right">
-                      <div class="font-bold">Kantor Pusat Perum LPPNPI</div>
-                      <div>Gedung AirNav Indonesia</div>
-                      <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                      <div>Banten – Indonesia</div>
-                      <div>Telp: 021-5591 5000</div>
-                      <div>Fax: 021-5591 5100</div>
-                      <div>www.airnavindonesia.co.id</div>
+
+                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                      <div class="font-bold uppercase">
+                        {{ user?.alamatInfo?.kantor }}
+                      </div>
+                      <div>
+                        {{ user?.alamatInfo?.gedung }}
+                        {{ user?.alamatInfo?.kota }}
+                      </div>
+                      <div v-html="user?.alamatInfo?.alamat"></div>
                     </div>
                   </div>
 
-                  <div class="text-center mb-6 text-black dark:text-white">
+                  <div class="text-center mb-6 text-black">
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
                       NOTA DINAS
                     </h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
 
-                  <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black dark:text-white">
+                  <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
                         <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
@@ -97,15 +98,14 @@
                           <span v-if="selectedTertuju.length > 5">
                             Periksa Alamat Terlampir
                           </span>
-
                           <span v-else v-html="selectedTertuju.length
                             ? selectedTertuju
                               .map((s: any, i: number) =>
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                  </div>`
+                                                                      ${i + 1}. ${s.labelJob || s.label}
+                                                                    </div>`
                               )
                               .join('')
                             : '................................................'
@@ -132,18 +132,18 @@
 
                 <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
-                <div
-                  class="bg-white dark:bg-gray-900 px-8 pt-4 pb-8 border-t border-gray-100 dark:border-gray-700 select-none">
-                  <div class="flex justify-end mb-4 text-black dark:text-white">
+                <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
+                  <div class="flex justify-end mb-4 text-black">
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
-                        <div>Tangerang, {{ formattedDate }}</div>
+                        <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
                       <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
-                  <div class="text-[12px] mt-2 w-full text-left text-black dark:text-white">
+
+                  <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
                       Periksa Alamat Terlampir
@@ -161,7 +161,7 @@
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page">
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
 
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
@@ -198,9 +198,7 @@
                       </li>
                     </ol>
                   </div>
-
                 </div>
-
               </div>
             </div>
           </ClientOnly>

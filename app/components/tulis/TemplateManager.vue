@@ -10,104 +10,106 @@
       class="w-full sm:w-auto justify-center" @click="openSaveModal(false)" />
   </div>
 
-  <div v-if="isTemplateModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="isTemplateModalOpen = false">
-    </div>
-
-    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Template Umum</h3>
-        <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
+  <Teleport to="body">
+    <div v-if="isTemplateModalOpen" class="fixed inset-0 z-[99] flex items-center justify-center p-4 sm:p-6">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        @click="isTemplateModalOpen = false">
       </div>
-      <div class="p-4 overflow-y-auto">
-        <UAccordion type="multiple" :items="publicTemplatesAccordion" :ui="{
-          wrapper: 'space-y-2',
-          default: {
-            base: 'w-full flex justify-between items-center',
-            padding: 'px-4 py-3'
-          }
-        }">
 
-          <template #trailing="{ item, open }">
-            <UIcon name="i-heroicons-chevron-down-20-solid"
-              class="w-5 h-5 transition-transform duration-200 text-gray-400"
-              :class="[open ? 'rotate-180' : 'rotate-0']" />
-            <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
-              {{ item.label }}
-            </span>
-            <UButton label="Gunakan" size="xs" color="primary" variant="solid" class="shrink-0"
-              @click.stop="selectTemplate(item)" />
-          </template>
-
-          <template #default>
-            <span />
-          </template>
-
-          <template #template-body="{ item }">
-            <div class="pb-4">
-              <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
-                style="height: 150px; pointer-events: none;" />
-            </div>
-          </template>
-        </UAccordion>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="isAddTemplateOpen" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="isAddTemplateOpen = false">
-    </div>
-
-    <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
-      <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Edit Template' : 'Simpan Template Baru' }}
-        </h3>
-      </div>
-      <div class="p-4 space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nama Template</label>
-          <UInput v-model="newTemplateName" placeholder="Contoh: Template Undangan Rapat" icon="i-heroicons-tag"
-            size="lg" class="w-full" />
+      <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Template Umum</h3>
+          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
         </div>
-        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p class="text-sm text-blue-800 dark:text-blue-300">
-            <span v-if="isEditMode">Konten template ini akan <strong>diperbarui</strong> dengan isi editor saat
-              ini.</span>
-            <span v-else>Konten editor saat ini akan disimpan sebagai template baru.</span>
-          </p>
+        <div class="p-4 overflow-y-auto">
+          <UAccordion type="multiple" :items="publicTemplatesAccordion" :ui="{
+            wrapper: 'space-y-2',
+            default: {
+              base: 'w-full flex justify-between items-center',
+              padding: 'px-4 py-3'
+            }
+          }">
+
+            <template #trailing="{ item, open }">
+              <UIcon name="i-heroicons-chevron-down-20-solid"
+                class="w-5 h-5 transition-transform duration-200 text-gray-400"
+                :class="[open ? 'rotate-180' : 'rotate-0']" />
+              <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
+                {{ item.label }}
+              </span>
+              <UButton label="Gunakan" size="xs" color="primary" variant="solid" class="shrink-0"
+                @click.stop="selectTemplate(item)" />
+            </template>
+
+            <template #default>
+              <span />
+            </template>
+
+            <template #template-body="{ item }">
+              <div class="pb-4">
+                <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
+                  style="height: 150px; pointer-events: none;" />
+              </div>
+            </template>
+          </UAccordion>
         </div>
       </div>
-      <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-lg">
-        <UButton label="Batal" variant="ghost" color="gray" @click="isAddTemplateOpen = false" />
-        <UButton :label="isEditMode ? 'Simpan Perubahan' : 'Simpan'" color="primary" icon="i-heroicons-check-circle"
-          :loading="isLoadingAction" :disabled="!newTemplateName.trim()" @click="submitTemplate" />
-      </div>
-    </div>
-  </div>
-
-  <div v-if="isMyTemplateModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-      @click="isMyTemplateModalOpen = false">
     </div>
 
-    <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">Template Saya</h3>
-          <UBadge color="primary" variant="subtle">{{ myTemplates.length }}</UBadge>
-        </div>
-        <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
+    <div v-if="isAddTemplateOpen" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="isAddTemplateOpen = false">
       </div>
-      <div class="p-4 overflow-y-auto">
-        <div v-if="isLoadingList" class="flex justify-center py-8">
-          <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary" />
+
+      <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ isEditMode ? 'Edit Template' : 'Simpan Template Baru' }}
+          </h3>
         </div>
-        <div v-else-if="myTemplates.length === 0" class="p-6 text-center text-gray-500">
-          Belum ada template tersimpan.
+        <div class="p-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nama Template</label>
+            <UInput v-model="newTemplateName" placeholder="Contoh: Template Undangan Rapat" icon="i-heroicons-tag"
+              size="lg" class="w-full" />
+          </div>
+          <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p class="text-sm text-blue-800 dark:text-blue-300">
+              <span v-if="isEditMode">Konten template ini akan <strong>diperbarui</strong> dengan isi editor saat
+                ini.</span>
+              <span v-else>Konten editor saat ini akan disimpan sebagai template baru.</span>
+            </p>
+          </div>
         </div>
-        <div v-else class="space-y-3">
-          <!-- <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
+        <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-lg">
+          <UButton label="Batal" variant="ghost" color="gray" @click="isAddTemplateOpen = false" />
+          <UButton :label="isEditMode ? 'Simpan Perubahan' : 'Simpan'" color="primary" icon="i-heroicons-check-circle"
+            :loading="isLoadingAction" :disabled="!newTemplateName.trim()" @click="submitTemplate" />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isMyTemplateModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        @click="isMyTemplateModalOpen = false">
+      </div>
+
+      <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">Template Saya</h3>
+            <UBadge color="primary" variant="subtle">{{ myTemplates.length }}</UBadge>
+          </div>
+          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
+        </div>
+        <div class="p-4 overflow-y-auto">
+          <div v-if="isLoadingList" class="flex justify-center py-8">
+            <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary" />
+          </div>
+          <div v-else-if="myTemplates.length === 0" class="p-6 text-center text-gray-500">
+            Belum ada template tersimpan.
+          </div>
+          <div v-else class="space-y-3">
+            <!-- <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
             <template #default="{ item, open }">
               <div
                 class="w-full flex justify-between items-center py-3 px-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded-md">
@@ -138,48 +140,50 @@
             </template>
           </UAccordion> -->
 
-          <UAccordion type="multiple" :items="myTemplatesAccordion" :ui="{
-            wrapper: 'space-y-2',
-            default: {
-              base: 'w-full flex justify-between items-center',
-              padding: 'px-4 py-3'
-            }
-          }">
+            <UAccordion type="multiple" :items="myTemplatesAccordion" :ui="{
+              wrapper: 'space-y-2',
+              default: {
+                base: 'w-full flex justify-between items-center',
+                padding: 'px-4 py-3'
+              }
+            }">
 
-            <template #trailing="{ item, open }">
-              <UIcon name="i-heroicons-chevron-down-20-solid"
-                class="w-5 h-5 transition-transform duration-200 text-gray-400"
-                :class="[open ? 'rotate-180' : 'rotate-0']" />
-              <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
-                {{ item.label }}
-              </span>
-              <div class="flex items-center gap-2">
-                <UButton icon="i-lucide-pencil" color="warning" variant="soft" size="xs" @click="openEditModal(item)" />
-                <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
-                  @click="handleDeleteTemplate(item.id)" />
-                <!-- Vertical divider -->
-                <div class="h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
-              </div>
+              <template #trailing="{ item, open }">
+                <UIcon name="i-heroicons-chevron-down-20-solid"
+                  class="w-5 h-5 transition-transform duration-200 text-gray-400"
+                  :class="[open ? 'rotate-180' : 'rotate-0']" />
+                <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
+                  {{ item.label }}
+                </span>
+                <div class="flex items-center gap-2">
+                  <UButton icon="i-lucide-pencil" color="warning" variant="soft" size="xs"
+                    @click="openEditModal(item)" />
+                  <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
+                    @click="handleDeleteTemplate(item.id)" />
+                  <!-- Vertical divider -->
+                  <div class="h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                  <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
+                </div>
 
-            </template>
+              </template>
 
-            <template #default>
-              <span />
-            </template>
+              <template #default>
+                <span />
+              </template>
 
-            <template #template-body="{ item }">
-              <div class="pb-4">
-                <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
-                  style="height: 150px; pointer-events: none;" />
-              </div>
-            </template>
-          </UAccordion>
+              <template #template-body="{ item }">
+                <div class="pb-4">
+                  <iframe :srcdoc="item.content" class="w-full rounded-lg bg-gray-50 shadow-sm border border-gray-200"
+                    style="height: 150px; pointer-events: none;" />
+                </div>
+              </template>
+            </UAccordion>
 
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

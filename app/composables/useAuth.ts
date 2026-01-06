@@ -17,17 +17,27 @@ export const useAuth = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Normalisasi struktur respons
-      const profileData =
-        res?.data?.user || // case: { data: { user: {...} } }
-        res?.user || // case: { user: {...} }
-        res || // case: langsung {persnum, role, ...}
-        null;
+      // 1. Ambil data User utama
+      let profileData = res?.data?.user || res?.user || res || null;
+
+      // 2. Ambil data AlamatInfo (biasanya ada di res.data.alamatInfo)
+      const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
 
       if (profileData) {
-        // Casting ke UserProfile agar TS yakin strukturnya cocok
+        // 3. GABUNGKAN: Jika alamatData ditemukan, masukkan ke dalam profileData
+        if (alamatData) {
+          profileData = {
+            ...profileData,
+            alamatInfo: alamatData,
+          };
+        }
+
+        // Casting ke UserProfile
         const normalizedProfile = profileData as UserProfile;
+
+        // Simpan ke state global (Pinia/useState)
         setUser(normalizedProfile);
+
         return normalizedProfile;
       }
 
