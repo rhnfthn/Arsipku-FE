@@ -24,7 +24,7 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Delegasi", to: "/admin/delegasi" },
 ];
 
@@ -372,21 +372,21 @@ function selectEditJabatan(val: string) {
 </script>
 
 <template>
-  <div class="w-full min-w-0 min-h-screen bg-gray-50">
-    <div class="flex items-start justify-between w-full mb-5">
+  <div class="min-w-0 min-h-screen">
+    <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md"> Delegasi </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
-      <div class="flex">
-        <UButton
-          @click="showAddModal = true"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-xs"
-        >
-          <Plus class="w-4 h-4" />
-          Tambah Delegasi
-        </UButton>
-      </div>
+
+      <!-- KIRI: TOMBOL TAMBAH -->
+      <button
+        @click="openAdd"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
+      >
+        <Plus class="w-4 h-4" />
+        Tambah Delegasi
+      </button>
     </div>
 
     <div class="flex flex-col w-full bg-white rounded-xl shadow-sm">
@@ -606,264 +606,268 @@ function selectEditJabatan(val: string) {
     <!-- ======= -->
     <!-- MODAL TAMBAH -->
     <!-- ======= -->
-    <Modal v-model="showAddModal" @save="saveDelegasi">
-      <template #title>
-        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
-          >Tambah Delegasi</Heading
-        >
-      </template>
-
-      <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-        <div>
-          <label class="text-xs font-semibold"
-            >Personil <span class="text-red-500">*</span></label
+    <Teleport to="body">
+      <Modal v-model="showAddModal" @save="saveDelegasi">
+        <template #title>
+          <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
+            >Tambah Delegasi</Heading
           >
-          <!-- custom select -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 mt-1 flex items-center justify-between"
-              @click.stop="openNewPersonil = !openNewPersonil"
-            >
-              <span class="text-sm text-gray-600">
-                {{ newDelegasi.personil || "Pilih personil" }}
-              </span>
-            </button>
+        </template>
 
-            <div
-              v-if="openNewPersonil"
-              class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="p in personilList"
-                :key="p.id"
-                class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
-                @click.prevent="selectNewPersonil(p.value)"
-              >
-                {{ p.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Sebagai <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openNewSebagai = !openNewSebagai"
-            >
-              <span class="text-sm text-gray-600">
-                {{ newDelegasi.sebagai || "Pilih peran" }}
-              </span>
-            </button>
-
-            <div
-              v-if="openNewSebagai"
-              class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="s in sebagaiList"
-                :key="s.id"
-                class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
-                @click.prevent="selectNewSebagai(s.value)"
-              >
-                {{ s.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Jabatan <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openNewJabatan = !openNewJabatan"
-            >
-              <span class="text-sm text-gray-600">
-                {{ newDelegasi.jabatan || "Pilih jabatan" }}
-              </span>
-            </button>
-
-            <div
-              v-if="openNewJabatan"
-              class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="j in jabatanList"
-                :key="j.id"
-                class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
-                @click.prevent="selectNewJabatan(j.value)"
-              >
-                {{ j.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
           <div>
             <label class="text-xs font-semibold"
-              >Mulai <span class="text-red-500">*</span></label
+              >Personil <span class="text-red-500">*</span></label
             >
-            <input
-              v-model="newDelegasi.mulai"
-              type="text"
-              class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
+            <!-- custom select -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 mt-1 flex items-center justify-between"
+                @click.stop="openNewPersonil = !openNewPersonil"
+              >
+                <span class="text-sm text-gray-600">
+                  {{ newDelegasi.personil || "Pilih personil" }}
+                </span>
+              </button>
+
+              <div
+                v-if="openNewPersonil"
+                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="p in personilList"
+                  :key="p.id"
+                  class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
+                  @click.prevent="selectNewPersonil(p.value)"
+                >
+                  {{ p.label }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div>
             <label class="text-xs font-semibold"
-              >Sampai <span class="text-red-500">*</span></label
+              >Sebagai <span class="text-red-500">*</span></label
             >
-            <input
-              v-model="newDelegasi.sampai"
-              type="text"
-              class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openNewSebagai = !openNewSebagai"
+              >
+                <span class="text-sm text-gray-600">
+                  {{ newDelegasi.sebagai || "Pilih peran" }}
+                </span>
+              </button>
+
+              <div
+                v-if="openNewSebagai"
+                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="s in sebagaiList"
+                  :key="s.id"
+                  class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
+                  @click.prevent="selectNewSebagai(s.value)"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold"
+              >Jabatan <span class="text-red-500">*</span></label
+            >
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left bg-gray-50 mt-1 border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openNewJabatan = !openNewJabatan"
+              >
+                <span class="text-sm text-gray-600">
+                  {{ newDelegasi.jabatan || "Pilih jabatan" }}
+                </span>
+              </button>
+
+              <div
+                v-if="openNewJabatan"
+                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="j in jabatanList"
+                  :key="j.id"
+                  class="w-full text-left px-4 py-3 mt-1 hover:bg-gray-100"
+                  @click.prevent="selectNewJabatan(j.value)"
+                >
+                  {{ j.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold"
+                >Mulai <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="newDelegasi.mulai"
+                type="text"
+                class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
+
+            <div>
+              <label class="text-xs font-semibold"
+                >Sampai <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="newDelegasi.sampai"
+                type="text"
+                class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+    </Teleport>
     <!-- ======= -->
     <!-- MODAL EDIT -->
     <!-- ======= -->
-    <Modal v-model="showEditModal" @save="saveEditDelegasi">
-      <template #title>
-        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
-          >Edit Delegasi</Heading
-        >
-      </template>
-
-      <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-        <div>
-          <label class="text-xs font-semibold"
-            >Personil <span class="text-red-500">*</span></label
+    <Teleport to="body">
+      <Modal v-model="showEditModal" @save="saveEditDelegasi">
+        <template #title>
+          <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
+            >Edit Delegasi</Heading
           >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditPersonil = !openEditPersonil"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.personil || "Pilih personil"
-              }}</span>
-            </button>
+        </template>
 
-            <div
-              v-if="openEditPersonil"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="p in personilList"
-                :key="p.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditPersonil(p.value)"
-              >
-                {{ p.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Sebagai <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditSebagai = !openEditSebagai"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.sebagai || "Pilih peran"
-              }}</span>
-            </button>
-
-            <div
-              v-if="openEditSebagai"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="s in sebagaiList"
-                :key="s.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditSebagai(s.value)"
-              >
-                {{ s.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Jabatan <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditJabatan = !openEditJabatan"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.jabatan || "Pilih jabatan"
-              }}</span>
-            </button>
-
-            <div
-              v-if="openEditJabatan"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="j in jabatanList"
-                :key="j.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditJabatan(j.value)"
-              >
-                {{ j.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
           <div>
             <label class="text-xs font-semibold"
-              >Mulai <span class="text-red-500">*</span></label
+              >Personil <span class="text-red-500">*</span></label
             >
-            <input
-              v-model="editDelegasi.mulai"
-              type="text"
-              class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openEditPersonil = !openEditPersonil"
+              >
+                <span class="text-sm text-gray-600">{{
+                  editDelegasi.personil || "Pilih personil"
+                }}</span>
+              </button>
+
+              <div
+                v-if="openEditPersonil"
+                class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="p in personilList"
+                  :key="p.id"
+                  class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
+                  @click.prevent="selectEditPersonil(p.value)"
+                >
+                  {{ p.label }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div>
             <label class="text-xs font-semibold"
-              >Sampai <span class="text-red-500">*</span></label
+              >Sebagai <span class="text-red-500">*</span></label
             >
-            <input
-              v-model="editDelegasi.sampai"
-              type="text"
-              class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openEditSebagai = !openEditSebagai"
+              >
+                <span class="text-sm text-gray-600">{{
+                  editDelegasi.sebagai || "Pilih peran"
+                }}</span>
+              </button>
+
+              <div
+                v-if="openEditSebagai"
+                class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="s in sebagaiList"
+                  :key="s.id"
+                  class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
+                  @click.prevent="selectEditSebagai(s.value)"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold"
+              >Jabatan <span class="text-red-500">*</span></label
+            >
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                @click.stop="openEditJabatan = !openEditJabatan"
+              >
+                <span class="text-sm text-gray-600">{{
+                  editDelegasi.jabatan || "Pilih jabatan"
+                }}</span>
+              </button>
+
+              <div
+                v-if="openEditJabatan"
+                class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
+                <button
+                  v-for="j in jabatanList"
+                  :key="j.id"
+                  class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
+                  @click.prevent="selectEditJabatan(j.value)"
+                >
+                  {{ j.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold"
+                >Mulai <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="editDelegasi.mulai"
+                type="text"
+                class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
+
+            <div>
+              <label class="text-xs font-semibold"
+                >Sampai <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="editDelegasi.sampai"
+                type="text"
+                class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
-
+      </Modal>
+    </Teleport>
     <!-- POPUP DELETE -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
+      type="danger"
       title="Hapus Data?"
       description="Data yang dihapus tidak dapat dikembalikan."
       confirmText="Hapus"

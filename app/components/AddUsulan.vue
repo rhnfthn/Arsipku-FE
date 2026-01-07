@@ -18,7 +18,7 @@
       </template>
 
       <!-- FORM -->
-      <div class="px-5 flex flex-col gap-4 pb-4">
+      <div class="px-1 flex flex-col gap-4 mt-2 pb-4">
         <!-- Tanggal Surat -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium">
@@ -161,9 +161,9 @@
             max="10"
             @keydown="blockInvalidNumber"
             @input="validateJumlah"
-            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-1"
           />
-          <p v-if="jumlahError" class="text-xs text-red-500 mt-1">
+          <p v-if="jumlahError" class="text-xs text-red-500">
             {{ jumlahError }}
           </p>
         </div>
@@ -172,17 +172,11 @@
       <!-- FOOTER -->
       <template #footer>
         <div
-          class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4 w-full"
+          class="flex justify-between gap-3 border-t border-gray-200 px-5 py-4 w-full"
         >
           <button
-            @click="handleCancel"
-            class="px-5 py-2 text-xs border border-gray-300 hover:bg-gray-100 rounded-md"
-          >
-            Batal
-          </button>
-          <button
             @click="openPreviewModal"
-            class="px-5 py-2 text-xs border border-primary-500 hover:bg-primary-50 text-primary rounded-md"
+            class="flex-1 px-5 py-2 text-sm border border-primary-500 hover:bg-primary-50 text-primary rounded-md"
           >
             Pratinjau
           </button>
@@ -191,7 +185,7 @@
             :disabled="
               isSubmitting || isLoadingKlasifikasi || isLoadingPositions
             "
-            class="px-5 py-2 bg-primary text-white hover:bg-primary-800 text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="flex-1 px-5 py-2 bg-primary text-white hover:bg-primary-800 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2"
           >
             <svg
               v-if="isSubmitting"

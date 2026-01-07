@@ -12,7 +12,7 @@
       <button
         @click="openAdd"
         :disabled="isLoadingCreate"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Plus class="w-4 h-4" />
         {{ isLoadingCreate ? "Menyimpan..." : "Tambah Template" }}
@@ -37,7 +37,7 @@
           </select>
         </div>
 
-        <div class="relative flex-1 w-full md:w-56">
+        <!-- <div class="relative flex-1 w-full md:w-56">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
@@ -46,7 +46,7 @@
             placeholder="Cari template..."
             class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
-        </div>
+        </div> -->
       </div>
 
       <!-- LOADING STATE -->
@@ -187,7 +187,7 @@
         <template #title>
           <Heading
             variant="heading8b"
-            class="font-semibold text-xl mb-5 mt-5 ml-7"
+            class="font-semibold text-xl mb-3 mt-5 ml-7"
           >
             Tambah Template
           </Heading>
@@ -214,7 +214,7 @@
             </Heading>
 
             <label
-              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+              class="w-full px-4 py-3 mb-5 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
             >
               <FileCheck class="w-6 h-6 text-gray-500" />
               <span class="font-medium">Pilih File</span>
@@ -233,10 +233,10 @@
             <!-- Preview file -->
             <div
               v-if="addData.file"
-              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+              class="mb-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
             >
               <div class="flex items-center gap-3">
-                <FileCheck class="w-6 h-6 text-primary-500" />
+                <FileCheck class="w-5 h-5 text-primary-500" />
                 <div>
                   <p class="text-xs font-medium">{{ addData.fileName }}</p>
                   <p class="text-xs text-gray-500">
@@ -305,9 +305,9 @@
             <!-- Current file info -->
             <div
               v-if="!editData.newFileName && editData.file"
-              class="mt-3 px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
+              class="mt-3 px-4 py-2 mb-5 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
             >
-              <FileCheck class="w-6 h-6 text-gray-400" />
+              <FileCheck class="w-5 h-5 text-gray-400" />
               <div>
                 <p class="text-xs text-gray-500">File saat ini:</p>
                 <p class="text-sm font-medium">
@@ -350,12 +350,15 @@
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->
+
     <ConfirmPopup
       v-model="confirmDeleteOpen"
+      type="danger"
       title="Hapus Template?"
-      description="Template yang dihapus tidak dapat dikembalikan."
+      message="Template yang dihapus tidak dapat dikembalikan."
       confirmText="Hapus"
       cancelText="Batal"
+      cancelColor="primary"
       @confirm="deleteNow"
     />
   </div>
