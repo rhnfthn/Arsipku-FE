@@ -1,68 +1,118 @@
 <template>
-  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" @click="closeMobile">
-  </div>
+  <div
+    v-if="isMobileOpen"
+    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+    @click="closeMobile"
+  ></div>
 
   <aside
     class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
-    ]">
+    ]"
+  >
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800">
-      <button @click="handleMenuClick"
-        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
-        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
-          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
+      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
+    >
+      <button
+        @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors"
+      >
+        <UIcon
+          :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200"
+        />
       </button>
 
       <div class="flex flex-col gap-4 w-full items-center">
-        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
-          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
-          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
-            :class="activeApp === app.id
-              ? 'bg-blue-200 dark:bg-gray-800'
-              : 'hover:bg-white/50 bg-transparent'
-              ">
-            <UIcon :name="app.icon" class="w-6 h-6 transition-colors" :class="activeApp === app.id
-              ? 'text-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-400'
-              " />
+        <div
+          v-for="app in apps"
+          :key="app.id"
+          @click="setActiveApp(app.id)"
+          @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null"
+          class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
+        >
+          <div
+            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="
+              activeApp === app.id
+                ? 'bg-blue-200 dark:bg-gray-800'
+                : 'hover:bg-white/50 bg-transparent'
+            "
+          >
+            <UIcon
+              :name="app.icon"
+              class="w-6 h-6 transition-colors"
+              :class="
+                activeApp === app.id
+                  ? 'text-gray-800 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              "
+            />
 
-            <div v-if="app.hasNotification"
-              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse">
-            </div>
+            <div
+              v-if="app.hasNotification"
+              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse"
+            ></div>
           </div>
-          <span class="text-[10px] font-medium transition-colors" :class="activeApp === app.id
-            ? 'text-gray-900 font-bold dark:text-white'
-            : 'text-gray-600 dark:text-gray-400'
-            ">{{ app.label }}
+          <span
+            class="text-[10px] font-medium transition-colors"
+            :class="
+              activeApp === app.id
+                ? 'text-gray-900 font-bold dark:text-white'
+                : 'text-gray-600 dark:text-gray-400'
+            "
+            >{{ app.label }}
           </span>
 
-          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
-            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
-            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+          <div
+            v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
+          >
+            <div
+              class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+              >
                 {{ app.label }}
               </h3>
             </div>
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
-              <SidebarItem v-for="(item, idx) in app.menus" :key="idx" :item="item" :collapsed="false" />
+              <SidebarItem
+                v-for="(item, idx) in app.menus"
+                :key="idx"
+                :item="item"
+                :collapsed="false"
+              />
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-show="!collapsed || isMobile"
-      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900">
+    <div
+      v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
+    >
       <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
-        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium"
+          >ArsipKu</span
+        >
       </div>
 
-      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2">
-        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
+      <div
+        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2"
+      >
+        <SidebarItem
+          v-for="(item, index) in currentAppData.menus"
+          :key="index"
+          :item="item"
+          :collapsed="false"
+        />
       </div>
     </div>
   </aside>
@@ -229,6 +279,9 @@ const userMenuUtama = computed(() => {
       to: "/dashboard",
       icon: "i-lucide-layout-dashboard",
     },
+
+    tulisMenu.value,
+
     {
       label: "Kotak Masuk",
       to: "/korespondensi/kotak-masuk",
@@ -272,6 +325,13 @@ const userMenuUtilitas = computed(() => {
 // B. DATA MENU ADMIN
 // =======================
 
+const tulisMenu = computed(() => ({
+  label: "Tulis",
+  to: "/korespondensi/tulis",
+  icon: "i-lucide-edit",
+  children: tulisChildrenByBod.value, // 🔥 tetap pakai bodTag
+}));
+
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? "";
 
@@ -312,12 +372,7 @@ const adminMenuUtama = computed(() => [
     to: "/dashboard", // Updated Path (Shared path with user, content handled by role)
     icon: "i-lucide-layout-dashboard",
   },
-  {
-    label: "Tulis",
-    to: "/korespondensi/tulis",
-    icon: "i-lucide-edit",
-    children: tulisChildrenByBod.value,
-  },
+  tulisMenu.value,
   {
     label: "Kotak Masuk",
     to: "/korespondensi/kotak-masuk",
@@ -616,7 +671,6 @@ defineExpose({ openMobile, closeMobile });
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

@@ -1,5 +1,11 @@
 // types/auth.ts
 
+export interface AlamatInfo {
+  kantor: string;
+  gedung: string;
+  kota: string;
+  alamat: string;
+}
 export interface UserProfile {
   persnum: number;
   nama: string;
@@ -18,6 +24,7 @@ export interface UserProfile {
   abbreviation: string;
   iat?: number; // Opsional (kadang tidak ada di respon raw DB)
   exp?: number; // Opsional
+  alamatInfo?: AlamatInfo;
 }
 
 // Interface untuk kemudahan return value useAuth (Opsional tapi rapi)

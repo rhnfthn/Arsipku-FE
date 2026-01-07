@@ -31,13 +31,13 @@
           :items="recipientItems" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal Kajian" />
+                placeholder="Ketik Perihal" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -47,7 +47,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -78,14 +78,15 @@
                           Indonesia</span>
                       </div>
                     </div>
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 dark:text-gray-300 text-right">
-                      <div class="font-bold">Kantor Pusat Perum LPPNPI</div>
-                      <div>Gedung AirNav Indonesia</div>
-                      <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                      <div>Banten – Indonesia</div>
-                      <div>Telp: 021-5591 5000</div>
-                      <div>Fax: 021-5591 5100</div>
-                      <div>www.airnavindonesia.co.id</div>
+                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                      <div class="font-bold uppercase">
+                        {{ user?.alamatInfo?.kantor }}
+                      </div>
+                      <div>
+                        {{ user?.alamatInfo?.gedung }}
+                        {{ user?.alamatInfo?.kota }}
+                      </div>
+                      <div v-html="user?.alamatInfo?.alamat"></div>
                     </div>
                   </div>
 
@@ -140,7 +141,7 @@
                   <div class="flex justify-end mb-4 text-black dark:text-white">
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
-                        <div>Tangerang, {{ formattedDate }}</div>
+                        <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
                       <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
@@ -359,10 +360,16 @@ const createFormData = (payload: KajianPayload, includePdf: boolean) => {
 };
 
 // --- ACTIONS ---
+// --- ACTIONS ---
 const validateInput = (payload: KajianPayload) => {
   const res = KajianSchema.safeParse(payload);
   if (!res.success) {
-    const msg = res.error.errors[0].message;
+    // PERBAIKAN: Gunakan Optional Chaining (?.) dan Fallback
+    // ZodError biasanya menggunakan .errors atau .issues
+    const msg = res.error?.errors?.[0]?.message ||
+      res.error?.issues?.[0]?.message ||
+      "Terjadi kesalahan validasi input";
+
     toast.add({ title: 'Validasi Gagal', description: msg, color: 'error' });
     return false;
   }

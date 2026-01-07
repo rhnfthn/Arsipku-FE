@@ -208,7 +208,7 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="selected"
-        class="max-w-5xl mx-auto w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
+        class="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">

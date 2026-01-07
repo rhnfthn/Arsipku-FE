@@ -19,14 +19,14 @@
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
-      <div class="flex-1 overflow-y-auto space-y-4">
+      <div class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Nomor Surat
@@ -41,7 +41,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Perihal
@@ -59,12 +59,14 @@
           :items="recipientList" />
 
         <div class="flex flex-col py-3 gap-3 mb-6">
-          <span class="text-sm font-medium text-gray-500">Instruksi / Disposisi</span>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Instruksi / Disposisi</span>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start">
+            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start group">
               <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
-                class="mt-0.5 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
-              <label :for="opt" class="text-sm text-gray-700 cursor-pointer select-none leading-tight">
+                class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer" />
+              <label :for="opt"
+                class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none leading-tight break-words">
                 {{ opt }}
               </label>
             </div>
@@ -76,9 +78,10 @@
             <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pratinjau Lembar Disposisi</span>
           </div> -->
 
-          <div class="border border-gray-300 shadow-sm rounded-lg bg-gray-50 p-1 md:p-6 overflow-x-auto">
-            <div
-              class="bg-white mx-auto max-w-[210mm] border border-gray-400 p-8 min-h-[297mm] shadow-lg text-black font-['Times_New_Roman'] relative">
+          <div
+            class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+
+            <div class="bg-white p-10 border-b border-gray-100 select-none text-black">
 
               <div class="border-2 border-black mb-0">
                 <div class="flex border-b-2 border-black">
@@ -192,7 +195,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau PDF" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
 

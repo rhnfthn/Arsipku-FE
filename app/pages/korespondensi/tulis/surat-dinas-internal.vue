@@ -35,7 +35,7 @@
           :items="tembusanItems" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600  gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -51,7 +51,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -69,10 +69,9 @@
 
           <ClientOnly>
             <div
-              class="flex flex-col bg-gray-100 dark:bg-gray-800 transition-all duration-300 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
 
-              <div
-                class="bg-white dark:bg-gray-900 pt-10 pb-10 border-b border-gray-100 dark:border-gray-700 select-none text-black dark:text-white min-h-[1000px]">
+              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
                 <div class="flex items-center pb-4 mb-6 px-10">
                   <div class="flex items-end gap-4">
@@ -81,14 +80,15 @@
                       <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
                     </div>
                   </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-right">
-                    <div class="font-bold">{{ user?.areaText || 'Kantor Pusat Perum LPPNPI' }}</div>
-                    <div>Gedung AirNav Indonesia</div>
-                    <div>Jl. Ir. H. Juanda, Tangerang 15121</div>
-                    <div>Banten – Indonesia</div>
-                    <div>Telp: 021-5591 5000</div>
-                    <div>Fax: 021-5591 5100</div>
-                    <div>www.airnavindonesia.co.id</div>
+                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                    <div class="font-bold uppercase">
+                      {{ user?.alamatInfo?.kantor }}
+                    </div>
+                    <div>
+                      {{ user?.alamatInfo?.gedung }}
+                      {{ user?.alamatInfo?.kota }}
+                    </div>
+                    <div v-html="user?.alamatInfo?.alamat"></div>
                   </div>
                 </div>
 
@@ -152,7 +152,7 @@
                   </div>
                 </div>
 
-                <div class="flex justify-end mt-12 text-black dark:text-white px-10">
+                <div class="flex justify-end mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
@@ -161,7 +161,7 @@
                   </div>
                 </div>
 
-                <div class="mt-8 text-[12px] text-black dark:text-white px-10">
+                <div class="mt-8 text-[12px] text-black px-10">
                   <div class="font-bold underline mb-1">Tembusan :</div>
 
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
@@ -176,7 +176,7 @@
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page mt-10">
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
 
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col py-3 gap-2 mt-4">
     <div class="flex justify-between items-center">
-      <label class="text-sm font-medium text-gray-700">Lampiran</label>
+      <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">Lampiran</label>
 
       <span v-if="isProcessing" class="text-xs text-primary font-medium flex items-center gap-1">
         <UIcon name="i-lucide-loader-2" class="animate-spin" />

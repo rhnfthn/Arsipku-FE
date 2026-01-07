@@ -663,7 +663,7 @@ watch(() => route.query.q, (newVal) => {
             </div>
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
               <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
-                <div class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate" :title="mail.from">{{
+                <div class="text-[13px] text-neutral-500 uppercase truncate font-bold" :title="mail.from">{{
                   mail.from }}</div>
               </div>
               <div class="text-[13px] text-gray-900 dark:text-gray-100 truncate flex-1">{{ mail.subject }}</div>

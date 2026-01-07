@@ -3,12 +3,12 @@
     class="bg-[#F6F8FC] dark:bg-gray-900 dark:border-gray-800 h-20 flex items-center transition-colors duration-300 gap-3 md:gap-5 justify-between sticky top-0 z-[99]">
     <div class="flex items-center gap-3 flex-1">
       <button
-        class="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="md:hidden me-2 mt-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="$emit('open-mobile-sidebar')">
         <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
       </button>
 
-      <h1 class="mt-1 font-bold text-xl tracking-tight text-neutral-900 dark:text-white md:hidden">
+      <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white md:hidden">
         ArsipKu
       </h1>
 

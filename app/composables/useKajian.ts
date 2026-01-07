@@ -14,6 +14,7 @@ export const useKajian = () => {
   // 2. Preview PDF
   const generatePdf = async (formData: FormData) => {
     // Asumsi endpoint preview, jika beda sesuaikan
+    console.log("INI YAA!: " + formData);
     const response = await api.post("/KA/preview-pdf", formData, {
       responseType: "blob",
     });

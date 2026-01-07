@@ -17,17 +17,27 @@ export const useAuth = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Normalisasi struktur respons
-      const profileData =
-        res?.data?.user || // case: { data: { user: {...} } }
-        res?.user || // case: { user: {...} }
-        res || // case: langsung {persnum, role, ...}
-        null;
+      // 1. Ambil data User utama
+      let profileData = res?.data?.user || res?.user || res || null;
+
+      // 2. Ambil data AlamatInfo (biasanya ada di res.data.alamatInfo)
+      const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
 
       if (profileData) {
-        // Casting ke UserProfile agar TS yakin strukturnya cocok
+        // 3. GABUNGKAN: Jika alamatData ditemukan, masukkan ke dalam profileData
+        if (alamatData) {
+          profileData = {
+            ...profileData,
+            alamatInfo: alamatData,
+          };
+        }
+
+        // Casting ke UserProfile
         const normalizedProfile = profileData as UserProfile;
+
+        // Simpan ke state global (Pinia/useState)
         setUser(normalizedProfile);
+
         return normalizedProfile;
       }
 
@@ -62,22 +72,34 @@ export const useAuth = () => {
       const sessionId = localStorage.getItem("sessionId");
       const token = localStorage.getItem("token");
 
+      // 1️⃣ Logout internal (hapus sessionId)
       if (sessionId && token) {
-        await apiGet(`/auth/logout?sessionId=${sessionId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        await apiGet(`/auth/logout-v2?sessionId=${sessionId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           validateStatus: (s: number) => s < 400,
         });
       }
     } catch (error) {
-      console.warn("[AUTH] logout error (ignored):", error);
+      // logout internal gagal TIDAK BOLEH menghalangi logout user
+      console.warn("[AUTH] logout-v2 error (ignored):", error);
     }
 
-    // Bersihkan localStorage & state
+    // 2️⃣ Bersihkan state lokal
     if (process.client) {
       localStorage.removeItem("token");
       localStorage.removeItem("sessionId");
     }
-    user.value = null; // Type aman karena null diizinkan
+    user.value = null;
+
+    // 3️⃣ Redirect ke SSO AirNav
+    if (process.client) {
+      const redirectTarget = "http://localhost:3000/autharsipku";
+      const encodedRedirect = btoa(redirectTarget);
+
+      window.location.href = `https://auth.airnavindonesia.co.id/user/logout?redirect_uri=${encodedRedirect}`;
+    }
 
     return true;
   };

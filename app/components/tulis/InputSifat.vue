@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+    class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
     <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
       Sifat
     </span>
@@ -9,7 +9,7 @@
         variant="none" :search="false" value-attribute="value">
         <template #default="{ label }">
           <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
-            <span v-if="selected" class="text-sm font-medium text-left truncate text-gray-900 dark:text-white">
+            <span v-if="selected" class="text-sm text-left truncate text-gray-900 dark:text-white">
               {{ getLabel(selected) }}
             </span>
             <span v-else class="text-sm text-gray-400">Pilih sifat</span>

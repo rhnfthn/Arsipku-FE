@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 gap-1 sm:gap-0">
-    <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1 text-gray-500 font-medium shrink-0">
+  <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+    <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
       {{ label }}
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
@@ -48,7 +48,7 @@
         </template>
 
         <template #default>
-          <div class="flex items-center gap-1.5 flex-wrap min-h-[28px] pr-10 w-full">
+          <div class="flex items-center gap-1.5 flex-wrap min-h-[28px] pr-10 w-full dark:bg-gray-800">
             <UBadge
               v-for="item in model"
               :key="item.value"

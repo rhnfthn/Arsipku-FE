@@ -21,6 +21,8 @@ import {
   StickyNote,
   RotateCw,
   Download,
+  Lock,
+  Tag,
 } from "lucide-vue-next";
 
 import * as XLSX from "xlsx";
@@ -359,8 +361,8 @@ const downloadExcel = () => {
             <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
               class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between group transition-colors">
               <span :class="activeFilterType === opt.value
-                  ? 'font-semibold text-primary'
-                  : ''
+                ? 'font-semibold text-primary'
+                : ''
                 ">{{ opt.label }}</span>
               <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
             </button>
@@ -453,7 +455,7 @@ const downloadExcel = () => {
           <div class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]">
             <span
               class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">{{
-              paginationInfo }}</span>
+                paginationInfo }}</span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
               @click="prevPage" :disabled="currentPage === 1">
@@ -473,16 +475,16 @@ const downloadExcel = () => {
       <div
         class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden"
         :class="selected
-            ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
-            : 'flex-1 w-full'
+          ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
+          : 'flex-1 w-full'
           ">
         <div class="py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="activeTab === tab.value
-                  ? 'bg-primary-400 text-white border-primary-400'
-                  : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                ? 'bg-primary-400 text-white border-primary-400'
+                : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                 ">
               <component :is="tab.icon" class="w-4 h-4" />{{ tab.label }}
             </UButton>
@@ -503,14 +505,26 @@ const downloadExcel = () => {
                 ">
               <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
                 <div
-                  class="w-3.5 h-3.5 border-[1.5px] border-gray-400 rounded-sm flex items-center justify-center transition-colors"
+                  class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 rounded-sm flex items-center justify-center transition-colors"
                   :class="selectedIds.has(mail.id)
-                      ? 'bg-primary border-primary'
-                      : 'bg-white'
+                    ? 'bg-primary border-primary'
+                    : 'bg-white'
                     " @click="toggleSelection(mail.id)">
                   <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                 </div>
+
+                <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
+                  ? 'text-yellow-400 fill-yellow-400'
+                  : 'text-neutral-300'
+                  " @click.stop="toggleFlag(mail, 'favorit')" />
+
+                <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300" :class="mail.isTinjut
+                  ? 'text-primary-300 fill-primary-300'
+                  : 'text-neutral-300'
+                  " @click.stop="toggleFlag(tinjut, 'favorit')" />
+
               </div>
+
 
               <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-4 overflow-hidden pt-0.5">
                 <div class="flex items-center sm:w-44 lg:w-52 shrink-0">
@@ -546,17 +560,21 @@ const downloadExcel = () => {
               <div
                 class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                 <div class="flex items-center gap-2 p-1">
-                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-neutral-300'
-                    " @click.stop="toggleFlag(mail, 'favorit')" />
+                  <!-- <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'favorit')" /> -->
                   <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
-                      ? 'text-orange-400 fill-orange-400'
-                      : 'text-neutral-300'
+                    ? 'text-orange-400 fill-orange-400'
+                    : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'note')" />
+                  <Lock class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
+                    ? 'text-orange-400 fill-orange-400'
+                    : 'text-neutral-300'
                     " @click.stop="toggleFlag(mail, 'note')" />
                   <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
-                      ? 'text-purple-500 fill-purple-500'
-                      : 'text-neutral-300'
+                    ? 'text-purple-500 fill-purple-500'
+                    : 'text-neutral-300'
                     " @click.stop="toggleFlag(mail, 'arsip')" />
                 </div>
               </div>
