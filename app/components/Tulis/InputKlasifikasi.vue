@@ -1,6 +1,6 @@
  <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-800 gap-1 sm:gap-0">
+    class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
     <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
       Klasifikasi
     </span>
@@ -24,7 +24,7 @@
         </template>
 
         <template #default>
-          <span v-if="selectedObj" class="truncate text-sm block w-full text-left dark:text-white font-medium">
+          <span v-if="selectedObj" class="truncate text-sm block w-full text-left dark:text-white">
             {{ selectedObj.klasifikasi }} - {{ selectedObj.klasifikasi_text }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">

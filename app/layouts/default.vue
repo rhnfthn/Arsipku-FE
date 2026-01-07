@@ -2,7 +2,7 @@
   <div
     class="min-h-dvh w-full bg-[#F6F8FC] dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    <div class="fixed top-0 left-0 bottom-0 z-50 h-screen transition-all duration-300">
+    <div class="fixed top-0 left-0 bottom-0 z-[93] h-screen transition-all duration-300">
       <Sidebar ref="sidebarRef" v-model:collapsed="collapsed" />
     </div>
 
@@ -10,7 +10,7 @@
       :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'">
 
       <div
-        class="sticky top-0 px-4 md:px-6 py-1 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-[92]">
+        class="sticky top-0 px-4 md:px-6 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-[92]">
         <Navbar @open-mobile-sidebar="openMobileSidebar" />
       </div>
 

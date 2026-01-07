@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 
 import { useAuth } from "~/composables/useAuth";
@@ -138,6 +138,7 @@ const { unreadCount, fetchInboxCount } = useInboxCount();
 
 const route = useRoute();
 
+// Role check helper
 const isAdminOrSuperadmin = computed(() =>
   ["admin", "superadmin"].includes(user.value?.role),
 );
@@ -146,7 +147,6 @@ const isAdminOrSuperadmin = computed(() =>
 const getPositionId = (userValue) => {
   if (!userValue) return null;
 
-  // Jika position adalah object dengan id
   if (userValue.position && typeof userValue.position === "object") {
     const id = userValue.position.id;
     return typeof id === "number"
@@ -156,12 +156,10 @@ const getPositionId = (userValue) => {
         : null;
   }
 
-  // Jika position adalah number langsung
   if (typeof userValue.position === "number") {
     return userValue.position;
   }
 
-  // Jika position adalah string number
   if (
     typeof userValue.position === "string" &&
     !isNaN(Number(userValue.position))
@@ -169,48 +167,23 @@ const getPositionId = (userValue) => {
     return Number(userValue.position);
   }
 
-  console.error(
-    "❌ Cannot extract valid position ID from:",
-    userValue.position,
-  );
   return null;
 };
 
 // Fetch counts based on role
 const fetchCounts = async () => {
   try {
-    if (!user.value) {
-      console.warn("⚠️ User not loaded, skipping count fetch");
-      return;
-    }
+    if (!user.value) return;
 
     const isAdmin =
       user.value.role === "admin" || user.value.role === "superadmin";
 
     const positionId = getPositionId(user.value);
 
-    console.log("🔄 Fetching counts:", {
-      role: user.value.role,
-      isAdmin,
-      rawPosition: user.value.position,
-      extractedPositionId: positionId,
-      positionIdType: typeof positionId,
-    });
-
     if (isAdmin) {
-      console.log("📊 Fetching ADMIN counts...");
       await getNomorRequestCountAdmin();
-      console.log("✅ Admin counts updated:", adminCounts.value);
     } else if (positionId && !isNaN(positionId)) {
-      console.log("📊 Fetching USER counts for position:", positionId);
       await getNomorRequestCountUser(positionId);
-      console.log("✅ User counts updated:", userCounts.value);
-    } else {
-      console.error("❌ Invalid or missing position ID:", {
-        positionId,
-        isNaN: isNaN(positionId),
-        position: user.value.position,
-      });
     }
   } catch (error) {
     console.error("❌ Error fetching counts:", error);
@@ -221,61 +194,36 @@ let countInterval = null;
 
 onMounted(async () => {
   try {
-    // Ensure user is loaded first
     if (!user.value) {
-      console.log("⏳ Loading user profile...");
       await getProfile();
     }
-
-    // Wait a bit for user.value.position to be set
     await nextTick();
 
     const positionId = getPositionId(user.value);
 
-    console.log("🚀 Sidebar mounted, user:", {
-      role: user.value?.role,
-      positionId: positionId,
-      positionIdType: typeof positionId,
-      position: user.value?.position,
-      isValidNumber: positionId && !isNaN(positionId) && positionId > 0,
-    });
-
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    // Fetch inbox count
     if (positionId && !isNaN(positionId)) {
       await fetchInboxCount(positionId);
     }
 
-    // ✅ Only fetch if we have valid position or admin role
     const canFetch =
       user.value?.role === "admin" ||
       user.value?.role === "superadmin" ||
       (positionId && !isNaN(positionId) && positionId > 0);
 
     if (canFetch) {
-      // Initial fetch with delay to ensure position is loaded
       setTimeout(async () => {
-        console.log("⏰ Initial count fetch triggered");
         await fetchCounts();
       }, 200);
 
-      // Poll setiap 30 detik untuk update counts
       countInterval = setInterval(() => {
-        console.log("🔄 Polling count update...");
         fetchCounts();
-
-        // Update inbox count juga
         if (positionId && !isNaN(positionId)) {
           fetchInboxCount(positionId);
         }
       }, 30000);
-    } else {
-      console.warn("⚠️ Cannot fetch counts - invalid position or role:", {
-        role: user.value?.role,
-        positionId,
-      });
     }
   } catch (error) {
     console.error("❌ Error in sidebar mount:", error);
@@ -291,15 +239,6 @@ watch(
     const newPos = getPositionId(newUser);
     const oldPos = getPositionId(oldUser);
 
-    console.log("👤 User changed:", {
-      oldPosition: oldPos,
-      newPosition: newPos,
-      newPositionValid: newPos && !isNaN(newPos) && newPos > 0,
-      role: newUser?.role,
-      rawPosition: newUser?.position,
-    });
-
-    // Only fetch if position is valid and changed
     if (
       newUser &&
       newPos &&
@@ -307,26 +246,11 @@ watch(
       newPos > 0 &&
       newPos !== oldPos
     ) {
-      console.log("🔄 Position changed, fetching counts...");
       await fetchCounts();
       await fetchInboxCount(newPos);
     }
   },
   { immediate: false, deep: true },
-);
-
-// Watch counts for debugging
-watch(
-  [adminCounts, userCounts],
-  ([admin, userVal]) => {
-    console.log("🔥 Counts updated:", {
-      role: user.value?.role,
-      position_id: getPositionId(user.value),
-      adminCounts: admin,
-      userCounts: userVal,
-    });
-  },
-  { deep: true },
 );
 
 // --- 1. SETUP & PROPS ---
@@ -342,7 +266,6 @@ const activeApp = ref("");
 const hoveredApp = ref(null);
 
 // --- 3. DATA MENU (COMPUTED AGAR REAKTIF) ---
-
 // =======================
 // A. DATA MENU USER
 // =======================
@@ -350,50 +273,48 @@ const hoveredApp = ref(null);
 const hasInboxUnread = computed(() => unreadCount.value > 0);
 
 const userMenuUtama = computed(() => {
-  console.log("🔧 Building userMenuUtama, unreadCount:", unreadCount.value);
-
   return [
     {
       label: "Dashboard",
-      to: "/user/dashboard",
+      to: "/dashboard",
       icon: "i-lucide-layout-dashboard",
     },
+
+    tulisMenu.value,
+
     {
       label: "Kotak Masuk",
-      to: "/user/korespondensi/kotak-masuk",
+      to: "/korespondensi/kotak-masuk",
       icon: "i-lucide-inbox",
       badge: unreadCount.value > 0 ? unreadCount.value : null,
     },
     {
       label: "Terkirim",
-      to: "/user/korespondensi/terkirim",
+      to: "/korespondensi/terkirim",
       icon: "i-lucide-send",
     },
     {
       label: "Draft",
-      to: "/user/korespondensi/draft",
+      to: "/korespondensi/draft",
       icon: "i-lucide-file-text",
     },
   ];
 });
 
 const userMenuUtilitas = computed(() => {
-  console.log("🔧 Building userMenuUtilitas, userCounts:", userCounts.value);
-
-  // Hitung badge dari userCounts
   const badgeCount = userCounts.value.belum_diajukan || 0;
 
   return [
-    { label: "Short URL", to: "/user/short-url", icon: "i-lucide-link" },
-    { label: "Template", to: "/user/template", icon: "i-lucide-copy" },
+    { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
+    { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Titelatur Inggris",
-      to: "/user/titelatur",
+      to: "/titelatur",
       icon: "i-lucide-languages",
     },
     {
       label: "Usulan Penomoran",
-      to: "/user/penomoran/usulan",
+      to: "/usulan-penomoran",
       icon: "i-lucide-hash",
       badge: badgeCount > 0 ? badgeCount : null,
     },
@@ -404,21 +325,29 @@ const userMenuUtilitas = computed(() => {
 // B. DATA MENU ADMIN
 // =======================
 
+const tulisMenu = computed(() => ({
+  label: "Tulis",
+  to: "/korespondensi/tulis",
+  icon: "i-lucide-edit",
+  children: tulisChildrenByBod.value, // 🔥 tetap pakai bodTag
+}));
+
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? "";
 
+  // Updated Paths
   const all = [
-    { label: "Nota Dinas", to: "/admin/korespondensi/tulis/nota-dinas" },
-    { label: "Disposisi", to: "/admin/korespondensi/tulis/disposisi" },
+    { label: "Nota Dinas", to: "/korespondensi/tulis/nota-dinas" },
+    { label: "Disposisi", to: "/korespondensi/tulis/disposisi" },
     {
       label: "Surat Dinas Internal",
-      to: "/admin/korespondensi/tulis/surat-dinas-internal",
+      to: "/korespondensi/tulis/surat-dinas-internal",
     },
     {
       label: "Surat Dinas Eksternal",
-      to: "/admin/korespondensi/tulis/surat-dinas-eksternal",
+      to: "/korespondensi/tulis/surat-dinas-eksternal",
     },
-    { label: "Kajian", to: "/admin/korespondensi/tulis/kajian" },
+    { label: "Kajian", to: "/korespondensi/tulis/kajian" },
   ];
 
   if (tag === "BOD" || tag === "BOD-1") {
@@ -440,29 +369,24 @@ const tulisChildrenByBod = computed(() => {
 const adminMenuUtama = computed(() => [
   {
     label: "Dashboard",
-    to: "/admin/dashboard",
+    to: "/dashboard", // Updated Path (Shared path with user, content handled by role)
     icon: "i-lucide-layout-dashboard",
   },
-  {
-    label: "Tulis",
-    to: "/admin/korespondensi/tulis",
-    icon: "i-lucide-edit",
-    children: tulisChildrenByBod.value,
-  },
+  tulisMenu.value,
   {
     label: "Kotak Masuk",
-    to: "/admin/korespondensi/kotak-masuk",
+    to: "/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
     badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
   {
     label: "Terkirim",
-    to: "/admin/korespondensi/terkirim",
+    to: "/korespondensi/terkirim",
     icon: "i-lucide-send",
   },
   {
     label: "Draft",
-    to: "/admin/korespondensi/draft",
+    to: "/korespondensi/draft",
     icon: "i-lucide-file-text",
   },
 ]);
@@ -472,53 +396,51 @@ const adminMenuUtilitas = computed(() => {
     {
       label: "Digsig",
       icon: "i-lucide-signature",
+      // Updated Paths
       children: [
-        { label: "Verifikasi Dokumen", to: "/admin/digsig/verifikasi-dokumen" },
-        { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
-        { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
-        { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
+        { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
+        { label: "Penandatanganan", to: "/digsig/penandatanganan" },
+        { label: "Cek Dokumen", to: "/digsig/cek-dokumen" },
+        { label: "Log Digsig", to: "/digsig/log-digsig" },
       ],
     },
-    { label: "Short URL", to: "/admin/short-url", icon: "i-lucide-link" },
-    { label: "Berkas", to: "/admin/berkas", icon: "i-lucide-folder" },
-    { label: "Template", to: "/admin/template", icon: "i-lucide-copy" },
+    { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
+    { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
+    { label: "Template", to: "/template", icon: "i-lucide-copy" },
 
     {
       label: "Usulan Penomoran",
-      to: "/admin/usulan-penomoran",
+      to: "/usulan-penomoran",
       icon: "i-lucide-hash",
+      hasNotification: false,
       onlyUser: true,
+      badge:
+        userCounts.value.belum_diajukan > 0
+          ? userCounts.value.belum_diajukan
+          : null,
     },
   ];
 
   return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value));
 });
 
-const isAdminRole = computed(() => {
-  return user.value?.role === "admin" || user.value?.role === "superadmin";
-});
-
 const adminMenuAdministrasi = computed(() => {
-  console.log(
-    "🔧 Building adminMenuAdministrasi, adminCounts:",
-    adminCounts.value,
-  );
-
   const base = [
-    { label: "Delegasi", to: "/admin/delegasi", icon: "i-lucide-users" },
+    { label: "Delegasi", to: "/delegasi", icon: "i-lucide-users" },
     {
       label: "Titelatur Inggris",
-      to: "/admin/titelatur",
+      to: "/titelatur",
       icon: "i-lucide-languages",
     },
     {
       label: "Penomoran",
       icon: "i-lucide-hash",
       hasNotification: false,
+      // Updated Paths
       children: [
         {
           label: "Usulan",
-          to: "/admin/penomoran/usulan",
+          to: "/penomoran/usulan",
           badge:
             adminCounts.value.belum_diajukan > 0
               ? adminCounts.value.belum_diajukan
@@ -526,19 +448,19 @@ const adminMenuAdministrasi = computed(() => {
         },
         {
           label: "Verifikasi",
-          to: "/admin/penomoran/verifikasi",
+          to: "/penomoran/verifikasi",
           badge:
             adminCounts.value.menunggu_verifikasi > 0
               ? adminCounts.value.menunggu_verifikasi
               : null,
         },
-        { label: "Penomoran", to: "/admin/penomoran" },
+        { label: "Penomoran", to: "/penomoran" },
       ],
     },
 
     {
       label: "Naskah Dinas",
-      to: "/admin/naskah-dinas",
+      to: "/naskah-dinas",
       icon: "i-lucide-file-text",
     },
   ];
@@ -547,13 +469,14 @@ const adminMenuAdministrasi = computed(() => {
     base.push({
       label: "Master Data",
       icon: "i-lucide-database",
+      // Updated Paths
       children: [
         {
           label: "Akun",
-          to: "/admin/master/akun",
+          to: "/master/akun",
           icon: "i-lucide-user-round",
         },
-        { label: "Tertuju Eksternal", to: "/admin/master/tertuju-eksternal" },
+        { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
       ],
     });
   }
@@ -562,61 +485,48 @@ const adminMenuAdministrasi = computed(() => {
 });
 
 const adminMenuLaporan = [
+  // Updated Paths
   {
     label: "Rekap Naskah",
-    to: "/admin/laporan/rekap-naskah",
+    to: "/laporan/rekap-naskah",
     icon: "i-lucide-file-bar-chart-2",
   },
   {
     label: "Detail Naskah",
-    to: "/admin/laporan/detail-naskah",
+    to: "/laporan/detail-naskah",
     icon: "i-lucide-file-search",
   },
   {
     label: "Naskah Masuk",
-    to: "/admin/laporan/naskah-masuk",
+    to: "/laporan/naskah-masuk",
     icon: "i-lucide-folder-input",
   },
 ];
 
 // Check if Administrasi has notification
 const hasAdministrasiNotification = computed(() => {
-  const hasNotif =
+  return (
     adminCounts.value.menunggu_verifikasi > 0 ||
-    adminCounts.value.belum_diajukan > 0;
-
-  console.log("🔔 Admin administrasi notification check:", {
-    menunggu_verifikasi: adminCounts.value.menunggu_verifikasi,
-    belum_diajukan: adminCounts.value.belum_diajukan,
-    hasNotif,
-  });
-
-  return hasNotif;
+    adminCounts.value.belum_diajukan > 0
+  );
 });
 
 // Check if Utilitas has notification (for user)
-// Hitung dari data rows yang memiliki status "Belum Diajukan"
 const hasUtilitasNotification = computed(() => {
-  // Jika di route user, hitung dari userCounts
-  if (route.path.startsWith("/user")) {
-    const hasNotif = userCounts.value.belum_diajukan > 0;
-
-    console.log("🔔 User utilitas notification check:", {
-      belum_diajukan: userCounts.value.belum_diajukan,
-      hasNotif,
-    });
-
-    return hasNotif;
+  // Karena path sekarang /..., kita cek berdasarkan Role bukan path
+  if (!isAdminOrSuperadmin.value) {
+    return userCounts.value.belum_diajukan > 0;
   }
-
   return false;
 });
 
-// --- 4. COMPUTED: APPS (DINAMIS BY ROUTE) ---
-const apps = computed(() => {
-  const isAdminRoute = route.path.startsWith("/admin");
+// --- 4. COMPUTED: APPS (DINAMIS BY ROLE NOT ROUTE) ---
+// Karena folder digabung ke /app, kita tidak bisa membedakan berdasarkan route.path
+// Kita membedakan tampilan sidebar berdasarkan ROLE user.
 
-  if (isAdminRoute) {
+const apps = computed(() => {
+  // LOGIC BARU: Cek Role, bukan Path
+  if (isAdminOrSuperadmin.value) {
     const baseApps = [
       {
         id: "admin-utama",
@@ -634,35 +544,28 @@ const apps = computed(() => {
       },
     ];
 
-    if (isAdminRole.value) {
-      baseApps.push(
-        {
-          id: "admin-administrasi",
-          label: "Administrasi",
-          icon: "i-heroicons-cog-6-tooth",
-          menus: adminMenuAdministrasi.value,
-          hasNotification: hasAdministrasiNotification.value,
-        },
-        {
-          id: "admin-laporan",
-          label: "Laporan",
-          icon: "i-heroicons-presentation-chart-line",
-          menus: adminMenuLaporan,
-          hasNotification: false,
-        },
-      );
-    }
+    // Admin selalu dapat akses administrasi & laporan
+    baseApps.push(
+      {
+        id: "admin-administrasi",
+        label: "Administrasi",
+        icon: "i-heroicons-cog-6-tooth",
+        menus: adminMenuAdministrasi.value,
+        hasNotification: hasAdministrasiNotification.value,
+      },
+      {
+        id: "admin-laporan",
+        label: "Laporan",
+        icon: "i-heroicons-presentation-chart-line",
+        menus: adminMenuLaporan,
+        hasNotification: false,
+      },
+    );
 
     return baseApps;
   }
 
-  // USER ROUTE
-  console.log("🎯 Building USER apps with counts:", {
-    hasInboxUnread: hasInboxUnread.value,
-    hasUtilitasNotification: hasUtilitasNotification.value,
-    userCounts: userCounts.value,
-  });
-
+  // ELSE: USER ROLE
   return [
     {
       id: "user-utama",
@@ -772,6 +675,7 @@ defineExpose({ openMobile, closeMobile });
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }

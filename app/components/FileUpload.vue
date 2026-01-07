@@ -56,8 +56,8 @@ const removeFile = (i: number) => {
   <div class="flex flex-col gap-2">
     <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop"
       @click="triggerFileInput"
-      class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50"
-      :class="isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-white'">
+      class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50 dark:bg-gray-900"
+      :class="isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-white dark:hover:bg-gray-800'">
       <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 mb-2" />
 
       <p class="text-sm text-gray-500 text-center">

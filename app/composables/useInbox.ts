@@ -65,7 +65,7 @@ export function useInbox(positionId: any) {
           category: it.jenis,
           category_label: it.jenis_label,
           nomor: it.nomor,
-          date: formatDateTime(it.tanggal),
+          date: formatDateTime(it.created_at),
           subject: (it.perihal || it.nomor || "").toString().trim(),
 
           from: position,
