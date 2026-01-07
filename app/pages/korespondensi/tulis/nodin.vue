@@ -661,7 +661,7 @@
             >
               <div style="text-align: center; min-width: 200px">
                 <div style="margin-bottom: 96px; font-size: 14px">
-                  <div>Tangerang, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
                   <div style="margin-top: 2px; font-weight: bold">
                     AVP of Enterprise Technology Planning
                   </div>

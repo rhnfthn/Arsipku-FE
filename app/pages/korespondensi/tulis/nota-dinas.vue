@@ -104,8 +104,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                      ${i + 1}. ${s.labelJob || s.label}
-                                                                    </div>`
+                                                                                                    ${i + 1}. ${s.labelJob || s.label}
+                                                                                                  </div>`
                               )
                               .join('')
                             : '................................................'
@@ -238,6 +238,60 @@
         </div>
       </template>
     </USlideover>
+
+    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Slot #header untuk judul -->
+      <template #header>
+        <h3 class="text-lg font-bold">Digital Signature</h3>
+      </template>
+
+      <!-- Slot #body untuk konten utama -->
+      <template #body>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Masukkan Passphrase untuk menandatangani dokumen ini secara digital.
+        </p>
+
+        <form @submit.prevent="handlePassphraseSubmit">
+
+          <div
+            class="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mb-4">
+            <div class="flex-shrink-0">
+              <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
+                <UIcon name="i-heroicons-user" class="w-6 h-6" />
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                {{ signerInfo.role }}
+              </span>
+              <span class="text-base font-bold text-gray-900 dark:text-white">
+                {{ signerInfo.name }}
+              </span>
+            </div>
+          </div>
+
+          <form @submit.prevent="handlePassphraseSubmit">
+            <UFormGroup label="Passphrase" class="mb-2">
+              <UInput type="password" v-model="passphrase" placeholder="" size="lg" :ui="{ wrapper: 'relative' }"
+                class="w-full" autofocus />
+            </UFormGroup>
+          </form>
+
+        </form>
+      </template>
+
+      <!-- Slot #footer untuk tombol aksi -->
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Tanda Tangan & Kirim" color="primary" :loading="isLoadingData"
+            icon="i-heroicons-pencil-square" @click="handlePassphraseSubmit" />
+        </div>
+      </template>
+    </UModal>
+
   </div>
 </template>
 
@@ -335,6 +389,17 @@ const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
+
+// [NEW] Passphrase State
+const isPassphraseModalOpen = ref(false)
+const passphrase = ref('')
+const isLoadingData2 = ref(false)
+
+const signerInfo = computed(() => ({
+  name: user.value?.nama || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh'
+}))
 
 // Form Data State
 const editDraftId = ref<string | null>(null);
@@ -526,20 +591,33 @@ const confirmKirimDokumen = async () => {
   const isConfirmed = await Alert.confirm(
     'Kirim Dokumen?',
     'Dokumen yang sudah dikirim tidak dapat dibatalkan.',
-    'Ya, Kirim',
+    'Ya, Lanjutkan', // Text diubah sedikit agar user tahu ada step berikutnya
     'Batal',
     false
   );
 
   if (!isConfirmed) return;
 
-  try {
-    await handleKirimDokumen();
-    Alert.close(); // <--- INI KUNCI UTAMANYA
-  } catch (error) {
-    console.error(error);
-    Alert.close();
+  // [MODIFIED] Alih-alih langsung kirim, buka modal passphrase
+  Alert.close();
+  passphrase.value = ""; // Reset passphrase
+  isPassphraseModalOpen.value = true;
+};
+
+// [NEW] Handler saat user submit passphrase di modal
+const handlePassphraseSubmit = async () => {
+  if (!passphrase.value) {
+    toast.add({
+      title: 'Validasi',
+      description: 'Harap masukkan passphrase Anda',
+      color: 'warning'
+    });
+    return;
   }
+
+  // Tutup modal dan panggil fungsi kirim utama
+  isPassphraseModalOpen.value = false;
+  await handleKirimDokumen();
 };
 
 const handleKirimDokumen = async () => {
@@ -557,6 +635,10 @@ const handleKirimDokumen = async () => {
 
     // 2. Kirim payload + PDF Binary
     const formData = createFormData(payload, true);
+
+    // [MODIFIED] Append passphrase ke FormData agar backend bisa proses digsig
+    formData.append('passphrase', passphrase.value);
+
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
@@ -566,9 +648,11 @@ const handleKirimDokumen = async () => {
     }
   } catch (e: any) {
     console.error("Gagal mengirim:", e);
+    // Jika gagal, mungkin perlu buka modal lagi atau reset passphrase?
+    // Di sini kita biarkan user coba lagi tombol "Kirim" -> Modal
     toast.add({
       title: 'Gagal Mengirim',
-      description: e.response?.data?.message || 'Pastikan semua input sudah benar',
+      description: e.response?.data?.message || 'Pastikan semua input & passphrase sudah benar',
       color: 'error'
     });
   } finally {

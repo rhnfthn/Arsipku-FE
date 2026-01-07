@@ -37,7 +37,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal Kajian" />
+                placeholder="Ketik Perihal" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -141,7 +141,7 @@
                   <div class="flex justify-end mb-4 text-black dark:text-white">
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
-                        <div>Tangerang, {{ formattedDate }}</div>
+                        <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
                       <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
@@ -360,10 +360,16 @@ const createFormData = (payload: KajianPayload, includePdf: boolean) => {
 };
 
 // --- ACTIONS ---
+// --- ACTIONS ---
 const validateInput = (payload: KajianPayload) => {
   const res = KajianSchema.safeParse(payload);
   if (!res.success) {
-    const msg = res.error.errors[0].message;
+    // PERBAIKAN: Gunakan Optional Chaining (?.) dan Fallback
+    // ZodError biasanya menggunakan .errors atau .issues
+    const msg = res.error?.errors?.[0]?.message ||
+      res.error?.issues?.[0]?.message ||
+      "Terjadi kesalahan validasi input";
+
     toast.add({ title: 'Validasi Gagal', description: msg, color: 'error' });
     return false;
   }
