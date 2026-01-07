@@ -312,78 +312,68 @@ const confirmDelete = () => {
   showDeleteConfirm.value = false;
   deleteIndex.value = null;
 };
-const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Tambah URL", to: "/admin/short-url" },
-];
 </script>
 
 <template>
   <div class="flex flex-wrap justify-between">
-    <div class="flex items-center justify-between w-full mb-5">
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md">
-          Tambah URL
-        </Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
-
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <!-- Left Section - Title & Breadcrumb -->
+      <PageHeader title="Short Url" :items="items" />
+    </div>
+    <div>
       <button
         @click="openAdd"
-        :disabled="isLoadingCreate"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
       >
         <Plus class="w-4 h-4" />
-        {{ isLoadingCreate ? "Menyimpan..." : "Tambah URL" }}
+        Tambah Url
       </button>
     </div>
   </div>
-  <Teleport to="body">
-    <Modal v-model="showAddModal" @save="saveAdd" size="xl">
-      <template #title>
-        <div class="mb-3 p-1 mt-2">
-          <Heading variant="heading9b" class="font-semibold text-sm ml-4">
-            Buat Short URL Baru
-          </Heading>
+  <Modal v-model="showAddModal" @save="saveAdd">
+    <template #title>
+      <div class="ml-5 mb-3">
+        <Heading variant="heading9b" class="font-semibold text-sm">
+          Buat Short URL Baru
+        </Heading>
 
-          <Heading variant="body2" class="text-xs text-gray-500 mt-1 ml-4">
-            Masukan URL Panjang untuk Dipersingkat
-          </Heading>
-        </div>
-      </template>
-
-      <div class="flex flex-col gap-2">
-        <Heading variant="body2m"
-          >URL Panjang<span class="text-red-500">*</span></Heading
-        >
-        <UInput
-          color="primary"
-          placeholder="Http://example"
-          size="lg"
-          v-model="addForm.LUrl"
-          class="mb-1"
-        />
-
-        <Heading variant="body2m">Back Half</Heading>
-        <UInput
-          color="primary"
-          placeholder="example favorit-link"
-          size="lg"
-          v-model="addForm.SUrl"
-          class="mb-1"
-        />
-
-        <Heading variant="body2m">Keterangan</Heading>
-        <UInput
-          color="primary"
-          placeholder="Tambahkan Keterangan"
-          size="lg"
-          v-model="addForm.keterangan"
-          class="mb-8"
-        />
+        <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+          Masukan URL Panjang untuk Dipersingkat
+        </Heading>
       </div>
-    </Modal>
-  </Teleport>
+    </template>
+
+    <div class="flex flex-col gap-3">
+      <Heading variant="body2m"
+        >URL Panjang<span class="text-red-500">*</span></Heading
+      >
+      <UInput
+        color="primary"
+        placeholder="Http://example"
+        size="lg"
+        v-model="addForm.LUrl"
+      />
+
+      <Heading variant="body2m">Back Half</Heading>
+      <UInput
+        color="primary"
+        placeholder="example favorit-link"
+        size="lg"
+        v-model="addForm.SUrl"
+      />
+
+      <Heading variant="body2m">Keterangan</Heading>
+      <UInput
+        color="primary"
+        placeholder="Tambahkan Keterangan"
+        size="lg"
+        v-model="addForm.keterangan"
+      />
+    </div>
+  </Modal>
+
   <!-- CARD FULL HEIGHT -->
   <div
     class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
