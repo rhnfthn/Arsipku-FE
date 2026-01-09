@@ -1,18 +1,7 @@
 <template>
   <div class="relative">
 
-    <Teleport to="body">
-      <div v-if="isLoadingData"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 backdrop-blur-[2px] transition-all">
-        <div
-          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-            {{ loadingMessage || 'Mohon Tunggu...' }}
-          </span>
-        </div>
-      </div>
-    </Teleport>
+    <LoadingOverlay :loading="isLoadingData" :message="loadingMessage" />
 
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
@@ -240,54 +229,87 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Slot #header untuk judul -->
+      <!-- Header -->
       <template #header>
-        <h3 class="text-lg font-bold">Digital Signature</h3>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-lg font-semibold">Kirim Dokumen</h3>
+        </div>
       </template>
 
-      <!-- Slot #body untuk konten utama -->
+      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Masukkan Passphrase untuk menandatangani dokumen ini secara digital.
+          Pilih metode pengiriman dokumen:
         </p>
 
-        <form @submit.prevent="handlePassphraseSubmit">
+        <!-- Card utama -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
 
-          <div
-            class="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mb-4">
-            <div class="flex-shrink-0">
-              <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
-                <UIcon name="i-heroicons-user" class="w-6 h-6" />
+          <!-- Opsi Digital Signature -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digital'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="digital" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col flex-1">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Kirim dengan Digital Signature
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen akan ditandatangani secara digital dan memiliki kekuatan legal.
+              </span>
+
+              <!-- Info Signer - hanya muncul jika digital dipilih -->
+              <div v-if="selectedSendType === 'digital'"
+                class="flex items-start mt-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                <div class="flex-shrink-0">
+                  <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
+                    <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div class="flex flex-col">
+                  <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+                  <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                    {{ signerInfo.role }}
+                  </span>
+                  <span class="text-base font-bold text-gray-900 dark:text-white">
+                    {{ signerInfo.name }}
+                  </span>
+                </div>
               </div>
             </div>
+          </label>
+
+          <!-- Opsi Tanpa TTD -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'internal'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="internal" v-model="selectedSendType" class="mt-1" />
 
             <div class="flex flex-col">
-              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
-              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                {{ signerInfo.role }}
+              <span class="font-medium text-gray-900 dark:text-white">
+                Kirim dengan Tanda Tangan Internal
               </span>
-              <span class="text-base font-bold text-gray-900 dark:text-white">
-                {{ signerInfo.name }}
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen dikirim dengan tanda tangan digital internal.
               </span>
             </div>
-          </div>
+          </label>
 
-          <form @submit.prevent="handlePassphraseSubmit">
-            <UFormGroup label="Passphrase" class="mb-2">
-              <UInput type="password" v-model="passphrase" placeholder="" size="lg" :ui="{ wrapper: 'relative' }"
-                class="w-full" autofocus />
-            </UFormGroup>
-          </form>
-
-        </form>
+          <!-- Input Passphrase - muncul jika salah satu dipilih -->
+          <UFormGroup label="Input Passphrase" v-if="selectedSendType">
+            <UInput type="password" v-model="passphrase" size="lg" placeholder="Ketik Passphrase" class="w-full"
+              autofocus />
+          </UFormGroup>
+        </div>
       </template>
 
-      <!-- Slot #footer untuk tombol aksi -->
+      <!-- Footer -->
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Tanda Tangan & Kirim" color="primary" :loading="isLoadingData"
-            icon="i-heroicons-pencil-square" @click="handlePassphraseSubmit" />
+          <UButton label="Batal" color="secondary" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Kirim Dokumen" color="primary" :loading="isLoadingData" @click="handlePassphraseSubmit" />
         </div>
       </template>
     </UModal>
@@ -392,8 +414,18 @@ const alertState = useAlertState();
 
 // [NEW] Passphrase State
 const isPassphraseModalOpen = ref(false)
+
+// Tambahkan di bagian data/ref
+const selectedSendType = ref('') // default kosong (tidak ada yang dipilih)
 const passphrase = ref('')
-const isLoadingData2 = ref(false)
+
+// Reset saat modal ditutup
+watch(() => isPassphraseModalOpen.value, (newVal) => {
+  if (!newVal) {
+    selectedSendType.value = ''
+    passphrase.value = ''
+  }
+})
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
