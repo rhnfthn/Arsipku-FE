@@ -58,7 +58,7 @@
             <option value="">Semua Status</option>
             <option value="Terpakai">Terpakai</option>
             <option value="booking">Booking</option>
-            <option value="Tidak Terpakai">Tidak Terpakai</option>
+            <option value="Hangus">Hangus</option>
           </select>
 
           <!-- Filter Tahun -->
@@ -286,7 +286,7 @@ const data = ref([
     perihal: "Penggantian Biaya Pembelian",
     jabatan: "Manager of HC Admin and General Affairs",
     lokasi: "Jakarta Pusat",
-    status: "Tidak Terpakai",
+    status: "Hangus",
     jenis: "ND",
   },
 ]);

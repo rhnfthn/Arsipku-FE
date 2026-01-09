@@ -222,8 +222,9 @@ const deleteNow = async () => {
 </script>
 
 <template>
-  <div class="min-w-0 min-h-screen">
-    <div class="flex items-center justify-between w-full mb-5">
+  <div class="w-full min-w-0 min-h-screen">
+    <!-- TITLE -->
+    <div class="mb-5 flex justify-between items-start">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Titelatur Inggris
@@ -231,10 +232,9 @@ const deleteNow = async () => {
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <!-- KIRI: TOMBOL TAMBAH -->
       <button
         @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
       >
         <Plus class="w-4 h-4" />
         Tambah Titelatur
@@ -476,7 +476,7 @@ const deleteNow = async () => {
     <Teleport to="body">
       <Modal v-model="showEditModal" @save="saveEdit" size="xl">
         <template #title>
-          <div class="mt-5 ml-5 mb-2">
+          <div class="mt-5 ml-5 mb-5">
             <Heading variant="heading9b" class="font-semibold text-sm">
               Edit Titelatur
             </Heading>
@@ -487,13 +487,13 @@ const deleteNow = async () => {
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-2">
+        <div class="flex flex-col gap-2 mt-1">
           <Heading variant="body2m"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="editForm.long_text"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm mb-3"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
           />
 
           <Heading variant="body2m"
@@ -501,7 +501,7 @@ const deleteNow = async () => {
           >
           <input
             v-model="editForm.long_text_en"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm mb-10"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
           />
         </div>
       </Modal>
@@ -512,7 +512,7 @@ const deleteNow = async () => {
     <Teleport to="body">
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
-          <div class="mt-5 ml-5 mb-2">
+          <div class="mt-5 ml-5 mb-5">
             <Heading variant="heading9b" class="font-semibold text-sm">
               Tambah Titelatur
             </Heading>
@@ -523,14 +523,14 @@ const deleteNow = async () => {
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-2">
+        <div class="flex flex-col gap-2 mt-1">
           <Heading variant="body2m"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="addForm.long_text"
             placeholder="Masukkan Titelatur Indonesia"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
           />
 
           <Heading variant="body2m"
@@ -539,7 +539,7 @@ const deleteNow = async () => {
           <input
             v-model="addForm.long_text_en"
             placeholder="Masukkan Titelatur Inggris"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-10"
+            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
           />
         </div>
       </Modal>
@@ -550,8 +550,8 @@ const deleteNow = async () => {
     <ConfirmPopup
       v-model="confirmDeleteOpen"
       type="danger"
-      title="Hapus Titelatur?"
-      message="Data yang dihapus tidak dapat dikembalikan."
+      title="Hapus Data"
+      message="Yakin ingin menghapus data ini?"
       confirmText="Hapus"
       cancelText="Batal"
       cancelColor="primary"

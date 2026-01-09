@@ -2,80 +2,23 @@
   <div class="min-h-screen bg-gray-50">
     <div class="max-w-[1400px] mx-auto space-y-8">
       <!-- Header -->
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md">
-          Naskah Masuk
-        </Heading>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Naskah Masuk</h1>
         <PageHeader :items="breadcrumbs" />
       </div>
 
       <!-- Table 1 - Monthly Summary -->
       <div
-        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+        class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
       >
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <button
-                @click="refreshData"
-                class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                title="Refresh"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </button>
-              <select
-                v-model="selectedType"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-              >
-                <option value="">Semua Jenis</option>
-                <option
-                  v-for="item in data"
-                  :key="item.id"
-                  :value="item.naskah"
-                >
-                  {{ item.naskah }}
-                </option>
-              </select>
-              <select
-                v-model="selectedMonth"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-              >
-                <option value="">Semua Bulan</option>
-                <option
-                  v-for="bulan in monthOptions"
-                  :key="bulan.value"
-                  :value="bulan.value"
-                >
-                  {{ bulan.label }}
-                </option>
-              </select>
-              <select
-                v-model="selectedYear"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-              >
-                <option
-                  v-for="tahun in yearOptions"
-                  :key="tahun"
-                  :value="tahun"
-                >
-                  {{ tahun }}
-                </option>
-              </select>
-            </div>
+        <div
+          class="sticky top-0 z-40 bg-white flex flex-wrap justify-between items-center p-4 border-b border-gray-200 gap-3"
+        >
+          <div class="flex items-center gap-3 flex-wrap">
             <button
-              class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
+              @click="refreshData"
+              class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
+              title="Refresh"
             >
               <svg
                 class="w-4 h-4"
@@ -87,38 +30,82 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
-              Export
             </button>
+            <select
+              v-model="selectedType"
+              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
+            >
+              <option value="">Semua Jenis</option>
+              <option v-for="item in data" :key="item.id" :value="item.naskah">
+                {{ item.naskah }}
+              </option>
+            </select>
+            <select
+              v-model="selectedMonth"
+              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
+            >
+              <option value="">Semua Bulan</option>
+              <option
+                v-for="bulan in monthOptions"
+                :key="bulan.value"
+                :value="bulan.value"
+              >
+                {{ bulan.label }}
+              </option>
+            </select>
+            <select
+              v-model="selectedYear"
+              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
+            >
+              <option v-for="tahun in yearOptions" :key="tahun" :value="tahun">
+                {{ tahun }}
+              </option>
+            </select>
           </div>
+          <button
+            class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
+            @click="exportTable1"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            Export
+          </button>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-primary text-white">
+        <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
+          <table class="w-full text-sm">
+            <thead class="sticky top-0 z-30 bg-primary text-white">
               <tr>
-                <th class="px-6 py-4 text-left font-semibold text-sm">
-                  Naskah
-                </th>
+                <th class="px-4 py-3 text-left font-semibold">Naskah</th>
                 <template v-if="!selectedMonth">
                   <th
                     v-for="bulan in monthOptions"
                     :key="bulan.value"
-                    class="px-6 py-4 text-center font-semibold text-sm"
+                    class="px-4 py-3 text-center font-semibold"
                   >
                     {{ bulan.label }}
                   </th>
                 </template>
                 <template v-else>
-                  <th class="px-6 py-4 text-center font-semibold text-sm">
+                  <th class="px-4 py-3 text-center font-semibold">
                     {{ selectedMonthLabel }}
                   </th>
                 </template>
-                <th class="px-6 py-4 text-center font-semibold text-sm">
-                  Jumlah
-                </th>
+                <th class="px-4 py-3 text-center font-semibold">Jumlah</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -127,26 +114,24 @@
                 :key="row.id"
                 class="hover:bg-blue-50 transition-colors"
               >
-                <td class="px-6 py-4 text-sm text-gray-900 font-medium">
+                <td class="px-4 py-3 text-gray-900 font-medium max-w-[350px]">
                   {{ row.naskah }}
                 </td>
                 <template v-if="!selectedMonth">
                   <td
                     v-for="bulan in monthOptions"
                     :key="bulan.value"
-                    class="px-6 py-4 text-center text-sm text-gray-600"
+                    class="px-4 py-3 text-center text-gray-600"
                   >
                     {{ row[bulan.value] || "-" }}
                   </td>
                 </template>
                 <template v-else>
-                  <td class="px-6 py-4 text-center text-sm text-gray-600">
+                  <td class="px-4 py-3 text-center text-gray-600">
                     {{ row[selectedMonth] || "-" }}
                   </td>
                 </template>
-                <td
-                  class="px-6 py-4 text-center text-sm font-bold text-gray-900"
-                >
+                <td class="px-4 py-3 text-center font-bold text-gray-900">
                   {{ row.jumlah.toLocaleString() }}
                 </td>
               </tr>
@@ -157,9 +142,9 @@
 
       <!-- Table 2 - Detailed List -->
       <div
-        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+        class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
       >
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="p-4 border-b border-gray-200">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3 flex-wrap">
               <button
@@ -223,6 +208,7 @@
             </div>
             <button
               class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
+              @click="exportTable2"
             >
               <svg
                 class="w-4 h-4"
@@ -240,10 +226,32 @@
               Export
             </button>
           </div>
+
+          <!-- <div class="relative mt-4">
+            <svg
+              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="Cari perihal / nomor..."
+              class="w-full bg-gray-50 border border-gray-200 text-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div> -->
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full text-sm">
             <thead class="bg-primary text-white">
               <tr>
                 <th
@@ -258,9 +266,9 @@
                   ]"
                   :key="col"
                   @click="handleSort(col)"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer hover:bg-primary-700 transition-colors select-none"
+                  class="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-primary-700 transition-colors"
                 >
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-2">
                     <span>{{
                       col.charAt(0).toUpperCase() + col.slice(1)
                     }}</span>
@@ -306,30 +314,23 @@
                 :key="item.id"
                 class="hover:bg-gray-50 transition-colors"
               >
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ item.naskah }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-600 font-mono">
+                <td class="px-4 py-3 text-gray-900">{{ item.jenis }}</td>
+                <td class="px-4 py-3 text-gray-600 font-mono">
                   {{ item.nomor }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600">
-                  {{ item.tanggal }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                <td class="px-4 py-3 text-gray-600">{{ item.tanggal }}</td>
+                <td class="px-4 py-3 text-gray-900 max-w-xs">
                   {{ item.perihal }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600">
-                  {{ item.jabatan }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-600">
-                  {{ item.lokasi }}
-                </td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-3 text-gray-600">{{ item.jabatan }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ item.lokasi }}</td>
+                <td class="px-4 py-3">
                   <span
                     class="inline-flex px-3 py-1 rounded-full text-xs font-medium"
                     :class="getStatusClass(item.status)"
-                    >{{ item.status }}</span
                   >
+                    {{ item.status }}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -348,10 +349,10 @@
               @click="currentPage = Math.max(1, currentPage - 1)"
               :disabled="currentPage === 1"
               :class="[
-                'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all',
+                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === 1
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-blue-600 border border-primary hover:bg-blue-50',
+                  : 'bg-white text-primary-600 border border-primary-600 hover:bg-blue-50',
               ]"
             >
               <svg
@@ -373,13 +374,11 @@
               <button
                 v-if="paginationPages[0] > 1"
                 @click="currentPage = 1"
-                class="w-8 h-8 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-white border border-gray-300 hover:bg-blue-50 hover:text-primary-600 transition-all"
               >
                 1
               </button>
-              <span
-                v-if="paginationPages[0] > 2"
-                class="px-2 text-gray-400 text-sm"
+              <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400"
                 >...</span
               >
               <button
@@ -389,8 +388,8 @@
                 :class="[
                   'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                   currentPage === page
-                    ? 'bg-primary-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600',
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-primary-600',
                 ]"
               >
                 {{ page }}
@@ -399,13 +398,13 @@
                 v-if="
                   paginationPages[paginationPages.length - 1] < totalPages - 1
                 "
-                class="px-2 text-gray-400 text-sm"
+                class="px-2 text-gray-400"
                 >...</span
               >
               <button
                 v-if="paginationPages[paginationPages.length - 1] < totalPages"
                 @click="currentPage = totalPages"
-                class="w-8 h-8 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-white border border-gray-300 hover:bg-blue-50 hover:text-primary-600 transition-all"
               >
                 {{ totalPages }}
               </button>
@@ -414,7 +413,7 @@
               @click="currentPage = Math.min(totalPages, currentPage + 1)"
               :disabled="currentPage === totalPages"
               :class="[
-                'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all',
+                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === totalPages
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-white text-primary-600 border border-primary-600 hover:bg-blue-50',
@@ -442,41 +441,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from "vue";
-
-const selectedYear = ref(2025);
-const selectedType = ref("");
-const selectedMonth = ref("");
-const filters = ref({
-  jenis: "",
-  lokasi: "",
-  status: "",
-  tahun: "",
-  search: "",
-});
-const sortConfig = ref({ key: null, direction: "asc" });
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
 ];
-const monthOptions = [
-  { label: "Januari", value: "januari" },
-  { label: "Februari", value: "februari" },
-  { label: "Maret", value: "maret" },
-  { label: "April", value: "april" },
-  { label: "Mei", value: "mei" },
-  { label: "Juni", value: "juni" },
-  { label: "Juli", value: "juli" },
-  { label: "Agustus", value: "agustus" },
-  { label: "September", value: "september" },
-  { label: "Oktober", value: "oktober" },
-  { label: "November", value: "november" },
-  { label: "Desember", value: "desember" },
-];
-
 const data = ref([
   {
     id: 1,
@@ -585,7 +555,6 @@ const data = ref([
 const data2 = ref([
   {
     id: 1,
-    naskah: "Surat Dinas Eksternal",
     nomor: "ND-001/SSF/KEU/III/2025",
     tanggal: "03/03/2025",
     perihal: "Persetujuan Proses Pembayaran Biaya Pegawai",
@@ -596,7 +565,6 @@ const data2 = ref([
   },
   {
     id: 2,
-    naskah: "Surat Undangan",
     nomor: "ST-002/SSF/KEU/III/2024",
     tanggal: "03/03/2024",
     perihal: "Pengajuan Dana Operasional Kantor Cabang Jakarta",
@@ -607,7 +575,6 @@ const data2 = ref([
   },
   {
     id: 3,
-    naskah: "Surat Dinas Eksternal",
     nomor: "ND-003/SSF/KEU/III/2023",
     tanggal: "03/03/2023",
     perihal: "Penggantian Biaya Pembelian",
@@ -616,118 +583,54 @@ const data2 = ref([
     status: "Hangus",
     jenis: "ND",
   },
-  {
-    id: 4,
-    naskah: "Surat Dinas Eksternal",
-    nomor: "ST-004/SSF/KEU/III/2025",
-    tanggal: "05/03/2025",
-    perihal: "Pelatihan SDM",
-    jabatan: "Manager of HR",
-    lokasi: "Jakarta Selatan",
-    status: "Terpakai",
-    jenis: "ST",
-  },
-  {
-    id: 5,
-    naskah: "Surat Dinas Eksternal",
-    nomor: "ND-005/SSF/KEU/III/2024",
-    tanggal: "10/03/2024",
-    perihal: "Pembelian Aset",
-    jabatan: "Manager of Finance",
-    lokasi: "Bandung",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 6,
-    naskah: "Surat Undangan",
-    nomor: "ST-006/SSF/KEU/III/2025",
-    tanggal: "12/03/2025",
-    perihal: "Rapat Koordinasi",
-    jabatan: "Director",
-    lokasi: "Jakarta Pusat",
-    status: "booking",
-    jenis: "ST",
-  },
-  {
-    id: 7,
-    naskah: "Surat Dinas Eksternal",
-    nomor: "ND-007/SSF/KEU/III/2023",
-    tanggal: "15/03/2023",
-    perihal: "Kerjasama Strategis",
-    jabatan: "Manager of Business Development",
-    lokasi: "Surabaya",
-    status: "Hangus",
-    jenis: "ND",
-  },
-  {
-    id: 8,
-    naskah: "Surat Undangan",
-    nomor: "ND-008/SSF/KEU/III/2025",
-    tanggal: "18/03/2025",
-    perihal: "Evaluasi Kinerja",
-    jabatan: "Manager of HR",
-    lokasi: "Jakarta Pusat",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 9,
-    naskah: "Surat Dinas Eksternal",
-    nomor: "ST-009/SSF/KEU/III/2024",
-    tanggal: "20/03/2024",
-    perihal: "Monitoring Proyek",
-    jabatan: "Project Manager",
-    lokasi: "Airnav Maintenance Facility",
-    status: "Terpakai",
-    jenis: "ST",
-  },
-  {
-    id: 10,
-    naskah: "Surat Undangan",
-    nomor: "ST-010/SSF/KEU/III/2025",
-    tanggal: "22/03/2025",
-    perihal: "Sosialisasi Kebijakan",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Selatan",
-    status: "booking",
-    jenis: "ST",
-  },
-  {
-    id: 11,
-    naskah: "Surat Undangan",
-    nomor: "ND-011/SSF/KEU/III/2024",
-    tanggal: "25/03/2024",
-    perihal: "Anggaran Tahunan",
-    jabatan: "Manager of Finance",
-    lokasi: "Jakarta Pusat",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 12,
-    naskah: "Surat Dinas Eksternal",
-    nomor: "ND-012/SSF/KEU/III/2023",
-    tanggal: "28/03/2023",
-    perihal: "Audit Internal",
-    jabatan: "Manager of Internal Audit",
-    lokasi: "Bandung",
-    status: "Hangus",
-    jenis: "ND",
-  },
 ]);
+
+const selectedType = ref("");
+const selectedMonth = ref("");
+const selectedYear = ref(2025);
+const filters = ref({
+  jenis: "",
+  lokasi: "",
+  status: "",
+  tahun: "",
+  search: "",
+});
+const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
+  key: null,
+  direction: "asc",
+});
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const monthOptions = [
+  { label: "Januari", value: "januari" },
+  { label: "Februari", value: "februari" },
+  { label: "Maret", value: "maret" },
+  { label: "April", value: "april" },
+  { label: "Mei", value: "mei" },
+  { label: "Juni", value: "juni" },
+  { label: "Juli", value: "juli" },
+  { label: "Agustus", value: "agustus" },
+  { label: "September", value: "september" },
+  { label: "Oktober", value: "oktober" },
+  { label: "November", value: "november" },
+  { label: "Desember", value: "desember" },
+];
 
 const selectedMonthLabel = computed(
   () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
 );
+
 const yearOptions = computed(() => {
-  const years = new Set();
+  const years = new Set<number>();
   data.value.forEach((d) => d.years.forEach((y) => years.add(y.tahun)));
   return Array.from(years).sort((a, b) => b - a);
 });
+
 const lokasiOptions = computed(() => [
   ...new Set(data2.value.map((d) => d.lokasi)),
 ]);
+
 const tahunOptions = computed(() =>
   [...new Set(data2.value.map((d) => d.tanggal.split("/")[2]))].sort(
     (a, b) => Number(b) - Number(a),
@@ -740,9 +643,11 @@ const filteredTableData = computed(() => {
     .map((item) => {
       const yearData = item.years.find((y) => y.tahun === selectedYear.value);
       if (!yearData) return null;
+
       const totalJumlah = Object.entries(yearData)
         .filter(([key, val]) => typeof val === "number" && key !== "tahun")
         .reduce((acc, [, val]) => acc + val, 0);
+
       return {
         id: item.id,
         naskah: item.naskah,
@@ -750,7 +655,7 @@ const filteredTableData = computed(() => {
         jumlah: totalJumlah,
       };
     })
-    .filter((item) => item !== null);
+    .filter(Boolean);
 });
 
 const filteredData = computed(() => {
@@ -808,11 +713,12 @@ watch(
   },
   { deep: true },
 );
+
 watch(totalPages, (val) => {
   if (currentPage.value > val) currentPage.value = val || 1;
 });
 
-const handleSort = (key) => {
+const handleSort = (key: string) => {
   sortConfig.value = {
     key,
     direction:
@@ -822,9 +728,9 @@ const handleSort = (key) => {
   };
 };
 
-const getStatusClass = (status) => {
+const getStatusClass = (status: string) => {
   if (status === "Terpakai") return "bg-green-100 text-green-700";
-  if (status === "booking") return "bg-blue-100 text-blue-700";
+  if (status === "booking") return "bg-primary-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
 
@@ -835,5 +741,70 @@ const refreshData = () => {
   filters.value = { jenis: "", lokasi: "", status: "", tahun: "", search: "" };
   sortConfig.value = { key: null, direction: "asc" };
   currentPage.value = 1;
+};
+
+const exportTable1 = () => {
+  const headers = ["Naskah"];
+  if (!selectedMonth.value) {
+    headers.push(...monthOptions.map((m) => m.label));
+  } else {
+    headers.push(selectedMonthLabel.value);
+  }
+  headers.push("Jumlah");
+
+  const rows = filteredTableData.value.map((row) => {
+    const data = [row.naskah];
+    if (!selectedMonth.value) {
+      monthOptions.forEach((m) => data.push(row[m.value] || "0"));
+    } else {
+      data.push(row[selectedMonth.value] || "0");
+    }
+    data.push(row.jumlah.toString());
+    return data;
+  });
+
+  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute(
+    "download",
+    `naskah-masuk-summary-${selectedYear.value}.csv`,
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const exportTable2 = () => {
+  const headers = [
+    "Jenis",
+    "Nomor",
+    "Tanggal",
+    "Perihal",
+    "Jabatan",
+    "Lokasi",
+    "Status",
+  ];
+  const rows = sortedData.value.map((item) => [
+    item.jenis,
+    item.nomor,
+    item.tanggal,
+    item.perihal,
+    item.jabatan,
+    item.lokasi,
+    item.status,
+  ]);
+
+  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "naskah-masuk-detail.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 </script>

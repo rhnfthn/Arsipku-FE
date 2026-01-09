@@ -1,39 +1,24 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="modelValue"
-        class="fixed inset-0 z-9999 flex items-center justify-center p-4"
-        @click.self="handleCancel"
-      >
+      <div v-if="modelValue" class="fixed inset-0 z-9999 flex items-center justify-center p-4"
+        @click.self="handleCancel">
         <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
         <!-- Dialog -->
-        <div
-          class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md transform transition-all"
-          role="dialog"
-          aria-modal="true"
-        >
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md transform transition-all"
+          role="dialog" aria-modal="true">
           <!-- Icon -->
           <div class="flex justify-center pt-6 pb-4">
-            <div
-              class="w-16 h-16 rounded-full flex items-center justify-center"
-              :class="iconClasses"
-            >
-              <component
-                :is="iconComponent"
-                :size="32"
-                :class="iconColorClass"
-              />
+            <div class="w-16 h-16 rounded-full flex items-center justify-center" :class="iconClasses">
+              <component :is="iconComponent" :size="32" :class="iconColorClass" />
             </div>
           </div>
 
           <!-- Content -->
           <div class="px-6 text-center pb-6">
-            <h3
-              class="text-lg font-semibold text-neutral-90 dark:text-white mb-2"
-            >
+            <h3 class="text-lg font-semibold text-neutral-90 dark:text-white mb-2">
               {{ title }}
             </h3>
             <p class="text-sm text-neutral-60 dark:text-neutral-40">
@@ -43,20 +28,13 @@
 
           <!-- Actions -->
           <div class="flex items-center gap-3 px-6 pb-6">
-            <button
-              @click="handleConfirm"
-              :disabled="isLoading"
-              class="flex-1 px-4 py-2 rounded-md text-white bg-primary hover:bg-primary-700 disabled:opacity-50"
-            >
+            <button @click="handleConfirm" :disabled="isLoading"
+              class="flex-1 px-4 py-2 rounded-md text-white bg-primary hover:bg-primary-700 disabled:opacity-50">
               {{ isLoading ? loadingText : confirmText }}
             </button>
 
-            <button
-              v-if="!isAlert"
-              @click="handleCancel"
-              :disabled="isLoading"
-              class="flex-1 px-4 py-2 rounded-md border border-primary text-primary hover:bg-primary/10 disabled:opacity-50"
-            >
+            <button v-if="!isAlert" @click="handleCancel" :disabled="isLoading"
+              class="flex-1 px-4 py-2 rounded-md border border-primary text-primary hover:bg-primary/10 disabled:opacity-50">
               {{ cancelText }}
             </button>
           </div>
@@ -98,6 +76,7 @@ const props = defineProps({
   },
   message: {
     type: String,
+    default: "This action cannot be undone.",
   },
   confirmText: {
     type: String,
