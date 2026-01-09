@@ -453,7 +453,7 @@ const adminMenuAdministrasi = computed(() => {
               ? adminCounts.value.menunggu_verifikasi
               : null,
         },
-        { label: "Penomoran", to: "/penomoran/penomoran" },
+        { label: "Penomoran", to: "/penomoran/nomor" },
       ],
     },
 

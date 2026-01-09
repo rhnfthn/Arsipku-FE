@@ -11,7 +11,7 @@
 
       <button
         @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Dokumen
@@ -319,6 +319,7 @@
           </div>
 
           <!-- Footer Buttons -->
+
           <div class="flex justify-end gap-3 mt-4 mb-6">
             <button
               @click="openAdd = false"
@@ -433,7 +434,7 @@ const selectedRow = ref(null);
 const fileInput = ref(null);
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 

@@ -447,19 +447,17 @@ const exportData = () => {
 </script>
 
 <template>
-  <div class="w-full min-w-0 min-h-screen bg-gray-50 p-6">
+  <div class="space-y-6">
     <!-- HEADER -->
-    <div class="flex items-start justify-between w-full mb-6">
+    <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-2xl font-bold text-gray-900">
-          Delegasi
-        </Heading>
+        <Heading variant="heading6b" class="text-mobile-md"> Delegasi </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
 
       <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
+        @click="openAdd = true"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Delegasi
@@ -653,7 +651,7 @@ const exportData = () => {
         v-if="filteredData.length > 0"
         class="flex items-center justify-between px-6 py-4 border-t border-gray-100"
       >
-        <div class="text-sm text-gray-600">
+        <div class="text-xs text-gray-600">
           Menampilkan {{ paginatedDelegasi.length }} dari {{ totalItems }} data
         </div>
 
@@ -790,7 +788,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openNewPersonil = !openNewPersonil"
               >
                 <span class="text-sm text-gray-700">
@@ -824,7 +822,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openNewSebagai = !openNewSebagai"
               >
                 <span class="text-sm text-gray-700">
@@ -858,7 +856,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openNewJabatan = !openNewJabatan"
               >
                 <span class="text-sm text-gray-700">
@@ -893,7 +891,7 @@ const exportData = () => {
               <input
                 v-model="newDelegasi.mulai"
                 type="date"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
 
@@ -904,7 +902,7 @@ const exportData = () => {
               <input
                 v-model="newDelegasi.sampai"
                 type="date"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
           </div>
@@ -932,7 +930,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openEditPersonil = !openEditPersonil"
               >
                 <span class="text-sm text-gray-700">
@@ -966,7 +964,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openEditSebagai = !openEditSebagai"
               >
                 <span class="text-sm text-gray-700">
@@ -1000,7 +998,7 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="openEditJabatan = !openEditJabatan"
               >
                 <span class="text-sm text-gray-700">
@@ -1035,7 +1033,7 @@ const exportData = () => {
               <input
                 v-model="editDelegasi.mulai"
                 type="date"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
 
@@ -1046,7 +1044,7 @@ const exportData = () => {
               <input
                 v-model="editDelegasi.sampai"
                 type="date"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
           </div>

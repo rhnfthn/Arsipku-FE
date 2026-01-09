@@ -312,200 +312,226 @@ const confirmDelete = () => {
   showDeleteConfirm.value = false;
   deleteIndex.value = null;
 };
+const breadcrumbs = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Short URL", to: "/admin/short-url" },
+];
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-between">
+  <!-- <div class="flex flex-wrap justify-between">
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
     >
-      <!-- Left Section - Title & Breadcrumb -->
       <PageHeader title="Short Url" :items="items" />
     </div>
     <div>
       <button
         @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
       >
         <Plus class="w-4 h-4" />
         Tambah Url
       </button>
     </div>
-  </div>
-  <Modal v-model="showAddModal" @save="saveAdd">
-    <template #title>
-      <div class="ml-5 mb-3">
-        <Heading variant="heading9b" class="font-semibold text-sm">
-          Buat Short URL Baru
+  </div> -->
+  <div class="space-y-6">
+    <!-- HEADER -->
+    <div class="flex items-center justify-between w-full mb-5">
+      <div>
+        <Heading variant="heading6b" class="text-mobile-md">
+          Short URL
         </Heading>
-
-        <Heading variant="body2" class="text-xs text-gray-500 mt-1">
-          Masukan URL Panjang untuk Dipersingkat
-        </Heading>
+        <PageHeader :items="breadcrumbs" />
       </div>
-    </template>
 
-    <div class="flex flex-col gap-3">
-      <Heading variant="body2m"
-        >URL Panjang<span class="text-red-500">*</span></Heading
-      >
-      <UInput
-        color="primary"
-        placeholder="Http://example"
-        size="lg"
-        v-model="addForm.LUrl"
-      />
-
-      <Heading variant="body2m">Back Half</Heading>
-      <UInput
-        color="primary"
-        placeholder="example favorit-link"
-        size="lg"
-        v-model="addForm.SUrl"
-      />
-
-      <Heading variant="body2m">Keterangan</Heading>
-      <UInput
-        color="primary"
-        placeholder="Tambahkan Keterangan"
-        size="lg"
-        v-model="addForm.keterangan"
-      />
-    </div>
-  </Modal>
-
-  <!-- CARD FULL HEIGHT -->
-  <div
-    class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
-  >
-    <div class="flex flex-wrap gap-2 p-2 items-center">
       <button
-        @click="toggleSort"
-        class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+        @click="openAdd"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
       >
-        <ArrowUpDown class="w-4 h-4" />
+        <Plus class="w-4 h-4" />
+        Tambah URL
       </button>
+    </div>
+    <Teleport to="body">
+      <Modal v-model="showAddModal" @save="saveAdd" size="xl">
+        <template #title>
+          <div class="ml-5 mb-3 mt-3">
+            <Heading variant="heading9b" class="font-semibold text-sm">
+              Buat Short URL Baru
+            </Heading>
 
-      <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
-        <RotateCcw class="w-4 h-4" />
-      </button>
+            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+              Masukan URL Panjang untuk Dipersingkat
+            </Heading>
+          </div>
+        </template>
 
-      <div class="relative flex-1 w-full my-3 px-2">
-        <Search
-          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          type="text"
-          placeholder="Cari berkas / klasifikasi..."
-          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+        <div class="flex flex-col gap-1">
+          <Heading variant="body2m"
+            >URL Panjang<span class="text-red-500">*</span></Heading
+          >
+          <UInput
+            color="primary"
+            placeholder="Http://example"
+            size="lg"
+            v-model="addForm.LUrl"
+            class="mb-3"
+          />
+
+          <Heading variant="body2m">Back Half</Heading>
+          <UInput
+            color="primary"
+            placeholder="example favorit-link"
+            size="lg"
+            v-model="addForm.SUrl"
+            class="mb-3"
+          />
+
+          <Heading variant="body2m">Keterangan</Heading>
+          <UInput
+            color="primary"
+            placeholder="Tambahkan Keterangan"
+            size="lg"
+            v-model="addForm.keterangan"
+            class="mb-3"
+          />
+        </div>
+      </Modal>
+    </Teleport>
+    <!-- CARD FULL HEIGHT -->
+    <div
+      class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
+    >
+      <div class="flex flex-wrap gap-2 p-2 items-center">
+        <button
+          @click="toggleSort"
+          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+        >
+          <ArrowUpDown class="w-4 h-4" />
+        </button>
+
+        <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+          <RotateCcw class="w-4 h-4" />
+        </button>
+
+        <div class="relative flex-1 w-full my-3 px-2">
+          <Search
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Cari berkas / klasifikasi..."
+            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+          />
+        </div>
+      </div>
+      <div class="w-full overflow-auto">
+        <table class="min-w-full text-sm border-collapse">
+          <thead class="bg-primary-400 text-white">
+            <tr class="p-3">
+              <th class="px-4 py-3 text-left">Tanggal</th>
+              <th class="px-4 py-3 text-left">URL Asli</th>
+              <th class="px-4 py-3 text-left">URL Modifikasi</th>
+              <th class="px-4 py-3 text-left">Keterangan</th>
+              <th class="px-4 py-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              v-for="(row, index) in sortedData"
+              :key="index"
+              class="hover:bg-blue-50 dark:hover:bg-gray-800 border-b border-b-gray-200"
+            >
+              <!-- Tanggal -->
+              <td class="px-3 py-2 whitespace-nowrap">
+                {{
+                  new Date(row.tanggal).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })
+                }}
+              </td>
+
+              <!-- URL Asli -->
+              <td class="px-3 py-2 max-w-[250px]">
+                <a
+                  :href="row.LUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-primary-600 underline hover:text-primary-800 break-all"
+                  :title="row.LUrl"
+                >
+                  {{ truncateUrl(row.LUrl, 35) }}
+                </a>
+              </td>
+
+              <!-- URL Modifikasi -->
+              <td class="px-3 py-2 max-w-[260px]">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs break-all" :title="row.SUrl">
+                    {{ truncateUrl(row.SUrl, 25) }}
+                  </span>
+
+                  <button
+                    class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    @click="
+                      copy(row.SUrl);
+                      toast.add({
+                        title: 'URL berhasil disalin!',
+                        color: 'success',
+                        icon: 'i-lucide-copy',
+                      });
+                    "
+                  >
+                    <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  </button>
+                </div>
+              </td>
+
+              <!-- Keterangan -->
+              <td class="px-3 py-2 max-w-[300px]">
+                {{ row.keterangan }}
+              </td>
+
+              <!-- ACTION -->
+              <td class="px-3 py-2 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <!-- EDIT -->
+                  <button
+                    class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900"
+                    @click="openEdit(row, index)"
+                  >
+                    <Pencil
+                      class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
+                    />
+                  </button>
+
+                  <!-- DELETE -->
+                  <button
+                    class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                    @click="openDeleteConfirm(index)"
+                  >
+                    <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ConfirmPopup
+          v-model="showDeleteConfirm"
+          type="danger"
+          title="Hapus Short URL?"
+          :message="`Hapus URL ${data[deleteIndex]?.SUrl}?`"
+          confirm-text="Hapus"
+          cancel-text="Batal"
+          @confirm="confirmDelete"
         />
       </div>
-    </div>
-    <div class="w-full overflow-auto">
-      <table class="min-w-full text-sm border-collapse">
-        <thead class="bg-primary-400 text-white">
-          <tr class="p-3">
-            <th class="px-4 py-3 text-left">Tanggal</th>
-            <th class="px-4 py-3 text-left">URL Asli</th>
-            <th class="px-4 py-3 text-left">URL Modifikasi</th>
-            <th class="px-4 py-3 text-left">Keterangan</th>
-            <th class="px-4 py-3 text-center">Aksi</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr
-            v-for="(row, index) in sortedData"
-            :key="index"
-            class="hover:bg-blue-50 dark:hover:bg-gray-800 border-b border-b-gray-200"
-          >
-            <!-- Tanggal -->
-            <td class="px-3 py-2 whitespace-nowrap">
-              {{
-                new Date(row.tanggal).toLocaleDateString("id-ID", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })
-              }}
-            </td>
-
-            <!-- URL Asli -->
-            <td class="px-3 py-2 max-w-[250px]">
-              <a
-                :href="row.LUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-primary-600 underline hover:text-primary-800 break-all"
-                :title="row.LUrl"
-              >
-                {{ truncateUrl(row.LUrl, 35) }}
-              </a>
-            </td>
-
-            <!-- URL Modifikasi -->
-            <td class="px-3 py-2 max-w-[260px]">
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-xs break-all" :title="row.SUrl">
-                  {{ truncateUrl(row.SUrl, 25) }}
-                </span>
-
-                <button
-                  class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                  @click="
-                    copy(row.SUrl);
-                    toast.add({
-                      title: 'URL berhasil disalin!',
-                      color: 'success',
-                      icon: 'i-lucide-copy',
-                    });
-                  "
-                >
-                  <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                </button>
-              </div>
-            </td>
-
-            <!-- Keterangan -->
-            <td class="px-3 py-2 max-w-[300px]">
-              {{ row.keterangan }}
-            </td>
-
-            <!-- ACTION -->
-            <td class="px-3 py-2 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <!-- EDIT -->
-                <button
-                  class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900"
-                  @click="openEdit(row, index)"
-                >
-                  <Pencil
-                    class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
-                  />
-                </button>
-
-                <!-- DELETE -->
-                <button
-                  class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
-                  @click="openDeleteConfirm(index)"
-                >
-                  <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <ConfirmPopup
-        v-model="showDeleteConfirm"
-        type="danger"
-        title="Hapus Short URL?"
-        :message="`Hapus URL ${data[deleteIndex]?.SUrl}?`"
-        confirm-text="Hapus"
-        cancel-text="Batal"
-        @confirm="confirmDelete"
-      />
     </div>
   </div>
 </template>

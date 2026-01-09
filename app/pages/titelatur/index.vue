@@ -222,9 +222,9 @@ const deleteNow = async () => {
 </script>
 
 <template>
-  <div class="w-full min-w-0 min-h-screen">
-    <!-- TITLE -->
-    <div class="mb-5 flex justify-between items-start">
+  <div class="space-y-6">
+    <!-- HEADER -->
+    <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Titelatur Inggris
@@ -233,14 +233,13 @@ const deleteNow = async () => {
       </div>
 
       <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
+        @click="openAdd = true"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Titelatur
       </button>
     </div>
-
     <!-- LOADING STATE -->
     <div v-if="loading" class="text-center py-8">
       <div

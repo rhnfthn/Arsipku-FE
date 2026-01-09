@@ -17,22 +17,9 @@
           <div class="flex items-center gap-3 flex-wrap">
             <button
               @click="refreshData"
-              class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-              title="Refresh"
+              class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <RotateCcw class="w-4 h-4" />
             </button>
             <select
               v-model="selectedType"
@@ -149,22 +136,9 @@
             <div class="flex items-center gap-3 flex-wrap">
               <button
                 @click="refreshData"
-                class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                title="Refresh"
+                class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
+                <RotateCcw class="w-4 h-4" />
               </button>
               <select
                 v-model="filters.jenis"
@@ -266,7 +240,7 @@
                   ]"
                   :key="col"
                   @click="handleSort(col)"
-                  class="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-primary-700 transition-colors"
+                  class="px-4 py-3 text-left font-semibold cursor-pointertransition-colors"
                 >
                   <div class="flex items-center gap-2">
                     <span>{{
@@ -341,7 +315,7 @@
           v-if="totalItems > 0"
           class="flex items-center justify-between px-6 py-4 border-t border-gray-200"
         >
-          <div class="text-sm text-gray-600">
+          <div class="text-xs text-gray-600">
             Menampilkan {{ currentItemsCount }} dari {{ totalItems }} data
           </div>
           <div class="flex items-center gap-2">
@@ -443,6 +417,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
+import { RotateCcw } from "lucide-vue-next";
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },

@@ -181,7 +181,7 @@
       <!-- EXPORT -->
       <button
         @click="exportExcel"
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-sm"
+        class="flex items-center gap-2 mr-4 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
       >
         <FileDown class="w-4 h-4" />
         Export
@@ -192,7 +192,7 @@
         <thead class="sticky top-0 z-30 bg-primary-400">
           <tr class="bg-primary-400 text-white">
             <th
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm w-[350px] text-start"
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm w-[350px] text-start"
             >
               Naskah
             </th>
@@ -200,7 +200,7 @@
               <th
                 v-for="bulan in monthOptions"
                 :key="bulan.value"
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
               >
                 {{ bulan.label }}
               </th>
@@ -208,19 +208,19 @@
 
             <template v-else>
               <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
               >
                 {{ selectedMonthLabel }}
               </th>
             </template>
 
             <th
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
             >
               Jumlah
             </th>
             <th
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
             >
               Status
             </th>

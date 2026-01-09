@@ -107,7 +107,7 @@
           <tr
             v-for="item in paginatedNaskah"
             :key="item.id"
-            class="hover:bg-blue-50 transition-colors"
+            class="hover:bg-blue-50 border-b border-gray-200 transition-colors"
           >
             <td class="px-4 py-3">{{ item.nomor }}</td>
             <td class="px-4 py-3">{{ item.tanggal }}</td>
