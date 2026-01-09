@@ -39,9 +39,9 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
       <!-- HEADER -->
-      <div class="flex items-center justify-between gap-4 mb-4">
+      <div class="flex items-center justify-between gap-4 p-5">
         <!-- SEARCH -->
         <div class="relative w-full max-w-md">
           <input
@@ -64,7 +64,7 @@
             Gangguan BsrE
           </button>
 
-          <div
+          <!-- <div
             class="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600"
           >
             <button class="hover:text-black">
@@ -74,7 +74,7 @@
             <button class="hover:text-black">
               <ChevronRight class="w-4 h-4" />
             </button>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -88,6 +88,7 @@
               <th class="px-4 py-3 text-left">User</th>
               <th class="px-4 py-3 text-left">Api</th>
               <th class="px-4 py-3 text-left">Naskah</th>
+              <th class="px-4 py-3 text-left">Jenis</th>
               <th class="px-4 py-3 text-left">Note</th>
             </tr>
           </thead>
@@ -103,10 +104,11 @@
                 {{ row.api }}
               </td>
               <td class="px-4 py-4">{{ row.naskah }}</td>
+              <td class="px-4 py-4">{{ row.jenis }}</td>
               <td class="px-4 py-4">
                 <span
                   :class="statusClass(row.status)"
-                  class="px-3 py-1 text-xs rounded-full font-medium inline-block whitespace-nowrap"
+                  class="px-2 py-1 text-xs rounded-full font-medium inline-block whitespace-nowrap"
                 >
                   {{ row.status }}
                 </span>
@@ -200,6 +202,7 @@ const rows = [
     user: "Rahmat Rahimi",
     api: "POST /api/sign",
     naskah: "123/TEST/2025",
+    jenis: "Surat Dinas Internal",
     status: "Sukses",
   },
   {
@@ -208,6 +211,7 @@ const rows = [
     user: "Nazaruddin",
     api: "POST /api/sign",
     naskah: "124/DIGSIG/2025",
+    jenis: "Surat Dinas Eksternal",
     status: "Passphrase anda salah",
   },
   {
@@ -216,6 +220,7 @@ const rows = [
     user: "Admin User",
     api: "POST /api/verify",
     naskah: "122/APPROVAL/2025",
+    jenis: "Surat Dinas Eksternal",
     status: "Sukses",
   },
   {
@@ -224,6 +229,7 @@ const rows = [
     user: "Rahmat Rahimi",
     api: "POST /api/sign",
     naskah: "121/CONTRACT/2025",
+    jenis: "Surat Dinas Internal",
     status: "Issue",
   },
 ];

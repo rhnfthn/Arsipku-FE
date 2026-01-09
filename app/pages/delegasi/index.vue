@@ -19,10 +19,23 @@ import Heading from "~/components/Heading.vue";
 // ==============================
 const search = ref("");
 const filterStatus = ref("Semua");
+const filterLokasi = ref("Semua");
+const filterJabatan = ref("Semua");
+
 const sortDirection = ref<"asc" | "desc" | null>(null);
 const showAddModal = ref(false);
 const showEditModal = ref(false);
-
+const openAdd = () => {
+  addForm.value = {
+    company: "10000",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "9999-12-31",
+    object_type: "CO",
+    long_text: "",
+    long_text_en: "",
+  };
+  showAddModal.value = true;
+};
 const breadcrumbs = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Delegasi", to: "/admin/delegasi" },
@@ -35,7 +48,7 @@ const listDelegasi = ref([
     jabatan: "Supervisor Operasional",
     lokasi: "Cabang Surabaya",
     tanggal: "10.12.2025 - 15.12.2025",
-    status: "Tidak Aktif",
+    status: "Akan Datang",
   },
   {
     id: 2,
@@ -67,7 +80,7 @@ const listDelegasi = ref([
     jabatan: "Supervisor Operasional",
     lokasi: "Cabang Surabaya",
     tanggal: "10.12.2025 - 15.12.2025",
-    status: "Tidak Aktif",
+    status: "Akan Datang",
   },
   {
     id: 6,
@@ -99,10 +112,18 @@ const listDelegasi = ref([
     jabatan: "Supervisor Operasional",
     lokasi: "Cabang Surabaya",
     tanggal: "10.12.2025 - 15.12.2025",
-    status: "Tidak Aktif",
+    status: "Akan Datang",
   },
   {
     id: 10,
+    nama: "Poni Sutanto",
+    jabatan: "Pelaksana Tugas Junior Manager",
+    lokasi: "Kejaksaan Cabang Denpasar",
+    tanggal: "01.12.2025 - 31.12.2025",
+    status: "Aktif",
+  },
+  {
+    id: 11,
     nama: "Poni Sutanto",
     jabatan: "Pelaksana Tugas Junior Manager",
     lokasi: "Kejaksaan Cabang Denpasar",
@@ -128,19 +149,29 @@ const refreshData = () => {
 
 const filteredData = computed(() => {
   let data = [...listDelegasi.value];
+
   data = data.filter((item) => {
     const matchSearch = item.nama
       .toLowerCase()
       .includes(search.value.toLowerCase());
+
     const matchStatus =
       filterStatus.value === "Semua" || item.status === filterStatus.value;
-    return matchSearch && matchStatus;
+
+    const matchLokasi =
+      filterLokasi.value === "Semua" || item.lokasi === filterLokasi.value;
+
+    const matchJabatan =
+      filterJabatan.value === "Semua" || item.jabatan === filterJabatan.value;
+
+    return matchSearch && matchStatus && matchLokasi && matchJabatan;
   });
 
   if (sortDirection.value === "asc")
     data.sort((a, b) => a.nama.localeCompare(b.nama));
   if (sortDirection.value === "desc")
     data.sort((a, b) => b.nama.localeCompare(a.nama));
+
   return data;
 });
 
@@ -183,7 +214,10 @@ const saveDelegasi = () => {
     status: "Aktif",
   });
 
-  showAddModal.value = false;
+  if (success) {
+    showAddModal.value = false;
+    // Optionally show success notification
+  }
 
   newDelegasi.value = {
     personil: "",
@@ -243,9 +277,41 @@ const paginatedDelegasi = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredData.value.slice(start, start + rowsPerPage.value);
 });
-
+watch(
+  [
+    search,
+    filterStatus,
+    filterLokasi,
+    filterJabatan,
+    sortDirection,
+    rowsPerPage,
+  ],
+  () => {
+    currentPage.value = 1;
+  },
+);
 const totalItems = computed(() => filteredData.value.length);
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
 
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
@@ -369,6 +435,29 @@ function selectEditJabatan(val: string) {
   editDelegasi.value.jabatan = val;
   openEditJabatan.value = false;
 }
+//EXPORT
+const exportData = () => {
+  const headers = ["Nama", "Jabatan", "Lokasi", "Periode", "Status"];
+  const rows = filteredData.value.map((i) => [
+    i.nama,
+    i.jabatan,
+    i.lokasi,
+    i.tanggal,
+    i.status,
+  ]);
+
+  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "delegasi.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 </script>
 
 <template>
@@ -385,7 +474,7 @@ function selectEditJabatan(val: string) {
         class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
       >
         <Plus class="w-4 h-4" />
-        Tambah Delegasi
+        Tambah
       </button>
     </div>
 
@@ -393,94 +482,78 @@ function selectEditJabatan(val: string) {
       <div class="">
         <!-- FILTER BAR -->
 
-        <div class="flex gap-4 mb-1 items-center flex-wrap px-3 py-3">
-          <span class="text-xs">Tampilkan</span>
-          <select
-            v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+        <div
+          class="flex items-center justify-between gap-4 px-3 py-3 mb-1 flex-wrap"
+        >
+          <!-- LEFT SECTION -->
+          <div class="flex items-center gap-4 flex-wrap">
+            <span class="text-xs">Tampilkan</span>
 
-          <button
-            @click="toggleSort"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-            <ArrowUpDown class="w-4 h-4" />
-          </button>
-
-          <button
-            @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-            <RotateCcw class="w-4 h-4" />
-          </button>
-
-          <!-- CUSTOM FILTER DROPDOWN -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-2 rounded-lg min-w-[150px]"
-              @click.stop="openFilterStatus = !openFilterStatus"
+            <select
+              v-model="rowsPerPage"
+              class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
             >
-              <span class="text-sm">
-                {{ filterStatus || "Semua" }}
-              </span>
+              <option v-for="n in rowsChoices" :key="n" :value="n">
+                {{ n }}
+              </option>
+            </select>
 
-              <!-- Icon V -->
-              <svg
-                :class="[
-                  'w-4 h-4 transition-transform duration-200',
-                  openFilterStatus ? 'rotate-180' : 'rotate-0',
-                ]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+            <button
+              @click="toggleSort"
+              class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+            >
+              <ArrowUpDown class="w-4 h-4" />
             </button>
 
-            <div
-              v-if="openFilterStatus"
-              class="absolute left-0 mt-2 w-56 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden"
+            <button
+              @click="refreshData"
+              class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
             >
-              <button
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Semua')"
-              >
-                Semua
-              </button>
-              <button
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Aktif')"
-              >
-                Aktif
-              </button>
-              <button
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Tidak Aktif')"
-              >
-                Tidak Aktif
-              </button>
-            </div>
+              <RotateCcw class="w-4 h-4" />
+            </button>
+
+            <!-- FILTERS -->
+            <select
+              v-model="filterStatus"
+              class="text-sm bg-gray-200 rounded-lg px-3 py-2"
+            >
+              <option value="Semua">Semua Status</option>
+              <option value="Aktif">Aktif</option>
+              <option value="Akan Datang">Akan Datang</option>
+              <option value="Kadaluwarsa">Kadaluwarsa</option>
+            </select>
+
+            <select
+              v-model="filterLokasi"
+              class="text-sm bg-gray-200 rounded-lg px-3 py-2"
+            >
+              <option value="Semua">Semua Lokasi</option>
+              <option value="Cabang Surabaya">Cabang Surabaya</option>
+              <option value="Cabang Denpasar">Cabang Denpasar</option>
+            </select>
+
+            <select
+              v-model="filterJabatan"
+              class="text-sm bg-gray-200 rounded-lg px-3 py-2"
+            >
+              <option value="Semua">Semua Jabatan</option>
+              <option value="Supervisor Operasional">
+                Supervisor Operasional
+              </option>
+              <option value="Pelaksana Tugas Junior Manager">
+                Pelaksana Tugas Junior Manager
+              </option>
+            </select>
           </div>
 
-          <div class="relative flex-1 w-full md:w-56">
-            <Search
-              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              v-model="search"
-              placeholder="Cari..."
-              class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
-            />
+          <!-- RIGHT SECTION (EXPORT) -->
+          <div>
+            <button
+              @click="exportData"
+              class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm text-white bg-primary hover:bg-primary-700"
+            >
+              Export
+            </button>
           </div>
         </div>
 
@@ -499,7 +572,7 @@ function selectEditJabatan(val: string) {
 
             <tbody>
               <tr
-                v-for="item in filteredData"
+                v-for="item in paginatedDelegasi"
                 :key="item.id"
                 class="text-sm hover:bg-gray-50"
               >
@@ -537,7 +610,7 @@ function selectEditJabatan(val: string) {
                       'px-3 py-1 text-xs rounded-full',
                       item.status === 'Aktif'
                         ? 'bg-green-100 text-green-800'
-                        : item.status === 'Tidak Aktif'
+                        : item.status === 'Akan Datang'
                           ? 'bg-gray-100 text-gray-600'
                           : 'bg-red-100 text-red-800',
                     ]"
@@ -563,41 +636,122 @@ function selectEditJabatan(val: string) {
         </div>
 
         <!-- PAGINATION tetapkan di bawah -->
-        <div class="flex items-center px-3 py-5 justify-between">
-          <div class="text-xs flex flex-col text-gray-600">
+        <div
+          v-if="filteredData.length > 0"
+          class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        >
+          <div class="text-xs text-gray-600">
             Menampilkan {{ paginatedDelegasi.length }} dari
             {{ totalItems }} data
           </div>
 
-          <div class="flex gap-1">
+          <div class="flex items-center gap-2">
+            <!-- BACK -->
             <button
               @click="currentPage = Math.max(1, currentPage - 1)"
               :disabled="currentPage === 1"
-              class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
-            >
-              &lt;
-            </button>
-
-            <button
-              v-for="page in totalPages"
-              :key="page"
-              @click="currentPage = page"
               :class="[
-                'px-3 py-1 text-xs rounded-md',
-                currentPage === page
-                  ? 'bg-primary text-white'
-                  : 'hover:bg-gray-200',
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary border border-primary hover:bg-primary-50',
               ]"
             >
-              {{ page }}
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
             </button>
 
+            <!-- PAGE NUMBERS -->
+            <div class="flex items-center gap-1">
+              <!-- FIRST -->
+              <button
+                v-if="paginationPages[0] > 1"
+                @click="currentPage = 1"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              >
+                1
+              </button>
+
+              <!-- DOTS LEFT -->
+              <span
+                v-if="paginationPages[0] > 2"
+                class="px-2 text-gray-400 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- WINDOW -->
+              <button
+                v-for="page in paginationPages"
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  currentPage === page
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                ]"
+              >
+                {{ page }}
+              </button>
+
+              <!-- DOTS RIGHT -->
+              <span
+                v-if="
+                  paginationPages[paginationPages.length - 1] < totalPages - 1
+                "
+                class="px-2 text-gray-400 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- LAST -->
+              <button
+                v-if="paginationPages[paginationPages.length - 1] < totalPages"
+                @click="currentPage = totalPages"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
+
+            <!-- NEXT -->
             <button
               @click="currentPage = Math.min(totalPages, currentPage + 1)"
               :disabled="currentPage === totalPages"
-              class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary border border-primary hover:bg-primary-50',
+              ]"
             >
-              &gt;
+              Next
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
             </button>
           </div>
         </div>
@@ -713,9 +867,8 @@ function selectEditJabatan(val: string) {
               >
               <input
                 v-model="newDelegasi.mulai"
-                type="text"
+                type="date"
                 class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
-                placeholder="dd/mm/yyyy"
               />
             </div>
 
@@ -725,9 +878,8 @@ function selectEditJabatan(val: string) {
               >
               <input
                 v-model="newDelegasi.sampai"
-                type="text"
+                type="date"
                 class="w-full border mt-1 bg-white border-gray-100 text-xs px-3 py-2 rounded-lg"
-                placeholder="dd/mm/yyyy"
               />
             </div>
           </div>
@@ -738,7 +890,7 @@ function selectEditJabatan(val: string) {
     <!-- MODAL EDIT -->
     <!-- ======= -->
     <Teleport to="body">
-      <Modal v-model="showEditModal" @save="saveEditDelegasi">
+      <Modal v-model="showEditModal" @save="saveEditDelegasi" size="xl">
         <template #title>
           <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
             >Edit Delegasi</Heading
@@ -752,7 +904,7 @@ function selectEditJabatan(val: string) {
             >
             <div class="relative" data-custom-dropdown>
               <button
-                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                class="w-full text-left mt-1 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
                 @click.stop="openEditPersonil = !openEditPersonil"
               >
                 <span class="text-sm text-gray-600">{{
@@ -782,7 +934,7 @@ function selectEditJabatan(val: string) {
             >
             <div class="relative" data-custom-dropdown>
               <button
-                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                class="w-full text-left mt-1 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
                 @click.stop="openEditSebagai = !openEditSebagai"
               >
                 <span class="text-sm text-gray-600">{{
@@ -812,7 +964,7 @@ function selectEditJabatan(val: string) {
             >
             <div class="relative" data-custom-dropdown>
               <button
-                class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                class="w-full text-left mt-1 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
                 @click.stop="openEditJabatan = !openEditJabatan"
               >
                 <span class="text-sm text-gray-600">{{
@@ -836,16 +988,15 @@ function selectEditJabatan(val: string) {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-3 mb-5">
             <div>
               <label class="text-xs font-semibold"
                 >Mulai <span class="text-red-500">*</span></label
               >
               <input
                 v-model="editDelegasi.mulai"
-                type="text"
+                type="date"
                 class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-                placeholder="dd/mm/yyyy"
               />
             </div>
 
@@ -855,9 +1006,8 @@ function selectEditJabatan(val: string) {
               >
               <input
                 v-model="editDelegasi.sampai"
-                type="text"
+                type="date"
                 class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-                placeholder="dd/mm/yyyy"
               />
             </div>
           </div>
@@ -869,9 +1019,10 @@ function selectEditJabatan(val: string) {
       v-model="confirmDeleteOpen"
       type="danger"
       title="Hapus Data?"
-      description="Data yang dihapus tidak dapat dikembalikan."
+      message="Data yang dihapus tidak dapat dikembalikan."
       confirmText="Hapus"
       cancelText="Batal"
+      cancelColor="primary"
       @confirm="deleteNow"
     />
   </div>

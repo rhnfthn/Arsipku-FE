@@ -72,26 +72,32 @@
         <table class="w-full bg-white text-sm">
           <thead class="bg-primary text-white text-[15px]">
             <tr>
-              <th class="p-4 text-left cursor-pointer" @click="sortBy('date')">
-                Tgl. dibuat
+              <th
+                class="px-4 py-3 text-left cursor-pointer"
+                @click="sortBy('date')"
+              >
+                Tanggal Dibuat
               </th>
 
-              <th class="p-4 text-left cursor-pointer" @click="sortBy('no')">
+              <th
+                class="px-4 py-3 text-left cursor-pointer"
+                @click="sortBy('no')"
+              >
                 No Dokumen / Perihal
               </th>
 
-              <th class="p-4 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Penandatangan</th>
 
-              <th class="p-4 text-center">Dokumen</th>
+              <th class="px-4 py-3 text-center">Dokumen</th>
 
               <th
-                class="p-4 text-center cursor-pointer"
+                class="px-4 py-3 text-center cursor-pointer"
                 @click="sortBy('status')"
               >
                 Status
               </th>
 
-              <th class="p-4 text-center">Action</th>
+              <th class="px-4 py-3 text-center">Action</th>
             </tr>
           </thead>
 
@@ -150,12 +156,13 @@
       <!-- ========================= -->
       <!-- MODAL EDIT -->
       <!-- ========================= -->
+
       <Teleport to="body">
         <Modal v-model="showEditModal" :hideDefaultFooter="true" size="xl">
           <template #title>
             <div class="mt-5 ml-5 mb-3">
               <Heading variant="heading9b" class="font-semibold text-sm">
-                Edit Dokumen
+                Tambah Dokumen
               </Heading>
             </div>
           </template>
@@ -249,7 +256,7 @@
             </div>
 
             <!-- Visible Sign -->
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between mt-1 mb-2">
               <div>
                 <Heading variant="body2m">Visible Sign</Heading>
                 <p class="text-xs text-red-500 mt-1">
@@ -272,20 +279,11 @@
             <div>
               <div class="flex items-center justify-between mb-2">
                 <Heading variant="body2m">Penanda Tangan</Heading>
-                <button
-                  type="button"
-                  @click="addSigner"
-                  class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  <Plus class="w-4 h-4" />
-                  Tambah
-                </button>
               </div>
-
               <div
                 v-for="(signer, index) in addForm.signers"
                 :key="index"
-                class="mb-8"
+                class="mb-8 flex gap-3"
               >
                 <select
                   v-model="addForm.signers[index]"
@@ -296,6 +294,14 @@
                   <option value="Vice President">Vice President</option>
                   <option value="Manager">Manager</option>
                 </select>
+                <button
+                  type="button"
+                  @click="addSigner"
+                  class="flex items-center gap-1 px-3 py-2 text-xs bg-primary hover:bg-primary-700 rounded-lg text-gray-500 text-white"
+                >
+                  <Plus class="w-4 h-4" />
+                  Tambah
+                </button>
               </div>
             </div>
           </div>
@@ -305,6 +311,7 @@
       <!---------->
       <!-- MODAL DETAIL -->
       <!---------->
+
       <Teleport to="body">
         <Modal
           v-model="openDetail"
@@ -321,42 +328,42 @@
             </Heading>
           </template>
 
-          <div class="">
+          <div class="space-y-3">
             <div class="text-sm mt-2" v-if="selectedRow">
-              <div clas="flex flex-col">
-                <p class="text-gray-600">ID</p>
-                <p class="font-medium">{{ selectedRow.id ?? "-" }}</p>
+              <div clas="flex mb-2 ">
+                <span class="w-40 text-gray-600">ID</span>
+                <span class="font-medium"> : {{ selectedRow.id ?? "-" }}</span>
               </div>
 
-              <div>
-                <p class="text-gray-600">No</p>
-                <p class="font-medium">{{ selectedRow.no }}</p>
+              <div class="flex mb-2">
+                <p class="w-40 text-gray-600">No</p>
+                <p class="font-medium">: {{ selectedRow.no }}</p>
               </div>
 
-              <div>
-                <p class="text-gray-600">Tanggal</p>
-                <p class="font-medium">{{ selectedRow.date }}</p>
+              <div class="flex mb-2">
+                <p class="w-40 text-gray-600">Tanggal</p>
+                <p class="font-medium">: {{ selectedRow.date }}</p>
               </div>
 
-              <div>
-                <p class="text-gray-600">Jenis</p>
-                <p class="font-medium">{{ selectedRow.type ?? "-" }}</p>
+              <div class="flex mb-2">
+                <p class="w-40 text-gray-600">Jenis</p>
+                <p class="font-medium">: {{ selectedRow.type ?? "-" }}</p>
               </div>
 
-              <div>
-                <p class="text-gray-600">Klasifikasi</p>
+              <div class="flex mb-2">
+                <p class="w-40 text-gray-600">Klasifikasi</p>
                 <p class="font-medium">
-                  {{ selectedRow.classification ?? "-" }}
+                  : {{ selectedRow.classification ?? "-" }}
                 </p>
               </div>
             </div>
 
             <!-- TABLE DI DALAM MODAL -->
             <div
-              class="mt-6 mb-3 bg-gray-50 border border-gray-200 rounded-lg shadow"
+              class="mt-6 mb-5 border border-gray-200 rounded-xl overflow-hidden"
             >
               <table class="w-full text-sm">
-                <thead class="bg-primary !rounded-lg text-white uppercase">
+                <thead class="bg-primary !rounded-lg text-white">
                   <tr>
                     <th class="p-3 text-left">No</th>
                     <th class="p-3 text-left">E-NIK</th>
@@ -492,7 +499,7 @@
             </div>
 
             <!-- Visible Sign -->
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between mt-1 mb-2">
               <div>
                 <Heading variant="body2m">Visible Sign</Heading>
                 <p class="text-xs text-red-500 mt-1">
@@ -515,20 +522,11 @@
             <div>
               <div class="flex items-center justify-between mb-2">
                 <Heading variant="body2m">Penanda Tangan</Heading>
-                <button
-                  type="button"
-                  @click="addSigner"
-                  class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  <Plus class="w-4 h-4" />
-                  Tambah
-                </button>
               </div>
-
               <div
                 v-for="(signer, index) in addForm.signers"
                 :key="index"
-                class="mb-8"
+                class="mb-8 flex gap-3"
               >
                 <select
                   v-model="addForm.signers[index]"
@@ -539,6 +537,14 @@
                   <option value="Vice President">Vice President</option>
                   <option value="Manager">Manager</option>
                 </select>
+                <button
+                  type="button"
+                  @click="addSigner"
+                  class="flex items-center gap-1 px-3 py-2 text-xs bg-primary hover:bg-primary-700 rounded-lg text-gray-500 text-white"
+                >
+                  <Plus class="w-4 h-4" />
+                  Tambah
+                </button>
               </div>
             </div>
           </div>

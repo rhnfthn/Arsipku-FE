@@ -1,33 +1,43 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-1">
+  <div class="min-h-screen bg-gray-50">
     <div class="max-w-[1400px] mx-auto space-y-8">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Naskah Masuk</h1>
-        <p class="text-sm text-gray-600 mt-1">
-          Kelola dan pantau naskah masuk berdasarkan lokasi, jenis, dan tahun.
-        </p>
+        <Heading variant="heading6b" class="text-mobile-md">
+          Naskah Masuk
+        </Heading>
+        <PageHeader :items="breadcrumbs" />
       </div>
 
       <!-- Table 1 - Monthly Summary -->
       <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
       >
-        <!-- Toolbar -->
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <button
                 @click="refreshData"
-                class="p-2 hover:bg-white rounded-lg text-gray-600 transition-colors"
+                class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
                 title="Refresh"
               >
-                <RotateCcw class="w-4 h-4" />
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
               </button>
-
               <select
                 v-model="selectedType"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Jenis</option>
                 <option
@@ -38,10 +48,9 @@
                   {{ item.naskah }}
                 </option>
               </select>
-
               <select
                 v-model="selectedMonth"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Bulan</option>
                 <option
@@ -52,10 +61,9 @@
                   {{ bulan.label }}
                 </option>
               </select>
-
               <select
                 v-model="selectedYear"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option
                   v-for="tahun in yearOptions"
@@ -66,17 +74,27 @@
                 </option>
               </select>
             </div>
-
             <button
               class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             >
-              <FileDown class="w-4 h-4" />
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
               Export
             </button>
           </div>
         </div>
 
-        <!-- Table Content -->
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-primary text-white">
@@ -139,51 +157,59 @@
 
       <!-- Table 2 - Detailed List -->
       <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
       >
-        <!-- Toolbar -->
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3 flex-wrap">
               <button
                 @click="refreshData"
-                class="p-2 hover:bg-white rounded-lg text-gray-600 transition-colors"
+                class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
                 title="Refresh"
               >
-                <RotateCcw class="w-4 h-4" />
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
               </button>
-
               <select
                 v-model="filters.jenis"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Jenis</option>
                 <option value="ND">Nota Dinas</option>
+                <option value="ST">Surat Tugas</option>
               </select>
-
               <select
                 v-model="filters.lokasi"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Lokasi</option>
                 <option v-for="lok in lokasiOptions" :key="lok" :value="lok">
                   {{ lok }}
                 </option>
               </select>
-
               <select
                 v-model="filters.status"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Status</option>
                 <option value="Terpakai">Terpakai</option>
                 <option value="booking">Booking</option>
                 <option value="Hangus">Hangus</option>
               </select>
-
               <select
                 v-model="filters.tahun"
-                class="bg-gray-100 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
               >
                 <option value="">Semua Tahun</option>
                 <option
@@ -195,227 +221,80 @@
                 </option>
               </select>
             </div>
-
             <button
-              class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm"
+              class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             >
-              <FileDown class="w-4 h-4" />
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
               Export
             </button>
           </div>
-
-          <!-- Search Bar -->
-          <!-- <div class="relative mt-4">
-            <Search
-              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              v-model="filters.search"
-              type="text"
-              placeholder="Cari perihal, nomor, jabatan, atau lokasi..."
-              class="w-full bg-white border border-gray-300 pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div> -->
         </div>
 
-        <!-- Table Content -->
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-primary text-white">
               <tr>
                 <th
-                  @click="handleSort('naskah')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointertransition-colors select-none"
+                  v-for="col in [
+                    'naskah',
+                    'nomor',
+                    'tanggal',
+                    'perihal',
+                    'jabatan',
+                    'lokasi',
+                    'status',
+                  ]"
+                  :key="col"
+                  @click="handleSort(col)"
+                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer hover:bg-primary-700 transition-colors select-none"
                 >
                   <div class="flex items-center gap-1">
-                    <span>Naskah</span>
+                    <span>{{
+                      col.charAt(0).toUpperCase() + col.slice(1)
+                    }}</span>
                     <div class="flex flex-col">
-                      <ChevronUp
+                      <svg
                         class="w-3 h-3 -mb-1"
                         :class="
-                          sortConfig.key === 'naskah' &&
+                          sortConfig.key === col &&
                           sortConfig.direction === 'asc'
                             ? 'opacity-100'
                             : 'opacity-40'
                         "
-                      />
-                      <ChevronDown
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                        />
+                      </svg>
+                      <svg
                         class="w-3 h-3"
                         :class="
-                          sortConfig.key === 'naskah' &&
+                          sortConfig.key === col &&
                           sortConfig.direction === 'desc'
                             ? 'opacity-100'
                             : 'opacity-40'
                         "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('nomor')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer transition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Nomor</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'nomor' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'nomor' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('tanggal')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer transition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Tanggal</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'tanggal' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'tanggal' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('perihal')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointertransition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Perihal</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'perihal' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'perihal' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('jabatan')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer transition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Jabatan</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'jabatan' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'jabatan' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('lokasi')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer transition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Lokasi</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'lokasi' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'lokasi' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th
-                  @click="handleSort('status')"
-                  class="px-6 py-4 text-left font-semibold text-sm cursor-pointer transition-colors select-none"
-                >
-                  <div class="flex items-center gap-1">
-                    <span>Status</span>
-                    <div class="flex flex-col">
-                      <ChevronUp
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === 'status' &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
-                      <ChevronDown
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === 'status' &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                      />
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </th>
@@ -425,7 +304,7 @@
               <tr
                 v-for="item in paginatedData"
                 :key="item.id"
-                class="hover:bg-blue-50 transition-colors"
+                class="hover:bg-gray-50 transition-colors"
               >
                 <td class="px-6 py-4 text-sm text-gray-900">
                   {{ item.naskah }}
@@ -449,57 +328,113 @@
                   <span
                     class="inline-flex px-3 py-1 rounded-full text-xs font-medium"
                     :class="getStatusClass(item.status)"
+                    >{{ item.status }}</span
                   >
-                    {{ item.status }}
-                  </span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-          <div class="flex items-center justify-between">
-            <div class="text-xs text-gray-600">
-              Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }} -
-              {{ Math.min(currentPage * itemsPerPage, sortedData.length) }} dari
-              {{ sortedData.length }} data
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                @click="currentPage = Math.max(1, currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        <div
+          v-if="totalItems > 0"
+          class="flex items-center justify-between px-6 py-4 border-t border-gray-200"
+        >
+          <div class="text-sm text-gray-600">
+            Menampilkan {{ currentItemsCount }} dari {{ totalItems }} data
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
+              :class="[
+                'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-blue-600 border border-primary hover:bg-blue-50',
+              ]"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <ChevronLeft class="w-4 h-4" />
-              </button>
-
-              <div class="flex gap-1">
-                <button
-                  v-for="page in totalPages"
-                  :key="page"
-                  @click="currentPage = page"
-                  class="px-3 py-1 rounded-lg text-sm font-medium transition-colors"
-                  :class="
-                    currentPage === page
-                      ? 'bg-primary text-white'
-                      : 'hover:bg-gray-100 text-gray-700'
-                  "
-                >
-                  {{ page }}
-                </button>
-              </div>
-
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
+            </button>
+            <div class="flex items-center gap-1">
               <button
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                v-if="paginationPages[0] > 1"
+                @click="currentPage = 1"
+                class="w-8 h-8 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-all"
               >
-                <ChevronRight class="w-4 h-4" />
+                1
+              </button>
+              <span
+                v-if="paginationPages[0] > 2"
+                class="px-2 text-gray-400 text-sm"
+                >...</span
+              >
+              <button
+                v-for="page in paginationPages"
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  currentPage === page
+                    ? 'bg-primary-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600',
+                ]"
+              >
+                {{ page }}
+              </button>
+              <span
+                v-if="
+                  paginationPages[paginationPages.length - 1] < totalPages - 1
+                "
+                class="px-2 text-gray-400 text-sm"
+                >...</span
+              >
+              <button
+                v-if="paginationPages[paginationPages.length - 1] < totalPages"
+                @click="currentPage = totalPages"
+                class="w-8 h-8 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-all"
+              >
+                {{ totalPages }}
               </button>
             </div>
+            <button
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              :class="[
+                'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary-600 border border-primary-600 hover:bg-blue-50',
+              ]"
+            >
+              Next
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -507,23 +442,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from "vue";
-import {
-  RotateCcw,
-  FileDown,
-  Search,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-vue-next";
+<script setup>
+import { ref, computed, watch } from "vue";
 
-// State
 const selectedYear = ref(2025);
 const selectedType = ref("");
 const selectedMonth = ref("");
-
 const filters = ref({
   jenis: "",
   lokasi: "",
@@ -531,15 +455,13 @@ const filters = ref({
   tahun: "",
   search: "",
 });
-
-const sortConfig = ref({
-  key: null as string | null,
-  direction: "asc" as "asc" | "desc",
-});
+const sortConfig = ref({ key: null, direction: "asc" });
 const currentPage = ref(1);
-const itemsPerPage = 10;
-
-// Constants
+const itemsPerPage = ref(10);
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
+];
 const monthOptions = [
   { label: "Januari", value: "januari" },
   { label: "Februari", value: "februari" },
@@ -795,21 +717,17 @@ const data2 = ref([
   },
 ]);
 
-// Computed
-const selectedMonthLabel = computed(() => {
-  return monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "";
-});
-
+const selectedMonthLabel = computed(
+  () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
+);
 const yearOptions = computed(() => {
-  const years = new Set<number>();
+  const years = new Set();
   data.value.forEach((d) => d.years.forEach((y) => years.add(y.tahun)));
   return Array.from(years).sort((a, b) => b - a);
 });
-
 const lokasiOptions = computed(() => [
   ...new Set(data2.value.map((d) => d.lokasi)),
 ]);
-
 const tahunOptions = computed(() =>
   [...new Set(data2.value.map((d) => d.tanggal.split("/")[2]))].sort(
     (a, b) => Number(b) - Number(a),
@@ -822,11 +740,9 @@ const filteredTableData = computed(() => {
     .map((item) => {
       const yearData = item.years.find((y) => y.tahun === selectedYear.value);
       if (!yearData) return null;
-
       const totalJumlah = Object.entries(yearData)
         .filter(([key, val]) => typeof val === "number" && key !== "tahun")
-        .reduce((acc, [, val]) => acc + (val as number), 0);
-
+        .reduce((acc, [, val]) => acc + val, 0);
       return {
         id: item.id,
         naskah: item.naskah,
@@ -841,11 +757,11 @@ const filteredData = computed(() => {
   return data2.value.filter((item) => {
     const tahunItem = item.tanggal.split("/")[2];
     return (
-      (filters.value.jenis === "" || item.jenis === filters.value.jenis) &&
-      (filters.value.lokasi === "" || item.lokasi === filters.value.lokasi) &&
-      (filters.value.status === "" || item.status === filters.value.status) &&
-      (filters.value.tahun === "" || tahunItem === filters.value.tahun) &&
-      (filters.value.search === "" ||
+      (!filters.value.jenis || item.jenis === filters.value.jenis) &&
+      (!filters.value.lokasi || item.lokasi === filters.value.lokasi) &&
+      (!filters.value.status || item.status === filters.value.status) &&
+      (!filters.value.tahun || tahunItem === filters.value.tahun) &&
+      (!filters.value.search ||
         Object.values(item)
           .join(" ")
           .toLowerCase()
@@ -856,28 +772,47 @@ const filteredData = computed(() => {
 
 const sortedData = computed(() => {
   if (!sortConfig.value.key) return filteredData.value;
-
   return [...filteredData.value].sort((a, b) => {
-    const aVal = a[sortConfig.value.key as keyof typeof a];
-    const bVal = b[sortConfig.value.key as keyof typeof b];
-
+    const aVal = a[sortConfig.value.key];
+    const bVal = b[sortConfig.value.key];
     if (aVal < bVal) return sortConfig.value.direction === "asc" ? -1 : 1;
     if (aVal > bVal) return sortConfig.value.direction === "asc" ? 1 : -1;
     return 0;
   });
 });
 
+const totalItems = computed(() => sortedData.value.length);
+const totalPages = computed(() =>
+  Math.ceil(totalItems.value / itemsPerPage.value),
+);
 const paginatedData = computed(() => {
-  const startIndex = (currentPage.value - 1) * itemsPerPage;
-  return sortedData.value.slice(startIndex, startIndex + itemsPerPage);
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return sortedData.value.slice(start, start + itemsPerPage.value);
+});
+const currentItemsCount = computed(() => paginatedData.value.length);
+
+const paginationPages = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+  if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
 });
 
-const totalPages = computed(() =>
-  Math.ceil(sortedData.value.length / itemsPerPage),
+watch(
+  [() => filters.value, () => sortConfig.value],
+  () => {
+    currentPage.value = 1;
+  },
+  { deep: true },
 );
+watch(totalPages, (val) => {
+  if (currentPage.value > val) currentPage.value = val || 1;
+});
 
-// Methods
-const handleSort = (key: string) => {
+const handleSort = (key) => {
   sortConfig.value = {
     key,
     direction:
@@ -887,7 +822,7 @@ const handleSort = (key: string) => {
   };
 };
 
-const getStatusClass = (status: string) => {
+const getStatusClass = (status) => {
   if (status === "Terpakai") return "bg-green-100 text-green-700";
   if (status === "booking") return "bg-blue-100 text-blue-700";
   return "bg-red-100 text-red-700";
