@@ -16,13 +16,13 @@
           <div class="relative flex items-center justify-center w-24 h-24">
 
             <div
-              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#175fa4] border-r-[#749fc8] animate-spin"
               style="animation-duration: 1.5s;">
             </div>
 
             <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
               <div class="plane-float">
-                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#175fa4] -rotate-45" />
               </div>
             </div>
 

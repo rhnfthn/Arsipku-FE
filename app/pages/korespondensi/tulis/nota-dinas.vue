@@ -1,14 +1,60 @@
 <template>
   <div class="relative">
 
-    <LoadingOverlay :loading="isLoadingData" :message="loadingMessage" />
+    <Teleport to="body">
+      <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
+
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          </div>
+        </div>
+
+        <div class="relative flex flex-col items-center gap-6 z-10">
+          <div class="relative flex items-center justify-center w-24 h-24">
+            <div
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              style="animation-duration: 1.5s;">
+            </div>
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+              <div class="plane-float">
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-gray-900 font-semibold text-lg">
+              {{ loadingMessage || 'Memproses Data' }}
+            </span>
+            <span class="text-sm text-gray-600">
+              Mohon tunggu sebentar
+            </span>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
-      <div class="flex-1 overflow-y-auto space-y-1">
+
+      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="space-y-6 animate-pulse">
+        <div class="space-y-2 pt-4">
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+           <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+        </div>
+      </div>
+
+      <div v-else class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
@@ -93,8 +139,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                                                  </div>`
+                                                                                                        ${i + 1}. ${s.labelJob || s.label}
+                                                                                                      </div>`
                               )
                               .join('')
                             : '................................................'
@@ -229,23 +275,19 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold">Kirim Dokumen</h3>
         </div>
       </template>
 
-      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Pilih metode pengiriman dokumen:
         </p>
 
-        <!-- Card utama -->
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
 
-          <!-- Opsi Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digital'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -259,7 +301,6 @@
                 Dokumen akan ditandatangani secara digital dan memiliki kekuatan legal.
               </span>
 
-              <!-- Info Signer - hanya muncul jika digital dipilih -->
               <div v-if="selectedSendType === 'digital'"
                 class="flex items-start mt-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                 <div class="flex-shrink-0">
@@ -281,7 +322,6 @@
             </div>
           </label>
 
-          <!-- Opsi Tanpa TTD -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'internal'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -297,7 +337,6 @@
             </div>
           </label>
 
-          <!-- Input Passphrase - muncul jika salah satu dipilih -->
           <UFormGroup label="Input Passphrase" v-if="selectedSendType">
             <UInput type="password" v-model="passphrase" size="lg" placeholder="Ketik Passphrase" class="w-full"
               autofocus />
@@ -305,10 +344,9 @@
         </div>
       </template>
 
-      <!-- Footer -->
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton label="Batal" color="secondary" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
           <UButton label="Kirim Dokumen" color="primary" :loading="isLoadingData" @click="handlePassphraseSubmit" />
         </div>
       </template>
