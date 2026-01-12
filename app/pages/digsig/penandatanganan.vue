@@ -97,12 +97,12 @@
         <table class="w-full text-left">
           <thead class="bg-primary">
             <tr class="text-gray-600 text-white text-sm">
-              <th class="p-4 font-semibold">Tanggal Dibuat</th>
-              <th class="p-4 font-semibold">No Dokumen</th>
-              <th class="p-4 font-semibold">Penandatangan</th>
-              <th class="p-4 font-semibold">Dokumen</th>
-              <th class="p-4 font-semibold">Status</th>
-              <th class="p-4 font-semibold text-center">Action</th>
+              <th class="px-4 py-3font-semibold">Tanggal Dibuat</th>
+              <th class="px-4 py-3 font-semibold">No Dokumen</th>
+              <th class="px-4 py-3 font-semibold">Penandatangan</th>
+              <th class="px-4 py-3 font-semibold">Dokumen</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold text-center">Action</th>
             </tr>
           </thead>
 
@@ -165,140 +165,146 @@
         <!------------------------->
         <!-- MODAL LIHAT DETAIL -->
         <!------------------------->
-        <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
-          <template #title>
-            <h2 class="text-xl font-semibold ml-5 mt-5 mb-4">
-              {{ detailDokumen.title }}
-            </h2>
-          </template>
+        <Teleport to="body">
+          <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
+            <template #title>
+              <h2 class="text-xl font-semibold ml-5 mt-5 mb-4">
+                {{ detailDokumen.title }}
+              </h2>
+            </template>
 
-          <!-- BODY -->
-          <div class="text-[15px] space-y-3">
-            <div class="flex">
-              <span class="w-40 text-gray-600">ID Dokumen</span>
-              <span>: {{ detailDokumen.idDokumen }}</span>
+            <!-- BODY -->
+            <div class="text-[15px] space-y-3">
+              <div class="flex">
+                <span class="w-40 text-gray-600">ID Dokumen</span>
+                <span>: {{ detailDokumen.idDokumen }}</span>
+              </div>
+
+              <div class="flex">
+                <span class="w-40 text-gray-600">No. Dokumen</span>
+                <span>: {{ detailDokumen.noDokumen }}</span>
+              </div>
+
+              <div class="flex">
+                <span class="w-40 text-gray-600">Tgl Dokumen</span>
+                <span>: {{ detailDokumen.tglDokumen }}</span>
+              </div>
+
+              <div class="flex">
+                <span class="w-40 text-gray-600">Jenis Naskah</span>
+                <span>: {{ detailDokumen.jenisNaskah }}</span>
+              </div>
+
+              <div class="flex mb-4">
+                <span class="w-40 text-gray-600">Klasifikasi</span>
+                <span>: {{ detailDokumen.klasifikasi }}</span>
+              </div>
+
+              <!-- TABEL PENANDATANGAN -->
+              <div
+                class="border border-gray-200 mb-5 rounded-xl overflow-hidden"
+              >
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-primary text-white text-left">
+                      <th class="p-3 w-12">N0</th>
+                      <th class="p-3">E-NIK</th>
+                      <th class="p-3">Nama</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3">Keterangan</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in detailDokumen.penandatangan"
+                      :key="index"
+                      class="shadow-sm"
+                    >
+                      <td class="p-3">{{ row.no }}</td>
+                      <td class="p-3">{{ row.nik }}</td>
+                      <td class="p-3">{{ row.nama }}</td>
+                      <td class="p-3">
+                        <span
+                          :class="
+                            row.status === 'Sudah TTD'
+                              ? 'text-green-600 font-medium'
+                              : 'text-red-600 font-medium'
+                          "
+                        >
+                          {{ row.status }}
+                        </span>
+                      </td>
+                      <td class="p-3">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-
-            <div class="flex">
-              <span class="w-40 text-gray-600">No. Dokumen</span>
-              <span>: {{ detailDokumen.noDokumen }}</span>
-            </div>
-
-            <div class="flex">
-              <span class="w-40 text-gray-600">Tgl Dokumen</span>
-              <span>: {{ detailDokumen.tglDokumen }}</span>
-            </div>
-
-            <div class="flex">
-              <span class="w-40 text-gray-600">Jenis Naskah</span>
-              <span>: {{ detailDokumen.jenisNaskah }}</span>
-            </div>
-
-            <div class="flex mb-4">
-              <span class="w-40 text-gray-600">Klasifikasi</span>
-              <span>: {{ detailDokumen.klasifikasi }}</span>
-            </div>
-
-            <!-- TABEL PENANDATANGAN -->
-            <div class="border border-gray-200 mb-5 rounded-xl overflow-hidden">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="bg-primary text-white text-left">
-                    <th class="p-3 w-12">N0</th>
-                    <th class="p-3">E-NIK</th>
-                    <th class="p-3">Nama</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3">Keterangan</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr
-                    v-for="(row, index) in detailDokumen.penandatangan"
-                    :key="index"
-                    class="shadow-sm"
-                  >
-                    <td class="p-3">{{ row.no }}</td>
-                    <td class="p-3">{{ row.nik }}</td>
-                    <td class="p-3">{{ row.nama }}</td>
-                    <td class="p-3">
-                      <span
-                        :class="
-                          row.status === 'Sudah TTD'
-                            ? 'text-green-600 font-medium'
-                            : 'text-red-600 font-medium'
-                        "
-                      >
-                        {{ row.status }}
-                      </span>
-                    </td>
-                    <td class="p-3">-</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </Modal>
+          </Modal>
+        </Teleport>
         <!------------------------->
         <!-- MODAL SIGNATURE -->
         <!------------------------->
-        <Modal v-model="openSign" :hideDefaultFooter="true" size="xl">
-          <!-- TITLE -->
-          <template #title>
-            <h2 class="text-lg font-semibold ml-5 mt-5 mb-3">
-              Input passphrase untuk proses signing
-            </h2>
-          </template>
+        <Teleport to="body">
+          <Modal v-model="openSign" :hideDefaultFooter="true" size="xl">
+            <!-- TITLE -->
+            <template #title>
+              <h2 class="text-lg font-semibold ml-5 mt-5 mb-3">
+                Input passphrase untuk proses signing
+              </h2>
+            </template>
 
-          <!-- BODY -->
-          <div class="px-5 pb-6 space-y-5 text-sm">
-            <!-- KARTU PENANDATANGAN -->
-            <div
-              class="border rounded-xl p-4 flex gap-4 items-start bg-white shadow-sm"
-            >
+            <!-- BODY -->
+            <div class="px-5 pb-6 space-y-5 text-sm">
+              <!-- KARTU PENANDATANGAN -->
               <div
-                class="w-12 h-9 rounded-full bg-blue-300 flex items-center justify-center"
+                class="border rounded-xl p-4 flex gap-4 items-start bg-white shadow-sm"
               >
-                <User class="w-6 h-6 text-white" />
+                <div
+                  class="w-12 h-9 rounded-full bg-blue-300 flex items-center justify-center"
+                >
+                  <User class="w-6 h-6 text-white" />
+                </div>
+
+                <div>
+                  <p class="text-gray-500 text-xs mb-1">
+                    Ditandatangani secara digital oleh
+                  </p>
+                  <p class="font-medium leading-5">{{ signer.jabatan }}</p>
+                  <p class="font-semibold">{{ signer.nama }}</p>
+                </div>
               </div>
 
+              <!-- FILE TO SIGN -->
               <div>
-                <p class="text-gray-500 text-xs mb-1">
-                  Ditandatangani secara digital oleh
-                </p>
-                <p class="font-medium leading-5">{{ signer.jabatan }}</p>
-                <p class="font-semibold">{{ signer.nama }}</p>
+                <label class="block text-gray-700 mb-1">File to sign</label>
+                <input
+                  type="file"
+                  class="w-full border rounded-lg px-3 py-2 focus:outline-primary"
+                />
               </div>
-            </div>
 
-            <!-- FILE TO SIGN -->
-            <div>
-              <label class="block text-gray-700 mb-1">File to sign</label>
-              <input
-                type="file"
-                class="w-full border rounded-lg px-3 py-2 focus:outline-primary"
-              />
-            </div>
+              <!-- PASSPHRASE -->
+              <div>
+                <label class="block text-gray-700 mb-1">Passphrase</label>
+                <input
+                  type="password"
+                  class="w-full border rounded-lg px-3 py-2 focus:outline-primary"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <!-- PASSPHRASE -->
-            <div>
-              <label class="block text-gray-700 mb-1">Passphrase</label>
-              <input
-                type="password"
-                class="w-full border rounded-lg px-3 py-2 focus:outline-primary"
-                placeholder="••••••••"
-              />
+              <!-- TOMBOL PROSES -->
+              <button
+                class="w-full bg-gray-300 text-gray-600 cursor-not-allowed rounded-lg py-2 font-semibold"
+                disabled
+              >
+                Proses
+              </button>
             </div>
-
-            <!-- TOMBOL PROSES -->
-            <button
-              class="w-full bg-gray-300 text-gray-600 cursor-not-allowed rounded-lg py-2 font-semibold"
-              disabled
-            >
-              Proses
-            </button>
-          </div>
-        </Modal>
+          </Modal>
+        </Teleport>
       </div>
     </div>
     <ConfirmPopup

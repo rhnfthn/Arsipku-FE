@@ -2,14 +2,35 @@
   <div class="relative">
 
     <Teleport to="body">
-      <div v-if="isLoadingData"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 backdrop-blur-[2px] transition-all">
-        <div
-          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-            {{ loadingMessage || 'Mohon Tunggu...' }}
-          </span>
+      <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
+
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          </div>
+        </div>
+
+        <div class="relative flex flex-col items-center gap-6 z-10">
+          <div class="relative flex items-center justify-center w-24 h-24">
+            <div
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              style="animation-duration: 1.5s;">
+            </div>
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+              <div class="plane-float">
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-gray-900 font-semibold text-lg">
+              {{ loadingMessage || 'Memproses Data' }}
+            </span>
+            <span class="text-sm text-gray-600">
+              Mohon tunggu sebentar
+            </span>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -19,7 +40,21 @@
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
-      <div class="flex-1 overflow-y-auto space-y-1">
+
+      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="space-y-6 animate-pulse">
+        <div class="space-y-2 pt-4">
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+        </div>
+      </div>
+
+      <div v-else class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
@@ -104,8 +139,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                                                  </div>`
+                                                                                                        ${i + 1}. ${s.labelJob || s.label}
+                                                                                                      </div>`
                               )
                               .join('')
                             : '................................................'
@@ -240,54 +275,80 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Slot #header untuk judul -->
       <template #header>
-        <h3 class="text-lg font-bold">Digital Signature</h3>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-lg font-semibold">Metode Tanda Tangan</h3>
+        </div>
       </template>
 
-      <!-- Slot #body untuk konten utama -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Masukkan Passphrase untuk menandatangani dokumen ini secara digital.
+          Pilih jenis tanda tangan untuk dokumen ini:
         </p>
 
-        <form @submit.prevent="handlePassphraseSubmit">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
 
-          <div
-            class="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mb-4">
-            <div class="flex-shrink-0">
-              <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
-                <UIcon name="i-heroicons-user" class="w-6 h-6" />
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col flex-1">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Digital Signature (BSrE)
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen ditandatangani secara elektronik resmi (TTE).
+              </span>
+
+              <div v-if="selectedSendType === 'digsig'"
+                class="flex items-start mt-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                <div class="flex-shrink-0">
+                  <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
+                    <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div class="flex flex-col">
+                  <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+                  <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                    {{ signerInfo.role }}
+                  </span>
+                  <span class="text-base font-bold text-gray-900 dark:text-white">
+                    {{ signerInfo.name }}
+                  </span>
+                </div>
               </div>
             </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
 
             <div class="flex flex-col">
-              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
-              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                {{ signerInfo.role }}
+              <span class="font-medium text-gray-900 dark:text-white">
+                Kirim tanpa tanda tangan
               </span>
-              <span class="text-base font-bold text-gray-900 dark:text-white">
-                {{ signerInfo.name }}
-              </span>
+              <!-- <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen hanya menggunakan validasi QR Code internal.
+              </span> -->
             </div>
-          </div>
+          </label>
 
-          <form @submit.prevent="handlePassphraseSubmit">
-            <UFormGroup label="Passphrase" class="mb-2">
-              <UInput type="password" v-model="passphrase" placeholder="" size="lg" :ui="{ wrapper: 'relative' }"
-                class="w-full" autofocus />
-            </UFormGroup>
-          </form>
-
-        </form>
+          <UFormGroup label="Input Passphrase" required v-if="selectedSendType === 'digsig'">
+            <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan Passphrase TTE Anda"
+              class="w-full" autofocus />
+          </UFormGroup>
+        </div>
       </template>
 
-      <!-- Slot #footer untuk tombol aksi -->
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Tanda Tangan & Kirim" color="primary" :loading="isLoadingData"
-            icon="i-heroicons-pencil-square" @click="handlePassphraseSubmit" />
+          <UButton label="Lanjut Kirim" color="primary" icon="i-heroicons-paper-airplane" :loading="isLoadingData"
+            @click="handlePassphraseSubmit" />
         </div>
       </template>
     </UModal>
@@ -392,8 +453,18 @@ const alertState = useAlertState();
 
 // [NEW] Passphrase State
 const isPassphraseModalOpen = ref(false)
+
+// Tambahkan di bagian data/ref
+const selectedSendType = ref('') // default kosong (tidak ada yang dipilih)
 const passphrase = ref('')
-const isLoadingData2 = ref(false)
+
+// Reset saat modal ditutup
+// watch(() => isPassphraseModalOpen.value, (newVal) => {
+//   if (!newVal) {
+//     selectedSendType.value = ''
+//     passphrase.value = ''
+//   }
+// })
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
@@ -586,73 +657,102 @@ const confirmSaveDraft = async () => {
     Alert.close();
   }
 };
-
 const confirmKirimDokumen = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Kirim Dokumen?',
-    'Dokumen yang sudah dikirim tidak dapat dibatalkan.',
-    'Ya, Lanjutkan', // Text diubah sedikit agar user tahu ada step berikutnya
-    'Batal',
-    false
-  );
+  // Validasi Payload Dasar (sebelum masuk modal)
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
 
-  if (!isConfirmed) return;
+  // ✅ RESET DISINI (Bukan di watcher)
+  passphrase.value = "";
+  selectedSendType.value = "digsig"; // Set default pilihan
 
-  // [MODIFIED] Alih-alih langsung kirim, buka modal passphrase
-  Alert.close();
-  passphrase.value = ""; // Reset passphrase
+  // Buka Modal
   isPassphraseModalOpen.value = true;
 };
 
-// [NEW] Handler saat user submit passphrase di modal
+// 2. Tombol "Lanjut Kirim" di dalam Modal
 const handlePassphraseSubmit = async () => {
-  if (!passphrase.value) {
-    toast.add({
-      title: 'Validasi',
-      description: 'Harap masukkan passphrase Anda',
-      color: 'warning'
-    });
+  // 1. Validasi Tipe Tanda Tangan
+  if (!selectedSendType.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
     return;
   }
 
-  // Tutup modal dan panggil fungsi kirim utama
+  // 2. Validasi Passphrase (HANYA jika DIGSIG)
+  if (selectedSendType.value === 'digsig' && !passphrase.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
+    return;
+  }
+
+  // Tutup modal
   isPassphraseModalOpen.value = false;
-  await handleKirimDokumen();
+
+  // Sesuaikan pesan konfirmasi
+  const confirmMessage = selectedSendType.value === 'digsig'
+    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
+    : 'Dokumen akan dikirim dengan QR Code Internal. Lanjutkan?';
+
+  const isConfirmed = await Alert.confirm(
+    'Konfirmasi Akhir',
+    confirmMessage,
+    'Ya, Kirim Sekarang',
+    'Periksa Lagi',
+    false
+  );
+
+  if (isConfirmed) {
+    await handleKirimDokumen();
+  } else {
+    // Opsional: Buka modal lagi jika batal
+    // isPassphraseModalOpen.value = true;
+  }
 };
 
+// 3. Proses Kirim ke API
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
 
   try {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. Generate PDF terbaru dulu untuk memastikan konten sinkron
+    // Generate PDF Final
     const formDataPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(formDataPreview);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
-    // 2. Kirim payload + PDF Binary
+    // Buat FormData Utama
     const formData = createFormData(payload, true);
 
-    // [MODIFIED] Append passphrase ke FormData agar backend bisa proses digsig
-    formData.append('passphrase', passphrase.value);
+    // ✅ Debugging (Bisa dihapus nanti)
+    console.log("Mengirim Sign Option:", selectedSendType.value);
+    console.log("Mengirim Passphrase:", passphrase.value ? "Terisi" : "Kosong");
 
+    // Append data modal
+    formData.append('passphrase', passphrase.value);
+    formData.append('sign_option', selectedSendType.value);
+
+    // Panggil API
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
       toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
+      Alert.close();
       router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     console.error("Gagal mengirim:", e);
-    // Jika gagal, mungkin perlu buka modal lagi atau reset passphrase?
-    // Di sini kita biarkan user coba lagi tombol "Kirim" -> Modal
+    let errMsg = e.response?.data?.message || 'Gagal mengirim dokumen';
+
+    // Jika error karena passphrase salah
+    if (errMsg.toLowerCase().includes('passphrase')) {
+      isPassphraseModalOpen.value = true; // Buka modal lagi otomatis
+    }
+
     toast.add({
       title: 'Gagal Mengirim',
-      description: e.response?.data?.message || 'Pastikan semua input & passphrase sudah benar',
+      description: errMsg,
       color: 'error'
     });
   } finally {

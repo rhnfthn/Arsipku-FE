@@ -2,14 +2,35 @@
   <div class="relative">
 
     <Teleport to="body">
-      <div v-if="isLoadingData"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/20 backdrop-blur-[2px] transition-all">
-        <div
-          class="flex flex-col items-center gap-3 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700">
-          <UIcon name="i-lucide-loader-2" class="w-10 h-10 animate-spin text-primary" />
-          <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">
-            {{ loadingMessage || 'Mohon Tunggu...' }}
-          </span>
+      <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
+
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          </div>
+        </div>
+
+        <div class="relative flex flex-col items-center gap-6 z-10">
+          <div class="relative flex items-center justify-center w-24 h-24">
+            <div
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              style="animation-duration: 1.5s;">
+            </div>
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+              <div class="plane-float">
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-gray-900 font-semibold text-lg">
+              {{ loadingMessage || 'Memproses Data' }}
+            </span>
+            <span class="text-sm text-gray-600">
+              Mohon tunggu sebentar
+            </span>
+          </div>
         </div>
       </div>
     </Teleport>

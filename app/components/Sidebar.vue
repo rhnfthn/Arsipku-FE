@@ -436,7 +436,6 @@ const adminMenuAdministrasi = computed(() => {
       label: "Penomoran",
       icon: "i-lucide-hash",
       hasNotification: false,
-      // Updated Paths
       children: [
         {
           label: "Usulan",
@@ -454,7 +453,7 @@ const adminMenuAdministrasi = computed(() => {
               ? adminCounts.value.menunggu_verifikasi
               : null,
         },
-        { label: "Penomoran", to: "/penomoran" },
+        { label: "Penomoran", to: "/penomoran/nomor" },
       ],
     },
 

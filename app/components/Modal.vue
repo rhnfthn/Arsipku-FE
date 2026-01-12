@@ -39,18 +39,18 @@
         <!-- DEFAULT FOOTER -->
         <div
           v-if="!hideDefaultFooter"
-          class="flex justify-end border-t border-gray-300 mt-7 mb-1 gap-3 pr-5"
+          class="flex justify-between border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2"
         >
           <button
             @click="$emit('update:modelValue', false)"
-            class="px-5 py-2 mt-2 text-xs border border-primary-500 hover:bg-primary-100 text-primary rounded-md"
+            class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md"
           >
             Batal
           </button>
 
           <button
             @click="$emit('save')"
-            class="px-5 py-2 mt-2 text-xs bg-primary hover:bg-primary-800 text-white rounded-md"
+            class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md"
           >
             Simpan
           </button>

@@ -12,7 +12,7 @@
       <button
         @click="openAdd"
         :disabled="isLoadingCreate"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Plus class="w-4 h-4" />
         {{ isLoadingCreate ? "Menyimpan..." : "Tambah Template" }}

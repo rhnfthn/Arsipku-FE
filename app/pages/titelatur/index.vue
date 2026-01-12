@@ -86,7 +86,27 @@ const paginatedItems = computed(() => {
 });
 
 watch(rowsPerPage, () => (currentPage.value = 1));
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
 
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 // ================================
 // MODAL: EDIT
 // ================================
@@ -202,9 +222,9 @@ const deleteNow = async () => {
 </script>
 
 <template>
-  <div class="w-full min-w-0 min-h-screen">
-    <!-- TITLE -->
-    <div class="mb-5 flex justify-between items-start">
+  <div class="space-y-6">
+    <!-- HEADER -->
+    <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Titelatur Inggris
@@ -213,14 +233,13 @@ const deleteNow = async () => {
       </div>
 
       <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-xs"
+        @click="openAdd = true"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Titelatur
       </button>
     </div>
-
     <!-- LOADING STATE -->
     <div v-if="loading" class="text-center py-8">
       <div
@@ -330,40 +349,121 @@ const deleteNow = async () => {
       </table>
 
       <!-- PAGINATION -->
-      <div class="flex justify-between p-4 text-xs">
-        <div>
+      <div
+        v-if="filteredItems.length > 0"
+        class="flex items-center justify-between px-4 py-4"
+      >
+        <div class="text-xs text-gray-600">
           Menampilkan {{ paginatedItems.length }} dari {{ totalItems }} data
         </div>
 
-        <div class="flex gap-1">
+        <div class="flex items-center gap-2">
+          <!-- BACK -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
-            class="px-3 py-1 rounded-md hover:bg-gray-100 disabled:opacity-30"
-          >
-            &lt;
-          </button>
-
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            @click="currentPage = page"
             :class="[
-              'px-3 py-1 rounded-md',
-              currentPage === page
-                ? 'bg-primary text-white'
-                : 'hover:bg-gray-200',
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
           >
-            {{ page }}
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
           </button>
 
+          <!-- PAGE NUMBERS -->
+          <div class="flex items-center gap-1">
+            <!-- FIRST -->
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <!-- DOTS LEFT -->
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- WINDOW -->
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- DOTS RIGHT -->
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- LAST -->
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- NEXT -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1 rounded-md hover:bg-gray-100 disabled:opacity-30"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
           >
-            &gt;
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -448,10 +548,12 @@ const deleteNow = async () => {
     <!-- ========================= -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
-      title="Hapus Titelatur?"
-      description="Data yang dihapus tidak dapat dikembalikan."
+      type="danger"
+      title="Hapus Data"
+      message="Yakin ingin menghapus data ini?"
       confirmText="Hapus"
       cancelText="Batal"
+      cancelColor="primary"
       @confirm="deleteNow"
     />
   </div>

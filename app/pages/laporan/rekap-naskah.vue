@@ -1,9 +1,10 @@
 <template>
-  <div class="mb-3 flex flex-wrap justify-between">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-    >
-      <PageHeader title="Rekap Naskah Dinas" :items="items" />
+  <div class="flex flex-wrap justify-between">
+    <div class="items-center justify-between w-full mb-5">
+      <Heading variant="heading6b" class="text-mobile-md">
+        Rekap Naskah Dinas
+      </Heading>
+      <PageHeader :items="breadcrumbs" />
     </div>
   </div>
 
@@ -156,18 +157,18 @@
 
           <div
             v-if="openDropdown === 'status'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+            class="absolute z-[999] p-2 bg-white text-sm mt-1 bg-whiterounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-3">
               <button
                 v-for="status in statusOptions"
                 :key="status.value"
                 @click="toggleStatus(status.value)"
-                class="px-3 py-1 rounded-full text-xs transition-colors"
+                class="text-left text-sm transition-colors"
                 :class="
                   selectedStatuses.includes(status.value)
-                    ? 'bg-primary-400 text-white'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-primary-400 w-full text-white'
+                    : 'hover:bg-gray-100'
                 "
               >
                 {{ status.label }}
@@ -180,7 +181,7 @@
       <!-- EXPORT -->
       <button
         @click="exportExcel"
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 mr-4 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
       >
         <FileDown class="w-4 h-4" />
         Export
@@ -191,7 +192,7 @@
         <thead class="sticky top-0 z-30 bg-primary-400">
           <tr class="bg-primary-400 text-white">
             <th
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm w-[350px] text-start"
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm w-[350px] text-start"
             >
               Naskah
             </th>
@@ -199,7 +200,7 @@
               <th
                 v-for="bulan in monthOptions"
                 :key="bulan.value"
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
               >
                 {{ bulan.label }}
               </th>
@@ -207,16 +208,21 @@
 
             <template v-else>
               <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
               >
                 {{ selectedMonthLabel }}
               </th>
             </template>
 
             <th
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-medium text-sm"
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
             >
               Jumlah
+            </th>
+            <th
+              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+            >
+              Status
             </th>
           </tr>
         </thead>
@@ -252,6 +258,9 @@
             <td class="px-4 py-3 font-bold text-sm text-gray-900">
               {{ row.jumlah }}
             </td>
+            <!-- <td class="px-4 py-3 font-bold text-sm text-gray-900">
+              {{ status.label }}
+            </td> -->
           </tr>
         </tbody>
       </table>
@@ -264,16 +273,25 @@ import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
 import { useToast } from "#imports";
 
-const items = [
-  {
-    label: "Home",
-    to: "/admin/dashboard",
-  },
-  {
-    label: "Rekap Naskah",
-    to: "/admin/laporan/rekap-naskah",
-  },
-] satisfies BreadcrumbItem[];
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
+];
+const getStatusClass = (status: string) => {
+  if (status === "Terpakai") return "bg-green-100 text-green-700";
+  if (status === "booking") return "bg-blue-100 text-blue-700";
+  return "bg-red-100 text-red-700";
+};
+// const items = [
+//   {
+//     label: "Home",
+//     to: "/admin/dashboard",
+//   },
+//   {
+//     label: "Rekap Naskah",
+//     to: "/admin/laporan/rekap-naskah",
+//   },
+// ] satisfies BreadcrumbItem[];
 
 const selectedYear = ref(2025);
 const selectedType = ref("");
@@ -352,7 +370,7 @@ const data = ref([
     id: 2,
     naskah: "Addendum Surat Perintah Kerja (SPK) Pengadaan",
     lokasi: "cabang bali",
-    status: "tidak terpakai",
+    status: "Hangus",
     years: [
       {
         tahun: 2025,
@@ -579,7 +597,7 @@ const monthOptions = [
 
 const statusOptions = [
   { label: "Terpakai", value: "terpakai" },
-  { label: "Tidak Terpakai / Hangus", value: "tidak terpakai" },
+  { label: "Hangus", value: "tidak terpakai" },
   { label: "Booking", value: "booking" },
 ];
 
