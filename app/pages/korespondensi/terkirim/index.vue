@@ -116,16 +116,17 @@ const getCategoryStyle = (cat: string) => {
   const c = (cat || '').toUpperCase();
   if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
   if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
   if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
-  if (['KAJIAN'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
+  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
   return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
 };
 
 // --- HELPER: LABEL MAPPING ---
 const getCategoryLabel = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['SDI', 'INTERNAL', 'KA'].includes(c)) return 'Surat Dinas Internal';
+  if (['KA'].includes(c)) return 'Kajian';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'Surat Dinas Internal';
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'Surat Dinas Eksternal';
   if (['ND', 'NOTA DINAS'].includes(c)) return 'Nota Dinas';
   if (['DI', 'DISPOSISI'].includes(c)) return 'Disposisi';
@@ -156,7 +157,19 @@ const loadData = async () => {
     }
 
     const dateObj = new Date(item.created_at || item.tanggal);
-    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' ' + dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const wibDate = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+    const dateStr =
+      wibDate.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }) +
+      ', ' +
+      wibDate.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
 
     return {
       id: item.id_naskah,

@@ -256,7 +256,7 @@ const jenisnaskahList = [
 ];
 
 const sifatnaskahList = [
-  { id: 1, label: "Biasa/Terbuka", value: "Biasa/Terbuk" },
+  { id: 1, label: "Biasa/Terbuka", value: "Biasa/Terbuka" },
   { id: 2, label: "Terbatas", value: "Terbatas" },
   { id: 3, label: "Rahasia", value: "Rahasia" },
   { id: 4, label: "Sangat Rahasia", value: "Sangat Rahasia" },

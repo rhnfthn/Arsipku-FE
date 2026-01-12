@@ -323,8 +323,8 @@ const getPayload = (): KajianPayload => {
 
   return {
     id_naskah: editDraftId.value || null,
-    pengirim_position_id: Number(user.value?.position),
-    penerima_position_ids: selectedPenerima.value.map(i => Number(i.value)),
+    pengirim: Number(user.value?.position),
+    penerima: selectedPenerima.value.map(i => Number(i.value)),
     // Tembusan removed
     tanggal: tglDb,
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",

@@ -43,14 +43,14 @@
 
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="space-y-6 animate-pulse">
         <div class="space-y-2 pt-4">
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-           <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+          <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
         </div>
       </div>
 
@@ -277,31 +277,31 @@
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>
         <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold">Kirim Dokumen</h3>
+          <h3 class="text-lg font-semibold">Metode Tanda Tangan</h3>
         </div>
       </template>
 
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Pilih metode pengiriman dokumen:
+          Pilih jenis tanda tangan untuk dokumen ini:
         </p>
 
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
 
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digital'
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="digital" v-model="selectedSendType" class="mt-1" />
+            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
 
             <div class="flex flex-col flex-1">
               <span class="font-medium text-gray-900 dark:text-white">
-                Kirim dengan Digital Signature
+                Digital Signature (BSrE)
               </span>
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen akan ditandatangani secara digital dan memiliki kekuatan legal.
+                Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
-              <div v-if="selectedSendType === 'digital'"
+              <div v-if="selectedSendType === 'digsig'"
                 class="flex items-start mt-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                 <div class="flex-shrink-0">
                   <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
@@ -322,24 +322,24 @@
             </div>
           </label>
 
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'internal'
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="internal" v-model="selectedSendType" class="mt-1" />
+            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
 
             <div class="flex flex-col">
               <span class="font-medium text-gray-900 dark:text-white">
-                Kirim dengan Tanda Tangan Internal
+                Kirim tanpa tanda tangan
               </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen dikirim dengan tanda tangan digital internal.
-              </span>
+              <!-- <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen hanya menggunakan validasi QR Code internal.
+              </span> -->
             </div>
           </label>
 
-          <UFormGroup label="Input Passphrase" v-if="selectedSendType">
-            <UInput type="password" v-model="passphrase" size="lg" placeholder="Ketik Passphrase" class="w-full"
-              autofocus />
+          <UFormGroup label="Input Passphrase" required v-if="selectedSendType === 'digsig'">
+            <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan Passphrase TTE Anda"
+              class="w-full" autofocus />
           </UFormGroup>
         </div>
       </template>
@@ -347,7 +347,8 @@
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Kirim Dokumen" color="primary" :loading="isLoadingData" @click="handlePassphraseSubmit" />
+          <UButton label="Lanjut Kirim" color="primary" icon="i-heroicons-paper-airplane" :loading="isLoadingData"
+            @click="handlePassphraseSubmit" />
         </div>
       </template>
     </UModal>
@@ -458,12 +459,12 @@ const selectedSendType = ref('') // default kosong (tidak ada yang dipilih)
 const passphrase = ref('')
 
 // Reset saat modal ditutup
-watch(() => isPassphraseModalOpen.value, (newVal) => {
-  if (!newVal) {
-    selectedSendType.value = ''
-    passphrase.value = ''
-  }
-})
+// watch(() => isPassphraseModalOpen.value, (newVal) => {
+//   if (!newVal) {
+//     selectedSendType.value = ''
+//     passphrase.value = ''
+//   }
+// })
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
@@ -656,73 +657,102 @@ const confirmSaveDraft = async () => {
     Alert.close();
   }
 };
-
 const confirmKirimDokumen = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Kirim Dokumen?',
-    'Dokumen yang sudah dikirim tidak dapat dibatalkan.',
-    'Ya, Lanjutkan', // Text diubah sedikit agar user tahu ada step berikutnya
-    'Batal',
-    false
-  );
+  // Validasi Payload Dasar (sebelum masuk modal)
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
 
-  if (!isConfirmed) return;
+  // ✅ RESET DISINI (Bukan di watcher)
+  passphrase.value = "";
+  selectedSendType.value = "digsig"; // Set default pilihan
 
-  // [MODIFIED] Alih-alih langsung kirim, buka modal passphrase
-  Alert.close();
-  passphrase.value = ""; // Reset passphrase
+  // Buka Modal
   isPassphraseModalOpen.value = true;
 };
 
-// [NEW] Handler saat user submit passphrase di modal
+// 2. Tombol "Lanjut Kirim" di dalam Modal
 const handlePassphraseSubmit = async () => {
-  if (!passphrase.value) {
-    toast.add({
-      title: 'Validasi',
-      description: 'Harap masukkan passphrase Anda',
-      color: 'warning'
-    });
+  // 1. Validasi Tipe Tanda Tangan
+  if (!selectedSendType.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
     return;
   }
 
-  // Tutup modal dan panggil fungsi kirim utama
+  // 2. Validasi Passphrase (HANYA jika DIGSIG)
+  if (selectedSendType.value === 'digsig' && !passphrase.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
+    return;
+  }
+
+  // Tutup modal
   isPassphraseModalOpen.value = false;
-  await handleKirimDokumen();
+
+  // Sesuaikan pesan konfirmasi
+  const confirmMessage = selectedSendType.value === 'digsig'
+    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
+    : 'Dokumen akan dikirim dengan QR Code Internal. Lanjutkan?';
+
+  const isConfirmed = await Alert.confirm(
+    'Konfirmasi Akhir',
+    confirmMessage,
+    'Ya, Kirim Sekarang',
+    'Periksa Lagi',
+    false
+  );
+
+  if (isConfirmed) {
+    await handleKirimDokumen();
+  } else {
+    // Opsional: Buka modal lagi jika batal
+    // isPassphraseModalOpen.value = true;
+  }
 };
 
+// 3. Proses Kirim ke API
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
 
   try {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. Generate PDF terbaru dulu untuk memastikan konten sinkron
+    // Generate PDF Final
     const formDataPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(formDataPreview);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
-    // 2. Kirim payload + PDF Binary
+    // Buat FormData Utama
     const formData = createFormData(payload, true);
 
-    // [MODIFIED] Append passphrase ke FormData agar backend bisa proses digsig
-    formData.append('passphrase', passphrase.value);
+    // ✅ Debugging (Bisa dihapus nanti)
+    console.log("Mengirim Sign Option:", selectedSendType.value);
+    console.log("Mengirim Passphrase:", passphrase.value ? "Terisi" : "Kosong");
 
+    // Append data modal
+    formData.append('passphrase', passphrase.value);
+    formData.append('sign_option', selectedSendType.value);
+
+    // Panggil API
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
       toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
+      Alert.close();
       router.push("/korespondensi/terkirim");
     }
   } catch (e: any) {
     console.error("Gagal mengirim:", e);
-    // Jika gagal, mungkin perlu buka modal lagi atau reset passphrase?
-    // Di sini kita biarkan user coba lagi tombol "Kirim" -> Modal
+    let errMsg = e.response?.data?.message || 'Gagal mengirim dokumen';
+
+    // Jika error karena passphrase salah
+    if (errMsg.toLowerCase().includes('passphrase')) {
+      isPassphraseModalOpen.value = true; // Buka modal lagi otomatis
+    }
+
     toast.add({
       title: 'Gagal Mengirim',
-      description: e.response?.data?.message || 'Pastikan semua input & passphrase sudah benar',
+      description: errMsg,
       color: 'error'
     });
   } finally {
