@@ -13,7 +13,7 @@
     ]"
   >
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
+      class="w-[72px] flex flex-col items-center py-4 bg-blue-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
     >
       <button
         @click="handleMenuClick"
@@ -105,7 +105,7 @@
       </div>
 
       <div
-        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2"
+        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2 pb-10"
       >
         <SidebarItem
           v-for="(item, index) in currentAppData.menus"
@@ -113,13 +113,153 @@
           :item="item"
           :collapsed="false"
         />
+
+        <div v-if="activeApp.includes('utama')" class="mt-6 mb-4">
+          <div class="flex items-center justify-between px-7 mb-2 group">
+            <span class="text-[14px] font-medium text-gray-500 dark:text-gray-400">Label</span>
+            <button
+              @click="openCreateLabelModal"
+              class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+              title="Tambah Label Baru"
+            >
+              <UIcon name="i-heroicons-plus" class="w-4 h-4" />
+            </button>
+          </div>
+
+          <div class="space-y-0.5">
+             <div
+              v-for="label in dummyLabels"
+              :key="label.id"
+              class="group relative flex items-center gap-3 px-4 py-2 mx-3 rounded-full hover:bg-gray-200/60 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+            >
+              <UIcon
+                name="i-heroicons-tag"
+                class="w-5 h-5 text-gray-500 dark:text-gray-400"
+              />
+              <span class="flex-1 text-[14px] text-gray-700 dark:text-gray-300 truncate leading-5">
+                {{ label.name }}
+              </span>
+
+              <div class="hidden group-hover:flex absolute right-1 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-2xl px-1 gap-0.5 z-10">
+                 <button
+                  @click.stop="openEditLabelModal(label)"
+                  class="p-1 rounded hover:text-primary-500 text-primary-300"
+                 >
+                   <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
+                 </button>
+                 <button
+                  @click.stop="openDeleteConfirm(label)"
+                  class="p-1 rounded hover:text-error-500 text-error-300"
+                 >
+                   <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </aside>
+
+  <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+          {{ isEditing ? 'Edit Label' : 'Label baru' }}
+        </h3>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Masukkan nama label {{ isEditing ? '' : 'baru' }}:
+          </label>
+          <input
+            v-model="labelForm.name"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white"
+            placeholder="Contoh: Penting"
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+           <input
+             v-model="labelForm.isNested"
+             id="check-nest"
+             type="checkbox"
+             class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+           />
+           <label for="check-nest" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+             Pilih label parent:
+           </label>
+        </div>
+
+        <div>
+          <select
+            v-model="labelForm.parentId"
+            :disabled="!labelForm.isNested"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400"
+          >
+            <option value="">Induk</option>
+            <option v-for="l in availableParents" :key="l.id" :value="l.id">
+              {{ l.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3">
+        <button
+          @click="closeLabelModal"
+          class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors"
+        >
+          Batal
+        </button>
+        <button
+          @click="saveLabel"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-400 hover:bg-primary-500 rounded-md shadow-sm transition-colors"
+          :disabled="!labelForm.name"
+        >
+          {{ isEditing ? 'Simpan' : 'Buat' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showDeleteModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="showDeleteModal = false"></div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative z-10 p-6">
+      <div class="text-center">
+        <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Hapus Label?</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Apakah Anda yakin ingin menghapus label "<strong>{{ labelToDelete?.name }}</strong>"? Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button
+            @click="showDeleteModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+          >
+            Batal
+          </button>
+          <button
+            @click="confirmDelete"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from "vue";
 import { useRoute } from "vue-router";
 
 import { useAuth } from "~/composables/useAuth";
@@ -620,6 +760,103 @@ const handleMenuClick = () => {
 
 const closeMobile = () => (isMobileOpen.value = false);
 const openMobile = () => (isMobileOpen.value = true);
+
+// ==========================================
+//        LOGIC LABEL MANAGEMENT (NEW)
+// ==========================================
+
+// Dummy Data Label
+const dummyLabels = ref([
+  { id: 1, name: "Penting sih", parentId: null },
+  { id: 2, name: "Iseng", parentId: null },
+]);
+
+const showLabelModal = ref(false);
+const showDeleteModal = ref(false);
+const isEditing = ref(false);
+const labelToDelete = ref(null);
+
+const labelForm = reactive({
+  id: null,
+  name: "",
+  isNested: false,
+  parentId: ""
+});
+
+// Filter parent agar tidak memilih diri sendiri saat edit
+const availableParents = computed(() => {
+  if (!isEditing.value) return dummyLabels.value;
+  return dummyLabels.value.filter(l => l.id !== labelForm.id);
+});
+
+// Open Create Modal
+const openCreateLabelModal = () => {
+  isEditing.value = false;
+  labelForm.id = null;
+  labelForm.name = "";
+  labelForm.isNested = false;
+  labelForm.parentId = "";
+  showLabelModal.value = true;
+};
+
+// Open Edit Modal
+const openEditLabelModal = (label) => {
+  isEditing.value = true;
+  labelForm.id = label.id;
+  labelForm.name = label.name;
+  labelForm.isNested = !!label.parentId;
+  labelForm.parentId = label.parentId || "";
+  showLabelModal.value = true;
+};
+
+// Close Modal
+const closeLabelModal = () => {
+  showLabelModal.value = false;
+};
+
+// Save Label (Add/Edit)
+const saveLabel = () => {
+  if (!labelForm.name) return;
+
+  const parentId = labelForm.isNested && labelForm.parentId ? labelForm.parentId : null;
+
+  if (isEditing.value) {
+    // Logic Update API Here
+    const index = dummyLabels.value.findIndex(l => l.id === labelForm.id);
+    if (index !== -1) {
+      dummyLabels.value[index] = {
+        ...dummyLabels.value[index],
+        name: labelForm.name,
+        parentId
+      };
+    }
+  } else {
+    // Logic Create API Here
+    const newId = Date.now(); // Mock ID
+    dummyLabels.value.push({
+      id: newId,
+      name: labelForm.name,
+      parentId
+    });
+  }
+  closeLabelModal();
+};
+
+// Open Delete Confirm
+const openDeleteConfirm = (label) => {
+  labelToDelete.value = label;
+  showDeleteModal.value = true;
+};
+
+// Confirm Delete
+const confirmDelete = () => {
+  if (labelToDelete.value) {
+    // Logic Delete API Here
+    dummyLabels.value = dummyLabels.value.filter(l => l.id !== labelToDelete.value.id);
+    labelToDelete.value = null;
+    showDeleteModal.value = false;
+  }
+};
 
 onUnmounted(() => {
   window.removeEventListener("resize", checkScreenSize);
