@@ -1,16 +1,18 @@
 module.exports = {
-  apps: [{
-    name: 'arsipku-fe',
-    script: 'npm',
-    args: 'run dev',
-    cwd: '/var/www/ArsipKu',
-    env: {
-      PORT: 3012,
-      HOST: '0.0.0.0',
-      NODE_ENV: 'development'
-    },
-    watch: false,
-    autorestart: true,
-    max_memory_restart: '500M'
-  }]
+  apps: [
+    {
+      name: 'arsipku-frontend',
+      script: 'npm',
+      args: 'run start',
+      instances: 1,           // fork mode cukup untuk QA
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '500M',
+      env: {
+        PORT: 3012,
+        NODE_ENV: 'qa'
+      }
+    }
+  ]
 }
