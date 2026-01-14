@@ -89,7 +89,7 @@
             @click="toggle('year')"
             class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
           >
-            <span>{{ selectedYear }}</span>
+            <span>{{ selectedYear || "Semua Tahun" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
           </button>
 
@@ -100,7 +100,10 @@
             <button
               v-for="tahun in yearOptions"
               :key="tahun"
-              @click="selectedYear = tahun"
+              @click="
+                selectedYear = tahun;
+                openDropdown = null;
+              "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
               {{ tahun }}
@@ -112,7 +115,7 @@
         <div class="relative">
           <button
             @click="toggle('lokasi')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[150px]"
           >
             <span>{{ selectedLokasi || "Semua Lokasi" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
@@ -123,18 +126,27 @@
             class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <button
-              @click="selectedLokasi = ''"
+              @click="
+                selectedArea = '';
+                selectedLokasi = '';
+                openDropdown = null;
+              "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
               Semua Lokasi
             </button>
+
             <button
-              v-for="lokasi in lokasiOptions"
-              :key="lokasi"
-              @click="selectedLokasi = lokasi"
+              v-for="area in areaOptions"
+              :key="area.value"
+              @click="
+                selectedArea = area.value;
+                selectedLokasi = area.label;
+                openDropdown = null;
+              "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
-              {{ lokasi }}
+              {{ area.label }}
             </button>
           </div>
         </div>
@@ -269,9 +281,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
 import { useToast } from "#imports";
+import { useLaporan } from "~/composables/useLaporan";
+
+const { getRekapNaskah, getAreaList } = useLaporan();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -296,8 +311,9 @@ const getStatusClass = (status: string) => {
 const selectedYear = ref(2025);
 const selectedType = ref("");
 const selectedMonth = ref("");
-const selectedLokasi = ref("");
 const selectedStatuses = ref<string[]>([]);
+const selectedArea = ref<string>("");
+const selectedLokasi = ref("");
 const isStatusOpen = ref(false);
 const openDropdown = ref<null | string>(null);
 
@@ -312,273 +328,77 @@ const exportExcel = () => {
   });
 };
 
-const data = ref([
-  {
-    id: 1,
-    naskah: "Addendum Perjanjian",
-    lokasi: "cabang jakarta",
-    status: "terpakai",
-    years: [
-      {
-        tahun: 2025,
-        januari: 1552,
-        februari: 1747,
-        maret: 1616,
-        april: 1383,
-        mei: 1656,
-        juni: 1547,
-        juli: 97,
-        agustus: 0,
-        september: 1,
-        oktober: 0,
-        november: 1000,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 1200,
-        februari: 1100,
-        maret: 900,
-        april: 800,
-        mei: 950,
-        juni: 1000,
-        juli: 70,
-        agustus: 5,
-        september: 10,
-        oktober: 0,
-        november: 50,
-        desember: 10,
-      },
-      {
-        tahun: 2023,
-        januari: 800,
-        februari: 600,
-        maret: 500,
-        april: 450,
-        mei: 400,
-        juni: 350,
-        juli: 40,
-        agustus: 10,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 5,
-      },
-    ],
-  },
-  {
-    id: 2,
-    naskah: "Addendum Surat Perintah Kerja (SPK) Pengadaan",
-    lokasi: "cabang bali",
-    status: "Hangus",
-    years: [
-      {
-        tahun: 2025,
-        januari: 143,
-        februari: 161,
-        maret: 175,
-        april: 196,
-        mei: 179,
-        juni: 152,
-        juli: 7,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 200,
-        februari: 240,
-        maret: 180,
-        april: 210,
-        mei: 190,
-        juni: 170,
-        juli: 10,
-        agustus: 0,
-        september: 4,
-        oktober: 3,
-        november: 1,
-        desember: 0,
-      },
-      {
-        tahun: 2023,
-        januari: 120,
-        februari: 130,
-        maret: 150,
-        april: 100,
-        mei: 90,
-        juni: 80,
-        juli: 10,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 3,
-        desember: 1,
-      },
-    ],
-  },
-  {
-    id: 3,
-    naskah: "Berita Acara",
-    lokasi: "cabang banten",
-    status: "booking",
-    years: [
-      {
-        tahun: 2025,
-        januari: 143,
-        februari: 161,
-        maret: 175,
-        april: 196,
-        mei: 179,
-        juni: 152,
-        juli: 7,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 200,
-        februari: 240,
-        maret: 180,
-        april: 210,
-        mei: 190,
-        juni: 170,
-        juli: 10,
-        agustus: 0,
-        september: 4,
-        oktober: 3,
-        november: 1,
-        desember: 0,
-      },
-      {
-        tahun: 2023,
-        januari: 120,
-        februari: 130,
-        maret: 150,
-        april: 100,
-        mei: 90,
-        juni: 80,
-        juli: 10,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 3,
-        desember: 1,
-      },
-    ],
-  },
-  {
-    id: 4,
-    naskah: "Berita Acara Hasil Audit",
-    lokasi: "cabang jakarta",
-    status: "terpakai",
-    years: [
-      {
-        tahun: 2025,
-        januari: 143,
-        februari: 161,
-        maret: 175,
-        april: 196,
-        mei: 179,
-        juni: 152,
-        juli: 7,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 200,
-        februari: 240,
-        maret: 180,
-        april: 210,
-        mei: 190,
-        juni: 170,
-        juli: 10,
-        agustus: 0,
-        september: 4,
-        oktober: 3,
-        november: 1,
-        desember: 0,
-      },
-      {
-        tahun: 2023,
-        januari: 120,
-        februari: 130,
-        maret: 150,
-        april: 100,
-        mei: 90,
-        juni: 80,
-        juli: 10,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 3,
-        desember: 1,
-      },
-    ],
-  },
-  {
-    id: 5,
-    naskah: "Keputusan Direktur",
-    lokasi: "cabang makasar",
-    status: "tidak terpakai",
-    years: [
-      {
-        tahun: 2025,
-        januari: 143,
-        februari: 161,
-        maret: 175,
-        april: 196,
-        mei: 179,
-        juni: 152,
-        juli: 7,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 200,
-        februari: 240,
-        maret: 180,
-        april: 210,
-        mei: 190,
-        juni: 170,
-        juli: 10,
-        agustus: 0,
-        september: 4,
-        oktober: 3,
-        november: 1,
-        desember: 0,
-      },
-      {
-        tahun: 2023,
-        januari: 120,
-        februari: 130,
-        maret: 150,
-        april: 100,
-        mei: 90,
-        juni: 80,
-        juli: 10,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 3,
-        desember: 1,
-      },
-    ],
-  },
-]);
+const rekapData = ref<any[]>([]);
+const loading = ref(false);
+
+const fetchRekap = async () => {
+  loading.value = true;
+  try {
+    const params: any = {
+      tahun: selectedYear.value,
+    };
+
+    if (selectedArea.value) {
+      params.area = selectedArea.value;
+    }
+
+    if (selectedStatuses.value.length === 1) {
+      params.status = selectedStatuses.value[0];
+    }
+
+    const res = await getRekapNaskah(params);
+
+    rekapData.value = res.data.rekap.map((item: any, idx: number) => ({
+      id: idx,
+      naskah: item.jenis_text,
+      status: res.data.status,
+      januari: item.jan,
+      februari: item.feb,
+      maret: item.mar,
+      april: item.apr,
+      mei: item.mei,
+      juni: item.jun,
+      juli: item.jul,
+      agustus: item.agu,
+      september: item.sep,
+      oktober: item.okt,
+      november: item.nov,
+      desember: item.des,
+      jumlah: item.total,
+    }));
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchArea = async () => {
+  try {
+    const res = await getAreaList();
+
+    const raw = res?.data?.data || res?.data || [];
+
+    areaOptions.value = raw.map((item: any) => ({
+      label: item.longText,
+      value: item.area,
+    }));
+  } catch (e) {
+    console.error("Gagal mengambil area", e);
+  }
+};
+
+watch([selectedYear, selectedArea, selectedStatuses], fetchRekap, {
+  deep: true,
+});
+
+onMounted(() => {
+  fetchRekap();
+  fetchArea();
+});
+
+const yearOptions = computed(() => {
+  const currentYear = new Date().getFullYear();
+  return [currentYear, currentYear - 1, currentYear - 2];
+});
 
 const monthOptions = [
   { label: "Januari", value: "januari" },
@@ -595,6 +415,8 @@ const monthOptions = [
   { label: "Desember", value: "desember" },
 ];
 
+const areaOptions = ref<{ label: string; value: string }[]>([]);
+
 const statusOptions = [
   { label: "Terpakai", value: "terpakai" },
   { label: "Hangus", value: "tidak terpakai" },
@@ -604,13 +426,6 @@ const statusOptions = [
 const toggle = (key: string) => {
   openDropdown.value = openDropdown.value === key ? null : key;
 };
-
-const lokasiOptions = [
-  "cabang jakarta",
-  "cabang banten",
-  "cabang bali",
-  "cabang makasar",
-];
 
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
@@ -632,51 +447,22 @@ const selectedMonthLabel = computed(() => {
 });
 
 const toggleStatus = (status: string) => {
-  if (selectedStatuses.value.includes(status)) {
-    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+  if (selectedStatuses.value[0] === status) {
+    selectedStatuses.value = [];
   } else {
-    selectedStatuses.value.push(status);
+    selectedStatuses.value = [status];
   }
+  openDropdown.value = null;
 };
 
-const filteredTableData = computed(() => {
-  return data.value
-    .filter(
-      (item) =>
-        (!selectedType.value || item.naskah === selectedType.value) &&
-        (!selectedLokasi.value || item.lokasi === selectedLokasi.value) &&
-        (selectedStatuses.value.length === 0 ||
-          selectedStatuses.value.includes(item.status)),
-    )
-    .map((item) => {
-      const yearData = item.years.find((y) => y.tahun === selectedYear.value);
-      if (!yearData) return null;
-
-      const totalJumlah = Object.values(yearData)
-        .filter((v) => typeof v === "number")
-        .reduce((acc, cur) => acc + cur, 0);
-
-      return {
-        id: item.id,
-        naskah: item.naskah,
-        ...yearData,
-        jumlah: totalJumlah,
-      };
-    })
-    .filter(Boolean);
-});
-
-const yearOptions = computed(() => {
-  const years = new Set();
-  data.value.forEach((d) => d.years.forEach((y) => years.add(y.tahun)));
-  return Array.from(years).sort((a, b) => b - a);
-});
+const filteredTableData = computed(() => rekapData.value);
 
 const refreshData = () => {
   selectedMonth.value = "";
   selectedType.value = "";
-  selectedLokasi.value = "";
   selectedStatuses.value = [];
-  selectedYear.value = 2025;
+  selectedArea.value = "";
+  selectedYear.value = new Date().getFullYear();
+  fetchRekap();
 };
 </script>
