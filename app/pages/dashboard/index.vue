@@ -1,77 +1,98 @@
 <template>
   <div class="space-y-6">
-    <!-- Error Alert -->
-    <UAlert
-      v-if="error"
-      icon="i-heroicons-exclamation-triangle"
-      color="red"
-      variant="solid"
-      title="Terjadi Kesalahan"
-      :description="error"
-      :close-button="{
+    <UAlert v-if="error" icon="i-heroicons-exclamation-triangle" color="red" variant="solid" title="Terjadi Kesalahan"
+      :description="error" :close-button="{
         icon: 'i-heroicons-x-mark-20-solid',
         color: 'white',
         variant: 'link',
         padded: false,
-      }"
-      @close="error = null"
-    />
+      }" @close="error = null" />
 
-    <!-- HERO -->
-    <div
-      class="relative w-full h-64 bg-gradient-to-r from-primary-50 to-primary rounded-3xl shadow-md flex items-center px-10 overflow-hidden"
-    >
+    <div v-if="!isLoading || dashboardData"
+      class="relative w-full h-64 bg-gradient-to-r from-primary-50 to-primary rounded-3xl shadow-md flex items-center px-10 overflow-hidden transition-all">
       <div class="flex flex-col z-10">
-        <Heading variant="heading6b" class="text-primary-600"
-          >Halo, {{ user?.nama || "User" }}</Heading
-        >
-        <Heading variant="heading9m" class="mt-1 text-primary-400"
-          >Semoga hari anda menyenangkan</Heading
-        >
+        <Heading variant="heading6b" class="text-primary-600">Halo, {{ user?.nama || "User" }}</Heading>
+        <Heading variant="heading9m" class="mt-1 text-primary-400">Semoga hari anda menyenangkan</Heading>
       </div>
-
-      <!-- Pesawat Membesar Keluar Card -->
-    </div>
-    <img
-      src="/dashboard.png"
-      class="absolute right-0 bottom-0 top-18 h-70 translate-x-0 translate-y-6 opacity-90"
-    />
-
-    <!-- Loading State -->
-    <div
-      v-if="isLoading && !dashboardData"
-      class="flex items-center justify-center py-20"
-    >
-      <div class="text-center">
-        <UIcon
-          name="i-heroicons-arrow-path"
-          class="w-12 h-12 animate-spin text-primary mx-auto"
-        />
-        <p class="text-sm text-gray-500 mt-4">Memuat data dashboard...</p>
-      </div>
+      <img src="/dashboard.png" class="absolute right-0 bottom-0 top-18 h-70 translate-x-0 translate-y-6 opacity-90" />
     </div>
 
-    <!-- Dashboard Content -->
-    <template v-else>
-      <!-- STAT CARDS -->
+    <div v-if="isLoading && !dashboardData" class="space-y-6 animate-pulse">
+
+      <div
+        class="w-full h-64 rounded-3xl shadow-sm bg-gray-100 dark:bg-gray-800 flex items-center px-10 relative overflow-hidden">
+        <div class="flex flex-col space-y-3 z-10">
+          <USkeleton class="h-9 w-64 sm:w-96 rounded-lg bg-gray-200 dark:bg-gray-700" />
+          <USkeleton class="h-5 w-48 sm:w-72 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <UCard
-          v-for="(stat, idx) in stats"
-          :key="idx"
-          class="rounded-xl shadow-sm border border-gray-100 relative overflow-hidden"
-        >
-          <!-- Garis Samping -->
-          <div
-            :class="`absolute left-0 top-0 h-full w-1 ${stat.borderColor}`"
-          ></div>
+        <UCard v-for="n in 4" :key="n" :ui="cardUI">
+          <div class="flex justify-between items-start pl-2">
+            <div class="space-y-2">
+              <USkeleton class="h-4 w-24" />
+              <USkeleton class="h-8 w-16" />
+            </div>
+            <USkeleton class="h-10 w-10 rounded-lg" />
+          </div>
+        </UCard>
+      </div>
+
+      <div class="flex flex-col lg:flex-row gap-6">
+        <UCard :ui="cardUI" class="w-full lg:w-[600px]">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <USkeleton class="h-5 w-32" />
+              <div class="flex gap-2">
+                <USkeleton class="h-3 w-20 rounded-full" />
+                <USkeleton class="h-3 w-20 rounded-full" />
+              </div>
+            </div>
+          </template>
+          <div class="flex items-end justify-between h-[200px] gap-2">
+            <USkeleton class="h-1/3 w-full" />
+            <USkeleton class="h-2/3 w-full" />
+            <USkeleton class="h-1/2 w-full" />
+            <USkeleton class="h-3/4 w-full" />
+            <USkeleton class="h-1/4 w-full" />
+          </div>
+        </UCard>
+
+        <UCard :ui="cardUI" class="w-full lg:w-[600px]">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <USkeleton class="h-5 w-40" />
+              <USkeleton class="h-4 w-20" />
+            </div>
+          </template>
+
+          <div class="space-y-4">
+            <div v-for="i in 4" :key="i" class="flex items-center gap-4 py-2">
+              <USkeleton class="h-12 w-1 rounded-full" />
+              <div class="flex-1 space-y-2">
+                <div class="flex justify-between">
+                  <USkeleton class="h-4 w-1/3" />
+                  <USkeleton class="h-3 w-16" />
+                </div>
+                <USkeleton class="h-3 w-1/2" />
+                <USkeleton class="h-3 w-3/4" />
+              </div>
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </div>
+
+    <template v-else>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <UCard v-for="(stat, idx) in stats" :key="idx" :ui="cardUI">
+          <div :class="`absolute left-0 top-0 h-full w-1 ${stat.borderColor}`"></div>
 
           <div class="flex justify-between items-start pl-2">
             <div>
               <p class="text-sm text-gray-500">{{ stat.label }}</p>
-              <Heading
-                variant="heading6b"
-                class="text-3xl font-bold mt-1 text-primary"
-              >
+              <Heading variant="heading6b" class="text-3xl font-bold mt-1 text-primary">
                 {{ stat.value }}
               </Heading>
             </div>
@@ -83,18 +104,12 @@
         </UCard>
       </div>
 
-      <!-- STATISTIK & SURAT TERBARU -->
       <div class="flex flex-col lg:flex-row gap-6">
-        <!-- GRAFIK -->
-        <UCard
-          class="rounded-xl shadow-sm border border-gray-100 w-full lg:w-[600px]"
-        >
+
+        <UCard :ui="cardUI" class="w-full lg:w-[600px]">
           <template #header>
             <div class="flex items-center justify-between">
-              <Heading variant="heading9sb" class="font-semibold"
-                >Statistik Surat</Heading
-              >
-              <!-- Legend dengan bulet kecil -->
+              <Heading variant="heading9sb" class="font-semibold">Statistik Surat</Heading>
               <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -113,50 +128,30 @@
           </div>
         </UCard>
 
-        <!-- SURAT TERBARU -->
-        <UCard :ui="cardUI" class="w-full lg:w-[600px] !border-0 !shadow-none">
+        <UCard :ui="cardUI" class="w-full lg:w-[600px]">
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-gray-900 dark:text-white">
                 Surat Masuk Terbaru
               </h3>
-              <UButton
-                to="/korespondensi/kotak-masuk"
-                size="xs"
-                color="primary"
-                variant="ghost"
-                trailing-icon="i-heroicons-arrow-right"
-              >
+              <UButton to="/korespondensi/kotak-masuk" size="xs" color="primary" variant="ghost"
+                trailing-icon="i-heroicons-arrow-right">
                 Lihat Semua
               </UButton>
             </div>
           </template>
 
-          <div
-            v-if="recentMails.length === 0"
-            class="flex items-center justify-center h-72"
-          >
+          <div v-if="recentMails.length === 0" class="flex items-center justify-center h-72">
             <div class="text-center">
-              <UIcon
-                name="i-heroicons-inbox"
-                class="w-12 h-12 text-gray-300 mx-auto"
-              />
+              <UIcon name="i-heroicons-inbox" class="w-12 h-12 text-gray-300 mx-auto" />
               <p class="text-sm text-gray-500 mt-2">Tidak ada surat masuk</p>
             </div>
           </div>
 
-          <div
-            v-else
-            class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800"
-          >
-            <div
-              v-for="mail in recentMails"
-              :key="mail.id"
-              class="py-4 flex items-center gap-4 hover:bg-gray-50 transition rounded-lg cursor-pointer px-2"
-            >
-              <div
-                :class="`w-1 h-12 rounded-full ${getAccentColor(mail.jenis)}`"
-              ></div>
+          <div v-else class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+            <div v-for="mail in recentMails" :key="mail.id"
+              class="py-4 flex items-center gap-4 hover:bg-gray-50 transition rounded-lg cursor-pointer px-2">
+              <div :class="`w-1 h-12 rounded-full ${getAccentColor(mail.jenis)}`"></div>
 
               <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start gap-2">
@@ -200,6 +195,16 @@ const {
   getAccentColor,
   dashboardData,
 } = useDashboard();
+
+// --- UI CONFIG ---
+// Diperbarui sesuai request (soft style, ring-0, shadow-sm)
+// Saya menggunakan rounded-xl agar lebih pas untuk dashboard (bukan rounded-t-lg)
+const cardUI = {
+  root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
+  header: { padding: 'px-5 py-4 sm:px-6' },
+  body: { padding: 'p-5 sm:p-6' },
+  divide: 'divide-y divide-gray-100 dark:divide-gray-700'
+};
 
 // Chart instance
 let chartInstance: any = null;
@@ -313,16 +318,6 @@ onMounted(async () => {
     error.value = "Position ID tidak ditemukan. Silakan login ulang.";
   }
 });
-
-// --- UI CONFIG ---
-const cardUI = {
-  background: "bg-white dark:bg-gray-900",
-  ring: "!ring-0",
-  rounded: "rounded-xl",
-  shadow: "",
-  body: { padding: "p-5 sm:p-6" },
-  header: { padding: "px-5 py-4 sm:px-6" },
-};
 </script>
 
 <style scoped>

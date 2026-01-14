@@ -40,7 +40,48 @@
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
-      <div class="flex-1 overflow-y-auto space-y-1">
+      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+        <div v-for="i in 4" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
+          <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
+          <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
+        </div>
+
+        <div class="py-4 space-y-3 border-t border-gray-100 dark:border-gray-800 mt-2">
+          <USkeleton class="h-5 w-40 mb-2" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="j in 12" :key="j" class="flex items-center gap-3">
+              <USkeleton class="h-5 w-5 rounded shrink-0" />
+              <USkeleton class="h-4 w-full max-w-[150px] rounded" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800 mt-4">
+          <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <USkeleton class="h-12 w-12 rounded-full" />
+            <div class="flex-1 space-y-2 pt-1">
+              <USkeleton class="h-3 w-1/2" />
+              <USkeleton class="h-3 w-1/3" />
+            </div>
+          </div>
+          <div class="space-y-3 px-4">
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-11/12" />
+            <USkeleton class="h-3 w-full" />
+          </div>
+        </div>
+
+        <USkeleton class="h-30 w-full rounded-md" />
+
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <USkeleton class="h-10 w-32 rounded-lg" />
+        </div>
+      </div>
+
+
+      <div v-else class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
 
@@ -51,7 +92,6 @@
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Nomor Surat
-              <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refNumber"
@@ -66,7 +106,6 @@
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Perihal
-              <!-- <span class="text-gray-400 font-normal text-[10px] ml-1">(Optional)</span> -->
             </span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
@@ -95,10 +134,6 @@
         </div>
 
         <ClientOnly>
-          <!-- <div class="text-center mb-2">
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pratinjau Lembar Disposisi</span>
-          </div> -->
-
           <div
             class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
 
@@ -189,10 +224,6 @@
 
                   <div class="relative" v-if="showEditor">
                     <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
-                    <!-- <div v-if="!editorContent"
-                      class="absolute top-10 left-4 text-gray-400 pointer-events-none italic z-0 text-sm">
-                      Ketik catatan disposisi di sini...
-                    </div> -->
                   </div>
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
@@ -440,6 +471,7 @@ const confirmKirimDokumen = async () => {
   if (!confirm("Kirim Disposisi ini?")) return;
   const payload = getPayload();
   isLoadingData.value = true;
+  loadingMessage.value = "Mengirim Disposisi...";
 
   try {
     // Regenerate PDF
@@ -470,6 +502,8 @@ const confirmKirimDokumen = async () => {
 const confirmSaveDraft = async () => {
   const payload = getPayload();
   isLoadingData.value = true;
+  loadingMessage.value = "Menyimpan Draft...";
+
   try {
     const fd = createFormData(payload, false);
     if (editDraftId.value) {
@@ -488,7 +522,10 @@ const confirmSaveDraft = async () => {
 
 // --- LIFECYCLE ---
 onMounted(async () => {
+  // 1. SET PESAN LOADING AWAL AGAR SKELETON MUNCUL
+  loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
+
   if (!user.value) await getProfile();
 
   try {
@@ -500,7 +537,7 @@ onMounted(async () => {
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
-      loadingMessage.value = "Memuat Draft...";
+      // loadingMessage sudah di-set di atas, jadi aman
       const resDraft = await getDraftDetail(draftId);
 
       if (resDraft.data) {

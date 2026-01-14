@@ -1,159 +1,110 @@
 <template>
-  <div
-    v-if="isMobileOpen"
-    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-    @click="closeMobile"
-  ></div>
+  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" @click="closeMobile">
+  </div>
 
   <aside
     class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
-    ]"
-  >
+    ]">
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-blue-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
-    >
-      <button
-        @click="handleMenuClick"
-        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors"
-      >
-        <UIcon
-          :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
-          class="w-6 h-6 text-gray-700 dark:text-gray-200"
-        />
+      class="w-[72px] flex flex-col items-center py-4 bg-blue-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800">
+      <button @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
+        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
       </button>
 
       <div class="flex flex-col gap-4 w-full items-center">
-        <div
-          v-for="app in apps"
-          :key="app.id"
-          @click="setActiveApp(app.id)"
-          @mouseenter="hoveredApp = app.id"
-          @mouseleave="hoveredApp = null"
-          class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
-        >
-          <div
-            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
-            :class="
-              activeApp === app.id
-                ? 'bg-blue-200 dark:bg-gray-800'
-                : 'hover:bg-white/50 bg-transparent'
-            "
-          >
-            <UIcon
-              :name="app.icon"
-              class="w-6 h-6 transition-colors"
-              :class="
-                activeApp === app.id
-                  ? 'text-gray-800 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              "
-            />
+        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
+          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="activeApp === app.id
+              ? 'bg-blue-200 dark:bg-gray-800'
+              : 'hover:bg-white/50 bg-transparent'
+              ">
+            <UIcon :name="app.icon" class="w-6 h-6 transition-colors" :class="activeApp === app.id
+              ? 'text-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400'
+              " />
 
-            <div
-              v-if="app.hasNotification"
-              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse"
-            ></div>
+            <div v-if="app.hasNotification"
+              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse">
+            </div>
           </div>
-          <span
-            class="text-[10px] font-medium transition-colors"
-            :class="
-              activeApp === app.id
-                ? 'text-gray-900 font-bold dark:text-white'
-                : 'text-gray-600 dark:text-gray-400'
-            "
-            >{{ app.label }}
+          <span class="text-[10px] font-medium transition-colors" :class="activeApp === app.id
+            ? 'text-gray-900 font-bold dark:text-white'
+            : 'text-gray-600 dark:text-gray-400'
+            ">{{ app.label }}
           </span>
 
-          <div
-            v-if="collapsed && hoveredApp === app.id && !isMobile"
-            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
-          >
-            <div
-              class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3"
-            >
-              <h3
-                class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
-              >
+          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
+            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                 {{ app.label }}
               </h3>
             </div>
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
-              <SidebarItem
-                v-for="(item, idx) in app.menus"
-                :key="idx"
-                :item="item"
-                :collapsed="false"
-              />
+              <SidebarItem v-for="(item, idx) in app.menus" :key="idx" :item="item" :collapsed="false" />
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div
-      v-show="!collapsed || isMobile"
-      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
-    >
+    <div v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900">
       <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
-        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium"
-          >ArsipKu</span
-        >
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
       </div>
 
-      <div
-        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar pr-2 pb-10"
-      >
-        <SidebarItem
-          v-for="(item, index) in currentAppData.menus"
-          :key="index"
-          :item="item"
-          :collapsed="false"
-        />
+      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar">
+        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
 
         <div v-if="activeApp.includes('utama')" class="mt-6 mb-4">
           <div class="flex items-center justify-between px-7 mb-2 group">
-            <span class="text-[14px] font-medium text-gray-500 dark:text-gray-400">Label</span>
-            <button
-              @click="openCreateLabelModal"
+            <span class="text-[14px] font-bold text-gray-600 dark:text-gray-400">Label</span>
+            <button @click="openCreateLabelModal"
               class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
-              title="Tambah Label Baru"
-            >
-              <UIcon name="i-heroicons-plus" class="w-4 h-4" />
+              title="Tambah Label Baru">
+              <UIcon name="i-lucide-plus" class="w-4 h-4" />
             </button>
           </div>
 
           <div class="space-y-0.5">
-             <div
-              v-for="label in dummyLabels"
-              :key="label.id"
-              class="group relative flex items-center gap-3 px-4 py-2 mx-3 rounded-full hover:bg-gray-200/60 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-            >
-              <UIcon
-                name="i-heroicons-tag"
-                class="w-5 h-5 text-gray-500 dark:text-gray-400"
-              />
+            <div v-if="isLoadingLabels" class="px-7 space-y-2 mt-2">
+              <USkeleton class="h-8 w-full rounded-full bg-gray-200 dark:bg-gray-800" v-for="n in 3" :key="n" />
+            </div>
+
+            <div v-else v-for="label in labels" :key="label.id"
+              class="group relative flex items-center gap-3 px-4 py-2 mx-3 rounded-full hover:bg-gray-200/60 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+              <UIcon name="i-lucide-tag" class="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
               <span class="flex-1 text-[14px] text-gray-700 dark:text-gray-300 truncate leading-5">
-                {{ label.name }}
+                {{ label.nama }}
               </span>
 
-              <div class="hidden group-hover:flex absolute right-1 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-2xl px-1 gap-0.5 z-10">
-                 <button
-                  @click.stop="openEditLabelModal(label)"
-                  class="p-1 rounded hover:text-primary-500 text-primary-300"
-                 >
-                   <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
-                 </button>
-                 <button
-                  @click.stop="openDeleteConfirm(label)"
-                  class="p-1 rounded hover:text-error-500 text-error-300"
-                 >
-                   <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
-                 </button>
+              <span v-if="labelCounts[label.id] && labelCounts[label.id] > 0"
+                class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full mr-2 group-hover:hidden">
+                {{ labelCounts[label.id] }}
+              </span>
+
+              <div
+                class="hidden group-hover:flex absolute right-1 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-full px-1 gap-0.5 z-10">
+                <button @click.stop="openEditLabelModal(label)"
+                  class="p-1 rounded hover:text-primary-500 text-primary-300">
+                  <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
+                </button>
+                <button @click.stop="openDeleteConfirm(label)" class="p-1 rounded hover:text-error-500 text-error-300">
+                  <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
+                </button>
               </div>
+            </div>
+
+            <div v-if="!isLoadingLabels && labels.length === 0" class="px-7 py-2 text-xs text-gray-400 italic">
+              Belum ada label
             </div>
           </div>
         </div>
@@ -165,7 +116,8 @@
   <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all">
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all">
       <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white">
           {{ isEditing ? 'Edit Label' : 'Label baru' }}
@@ -177,53 +129,39 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Masukkan nama label {{ isEditing ? '' : 'baru' }}:
           </label>
-          <input
-            v-model="labelForm.name"
-            type="text"
+          <input v-model="labelForm.nama" type="text"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white"
-            placeholder="Contoh: Penting"
-          />
+            placeholder="Contoh: Penting" />
         </div>
 
         <div class="flex items-center gap-2">
-           <input
-             v-model="labelForm.isNested"
-             id="check-nest"
-             type="checkbox"
-             class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-           />
-           <label for="check-nest" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-             Pilih label parent:
-           </label>
+          <input v-model="labelForm.isNested" id="check-nest" type="checkbox"
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+          <label for="check-nest" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            Pilih label parent:
+          </label>
         </div>
 
         <div>
-          <select
-            v-model="labelForm.parentId"
-            :disabled="!labelForm.isNested"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400"
-          >
+          <select v-model="labelForm.parentId" :disabled="!labelForm.isNested"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400">
             <option value="">Induk</option>
             <option v-for="l in availableParents" :key="l.id" :value="l.id">
-              {{ l.name }}
+              {{ l.nama }}
             </option>
           </select>
         </div>
       </div>
 
       <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3">
-        <button
-          @click="closeLabelModal"
-          class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors"
-        >
+        <button @click="closeLabelModal"
+          class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors">
           Batal
         </button>
-        <button
-          @click="saveLabel"
+        <button @click="saveLabel"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-400 hover:bg-primary-500 rounded-md shadow-sm transition-colors"
-          :disabled="!labelForm.name"
-        >
-          {{ isEditing ? 'Simpan' : 'Buat' }}
+          :disabled="!labelForm.nama || isProcessing">
+          {{ isProcessing ? 'Menyimpan...' : (isEditing ? 'Simpan' : 'Buat') }}
         </button>
       </div>
     </div>
@@ -236,20 +174,18 @@
         <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto h-12 w-12 text-red-500 mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Hapus Label?</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Apakah Anda yakin ingin menghapus label "<strong>{{ labelToDelete?.name }}</strong>"? Tindakan ini tidak dapat dibatalkan.
+          Apakah Anda yakin ingin menghapus label "<strong>{{ labelToDelete?.nama }}</strong>"? Tindakan ini tidak dapat
+          dibatalkan.
         </p>
         <div class="flex justify-center gap-3">
-          <button
-            @click="showDeleteModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-          >
+          <button @click="showDeleteModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
             Batal
           </button>
-          <button
-            @click="confirmDelete"
+          <button @click="confirmDelete"
             class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
-          >
-            Hapus
+            :disabled="isProcessing">
+            {{ isProcessing ? 'Menghapus...' : 'Hapus' }}
           </button>
         </div>
       </div>
@@ -265,6 +201,7 @@ import { useRoute } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useInboxCount } from "~/composables/useInboxCount";
+import { useLabel } from "~/composables/useLabel"; // Pastikan path file sesuai
 
 const { user, getProfile } = useAuth();
 const {
@@ -276,6 +213,18 @@ const {
 
 const { unreadCount, fetchInboxCount } = useInboxCount();
 
+// --- INTEGRASI USE LABELS ---
+const {
+  labels,
+  labelCounts,
+  isLoadingLabels,
+  fetchLabels,
+  fetchLabelCounts,
+  createLabel,
+  updateLabel,
+  deleteLabel
+} = useLabel();
+
 const route = useRoute();
 
 // Role check helper
@@ -283,7 +232,7 @@ const isAdminOrSuperadmin = computed(() =>
   ["admin", "superadmin"].includes(user.value?.role),
 );
 
-// ✅ Helper untuk mendapatkan position ID yang valid
+// Helper position ID
 const getPositionId = (userValue) => {
   if (!userValue) return null;
 
@@ -332,6 +281,28 @@ const fetchCounts = async () => {
 
 let countInterval = null;
 
+// --- WATCHER USER (DIPERBAIKI) ---
+// Menggunakan immediate: true agar fetchLabels jalan saat load awal & saat user login
+watch(
+  () => user.value,
+  async (newUser) => {
+    if (newUser) {
+      // 1. Ambil Label & Count (Global untuk user yg login)
+      fetchLabels();
+      fetchLabelCounts();
+
+      // 2. Ambil Notifikasi & Inbox (Tergantung Posisi/Role)
+      const posId = getPositionId(newUser);
+      await fetchCounts();
+
+      if (posId && !isNaN(posId)) {
+        await fetchInboxCount(posId);
+      }
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   try {
     if (!user.value) {
@@ -339,59 +310,32 @@ onMounted(async () => {
     }
     await nextTick();
 
-    const positionId = getPositionId(user.value);
-
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    if (positionId && !isNaN(positionId)) {
-      await fetchInboxCount(positionId);
+    // Initial Fetch jika user sudah ada (backup jika watcher miss)
+    if (user.value) {
+      fetchLabels();
+      fetchLabelCounts();
     }
 
-    const canFetch =
-      user.value?.role === "admin" ||
-      user.value?.role === "superadmin" ||
-      (positionId && !isNaN(positionId) && positionId > 0);
-
-    if (canFetch) {
-      setTimeout(async () => {
-        await fetchCounts();
-      }, 200);
-
-      countInterval = setInterval(() => {
+    // Interval Polling (Setiap 30 detik refresh data)
+    countInterval = setInterval(() => {
+      if (user.value) {
         fetchCounts();
+        fetchLabelCounts(); // Refresh jumlah label
+
+        const positionId = getPositionId(user.value);
         if (positionId && !isNaN(positionId)) {
           fetchInboxCount(positionId);
         }
-      }, 30000);
-    }
+      }
+    }, 30000);
+
   } catch (error) {
     console.error("❌ Error in sidebar mount:", error);
   }
 });
-
-// Watch user changes
-watch(
-  () => user.value,
-  async (newUser, oldUser) => {
-    if (!newUser) return;
-
-    const newPos = getPositionId(newUser);
-    const oldPos = getPositionId(oldUser);
-
-    if (
-      newUser &&
-      newPos &&
-      !isNaN(newPos) &&
-      newPos > 0 &&
-      newPos !== oldPos
-    ) {
-      await fetchCounts();
-      await fetchInboxCount(newPos);
-    }
-  },
-  { immediate: false, deep: true },
-);
 
 // --- 1. SETUP & PROPS ---
 const props = defineProps({
@@ -405,11 +349,7 @@ const isMobile = ref(false);
 const activeApp = ref("");
 const hoveredApp = ref(null);
 
-// --- 3. DATA MENU (COMPUTED AGAR REAKTIF) ---
-// =======================
-// A. DATA MENU USER
-// =======================
-
+// --- 3. DATA MENU ---
 const hasInboxUnread = computed(() => unreadCount.value > 0);
 
 const userMenuUtama = computed(() => {
@@ -419,9 +359,7 @@ const userMenuUtama = computed(() => {
       to: "/dashboard",
       icon: "i-lucide-layout-dashboard",
     },
-
     tulisMenu.value,
-
     {
       label: "Kotak Masuk",
       to: "/korespondensi/kotak-masuk",
@@ -443,15 +381,10 @@ const userMenuUtama = computed(() => {
 
 const userMenuUtilitas = computed(() => {
   const badgeCount = userCounts.value.belum_diajukan || 0;
-
   return [
     { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
-    {
-      label: "Titelatur Inggris",
-      to: "/titelatur",
-      icon: "i-lucide-languages",
-    },
+    { label: "Titelatur Inggris", to: "/titelatur", icon: "i-lucide-languages" },
     {
       label: "Usulan Penomoran",
       to: "/usulan-penomoran",
@@ -461,57 +394,32 @@ const userMenuUtilitas = computed(() => {
   ];
 });
 
-// =======================
-// B. DATA MENU ADMIN
-// =======================
-
 const tulisMenu = computed(() => ({
   label: "Tulis",
   to: "/korespondensi/tulis",
   icon: "i-lucide-edit",
-  children: tulisChildrenByBod.value, // 🔥 tetap pakai bodTag
+  children: tulisChildrenByBod.value,
 }));
 
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? "";
-
-  // Updated Paths
   const all = [
     { label: "Nota Dinas", to: "/korespondensi/tulis/nota-dinas" },
     { label: "Disposisi", to: "/korespondensi/tulis/disposisi" },
-    {
-      label: "Surat Dinas Internal",
-      to: "/korespondensi/tulis/surat-dinas-internal",
-    },
-    {
-      label: "Surat Dinas Eksternal",
-      to: "/korespondensi/tulis/surat-dinas-eksternal",
-    },
+    { label: "Surat Dinas Internal", to: "/korespondensi/tulis/surat-dinas-internal" },
+    { label: "Surat Dinas Eksternal", to: "/korespondensi/tulis/surat-dinas-eksternal" },
     { label: "Kajian", to: "/korespondensi/tulis/kajian" },
   ];
 
-  if (tag === "BOD" || tag === "BOD-1") {
-    return all;
-  }
-
+  if (tag === "BOD" || tag === "BOD-1") return all;
   if (tag === "BOD-2" || tag === "BOD-3") {
-    return all.filter(
-      (i) =>
-        !["Surat Dinas Internal", "Surat Dinas Eksternal", "Kajian"].includes(
-          i.label,
-        ),
-    );
+    return all.filter((i) => !["Surat Dinas Internal", "Surat Dinas Eksternal", "Kajian"].includes(i.label));
   }
-
   return all.filter((i) => i.label === "Kajian");
 });
 
 const adminMenuUtama = computed(() => [
-  {
-    label: "Dashboard",
-    to: "/dashboard", // Updated Path (Shared path with user, content handled by role)
-    icon: "i-lucide-layout-dashboard",
-  },
+  { label: "Dashboard", to: "/dashboard", icon: "i-lucide-layout-dashboard" },
   tulisMenu.value,
   {
     label: "Kotak Masuk",
@@ -519,16 +427,8 @@ const adminMenuUtama = computed(() => [
     icon: "i-lucide-inbox",
     badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
-  {
-    label: "Terkirim",
-    to: "/korespondensi/terkirim",
-    icon: "i-lucide-send",
-  },
-  {
-    label: "Draft",
-    to: "/korespondensi/draft",
-    icon: "i-lucide-file-text",
-  },
+  { label: "Terkirim", to: "/korespondensi/terkirim", icon: "i-lucide-send" },
+  { label: "Draft", to: "/korespondensi/draft", icon: "i-lucide-file-text" },
 ]);
 
 const adminMenuUtilitas = computed(() => {
@@ -536,7 +436,6 @@ const adminMenuUtilitas = computed(() => {
     {
       label: "Digsig",
       icon: "i-lucide-signature",
-      // Updated Paths
       children: [
         { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
         { label: "Penandatanganan", to: "/digsig/penandatanganan" },
@@ -547,31 +446,22 @@ const adminMenuUtilitas = computed(() => {
     { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
     { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
-
     {
       label: "Usulan Penomoran",
       to: "/usulan-penomoran",
       icon: "i-lucide-hash",
       hasNotification: false,
       onlyUser: true,
-      badge:
-        userCounts.value.belum_diajukan > 0
-          ? userCounts.value.belum_diajukan
-          : null,
+      badge: userCounts.value.belum_diajukan > 0 ? userCounts.value.belum_diajukan : null,
     },
   ];
-
   return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value));
 });
 
 const adminMenuAdministrasi = computed(() => {
   const base = [
     { label: "Delegasi", to: "/delegasi", icon: "i-lucide-users" },
-    {
-      label: "Titelatur Inggris",
-      to: "/titelatur",
-      icon: "i-lucide-languages",
-    },
+    { label: "Titelatur Inggris", to: "/titelatur", icon: "i-lucide-languages" },
     {
       label: "Penomoran",
       icon: "i-lucide-hash",
@@ -580,91 +470,50 @@ const adminMenuAdministrasi = computed(() => {
         {
           label: "Usulan",
           to: "/penomoran/usulan",
-          badge:
-            adminCounts.value.belum_diajukan > 0
-              ? adminCounts.value.belum_diajukan
-              : null,
+          badge: adminCounts.value.belum_diajukan > 0 ? adminCounts.value.belum_diajukan : null,
         },
         {
           label: "Verifikasi",
           to: "/penomoran/verifikasi",
-          badge:
-            adminCounts.value.menunggu_verifikasi > 0
-              ? adminCounts.value.menunggu_verifikasi
-              : null,
+          badge: adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null,
         },
         { label: "Penomoran", to: "/penomoran/nomor" },
       ],
     },
-
-    {
-      label: "Naskah Dinas",
-      to: "/naskah-dinas",
-      icon: "i-lucide-file-text",
-    },
+    { label: "Naskah Dinas", to: "/naskah-dinas", icon: "i-lucide-file-text" },
   ];
 
   if (user.value?.role === "superadmin") {
     base.push({
       label: "Master Data",
       icon: "i-lucide-database",
-      // Updated Paths
       children: [
-        {
-          label: "Akun",
-          to: "/master/akun",
-          icon: "i-lucide-user-round",
-        },
+        { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
         { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
       ],
     });
   }
-
   return base;
 });
 
 const adminMenuLaporan = [
-  // Updated Paths
-  {
-    label: "Rekap Naskah",
-    to: "/laporan/rekap-naskah",
-    icon: "i-lucide-file-bar-chart-2",
-  },
-  {
-    label: "Detail Naskah",
-    to: "/laporan/detail-naskah",
-    icon: "i-lucide-file-search",
-  },
-  {
-    label: "Naskah Masuk",
-    to: "/laporan/naskah-masuk",
-    icon: "i-lucide-folder-input",
-  },
+  { label: "Rekap Naskah", to: "/laporan/rekap-naskah", icon: "i-lucide-file-bar-chart-2" },
+  { label: "Detail Naskah", to: "/laporan/detail-naskah", icon: "i-lucide-file-search" },
+  { label: "Naskah Masuk", to: "/laporan/naskah-masuk", icon: "i-lucide-folder-input" },
 ];
 
-// Check if Administrasi has notification
 const hasAdministrasiNotification = computed(() => {
-  return (
-    adminCounts.value.menunggu_verifikasi > 0 ||
-    adminCounts.value.belum_diajukan > 0
-  );
+  return adminCounts.value.menunggu_verifikasi > 0 || adminCounts.value.belum_diajukan > 0;
 });
 
-// Check if Utilitas has notification (for user)
 const hasUtilitasNotification = computed(() => {
-  // Karena path sekarang /..., kita cek berdasarkan Role bukan path
   if (!isAdminOrSuperadmin.value) {
     return userCounts.value.belum_diajukan > 0;
   }
   return false;
 });
 
-// --- 4. COMPUTED: APPS (DINAMIS BY ROLE NOT ROUTE) ---
-// Karena folder digabung ke /app, kita tidak bisa membedakan berdasarkan route.path
-// Kita membedakan tampilan sidebar berdasarkan ROLE user.
-
 const apps = computed(() => {
-  // LOGIC BARU: Cek Role, bukan Path
   if (isAdminOrSuperadmin.value) {
     const baseApps = [
       {
@@ -682,8 +531,6 @@ const apps = computed(() => {
         hasNotification: false,
       },
     ];
-
-    // Admin selalu dapat akses administrasi & laporan
     baseApps.push(
       {
         id: "admin-administrasi",
@@ -700,11 +547,8 @@ const apps = computed(() => {
         hasNotification: false,
       },
     );
-
     return baseApps;
   }
-
-  // ELSE: USER ROLE
   return [
     {
       id: "user-utama",
@@ -723,7 +567,6 @@ const apps = computed(() => {
   ];
 });
 
-// --- 5. LOGIC SWITCHING & WATCHER ---
 const setActiveApp = (appId) => {
   activeApp.value = appId;
 };
@@ -745,7 +588,6 @@ watch(
   { immediate: true },
 );
 
-// --- 6. LOGIC RESPONSIVE & EVENT HANDLERS ---
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768;
 };
@@ -762,18 +604,13 @@ const closeMobile = () => (isMobileOpen.value = false);
 const openMobile = () => (isMobileOpen.value = true);
 
 // ==========================================
-//        LOGIC LABEL MANAGEMENT (NEW)
+//        LOGIC LABEL MANAGEMENT (INTEGRATED)
 // ==========================================
-
-// Dummy Data Label
-const dummyLabels = ref([
-  { id: 1, name: "Penting sih", parentId: null },
-  { id: 2, name: "Iseng", parentId: null },
-]);
 
 const showLabelModal = ref(false);
 const showDeleteModal = ref(false);
 const isEditing = ref(false);
+const isProcessing = ref(false);
 const labelToDelete = ref(null);
 
 const labelForm = reactive({
@@ -783,78 +620,82 @@ const labelForm = reactive({
   parentId: ""
 });
 
-// Filter parent agar tidak memilih diri sendiri saat edit
 const availableParents = computed(() => {
-  if (!isEditing.value) return dummyLabels.value;
-  return dummyLabels.value.filter(l => l.id !== labelForm.id);
+  if (!isEditing.value) return labels.value;
+  return labels.value.filter(l => l.id !== labelForm.id);
 });
 
-// Open Create Modal
 const openCreateLabelModal = () => {
   isEditing.value = false;
   labelForm.id = null;
-  labelForm.name = "";
+  labelForm.nama = "";
   labelForm.isNested = false;
   labelForm.parentId = "";
   showLabelModal.value = true;
 };
 
-// Open Edit Modal
 const openEditLabelModal = (label) => {
   isEditing.value = true;
   labelForm.id = label.id;
-  labelForm.name = label.name;
-  labelForm.isNested = !!label.parentId;
-  labelForm.parentId = label.parentId || "";
+  labelForm.nama = label.nama;
+  labelForm.isNested = !!label.parent_id;
+  labelForm.parentId = label.parent_id || "";
   showLabelModal.value = true;
 };
 
-// Close Modal
 const closeLabelModal = () => {
   showLabelModal.value = false;
+  isProcessing.value = false;
 };
 
-// Save Label (Add/Edit)
-const saveLabel = () => {
-  if (!labelForm.name) return;
+// --- CRUD Actions ---
 
-  const parentId = labelForm.isNested && labelForm.parentId ? labelForm.parentId : null;
+const saveLabel = async () => {
+  if (!labelForm.nama) return;
+  isProcessing.value = true;
 
-  if (isEditing.value) {
-    // Logic Update API Here
-    const index = dummyLabels.value.findIndex(l => l.id === labelForm.id);
-    if (index !== -1) {
-      dummyLabels.value[index] = {
-        ...dummyLabels.value[index],
-        name: labelForm.name,
-        parentId
-      };
+  // PERBAIKAN:
+  // Backend menolak 'parentId' dan 'parent_id'.
+  // Kita hanya mengirim 'nama' agar request berhasil (Status 200).
+  const payload = {
+    nama: labelForm.nama
+  };
+
+  try {
+    if (isEditing.value) {
+      await updateLabel(labelForm.id, payload);
+    } else {
+      await createLabel(payload);
     }
-  } else {
-    // Logic Create API Here
-    const newId = Date.now(); // Mock ID
-    dummyLabels.value.push({
-      id: newId,
-      name: labelForm.name,
-      parentId
-    });
+    await fetchLabels(); // Refresh data
+    closeLabelModal();
+  } catch (err) {
+    console.error("Gagal menyimpan label:", err);
+    // Opsional: Tampilkan notifikasi error
+    // toast.add({ title: 'Gagal', description: err.response?.data?.message, color: 'error' });
+  } finally {
+    isProcessing.value = false;
   }
-  closeLabelModal();
 };
 
-// Open Delete Confirm
 const openDeleteConfirm = (label) => {
   labelToDelete.value = label;
   showDeleteModal.value = true;
 };
 
-// Confirm Delete
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (labelToDelete.value) {
-    // Logic Delete API Here
-    dummyLabels.value = dummyLabels.value.filter(l => l.id !== labelToDelete.value.id);
-    labelToDelete.value = null;
-    showDeleteModal.value = false;
+    isProcessing.value = true;
+    try {
+      await deleteLabel(labelToDelete.value.id);
+      await fetchLabels(); // Refresh data
+      showDeleteModal.value = false;
+      labelToDelete.value = null;
+    } catch (err) {
+      console.error("Gagal menghapus label:", err);
+    } finally {
+      isProcessing.value = false;
+    }
   }
 };
 
@@ -867,57 +708,3 @@ onUnmounted(() => {
 
 defineExpose({ openMobile, closeMobile });
 </script>
-
-<style scoped>
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.15s ease-out forwards;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 10px;
-}
-
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #dadce0;
-}
-
-.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #444746;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-</style>

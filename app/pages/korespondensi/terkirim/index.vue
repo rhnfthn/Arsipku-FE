@@ -114,23 +114,35 @@ const currentReaderData = ref({
 // --- HELPER: COLOR MAPPING ---
 const getCategoryStyle = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
-  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
+
 
 // --- HELPER: LABEL MAPPING ---
 const getCategoryLabel = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['KA'].includes(c)) return 'Kajian';
-  if (['SDI', 'INTERNAL'].includes(c)) return 'Surat Dinas Internal';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'Surat Dinas Eksternal';
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'Nota Dinas';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'Disposisi';
-  return 'Konsep';
+  if (['KA'].includes(c)) return 'KA';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'SDI';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'SDE';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
+  return 'K';
 };
 
 // --- API FETCH & MAPPING ---
@@ -201,7 +213,8 @@ const filteredEmails = computed(() => {
   if (activeTab.value !== "ALL") {
     const tab = activeTab.value;
     let targetCats = [tab];
-    if (tab === 'SDI') targetCats = ['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'];
+    if (tab === 'SDI') targetCats = ['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'];
+    else if (tab === 'KA') targetCats = ['KA'];
     else if (tab === 'SDE') targetCats = ['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'];
     else if (tab === 'DI') targetCats = ['DI', 'DISPOSISI'];
     else if (tab === 'ND') targetCats = ['ND', 'NOTA DINAS'];
@@ -421,7 +434,7 @@ const tabs = [
   { label: "Internal", value: "SDI", icon: Building },
   { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
-  { label: "Kajian", value: "KAJIAN", icon: BookOpen },
+  { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 
 onMounted(() => { loadData(); });
@@ -655,17 +668,45 @@ watch(() => route.query.q, (newVal) => {
           </div>
         </div>
         <div class="flex-1 w-full relative">
-          <div v-if="isLoading"
-            class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-20">
-            <Loader2 class="w-8 h-8 text-primary animate-spin" />
+
+          <div v-if="isLoading" class="w-full">
+            <div v-for="n in 10" :key="n"
+              class="flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full">
+
+              <USkeleton class="w-3.5 h-3.5 rounded-sm shrink-0" />
+
+              <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
+                <div class="sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
+                  <USkeleton class="h-3 w-24 sm:w-32" />
+                </div>
+                <div class="flex-1 mt-2 sm:mt-0">
+                  <USkeleton class="h-3 w-full sm:w-3/4" />
+                </div>
+                <div class="hidden xl:flex shrink-0 w-[150px]">
+                  <USkeleton class="h-5 w-20 rounded" />
+                </div>
+              </div>
+
+              <div class="pl-2 shrink-0 text-right w-24">
+                <USkeleton class="h-3 w-16 ml-auto" />
+              </div>
+
+              <div class="min-w-10 pl-2 shrink-0 w-8 flex justify-end">
+                <USkeleton class="h-3 w-6" />
+              </div>
+            </div>
           </div>
+
           <div v-else-if="paginatedEmails.length === 0"
             class="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-            <Inbox class="w-10 h-10 mb-2 opacity-20" /><span class="text-sm">Tidak ada data ditemukan</span>
+            <Inbox class="w-10 h-10 mb-2 opacity-20" />
+            <span class="text-sm">Tidak ada data ditemukan</span>
           </div>
+
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="selectMail(mail)"
             class="group flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:shadow-sm cursor-pointer transition-colors relative w-full"
             :class="selected?.id === mail.id ? 'bg-blue-50/50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'">
+
             <div class="flex items-center shrink-0" @click.stop>
               <div
                 class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
@@ -674,23 +715,31 @@ watch(() => route.query.q, (newVal) => {
                 <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
               </div>
             </div>
+
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
               <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
-                <div class="text-[13px] text-neutral-500 uppercase truncate font-bold" :title="mail.from">{{
-                  mail.from }}</div>
+                <div class="text-[13px] text-neutral-500 uppercase truncate font-bold" :title="mail.from">
+                  {{ mail.from }}
+                </div>
               </div>
               <div class="text-[13px] text-gray-900 dark:text-gray-100 truncate flex-1">{{ mail.subject }}</div>
-              <div class="hidden xl:flex shrink-0 w-[150px] justify-start items-center">
-                <span class="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full"
-                  :class="getCategoryStyle(mail.category)">{{ getCategoryLabel(mail.category) }}</span>
+              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+                <span
+                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
+                </span>
               </div>
             </div>
+
             <div class="pl-2 shrink-0 text-right w-24">
               <span class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap">
-                {{ mail.date }}</span>
+                {{ mail.date }}
+              </span>
             </div>
+
             <div
-              class="min-w-10 pl-2 shrink-0 text-right w-8 flex items-center gap-1 rounded p-1 text-neutral-500 dark:text-gray-400"
+              class="min-w-10 pl-2 ml-2 shrink-0 text-right w-8 flex items-center gap-1 rounded p-1 text-neutral-500 dark:text-gray-400"
               :class="[mail.category === 'SDE'
                 ? 'cursor-not-allowed opacity-50'
                 : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -734,9 +783,12 @@ watch(() => route.query.q, (newVal) => {
                 </div>
               </div>
             </div>
-            <div class="mt-4"><span
-                :class="[getCategoryStyle(selected.category), 'px-3 py-1 rounded text-[13px] font-medium inline-block']">{{
-                  getCategoryLabel(selected.category) }}</span></div>
+            <div class="mt-4">
+              <span
+                :class="[getCategoryStyle(selected.category), 'px-3 py-1 rounded-full text-[13px] font-medium inline-block']">
+                {{ getCategoryLabel(selected.category) }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto px-6 py-6 bg-white dark:bg-gray-900">
