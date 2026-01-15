@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: 172.20.16.115:5500
-  IMAGE_NAME: dani/arsipku-be
+  IMAGE_NAME: Azzhsna/ArsipKu
   TAG: latest
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
           git clone \
             --branch ${{ github.ref_name }} \
             --single-branch \
-            http://${{ secrets.GITEAUSERNAME }}:${{ secrets.GITEATOKEN }}@${{ vars.HOST_URL }}/dani/arsipku-be.git \
+            http://${{ secrets.GITEAUSERNAME }}:${{ secrets.GITEATOKEN }}@${{ vars.HOST_URL }}/Azzhsna/ArsipKu.git \
             .
 
       - name: Debug workspace
