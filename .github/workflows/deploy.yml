@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: 172.20.16.115:5500
-  IMAGE_NAME: Azzhsna/ArsipKu
+  IMAGE_NAME: azzhsna/arsipKu
   TAG: latest
 
 jobs:
