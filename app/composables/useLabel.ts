@@ -8,6 +8,10 @@ export const useLabel = () => {
   const labelCounts = ref<Record<string, number>>({});
   const isLoadingLabels = ref(false);
 
+  const naskahByLabel = ref<any[]>([]);
+  const isLoadingNaskah = ref(false);
+  const naskahError = ref<any>(null);
+
   const fetchLabels = async () => {
     isLoadingLabels.value = true;
     try {
@@ -42,11 +46,26 @@ export const useLabel = () => {
   };
 
   const addNaskahToLabel = async (naskahId: string, labelId: string) => {
-    return await post(`/labels/naskah/${naskahId}`, { label_id: labelId });
+    return await post(`/labels/naskah/${naskahId}`, { labelIds: [labelId] });
   };
 
   const removeNaskahFromLabel = async (naskahId: string, labelId: string) => {
     return await del(`/labels/naskah/${naskahId}/${labelId}`);
+  };
+
+  const fetchNaskahByLabel = async (labelId: string) => {
+    isLoadingNaskah.value = true;
+    naskahError.value = null;
+
+    try {
+      const res = await get(`/labels/${labelId}/naskah`);
+      naskahByLabel.value = res?.data || [];
+    } catch (err) {
+      naskahError.value = err;
+      naskahByLabel.value = [];
+    } finally {
+      isLoadingNaskah.value = false;
+    }
   };
 
   return {
@@ -60,5 +79,7 @@ export const useLabel = () => {
     deleteLabel,
     addNaskahToLabel,
     removeNaskahFromLabel,
+    naskahByLabel,
+    fetchNaskahByLabel,
   };
 };

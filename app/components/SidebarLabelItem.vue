@@ -1,0 +1,66 @@
+<template>
+  <div>
+    <div class="group relative flex items-center gap-2 py-2 mx-3 rounded-full cursor-pointer transition-colors" :class="isActive
+      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+      : 'hover:bg-gray-200/60 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'"
+      :style="{ paddingLeft: (16 + (level * 20)) + 'px', paddingRight: '16px' }" @click="navigateToLabel">
+      <UIcon name="i-lucide-tag" class="w-5 h-5 shrink-0 transition-transform" :class="[
+        level > 0 ? 'scale-90' : '',
+        isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'
+      ]" />
+
+      <span class="flex-1 text-[14px] truncate leading-5" :class="{ 'font-semibold': isActive }">
+        {{ item.nama }}
+      </span>
+
+      <span v-if="count > 0" class="text-[10px] font-semibold px-2 py-0.5 rounded-full mr-2 group-hover:hidden"
+        :class="isActive ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'">
+        {{ count }}
+      </span>
+
+      <div
+        class="hidden group-hover:flex absolute right-1 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-full px-1 gap-0.5 z-10">
+        <button @click.stop="$emit('edit', item)" class="p-1 rounded hover:text-primary-500 text-primary-300">
+          <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" />
+        </button>
+        <button @click.stop="$emit('delete', item)" class="p-1 rounded hover:text-error-500 text-error-300">
+          <UIcon name="i-lucide-trash-2" class="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+
+    <div v-if="item.children && item.children.length > 0">
+      <SidebarLabelItem v-for="child in item.children" :key="child.id" :item="child" :level="level + 1"
+        :labelCounts="labelCounts" @edit="$emit('edit', $event)" @delete="$emit('delete', $event)" />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
+const props = defineProps({
+  item: { type: Object, required: true },
+  level: { type: Number, default: 0 },
+  labelCounts: { type: Object, default: () => ({}) }
+});
+
+const emit = defineEmits(['edit', 'delete', 'click']);
+
+const route = useRoute();
+const router = useRouter();
+
+// Hitung apakah label ini sedang dibuka berdasarkan URL
+const isActive = computed(() => {
+  return route.name === 'label-id' && route.params.id === props.item.id;
+});
+
+const count = computed(() => props.labelCounts[props.item.id] || 0);
+
+// Fungsi navigasi ke halaman detail label
+const navigateToLabel = () => {
+  router.push(`/label/${props.item.id}`);
+  emit('click', props.item);
+};
+</script>

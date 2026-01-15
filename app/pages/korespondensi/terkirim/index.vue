@@ -4,10 +4,11 @@ import {
   Inbox, FileText, Send, Building, Building2, FilePen,
   Check, X, RotateCw, MoreVertical, History, Layers, Download,
   Archive, Trash2, ChevronLeft, ChevronRight, Eye, Loader2, BookOpen,
-  ArrowUpDown, Calendar as CalendarIcon, AlertTriangle
+  ArrowUpDown, Calendar as CalendarIcon, AlertTriangle, Tag, Plus // Tambah Tag & Plus
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useSirkulasi } from '@/composables/useTerkirim';
+import { useLabel } from '~/composables/useLabel'; // Import useLabel
 import type { NaskahItem, UIMailItem } from '~/types/terkirim';
 import * as XLSX from 'xlsx';
 // Import CalendarDate untuk type safety (opsional, tergantung setup project)
@@ -28,6 +29,9 @@ const getInitials = (name: string) => {
 // --- COMPOSABLES ---
 const { user } = useAuth();
 const { fetchSentBox, isLoading, bulkActionSent } = useSirkulasi();
+// Inisialisasi useLabel
+const { labels, fetchLabels, createLabel, addNaskahToLabel } = useLabel();
+
 const route = useRoute();
 const toast = useToast();
 
@@ -110,6 +114,9 @@ const currentReaderData = ref({
   readList: [] as any[],
   unreadList: [] as any[]
 });
+
+// --- STATE LABEL ASSIGNMENT ---
+const showLabelAssignModal = ref(false);
 
 // --- HELPER: COLOR MAPPING ---
 const getCategoryStyle = (cat: string) => {
@@ -426,6 +433,78 @@ const downloadExcel = async () => {
   }
 };
 
+// --- LABEL METHODS ---
+const openLabelAssignModal = () => {
+  showLabelAssignModal.value = true;
+};
+
+// Terapkan label ke item yang dipilih
+const assignLabelToSelected = async (labelId: string, labelName: string) => {
+  if (selectedIds.value.size === 0) return;
+  isLabelProcessing.value = true;
+
+  try {
+    // Loop semua item terpilih dan tambahkan label (API addNaskahToLabel biasanya single item)
+    // Kita gunakan Promise.all untuk paralel
+    const promises = Array.from(selectedIds.value).map(naskahId =>
+      addNaskahToLabel(naskahId, labelId)
+    );
+
+    await Promise.all(promises);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `Label "${labelName}" ditambahkan ke ${selectedIds.value.size} item.`,
+      color: 'success'
+    });
+
+    showLabelAssignModal.value = false;
+    selectedIds.value.clear(); // Opsional: clear selection setelah label
+  } catch (error) {
+    console.error("Gagal assign label:", error);
+    toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
+  } finally {
+    isLabelProcessing.value = false;
+  }
+};
+
+// Buat label baru lalu terapkan
+const createNewAndAssign = async () => {
+  const name = labelSearchQuery.value.trim();
+  if (!name) return;
+  isLabelProcessing.value = true;
+
+  try {
+    // 1. Create Label
+    const payload: any = { nama: name };
+
+    if (newLabelParentId.value) {
+      // PERBAIKAN: Backend menolak 'parent_id', gunakan 'idParent'
+      payload.idParent = newLabelParentId.value;
+    }
+
+    const res = await createLabel(payload);
+
+    // Sesuaikan dengan struktur response create backend Anda
+    // Biasanya ada di res.data atau res.data.data
+    const newLabel = res.data;
+
+    if (newLabel && newLabel.id) {
+      // 2. Assign ke item terpilih
+      await assignLabelToSelected(newLabel.id, newLabel.nama);
+      // Refresh daftar label global
+      await fetchLabels();
+    }
+  } catch (error: any) { // Type any agar bisa baca error response
+    console.error("Gagal buat label:", error);
+    // Tampilkan pesan error spesifik jika ada
+    const msg = error.response?.data?.message || 'Gagal membuat label baru.';
+    toast.add({ title: 'Gagal', description: Array.isArray(msg) ? msg.join(', ') : msg, color: 'error' });
+    isLabelProcessing.value = false;
+  }
+};
+
+
 // --- TABS DEFINITION ---
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
@@ -499,6 +578,11 @@ watch(() => route.query.q, (newVal) => {
               class="p-1.5 text-primary dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
               title="Arsipkan">
               <Archive class="w-4 h-4" />
+            </button>
+            <button @click="openLabelAssignModal"
+              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
+              title="Label">
+              <Tag class="w-4 h-4" />
             </button>
 
             <span class="text-xs text-neutral-500 ms-2">{{ selectedIds.size }} dipilih</span>
@@ -815,6 +899,8 @@ watch(() => route.query.q, (newVal) => {
         </div>
       </div>
     </div>
+
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" />
 
     <Teleport to="body">
       <div v-if="showReaderModal"

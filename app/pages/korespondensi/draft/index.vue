@@ -323,17 +323,23 @@ const handleDelete = async () => {
 // --- STYLE KATEGORI SESUAI GAMBAR ---
 const getCategoryStyle = (cat) => {
   const c = (cat || '').toUpperCase();
-  // Nota Dinas (Biru)
-  if (['ND'].includes(c)) return 'bg-blue-100 text-blue-600';
-  // Disposisi (Ungu)
-  if (['DI'].includes(c)) return 'bg-purple-100 text-purple-600';
-  // Internal (Hijau)
-  if (['SDI'].includes(c)) return 'bg-green-100 text-green-600';
-  // Eksternal (Orange/Kuning)
-  if (['SDE'].includes(c)) return 'bg-orange-100 text-orange-600';
 
-  // Default/Konsep
-  return 'bg-gray-100 text-gray-700';
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 </script>
 
