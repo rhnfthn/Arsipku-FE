@@ -76,11 +76,7 @@ export function useNaskahDinas() {
       formData.append("file_attachment", payload.file[0]);
     }
 
-    return await apiPost("/naskah-dinas/send-message", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    return apiPost("/naskah-dinas/send-message", formData);
   };
 
   return {
