@@ -15,8 +15,13 @@ export const useLaporan = () => {
     return apiGet("/area");
   };
 
+  const getJenisList = () => {
+    return apiGet("/jenis");
+  };
+
   return {
     getRekapNaskah,
     getAreaList,
+    getJenisList,
   };
 };

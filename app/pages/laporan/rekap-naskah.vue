@@ -1,54 +1,81 @@
 <template>
-  <div class="flex flex-wrap justify-between">
-    <div class="items-center justify-between w-full mb-5">
+  <div class="flex items-center justify-between mb-5">
+    <div>
       <Heading variant="heading6b" class="text-mobile-md">
         Rekap Naskah Dinas
       </Heading>
       <PageHeader :items="breadcrumbs" />
     </div>
+
+    <button
+      @click="exportExcel"
+      class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
+    >
+      <FileDown class="w-4 h-4" />
+      Export
+    </button>
   </div>
 
   <div
     class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
   >
-    <div class="sticky top-0 z-40 bg-white flex-wrap flex justify-between p-3">
+    <div
+      class="sticky top-0 z-40 bg-white flex items-start gap-3 p-3 relative z-50"
+    >
       <div class="flex flex-wrap gap-3">
         <!-- Refresh -->
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+          :disabled="loading"
+          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 disabled:opacity-50"
         >
-          <RotateCcw class="w-4 h-4" />
+          <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
 
-        <!-- JENIS NASKAH -->
-        <div class="relative">
-          <button
-            @click="toggle('type')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
-          >
-            <span>{{ selectedType || "Semua Jenis" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
-          </button>
+        <div class="relative min-w-[220px]">
+          <input
+            v-model="jenisSearch"
+            @focus="openDropdown = 'type'"
+            @keydown.escape="openDropdown = null"
+            type="text"
+            placeholder="Semua Jenis"
+            class="w-full rounded-md p-2 text-sm bg-gray-100 pr-8 focus:outline-none placeholder:text-black"
+          />
 
+          <ChevronDown
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+          />
+
+          <!-- DROPDOWN LIST -->
           <div
             v-if="openDropdown === 'type'"
             class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
+            <!-- RESET -->
             <button
-              @click="selectedType = ''"
+              @click="selectJenis(null)"
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
               Semua Jenis
             </button>
+
+            <!-- OPTIONS -->
             <button
-              v-for="item in data"
+              v-for="item in filteredJenisOptions"
               :key="item.id"
-              @click="selectedType = item.naskah"
+              @click="selectJenis(item)"
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
-              {{ item.naskah }}
+              {{ item.jenis_text }}
             </button>
+
+            <!-- EMPTY -->
+            <div
+              v-if="filteredJenisOptions.length === 0"
+              class="px-3 py-2 text-sm text-gray-400 italic"
+            >
+              Data tidak ditemukan
+            </div>
           </div>
         </div>
 
@@ -67,15 +94,22 @@
             class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <button
-              @click="selectedMonth = ''"
+              @click="
+                selectedMonth = '';
+                openDropdown = null;
+              "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
               Semua Bulan
             </button>
+
             <button
               v-for="bulan in monthOptions"
               :key="bulan.value"
-              @click="selectedMonth = bulan.value"
+              @click="
+                selectedMonth = bulan.value;
+                openDropdown = null;
+              "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
             >
               {{ bulan.label }}
@@ -189,93 +223,112 @@
           </div>
         </div>
       </div>
-
-      <!-- EXPORT -->
-      <button
-        @click="exportExcel"
-        class="flex items-center gap-2 mr-4 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
-      >
-        <FileDown class="w-4 h-4" />
-        Export
-      </button>
     </div>
-    <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
-      <table class="text-center">
-        <thead class="sticky top-0 z-30 bg-primary-400">
-          <tr class="bg-primary-400 text-white">
-            <th
-              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm w-[350px] text-start"
-            >
-              Naskah
-            </th>
-            <template v-if="!selectedMonth">
+    <div class="max-h-[70vh] overflow-y-auto">
+      <div class="overflow-x-auto">
+        <table class="text-center">
+          <thead class="bg-primary-400">
+            <tr class="bg-primary-400 text-white">
               <th
-                v-for="bulan in monthOptions"
-                :key="bulan.value"
+                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm w-[350px] text-start"
+              >
+                Naskah
+              </th>
+              <template v-if="!selectedMonth">
+                <th
+                  v-for="bulan in monthOptions"
+                  :key="bulan.value"
+                  class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                >
+                  {{ bulan.label }}
+                </th>
+              </template>
+
+              <template v-else>
+                <th
+                  class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                >
+                  {{ selectedMonthLabel }}
+                </th>
+              </template>
+
+              <th
                 class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
               >
-                {{ bulan.label }}
+                Jumlah
               </th>
-            </template>
-
-            <template v-else>
               <th
-                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 font-semibold text-sm sticky right-0 z-20 bg-primary-400 min-w-[140px]"
               >
-                {{ selectedMonthLabel }}
+                Status
               </th>
-            </template>
+            </tr>
+          </thead>
 
-            <th
-              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
-            >
-              Jumlah
-            </th>
-            <th
-              class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
-            >
-              Status
-            </th>
-          </tr>
-        </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td :colspan="tableColCount" class="px-4 py-6">
+                <div class="space-y-4 animate-pulse">
+                  <div
+                    v-for="n in skeletonRows"
+                    :key="'skeleton-' + n"
+                    class="h-14 w-full rounded-lg bg-gray-200"
+                  />
+                </div>
+              </td>
+            </tr>
 
-        <tbody>
-          <tr
-            v-for="row in filteredTableData"
-            :key="row.id"
-            class="hover:bg-blue-50"
-          >
-            <td
-              class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible"
-            >
-              {{ row.naskah }}
-            </td>
+            <tr v-else-if="!filteredTableData.length">
+              <td :colspan="tableColCount" class="py-8 text-gray-400 text-sm">
+                Tidak ada data
+              </td>
+            </tr>
 
-            <template v-if="!selectedMonth">
+            <tr
+              v-else
+              v-for="row in filteredTableData"
+              :key="row.id"
+              class="hover:bg-blue-50"
+            >
               <td
-                v-for="bulan in monthOptions"
-                :key="bulan.value"
-                class="px-4 py-3 text-sm"
+                class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible"
               >
-                {{ row[bulan.value] || "-" }}
+                {{ row.naskah }}
               </td>
-            </template>
 
-            <template v-else>
-              <td class="px-4 py-3 text-sm">
-                {{ row[selectedMonth] || "-" }}
+              <template v-if="!selectedMonth">
+                <td
+                  v-for="bulan in monthOptions"
+                  :key="bulan.value"
+                  class="px-4 py-3 text-sm"
+                >
+                  {{ row[bulan.value] || "-" }}
+                </td>
+              </template>
+
+              <template v-else>
+                <td class="px-4 py-3 text-sm">
+                  {{ row[selectedMonth] || "-" }}
+                </td>
+              </template>
+
+              <td class="px-4 py-3 font-bold text-sm text-gray-900">
+                {{ row.jumlah }}
               </td>
-            </template>
-
-            <td class="px-4 py-3 font-bold text-sm text-gray-900">
-              {{ row.jumlah }}
-            </td>
-            <!-- <td class="px-4 py-3 font-bold text-sm text-gray-900">
-              {{ status.label }}
-            </td> -->
-          </tr>
-        </tbody>
-      </table>
+              <td
+                class="px-4 py-3 text-sm sticky right-0 z-10 min-w-[140px] shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+              >
+                <span
+                  class="px-2 py-1 rounded-full text-xs font-semibold capitalize"
+                  :class="getStatusClass(row.status)"
+                >
+                  {{ row.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -285,18 +338,20 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
 import { useToast } from "#imports";
 import { useLaporan } from "~/composables/useLaporan";
+import * as XLSX from "xlsx";
 
-const { getRekapNaskah, getAreaList } = useLaporan();
+const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
 ];
 const getStatusClass = (status: string) => {
-  if (status === "Terpakai") return "bg-green-100 text-green-700";
+  if (status === "terpakai") return "bg-green-100 text-green-700";
   if (status === "booking") return "bg-blue-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
+
 // const items = [
 //   {
 //     label: "Home",
@@ -320,9 +375,49 @@ const openDropdown = ref<null | string>(null);
 const toast = useToast();
 
 const exportExcel = () => {
+  if (!filteredTableData.value.length) {
+    toast.add({
+      title: "Tidak ada data",
+      description: "Data kosong, tidak bisa diexport",
+      color: "warning",
+    });
+    return;
+  }
+
+  const rows: any[] = [];
+
+  filteredTableData.value.forEach((row) => {
+    const baseRow: any = {
+      Naskah: row.naskah,
+    };
+
+    if (selectedMonth.value) {
+      // export 1 bulan saja
+      baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
+    } else {
+      // export semua bulan
+      monthOptions.forEach((bulan) => {
+        baseRow[bulan.label] = row[bulan.value] ?? 0;
+      });
+    }
+
+    baseRow["Jumlah"] = row.jumlah;
+    baseRow["Status"] = row.status;
+
+    rows.push(baseRow);
+  });
+
+  // buat worksheet & workbook
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap");
+
+  // download
+  XLSX.writeFile(workbook, `rekap-naskah-${selectedYear.value}.xlsx`);
+
   toast.add({
     title: "Berhasil!",
-    description: "Data berhasil diexport testt",
+    description: `Rekap tahun ${selectedYear.value} berhasil diexport`,
     color: "success",
     icon: "i-lucide-check-circle",
   });
@@ -335,7 +430,7 @@ const fetchRekap = async () => {
   loading.value = true;
   try {
     const params: any = {
-      tahun: selectedYear.value,
+      tahun: selectedYear.value, // wajib
     };
 
     if (selectedArea.value) {
@@ -346,12 +441,16 @@ const fetchRekap = async () => {
       params.status = selectedStatuses.value[0];
     }
 
+    if (selectedType.value) {
+      params.jenis = selectedType.value;
+    }
+
     const res = await getRekapNaskah(params);
 
     rekapData.value = res.data.rekap.map((item: any, idx: number) => ({
       id: idx,
       naskah: item.jenis_text,
-      status: res.data.status,
+      status: item.status,
       januari: item.jan,
       februari: item.feb,
       maret: item.mar,
@@ -386,13 +485,40 @@ const fetchArea = async () => {
   }
 };
 
-watch([selectedYear, selectedArea, selectedStatuses], fetchRekap, {
-  deep: true,
+watch(
+  [selectedYear, selectedArea, selectedStatuses, selectedType],
+  fetchRekap,
+  { deep: true },
+);
+
+const jenisOptions = ref<any[]>([]);
+
+const selectedTypeLabel = computed(() => {
+  if (!selectedType.value) return "Semua Jenis";
+  return (
+    jenisOptions.value.find((j) => j.jenis === selectedType.value)
+      ?.jenis_text ?? "Semua Jenis"
+  );
 });
+
+const fetchJenis = async () => {
+  try {
+    const res = await getJenisList();
+    jenisOptions.value = res.data;
+  } catch (e) {
+    console.error("Gagal mengambil jenis", e);
+  }
+};
 
 onMounted(() => {
   fetchRekap();
   fetchArea();
+  fetchJenis();
+});
+
+const tableColCount = computed(() => {
+  if (selectedMonth.value) return 4;
+  return 1 + monthOptions.length + 2;
 });
 
 const yearOptions = computed(() => {
@@ -419,7 +545,7 @@ const areaOptions = ref<{ label: string; value: string }[]>([]);
 
 const statusOptions = [
   { label: "Terpakai", value: "terpakai" },
-  { label: "Hangus", value: "tidak terpakai" },
+  { label: "Hangus", value: "hangus" },
   { label: "Booking", value: "booking" },
 ];
 
@@ -455,14 +581,74 @@ const toggleStatus = (status: string) => {
   openDropdown.value = null;
 };
 
-const filteredTableData = computed(() => rekapData.value);
+const filteredTableData = computed(() => {
+  let data = [...rekapData.value];
 
-const refreshData = () => {
+  // filter STATUS
+  if (selectedStatuses.value.length === 1) {
+    data = data.filter((row) => row.status === selectedStatuses.value[0]);
+  }
+
+  // filter JENIS
+  if (selectedType.value) {
+    data = data.filter(
+      (row) =>
+        row.naskah ===
+        jenisOptions.value.find((j) => j.jenis === selectedType.value)
+          ?.jenis_text,
+    );
+  }
+
+  return data;
+});
+
+const jenisSearch = ref("");
+
+const filteredJenisOptions = computed(() => {
+  if (!jenisSearch.value) return jenisOptions.value;
+
+  return jenisOptions.value.filter((item) =>
+    item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase()),
+  );
+});
+
+const selectJenis = (item: any | null) => {
+  if (!item) {
+    selectedType.value = "";
+    jenisSearch.value = "";
+  } else {
+    selectedType.value = item.jenis;
+    jenisSearch.value = item.jenis_text;
+  }
+
+  openDropdown.value = null;
+};
+
+watch(selectedType, (val) => {
+  if (!val) {
+    jenisSearch.value = "";
+    return;
+  }
+
+  const found = jenisOptions.value.find((j) => j.jenis === val);
+  if (found) {
+    jenisSearch.value = found.jenis_text;
+  }
+});
+
+const refreshData = async () => {
   selectedMonth.value = "";
   selectedType.value = "";
+  jenisSearch.value = "";
   selectedStatuses.value = [];
   selectedArea.value = "";
+  selectedLokasi.value = "";
   selectedYear.value = new Date().getFullYear();
-  fetchRekap();
+
+  await fetchRekap();
 };
+
+const skeletonRows = computed(() => {
+  return selectedMonth.value ? 4 : 6;
+});
 </script>
