@@ -6,6 +6,9 @@ import {
   RotateCcw,
   Plus,
   FileDown,
+  Upload,
+  FileText,
+  X,
 } from "lucide-vue-next";
 
 import Modal from "~/components/Modal.vue";
@@ -14,16 +17,22 @@ import { useNaskahDinas } from "~/composables/useNaskahDinas";
 import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 import { useToast } from "#imports";
 import { useAuth } from "~/composables/useAuth";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 // ==============================
 // STATE (existing)
 // ==============================
 const toast = useToast();
 const search = ref("");
-const filterStatus = ref("Semua");
-const sortDirection = ref<"asc" | "desc" | null>(null);
+const sortDirection = ref<"asc" | "desc" | null>("desc");
 const showAddModal = ref(false);
-const showEditModal = ref(false);
+const searchTertuju = ref("");
+const searchAsalNaskah = ref("");
+const skeletonRows = computed(() => {
+  if (perPage.value === "all") return 10;
+  return Number(perPage.value);
+});
 
 const items = [
   {
@@ -63,6 +72,30 @@ onMounted(() => {
   fetchRecipients();
 });
 
+const filteredTertujuList = computed(() => {
+  const keyword = searchTertuju.value.toLowerCase();
+
+  if (!keyword) return tertujuList.value;
+
+  return tertujuList.value.filter((item) => {
+    return (
+      item.persnum_person_text?.toLowerCase().includes(keyword) ||
+      item.position_text?.toLowerCase().includes(keyword) ||
+      item.organization_parent_text?.toLowerCase().includes(keyword)
+    );
+  });
+});
+
+const filteredAsalNaskahList = computed(() => {
+  const keyword = searchAsalNaskah.value.toLowerCase();
+
+  if (!keyword) return asalNaskahList.value;
+
+  return asalNaskahList.value.filter((item) =>
+    item.nama?.toLowerCase().includes(keyword),
+  );
+});
+
 // ==============================
 // SORT & REFRESH (existing)
 // ==============================
@@ -72,10 +105,12 @@ const toggleSort = () => {
   else sortDirection.value = null;
 };
 
-const refreshData = () => {
+const refreshData = async () => {
   search.value = "";
-  filterStatus.value = "Semua";
   sortDirection.value = null;
+  currentPage.value = 1;
+
+  await fetchNaskahDinas();
 };
 
 const filteredData = computed(() => {
@@ -88,7 +123,9 @@ const filteredData = computed(() => {
   // =====================
   data = data.filter((item) => {
     return (
-      (item.pengirim?.nama || "").toLowerCase().includes(keyword) ||
+      (item.pengirim?.persnum_person_text || "")
+        .toLowerCase()
+        .includes(keyword) ||
       (item.nomor || "").toLowerCase().includes(keyword) ||
       (item.perihal || "").toLowerCase().includes(keyword) ||
       (item.lampiran || "").toLowerCase().includes(keyword) ||
@@ -97,49 +134,91 @@ const filteredData = computed(() => {
   });
 
   // =====================
-  // SORT
+  // SORT (DEFAULT = TERBARU)
   // =====================
-  if (sortDirection.value === "asc") {
-    data.sort((a, b) =>
-      `${a.tanggal} ${a.jam}`.localeCompare(`${b.tanggal} ${b.jam}`),
-    );
-  }
+  data.sort((a, b) => {
+    const dateA = parseUtcTanggalJam(a.tanggal, a.jam)?.getTime() ?? 0;
+    const dateB = parseUtcTanggalJam(b.tanggal, b.jam)?.getTime() ?? 0;
 
-  if (sortDirection.value === "desc") {
-    data.sort((a, b) =>
-      `${b.tanggal} ${b.jam}`.localeCompare(`${a.tanggal} ${a.jam}`),
-    );
-  }
+    // default: terbaru
+    if (sortDirection.value !== "asc") {
+      return dateB - dateA;
+    }
+
+    return dateA - dateB;
+  });
 
   return data;
 });
 
 // ==============================
-// DELETE (existing)
+// PAGINATION
 // ==============================
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref<any>(null);
+const currentPage = ref(1);
+const perPage = ref<number | "all">(10);
 
-const openDelete = (item) => {
-  itemToDelete.value = item;
-  confirmDeleteOpen.value = true;
-};
+const totalItems = computed(() => filteredData.value.length);
 
-const deleteNow = () => {
-  listDelegasi.value = listDelegasi.value.filter(
-    (i) => i.id !== itemToDelete.value.id,
-  );
-  confirmDeleteOpen.value = false;
-};
+const totalPages = computed(() => {
+  if (perPage.value === "all") return 1;
+  return Math.ceil(totalItems.value / perPage.value);
+});
+
+const paginatedData = computed(() => {
+  if (perPage.value === "all") {
+    return filteredData.value;
+  }
+
+  const start = (currentPage.value - 1) * perPage.value;
+  return filteredData.value.slice(start, start + perPage.value);
+});
+
+const paginationPages = computed(() => {
+  const pages: (number | string)[] = [];
+  const total = totalPages.value;
+  const current = currentPage.value;
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+    return pages;
+  }
+
+  pages.push(1);
+
+  if (current > 4) pages.push("...");
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (current < total - 3) pages.push("...");
+
+  pages.push(total);
+
+  return pages;
+});
+
+function goToPage(page: number) {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+}
+
+watch(perPage, () => {
+  currentPage.value = 1;
+});
 
 // ==============================
 // ADD & EDIT DELEGASI (existing)
 // ==============================
 
 const filesRef = ref<File[]>([]);
+
 const lampiranText = computed(() => {
-  const count = filesRef.value.length;
-  return `${count} lampiran`;
+  const total = filesRef.value.length;
+  return `${total} lampiran`;
 });
 
 const newDelegasi = ref({
@@ -194,6 +273,7 @@ const saveDelegasi = async () => {
       icon: "i-lucide-check-circle",
     });
 
+    resetNewDelegasi();
     showAddModal.value = false;
     fetchNaskahDinas();
   } catch (e) {
@@ -206,37 +286,6 @@ const saveDelegasi = async () => {
       icon: "i-lucide-x-circle",
     });
   }
-};
-
-const editDelegasi = ref({
-  id: null,
-  jenisnaskah: "",
-  sifatnaskah: "",
-});
-
-const openEdit = (item) => {
-  const [mulai, sampai] = item.tanggal.split(" - ");
-  editDelegasi.value = {
-    id: item.id,
-    jenisnaskah: item.jenisnaskah,
-    sifatnaskah: item.sifataskah ?? "",
-  };
-  showEditModal.value = true;
-};
-
-const saveEditDelegasi = () => {
-  const index = listDelegasi.value.findIndex(
-    (x) => x.id === editDelegasi.value.id,
-  );
-  if (index !== -1) {
-    listDelegasi.value[index] = {
-      ...listDelegasi.value[index],
-      jenisnaskah: editDelegasi.value.jenisnaskah,
-      sifatnaskah: editDelegasi.value.sifatnaskah,
-      // tanggal: `${editDelegasi.value.mulai} - ${editDelegasi.value.sampai}`,
-    };
-  }
-  showEditModal.value = false;
 };
 
 // ==============================
@@ -256,7 +305,7 @@ const jenisnaskahList = [
 ];
 
 const sifatnaskahList = [
-  { id: 1, label: "Biasa/Terbuka", value: "Biasa/Terbuk" },
+  { id: 1, label: "Biasa/Terbuka", value: "Biasa/Terbuka" },
   { id: 2, label: "Terbatas", value: "Terbatas" },
   { id: 3, label: "Rahasia", value: "Rahasia" },
   { id: 4, label: "Sangat Rahasia", value: "Sangat Rahasia" },
@@ -305,6 +354,8 @@ function handleDocumentClick(e: MouseEvent) {
   openEditSifatNaskah.value = false;
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
+  searchTertuju.value = "";
+  searchAsalNaskah.value = "";
 }
 
 onMounted(() => {
@@ -313,12 +364,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
-
-// helpers to set value and close
-function selectFilterStatus(val: string) {
-  filterStatus.value = val;
-  openFilterStatus.value = false;
-}
 
 function selectNewJenisNaskah(val: string) {
   newDelegasi.value.jenisnaskah = val;
@@ -329,19 +374,11 @@ function selectNewSifatNaskah(val: string) {
   openNewSifatNaskah.value = false;
 }
 
-function selectEditJenisNaskah(val: string) {
-  editDelegasi.value.jenisnaskah = val;
-  openEditJenisNaskah.value = false;
-}
-function selectEditSifatNaskah(val: string) {
-  editDelegasi.value.sifatnaskah = val;
-  openEditSifatNaskah.value = false;
-}
-
 function selectNewAsalNaskah(item: { id: number; nama: string }) {
   newDelegasi.value.asal_naskah = item.id;
   newDelegasi.value.asal_naskah_label = item.nama;
   openNewAsalNaskah.value = false;
+  searchAsalNaskah.value = "";
 }
 
 function selectNewTertuju(item: any) {
@@ -353,8 +390,10 @@ function selectNewTertuju(item: any) {
     newDelegasi.value.tertuju.push(item);
   }
 
+  searchTertuju.value = ""; // reset search
   openNewTertuju.value = false;
 }
+
 function removeTertuju(position: number) {
   newDelegasi.value.tertuju = newDelegasi.value.tertuju.filter(
     (t) => t.position !== position,
@@ -363,12 +402,166 @@ function removeTertuju(position: number) {
 
 function handleFileChange(e: Event) {
   const input = e.target as HTMLInputElement;
-  if (!input.files) {
-    filesRef.value = [];
+  if (!input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+
+  // VALIDASI MIME TYPE
+  if (file.type !== "application/pdf") {
+    toast.add({
+      title: "File tidak valid",
+      description: "Hanya file PDF yang diperbolehkan",
+      color: "warning",
+      icon: "i-lucide-alert-circle",
+    });
+
+    input.value = "";
     return;
   }
 
-  filesRef.value = Array.from(input.files);
+  filesRef.value = [file];
+  input.value = "";
+}
+
+function parseUtcTanggalJam(tanggal?: string, jam?: string) {
+  if (!tanggal || !jam) return null;
+
+  // PAKSA UTC
+  return new Date(`${tanggal}T${jam}Z`);
+}
+
+function formatTanggalJamIndonesia(tanggal?: string, jam?: string) {
+  const date = parseUtcTanggalJam(tanggal, jam);
+  if (!date) {
+    return { tanggal: "-", jam: "-" };
+  }
+
+  return {
+    tanggal: date.toLocaleDateString("id-ID", {
+      timeZone: "Asia/Jakarta",
+    }),
+    jam: date.toLocaleTimeString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+}
+
+function resetNewDelegasi() {
+  newDelegasi.value = {
+    tanggal_surat: "",
+    nomor_asal: "",
+    sifat_naskah: "",
+    perihal: "",
+    asal_naskah: null,
+    asal_naskah_label: "",
+    tertuju: [],
+    tertuju_label: "",
+  };
+
+  filesRef.value = [];
+  searchTertuju.value = "";
+  searchAsalNaskah.value = "";
+
+  openNewJenisNaskah.value = false;
+  openNewSifatNaskah.value = false;
+  openNewAsalNaskah.value = false;
+  openNewTertuju.value = false;
+}
+
+function openFinalPdf(url?: string) {
+  if (!url) return;
+
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function getFileNameFromUrl(url?: string) {
+  if (!url) return "";
+
+  try {
+    const cleanUrl = url.split("?")[0]; // buang query string
+    return decodeURIComponent(
+      cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1),
+    );
+  } catch {
+    return "";
+  }
+}
+
+function truncateFileName(name: string, maxLength = 25) {
+  if (name.length <= maxLength) return name;
+
+  const extIndex = name.lastIndexOf(".");
+  if (extIndex === -1) {
+    return name.slice(0, maxLength) + "…";
+  }
+
+  const ext = name.slice(extIndex); // .pdf
+  const base = name.slice(0, maxLength - ext.length - 1);
+
+  return `${base}…${ext}`;
+}
+
+function setPerPage(val: number | "all") {
+  perPage.value = val;
+  openFilterStatus.value = false;
+}
+
+function exportExcel() {
+  if (filteredData.value.length === 0) {
+    toast.add({
+      title: "Tidak ada data",
+      description: "Data kosong, tidak bisa diexport",
+      color: "warning",
+      icon: "i-lucide-alert-circle",
+    });
+    return;
+  }
+
+  // Mapping data ke format Excel
+  const excelData = filteredData.value.map((item, index) => {
+    const waktu = formatTanggalJamIndonesia(item.tanggal, item.jam);
+
+    return {
+      No: index + 1,
+      "Asal Naskah": item.pengirim?.nama || "-",
+      "Nomor Naskah": item.nomor || "-",
+      Tanggal: waktu.tanggal,
+      Jam: waktu.jam,
+      Tertuju:
+        item.penerima?.map((p: any) => p.position_text).join(", ") || "-",
+      Perihal: item.perihal || "-",
+      Pembuat: item.pembuat?.nama || "-",
+      "Jabatan Pembuat": item.pembuat?.position_text || "-",
+      "Final PDF URL": item.final_pdf_url || "-",
+    };
+  });
+
+  // Buat worksheet & workbook
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Naskah Dinas");
+
+  // Generate file
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const filename = `Naskah_Dinas_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  saveAs(blob, filename);
+
+  toast.add({
+    title: "Export berhasil",
+    description: "File Excel berhasil diunduh",
+    color: "success",
+    icon: "i-lucide-check-circle",
+  });
 }
 </script>
 
@@ -406,19 +599,20 @@ function handleFileChange(e: Event) {
 
           <button
             @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+            :disabled="pending"
+            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 disabled:opacity-50"
           >
-            <RotateCcw class="w-4 h-4" />
+            <RotateCcw class="w-4 h-4" :class="pending ? 'animate-spin' : ''" />
           </button>
 
           <!-- CUSTOM FILTER DROPDOWN -->
           <div class="relative" data-custom-dropdown>
             <button
-              class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-2 rounded-lg min-w-[150px]"
+              class="flex items-center justify-between gap-2 text-xs px-2 py-0.5 rounded-lg min-w-auto border border-gray-200"
               @click.stop="openFilterStatus = !openFilterStatus"
             >
               <span class="text-sm">
-                {{ filterStatus || "Semua" }}
+                {{ perPage === "all" ? "Semua" : ` ${perPage}` }}
               </span>
 
               <!-- Icon V -->
@@ -446,21 +640,18 @@ function handleFileChange(e: Event) {
             >
               <button
                 class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Semua')"
+                @click.prevent="setPerPage('all')"
               >
                 Semua
               </button>
+
               <button
+                v-for="n in [5, 10, 20, 50]"
+                :key="n"
                 class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Aktif')"
+                @click.prevent="setPerPage(n)"
               >
-                Aktif
-              </button>
-              <button
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                @click.prevent="selectFilterStatus('Tidak Aktif')"
-              >
-                Tidak Aktif
+                {{ n }}
               </button>
             </div>
           </div>
@@ -476,7 +667,8 @@ function handleFileChange(e: Event) {
             />
           </div>
           <button
-            class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+            @click="exportExcel"
+            class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
           >
             <FileDown class="w-4 h-4" />
             Export
@@ -500,12 +692,30 @@ function handleFileChange(e: Event) {
             </thead>
 
             <tbody>
+              <!-- ================= -->
+              <!-- SKELETON BLOCK -->
+              <!-- ================= -->
+              <tr v-if="pending">
+                <td colspan="5" class="px-4 py-6">
+                  <div class="space-y-4 animate-pulse">
+                    <div
+                      v-for="n in skeletonRows"
+                      :key="'skeleton-' + n"
+                      class="h-16 w-full rounded-lg bg-gray-200"
+                    />
+                  </div>
+                </td>
+              </tr>
+              <!-- ================= -->
+              <!-- DATA ASLI -->
+              <!-- ================= -->
               <tr
-                v-for="item in filteredData"
+                v-else
+                v-for="item in paginatedData"
                 :key="item.id"
                 class="hover:bg-blue-50 transition-colors"
               >
-                <td class="px-4 py-3 text-black">
+                <td class="px-4 py-3 text-black whitespace-nowrap">
                   <div class="font-medium">
                     {{ item.pengirim?.nama || "-" }}
                   </div>
@@ -513,11 +723,13 @@ function handleFileChange(e: Event) {
                     {{ item.nomor || "-" }}
                   </div>
                   <div class="text-xs text-gray-400">
-                    {{ item.tanggal }}
+                    {{
+                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
+                    }}
                   </div>
                 </td>
 
-                <td class="px-4 py-3 text-black whitespace-nowrap">
+                <td class="px-4 py-3 text-black">
                   <div class="font-medium">
                     {{
                       item.penerima?.map((p) => p.position_text).join(", ") ||
@@ -532,12 +744,22 @@ function handleFileChange(e: Event) {
                       {{ item.perihal }}
                     </div>
 
-                    <div
+                    <button
                       v-if="item.final_pdf_url"
-                      class="inline-flex w-fit items-center gap-1 bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded text-xs"
+                      @click="openFinalPdf(item.final_pdf_url)"
+                      class="inline-flex max-w-[220px] items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs hover:bg-emerald-200 hover:text-emerald-800 transition cursor-pointer"
+                      :title="getFileNameFromUrl(item.final_pdf_url)"
                     >
-                      Final
-                    </div>
+                      <FileText class="w-3 h-3 shrink-0" />
+                      <span class="truncate">
+                        {{
+                          truncateFileName(
+                            getFileNameFromUrl(item.final_pdf_url),
+                            28,
+                          )
+                        }}
+                      </span>
+                    </button>
                   </div>
                 </td>
                 <td class="px-4 py-3 text-black whitespace-nowrap">
@@ -549,11 +771,74 @@ function handleFileChange(e: Event) {
                   </div>
                 </td>
                 <td class="px-4 py-3 text-black">
-                  {{ item.jam }}
+                  {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <!-- PAGINATION -->
+          <div
+            class="flex items-center justify-between px-4 py-3 border-t border-gray-200"
+          >
+            <!-- INFO -->
+            <div class="text-sm text-gray-500">
+              Menampilkan
+              {{ paginatedData.length }}
+              dari
+              {{ totalItems }}
+              data
+            </div>
+
+            <!-- CONTROLS -->
+            <div class="flex items-center gap-1">
+              <!-- BACK -->
+              <button
+                class="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm"
+                :class="
+                  currentPage === 1
+                    ? 'text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'text-primary-500 border-primary-300 hover:bg-primary-50'
+                "
+                :disabled="currentPage === 1"
+                @click="goToPage(currentPage - 1)"
+              >
+                ‹ Back
+              </button>
+
+              <!-- PAGE NUMBERS -->
+              <button
+                v-for="(page, i) in paginationPages"
+                :key="i"
+                class="px-3 py-1.5 rounded-lg text-sm"
+                :class="[
+                  page === currentPage
+                    ? 'bg-primary-500 text-white'
+                    : page === '...'
+                      ? 'text-gray-400 cursor-default'
+                      : 'border border-gray-200 hover:bg-gray-100',
+                ]"
+                :disabled="page === '...'"
+                @click="typeof page === 'number' && goToPage(page)"
+              >
+                {{ page }}
+              </button>
+
+              <!-- NEXT -->
+              <button
+                class="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm"
+                :class="
+                  currentPage === totalPages
+                    ? 'text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'text-primary-500 border-primary-300 hover:bg-primary-50'
+                "
+                :disabled="currentPage === totalPages"
+                @click="goToPage(currentPage + 1)"
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -567,407 +852,359 @@ function handleFileChange(e: Event) {
         @preview="handlePreview"
     /></Teleport>
     <Teleport to="body">
-      <Modal v-model="showAddModal" @save="saveDelegasi">
+      <Modal
+        v-model="showAddModal"
+        @save="saveDelegasi"
+        @close="resetNewDelegasi"
+        size="xl"
+      >
         <template #title>
           <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
             >Tambah Naskah Dinas</Heading
           >
         </template>
 
-        <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-          <!-- <div>
-            <label class="text-xs font-semibold"
-              >Jenis Naskah <span class="text-red-500">*</span></label
-            >
-            <div class="relative" data-custom-dropdown>
-              <button
-                class="w-full text-left bg-gray-50 border border-gray-100 rounded-md px-4 py-1 mt-1 flex items-center justify-between"
-                @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
-              >
-                <span class="text-xs text-gray-600">
-                  {{ newDelegasi.jenisnaskah || "Pilih Jenis Naskah" }}
-                </span>
-              </button>
-
-              <div
-                v-if="openNewJenisNaskah"
-                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-md shadow-lg z-50 max-h-56 overflow-auto"
-              >
-                <button
-                  v-for="p in jenisnaskahList"
-                  :key="p.id"
-                  class="w-full text-left px-4 py-1 mt-1 text-xs hover:bg-gray-100"
-                  @click.prevent="selectNewJenisNaskah(p.value)"
-                >
-                  {{ p.label }}
-                </button>
-              </div>
-            </div>
-          </div> -->
-
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold"
-              >Tanggal Surat <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="newDelegasi.tanggal_surat"
-              type="date"
-              class="bg-gray-50 mt-1 border border-gray-100 rounded-md px-4 py-1 text-xs"
-            />
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold"
-              >Sifat Naskah <span class="text-red-500">*</span></label
-            >
-            <div class="relative" data-custom-dropdown>
-              <button
-                class="w-full text-left bg-gray-50 mt-1 border border-gray-100 rounded-md px-4 py-1 flex items-center justify-between"
-                @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
-              >
-                <span class="text-xs text-gray-600">
-                  {{ newDelegasi.sifat_naskah || "Biasa/Terbuka" }}
-                </span>
-              </button>
-
-              <div
-                v-if="openNewSifatNaskah"
-                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-md shadow-lg z-50 max-h-56 overflow-auto"
-              >
-                <button
-                  v-for="s in sifatnaskahList"
-                  :key="s.id"
-                  class="w-full text-left px-4 py-1 mt-1 text-xs hover:bg-gray-100"
-                  @click.prevent="selectNewSifatNaskah(s.value)"
-                >
-                  {{ s.label }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold"
-              >Nomor Asal Naskah <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="newDelegasi.nomor_asal"
-              type="text"
-              class="bg-gray-50 mt-1 border border-gray-100 rounded-md px-4 py-1 text-xs"
-              placeholder="Masukan nomor"
-            />
-          </div>
-
-          <div class="flex flex-wrap flex-col">
+        <div class="modal-form flex flex-col">
+          <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
             <div>
+              <label class="text-xs font-semibold"
+                >Jenis Naskah <span class="text-red-500">*</span></label
+              >
+              <div class="relative" data-custom-dropdown>
+                <button
+                  class="w-full text-left border border-gray-200 rounded-lg px-3 py-2 mt-1 flex items-center justify-between"
+                  @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
+                >
+                  <span
+                    class="text-xs"
+                    :class="
+                      newDelegasi.jenisnaskah
+                        ? 'text-gray-700'
+                        : 'text-gray-400'
+                    "
+                  >
+                    {{ newDelegasi.jenisnaskah || "Pilih Jenis Naskah" }}
+                  </span>
+                </button>
+
+                <div
+                  v-if="openNewJenisNaskah"
+                  class="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[999] max-h-56 overflow-auto"
+                >
+                  <button
+                    v-for="p in jenisnaskahList"
+                    :key="p.id"
+                    class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100"
+                    @click.prevent="selectNewJenisNaskah(p.value)"
+                  >
+                    {{ p.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap flex-col">
+              <label class="text-xs font-semibold"
+                >Tanggal Surat <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="newDelegasi.tanggal_surat"
+                type="date"
+                class="mt-1 border border-gray-200 rounded-lg px-3 py-2 text-xs"
+              />
+            </div>
+
+            <div>
+              <label class="text-xs font-semibold"
+                >Sifat Naskah <span class="text-red-500">*</span></label
+              >
+              <div class="relative" data-custom-dropdown>
+                <button
+                  class="w-full text-left mt-1 border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between"
+                  @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
+                >
+                  <span
+                    class="text-xs"
+                    :class="
+                      newDelegasi.sifat_naskah
+                        ? 'text-gray-700'
+                        : 'text-gray-400'
+                    "
+                  >
+                    {{ newDelegasi.sifat_naskah || "Pilih sifat naskah" }}
+                  </span>
+                </button>
+
+                <div
+                  v-if="openNewSifatNaskah"
+                  class="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+                >
+                  <button
+                    v-for="s in sifatnaskahList"
+                    :key="s.id"
+                    class="w-full text-left px-3 py-2 mt-1 text-xs"
+                    @click.prevent="selectNewSifatNaskah(s.value)"
+                  >
+                    {{ s.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap flex-col">
+              <label class="text-xs font-semibold"
+                >Nomor Asal Naskah <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="newDelegasi.nomor_asal"
+                type="text"
+                class="mt-1 border border-gray-200 rounded-lg px-3 py-2 text-xs"
+                placeholder="Masukan nomor"
+              />
+            </div>
+
+            <div class="flex flex-col">
               <label class="text-xs font-semibold">
                 Asal Naskah <span class="text-red-500">*</span>
               </label>
 
-              <div class="relative mt-1" data-custom-dropdown>
-                <button
-                  type="button"
-                  class="w-full text-left bg-gray-50 border border-gray-100 rounded-md px-4 py-1 flex items-center justify-between"
-                  @click.stop="openNewAsalNaskah = !openNewAsalNaskah"
+              <div class="relative mt-1 dropdown-input" data-custom-dropdown>
+                <!-- INPUT BOX -->
+                <div
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 flex items-center cursor-text dropdown-field"
+                  @click.stop="openNewAsalNaskah = true"
                 >
-                  <span class="text-xs text-gray-600">
-                    {{ newDelegasi.asal_naskah_label || "Pilih Asal Naskah" }}
-                  </span>
+                  <input
+                    :value="newDelegasi.asal_naskah_label || searchAsalNaskah"
+                    @input="searchAsalNaskah = $event.target.value"
+                    @focus="openNewAsalNaskah = true"
+                    placeholder="Cari asal naskah"
+                    class="flex-1 outline-none text-xs"
+                    :class="
+                      newDelegasi.asal_naskah_label
+                        ? 'text-gray-700'
+                        : 'text-gray-400'
+                    "
+                  />
 
-                  <svg
-                    class="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <!-- CLEAR -->
+                  <button
+                    v-if="newDelegasi.asal_naskah_label"
+                    type="button"
+                    class="text-red-400 text-xs ml-2"
+                    @click.stop="
+                      newDelegasi.asal_naskah = null;
+                      newDelegasi.asal_naskah_label = '';
+                      searchAsalNaskah = '';
+                    "
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                    ✕
+                  </button>
+                </div>
 
+                <!-- DROPDOWN -->
                 <div
                   v-if="openNewAsalNaskah"
-                  class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-md shadow-lg z-50 max-h-56 overflow-auto"
+                  class="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[999] max-h-60 overflow-auto"
                 >
                   <div
                     v-if="loadingAsalNaskah"
-                    class="px-4 py-3 text-xs text-gray-400"
+                    class="px-3 py-2 text-xs text-gray-400"
                   >
                     Memuat data...
                   </div>
 
                   <button
-                    v-for="item in asalNaskahList"
+                    v-for="item in filteredAsalNaskahList"
                     :key="item.id"
-                    class="w-full text-left px-4 py-1 hover:bg-gray-100 text-xs"
+                    class="w-full text-left px-3 py-2 hover:bg-gray-100 text-xs"
                     @click.prevent="selectNewAsalNaskah(item)"
                   >
                     {{ item.nama }}
                   </button>
+
+                  <div
+                    v-if="
+                      !loadingAsalNaskah && filteredAsalNaskahList.length === 0
+                    "
+                    class="px-3 py-2 text-xs text-gray-400"
+                  >
+                    Data tidak ditemukan
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold"
-              >Perihal <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="newDelegasi.perihal"
-              type="text"
-              class="bg-gray-50 mt-1 border border-gray-100 rounded-md px-4 py-1 text-xs"
-              placeholder="Masukan perihal"
-            />
-          </div>
-
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold">
-              Lampiran <span class="text-red-500">*</span>
-            </label>
-            <input
-              :value="lampiranText"
-              type="text"
-              readonly
-              class="bg-gray-100 mt-1 border border-gray-200 rounded-md px-4 py-1 text-xs cursor-not-allowed"
-              placeholder="0 Lampiran"
-            />
-          </div>
-
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold">
-              Tertuju <span class="text-red-500">*</span>
-            </label>
-
-            <div class="relative mt-1" data-custom-dropdown>
-              <button
-                type="button"
-                class="w-full text-left bg-gray-50 border border-gray-100 rounded-md px-4 py-1 flex items-center justify-between"
-                @click.stop="openNewTertuju = !openNewTertuju"
+            <div class="flex flex-wrap flex-col">
+              <label class="text-xs font-semibold"
+                >Perihal <span class="text-red-500">*</span></label
               >
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-if="!newDelegasi.tertuju.length"
-                    class="text-xs text-gray-400"
-                  >
-                    Pilih Tertuju
-                  </span>
+              <input
+                v-model="newDelegasi.perihal"
+                type="text"
+                class="mt-1 border border-gray-200 rounded-lg px-3 py-2 text-xs"
+                placeholder="Masukan perihal"
+              />
+            </div>
 
+            <div class="flex flex-wrap flex-col">
+              <label class="text-xs font-semibold">
+                Lampiran <span class="text-red-500">*</span>
+              </label>
+              <input
+                :value="lampiranText"
+                type="text"
+                readonly
+                class="mt-1 border border-gray-200 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
+                placeholder="0 Lampiran"
+              />
+            </div>
+
+            <div class="flex flex-wrap flex-col">
+              <label class="text-xs font-semibold">
+                Tertuju <span class="text-red-500">*</span>
+              </label>
+
+              <div class="relative mt-1 dropdown-input" data-custom-dropdown>
+                <div
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 flex items-center cursor-text dropdown-field"
+                  @click.stop="openNewTertuju = true"
+                >
+                  <!-- CHIP -->
                   <span
                     v-for="t in newDelegasi.tertuju"
                     :key="t.position"
-                    class="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs"
+                    class="flex flex-col bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
                   >
-                    {{ t.position_text }}
+                    <span class="font-medium text-[13px] text-primary-400">
+                      {{ t.position_text }}
+                    </span>
+                    <span class="text-[10px] text-gray-800">
+                      {{ t.persnum_person_text }}
+                    </span>
+                    <span class="text-[9px] text-gray-400">
+                      {{ t.organization_parent_text }}
+                    </span>
+
                     <button
                       type="button"
-                      class="hover:text-red-500"
+                      class="text-red-500 text-[10px] self-end"
                       @click.stop="removeTertuju(t.position)"
                     >
                       ✕
                     </button>
                   </span>
-                </div>
 
-                <svg
-                  class="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
+                  <!-- INPUT SEARCH (INI INTINYA) -->
+                  <input
+                    v-model="searchTertuju"
+                    @focus="openNewTertuju = true"
+                    :placeholder="
+                      newDelegasi.tertuju.length === 0 ? 'Cari tertuju' : ''
+                    "
+                    class="flex-1 min-w-[180px] outline-none text-xs"
                   />
-                </svg>
-              </button>
-
-              <div
-                v-if="openNewTertuju"
-                class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-md shadow-lg z-50 max-h-60 overflow-auto"
-              >
-                <div
-                  v-if="loadingTertuju"
-                  class="px-4 py-3 text-xs text-gray-400"
-                >
-                  Memuat data...
                 </div>
 
-                <button
-                  v-for="item in tertujuList"
-                  :key="item.position"
-                  class="w-full text-left px-4 py-1 hover:bg-gray-100 text-xs"
-                  @click.prevent="selectNewTertuju(item)"
+                <div
+                  v-if="openNewTertuju"
+                  class="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto"
                 >
-                  <div class="font-medium">
-                    {{ item.position_text }}
+                  <div
+                    v-if="loadingTertuju"
+                    class="px-3 py-2 text-xs text-gray-400"
+                  >
+                    Memuat data...
                   </div>
-                  <div class="text-xs text-gray-500">
-                    {{ item.organization_parent_text }}
+
+                  <div
+                    v-if="!loadingTertuju && filteredTertujuList.length === 0"
+                    class="px-3 py-2 text-xs text-gray-400"
+                  >
+                    Data tidak ditemukan
                   </div>
-                </button>
+
+                  <button
+                    v-for="item in filteredTertujuList"
+                    :key="item.position"
+                    class="w-full text-left px-3 py-2 hover:bg-gray-100 text-xs"
+                    @click.prevent="selectNewTertuju(item)"
+                  >
+                    <div class="font-medium text-[13px] text-primary-400">
+                      {{ item.position_text }}
+                    </div>
+
+                    <div class="text-[10px] text-gray-800">
+                      {{ item.persnum_person_text }}
+                    </div>
+
+                    <div class="text-[9px] text-gray-400">
+                      {{ item.organization_parent_text }}
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="flex flex-wrap flex-col">
-            <label class="text-xs font-semibold"
-              >File<span class="text-red-500">*</span></label
-            >
-            <input
-              type="file"
-              multiple
-              class="bg-gray-50 mt-1 border border-gray-100 rounded-md px-4 py-1 text-xs"
-              @change="handleFileChange"
-            />
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-semibold">
+                File <span class="text-red-500">*</span>
+              </label>
+
+              <!-- Upload Box -->
+              <label
+                class="group cursor-pointer border-2 border-dashed border-gray-300 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 transition"
+              >
+                <Upload
+                  class="w-6 h-6 text-gray-400 group-hover:text-primary-400"
+                />
+
+                <p class="text-xs text-gray-600">
+                  Klik untuk upload atau
+                  <span class="text-primary-500 font-medium">pilih file</span>
+                </p>
+
+                <input
+                  type="file"
+                  class="hidden"
+                  @change="handleFileChange"
+                  accept=".pdf,application/pdf"
+                />
+              </label>
+
+              <!-- File List -->
+              <div v-if="filesRef.length" class="mt-2 space-y-2">
+                <div
+                  v-for="(file, index) in filesRef"
+                  :key="index"
+                  class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <FileText class="w-4 h-4 text-primary-400" />
+                    <div class="flex flex-col">
+                      <span class="text-xs font-medium truncate max-w-[220px]">
+                        {{ file.name }}
+                      </span>
+                      <span class="text-[10px] text-gray-400">
+                        {{ (file.size / 1024).toFixed(1) }} KB
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="text-red-400 hover:text-red-600"
+                    @click="filesRef.splice(index, 1)"
+                  >
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Modal>
     </Teleport>
-    <!-- ======= -->
-    <!-- MODAL EDIT -->
-    <!-- ======= -->
-    <Modal v-model="showEditModal" @save="saveEditDelegasi">
-      <template #title>
-        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
-          >Edit Delegasi</Heading
-        >
-      </template>
-
-      <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-        <div>
-          <label class="text-xs font-semibold"
-            >Jenis Naskah <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditJenisNaskah = !openEditJenisNaskah"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.jenisnaskah || "Pilih Jenis Naskah"
-              }}</span>
-            </button>
-
-            <div
-              v-if="openEditJenisNaskah"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="p in jenisnaskahList"
-                :key="p.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditJenisNaskah(p.value)"
-              >
-                {{ p.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Sifat Naskah <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditSifatNaskah = !openEditSifatNaskah"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.sifatnaskah || "Biasa/Terbuka"
-              }}</span>
-            </button>
-
-            <div
-              v-if="openEditSifatNaskah"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="s in sifatnaskahList"
-                :key="s.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditSifatNaskah(s.value)"
-              >
-                {{ s.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold"
-            >Jabatan <span class="text-red-500">*</span></label
-          >
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="w-full text-left mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between"
-              @click.stop="openEditJabatan = !openEditJabatan"
-            >
-              <span class="text-sm text-gray-600">{{
-                editDelegasi.jabatan || "Pilih jabatan"
-              }}</span>
-            </button>
-
-            <div
-              v-if="openEditJabatan"
-              class="absolute left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-            >
-              <button
-                v-for="j in jabatanList"
-                :key="j.id"
-                class="w-full text-left mt-1 px-4 py-3 hover:bg-gray-100"
-                @click.prevent="selectEditJabatan(j.value)"
-              >
-                {{ j.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs font-semibold"
-              >Mulai <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="editDelegasi.mulai"
-              type="text"
-              class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold"
-              >Sampai <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="editDelegasi.sampai"
-              type="text"
-              class="w-full border border-gray-200 mt-1 text-xs px-4 py-3 rounded-lg"
-              placeholder="dd/mm/yyyy"
-            />
-          </div>
-        </div>
-      </div>
-    </Modal>
-
-    <!-- POPUP DELETE -->
-    <ConfirmPopup
-      v-model="confirmDeleteOpen"
-      title="Hapus Data?"
-      description="Data yang dihapus tidak dapat dikembalikan."
-      confirmText="Hapus"
-      cancelText="Batal"
-      @confirm="deleteNow"
-    />
   </div>
 </template>
 
@@ -975,6 +1212,47 @@ function handleFileChange(e: Event) {
 /* minor styling for dropdowns and scrollbars */
 [data-custom-dropdown] button:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 1px rgb(59 130 246);
+}
+
+/* input biasa */
+.modal-form input:focus {
+  border-color: rgb(59 130 246); /* primary-400 */
+  box-shadow: 0 0 0 1px rgb(59 130 246);
+}
+
+/* file input */
+.modal-form input[type="file"]:focus {
+  border-color: rgb(59 130 246);
+  box-shadow: 0 0 0 1px rgb(59 130 246);
+}
+
+.dropdown-input input:focus {
+  border: none;
+  box-shadow: none;
+}
+
+.dropdown-input:focus-within > .dropdown-field {
+  border-color: rgb(59 130 246); /* primary */
+  box-shadow: 0 0 0 1px rgb(59 130 246);
+}
+
+.dropdown-input > div:not(.dropdown-field) {
+  box-shadow: none !important;
+  border-color: rgb(229 231 235); /* gray-200 */
+}
+
+.dropdown-input input {
+  outline: none;
+}
+
+/* HILANGKAN outline default */
+.modal-form input:focus,
+.modal-form button:focus {
+  outline: none;
+}
+
+.modal-form input::placeholder {
+  color: rgb(156 163 175); /* gray-400 */
 }
 </style>

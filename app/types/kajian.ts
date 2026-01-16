@@ -3,11 +3,11 @@ import { z } from "zod";
 export const KajianSchema = z.object({
   id_naskah: z.string().nullable().optional(),
 
-  pengirim_position_id: z.number({
+  pengirim: z.number({
     required_error: "Posisi pengirim tidak valid",
   }),
 
-  penerima_position_ids: z
+  penerima: z
     .array(z.number())
     .min(1, "Pilih minimal satu penerima (Kepada)"),
 

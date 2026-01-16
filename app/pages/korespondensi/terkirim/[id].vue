@@ -26,7 +26,14 @@ const {
 
 // --- CONSTANTS & PARAMS ---
 const idNaskah = route.params.id as string;
-const jenisNaskah = (route.query.jenis as string)?.toUpperCase() || 'ND';
+
+// [FIX] Gunakan computed untuk menangkap query param secara reaktif & normalisasi
+const currentJenis = computed(() => {
+  const raw = (route.query.jenis as string)?.toUpperCase() || 'ND';
+  // Pastikan KAJIAN atau KA dinormalisasi menjadi 'KA' untuk endpoint
+  return (raw === 'KAJIAN' || raw === 'KA') ? 'KA' : raw;
+});
+
 const LIMIT_DISPLAY = 2;
 const MAX_CONTENT_HEIGHT = 300;
 
@@ -42,7 +49,7 @@ const previewTitle = ref('Preview Dokumen');
 
 // --- COMPUTED PROPERTIES ---
 const categoryLabel = computed(() => {
-  const j = detail.value?.jenis || jenisNaskah;
+  const j = detail.value?.jenis || currentJenis.value; // Gunakan currentJenis
   const labels: Record<string, string> = {
     'ND': 'Nota Dinas',
     'INTERNAL': 'Surat Dinas Internal',
@@ -51,26 +58,38 @@ const categoryLabel = computed(() => {
     'SDE': 'Surat Dinas Eksternal',
     'DI': 'Disposisi',
     'DISPOSISI': 'Disposisi',
+    'KA': 'Kajian',
     'KAJIAN': 'Kajian'
   };
   return labels[j] || j;
 });
 
 // LOGIC WARNA LABEL
-const categoryStyle = computed(() => {
-  const c = (detail.value?.jenis || jenisNaskah || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
-  if (['KAJIAN'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-});
+const getCategoryStyle = (cat: string) => {
+  const c = (cat || '').toUpperCase();
+
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
+};
 
 // LOGIC TOTAL COUNT (NEW)
 const totalRecipientCount = computed(() => {
   if (!detail.value) return 0;
-  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
     return detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
   }
@@ -85,7 +104,7 @@ const totalCCCount = computed(() => {
 const visiblePenerima = computed(() => {
   if (!detail.value) return [];
 
-  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
 
   // KHUSUS SDE
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
@@ -107,7 +126,7 @@ const visiblePenerima = computed(() => {
 const remainingCount = computed(() => {
   if (!detail.value) return 0;
 
-  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
     const total = detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
     return Math.max(0, total - LIMIT_DISPLAY);
@@ -223,7 +242,7 @@ const resizeIframe = () => {
 
 const contentToDisplay = computed(() => {
   if (!detail.value) return '';
-  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
 
   if (type === 'DI' || type === 'DISPOSISI') {
     return detail.value.catatan || '';
@@ -233,7 +252,7 @@ const contentToDisplay = computed(() => {
 
 const dispositionData = computed(() => {
   if (!detail.value) return null;
-  const type = (detail.value.jenis || jenisNaskah).toUpperCase();
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
 
   if (type === 'DI' || type === 'DISPOSISI') {
     if (detail.value.disposisi) {
@@ -260,7 +279,8 @@ onUnmounted(() => {
 
 onMounted(async () => {
   if (idNaskah) {
-    await fetchDetail(idNaskah, jenisNaskah);
+    // [FIX] Mengambil jenis yang benar saat komponen di-mount
+    await fetchDetail(idNaskah, currentJenis.value);
   }
 });
 </script>
@@ -276,7 +296,7 @@ onMounted(async () => {
       </div>
 
       <div v-else-if="detail"
-        class="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
+        class="w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
@@ -304,7 +324,6 @@ onMounted(async () => {
           </h2>
 
           <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-            <!-- nomor -->
             <div class="flex items-center gap-1">
               <Hash class="w-3.5 h-3.5" />
               <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
@@ -314,7 +333,6 @@ onMounted(async () => {
 
             <span class="opacity-40">•</span>
 
-            <!-- tanggal -->
             <div class="flex items-center gap-1">
               <Calendar class="w-3.5 h-3.5" />
               <span>{{ formatDate(detail.tanggal) }}</span>
@@ -322,7 +340,6 @@ onMounted(async () => {
 
             <span class="opacity-40">•</span>
 
-            <!-- kategori -->
             <div
               class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
               :class="categoryStyle">
@@ -356,7 +373,7 @@ onMounted(async () => {
                   </div>
                   <div class="flex flex-col">
                     <template
-                      v-if="['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((detail.jenis || jenisNaskah).toUpperCase())">
+                      v-if="['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((detail.jenis || currentJenis).toUpperCase())">
                       <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
                         class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
                         <span v-if="totalRecipientCount > 2"

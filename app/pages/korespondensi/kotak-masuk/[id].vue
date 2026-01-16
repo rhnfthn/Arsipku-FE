@@ -89,15 +89,26 @@ const senderInitials = computed(() => {
     .join("");
 });
 
-const categoryStyle = computed(() => {
-  const c = (selected.value?.jenis_label || jenis || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
-  if (['KAJIAN'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-});
+const getCategoryStyle = (cat: string) => {
+  const c = (cat || '').toUpperCase();
+
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
+};
 
 const isJenisDI = computed(() => selected.value?.jenis === "DI");
 
@@ -208,7 +219,7 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="selected"
-        class="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
+        class="w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
