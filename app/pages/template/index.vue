@@ -67,7 +67,7 @@
             <tr class="bg-primary-400 text-white dark:bg-gray-800">
               <th
                 class="text-left text-[14px] p-4 border-b border-gray-300 cursor-pointer"
-                @click="col.sortable && sort(col.key)"
+                @click="sort('nama_template')"
               >
                 Nama Template
                 <ArrowUpDown class="inline w-3 h-3 ml-2" />
@@ -140,40 +140,121 @@
       </div>
 
       <!-- PAGINATION -->
-      <div class="flex items-center justify-between ml-5 mr-5 mt-5 mb-5">
-        <div class="text-xs">
+      <div
+        v-if="filteredTemplates.length > 0"
+        class="flex items-center justify-between px-4 py-4"
+      >
+        <div class="text-xs text-gray-600">
           Menampilkan {{ paginatedTemplates.length }} dari {{ totalItems }} data
         </div>
 
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-2">
+          <!-- BACK -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
-            class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
-          >
-            &lt;
-          </button>
-
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            @click="currentPage = page"
             :class="[
-              'px-3 py-1 text-xs rounded-md',
-              currentPage === page
-                ? 'bg-primary text-white'
-                : 'hover:bg-gray-200',
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
           >
-            {{ page }}
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
           </button>
 
+          <!-- PAGE NUMBERS -->
+          <div class="flex items-center gap-1">
+            <!-- FIRST -->
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <!-- DOTS LEFT -->
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- WINDOW -->
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- DOTS RIGHT -->
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- LAST -->
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- NEXT -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1 text-xs rounded-md hover:bg-gray-100 disabled:opacity-30"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
           >
-            &gt;
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -352,10 +433,12 @@
     <!-- ========================= -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
-      title="Hapus Template?"
-      description="Template yang dihapus tidak dapat dikembalikan."
+      type="danger"
+      title="Hapus Data"
+      message="Yakin ingin menghapus data ini?"
       confirmText="Hapus"
       cancelText="Batal"
+      cancelColor="primary"
       @confirm="deleteNow"
     />
   </div>
@@ -456,6 +539,7 @@ const sortedTemplates = computed(() => {
     return 0;
   });
 });
+
 const sort = (col: string) => {
   if (sortBy.value === col) {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -478,7 +562,7 @@ const toggleSort = (column: string) => {
 // PAGINATION
 // ================================
 const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 15, 20];
+const rowsChoices = [5, 10, 15, 25, 50, 100];
 const currentPage = ref(1);
 
 const paginatedTemplates = computed(() => {
@@ -486,10 +570,26 @@ const paginatedTemplates = computed(() => {
   return sortedTemplates.value.slice(start, start + rowsPerPage.value);
 });
 
-const totalItems = computed(() => sortedTemplates.value.length);
+const totalItems = computed(() => filteredTemplates.value.length);
+
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 2;
+
+  const range: number[] = [];
+  for (
+    let i = Math.max(1, current - delta);
+    i <= Math.min(total, current + delta);
+    i++
+  ) {
+    range.push(i);
+  }
+  return range;
+});
 
 watch([search, rowsPerPage], () => {
   currentPage.value = 1;

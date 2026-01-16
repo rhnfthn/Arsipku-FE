@@ -8,7 +8,7 @@ import { useTitelatur } from "~/composables/useTitelatur";
 import type { TitelaturItem } from "~/types/titelatur";
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Titelatur Inggris", to: "/admin/titelatur" },
 ];
 
@@ -233,7 +233,7 @@ const deleteNow = async () => {
       </div>
 
       <button
-        @click="openAdd = true"
+        @click="openAdd()"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />

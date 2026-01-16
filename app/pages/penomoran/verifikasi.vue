@@ -526,52 +526,34 @@
                   <!-- Show existing file if available -->
                   <div
                     v-if="detail.file_name && !fileStates[idx]?.isReplacing"
-                    class="bg-white border border-gray-200 rounded-lg p-2"
+                    class="border border-green-200 bg-green-50 rounded-lg p-3"
                   >
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-3">
-                        <svg
-                          class="w-3 h-3 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <div>
-                          <p class="text-xs font-medium text-gray-900">
-                            {{ detail.file_name }}
+                    <a
+                      :href="
+                        detail.file_url
+                          ? detail.file_url
+                          : detail.file_text
+                            ? `${apiBaseUrl}/${detail.file_text}`
+                            : '#'
+                      "
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="block hover:bg-green-100 transition rounded-md"
+                    >
+                      <div class="flex items-start gap-3">
+                        <!-- FILE INFO -->
+                        <div class="flex-1">
+                          <p
+                            class="text-sm font-medium text-green-700 hover:bg-green-100 underline"
+                          >
+                            📄 {{ detail.file_name }}
                           </p>
-                          <p class="text-xs text-gray-500">
-                            File sudah diupload
+                          <p class="text-xs text-gray-600">
+                            Klik untuk preview
                           </p>
                         </div>
                       </div>
-                      <div class="flex items-center gap-2">
-                        <!-- Preview Button -->
-                        <button
-                          v-if="detail.file_url || detail.file_text"
-                          @click="previewFile(detail)"
-                          class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
-                        >
-                          Lihat
-                        </button>
-                        <button
-                          @click="startReplacingFile(idx)"
-                          :disabled="
-                            isProcessing || fileStates[idx]?.isUploading
-                          "
-                          class="px-3 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50"
-                        >
-                          Ganti
-                        </button>
-                      </div>
-                    </div>
+                    </a>
                   </div>
 
                   <!-- Upload/Replace form -->
