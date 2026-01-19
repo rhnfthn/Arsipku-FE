@@ -3,9 +3,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "ArsipKu",
-      link: [
-        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-      ],
+      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
     },
   },
   compatibilityDate: "2025-07-15",

@@ -179,7 +179,11 @@ export function useInbox(positionId: any) {
 
       const res = await apiGet(`${basePath}/${encodeURIComponent(idNaskah)}`);
 
+      // Pastikan mengambil objek data yang benar.
+      // Jika respons API dibungkus (misal: res.data.data atau res.data.flow[0]), sesuaikan di sini.
+      // Asumsi di sini: res.data adalah objek surat langsung.
       const d = res?.data;
+
       if (!d) return null;
 
       return {
@@ -191,15 +195,29 @@ export function useInbox(positionId: any) {
           d.jenis_text ||
           JENIS_LABEL_MAP[d.jenis] ||
           "-",
-        sifat: d.sifat,
+
+        // --- PERBAIKAN DI SINI ---
+        // Tambahkan field-field ini agar terbaca di template:
+        sifat: d.sifat, // "terbatas", "biasa", dll
+        status: d.status, // "final", "draft"
+        kepada_yth: d.kepada_yth, // String jabatan tujuan utama (khusus Disposisi)
+        disposisi: d.disposisi, // Isi instruksi disposisi
+        catatan: d.catatan, // Isi catatan (HTML)
+        final_pdf_url: d.final_pdf_url, // URL PDF utama
+        // ------------------------
+
         nomor: d.nomor,
         tanggal: d.tanggal,
         perihal: d.perihal,
         konten: d.konten,
         lampiran_files: d.lampiran_files || [],
         pengirim: d.pengirim,
+
+        // Mapping penerima array
         kepada: Array.isArray(d.penerima) ? d.penerima : [],
         tembusan: d.tembusan || [],
+
+        // Simpan data mentah untuk jaga-jaga
         raw: d,
       };
     } catch (err) {

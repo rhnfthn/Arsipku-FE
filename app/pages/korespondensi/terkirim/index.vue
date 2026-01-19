@@ -4,10 +4,11 @@ import {
   Inbox, FileText, Send, Building, Building2, FilePen,
   Check, X, RotateCw, MoreVertical, History, Layers, Download,
   Archive, Trash2, ChevronLeft, ChevronRight, Eye, Loader2, BookOpen,
-  ArrowUpDown, Calendar as CalendarIcon, AlertTriangle
+  ArrowUpDown, Calendar as CalendarIcon, AlertTriangle, Tag, Plus // Tambah Tag & Plus
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useSirkulasi } from '@/composables/useTerkirim';
+import { useLabel } from '~/composables/useLabel'; // Import useLabel
 import type { NaskahItem, UIMailItem } from '~/types/terkirim';
 import * as XLSX from 'xlsx';
 // Import CalendarDate untuk type safety (opsional, tergantung setup project)
@@ -28,6 +29,9 @@ const getInitials = (name: string) => {
 // --- COMPOSABLES ---
 const { user } = useAuth();
 const { fetchSentBox, isLoading, bulkActionSent } = useSirkulasi();
+// Inisialisasi useLabel
+const { labels, fetchLabels, createLabel, addNaskahToLabel } = useLabel();
+
 const route = useRoute();
 const toast = useToast();
 
@@ -111,26 +115,41 @@ const currentReaderData = ref({
   unreadList: [] as any[]
 });
 
+// --- STATE LABEL ASSIGNMENT ---
+const showLabelAssignModal = ref(false);
+
 // --- HELPER: COLOR MAPPING ---
 const getCategoryStyle = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300';
-  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
+
 
 // --- HELPER: LABEL MAPPING ---
 const getCategoryLabel = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['KA'].includes(c)) return 'Kajian';
-  if (['SDI', 'INTERNAL'].includes(c)) return 'Surat Dinas Internal';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'Surat Dinas Eksternal';
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'Nota Dinas';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'Disposisi';
-  return 'Konsep';
+  if (['KA'].includes(c)) return 'KA';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'SDI';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'SDE';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
+  return 'K';
 };
 
 // --- API FETCH & MAPPING ---
@@ -201,7 +220,8 @@ const filteredEmails = computed(() => {
   if (activeTab.value !== "ALL") {
     const tab = activeTab.value;
     let targetCats = [tab];
-    if (tab === 'SDI') targetCats = ['SDI', 'INTERNAL', 'KA', 'SURAT DINAS INTERNAL'];
+    if (tab === 'SDI') targetCats = ['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'];
+    else if (tab === 'KA') targetCats = ['KA'];
     else if (tab === 'SDE') targetCats = ['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'];
     else if (tab === 'DI') targetCats = ['DI', 'DISPOSISI'];
     else if (tab === 'ND') targetCats = ['ND', 'NOTA DINAS'];
@@ -413,6 +433,78 @@ const downloadExcel = async () => {
   }
 };
 
+// --- LABEL METHODS ---
+const openLabelAssignModal = () => {
+  showLabelAssignModal.value = true;
+};
+
+// Terapkan label ke item yang dipilih
+const assignLabelToSelected = async (labelId: string, labelName: string) => {
+  if (selectedIds.value.size === 0) return;
+  isLabelProcessing.value = true;
+
+  try {
+    // Loop semua item terpilih dan tambahkan label (API addNaskahToLabel biasanya single item)
+    // Kita gunakan Promise.all untuk paralel
+    const promises = Array.from(selectedIds.value).map(naskahId =>
+      addNaskahToLabel(naskahId, labelId)
+    );
+
+    await Promise.all(promises);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `Label "${labelName}" ditambahkan ke ${selectedIds.value.size} item.`,
+      color: 'success'
+    });
+
+    showLabelAssignModal.value = false;
+    selectedIds.value.clear(); // Opsional: clear selection setelah label
+  } catch (error) {
+    console.error("Gagal assign label:", error);
+    toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
+  } finally {
+    isLabelProcessing.value = false;
+  }
+};
+
+// Buat label baru lalu terapkan
+const createNewAndAssign = async () => {
+  const name = labelSearchQuery.value.trim();
+  if (!name) return;
+  isLabelProcessing.value = true;
+
+  try {
+    // 1. Create Label
+    const payload: any = { nama: name };
+
+    if (newLabelParentId.value) {
+      // PERBAIKAN: Backend menolak 'parent_id', gunakan 'idParent'
+      payload.idParent = newLabelParentId.value;
+    }
+
+    const res = await createLabel(payload);
+
+    // Sesuaikan dengan struktur response create backend Anda
+    // Biasanya ada di res.data atau res.data.data
+    const newLabel = res.data;
+
+    if (newLabel && newLabel.id) {
+      // 2. Assign ke item terpilih
+      await assignLabelToSelected(newLabel.id, newLabel.nama);
+      // Refresh daftar label global
+      await fetchLabels();
+    }
+  } catch (error: any) { // Type any agar bisa baca error response
+    console.error("Gagal buat label:", error);
+    // Tampilkan pesan error spesifik jika ada
+    const msg = error.response?.data?.message || 'Gagal membuat label baru.';
+    toast.add({ title: 'Gagal', description: Array.isArray(msg) ? msg.join(', ') : msg, color: 'error' });
+    isLabelProcessing.value = false;
+  }
+};
+
+
 // --- TABS DEFINITION ---
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
@@ -421,7 +513,7 @@ const tabs = [
   { label: "Internal", value: "SDI", icon: Building },
   { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
-  { label: "Kajian", value: "KAJIAN", icon: BookOpen },
+  { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 
 onMounted(() => { loadData(); });
@@ -486,6 +578,11 @@ watch(() => route.query.q, (newVal) => {
               class="p-1.5 text-primary dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
               title="Arsipkan">
               <Archive class="w-4 h-4" />
+            </button>
+            <button @click="openLabelAssignModal"
+              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
+              title="Label">
+              <Tag class="w-4 h-4" />
             </button>
 
             <span class="text-xs text-neutral-500 ms-2">{{ selectedIds.size }} dipilih</span>
@@ -655,17 +752,45 @@ watch(() => route.query.q, (newVal) => {
           </div>
         </div>
         <div class="flex-1 w-full relative">
-          <div v-if="isLoading"
-            class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-20">
-            <Loader2 class="w-8 h-8 text-primary animate-spin" />
+
+          <div v-if="isLoading" class="w-full">
+            <div v-for="n in 10" :key="n"
+              class="flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full">
+
+              <USkeleton class="w-3.5 h-3.5 rounded-sm shrink-0" />
+
+              <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
+                <div class="sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
+                  <USkeleton class="h-3 w-24 sm:w-32" />
+                </div>
+                <div class="flex-1 mt-2 sm:mt-0">
+                  <USkeleton class="h-3 w-full sm:w-3/4" />
+                </div>
+                <div class="hidden xl:flex shrink-0 w-[150px]">
+                  <USkeleton class="h-5 w-20 rounded" />
+                </div>
+              </div>
+
+              <div class="pl-2 shrink-0 text-right w-24">
+                <USkeleton class="h-3 w-16 ml-auto" />
+              </div>
+
+              <div class="min-w-10 pl-2 shrink-0 w-8 flex justify-end">
+                <USkeleton class="h-3 w-6" />
+              </div>
+            </div>
           </div>
+
           <div v-else-if="paginatedEmails.length === 0"
             class="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-            <Inbox class="w-10 h-10 mb-2 opacity-20" /><span class="text-sm">Tidak ada data ditemukan</span>
+            <Inbox class="w-10 h-10 mb-2 opacity-20" />
+            <span class="text-sm">Tidak ada data ditemukan</span>
           </div>
+
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="selectMail(mail)"
             class="group flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:shadow-sm cursor-pointer transition-colors relative w-full"
             :class="selected?.id === mail.id ? 'bg-blue-50/50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'">
+
             <div class="flex items-center shrink-0" @click.stop>
               <div
                 class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
@@ -674,23 +799,31 @@ watch(() => route.query.q, (newVal) => {
                 <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
               </div>
             </div>
+
             <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
               <div class="flex items-center sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
-                <div class="text-[13px] text-neutral-500 uppercase truncate font-bold" :title="mail.from">{{
-                  mail.from }}</div>
+                <div class="text-[13px] text-neutral-500 uppercase truncate font-bold" :title="mail.from">
+                  {{ mail.from }}
+                </div>
               </div>
               <div class="text-[13px] text-gray-900 dark:text-gray-100 truncate flex-1">{{ mail.subject }}</div>
-              <div class="hidden xl:flex shrink-0 w-[150px] justify-start items-center">
-                <span class="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full"
-                  :class="getCategoryStyle(mail.category)">{{ getCategoryLabel(mail.category) }}</span>
+              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+                <span
+                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
+                </span>
               </div>
             </div>
+
             <div class="pl-2 shrink-0 text-right w-24">
               <span class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap">
-                {{ mail.date }}</span>
+                {{ mail.date }}
+              </span>
             </div>
+
             <div
-              class="min-w-10 pl-2 shrink-0 text-right w-8 flex items-center gap-1 rounded p-1 text-neutral-500 dark:text-gray-400"
+              class="min-w-10 pl-2 ml-2 shrink-0 text-right w-8 flex items-center gap-1 rounded p-1 text-neutral-500 dark:text-gray-400"
               :class="[mail.category === 'SDE'
                 ? 'cursor-not-allowed opacity-50'
                 : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -734,9 +867,12 @@ watch(() => route.query.q, (newVal) => {
                 </div>
               </div>
             </div>
-            <div class="mt-4"><span
-                :class="[getCategoryStyle(selected.category), 'px-3 py-1 rounded text-[13px] font-medium inline-block']">{{
-                  getCategoryLabel(selected.category) }}</span></div>
+            <div class="mt-4">
+              <span
+                :class="[getCategoryStyle(selected.category), 'px-3 py-1 rounded-full text-[13px] font-medium inline-block']">
+                {{ getCategoryLabel(selected.category) }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto px-6 py-6 bg-white dark:bg-gray-900">
@@ -763,6 +899,8 @@ watch(() => route.query.q, (newVal) => {
         </div>
       </div>
     </div>
+
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" />
 
     <Teleport to="body">
       <div v-if="showReaderModal"

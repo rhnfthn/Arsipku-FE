@@ -76,6 +76,12 @@
           </div>
         </template>
 
+        <template #delegation-item="{ item }">
+          <UTooltip :text="item.label" :popper="{ placement: 'left' }">
+            <span class="text-sm text-gray-700 dark:text-gray-200 truncate">{{ item.label }}</span>
+          </UTooltip>
+        </template>
+
         <template #theme-label>
           <div class="flex items-center justify-between w-full px-3">
             <span class="text-sm text-gray-700 dark:text-gray-200">Tampilan</span>
@@ -123,18 +129,31 @@ import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useDelegasi } from "~/composables/useDelegasi"; // Tambahan import
 
 const { user, getProfile, logout } = useAuth();
+const { getAvailableRoles } = useDelegasi(); // Gunakan composable delegasi
 const showLogoutPopup = ref(false);
 const isLoggingOut = ref(false);
 const search = ref("");
 const route = useRoute();
 
+// Tambahan state untuk menyimpan list delegasi
+const delegationRoles = ref<any[]>([]);
+
 const standardItemClass = "text-sm text-gray-700 dark:text-gray-200 truncate";
 const logoutItemClass = "text-sm text-error";
 
-onMounted(() => {
+onMounted(async () => {
   if (!user.value) getProfile();
+
+  // Fetch delegasi saat mounted
+  try {
+    const roles = await getAvailableRoles();
+    delegationRoles.value = roles;
+  } catch (e) {
+    console.error("Gagal mengambil role delegasi", e);
+  }
 });
 
 const searchConfig = computed(() => {
@@ -195,34 +214,46 @@ const confirmLogout = async () => {
 
 defineEmits(["open-mobile-sidebar"]);
 
-const menuItems = computed<DropdownMenuItem[][]>(() => [
-  [
-    ...(searchConfig.value.show
-      ? [{ slot: "search", type: "label", class: "md:hidden p-0" }]
-      : []),
-    {
-      label: user.value?.positionText || "Posisi",
-      class: standardItemClass,
-      slot: undefined
-    },
-  ],
-  [
-    { label: "Setting Notif Email", class: standardItemClass },
-    { label: "Visualisasi Digsig (Visible)", class: standardItemClass },
-    { label: "Setting Temporary File", class: standardItemClass },
-  ],
-  [
-    { slot: "theme-label", type: "label" },
-    { slot: "lang-label", type: "label" },
-  ],
-  [
-    {
-      label: "Keluar",
-      class: logoutItemClass,
-      onSelect: () => openLogoutPopup(),
-    },
-  ],
-]);
+const menuItems = computed<DropdownMenuItem[][]>(() => {
+  // Mapping data delegasi ke format menu item
+  const delegasiItems = delegationRoles.value.map(role => ({
+    label: role.position_text,
+    slot: 'delegation-item',
+    click: () => {
+      console.log("Switch ke role:", role.position_text);
+    }
+  }));
+
+  return [
+    [
+      ...(searchConfig.value.show
+        ? [{ slot: "search", type: "label", class: "md:hidden p-0" }]
+        : []),
+      {
+        label: user.value?.positionText || "Posisi",
+        class: standardItemClass,
+        slot: undefined
+      },
+      ...delegasiItems
+    ],
+    [
+      { label: "Setting Notif Email", class: standardItemClass },
+      { label: "Visualisasi Digsig (Visible)", class: standardItemClass },
+      { label: "Setting Temporary File", class: standardItemClass },
+    ],
+    [
+      { slot: "theme-label", type: "label" },
+      { slot: "lang-label", type: "label" },
+    ],
+    [
+      {
+        label: "Keluar",
+        class: logoutItemClass,
+        onSelect: () => openLogoutPopup(),
+      },
+    ],
+  ];
+});
 
 const getInitials = (name: string) => {
   if (!name) return "";

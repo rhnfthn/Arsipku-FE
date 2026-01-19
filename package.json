@@ -35,6 +35,7 @@
     "@vueup/vue-quill": "^1.2.0",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
+    "file-saver": "^2.0.5",
     "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.12.1",

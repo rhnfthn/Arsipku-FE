@@ -242,27 +242,38 @@ const closeDetail = () => {
 
 // --- HELPER: COLOR MAPPING (UPDATED to match Sent Box) ---
 const getCategoryStyle = (cat) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c))
-    return "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300";
-  if (["DI", "DISPOSISI"].includes(c))
-    return "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300";
-  if (["SDI", "INTERNAL", "KA", "SURAT DINAS INTERNAL"].includes(c))
-    return "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300";
-  if (["SDE", "EXTERNAL", "EKSTERNAL", "SURAT DINAS EKSTERNAL"].includes(c))
-    return "bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300";
-  if (["KAJIAN"].includes(c))
-    return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-300";
-  return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
+  const c = (cat || '').toUpperCase();
+
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 
 // Update Label agar sesuai gambar
+// --- HELPER: LABEL MAPPING ---
 const getCategoryLabel = (cat) => {
-  if (cat === "INTERNAL") return "SDI";
-  if (cat === "EXTERNAL") return "SDE";
-  if (cat === "ND") return "Nota Dinas";
-  return cat;
+  const c = (cat || '').toUpperCase();
+  if (['KA'].includes(c)) return 'KA';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'SDI';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'SDE';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
+  return 'K';
 };
+
 
 const penerimaDetail = computed(() => {
   if (!selected.value?.penerima) return null;
@@ -542,12 +553,11 @@ const downloadExcel = () => {
                 </div>
               </div>
 
-              <div class="hidden md:flex md:w-[140px] shrink-0 pt-0.5 justify-start pl-4">
-                <span v-if="mail.category_label || mail.category" :class="[
-                  getCategoryStyle(mail.category),
-                  'px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full',
-                ]">
-                  {{ mail.category_label || getCategoryLabel(mail.category) }}
+              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+                <span
+                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
                 </span>
               </div>
 

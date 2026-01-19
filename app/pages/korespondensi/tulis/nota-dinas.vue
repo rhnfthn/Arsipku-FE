@@ -41,18 +41,46 @@
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
 
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="space-y-6 animate-pulse">
-        <div class="space-y-2 pt-4">
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-11 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-          <div class="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+        <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
+          <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
+          <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
+        </div>
+
+        <div class="pt-2">
+          <div class="flex justify-between items-center gap-4">
+            <div class="flex gap-3 sm:gap-4">
+              <USkeleton class="h-8 w-36 rounded" />
+              <USkeleton class="h-8 w-36 rounded" />
+            </div>
+            <USkeleton class="h-8 w-36 rounded" />
+          </div>
+        </div>
+
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+          <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <USkeleton class="h-12 w-12 rounded-full" />
+            <div class="flex-1 space-y-2 pt-1">
+              <USkeleton class="h-3 w-1/2" />
+              <USkeleton class="h-3 w-1/3" />
+            </div>
+          </div>
+          <div class="space-y-3 px-4">
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-11/12" />
+            <USkeleton class="h-3 w-full" />
+          </div>
+        </div>
+
+        <USkeleton class="h-30 w-full rounded-md" />
+
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
+
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
@@ -139,8 +167,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                        ${i + 1}. ${s.labelJob || s.label}
-                                                                                                      </div>`
+                                                                                                    ${i + 1}. ${s.labelJob || s.label}
+                                                                                                  </div>`
                               )
                               .join('')
                             : '................................................'
@@ -275,19 +303,23 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold">Metode Tanda Tangan</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Pilih Metode Tanda Tangan
+          </h3>
         </div>
       </template>
 
+      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Pilih jenis tanda tangan untuk dokumen ini:
+          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
         </p>
 
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
-
+        <div class="space-y-4">
+          <!-- Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -295,33 +327,49 @@
 
             <div class="flex flex-col flex-1">
               <span class="font-medium text-gray-900 dark:text-white">
-                Digital Signature (BSrE)
+                Tanda Tangan Digital (BSrE)
               </span>
               <span class="text-sm text-gray-600 dark:text-gray-400">
                 Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
+              <!-- Signer Info -->
               <div v-if="selectedSendType === 'digsig'"
-                class="flex items-start mt-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                <div class="flex-shrink-0">
-                  <div class="h-12 w-12 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
-                    <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div class="flex items-start gap-4 p-4">
+                  <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="text-xs text-gray-500 mb-0.5">
+                      {{ signerInfo.label }}
+                    </span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                      {{ signerInfo.role }}
+                    </span>
+                    <span class="text-base font-semibold text-gray-900 dark:text-white">
+                      {{ signerInfo.name }}
+                    </span>
                   </div>
                 </div>
 
-                <div class="flex flex-col">
-                  <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
-                  <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                    {{ signerInfo.role }}
-                  </span>
-                  <span class="text-base font-bold text-gray-900 dark:text-white">
-                    {{ signerInfo.name }}
-                  </span>
+                <!-- Passphrase -->
+                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div @click.stop>
+                    <UFormGroup label="Passphrase" required>
+                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
+                        class="w-full" autofocus />
+                    </UFormGroup>
+                  </div>
                 </div>
               </div>
             </div>
           </label>
 
+          <!-- Without Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -329,26 +377,22 @@
 
             <div class="flex flex-col">
               <span class="font-medium text-gray-900 dark:text-white">
-                Kirim tanpa tanda tangan
+                Kirim Tanpa Tanda Tangan
               </span>
-              <!-- <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen hanya menggunakan validasi QR Code internal.
-              </span> -->
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen dikirim tanpa proses tanda tangan digital.
+              </span>
             </div>
           </label>
-
-          <UFormGroup label="Input Passphrase" required v-if="selectedSendType === 'digsig'">
-            <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan Passphrase TTE Anda"
-              class="w-full" autofocus />
-          </UFormGroup>
         </div>
       </template>
 
+      <!-- Footer -->
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton label="Batal" color="gray" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Lanjut Kirim" color="primary" icon="i-heroicons-paper-airplane" :loading="isLoadingData"
-            @click="handlePassphraseSubmit" />
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            :loading="isLoadingData" @click="handlePassphraseSubmit" />
         </div>
       </template>
     </UModal>
@@ -372,13 +416,16 @@ import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
 import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
 import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
-// Types & Validation (Dari file Zod kamu)
+// Types & Validation
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
+// Composables
+import { useDigSign } from "@/composables/useDigSign"; // Pastikan path ini benar
+
 /* -------------------------------------------------------------------------- */
-/* 2. LOCAL TYPES (Helper UI)                                                 */
+/* 2. LOCAL TYPES                                                             */
 /* -------------------------------------------------------------------------- */
 interface RecipientItem {
   label: string;
@@ -411,6 +458,7 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useRecipients();
 const { isLoadingDraft, getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
+const { getKtp } = useDigSign(); // Init composable getKtp
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/admin/dashboard" },
@@ -445,26 +493,14 @@ const tinyMceInit = {
 /* -------------------------------------------------------------------------- */
 /* 4. STATE & REFS                                                            */
 /* -------------------------------------------------------------------------- */
-// UI State
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
 
-// [NEW] Passphrase State
 const isPassphraseModalOpen = ref(false)
-
-// Tambahkan di bagian data/ref
-const selectedSendType = ref('') // default kosong (tidak ada yang dipilih)
+const selectedSendType = ref('')
 const passphrase = ref('')
-
-// Reset saat modal ditutup
-// watch(() => isPassphraseModalOpen.value, (newVal) => {
-//   if (!newVal) {
-//     selectedSendType.value = ''
-//     passphrase.value = ''
-//   }
-// })
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
@@ -518,7 +554,6 @@ const formattedDate = computed(() => {
 const validateAndToast = (payload: DraftPayload) => {
   const validationResult = validateDraftPayload(payload);
   if (!validationResult.isValid) {
-    // Mengambil error pertama dari object errors yang dikembalikan fungsi validasi kamu
     const errorKeys = Object.keys(validationResult.errors || {});
     const firstKey = errorKeys.length > 0 ? errorKeys[0] : null;
     const firstMessage = firstKey && validationResult.errors
@@ -536,8 +571,6 @@ const validateAndToast = (payload: DraftPayload) => {
   return true;
 };
 
-// --- Payload Generators ---
-// Fungsi ini sekarang return-nya strict sesuai Zod Schema
 const getBasePayload = (): DraftPayload => {
   const tglDb = date.value
     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
@@ -552,28 +585,21 @@ const getBasePayload = (): DraftPayload => {
     .filter((id): id is string => !!id);
 
   return {
-    // Jika null undefined, biarkan undefined agar Zod handle (atau null)
     id_naskah: editDraftId.value || null,
-
     pengirim: user.value?.position || "",
     penerima: selectedTertuju.value.map(i => i.value),
     tembusan: selectedTembusan.value.map(i => i.value),
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-
     sifat: selectedSifat.value?.value || 'biasa',
-
     perihal: subject.value,
     konten: String(editorContent.value || ''),
     htmlContent: String(editorContent.value || ''),
     english: english.value,
-
     nama_tempat: user.value?.areaText || "Kantor Pusat",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: user.value?.nama || "",
-
     tgl: tglDb,
     tanggal: tglPreview,
     lampiran_temp_ids: lampiranIds,
@@ -583,7 +609,6 @@ const getBasePayload = (): DraftPayload => {
 const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   const formData = new FormData();
 
-  // Loop keys dari DraftPayload (Zod inferred type)
   (Object.keys(payload) as Array<keyof DraftPayload>).forEach((key) => {
     const value = payload[key];
     if (Array.isArray(value)) {
@@ -593,9 +618,7 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
     }
   });
 
-  // Handle PDF secara manual karena tidak ada di schema Zod
   if (includePdf && pdfBlob.value) {
-    // Pastikan nama file PDF valid
     const safeDate = payload.tanggal ? payload.tanggal.replace(/\//g, '-') : 'draft';
     formData.append("final_pdf", pdfBlob.value, `nota_dinas_${safeDate}.pdf`);
   }
@@ -603,7 +626,7 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   return formData;
 };
 
-// --- Event Handlers & Core Actions ---
+// --- Event Handlers ---
 const handleApplyTemplate = (htmlContent: string) => {
   if (tinymceEditor.value) {
     const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
@@ -621,7 +644,6 @@ const handlePreview = async () => {
 
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    // Preview tidak butuh PDF di formData karena backend yang generate
     const formData = createFormData(payload, false);
     const blobResponse = await generatePdf(formData);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
@@ -646,51 +668,39 @@ const confirmSaveDraft = async () => {
   if (!isConfirmed) return;
 
   try {
-    // Loading spinner sedang berputar di sini...
     await handleSaveDraft();
-
-    // SUKSES: Panggil ini untuk menutup modal & mematikan loading
     Alert.close();
   } catch (error) {
     console.error(error);
-    // JIKA ERROR: Tetap tutup alert, atau matikan loading saja
     Alert.close();
   }
 };
+
 const confirmKirimDokumen = async () => {
-  // Validasi Payload Dasar (sebelum masuk modal)
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  // ✅ RESET DISINI (Bukan di watcher)
   passphrase.value = "";
-  selectedSendType.value = "digsig"; // Set default pilihan
-
-  // Buka Modal
+  selectedSendType.value = "digsig";
   isPassphraseModalOpen.value = true;
 };
 
-// 2. Tombol "Lanjut Kirim" di dalam Modal
 const handlePassphraseSubmit = async () => {
-  // 1. Validasi Tipe Tanda Tangan
   if (!selectedSendType.value) {
     toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
     return;
   }
 
-  // 2. Validasi Passphrase (HANYA jika DIGSIG)
   if (selectedSendType.value === 'digsig' && !passphrase.value) {
     toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
     return;
   }
 
-  // Tutup modal
   isPassphraseModalOpen.value = false;
 
-  // Sesuaikan pesan konfirmasi
   const confirmMessage = selectedSendType.value === 'digsig'
     ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim dengan QR Code Internal. Lanjutkan?';
+    : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
 
   const isConfirmed = await Alert.confirm(
     'Konfirmasi Akhir',
@@ -702,13 +712,10 @@ const handlePassphraseSubmit = async () => {
 
   if (isConfirmed) {
     await handleKirimDokumen();
-  } else {
-    // Opsional: Buka modal lagi jika batal
-    // isPassphraseModalOpen.value = true;
   }
 };
 
-// 3. Proses Kirim ke API
+// --- CORE FUNCTION YANG DIPERBAIKI SESUAI GAMBAR ---
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
@@ -716,23 +723,52 @@ const handleKirimDokumen = async () => {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // Generate PDF Final
+    // 1. [BARU] Fetch KTP jika metode TTE dipilih
+    // Menggunakan variable 'noktp' sesuai respon API di gambar
+    let noktpValue = '';
+
+    if (selectedSendType.value === 'digsig') {
+      try {
+        const ktpResponse = await getKtp();
+
+        // Debugging untuk melihat respon di console browser
+        console.log("Respon API KTP:", ktpResponse);
+
+        // Ambil value dari path: response.data.noktp
+        if (ktpResponse?.data?.noktp) {
+          noktpValue = ktpResponse.data.noktp;
+        } else {
+          console.warn("Field 'noktp' tidak ditemukan dalam respon");
+        }
+
+      } catch (err) {
+        console.error("Gagal mengambil data KTP:", err);
+        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
+      }
+    }
+
+    // 2. Generate PDF Final
     const formDataPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(formDataPreview);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
-    // Buat FormData Utama
+    // 3. Buat FormData Utama
     const formData = createFormData(payload, true);
 
-    // ✅ Debugging (Bisa dihapus nanti)
     console.log("Mengirim Sign Option:", selectedSendType.value);
-    console.log("Mengirim Passphrase:", passphrase.value ? "Terisi" : "Kosong");
+    console.log("Mengirim Passphrase (RAW):", passphrase.value);
 
-    // Append data modal
+    // 4. Append Data Tambahan
     formData.append('passphrase', passphrase.value);
     formData.append('sign_option', selectedSendType.value);
 
-    // Panggil API
+    // [BARU] Masukkan NOKTP ke Body dengan key 'nik' (atau 'noktp' tergantung backend kirim surat)
+    // Biasanya backend TTE standar menggunakan key 'nik'
+    if (noktpValue) {
+      formData.append('nik', noktpValue);
+    }
+
+    // 5. Panggil API Kirim
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
@@ -740,14 +776,18 @@ const handleKirimDokumen = async () => {
       toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
       Alert.close();
       router.push("/korespondensi/terkirim");
+    } else {
+      throw new Error(result.data.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
-    console.error("Gagal mengirim:", e);
-    let errMsg = e.response?.data?.message || 'Gagal mengirim dokumen';
+    isLoadingData.value = false;
+    Alert.close();
 
-    // Jika error karena passphrase salah
+    console.error("Gagal mengirim:", e);
+    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+
     if (errMsg.toLowerCase().includes('passphrase')) {
-      isPassphraseModalOpen.value = true; // Buka modal lagi otomatis
+      isPassphraseModalOpen.value = true;
     }
 
     toast.add({
@@ -762,16 +802,12 @@ const handleKirimDokumen = async () => {
 
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
-
-  // Validasi Zod tetap dijalankan untuk Draft (Opsional, tapi bagus untuk data integrity)
-  // Kalau mau draft bisa disimpan walau error, komen baris validasi ini.
   if (!validateAndToast(payload)) return;
 
   try {
     loadingMessage.value = "Menyimpan Draft...";
     isLoadingData.value = true;
 
-    // Draft biasanya tidak butuh PDF binary, cukup JSON datanya
     const formData = createFormData(payload, false);
     await saveND(formData, editDraftId.value);
 
@@ -796,17 +832,6 @@ onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
-  // Helpers
-  const onConfirm = () => {
-    alertState.isOpen = false;
-    if (alertState.resolve) alertState.resolve(true);
-  };
-
-  const onCancel = () => {
-    alertState.isOpen = false;
-    if (alertState.resolve) alertState.resolve(false);
-  };
-
   if (!user.value) await getProfile();
 
   try {
@@ -827,7 +852,6 @@ onMounted(async () => {
     klasifikasiStatus.value = "error";
   }
 
-  // Populate Draft Data
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
