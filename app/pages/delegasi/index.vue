@@ -605,7 +605,7 @@ const exportData = () => {
       <button @click="openAdd"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition">
         <Plus class="w-4 h-4" />
-        Tambah Delegasi
+        Tambah
       </button>
     </div>
 

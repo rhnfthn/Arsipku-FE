@@ -12,7 +12,7 @@
       <!-- ADD BUTTON -->
       <button
         @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Usulan
@@ -591,12 +591,14 @@
 
       <!-- FOOTER -->
       <template #footer>
-        <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-200">
+        <div
+          class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200"
+        >
           <button
             v-if="selectedRow?.status === 'Belum Diajukan'"
             @click="submitUsulan"
             :disabled="isLoadingBooking || isDeletingUsulan"
-            class="px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            class="flex-1 px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <span v-if="isLoadingBooking" class="flex items-center gap-2">
               <svg
@@ -624,7 +626,7 @@
             <span v-else>Kirim Usulan</span>
           </button>
 
-          <div v-else class="flex items-center gap-2">
+          <!-- <div v-else class="flex items-center gap-2">
             <span
               :class="[
                 'px-3 py-1 rounded-full text-xs font-medium',
@@ -639,12 +641,12 @@
             >
               {{ selectedRow?.status }}
             </span>
-          </div>
+          </div> -->
 
           <button
             @click="hapusUsulan"
             :disabled="isLoadingBooking || isDeletingUsulan"
-            class="px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            class="flex-1 px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {{ isDeletingUsulan ? "Menghapus..." : "Hapus Usulan" }}
           </button>
@@ -813,13 +815,15 @@ const fetchData = async () => {
         id_usulan: item.id,
         jenis: item.jenis,
         tanggal: formatDateTime(item.tanggal).split(" ")[0], // DD/MM/YY
+        tglUsulan: formatDateTime(item.created_at),
+        tglUsulanSort: toWIB(item.created_at).getTime(),
         perihal: item.perihal,
         jumlah: item.jumlah,
         penandatangan: item.penandatangan || "-",
         klasifikasi: item.klasifikasi || "-",
         klasifikasiDisplay,
         pengusul: pengusulInfo.nama || user.value?.nama || "-",
-        tglUsulan: formatDateTime(item.created_at),
+
         status: mappedStatus,
         details: item.details || [],
         template_nomor: item.template_nomor || "",
@@ -1154,6 +1158,12 @@ const headers = [
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
 ];
+const WIB_OFFSET = 7 * 60 * 60 * 1000;
+
+const toWIB = (dateStr: string | Date) => {
+  const d = new Date(dateStr);
+  return new Date(d.getTime() + WIB_OFFSET);
+};
 
 /* SORT STATUS */
 const isSortingStatus = ref(false);
@@ -1285,20 +1295,17 @@ const showPreview = async (row: any) => {
     });
   }
 };
-// ⭐ FINAL FORMAT: DD/MM/YY HH:mm (WIB)
+//   FORMAT: DD/MM/YY HH:mm WIB
 const formatDateTime = (dateStr: string | Date) => {
   if (!dateStr) return "-";
 
-  const date = new Date(dateStr);
-  const jakarta = new Date(
-    date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
-  );
+  const wib = toWIB(dateStr);
 
-  const dd = String(jakarta.getDate()).padStart(2, "0");
-  const mm = String(jakarta.getMonth() + 1).padStart(2, "0");
-  const yy = String(jakarta.getFullYear()).slice(-2);
-  const hh = String(jakarta.getHours()).padStart(2, "0");
-  const min = String(jakarta.getMinutes()).padStart(2, "0");
+  const dd = String(wib.getDate()).padStart(2, "0");
+  const mm = String(wib.getMonth() + 1).padStart(2, "0");
+  const yy = String(wib.getFullYear()).slice(-2);
+  const hh = String(wib.getHours()).padStart(2, "0");
+  const min = String(wib.getMinutes()).padStart(2, "0");
 
   return `${dd}/${mm}/${yy} ${hh}:${min}`;
 };
