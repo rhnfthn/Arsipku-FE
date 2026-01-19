@@ -434,9 +434,6 @@ const openEdit = (item: any) => {
 
 const saveEditDelegasi = async () => {
   // Validasi Tanggal
-  // Catatan: Jika mengedit data lama yang start_date nya sudah lewat hari ini,
-  // validasi "tidak boleh kurang dari hari ini" mungkin akan memblokir update.
-  // Sesuaikan kebutuhan, di sini saya terapkan validasi yang sama sesuai request.
   const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai);
   if (errorMsg) {
     toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
@@ -470,11 +467,6 @@ const saveEditDelegasi = async () => {
   }
 };
 
-// ... (Sisa kode pagination, watcher, dan dropdown state)
-
-// ================================
-// PAGINATION
-// ================================
 const paginatedDelegasi = computed(() => filteredData.value);
 const totalPages = computed(() => totalPagesApi.value);
 
@@ -605,11 +597,12 @@ const exportData = () => {
       <button @click="openAdd"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition">
         <Plus class="w-4 h-4" />
-        Tambah
+        Tambah Delegasi
       </button>
     </div>
 
     <div class="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-100">
+
       <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-100 flex-wrap">
         <div class="flex items-center gap-3 flex-wrap">
           <span class="text-sm text-gray-600 font-medium">Tampilkan</span>
@@ -666,33 +659,19 @@ const exportData = () => {
         </button>
       </div>
 
-      <div class="overflow-x-auto relative">
-        <div v-if="isLoading" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
-          <span class="text-primary text-sm font-semibold">Loading...</span>
-        </div>
-
+      <div class="overflow-x-auto relative min-h-[400px]">
         <table class="min-w-full text-sm">
           <thead class="bg-primary">
             <tr>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
-                Delegator
-              </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
-                Jabatan
-              </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
-                Periode
-              </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
-                Status
-              </th>
-              <th class="px-6 py-4 text-center text-sm font-semibold text-white">
-                Aksi
-              </th>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-white">Delegator</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-white">Jabatan</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-white">Periode</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-white">Status</th>
+              <th class="px-6 py-4 text-center text-sm font-semibold text-white">Aksi</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
 
+          <tbody class="divide-y divide-gray-100">
             <template v-if="isLoading">
               <tr v-for="n in rowsPerPage" :key="'skeleton-' + n" class="animate-pulse bg-white">
                 <td class="px-6 py-4">
@@ -701,22 +680,18 @@ const exportData = () => {
                     <div class="h-4 w-32 bg-gray-200 rounded"></div>
                   </div>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="flex flex-col gap-2">
                     <div class="h-4 w-40 bg-gray-200 rounded"></div>
                     <div class="h-3 w-24 bg-gray-200 rounded"></div>
                   </div>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="h-4 w-32 bg-gray-200 rounded"></div>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="h-6 w-24 bg-gray-200 rounded-full"></div>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="flex justify-center gap-3">
                     <div class="w-8 h-8 bg-gray-200 rounded-lg"></div>
@@ -726,9 +701,11 @@ const exportData = () => {
               </tr>
             </template>
 
-            <tr v-else-if="paginatedDelegasi.length === 0">
-              <td colspan="5" class="text-center py-8 text-gray-500">Tidak ada data ditemukan</td>
-            </tr>
+            <template v-else-if="paginatedDelegasi.length === 0">
+              <tr>
+                <td colspan="5" class="text-center py-8 text-gray-500">Tidak ada data ditemukan</td>
+              </tr>
+            </template>
 
             <template v-else>
               <tr v-for="item in paginatedDelegasi" :key="item.id" class="hover:bg-gray-50 transition-colors">
@@ -740,22 +717,15 @@ const exportData = () => {
                     <span class="text-gray-900 font-medium">{{ item.nama }}</span>
                   </div>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 font-medium">
-                      {{ item.jabatan }}
-                    </span>
-                    <span class="text-gray-500 text-xs mt-1">
-                      {{ item.lokasi }}
-                    </span>
+                    <span class="text-gray-900 font-medium">{{ item.jabatan }}</span>
+                    <span class="text-gray-500 text-xs mt-1">{{ item.lokasi }}</span>
                   </div>
                 </td>
-
                 <td class="px-6 py-4 text-gray-700">
                   {{ item.tanggal }}
                 </td>
-
                 <td class="px-6 py-4">
                   <span :class="[
                     'inline-flex px-3 py-1 text-xs font-medium rounded-full',
@@ -768,7 +738,6 @@ const exportData = () => {
                     {{ item.status }}
                   </span>
                 </td>
-
                 <td class="px-6 py-4">
                   <div class="flex justify-center gap-3">
                     <button @click="openEdit(item)"
@@ -783,7 +752,6 @@ const exportData = () => {
                 </td>
               </tr>
             </template>
-
           </tbody>
         </table>
       </div>
@@ -945,7 +913,8 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button type="button"
                 class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleNewJabatan"> <span class="text-sm text-gray-700 truncate pr-2">
+                @click.stop="toggleNewJabatan">
+                <span class="text-sm text-gray-700 truncate pr-2">
                   {{ getJabatanLabel(newDelegasi.jabatan) || "Pilih jabatan" }}
                 </span>
                 <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -1091,7 +1060,8 @@ const exportData = () => {
             <div class="relative" data-custom-dropdown>
               <button type="button"
                 class="w-full text-left border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleEditJabatan"> <span class="text-sm text-gray-700 truncate pr-2">
+                @click.stop="toggleEditJabatan">
+                <span class="text-sm text-gray-700 truncate pr-2">
                   {{ getJabatanLabel(editDelegasi.jabatan) || "Pilih jabatan" }}
                 </span>
                 <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0" />
