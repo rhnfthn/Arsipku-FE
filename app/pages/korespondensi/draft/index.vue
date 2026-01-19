@@ -341,6 +341,18 @@ const getCategoryStyle = (cat) => {
 
   return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
+
+
+const getCategoryLabel = (cat) => {
+  const c = (cat || '').toUpperCase();
+  if (['KA'].includes(c)) return 'KA';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'SDI';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'SDE';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
+  return 'K';
+};
+
 </script>
 
 <template>
@@ -514,10 +526,11 @@ const getCategoryStyle = (cat) => {
                 </span>
               </div>
 
-              <div class="hidden md:flex shrink-0 w-[140px]">
-                <span class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap"
+              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+                <span
+                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
                   :class="getCategoryStyle(mail.category)">
-                  {{ mail.category_text }}
+                  {{ getCategoryLabel(mail.category) }}
                 </span>
               </div>
 
