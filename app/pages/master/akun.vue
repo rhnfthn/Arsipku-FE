@@ -106,37 +106,48 @@
     </table>
   </div>
 
-  <Modal v-model="showAddModal" @save="saveAccount">
-    <template #title>
-      <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
-        Tambah Akun
-      </Heading>
-    </template>
+  <Teleport to="body">
+    <AddUsulan
+      v-model="openAdd"
+      @submit="handleSubmitFromModal"
+      @preview="handlePreview"
+  /></Teleport>
+  <Teleport to="body">
+    <Modal v-model="showAddModal" @save="saveAccount">
+      <template #title>
+        <Heading
+          variant="heading9b"
+          class="font-semibold text-sm mb-3 mt-5 ml-5"
+        >
+          Tambah Akun
+        </Heading>
+      </template>
 
-    <!-- FIELD PERSNUM -->
-    <div class="flex flex-col gap-2">
-      <label class="text-xs font-semibold text-gray-700">Persnum</label>
-      <input
-        v-model="form.persnum"
-        type="text"
-        placeholder="Masukkan persnum"
-        class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-      />
-    </div>
+      <!-- FIELD PERSNUM -->
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-semibold text-gray-700">Persnum</label>
+        <input
+          v-model="form.persnum"
+          type="text"
+          placeholder="Masukkan persnum"
+          class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+        />
+      </div>
 
-    <!-- FIELD ROLE -->
-    <div class="flex flex-col gap-2">
-      <label class="text-xs font-semibold text-gray-700">Role</label>
-      <select
-        v-model="form.role"
-        class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-      >
-        <option value="" disabled>Pilih role</option>
-        <option value="admin">Admin</option>
-        <option value="superadmin">Super Admin</option>
-      </select>
-    </div>
-  </Modal>
+      <!-- FIELD ROLE -->
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-semibold text-gray-700">Role</label>
+        <select
+          v-model="form.role"
+          class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+        >
+          <option value="" disabled>Pilih role</option>
+          <option value="admin">Admin</option>
+          <option value="superadmin">Super Admin</option>
+        </select>
+      </div>
+    </Modal>
+  </Teleport>
 
   <ConfirmPopup
     v-model="confirmDeleteOpen"

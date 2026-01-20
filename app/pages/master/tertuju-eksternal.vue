@@ -117,60 +117,70 @@
         </tbody>
       </table>
 
-      <Modal v-model="showModal" @save="handleSave">
-        <template #title>
-          <Heading
-            variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5"
-          >
-            {{ editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal" }}
-          </Heading>
-        </template>
+      <Teleport to="body">
+        <AddUsulan
+          v-model="openAdd"
+          @submit="handleSubmitFromModal"
+          @preview="handlePreview"
+      /></Teleport>
+      <Teleport to="body">
+        <Modal v-model="showModal" @save="handleSave">
+          <template #title>
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm mb-3 mt-5 ml-5"
+            >
+              {{
+                editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal"
+              }}
+            </Heading>
+          </template>
 
-        <!-- FIELD PERSNUM -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Nama</label>
-          <input
-            v-model="form.nama"
-            type="text"
-            placeholder="Masukkan nama"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-          />
-        </div>
+          <!-- FIELD PERSNUM -->
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-gray-700">Nama</label>
+            <input
+              v-model="form.nama"
+              type="text"
+              placeholder="Masukkan nama"
+              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            />
+          </div>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Alamat</label>
-          <textarea
-            v-model="form.alamat"
-            type="text"
-            placeholder="Masukkan alamat"
-            class="border border-gray-300 rounded-md px-3 py-4 text-sm"
-          />
-        </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-gray-700">Alamat</label>
+            <textarea
+              v-model="form.alamat"
+              type="text"
+              placeholder="Masukkan alamat"
+              class="border border-gray-300 rounded-md px-3 py-4 text-sm"
+            />
+          </div>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Telephone</label>
-          <input
-            v-model="form.telephone"
-            type="text"
-            placeholder="Masukkan no telphone"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-          />
-        </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-gray-700">Telephone</label>
+            <input
+              v-model="form.telephone"
+              type="text"
+              placeholder="Masukkan no telphone"
+              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            />
+          </div>
 
-        <!-- FIELD ROLE -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Status</label>
-          <select
-            v-model="form.aktif"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-          >
-            <option value="" disabled>Pilih status</option>
-            <option :value="true">Aktif</option>
-            <option :value="false">Tidak Aktif</option>
-          </select>
-        </div>
-      </Modal>
+          <!-- FIELD ROLE -->
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-gray-700">Status</label>
+            <select
+              v-model="form.aktif"
+              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="" disabled>Pilih status</option>
+              <option :value="true">Aktif</option>
+              <option :value="false">Tidak Aktif</option>
+            </select>
+          </div>
+        </Modal>
+      </Teleport>
 
       <ConfirmPopup
         v-model="showConfirmDelete"

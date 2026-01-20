@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 p-6">
+  <div class="space-y-6 min-h-screen p-6">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -14,29 +14,45 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Dokumen
+        Tambah
       </button>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm w-full">
       <!-- TOP ACTION BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
       >
         <!-- STATUS FILTER -->
-        <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Status</span>
-          <select
-            v-model="statusFilter"
-            @change="handleFilterChange"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+        <div class="relative">
+          <button
+            data-custom-dropdown
+            class="flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 text-sm px-4 py-2 rounded-lg transition"
+            @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <option value="">Semua</option>
-            <option value="draft">Draft</option>
-            <option value="on_progress">On Progress</option>
-            <option value="completed">Completed</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            <span>{{ filterStatusLabel }}</span>
+            <ChevronDown
+              :class="[
+                'w-4 h-4 transition-transform duration-200',
+                openFilterStatus ? 'rotate-180' : '',
+              ]"
+            />
+          </button>
+
+          <div
+            v-if="openFilterStatus"
+            data-custom-dropdown
+            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+          >
+            <button
+              v-for="item in filterOptions"
+              :key="item.value"
+              class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition"
+              @click.prevent="selectFilterStatus(item)"
+            >
+              {{ item.label }}
+            </button>
+          </div>
         </div>
 
         <!-- SEARCH -->
@@ -47,8 +63,8 @@
           <input
             v-model="search"
             @input="handleSearch"
-            placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            placeholder="Cari Dokumen"
+            class="w-full bg-gray-50 border border-gray-200 text-sm pl-9 pr-3 py-2 rounded-lg"
           />
         </div>
       </div>
@@ -76,7 +92,7 @@
           <thead class="bg-primary text-white text-[15px]">
             <tr>
               <th
-                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
+                class="px-4 py-3 text-left cursor-pointer"
                 @click="sortBy('tanggalDokumen')"
               >
                 <div class="flex items-center gap-2">
@@ -87,7 +103,7 @@
                 </div>
               </th>
               <th
-                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
+                class="px-4 py-3 text-left cursor-pointer"
                 @click="sortBy('nomorDokumen')"
               >
                 <div class="flex items-center gap-2">
@@ -100,7 +116,7 @@
               <th class="px-4 py-3 text-center">Penandatangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th
-                class="px-4 py-3 text-center cursor-pointer hover:bg-primary-700"
+                class="px-4 py-3 text-center cursor-pointer"
                 @click="sortBy('status')"
               >
                 <div class="flex items-center justify-center gap-2">
@@ -336,51 +352,125 @@
           <!-- Penanda Tangan -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <Heading variant="body2m">Penanda Tangan</Heading>
+              <Heading variant="body2m">
+                Penanda Tangan <span class="text-red-500">*</span>
+              </Heading>
             </div>
+
+            <!-- Selected Signers Display -->
             <div
-              v-for="(signer, index) in addForm.signers"
-              :key="index"
-              class="mb-4 flex gap-3"
+              v-if="addForm.selectedSigners.length > 0"
+              class="mb-4 space-y-2"
             >
-              <select
-                v-model="signer.positionId"
-                :disabled="loadingVerifikator"
-                class="flex-1 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              <div
+                v-for="(signer, index) in addForm.selectedSigners"
+                :key="index"
+                class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3"
               >
-                <option :value="0">
-                  {{ loadingVerifikator ? "Loading..." : "Pilih Jabatan" }}
-                </option>
-                <option
-                  v-for="v in verifikatorList"
-                  :key="v.positionId"
-                  :value="v.positionId"
+                <div class="flex-1">
+                  <p class="font-medium text-sm">
+                    {{ index + 1 }}. {{ signer.jabatan }} -
+                    {{ signer.lokasi }} - {{ signer.nama }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="removeSelectedSigner(index)"
+                  class="text-red-600 hover:text-red-800 ml-2"
                 >
-                  {{ v.jabatan }}
-                </option>
-              </select>
-              <button
-                v-if="index === addForm.signers.length - 1"
-                type="button"
-                @click="addSigner"
-                class="flex items-center gap-1 px-3 py-2 text-sm bg-primary hover:bg-primary-700 rounded-lg text-white"
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dropdown with Search -->
+            <div class="relative" ref="dropdownRef">
+              <div
+                @click="toggleSignerDropdown"
+                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white flex items-center justify-between"
               >
-                <Plus class="w-4 h-4" />
-                Tambah
-              </button>
-              <button
-                v-if="addForm.signers.length > 1"
-                type="button"
-                @click="removeSigner(index)"
-                class="flex items-center gap-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded-lg text-white"
+                <span class="text-gray-500">Pilih Jabatan</span>
+                <svg
+                  class="w-4 h-4 text-gray-400 transition-transform"
+                  :class="{ 'rotate-180': showSignerDropdown }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+
+              <!-- Dropdown Menu -->
+              <div
+                v-if="showSignerDropdown"
+                class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden"
               >
-                Hapus
-              </button>
+                <!-- Search Input -->
+                <div class="p-2 border-b border-gray-200 sticky top-0 bg-white">
+                  <div class="relative">
+                    <Search
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="signerSearchQuery"
+                      type="text"
+                      placeholder="Cari jabatan, nama, atau lokasi..."
+                      class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+
+                <!-- Options List -->
+                <div class="overflow-y-auto max-h-64">
+                  <div
+                    v-for="v in filteredVerifikatorList"
+                    :key="v.persnum"
+                    @click="selectSigner(v)"
+                    class="px-3 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                    :class="{
+                      'bg-blue-50':
+                        addForm.selectedSigners.findIndex(
+                          (s) => s.persnum === v.persnum,
+                        ) !== -1,
+                    }"
+                  >
+                    <p class="font-medium">
+                      {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
+                    </p>
+                  </div>
+
+                  <div
+                    v-if="filteredVerifikatorList.length === 0"
+                    class="px-3 py-4 text-center text-gray-500 text-sm"
+                  >
+                    Tidak ada data ditemukan
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Footer Buttons - Fixed at bottom -->
+        <!-- Footer Buttons -->
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
           <button
             @click="closeModal"
@@ -411,14 +501,14 @@
           </Heading>
         </template>
 
-        <div class="px-6 max-h-[70vh] overflow-y-auto">
+        <div class="px-3 max-h-[70vh] overflow-y-auto">
           <div v-if="loadingDetail" class="text-center py-8">
             <p class="text-gray-500">Loading...</p>
           </div>
 
           <div
             v-else-if="documentDetail"
-            class="grid grid-cols-2 gap-6 text-sm mt-2"
+            class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-2"
           >
             <div>
               <p class="text-gray-600 mb-1">ID</p>
@@ -438,72 +528,101 @@
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Jenis</p>
+              <p class="text-gray-600 mb-1">Jenis Naskah</p>
               <p class="font-medium">{{ documentDetail.jenisNaskah }}</p>
             </div>
 
-            <div class="col-span-2">
+            <div>
               <p class="text-gray-600 mb-1">Klasifikasi</p>
               <p class="font-medium">{{ documentDetail.klasifikasiText }}</p>
             </div>
 
-            <div class="col-span-2">
+            <div>
               <p class="text-gray-600 mb-1">Perihal</p>
               <p class="font-medium">{{ documentDetail.perihal }}</p>
             </div>
-
-            <!-- <div class="col-span-2">
-              <p class="text-gray-600 mb-1">Status</p>
-              <span
-                class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
-                :class="getStatusClass(documentDetail.status)"
-              >
-                {{ getStatusLabel(documentDetail.status) }}
-              </span>
-            </div> -->
           </div>
 
           <!-- TABLE SIGNERS -->
           <div
-            v-if="documentDetail && documentDetail.signers.length > 0"
+            v-if="
+              documentDetail &&
+              documentDetail.signers &&
+              documentDetail.signers.length > 0
+            "
             class="mt-6 mb-5 border border-gray-200 rounded-xl overflow-hidden"
           >
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead class="bg-primary text-white">
+                <thead class="bg-primary border-b border-gray-200">
                   <tr>
-                    <th class="p-3 text-left">NO</th>
-                    <th class="p-3 text-left">E-NIK</th>
-                    <th class="p-3 text-left">NAMA</th>
-                    <th class="p-3 text-center">STATUS</th>
-                    <th class="p-3 text-center">KETERANGAN</th>
+                    <th class="p-3 text-left text-white font-semibold">NO</th>
+                    <th class="p-3 text-left font-semibold text-white">
+                      PERSNUM
+                    </th>
+                    <th class="p-3 text-left font-semibold text-white">
+                      NAMA / JABATAN
+                    </th>
+                    <th class="p-3 text-center font-semibold text-white">
+                      STATUS
+                    </th>
+                    <th class="p-3 text-center font-semibold text-white">
+                      KETERANGAN
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
                     v-for="(s, i) in documentDetail.signers"
-                    :key="s.id"
-                    class="border-b border-gray-100"
+                    :key="i"
+                    class="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <td class="p-3">{{ i + 1 }}</td>
-                    <td class="p-3">{{ s.nik || "-" }}</td>
                     <td class="p-3">
-                      <div class="font-medium">{{ s.nama || "-" }}</div>
-                      <div class="text-xs text-gray-500">{{ s.jabatan }}</div>
+                      <span
+                        class="inline-flex items-center justify-center text-xs font-semibold"
+                      >
+                        {{ s.urutan }}
+                      </span>
+                    </td>
+                    <td class="p-3 font-mono text-gray-700">
+                      {{ s.persnum || "-" }}
+                    </td>
+                    <td class="p-3">
+                      <div class="font-semibold text-gray-900">
+                        {{ s.nama || "-" }}
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
+                        {{ s.jabatan || "-" }}
+                      </div>
                     </td>
                     <td class="p-3 text-center">
                       <span
-                        class="px-3 py-1 rounded-lg text-xs font-medium"
+                        class="px-3 py-1 rounded-lg text-xs font-semibold"
                         :class="getSignerStatusClass(s.status)"
                       >
                         {{ getSignerStatusLabel(s.status) }}
                       </span>
                     </td>
-                    <td class="p-3 text-center">{{ s.keterangan || "-" }}</td>
+                    <td class="p-3 font-mono text-center text-gray-700">
+                      {{ s.keterangan || "-" }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <!-- Empty state jika tidak ada penandatangan -->
+          <div
+            v-else-if="
+              documentDetail &&
+              (!documentDetail.signers || documentDetail.signers.length === 0)
+            "
+            class="mt-6 mb-5 border border-gray-200 rounded-xl p-8 text-center"
+          >
+            <p class="text-gray-500 text-sm">
+              Belum ada penandatangan yang ditambahkan
+            </p>
           </div>
         </div>
       </Modal>
@@ -512,9 +631,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { Plus, Search, Pencil, FileCheck, Eye } from "lucide-vue-next";
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import {
+  Plus,
+  Search,
+  Pencil,
+  FileCheck,
+  Eye,
+  ChevronDown,
+} from "lucide-vue-next";
+
 import { useDigsig } from "~/composables/useDigsig";
+import type { Verifikator } from "~/types/digsig";
 
 const {
   documents,
@@ -541,14 +669,28 @@ const openDetail = ref(false);
 const openAdd = ref(false);
 const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+const dropdownRef = ref<HTMLElement | null>(null);
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 
+const filterOptions = [
+  { label: "Semua", value: "" },
+  { label: "Menunggu", value: "waiting" },
+  { label: "Sudah TTD", value: "signed" },
+  { label: "Ditolak", value: "rejected" },
+];
+
+const filterStatusLabel = computed(() => {
+  const found = filterOptions.find((opt) => opt.value === statusFilter.value);
+  return found?.label || "Semua Status";
+});
+
 const statusFilter = ref("");
+const openFilterStatus = ref(false);
 const sortKey = ref("");
 const sortOrder = ref<"asc" | "desc">("asc");
 const search = ref("");
@@ -564,7 +706,26 @@ const addForm = ref({
   fileName: "",
   file: null as File | null,
   visibleSign: false,
-  signers: [{ urutan: 1, positionId: 0 }],
+  signers: [] as { urutan: number; persnum: number }[],
+  selectedSigners: [] as Verifikator[],
+});
+
+const showSignerDropdown = ref(false);
+const signerSearchQuery = ref("");
+
+const filteredVerifikatorList = computed(() => {
+  if (!signerSearchQuery.value) {
+    return verifikatorList.value;
+  }
+
+  const query = signerSearchQuery.value.toLowerCase();
+  return verifikatorList.value.filter(
+    (v) =>
+      v.jabatan.toLowerCase().includes(query) ||
+      v.nama.toLowerCase().includes(query) ||
+      v.lokasi.toLowerCase().includes(query) ||
+      v.areaText.toLowerCase().includes(query),
+  );
 });
 
 onMounted(() => {
@@ -572,6 +733,13 @@ onMounted(() => {
   fetchKlasifikasi();
   fetchJenisNaskah();
   fetchVerifikator();
+  document.addEventListener("click", handleClickOutside);
+  document.addEventListener("click", handleDropdownClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+  document.removeEventListener("click", handleDropdownClickOutside);
 });
 
 const loadDocuments = async () => {
@@ -581,6 +749,7 @@ const loadDocuments = async () => {
     search: search.value,
     status: statusFilter.value,
     sortBy: sortKey.value,
+    sortOrder: sortOrder.value,
   });
 };
 
@@ -589,9 +758,24 @@ const handleSearch = () => {
   loadDocuments();
 };
 
-const handleFilterChange = () => {
+const selectFilterStatus = (item: { label: string; value: string }) => {
+  statusFilter.value = item.value;
+  openFilterStatus.value = false;
   currentPage.value = 1;
   loadDocuments();
+};
+
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (!target.closest("[data-custom-dropdown]")) {
+    openFilterStatus.value = false;
+  }
+};
+
+const handleDropdownClickOutside = (e: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
+    showSignerDropdown.value = false;
+  }
 };
 
 const sortBy = (key: string) => {
@@ -639,10 +823,10 @@ const getStatusClass = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   const statusMap = {
-    draft: "Draft",
     on_progress: "On Progress",
     completed: "Completed",
     rejected: "Rejected",
+    draft: "Draft",
   };
   return statusMap[status] || status;
 };
@@ -667,6 +851,30 @@ const getSignerStatusLabel = (status: string) => {
   return statusMap[status] || status;
 };
 
+const toggleSignerDropdown = () => {
+  showSignerDropdown.value = !showSignerDropdown.value;
+  if (showSignerDropdown.value) {
+    signerSearchQuery.value = "";
+  }
+};
+
+const selectSigner = (verifikator: Verifikator) => {
+  const exists = addForm.value.selectedSigners.findIndex(
+    (s) => s.persnum === verifikator.persnum,
+  );
+
+  if (exists === -1) {
+    addForm.value.selectedSigners.push(verifikator);
+  }
+
+  showSignerDropdown.value = false;
+  signerSearchQuery.value = "";
+};
+
+const removeSelectedSigner = (index: number) => {
+  addForm.value.selectedSigners.splice(index, 1);
+};
+
 const triggerFileUpload = () => {
   fileInput.value?.click();
 };
@@ -678,20 +886,6 @@ const handleFileUpload = (event: Event) => {
     addForm.value.fileName = file.name;
     addForm.value.file = file;
   }
-};
-
-const addSigner = () => {
-  addForm.value.signers.push({
-    urutan: addForm.value.signers.length + 1,
-    positionId: 0,
-  });
-};
-
-const removeSigner = (index: number) => {
-  addForm.value.signers.splice(index, 1);
-  addForm.value.signers.forEach((signer, idx) => {
-    signer.urutan = idx + 1;
-  });
 };
 
 const openAddModal = () => {
@@ -707,10 +901,29 @@ const openEditModal = async (id: string) => {
 
   const doc = await fetchDocumentDetail(id);
   if (doc) {
-    // Get klasifikasi text for display
-    const selectedKlasifikasi = klasifikasiList.value.find(
-      (k) => k.klasifikasi === doc.klasifikasi,
-    );
+    const mappedSigners: Verifikator[] = [];
+
+    if (doc.signers && doc.signers.length > 0) {
+      for (const s of doc.signers) {
+        const verifikator = verifikatorList.value.find(
+          (v) => v.persnum === Number(s.persnum),
+        );
+
+        if (verifikator) {
+          mappedSigners.push(verifikator);
+        } else {
+          mappedSigners.push({
+            positionId: Number(s.positionId) || 0,
+            persnum: Number(s.persnum) || 0,
+            nama: s.nama || "",
+            jabatan: s.jabatan || "",
+            lokasi: s.lokasi || "",
+            areaText: "",
+            companyText: "",
+          });
+        }
+      }
+    }
 
     addForm.value = {
       tanggal: doc.tanggalDokumen.split("T")[0],
@@ -721,13 +934,8 @@ const openEditModal = async (id: string) => {
       fileName: doc.fileName || "",
       file: null,
       visibleSign: Boolean(doc.visibleSign),
-      signers:
-        doc.signers.length > 0
-          ? doc.signers.map((s) => ({
-              urutan: s.urutan,
-              positionId: Number(s.positionId) || 0,
-            }))
-          : [{ urutan: 1, positionId: 0 }],
+      signers: [],
+      selectedSigners: mappedSigners,
     };
   }
 
@@ -735,8 +943,12 @@ const openEditModal = async (id: string) => {
 };
 
 const openDetailModal = async (id: string) => {
-  await fetchDocumentDetail(id);
-  openDetail.value = true;
+  const res = await fetchDocumentDetail(id);
+  if (res) {
+    openDetail.value = true;
+  } else {
+    alert("Gagal memuat detail dokumen");
+  }
 };
 
 const closeModal = () => {
@@ -754,8 +966,11 @@ const resetForm = () => {
     fileName: "",
     file: null,
     visibleSign: false,
-    signers: [{ urutan: 1, positionId: 0 }],
+    signers: [],
+    selectedSigners: [],
   };
+  showSignerDropdown.value = false;
+  signerSearchQuery.value = "";
   if (fileInput.value) {
     fileInput.value.value = "";
   }
@@ -768,64 +983,84 @@ const viewDocument = (doc: any) => {
 };
 
 const saveDokumen = async () => {
+  if (!addForm.value.tanggal) {
+    alert("Tanggal Dokumen harus diisi");
+    return;
+  }
+  if (!addForm.value.klasifikasi) {
+    alert("Klasifikasi harus dipilih");
+    return;
+  }
+  if (!addForm.value.jenisNaskah) {
+    alert("Jenis Naskah harus dipilih");
+    return;
+  }
+  if (!addForm.value.nomorDokumen) {
+    alert("Nomor Dokumen harus diisi");
+    return;
+  }
+  if (!addForm.value.perihal) {
+    alert("Perihal harus diisi");
+    return;
+  }
+  if (!isEditMode.value && !addForm.value.file) {
+    alert("File Attachment harus diupload");
+    return;
+  }
+  if (addForm.value.selectedSigners.length === 0) {
+    alert("Mohon pilih minimal satu penandatangan");
+    return;
+  }
+
   try {
-    // Validation
-    if (
-      !addForm.value.tanggal ||
-      !addForm.value.klasifikasi ||
-      !addForm.value.jenisNaskah ||
-      !addForm.value.nomorDokumen ||
-      !addForm.value.perihal
-    ) {
-      alert("Mohon lengkapi semua field yang wajib diisi");
-      return;
-    }
-
-    if (!isEditMode.value && !addForm.value.file) {
-      alert("Mohon upload file dokumen");
-      return;
-    }
-
-    // Validate signers
-    const validSigners = addForm.value.signers.filter((s) => s.positionId > 0);
-    if (validSigners.length === 0) {
-      alert("Mohon pilih minimal satu penandatangan");
-      return;
-    }
-
-    const payload: any = {
-      tanggalDokumen: addForm.value.tanggal,
-      klasifikasi: addForm.value.klasifikasi,
-      jenisNaskah: addForm.value.jenisNaskah,
-      nomorDokumen: addForm.value.nomorDokumen,
-      perihal: addForm.value.perihal,
-      visibleSign: addForm.value.visibleSign,
-      signers: validSigners,
-    };
-
-    // Only add file if it's a new file
-    if (addForm.value.file) {
-      payload.file = addForm.value.file;
-    }
+    const signersPayload = addForm.value.selectedSigners.map((s, idx) => ({
+      urutan: idx + 1,
+      persnum: s.persnum,
+    }));
 
     if (isEditMode.value && editingId.value) {
+      const payload: any = {
+        tanggalDokumen: addForm.value.tanggal,
+        klasifikasi: addForm.value.klasifikasi,
+        jenisNaskah: addForm.value.jenisNaskah,
+        nomorDokumen: addForm.value.nomorDokumen,
+        perihal: addForm.value.perihal,
+        visibleSign: addForm.value.visibleSign,
+        signers: signersPayload,
+      };
+
+      if (addForm.value.file) {
+        payload.file = addForm.value.file;
+      }
+
       await updateDocument(editingId.value, payload);
+      alert("✅ Dokumen berhasil diperbarui!");
     } else {
-      payload.file = addForm.value.file;
+      if (!addForm.value.file) {
+        alert("File harus diupload untuk dokumen baru");
+        return;
+      }
+
+      const payload = {
+        tanggalDokumen: addForm.value.tanggal,
+        klasifikasi: addForm.value.klasifikasi,
+        jenisNaskah: addForm.value.jenisNaskah,
+        nomorDokumen: addForm.value.nomorDokumen,
+        perihal: addForm.value.perihal,
+        file: addForm.value.file,
+        visibleSign: addForm.value.visibleSign,
+        signers: signersPayload,
+      };
+
       await createDocument(payload);
+      alert("✅ Dokumen berhasil dibuat!");
     }
 
     closeModal();
     await loadDocuments();
-
-    alert(
-      isEditMode.value
-        ? "Dokumen berhasil diupdate"
-        : "Dokumen berhasil ditambahkan",
-    );
-  } catch (error: any) {
-    console.error("Error saving document:", error);
-    alert(error?.response?.data?.message || "Gagal menyimpan dokumen");
+  } catch (err: any) {
+    console.error("❌ Save error:", err);
+    alert(`❌ Gagal menyimpan dokumen: ${err.message || "Unknown error"}`);
   }
 };
 </script>

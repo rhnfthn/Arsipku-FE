@@ -181,94 +181,20 @@ export interface JenisNaskahResponse {
 
 // Verifikator
 export interface Verifikator {
+  persnum: number;
+  nama: string;
   positionId: number;
   jabatan: string;
+  lokasi: string;
   company: number;
   companyText: string;
   area: string;
   areaText: string;
   subArea: number;
   subAreaText: string;
+  organization: string | null;
   organizationText: string;
-  bodTag: string;
-  isChief: boolean;
-}
-
-export interface VerifikatorResponse {
-  success: boolean;
-  data: Verifikator[];
-}
-
-export interface CreateDocumentPayload {
-  tanggalDokumen: string;
-  klasifikasi: string;
-  jenisNaskah: string;
-  nomorDokumen: string;
-  perihal: string;
-  file: File;
-  visibleSign: boolean;
-  signers: {
-    urutan: number;
-    positionId: number;
-  }[];
-}
-
-export interface UpdateDocumentPayload {
-  tanggalDokumen?: string;
-  klasifikasi?: string;
-  jenisNaskah?: string;
-  nomorDokumen?: string;
-  perihal?: string;
-  file?: File;
-  visibleSign?: boolean;
-  signers?: {
-    urutan: number;
-    positionId: number;
-  }[];
-}
-
-// Klasifikasi
-export interface Klasifikasi {
-  id: string;
-  company: string;
-  klasifikasi: string;
-  klasifikasi_text: string;
-  deskripsi: string | null;
-  id_parent: string;
-  active: number;
-}
-
-export interface KlasifikasiResponse {
-  success: boolean;
-  data: Klasifikasi[];
-}
-
-// Jenis Naskah
-export interface JenisNaskah {
-  id: string;
-  jenis: string;
-  jenis_text: string;
-  format_penomoran: string;
-  file_url: string;
-}
-
-export interface JenisNaskahResponse {
-  success: boolean;
-  message: string;
-  data: JenisNaskah[];
-}
-
-// Verifikator
-export interface Verifikator {
-  positionId: number;
-  jabatan: string;
-  company: number;
-  companyText: string;
-  area: string;
-  areaText: string;
-  subArea: number;
-  subAreaText: string;
-  organizationText: string;
+  abbreviation: string | null;
   bodTag: string;
   isChief: boolean;
 }
@@ -304,4 +230,71 @@ export interface CekDokumenResponse {
   success: boolean;
   message: string;
   data: CekDokumenData;
+}
+
+export interface PenandatangananSigner {
+  id: string;
+  urutan: number;
+  persnum: number;
+  nama: string | null;
+  jabatan: string | null;
+  status: "waiting" | "pending" | "signed" | "rejected";
+  signedAt: string | null;
+}
+
+export interface PenandatangananDocument {
+  id: string;
+  uuid?: string;
+  tanggalDibuat: string;
+  tanggalDokumen?: string;
+  nomorDokumen: string;
+  jenisNaskah: string;
+  jenisNaskahText?: string;
+  klasifikasi?: string;
+  klasifikasiText?: string;
+  perihal: string;
+  totalPenandatangan: number;
+  currentSignerOrder: number;
+  status: "pending" | "signed" | "rejected";
+  mySignerStatus: "waiting" | "pending" | "signed" | "rejected";
+  documentStatus: "draft" | "on_progress" | "completed" | "rejected";
+  canSign: boolean;
+  canReject: boolean;
+  signers: PenandatangananSigner[];
+  fileName?: string;
+  fileSize?: number;
+  fileMimeType?: string;
+  filePreviewUrl: string | null;
+  signedFileName?: string | null;
+  signedFilePreviewUrl: string | null;
+  createdBy?: number;
+  createdByName: string;
+  createdByPosition: string;
+  mySignerInfo?: PenandatangananSigner;
+}
+
+export interface PenandatangananResponse {
+  success: boolean;
+  data: {
+    data: PenandatangananDocument[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    summary: {
+      totalPending: number;
+      totalSigned: number;
+      totalRejected: number;
+    };
+  };
+}
+
+export interface PenandatangananDetailResponse {
+  success: boolean;
+  data: PenandatangananDocument;
+}
+
+export interface SignDocumentPayload {
+  file: File;
+  passphrase: string;
 }

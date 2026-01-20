@@ -33,7 +33,7 @@
           >
             <FileText class="w-5 h-5 text-gray-500" />
             <span class="text-gray-600 flex-1 text-center">
-              {{ fileName || "no file selected" }}
+              {{ fileName || "Pilih file PDF untuk diperiksa" }}
             </span>
             <Upload class="w-5 h-5 text-gray-600" />
           </div>
@@ -65,67 +65,55 @@
             :disabled="loadingCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit
+            Periksa Dokumen
           </UButton>
         </div>
       </div>
 
       <!-- ================== -->
-      <!-- CONFIRMATION DIALOG -->
-      <!-- ================== -->
-      <!-- <Teleport to="body">
-        <Modal
-          v-if="showConfirmDialog"
-          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          @click.self="cancelSubmit"
-        >
-          <div
-            class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in"
-          >
-            <p class="text-gray-800 mb-6">Yakin ingin melanjutkannya?</p>
-
-            <div class="flex justify-end gap-3">
-              <button
-                @click="cancelSubmit"
-                class="px-6 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
-              >
-                Cancel
-              </button>
-              <button
-                @click="submitDocument"
-                :disabled="loadingCheck"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
-              >
-                <span v-if="!loadingCheck">OK</span>
-                <span v-else class="flex items-center gap-2">
-                  <i class="i-lucide-loader animate-spin h-4"></i>
-                  Memeriksa...
-                </span>
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </Teleport> -->
-
-      <!-- ================== -->
-      <!-- INFORMASI DOKUMEN -->
+      <!-- HASIL PEMERIKSAAN -->
       <!-- ================== -->
       <div
         v-if="fileUploaded && !loadingCheck && documentCheck"
         class="space-y-4"
       >
-        <!-- Informasi Dokumen Card -->
+        <!-- Status Card -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <Heading variant="heading10sb" class="mb-5"
-            >Informasi Dokumen</Heading
-          >
+          <div class="flex items-center justify-between mb-4">
+            <Heading variant="heading10sb">Status Verifikasi</Heading>
+            <span
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
+              :class="getStatusBadgeClass(documentCheck.data.status)"
+            >
+              <component
+                :is="getStatusIcon(documentCheck.data.status)"
+                class="w-5 h-5"
+              />
+              {{ documentCheck.data.status }}
+            </span>
+          </div>
 
+          <!-- Warning untuk status UNKNOWN -->
+          <div
+            v-if="documentCheck.data.status === 'UNKNOWN'"
+            class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4"
+          >
+            <AlertTriangle
+              class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
+            />
+            <div class="flex-1">
+              <p class="text-sm font-medium text-yellow-800">Informasi</p>
+              <p class="text-sm text-yellow-700">{{ documentCheck.message }}</p>
+            </div>
+          </div>
+
+          <!-- Grid Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <!-- Nama Dokumen -->
             <div>
               <p class="text-sm font-medium text-gray-700 mb-1">Nama Dokumen</p>
-              <p class="text-sm text-gray-900">
-                {{ documentCheck.data.document.name }}
+              <p class="text-sm text-gray-900 break-all">
+                {{ documentCheck.data.namaDokumen }}
               </p>
             </div>
 
@@ -133,37 +121,57 @@
             <div>
               <p class="text-sm font-medium text-gray-700 mb-1">Keterangan</p>
               <p class="text-sm text-gray-900">
-                {{ documentCheck.data.document.description }}
+                {{ documentCheck.data.keterangan }}
               </p>
             </div>
 
             <!-- Jumlah Signature -->
             <div>
               <p class="text-sm font-medium text-gray-700 mb-1">
-                Jumlah Signature
+                Jumlah Tanda Tangan
               </p>
               <p class="text-sm text-gray-900">
-                {{ documentCheck.data.document.signatureCount }}
+                {{ documentCheck.data.jumlahSignature }}
               </p>
             </div>
 
-            <!-- Status -->
+            <!-- Waktu Verifikasi -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">Status</p>
+              <p class="text-sm font-medium text-gray-700 mb-1">
+                Waktu Verifikasi
+              </p>
+              <p class="text-sm text-gray-900">
+                {{ formatDate(documentCheck.data.verifiedAt) }}
+              </p>
+            </div>
+
+            <!-- Valid -->
+            <div>
+              <p class="text-sm font-medium text-gray-700 mb-1">Status Valid</p>
               <span
-                class="inline-block px-3 py-1 rounded-lg text-xs font-medium"
-                :class="getStatusClass(documentCheck.data.document.status)"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium"
+                :class="
+                  documentCheck.data.isValid
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                "
               >
-                {{ getStatusIcon(documentCheck.data.document.status) }}
-                {{ documentCheck.data.document.status }}
+                <component
+                  :is="documentCheck.data.isValid ? CheckCircle2 : XCircle"
+                  class="w-4 h-4"
+                />
+                {{ documentCheck.data.isValid ? "Valid" : "Tidak Valid" }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Info Penanda Tangan -->
+        <!-- Info Penanda Tangan (jika ada) -->
         <div
-          v-for="(signature, index) in documentCheck.data.signatures"
+          v-if="
+            documentCheck.data.signers && documentCheck.data.signers.length > 0
+          "
+          v-for="(signer, index) in documentCheck.data.signers"
           :key="index"
           class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
         >
@@ -181,9 +189,11 @@
 
               <div class="text-left">
                 <p class="text-sm font-semibold text-gray-900">
-                  Info Penanda Tangan
+                  Penanda Tangan {{ index + 1 }}
                 </p>
-                <p class="text-sm text-gray-600 mt-0.5">{{ signature.name }}</p>
+                <p class="text-sm text-gray-600 mt-0.5">
+                  {{ signer.name || "Tidak diketahui" }}
+                </p>
               </div>
             </div>
 
@@ -204,53 +214,12 @@
           >
             <div v-if="openSigners.has(index)" class="px-6 py-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                <!-- Diterbitkan Oleh -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">
-                    Diterbitkan Oleh
+                <div v-for="(value, key) in signer" :key="key">
+                  <p class="text-sm font-medium text-gray-500 mb-1 capitalize">
+                    {{ formatKey(key) }}
                   </p>
                   <p class="text-sm text-gray-900 break-all">
-                    {{ signature.issuer }}
-                  </p>
-                </div>
-
-                <!-- Algoritma Tanda Tangan -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">
-                    Algoritma Tanda Tangan
-                  </p>
-                  <p class="text-sm text-gray-900">{{ signature.algorithm }}</p>
-                </div>
-
-                <!-- Tanggal Sign -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">
-                    Tanggal Sign
-                  </p>
-                  <p class="text-sm text-gray-900">{{ signature.signDate }}</p>
-                </div>
-
-                <!-- Reason -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Reason</p>
-                  <p class="text-sm text-gray-900">{{ signature.reason }}</p>
-                </div>
-
-                <!-- Valid Dari -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">
-                    Valid dari
-                  </p>
-                  <p class="text-sm text-gray-900">{{ signature.validFrom }}</p>
-                </div>
-
-                <!-- Valid Hingga -->
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">
-                    Valid hingga
-                  </p>
-                  <p class="text-sm text-gray-900">
-                    {{ signature.validUntil }}
+                    {{ value || "-" }}
                   </p>
                 </div>
               </div>
@@ -258,25 +227,80 @@
           </transition>
         </div>
 
-        <!-- SUBMIT BUTTON AT BOTTOM -->
-        <div class="flex justify-end">
-          <UButton
-            @click="finalSubmit"
-            class="bg-teal-600 hover:bg-teal-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium"
+        <!-- Empty State jika tidak ada signature -->
+        <div
+          v-if="
+            !documentCheck.data.signers ||
+            documentCheck.data.signers.length === 0
+          "
+          class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center"
+        >
+          <FileQuestion class="w-16 h-16 text-gray-400 mx-auto mb-3" />
+          <p class="text-gray-600 font-medium">
+            Tidak ada tanda tangan digital ditemukan
+          </p>
+          <p class="text-sm text-gray-500 mt-1">
+            Dokumen ini mungkin belum ditandatangani atau menggunakan format
+            yang tidak didukung
+          </p>
+        </div>
+
+        <!-- Verification Details (jika ada) -->
+        <div
+          v-if="
+            documentCheck.data.verificationDetails &&
+            Object.keys(documentCheck.data.verificationDetails).length > 0
+          "
+          class="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+        >
+          <Heading variant="heading10sb" class="mb-4"
+            >Detail Verifikasi</Heading
           >
-            Submit
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div
+              v-for="(value, key) in documentCheck.data.verificationDetails"
+              :key="key"
+            >
+              <p class="text-sm font-medium text-gray-700 mb-1 capitalize">
+                {{ formatKey(key) }}
+              </p>
+              <p class="text-sm text-gray-900 break-all">
+                {{ value || "-" }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center gap-3">
+          <UButton
+            @click="resetCheck"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium"
+          >
+            Periksa Dokumen Lain
+          </UButton>
+
+          <UButton
+            v-if="documentCheck.data.isValid"
+            @click="downloadReport"
+            class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Download class="w-4 h-4" />
+            Unduh Laporan
           </UButton>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- CONFIRMATION DIALOG -->
   <ConfirmPopup
     v-model="showConfirmDialog"
     type="question"
     title="Konfirmasi"
     message="Yakin ingin melanjutkan pemeriksaan dokumen ini?"
-    confirmText="OK"
-    cancelText="Cancel"
+    confirmText="Periksa"
+    cancelText="Batal"
     :isLoading="loadingCheck"
     @confirm="submitDocument"
     @cancel="cancelSubmit"
@@ -291,10 +315,14 @@ import {
   AlertCircle,
   FileText,
   Upload,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  FileQuestion,
+  Download,
 } from "lucide-vue-next";
 import { ref } from "vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
-const showResultView = ref(false);
 
 const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 
@@ -347,27 +375,39 @@ async function submitDocument() {
 
   try {
     await checkDocument(selectedFile.value);
-
     fileUploaded.value = true;
-    showResultView.value = true;
 
-    if (documentCheck.value?.data.signatures.length) {
+    // Buka accordion pertama jika ada signers
+    if (documentCheck.value?.data.signers?.length) {
       openSigners.value.add(0);
     }
   } catch (err) {
     console.error("Error checking document:", err);
     fileUploaded.value = false;
-    showResultView.value = false;
   } finally {
     showConfirmDialog.value = false;
   }
 }
 
-/* Final Submit (bottom button) */
-function finalSubmit() {
-  // Handle final submit action here
-  console.log("Final submit - Document validated");
-  // You can add navigation or other actions here
+/* Reset Check - Mulai pemeriksaan baru */
+function resetCheck() {
+  fileName.value = "";
+  selectedFile.value = null;
+  fileUploaded.value = false;
+  documentCheck.value = null;
+  error.value = null;
+  openSigners.value.clear();
+
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+}
+
+/* Download Report */
+function downloadReport() {
+  // Implementasi download report
+  console.log("Downloading report...");
+  // TODO: Implement actual download logic
 }
 
 /* Toggle Signer Accordion */
@@ -379,17 +419,19 @@ function toggleSigner(index: number) {
   }
 }
 
-/* Get Status Class */
-function getStatusClass(status: string) {
+/* Get Status Badge Class */
+function getStatusBadgeClass(status: string) {
   switch (status.toUpperCase()) {
     case "VALID":
-      return "bg-green-100 text-green-700";
+      return "bg-green-100 text-green-700 border border-green-200";
     case "INVALID":
-      return "bg-red-100 text-red-700";
+      return "bg-red-100 text-red-700 border border-red-200";
     case "EXPIRED":
-      return "bg-yellow-100 text-yellow-700";
+      return "bg-yellow-100 text-yellow-700 border border-yellow-200";
+    case "UNKNOWN":
+      return "bg-gray-100 text-gray-700 border border-gray-200";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-gray-100 text-gray-700 border border-gray-200";
   }
 }
 
@@ -397,14 +439,33 @@ function getStatusClass(status: string) {
 function getStatusIcon(status: string) {
   switch (status.toUpperCase()) {
     case "VALID":
-      return "✔";
+      return CheckCircle2;
     case "INVALID":
-      return "✖";
+      return XCircle;
     case "EXPIRED":
-      return "⚠";
+    case "UNKNOWN":
+      return AlertTriangle;
     default:
-      return "•";
+      return AlertCircle;
   }
+}
+
+/* Format Date */
+function formatDate(dateString: string) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(date);
+}
+
+/* Format Key untuk display */
+function formatKey(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
 }
 </script>
 
