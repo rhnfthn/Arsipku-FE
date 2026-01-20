@@ -100,7 +100,7 @@ export const useAuth = () => {
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
       // const redirectTarget = "http://localhost:3000/autharsipku";
-      const redirectTarget = "http://172.20.16.115:3012/autharsipku";
+      const redirectTarget = "http://172.20.16.116:3012/autharsipku";
       const encodedRedirect = btoa(redirectTarget);
 
       window.location.href = `https://auth.airnavindonesia.co.id/user/logout?redirect_uri=${encodedRedirect}`;
