@@ -15,7 +15,7 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Penomoran
+        Tambah
       </button>
     </div>
 
@@ -27,7 +27,6 @@
       >
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Tampilkan</span>
           <select
             v-model="rowsPerPage"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
@@ -763,13 +762,6 @@ const handleFileSelect = (detailId: string, event: Event) => {
   }
 };
 
-/**
- * LOGIKA BARU SAVE FILE:
- * - Upload file akan hit endpoint POST /admin/nomor-request-detail/:detail_id/file
- * - Endpoint akan mengubah status menjadi 'terpakai_final'
- * - File akan persist dan tidak hilang saat refresh
- * - Nomor dengan status 'terpakai_final' akan tetap muncul
- */
 const saveFile = async (detailId: string) => {
   const state = fileStates.value[detailId];
   if (!state?.file) {
@@ -963,13 +955,6 @@ const getListNomor = async () => {
   }
 };
 
-/**
- * LOGIKA BARU UNTUK OPEN ROW MODAL:
- * - Ambil detail dari backend
- * - Preserve file_name, file_text, file_url dari backend
- * - Set status berdasarkan backend response
- * - Status 'terpakai_final' akan tetap muncul dengan file-nya
- */
 const openRowModal = async (row) => {
   selectedRow.value = row;
   openPreview.value = true;
@@ -989,8 +974,6 @@ const openRowModal = async (row) => {
       detail?.klasifikasi ||
       row.klasifikasi;
 
-    // Build nomor_list dengan data lengkap dari backend
-    // PRESERVE semua field dari backend
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
       id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
@@ -1148,15 +1131,6 @@ onMounted(async () => {
 
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
-}
-
-/* Sticky column styling */
-thead th:last-child,
-tbody td:last-child {
-  position: sticky;
-  right: 0;
-  background-color: inherit;
-  z-index: 1;
 }
 
 thead th:last-child {

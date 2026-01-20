@@ -17,6 +17,9 @@ import type {
   Verifikator,
   VerifikatorResponse,
   CekDokumenResponse,
+  PenandatangananDocument,
+  PenandatangananResponse,
+  PenandatangananDetailResponse,
 } from "~/types/digsig";
 
 export const useDigsig = () => {
@@ -29,10 +32,17 @@ export const useDigsig = () => {
   const meta = ref<any>(null);
   const bsreHealth = ref<BsreHealthResponse["data"] | null>(null);
 
+  // Penandatanganan
+  const penandatanganDocuments = ref<PenandatangananDocument[]>([]);
+  const penandatanganDetail = ref<PenandatangananDocument | null>(null);
+  const penandatanganMeta = ref<any>(null);
+  const penandatanganSummary = ref<any>(null);
+
   // Dropdown data
   const klasifikasiList = ref<Klasifikasi[]>([]);
   const jenisNaskahList = ref<JenisNaskah[]>([]);
   const verifikatorList = ref<Verifikator[]>([]);
+  const userEnik = ref<string | null>(null);
 
   const loading = ref(false);
   const loadingHealth = ref(false);
@@ -41,6 +51,7 @@ export const useDigsig = () => {
   const loadingJenisNaskah = ref(false);
   const loadingVerifikator = ref(false);
   const loadingCheck = ref(false);
+  const loadingEnik = ref(false);
   const error = ref<string | null>(null);
 
   /* ======================
@@ -170,6 +181,7 @@ export const useDigsig = () => {
   /* ======================
    * CREATE DOCUMENT
    * POST /digsig/document
+   * ✅ FIXED: Properly format signers array
    * ====================== */
   const createDocument = async (payload: CreateDocumentPayload) => {
     loading.value = true;
@@ -184,7 +196,18 @@ export const useDigsig = () => {
       formData.append("perihal", payload.perihal);
       formData.append("file", payload.file);
       formData.append("visibleSign", payload.visibleSign.toString());
-      formData.append("signers", JSON.stringify(payload.signers));
+
+      // ✅ Clean signers - only send urutan and persnum
+      const cleanSigners = payload.signers.map((s) => ({
+        urutan: Number(s.urutan),
+        persnum: Number(s.persnum),
+      }));
+
+      // ✅ Append each signer individually or as JSON string
+      // Try JSON string first (most common approach)
+      formData.append("signers", JSON.stringify(cleanSigners));
+
+      console.log("📤 Creating document with signers:", cleanSigners);
 
       const res = await api.post<DigsigDocumentDetailResponse>(
         "/digsig/document",
@@ -196,14 +219,20 @@ export const useDigsig = () => {
         },
       );
 
+      console.log("✅ Document created:", res.data);
+
       if (res.data.success) {
         return res.data.data;
       } else {
-        throw new Error("Failed to create document");
+        throw new Error(res.data.message || "Failed to create document");
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to create document";
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create document";
       console.error("❌ createDocument error:", err);
+      console.error("❌ Error response:", err?.response?.data);
       throw err;
     } finally {
       loading.value = false;
@@ -213,6 +242,7 @@ export const useDigsig = () => {
   /* ======================
    * UPDATE DOCUMENT
    * PUT /digsig/document/:id
+   * ✅ FIXED: Properly format signers array
    * ====================== */
   const updateDocument = async (id: string, payload: UpdateDocumentPayload) => {
     loading.value = true;
@@ -233,8 +263,17 @@ export const useDigsig = () => {
       if (payload.file) formData.append("file", payload.file);
       if (payload.visibleSign !== undefined)
         formData.append("visibleSign", payload.visibleSign.toString());
-      if (payload.signers)
-        formData.append("signers", JSON.stringify(payload.signers));
+
+      if (payload.signers) {
+        // ✅ Clean signers - only send urutan and persnum
+        const cleanSigners = payload.signers.map((s) => ({
+          urutan: Number(s.urutan),
+          persnum: Number(s.persnum),
+        }));
+        formData.append("signers", JSON.stringify(cleanSigners));
+
+        console.log("📤 Updating document with signers:", cleanSigners);
+      }
 
       const res = await api.put<DigsigDocumentDetailResponse>(
         `/digsig/document/${id}`,
@@ -246,14 +285,20 @@ export const useDigsig = () => {
         },
       );
 
+      console.log("✅ Document updated:", res.data);
+
       if (res.data.success) {
         return res.data.data;
       } else {
-        throw new Error("Failed to update document");
+        throw new Error(res.data.message || "Failed to update document");
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to update document";
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update document";
       console.error("❌ updateDocument error:", err);
+      console.error("❌ Error response:", err?.response?.data);
       throw err;
     } finally {
       loading.value = false;
@@ -327,6 +372,156 @@ export const useDigsig = () => {
   };
 
   /* ======================
+   * FETCH PENANDATANGANAN DOCUMENTS
+   * GET /digsig/penandatanganan
+   * ====================== */
+  const fetchPenandatanganDocuments = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const queryParams = new URLSearchParams();
+
+      if (params?.page) queryParams.append("page", params.page.toString());
+      if (params?.limit) queryParams.append("limit", params.limit.toString());
+      if (params?.search) queryParams.append("search", params.search);
+      if (params?.status) queryParams.append("status", params.status);
+
+      const url = `/digsig/penandatanganan${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+      const res = await apiGet<PenandatangananResponse>(url);
+
+      if (res.success && res.data) {
+        penandatanganDocuments.value = res.data.data;
+        penandatanganMeta.value = {
+          total: res.data.total,
+          page: res.data.page,
+          limit: res.data.limit,
+          totalPages: res.data.totalPages,
+        };
+        penandatanganSummary.value = res.data.summary;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch penandatanganan documents";
+      console.error("❌ fetchPenandatanganDocuments error:", err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /* ======================
+   * FETCH PENANDATANGANAN DETAIL
+   * GET /digsig/penandatanganan/:id
+   * ====================== */
+  const fetchPenandatanganDetail = async (id: string) => {
+    loadingDetail.value = true;
+    error.value = null;
+    penandatanganDetail.value = null;
+
+    try {
+      const url = `/digsig/penandatanganan/${id}`;
+      const res = await apiGet<PenandatangananDetailResponse>(url);
+
+      if (res.success && res.data) {
+        penandatanganDetail.value = res.data;
+        return res.data;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch penandatanganan detail";
+      console.error("❌ fetchPenandatanganDetail error:", err);
+      return null;
+    } finally {
+      loadingDetail.value = false;
+    }
+  };
+
+  /* ======================
+   * SIGN DOCUMENT
+   * POST /digsig/penandatanganan/:id/sign
+   * ====================== */
+  const signDocument = async (
+    id: string,
+    payload: { passphrase: string; keterangan?: string },
+  ) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const body: any = {
+        passphrase: payload.passphrase,
+      };
+
+      if (payload.keterangan) {
+        body.keterangan = payload.keterangan;
+      }
+
+      console.log("📤 Signing document:", id, body);
+
+      const res = await apiPost(`/digsig/penandatanganan/${id}/sign`, body);
+
+      console.log("✅ Document signed:", res);
+
+      if (res.success) {
+        return res;
+      } else {
+        throw new Error(res.message || "Failed to sign document");
+      }
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to sign document";
+      console.error("❌ signDocument error:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /* ======================
+   * REJECT DOCUMENT
+   * POST /digsig/penandatanganan/:id/reject
+   * ====================== */
+  const rejectDocument = async (id: string, alasan: string) => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      console.log("📤 Rejecting document:", id, { alasan });
+
+      const res = await apiPost(`/digsig/penandatanganan/${id}/reject`, {
+        alasan,
+      });
+
+      console.log("✅ Document rejected:", res);
+
+      if (res.success) {
+        return res;
+      } else {
+        throw new Error(res.message || "Failed to reject document");
+      }
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to reject document";
+      console.error("❌ rejectDocument error:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /* ======================
    * FETCH KLASIFIKASI
    * GET /persuratan/klasifikasi
    * ====================== */
@@ -341,6 +536,7 @@ export const useDigsig = () => {
         klasifikasiList.value = res.data.filter(
           (k) => !k.klasifikasi.includes("."),
         );
+        console.log("✅ Klasifikasi loaded:", klasifikasiList.value.length);
       } else {
         throw new Error("Invalid response format");
       }
@@ -365,6 +561,7 @@ export const useDigsig = () => {
 
       if (res.success && res.data) {
         jenisNaskahList.value = res.data;
+        console.log("✅ Jenis Naskah loaded:", jenisNaskahList.value.length);
       } else {
         throw new Error("Invalid response format");
       }
@@ -391,6 +588,7 @@ export const useDigsig = () => {
 
       if (res.success && res.data) {
         verifikatorList.value = res.data;
+        console.log("✅ Verifikator loaded:", verifikatorList.value.length);
       } else {
         throw new Error("Invalid response format");
       }
@@ -399,6 +597,33 @@ export const useDigsig = () => {
       console.error("❌ fetchVerifikator error:", err);
     } finally {
       loadingVerifikator.value = false;
+    }
+  };
+
+  /* ======================
+   * FETCH USER E-NIK
+   * GET /digsig/ktp
+   * ====================== */
+  const fetchUserEnik = async () => {
+    loadingEnik.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet<{ success: boolean; data: { noktp: string } }>(
+        "/digsig/ktp",
+      );
+
+      if (res.success && res.data) {
+        userEnik.value = res.data.noktp;
+        console.log("✅ User E-NIK loaded:", userEnik.value);
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch E-NIK";
+      console.error("❌ fetchUserEnik error:", err);
+    } finally {
+      loadingEnik.value = false;
     }
   };
 
@@ -413,6 +638,14 @@ export const useDigsig = () => {
     klasifikasiList,
     jenisNaskahList,
     verifikatorList,
+    userEnik,
+
+    // Penandatanganan state
+    penandatanganDocuments,
+    penandatanganDetail,
+    penandatanganMeta,
+    penandatanganSummary,
+
     loading,
     loadingHealth,
     loadingDetail,
@@ -420,6 +653,7 @@ export const useDigsig = () => {
     loadingJenisNaskah,
     loadingVerifikator,
     loadingCheck,
+    loadingEnik,
     error,
 
     // Methods
@@ -431,8 +665,16 @@ export const useDigsig = () => {
     updateDocument,
     deleteDocument,
     checkDocument,
+
+    // Penandatanganan methods
+    fetchPenandatanganDocuments,
+    fetchPenandatanganDetail,
+    signDocument,
+    rejectDocument,
+
     fetchKlasifikasi,
     fetchJenisNaskah,
     fetchVerifikator,
+    fetchUserEnik,
   };
 };

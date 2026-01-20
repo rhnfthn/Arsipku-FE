@@ -15,7 +15,7 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Usulan
+        Tambah
       </button>
     </div>
 
@@ -27,7 +27,6 @@
       >
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Tampilkan</span>
           <select
             v-model="rowsPerPage"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
@@ -410,6 +409,7 @@
               class="border border-gray-300 rounded-lg p-4 bg-gray-50"
             >
               <!-- Nomor surat dengan status badge -->
+              <!-- Nomor surat + status -->
               <div class="flex items-center gap-2 mb-3">
                 <div
                   class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
@@ -440,125 +440,114 @@
                   </div>
                 </div>
 
-                <!-- Copy button if nomor exists -->
+                <!-- Copy -->
                 <button
                   v-if="detail.nomor"
                   @click="handleCopy(detail.nomor)"
-                  class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
-                  title="Copy nomor surat"
+                  class="p-2 rounded-lg hover:bg-gray-200 transition border border-gray-300 bg-white"
                 >
                   <Copy class="w-4 h-4 text-gray-600" />
                 </button>
               </div>
 
-              <!-- Show existing file if available -->
-              <div
-                v-if="detail.file_name || filesByDetailId[detail.id]"
-                class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
-              >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-4 h-4 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-
-                  <span class="text-xs text-gray-700">
-                    {{ filesByDetailId[detail.id]?.name || detail.file_name }}
-                  </span>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <!-- Preview Button -->
-                  <button
-                    type="button"
-                    @click="previewFile(detail)"
-                    class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
-                  >
-                    Lihat
-                  </button>
-
-                  <!-- Hapus hanya jika belum submit -->
-                  <button
-                    v-if="selectedRow?.status === 'Belum Diajukan'"
-                    @click.prevent="removeFile(detail.id)"
-                    class="text-red-500 hover:text-red-700 text-xs"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
-
-              <!-- Upload area if status is "Belum Diajukan" and no file -->
-              <div
-                v-else-if="selectedRow?.status === 'Belum Diajukan'"
-                class="relative"
-              >
-                <label
-                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+              <!-- ================= FILE SECTION ================= -->
+              <div class="mt-2 space-y-2">
+                <!-- 1️⃣ ADA FILE (backend / lokal) -->
+                <div
+                  v-if="detail.file_name || filesByDetailId[detail.id]"
+                  class="flex items-center justify-between bg-white border border-green-200 hover:bg-green-100rounded-md px-3 py-2"
                 >
-                  <svg
-                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <a
+                    :href="
+                      detail.file_url
+                        ? detail.file_url
+                        : detail.file_text
+                          ? `${apiBaseUrl}/${detail.file_text}`
+                          : '#'
+                    "
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block transition rounded-md"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
+                    <div class="flex items-start gap-3">
+                      <!-- FILE INFO -->
+                      <div class="flex-1">
+                        <p class="text-sm font-medium text-green-700 underline">
+                          📄 {{ detail.file_name }}
+                        </p>
+                        <p class="text-xs text-gray-600">Klik untuk preview</p>
+                      </div>
+                    </div>
+                  </a>
+                </div>
 
-                  <div class="flex-1">
-                    <span class="text-gray-700 font-medium block">
-                      Pilih file untuk diupload
-                    </span>
-                    <span class="text-xs text-gray-500 block">
-                      PDF saja (Max 5MB)
+                <!-- 2️⃣ BELUM ADA FILE & MASIH BISA UPLOAD -->
+                <div
+                  v-else-if="selectedRow?.status === 'Belum Diajukan'"
+                  class="space-y-2"
+                >
+                  <label
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all"
+                  >
+                    <svg
+                      class="w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+
+                    <div class="flex-1">
+                      <span class="text-gray-700 font-medium block">
+                        {{
+                          filesByDetailId[detail.id]?.name ||
+                          "Pilih file (Opsional)"
+                        }}
+                      </span>
+                      <span class="text-xs text-gray-500 block">
+                        PDF, DOC, DOCX (Max 5MB)
+                      </span>
+                    </div>
+
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.doc,.docx"
+                      @change="handleFile(idx, $event, detail)"
+                    />
+                  </label>
+                </div>
+
+                <!-- 3️⃣ BELUM ADA FILE & TIDAK BISA UPLOAD -->
+                <div
+                  v-else
+                  class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-3 h-3 text-yellow-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+
+                    <span class="text-xs text-yellow-800">
+                      Belum ada file diupload
                     </span>
                   </div>
-
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf"
-                    @change="handleFile(detail.id, $event)"
-                  />
-                </label>
-              </div>
-
-              <!-- No file uploaded -->
-              <div
-                v-else
-                class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
-              >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-3 h-3 text-yellow-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  <span class="text-xs text-yellow-800">
-                    Belum ada file diupload
-                  </span>
                 </div>
               </div>
             </div>
@@ -723,7 +712,16 @@ const previewFile = (detail: any) => {
     window.open(detail.file_url, "_blank");
     return;
   }
-
+  /* Start replacing file */
+  const startReplacingFile = (idx: number) => {
+    const detail = selectedRow.value.details[idx];
+    fileStates.value[idx] = {
+      isReplacing: true,
+      isUploading: false,
+      file: null,
+      originalFileName: detail.file_name,
+    };
+  };
   // File baru (belum submit) berdasarkan detail.id
   if (filesByDetailId.value[detail.id]) {
     const url = URL.createObjectURL(filesByDetailId.value[detail.id]);
@@ -735,12 +733,51 @@ const previewFile = (detail: any) => {
 // ✅ FIXED: Remove file berdasarkan detail.id
 const removeFile = (detailId: string) => {
   delete filesByDetailId.value[detailId];
-
   toast.add({
     title: "File dihapus",
     description: "File berhasil dihapus dari daftar upload",
     color: "green",
   });
+};
+
+/* Upload replace file */
+const uploadReplaceFile = async (idx: number, detail: any) => {
+  if (!detail.id) {
+    toast.add({
+      title: "Gagal",
+      description: "Detail ID tidak ditemukan",
+      color: "red",
+    });
+    return;
+  }
+
+  const fileState = fileStates.value[idx];
+  if (!fileState || !fileState.file) {
+    toast.add({
+      title: "Peringatan",
+      description: "Pilih file terlebih dahulu",
+      color: "yellow",
+    });
+    return;
+  }
+
+  fileState.isUploading = true;
+
+  try {
+    const result = await uploadDetailFile(detail.id, fileState.file);
+
+    if (result) {
+      detail.file_name = result.file_name;
+      detail.file_text = result.file_text;
+      detail.file_url = result.file_url;
+
+      delete fileStates.value[idx];
+    }
+  } catch (error: any) {
+    console.error("❌ Error replace file:", error);
+  } finally {
+    fileState.isUploading = false;
+  }
 };
 
 const fetchPersonMap = async () => {
@@ -923,49 +960,23 @@ const openRowModal = async (row) => {
 };
 
 // ✅ FIXED: HANDLE FILE UPLOAD berdasarkan detail.id
-const handleFile = (detailId: string, e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const selectedFile = target.files?.[0];
+const handleFile = (detailId: string, event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
-  if (!selectedFile) return;
-
-  // Validate file type - HANYA PDF
-  if (selectedFile.type !== "application/pdf") {
-    toast.add({
-      title: "Tipe file tidak valid",
-      description: "Hanya file PDF yang diperbolehkan",
-      color: "red",
-    });
-    target.value = ""; // Reset input
-    return;
-  }
-
-  // Validate file size (5MB max)
-  const maxSize = 5 * 1024 * 1024;
-  if (selectedFile.size > maxSize) {
+  if (file.size > 5 * 1024 * 1024) {
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
       color: "red",
     });
-    target.value = ""; // Reset input
     return;
   }
 
-  // ✅ FIXED: Simpan file menggunakan detail.id sebagai key
-  filesByDetailId.value[detailId] = selectedFile;
+  filesByDetailId.value[detailId] = file;
 
-  console.log(
-    `✅ File uploaded for detail ID ${detailId}:`,
-    selectedFile.name,
-    formatFileSize(selectedFile.size),
-  );
-
-  toast.add({
-    title: "File berhasil dipilih",
-    description: `${selectedFile.name} (${formatFileSize(selectedFile.size)})`,
-    color: "green",
-  });
+  console.log("📎 File disimpan:", detailId, file.name);
 };
 
 // JUMLAH SURAT
