@@ -451,7 +451,7 @@ const handlePreview = async () => {
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
-  loadingMessage.value = "Membuat PDF...";
+  loadingMessage.value = "Memproses Pratinjau......";
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
     const fd = createFormData(payload, false);

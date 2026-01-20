@@ -618,7 +618,7 @@ const adminMenuAdministrasi = computed(() => {
         { label: "Penomoran", to: "/penomoran/nomor" },
       ],
     },
-    { label: "Naskah Dinas", to: "/naskah-dinas", icon: "i-lucide-file-text" },
+    { label: "Naskah Masuk", to: "/naskah-dinas", icon: "i-lucide-file-text" },
   ];
 
   if (user.value?.role === "superadmin") {

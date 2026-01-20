@@ -700,7 +700,7 @@ const handlePassphraseSubmit = async () => {
 
   const confirmMessage = selectedSendType.value === 'digsig'
     ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim dengan QR Code Internal. Lanjutkan?';
+    : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
 
   const isConfirmed = await Alert.confirm(
     'Konfirmasi Akhir',

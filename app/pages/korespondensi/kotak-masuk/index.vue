@@ -263,12 +263,17 @@ const getCategoryStyle = (cat) => {
 };
 
 // Update Label agar sesuai gambar
+// --- HELPER: LABEL MAPPING ---
 const getCategoryLabel = (cat) => {
-  if (cat === "INTERNAL") return "SDI";
-  if (cat === "EXTERNAL") return "SDE";
-  if (cat === "ND") return "Nota Dinas";
-  return cat;
+  const c = (cat || '').toUpperCase();
+  if (['KA'].includes(c)) return 'KA';
+  if (['SDI', 'INTERNAL'].includes(c)) return 'SDI';
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(c)) return 'SDE';
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
+  return 'K';
 };
+
 
 const penerimaDetail = computed(() => {
   if (!selected.value?.penerima) return null;
@@ -548,12 +553,11 @@ const downloadExcel = () => {
                 </div>
               </div>
 
-              <div class="hidden md:flex md:w-[140px] shrink-0 pt-0.5 justify-start pl-4">
-                <span v-if="mail.category_label || mail.category" :class="[
-                  getCategoryStyle(mail.category),
-                  'px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap truncate max-w-full',
-                ]">
-                  {{ mail.category_label || getCategoryLabel(mail.category) }}
+              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+                <span
+                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                  :class="getCategoryStyle(mail.category)">
+                  {{ getCategoryLabel(mail.category) }}
                 </span>
               </div>
 

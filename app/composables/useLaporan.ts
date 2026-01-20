@@ -19,9 +19,19 @@ export const useLaporan = () => {
     return apiGet("/jenis");
   };
 
+  const getRekapNaskahDetail = (params?: {
+    tahun?: number;
+    area?: string;
+    status?: string;
+    jenis?: string;
+  }) => {
+    return apiGet("/rekap-naskah/detail", { params });
+  };
+
   return {
     getRekapNaskah,
     getAreaList,
     getJenisList,
+    getRekapNaskahDetail,
   };
 };

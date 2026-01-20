@@ -184,7 +184,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau PDF" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -381,7 +381,7 @@ const handlePreview = async () => {
   if (!validateInput(payload)) return;
 
   isLoadingData.value = true;
-  loadingMessage.value = "Membuat PDF...";
+  loadingMessage.value = "Memproses Pratinjau......";
 
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);

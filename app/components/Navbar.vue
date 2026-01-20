@@ -76,6 +76,12 @@
           </div>
         </template>
 
+        <template #delegation-item="{ item }">
+          <UTooltip :text="item.label" :popper="{ placement: 'left' }">
+            <span class="text-sm text-gray-700 dark:text-gray-200 truncate">{{ item.label }}</span>
+          </UTooltip>
+        </template>
+
         <template #theme-label>
           <div class="flex items-center justify-between w-full px-3">
             <span class="text-sm text-gray-700 dark:text-gray-200">Tampilan</span>
@@ -123,19 +129,53 @@ import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import { useDelegasi } from "~/composables/useDelegasi";
 
+// Init Composables
 const { user, getProfile, logout } = useAuth();
+const { getAvailableRoles } = useDelegasi();
+const route = useRoute();
+
+// State
 const showLogoutPopup = ref(false);
 const isLoggingOut = ref(false);
 const search = ref("");
-const route = useRoute();
+const delegationRoles = ref<any[]>([]); // State delegasi
 
-const standardItemClass = "text-sm text-gray-700 dark:text-gray-200 truncate";
-const logoutItemClass = "text-sm text-error";
+// --- LOGIC FETCH DELEGASI ---
 
+// 1. Fungsi khusus untuk fetch roles
+const fetchDelegationRoles = async () => {
+  // Cegah call jika user belum ada
+  if (!user.value) return;
+
+  try {
+    const roles = await getAvailableRoles();
+    delegationRoles.value = roles || [];
+  } catch (e) {
+    console.error("Gagal mengambil role delegasi", e);
+  }
+};
+
+// 2. Watcher: Memantau perubahan state User
+// Ini akan otomatis jalan ketika getProfile() selesai dan mengisi data user
+watch(user, (newUser) => {
+  if (newUser) {
+    fetchDelegationRoles();
+  }
+}, { immediate: true });
+// immediate: true agar jika user sudah ada (pindah halaman), langsung fetch tanpa tunggu perubahan
+
+// 3. onMounted hanya trigger getProfile jika kosong
 onMounted(() => {
-  if (!user.value) getProfile();
+  if (!user.value) {
+    getProfile();
+    // Kita tidak perlu await di sini, karena 'watch' di atas
+    // akan bereaksi segera setelah getProfile selesai update state 'user'
+  }
 });
+
+// --- END LOGIC FETCH ---
 
 const searchConfig = computed(() => {
   const path = route.path;
@@ -152,10 +192,7 @@ const searchConfig = computed(() => {
 const handleSearch = () => {
   navigateTo({
     path: route.path,
-    query: {
-      ...route.query,
-      q: search.value
-    }
+    query: { ...route.query, q: search.value }
   });
 };
 
@@ -174,6 +211,7 @@ watch(() => route.path, (newPath, oldPath) => {
   }
 });
 
+// UI & Theme Logic
 const isDark = useDark();
 const currentLocale = ref("id");
 const locales = [
@@ -181,6 +219,56 @@ const locales = [
   { code: "en", name: "EN" },
 ];
 const setLocale = (code: string) => (currentLocale.value = code);
+
+// Dropdown Logic
+const standardItemClass = "text-sm text-gray-700 dark:text-gray-200 truncate";
+const logoutItemClass = "text-sm text-error";
+
+const menuItems = computed<DropdownMenuItem[][]>(() => {
+  // Mapping data delegasi (hanya muncul jika fetchDelegationRoles sukses)
+  const delegasiItems = delegationRoles.value.map(role => ({
+    label: role.position_text, // Sesuaikan dengan key dari API response Anda
+    slot: 'delegation-item',
+    click: () => {
+      console.log("Switch ke role:", role.position_text);
+      // Tambahkan logic switch role disini
+    }
+  }));
+
+  // Jika ada delegasi, tambahkan separator/header opsional jika mau
+  // Di sini langsung digabung ke array utama
+
+  return [
+    [
+      ...(searchConfig.value.show
+        ? [{ slot: "search", type: "label", class: "md:hidden p-0" }]
+        : []),
+      {
+        label: user.value?.positionText || "Posisi",
+        class: standardItemClass,
+        slot: undefined
+      },
+      // Masukkan item delegasi di sini (Dynamic)
+      ...delegasiItems
+    ],
+    [
+      { label: "Setting Notif Email", class: standardItemClass },
+      { label: "Visualisasi Digsig (Visible)", class: standardItemClass },
+      { label: "Setting Temporary File", class: standardItemClass },
+    ],
+    [
+      { slot: "theme-label", type: "label" },
+      { slot: "lang-label", type: "label" },
+    ],
+    [
+      {
+        label: "Keluar",
+        class: logoutItemClass,
+        onSelect: () => openLogoutPopup(),
+      },
+    ],
+  ];
+});
 
 const openLogoutPopup = () => { showLogoutPopup.value = true; };
 
@@ -193,40 +281,11 @@ const confirmLogout = async () => {
   alert("Gagal logout!");
 };
 
-defineEmits(["open-mobile-sidebar"]);
-
-const menuItems = computed<DropdownMenuItem[][]>(() => [
-  [
-    ...(searchConfig.value.show
-      ? [{ slot: "search", type: "label", class: "md:hidden p-0" }]
-      : []),
-    {
-      label: user.value?.positionText || "Posisi",
-      class: standardItemClass,
-      slot: undefined
-    },
-  ],
-  [
-    { label: "Setting Notif Email", class: standardItemClass },
-    { label: "Visualisasi Digsig (Visible)", class: standardItemClass },
-    { label: "Setting Temporary File", class: standardItemClass },
-  ],
-  [
-    { slot: "theme-label", type: "label" },
-    { slot: "lang-label", type: "label" },
-  ],
-  [
-    {
-      label: "Keluar",
-      class: logoutItemClass,
-      onSelect: () => openLogoutPopup(),
-    },
-  ],
-]);
-
 const getInitials = (name: string) => {
   if (!name) return "";
   const parts = name.trim().split(" ");
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 };
+
+defineEmits(["open-mobile-sidebar"]);
 </script>
