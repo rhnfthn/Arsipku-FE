@@ -286,7 +286,7 @@ const { getRecipients } = useSdi();
 const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Tulis Surat Dinas Eksternal", to: "#" },
 ];
 

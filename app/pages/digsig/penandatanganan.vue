@@ -409,7 +409,7 @@ const rows = [
 ];
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
 ];
 

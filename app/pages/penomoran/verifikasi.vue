@@ -776,7 +776,7 @@ const {
 } = usePenomoran();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Verifikasi", to: "/admin/verifikasi" },
 ];
 

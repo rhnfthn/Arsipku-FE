@@ -289,7 +289,7 @@ const { getDraftDetail } = useDraft(); // Asumsi generic draft logic
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Tulis Surat Dinas Internal", to: "#" },
 ];
 

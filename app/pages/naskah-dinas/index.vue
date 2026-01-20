@@ -37,7 +37,7 @@ const skeletonRows = computed(() => {
 const items = [
   {
     label: "Dashboard",
-    to: "/admin/dashboard",
+    to: "/dashboard",
   },
   {
     label: "Naskah Dinas",

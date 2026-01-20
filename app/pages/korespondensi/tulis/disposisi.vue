@@ -302,7 +302,7 @@ const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Tulis Disposisi", to: "#" },
 ];
 

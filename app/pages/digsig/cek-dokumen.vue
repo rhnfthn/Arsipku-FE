@@ -300,7 +300,7 @@ const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 
 /* Breadcrumb */
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
 ];
 

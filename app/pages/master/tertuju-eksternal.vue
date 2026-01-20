@@ -191,7 +191,7 @@
 const items = [
   {
     label: "Dashboard",
-    to: "/admin/dashboard",
+    to: "/dashboard",
   },
   {
     label: "Tertuju Eksternal",

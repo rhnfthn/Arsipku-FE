@@ -343,7 +343,7 @@ import * as XLSX from "xlsx";
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
 ];
 const getStatusClass = (status: string) => {
@@ -355,7 +355,7 @@ const getStatusClass = (status: string) => {
 // const items = [
 //   {
 //     label: "Home",
-//     to: "/admin/dashboard",
+//     to: "/dashboard",
 //   },
 //   {
 //     label: "Rekap Naskah",

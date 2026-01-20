@@ -1,47 +1,44 @@
-import { ref } from 'vue';
-import { useApi } from '@/composables/useApi';
+import { ref } from "vue";
+import { useApi } from "@/composables/useApi";
 
 export const useTerkirimDetail = () => {
-  const { get } = useApi();
+  const { get, post } = useApi(); // Asumsi useApi punya 'post' helper juga
 
-  const detail = ref<any>(null); // Gunakan any agar fleksibel untuk ND/SDI/SDE
+  const detail = ref<any>(null);
   const isLoading = ref(false);
 
   // State PDF
   const pdfBlob = ref<Blob | null>(null);
-  const pdfUrl = ref<string>('');
+  const pdfUrl = ref<string>("");
   const isPdfLoading = ref(false);
   const showPdfModal = ref(false);
 
-  // Base URL API (Sebaiknya dipindahkan ke .env / runtime config)
-  const BASE_API_URL = "http://172.20.16.115:3011";
-
   // --- 1. FETCH DETAIL ---
-  const fetchDetail = async (id: string, jenis: string = 'ND') => {
+  const fetchDetail = async (id: string, jenis: string = "ND") => {
     isLoading.value = true;
     detail.value = null;
 
     try {
-      let endpoint = '';
+      let endpoint = "";
+      const type = jenis.toUpperCase();
 
-      // Tentukan endpoint berdasarkan jenis naskah
-      switch (jenis.toUpperCase()) {
-        case 'ND':
+      switch (type) {
+        case "ND":
           endpoint = `/ND/${id}`;
           break;
-        case 'INTERNAL':
-        case 'SDI':
+        case "INTERNAL":
+        case "SDI":
           endpoint = `/SDI/${id}`;
           break;
-        case 'EXTERNAL':
-        case 'SDE':
+        case "EXTERNAL":
+        case "SDE":
           endpoint = `/SDE/${id}`;
           break;
-        case 'DI':
-        case 'DISPOSISI':
+        case "DI":
+        case "DISPOSISI":
           endpoint = `/DI/${id}`;
           break;
-        case 'KA':
+        case "KA":
           endpoint = `/KA/${id}`;
           break;
         default:
@@ -51,10 +48,24 @@ export const useTerkirimDetail = () => {
       const response = await get(endpoint);
 
       if (response.success) {
-        // Inject 'jenis' ke dalam data detail agar bisa dipakai fungsi lain (PDF)
+        let rawData = response.data;
+
+        // [FIX] Khusus DI, datanya ada di dalam array 'flow'
+        if (
+          (type === "DI" || type === "DISPOSISI") &&
+          rawData.flow &&
+          rawData.flow.length > 0
+        ) {
+          rawData = rawData.flow[0];
+        }
+        // Normalisasi untuk endpoint lain jika ada wrapper 'detail'
+        else if (rawData.detail) {
+          rawData = rawData.detail;
+        }
+
         detail.value = {
-          ...response.data,
-          jenis: jenis.toUpperCase() // Normalisasi ke uppercase
+          ...rawData,
+          jenis: type,
         };
       }
     } catch (error) {
@@ -68,9 +79,17 @@ export const useTerkirimDetail = () => {
   const openPdfPreview = async () => {
     if (!detail.value) return;
 
+    // [FIX] Jika final_pdf_url sudah ada dari backend, pakai itu saja
+    if (detail.value.final_pdf_url) {
+      // Cek apakah URL valid/bisa diakses
+      activePdfUrl.value = detail.value.final_pdf_url;
+      showPdfModal.value = true;
+      return;
+    }
+
     showPdfModal.value = true;
 
-    // Cache: jika URL sudah ada, tidak perlu fetch ulang
+    // Cache: jika URL Blob lokal sudah ada, tidak perlu fetch ulang
     if (pdfUrl.value) return;
 
     isPdfLoading.value = true;
@@ -79,99 +98,98 @@ export const useTerkirimDetail = () => {
       const d = detail.value;
       const jenis = d.jenis;
 
-      let pdfEndpoint = '';
-      let pdfPayload: any = {};
+      let pdfEndpoint = "";
+      const formData = new FormData();
 
-      // --- LOGIC PAYLOAD BERDASARKAN JENIS ---
+      // Helper untuk append FormData aman
+      const append = (key: string, val: any) => {
+        if (val === undefined || val === null) return;
+        if (Array.isArray(val) || typeof val === "object") {
+          formData.append(key, JSON.stringify(val));
+        } else {
+          formData.append(key, String(val));
+        }
+      };
 
-      if (jenis === 'ND') {
-        // --- NOTA DINAS ---
-        pdfEndpoint = `${BASE_API_URL}/ND/generate-pdf`;
-        pdfPayload = {
-          penerima: d.penerima?.map((p: any) => p.position_text || p.nama_sirkuler) || [],
-          tembusan: [], // Sesuaikan jika ada
-          tgl: d.tanggal,
-          perihal: d.perihal,
-          sifat: d.sifat,
-          htmlContent: d.konten,
-          penandatangan: d.pengirim?.nama_sirkuler || d.pengirim?.nama,
-          nama_jabatan: d.pengirim?.position_text,
-          nama_tempat: d.nama_tempat || "Tangerang",
-          nomor: d.nomor
-        };
-
-      } else if (jenis === 'INTERNAL' || jenis === 'SDI') {
-        // --- SURAT DINAS INTERNAL ---
-        pdfEndpoint = `${BASE_API_URL}/SDI/preview-pdf`;
-
-        pdfPayload = {
-          id_naskah: d.id, // Backend mungkin bisa generate dari ID saja
-          perihal: d.perihal,
-          konten: d.konten,
-          pengirim: d.pengirim?.position || d.pengirim?.id,
-          // Mapping penerima (array of IDs untuk SDI)
-          tertuju: d.penerima?.map((p:any) => p.position || p.id) || [],
-          tembusan: d.tembusan?.map((t:any) => t.position || t.id) || [],
-          sifat: d.sifat,
-          klasifikasi: d.klasifikasi,
-          tgl: d.tanggal, // Format YYYY-MM-DD
-          nama_tempat: d.nama_tempat || "Tangerang",
-          nama_jabatan: d.pengirim?.position_text,
-          nama_lengkap: d.pengirim?.nama,
-          english: false
-        };
-
-      } else if (jenis === 'EXTERNAL' || jenis === 'SDE') {
-        // --- SURAT DINAS EKSTERNAL ---
-        pdfEndpoint = `${BASE_API_URL}/SDE/preview-pdf`;
-
-        // SDE butuh detail penerima object, bukan cuma ID
-        // Gunakan JSON.stringify jika backend meminta JSON string di dalam body
-        pdfPayload = {
-          id_naskah: d.id,
-          perihal: d.perihal,
-          konten: d.konten,
-          pengirim: d.pengirim?.position || d.pengirim?.id,
-          // SDE Penerima biasanya array of object {nama, alamat}
-          penerima: d.penerima || [],
-          tembusan: d.tembusan?.map((t:any) => t.position || t.id) || [], // Tembusan biasanya internal (ID)
-          sifat: d.sifat,
-          klasifikasi: d.klasifikasi,
-          tgl: d.tanggal,
-          nama_tempat: d.nama_tempat || "Tangerang",
-          nama_jabatan: d.pengirim?.position_text,
-          nama_lengkap: d.pengirim?.nama,
-          english: false
-        };
+      if (jenis === "ND") {
+        pdfEndpoint = "/ND/generate-pdf";
+        // ND biasanya JSON body, tapi kita coba standarisasi FormData dulu
+        // atau sesuaikan kembali ke JSON jika backend ND menolak FormData
+        append(
+          "penerima",
+          d.penerima?.map((p: any) => p.position_text || p.nama_sirkuler) || [],
+        );
+        append("tgl", d.tanggal);
+        append("perihal", d.perihal);
+        append("sifat", d.sifat);
+        append("htmlContent", d.konten);
+        append("penandatangan", d.pengirim?.nama_sirkuler || d.pengirim?.nama);
+        append("nama_jabatan", d.pengirim?.position_text);
+        append("nama_tempat", d.nama_tempat || "Tangerang");
+        append("nomor", d.nomor);
+      } else if (jenis === "INTERNAL" || jenis === "SDI") {
+        pdfEndpoint = "/SDI/preview-pdf";
+        append("id_naskah", d.id);
+        append("perihal", d.perihal);
+        append("konten", d.konten);
+        append("pengirim", d.pengirim?.position_id || d.pengirim?.id);
+        // SDI Map IDs
+        const tertujuIds =
+          d.penerima?.map((p: any) => p.position_id || p.id) || [];
+        append("tertuju", tertujuIds);
+        const tembusanIds =
+          d.tembusan?.map((t: any) => t.position_id || t.id) || [];
+        append("tembusan", tembusanIds);
+        append("sifat", d.sifat);
+        append("nama_jabatan", d.pengirim?.position_text);
+        append("nama_lengkap", d.pengirim?.nama);
+      } else if (jenis === "EXTERNAL" || jenis === "SDE") {
+        pdfEndpoint = "/SDE/preview-pdf";
+        append("id_naskah", d.id);
+        append("perihal", d.perihal);
+        append("konten", d.konten);
+        append("pengirim", d.pengirim?.position_id || d.pengirim?.id);
+        // SDE butuh object utuh untuk penerima
+        append("penerima", d.penerima || []);
+        const tembusanIds =
+          d.tembusan?.map((t: any) => t.position_id || t.id) || [];
+        append("tembusan", tembusanIds);
+        append("nama_jabatan", d.pengirim?.position_text);
+        append("nama_lengkap", d.pengirim?.nama);
+      } else if (jenis === "DI" || jenis === "DISPOSISI") {
+        // [FIX] Tambahkan logic PDF Disposisi
+        pdfEndpoint = "/DI/preview-pdf";
+        append("nomor", d.nomor);
+        append("sifat", d.sifat);
+        // ... field lain sesuai kebutuhan endpoint DI PDF
+        // Biasanya DI endpoint PDF butuh ID saja jika data sudah di DB
+        // append('id', d.id);
       }
 
-      // --- REQUEST PDF ---
-      // Perhatikan: SDI/SDE di menu 'Tulis' menggunakan FormData.
-      // Jika endpoint 'preview-pdf' di backend mengharuskan FormData, gunakan logic ini:
-      /* const formData = new FormData();
-      Object.keys(pdfPayload).forEach(key => {
-         const val = pdfPayload[key];
-         if (typeof val === 'object') formData.append(key, JSON.stringify(val));
-         else formData.append(key, val);
-      });
-      body: formData (dan hapus header Content-Type agar browser set boundary)
-      */
+      // Gunakan useApi post dengan responseType blob
+      // Pastikan useApi Anda mendukung config axios tambahan (responseType)
+      // Jika tidak, fallback ke fetch native seperti kode lama Anda.
 
-      // Jika backend terima JSON raw:
-      const response = await fetch(pdfEndpoint, {
+      // CONTOH FETCH NATIVE (Lebih aman untuk Blob):
+      // Ganti BASE_API_URL dengan url endpoint asli Anda
+      const BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://172.20.16.115:3011";
+
+      const response = await fetch(`${BASE_URL}${pdfEndpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pdfPayload),
+        // Header Content-Type jangan di-set manual saat pakai FormData!
+        // headers: { "Authorization": `Bearer ${token}` }, // Jika butuh token
+        body: formData,
       });
 
-      if (!response.ok) throw new Error(`Gagal generate PDF (${response.status})`);
+      if (!response.ok) throw new Error("Gagal generate PDF");
 
       const blob = await response.blob();
       pdfBlob.value = blob;
       pdfUrl.value = URL.createObjectURL(blob);
-
     } catch (error) {
       console.error("PDF Generate Error:", error);
+      // Fallback: tampilkan pesan error di UI
     } finally {
       isPdfLoading.value = false;
     }
@@ -189,6 +207,6 @@ export const useTerkirimDetail = () => {
     closePdfPreview,
     pdfUrl,
     isPdfLoading,
-    showPdfModal
+    showPdfModal,
   };
 };

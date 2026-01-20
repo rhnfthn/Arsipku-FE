@@ -419,7 +419,7 @@
 import { ref, computed, watch } from "vue";
 import { RotateCcw } from "lucide-vue-next";
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
 ];
 const data = ref([

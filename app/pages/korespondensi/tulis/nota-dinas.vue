@@ -461,7 +461,7 @@ const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
 const { getKtp } = useDigSign(); // Init composable getKtp
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 
@@ -914,6 +914,31 @@ onMounted(async () => {
   isLoadingData.value = false;
 });
 </script>
+
+<style scoped>
+:deep(.tox-tinymce) {
+  border: none !important;
+}
+
+.tox-fullscreen {
+  /* Harus lebih besar dari z-index Sidebar (93) dan Navbar (92) */
+  z-index: 9999 !important;
+
+  /* Memastikan posisinya menutupi seluruh layar */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* Opsional: Fix untuk Shadow DOM atau popup dialog TinyMCE agar juga di atas */
+.tox-dialog-wrap,
+.tox-dropzone,
+.tox-promotions {
+  z-index: 10000 !important;
+}
+</style>
 
 <style scoped>
 :deep(.tox-tinymce) {

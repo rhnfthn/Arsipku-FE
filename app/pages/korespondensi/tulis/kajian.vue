@@ -253,7 +253,7 @@ const {
 } = useKajian();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Tulis Kajian", to: "#" },
 ];
 

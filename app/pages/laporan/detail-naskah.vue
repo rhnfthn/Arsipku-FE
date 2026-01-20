@@ -342,7 +342,7 @@ const refreshData = () => {
   filters.value.tahun = "";
 };
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
 ];
 // ================================

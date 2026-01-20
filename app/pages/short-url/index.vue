@@ -248,7 +248,7 @@ const openAdd = () => {
 const items = [
   {
     label: "Dashboard",
-    to: "/admin/dashboard",
+    to: "/dashboard",
   },
   {
     label: "Short Url",
