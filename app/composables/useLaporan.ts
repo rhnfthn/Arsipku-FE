@@ -28,10 +28,15 @@ export const useLaporan = () => {
     return apiGet("/rekap-naskah/detail", { params });
   };
 
+  const getRekapNaskahMasuk = (params?: { tahun?: number }) => {
+    return apiGet("/rekap-naskah/naskah-masuk", { params });
+  };
+
   return {
     getRekapNaskah,
     getAreaList,
     getJenisList,
     getRekapNaskahDetail,
+    getRekapNaskahMasuk,
   };
 };
