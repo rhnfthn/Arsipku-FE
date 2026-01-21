@@ -20,8 +20,8 @@
           icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } }
         }">
         <template #trailing>
-          <UButton v-if="search" color="gray" variant="link" icon="i-heroicons-x-mark" :padded="false"
-            @click="handleReset" class="hover:text-gray-700 dark:hover:text-gray-200 w-5 h-5" />
+          <UButton v-if="search" variant="link" icon="i-heroicons-x-mark" :padded="false" @click="handleReset"
+            class="hover:text-gray-700 dark:hover:text-gray-200 w-5 h-5" />
           <UIcon v-else name="i-heroicons-magnifying-glass" class="text-gray-400 dark:text-gray-500 w-5 h-5" />
         </template>
       </UInput>
@@ -119,11 +119,6 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
-import { useAuth } from "~/composables/useAuth";
-import ConfirmPopup from "~/components/ConfirmPopup.vue";
-// [BARU] Import Loading Overlay
-import LoadingOverlay from "~/components/LoadingOverlay.vue";
-import { useDelegasi } from "~/composables/useDelegasi";
 
 // --- INIT COMPOSABLES ---
 const { user, getProfile, logout } = useAuth();
@@ -235,7 +230,7 @@ const confirmLogout = async () => {
   if (process.client) {
     localStorage.removeItem('arsipku_original_position');
     localStorage.removeItem('arsipku_active_delegation_id');
-    localStorage.removeItem('arsipku_active_delegation_role'); // Hapus juga role saat logout
+    localStorage.removeItem('arsipku_active_delegation_role');
   }
 
   isLoggingOut.value = true;
@@ -261,12 +256,16 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   const currentId = activeDelegationId.value;
   const isMainAccountActive = !currentId;
 
+  // Cek apakah ada data delegasi
+  const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0;
+
   const mainAccountItem = {
     label: originalRoleLabel.value,
     slot: 'delegation-item',
     isActive: isMainAccountActive,
-    click: () => handleSwitchRole({ type: 'reset' }),
-    onSelect: () => handleSwitchRole({ type: 'reset' })
+    disabled: !hasDelegationData, // Disable jika tidak ada data delegasi
+    click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
+    onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
   };
 
   const delegasiItems = delegationRoles.value.map(role => {
@@ -279,8 +278,10 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     };
   });
 
+  const roleGroup = [mainAccountItem, ...delegasiItems];
+
   return [
-    [mainAccountItem, ...delegasiItems],
+    roleGroup,
     [
       { label: "Setting Notif Email", class: itemClass },
       { label: "Visualisasi Digsig (Visible)", class: itemClass },
