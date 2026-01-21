@@ -102,28 +102,19 @@
                 class="px-4 py-3 text-left cursor-pointer transition"
                 @click="handleSort('userName')"
               >
-                <div class="flex items-center gap-2">
-                  User
-                  <component :is="getSortIcon('userName')" class="w-4 h-4" />
-                </div>
+                <div class="flex items-center gap-2">User</div>
               </th>
               <th
                 class="px-4 py-3 text-left cursor-pointer transition"
                 @click="handleSort('apiEndpoint')"
               >
-                <div class="flex items-center gap-2">
-                  Api
-                  <component :is="getSortIcon('apiEndpoint')" class="w-4 h-4" />
-                </div>
+                <div class="flex items-center gap-2">Api</div>
               </th>
               <th
                 class="px-4 py-3 text-left cursor-pointertransition"
                 @click="handleSort('nomorNaskah')"
               >
-                <div class="flex items-center gap-2">
-                  Naskah
-                  <component :is="getSortIcon('nomorNaskah')" class="w-4 h-4" />
-                </div>
+                <div class="flex items-center gap-2">Naskah</div>
               </th>
               <th
                 class="px-4 py-3 text-left cursor-pointer transition"
@@ -384,15 +375,32 @@ const showGlobalAlert = ref(false);
 const sortedLogs = computed(() => {
   if (!sortBy.value) return logs.value;
 
+  const field = SORT_FIELD_MAP[sortBy.value];
+  if (!field) return logs.value;
+
   return [...logs.value].sort((a, b) => {
-    const aVal = a[sortBy.value as keyof DigsigLog];
-    const bVal = b[sortBy.value as keyof DigsigLog];
+    let aVal = a[field];
+    let bVal = b[field];
 
-    if (aVal === null || aVal === undefined) return 1;
-    if (bVal === null || bVal === undefined) return -1;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
 
-    const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-    return sortOrder.value === "asc" ? comparison : -comparison;
+    // tanggal → date
+    if (field === "tanggal") {
+      return sortOrder.value === "asc"
+        ? new Date(aVal as string).getTime() -
+            new Date(bVal as string).getTime()
+        : new Date(bVal as string).getTime() -
+            new Date(aVal as string).getTime();
+    }
+
+    // string normalize
+    const aStr = String(aVal).toLowerCase();
+    const bStr = String(bVal).toLowerCase();
+
+    return sortOrder.value === "asc"
+      ? aStr.localeCompare(bStr)
+      : bStr.localeCompare(aStr);
   });
 });
 
@@ -416,6 +424,12 @@ const loadBsreHealth = async () => {
 };
 
 // Sorting (client-side)
+const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
+  tanggal: "tanggal",
+  jenisNaskah: "jenisNaskah",
+  status: "note", // ⬅️ PENTING
+};
+
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";

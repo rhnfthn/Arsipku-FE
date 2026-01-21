@@ -1,6 +1,7 @@
 <template>
   <nav
     class="bg-[#F6F8FC] dark:bg-gray-900 dark:border-gray-800 h-20 flex items-center transition-colors duration-300 gap-3 md:gap-5 justify-between sticky top-0 z-[99]">
+
     <div class="flex items-center gap-3 flex-1">
       <button
         class="md:hidden me-2 mt-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -16,11 +17,7 @@
         class="hidden md:block w-full rounded-full [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400"
         @keyup.enter="handleSearch" :ui="{
           base: 'py-3 px-5 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-md dark:focus:bg-gray-700 transition-all',
-          icon: {
-            trailing: {
-              pointer: 'pointer-events-auto cursor-pointer'
-            }
-          }
+          icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } }
         }">
         <template #trailing>
           <UButton v-if="search" color="gray" variant="link" icon="i-heroicons-x-mark" :padded="false"
@@ -41,7 +38,6 @@
             <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100 text-nowrap">
               {{ user?.nama }}
             </span>
-
             <UTooltip :text="user?.positionText" :popper="{ placement: 'bottom-end' }">
               <span
                 class="hidden md:block text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-tight truncate max-w-[150px] lg:max-w-[200px]">
@@ -49,37 +45,33 @@
               </span>
             </UTooltip>
           </div>
-
           <UAvatar size="md"
             class="ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center">
             {{ getInitials(user?.nama) }}
           </UAvatar>
         </div>
 
-        <template #search v-if="searchConfig.show">
-          <div class="block w-full md:hidden px-3 pt-3">
-            <UInput v-model="search" :placeholder="searchConfig.placeholder" size="md" autofocus class="w-full"
-              @keyup.enter="handleSearch" :ui="{
-                icon: {
-                  trailing: {
-                    pointer: 'pointer-events-auto cursor-pointer'
-                  }
-                }
-              }">
-              <template #trailing>
-                <UButton v-if="search" color="gray" variant="link" icon="i-heroicons-x-mark" :padded="false"
-                  @click="handleReset" />
-                <UIcon v-else name="i-heroicons-magnifying-glass" class="text-gray-400 dark:text-gray-500 w-5 h-5" />
-              </template>
-            </UInput>
-            <div class="h-px bg-gray-200 dark:bg-gray-800 mt-4 -mx-4"></div>
+        <template #delegation-item="{ item }">
+          <div class="flex items-center justify-between w-full gap-2">
+            <UTooltip :text="item.label" :popper="{ placement: 'left' }">
+              <span class="text-sm truncate transition-colors"
+                :class="item.isActive ? 'font-bold text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-200'">
+                {{ item.label }}
+              </span>
+            </UTooltip>
+
+            <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
+              class="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
           </div>
         </template>
 
-        <template #delegation-item="{ item }">
-          <UTooltip :text="item.label" :popper="{ placement: 'left' }">
-            <span class="text-sm text-gray-700 dark:text-gray-200 truncate">{{ item.label }}</span>
-          </UTooltip>
+        <template #search v-if="searchConfig.show">
+          <div class="block w-full md:hidden px-3 pt-3">
+            <UInput v-model="search" :placeholder="searchConfig.placeholder" size="md" autofocus class="w-full"
+              @keyup.enter="handleSearch">
+            </UInput>
+            <div class="h-px bg-gray-200 dark:bg-gray-800 mt-4 -mx-4"></div>
+          </div>
         </template>
 
         <template #theme-label>
@@ -105,10 +97,8 @@
             <div
               class="flex items-center bg-gray-50 dark:bg-gray-800 rounded-lg p-0.5 gap-0.5 border border-gray-200 dark:border-gray-700">
               <UButton v-for="lang in locales" :key="lang.code" :label="lang.name"
-                :variant="currentLocale === lang.code ? 'solid' : 'ghost'"
-                class="rounded-md text-[10px] font-bold px-2 py-1 transition-all h-6"
-                :class="currentLocale === lang.code ? '!bg-white dark:!bg-gray-700 !text-primary-600 shadow-sm' : 'text-gray-500'"
-                @click="setLocale(lang.code)" />
+                :variant="currentLocale === lang.code ? 'solid' : 'ghost'" @click="setLocale(lang.code)"
+                class="h-6 text-[10px] px-2" />
             </div>
           </div>
         </template>
@@ -120,6 +110,8 @@
   <ConfirmPopup v-model="showLogoutPopup" type="warning" title="Keluar dari akun?"
     message="Anda akan keluar dari sistem. Pastikan semua pekerjaan sudah disimpan." confirmText="Keluar"
     cancelText="Batal" :isLoading="isLoggingOut" @confirm="confirmLogout" @cancel="showLogoutPopup = false" />
+
+  <LoadingOverlay :loading="isSwitching" :message="switchingMessage" />
 </template>
 
 <script setup lang="ts">
@@ -129,157 +121,204 @@ import { useDark } from "@vueuse/core";
 import type { DropdownMenuItem } from "#ui/types";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+// [BARU] Import Loading Overlay
+import LoadingOverlay from "~/components/LoadingOverlay.vue";
 import { useDelegasi } from "~/composables/useDelegasi";
 
-// Init Composables
+// --- INIT COMPOSABLES ---
 const { user, getProfile, logout } = useAuth();
-const { getAvailableRoles } = useDelegasi();
+const { getAvailableRoles, switchRole } = useDelegasi();
+const toast = useToast();
 const route = useRoute();
 
-// State
+// --- STATE ---
 const showLogoutPopup = ref(false);
 const isLoggingOut = ref(false);
 const search = ref("");
-const delegationRoles = ref<any[]>([]); // State delegasi
+const delegationRoles = ref<any[]>([]);
 
-// --- LOGIC FETCH DELEGASI ---
+// [STATE BARU] Message untuk Loading Overlay
+const switchingMessage = ref("");
 
-// 1. Fungsi khusus untuk fetch roles
+// [STATE 1] Label Jabatan Asli (Untuk Tampilan Teks)
+const getStoredOriginalRole = () => process.client ? localStorage.getItem('arsipku_original_position') : null;
+const originalRoleLabel = ref(getStoredOriginalRole() || "Posisi Utama");
+
+// [STATE 2] ID Delegasi Aktif (Untuk Checklist/Centang)
+const activeDelegationId = ref<string | null>(null);
+
+// --- LOGIC 1: MONITOR & INIT DATA ---
+const initActiveState = () => {
+  if (process.client) {
+    activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
+  }
+};
+
+watch(user, (newUser) => {
+  if (newUser) {
+    fetchDelegationRoles();
+
+    if (!activeDelegationId.value) {
+      originalRoleLabel.value = newUser.positionText;
+      if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
+    }
+    else if (process.client) {
+      const stored = localStorage.getItem('arsipku_original_position');
+      if (stored) originalRoleLabel.value = stored;
+    }
+  }
+}, { immediate: true });
+
 const fetchDelegationRoles = async () => {
-  // Cegah call jika user belum ada
   if (!user.value) return;
-
   try {
     const roles = await getAvailableRoles();
     delegationRoles.value = roles || [];
   } catch (e) {
-    console.error("Gagal mengambil role delegasi", e);
+    console.error("Error fetch roles", e);
   }
 };
 
-// 2. Watcher: Memantau perubahan state User
-// Ini akan otomatis jalan ketika getProfile() selesai dan mengisi data user
-watch(user, (newUser) => {
-  if (newUser) {
-    fetchDelegationRoles();
+// --- LOGIC 2: SWITCH ROLE (DENGAN LOADING) ---
+const isSwitching = ref(false);
+
+const handleSwitchRole = async (target: { type: 'delegasi' | 'reset', id?: string }) => {
+  if (isSwitching.value) return;
+
+  if (target.type === 'delegasi') {
+    switchingMessage.value = "Mengalihkan ke Akun Delegasi...";
+  } else {
+    switchingMessage.value = "Kembali ke Akun Utama...";
   }
-}, { immediate: true });
-// immediate: true agar jika user sudah ada (pindah halaman), langsung fetch tanpa tunggu perubahan
 
-// 3. onMounted hanya trigger getProfile jika kosong
-onMounted(() => {
-  if (!user.value) {
-    getProfile();
-    // Kita tidak perlu await di sini, karena 'watch' di atas
-    // akan bereaksi segera setelah getProfile selesai update state 'user'
+  isSwitching.value = true;
+
+  try {
+    let payload = {};
+    if (target.type === 'delegasi' && target.id) {
+      payload = { delegasiId: target.id };
+    } else {
+      payload = { resetToOriginal: true };
+    }
+
+    const res = await switchRole(payload);
+
+    if (res?.success) {
+      if (target.type === 'delegasi' && target.id) {
+        // 1. Simpan ID Delegasi
+        localStorage.setItem('arsipku_active_delegation_id', target.id);
+
+        // 2. [BARU] Simpan Role Hasil Delegasi dari Response
+        // Pastikan struktur response sesuai JSON yang Anda berikan (res.data.user.role)
+        if (res.data?.user?.role) {
+          localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
+        }
+      } else {
+        // Hapus data saat reset
+        localStorage.removeItem('arsipku_active_delegation_id');
+        localStorage.removeItem('arsipku_active_delegation_role');
+      }
+
+      localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
+      window.location.reload();
+    } else {
+      isSwitching.value = false;
+    }
+  } catch (error) {
+    console.error("Gagal ganti role:", error);
+    toast.add({ title: 'Gagal', description: 'Gagal mengganti role.', color: 'red' });
+    isSwitching.value = false;
   }
-});
-
-// --- END LOGIC FETCH ---
-
-const searchConfig = computed(() => {
-  const path = route.path;
-  if (path.includes("kotak-masuk")) {
-    return { show: true, placeholder: "Cari naskah masuk...", key: "inbox" };
-  } else if (path.includes("terkirim")) {
-    return { show: true, placeholder: "Cari naskah terkirim...", key: "sent" };
-  } else if (path.includes("draft")) {
-    return { show: true, placeholder: "Cari draf naskah...", key: "draft" };
-  }
-  return { show: false, placeholder: "", key: "" };
-});
-
-const handleSearch = () => {
-  navigateTo({
-    path: route.path,
-    query: { ...route.query, q: search.value }
-  });
 };
 
-const handleReset = () => {
-  search.value = "";
-  handleSearch();
+const confirmLogout = async () => {
+  if (process.client) {
+    localStorage.removeItem('arsipku_original_position');
+    localStorage.removeItem('arsipku_active_delegation_id');
+    localStorage.removeItem('arsipku_active_delegation_role'); // Hapus juga role saat logout
+  }
+
+  isLoggingOut.value = true;
+  await logout();
+  isLoggingOut.value = false;
+  showLogoutPopup.value = false;
+  navigateTo("/");
 };
 
-watch(() => route.query.q, (newVal) => {
-  search.value = (newVal as string) || "";
-}, { immediate: true });
-
-watch(() => route.path, (newPath, oldPath) => {
-  if (newPath !== oldPath) {
-    search.value = "";
-  }
-});
-
-// UI & Theme Logic
+// --- CONFIG LAINNYA ---
+const searchConfig = computed(() => ({ show: false, placeholder: "", key: "" }));
+const handleSearch = () => { };
+const handleReset = () => { };
 const isDark = useDark();
 const currentLocale = ref("id");
-const locales = [
-  { code: "id", name: "ID" },
-  { code: "en", name: "EN" },
-];
+const locales = [{ code: "id", name: "ID" }, { code: "en", name: "EN" }];
 const setLocale = (code: string) => (currentLocale.value = code);
 
-// Dropdown Logic
-const standardItemClass = "text-sm text-gray-700 dark:text-gray-200 truncate";
-const logoutItemClass = "text-sm text-error";
+// --- MENU ITEMS CONFIG ---
+const itemClass = "text-sm truncate transition-colors cursor-pointer";
 
 const menuItems = computed<DropdownMenuItem[][]>(() => {
-  // Mapping data delegasi (hanya muncul jika fetchDelegationRoles sukses)
-  const delegasiItems = delegationRoles.value.map(role => ({
-    label: role.position_text, // Sesuaikan dengan key dari API response Anda
-    slot: 'delegation-item',
-    click: () => {
-      console.log("Switch ke role:", role.position_text);
-      // Tambahkan logic switch role disini
-    }
-  }));
+  const currentId = activeDelegationId.value;
+  const isMainAccountActive = !currentId;
 
-  // Jika ada delegasi, tambahkan separator/header opsional jika mau
-  // Di sini langsung digabung ke array utama
+  const mainAccountItem = {
+    label: originalRoleLabel.value,
+    slot: 'delegation-item',
+    isActive: isMainAccountActive,
+    click: () => handleSwitchRole({ type: 'reset' }),
+    onSelect: () => handleSwitchRole({ type: 'reset' })
+  };
+
+  const delegasiItems = delegationRoles.value.map(role => {
+    return {
+      label: role.position_text,
+      slot: 'delegation-item',
+      isActive: currentId === role.id,
+      click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
+      onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
+    };
+  });
 
   return [
+    [mainAccountItem, ...delegasiItems],
     [
-      ...(searchConfig.value.show
-        ? [{ slot: "search", type: "label", class: "md:hidden p-0" }]
-        : []),
-      {
-        label: user.value?.positionText || "Posisi",
-        class: standardItemClass,
-        slot: undefined
-      },
-      // Masukkan item delegasi di sini (Dynamic)
-      ...delegasiItems
+      { label: "Setting Notif Email", class: itemClass },
+      { label: "Visualisasi Digsig (Visible)", class: itemClass },
+      { label: "Setting Temporary File", class: itemClass },
     ],
-    [
-      { label: "Setting Notif Email", class: standardItemClass },
-      { label: "Visualisasi Digsig (Visible)", class: standardItemClass },
-      { label: "Setting Temporary File", class: standardItemClass },
-    ],
-    [
-      { slot: "theme-label", type: "label" },
-      { slot: "lang-label", type: "label" },
-    ],
-    [
-      {
-        label: "Keluar",
-        class: logoutItemClass,
-        onSelect: () => openLogoutPopup(),
-      },
-    ],
+    [{ slot: "theme-label", type: "label" }],
+    [{ slot: "lang-label", type: "label" }],
+    [{ label: "Keluar", class: "text-sm text-error", onSelect: () => openLogoutPopup() }],
   ];
 });
 
-const openLogoutPopup = () => { showLogoutPopup.value = true; };
+// --- UTILS ---
+onMounted(() => {
+  if (process.client) {
+    initActiveState();
 
-const confirmLogout = async () => {
-  isLoggingOut.value = true;
-  const success = await logout();
-  isLoggingOut.value = false;
-  showLogoutPopup.value = false;
-  if (success) return navigateTo("/");
-  alert("Gagal logout!");
-};
+    const successMsg = localStorage.getItem('switch_role_message');
+    if (successMsg) {
+      toast.add({ title: 'Berhasil', description: successMsg, icon: 'i-heroicons-check-circle', color: 'green' });
+      localStorage.removeItem('switch_role_message');
+    }
+  }
+  if (!user.value) getProfile();
+});
+
+const openLogoutPopup = () => { showLogoutPopup.value = true; };
+// const confirmLogout = async () => {
+//   if (process.client) {
+//     localStorage.removeItem('arsipku_original_position');
+//     localStorage.removeItem('arsipku_active_delegation_id');
+//   }
+
+//   isLoggingOut.value = true;
+//   await logout();
+//   isLoggingOut.value = false;
+//   showLogoutPopup.value = false;
+//   navigateTo("/");
+// };
 
 const getInitials = (name: string) => {
   if (!name) return "";

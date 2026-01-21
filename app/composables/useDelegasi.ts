@@ -61,15 +61,29 @@ export const useDelegasi = () => {
     return res.data.delegations || [];
   };
 
-  // SWITCH ROLE
-  // const switchRole = async (roleId: string) => {
-  //   // Sesuaikan endpoint backend untuk switch role
-  //   return await apiPost("/delegasi/switch-role", { id: roleId });
-  // };
+  // SWITCH ROLE ACTION
+  const switchRole = async (payload: {
+    delegasiId?: string;
+    resetToOriginal?: boolean;
+  }) => {
+    const res = await apiPost<any>("/delegasi/switch-role", payload);
+
+    if (res?.success && res?.data?.accessToken) {
+      if (process.client) {
+        console.log(
+          "[DELEGASI] Token diganti, role berubah ke:",
+          res.data.user?.positionText,
+        );
+        localStorage.setItem("token", res.data.accessToken);
+      }
+    }
+
+    return res;
+  };
 
   return {
     getAvailableRoles,
-    // switchRole,
+    switchRole,
     getDelegasiList,
     getPersonilList,
     getPositionStatuses,

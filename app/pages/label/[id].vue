@@ -41,6 +41,7 @@ const { fetchSentBox } = useSirkulasi();
 
 // --- STATE ---
 const labelId = computed(() => route.params.id as string);
+const labelName = ref("Label View"); // [BARU] State untuk Nama Label
 const isLoading = ref(false);
 const emails = ref<UIMailItem[]>([]);
 
@@ -60,17 +61,46 @@ const loadData = async () => {
 
   try {
     // ----------------------------------------------------------------
-    // 1. Ambil List ID dari Label
+    // 1. Ambil Data Label (ID & Nama)
     // ----------------------------------------------------------------
-    console.log("1. Fetching Label IDs...");
+    console.log("1. Fetching Label Data...");
     await fetchNaskahByLabel(labelId.value);
 
-    // Response API Label Anda: { success: true, data: ["id1", "id2"] }
-    // Composable Anda set naskahByLabel.value = res.data
-    // Jadi naskahByLabel.value langsung array string
-    const labelIds: string[] = naskahByLabel.value || [];
+    const rawData = naskahByLabel.value;
 
+    // [FIXED] Inisialisasi labelIds sebagai array kosong
+    let labelIds: string[] = [];
+
+    // [FIXED] Logika Ekstraksi & Normalisasi yang "Defensive"
+    if (Array.isArray(rawData)) {
+      // Gunakan spread operator [...] untuk memastikan ini array murni (bukan Proxy)
+      labelIds = [...rawData];
+      labelName.value = "Label View";
+    } else if (rawData && typeof rawData === 'object') {
+      // Ambil Nama Label
+      labelName.value = rawData.namaLabel || rawData.name || "Label View";
+
+      // Cari Array ID di dalam object properti
+      if (Array.isArray(rawData.data)) {
+        labelIds = [...rawData.data];
+      } else if (Array.isArray(rawData.list)) {
+        labelIds = [...rawData.list];
+      } else if (Array.isArray(rawData.naskah_ids)) {
+        labelIds = [...rawData.naskah_ids];
+      } else {
+        console.warn("Struktur array ID tidak ditemukan dalam objek:", rawData);
+        labelIds = [];
+      }
+    }
+
+    console.log("   Label Name:", labelName.value);
     console.log("   Label IDs:", labelIds);
+
+    // [FIXED] Validasi Akhir: Jika entah bagaimana masih bukan array, paksa jadi array kosong
+    if (!Array.isArray(labelIds)) {
+      console.error("   Fatal: labelIds is not an array:", labelIds);
+      labelIds = [];
+    }
 
     if (labelIds.length === 0) {
       console.log("   Label kosong.");
@@ -82,22 +112,28 @@ const loadData = async () => {
     // 2. Ambil Data Sent Box
     // ----------------------------------------------------------------
     console.log("2. Fetching Sent Box...");
-    // Response API Sentbox Anda: { data: { items: [ ... ] } }
-    // Composable Anda sudah return response.data.items
     const sentBoxItems = await fetchSentBox(userPositionId);
 
+    if (!Array.isArray(sentBoxItems)) {
+      console.error("   Fatal: sentBoxItems is not an array");
+      isLoading.value = false;
+      return;
+    }
+
     // ----------------------------------------------------------------
-    // 3. Filter Data (FIXED: Pakai id_naskah)
+    // 3. Filter Data
     // ----------------------------------------------------------------
     console.log("3. Filtering...");
 
     const matchedItems = sentBoxItems.filter((item: any) => {
-      // PERBAIKAN DI SINI: Gunakan item.id_naskah
-      const sentItemId = item.id_naskah;
+      // Pastikan item dan id_naskah ada
+      if (!item || !item.id_naskah) return false;
+
+      const sentItemId = String(item.id_naskah); // Convert ke string untuk keamanan
       return labelIds.includes(sentItemId);
     });
 
-    console.log(`   Ditemukan ${matchedItems.length} naskah cocok dari ${sentBoxItems.length} data sentbox.`);
+    console.log(`   Ditemukan ${matchedItems.length} naskah cocok.`);
 
     // ----------------------------------------------------------------
     // 4. Mapping ke UI
@@ -111,10 +147,10 @@ const loadData = async () => {
     isLoading.value = false;
   }
 };
+// ... (SISA KODE SAMA: mapToUIMailItem, watcher, utils, dll) ...
+// Pastikan copy paste helper function di bawah ini agar kode lengkap
 
-// --- HELPER MAPPING (FIXED: Pakai id_naskah) ---
 const mapToUIMailItem = (item: any): UIMailItem => {
-  // Parsing Penerima
   const daftarPenerima = item.penerima || [];
   let displayRecipient = "Tanpa Penerima";
   let firstRecipientTitle = "Tanpa Jabatan";
@@ -135,9 +171,7 @@ const mapToUIMailItem = (item: any): UIMailItem => {
   const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return {
-    // PERBAIKAN DI SINI: Gunakan id_naskah
     id: item.id_naskah,
-
     from: displayRecipient,
     email: firstRecipientTitle,
     subject: item.perihal || "Tanpa Perihal",
@@ -147,22 +181,17 @@ const mapToUIMailItem = (item: any): UIMailItem => {
     fullDate: item.created_at || item.tanggal,
     initial: (daftarPenerima[0]?.nama || '?').substring(0, 1).toUpperCase(),
     color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
-
-    // Data view count
     viewCount: item.summary_baca?.terbaca || 0,
-
     isRead: true,
     isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
     isLocked: item.status === 'final_tte' || item.status === 'final',
     isArchived: item.arsip,
-
     recipient: daftarPenerima.map((p: any) => p.position_text || p.nama).join(', '),
     note: item.sifat,
     originalData: item
   };
 };
 
-// --- WATCHER ---
 watch(
   [() => user.value, labelId],
   ([newUser, newLabelId]) => {
@@ -173,7 +202,6 @@ watch(
   { immediate: true }
 );
 
-// --- UTILS LAINNYA ---
 const getInitials = (name: string) => {
   if (!name) return "";
   const parts = name.trim().split(" ");
@@ -254,7 +282,6 @@ const toggleSelectAll = () => { if (selectedIds.value.size === paginatedEmails.v
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
 const toggleSelection = (id: string) => { if (selectedIds.value.has(id)) selectedIds.value.delete(id); else selectedIds.value.add(id); };
 
-// Reader Modal
 const showReaderModal = ref(false);
 const currentReaderData = ref({ subject: '', readList: [] as any[], unreadList: [] as any[] });
 const openReaderModal = (mail: UIMailItem) => {
@@ -293,7 +320,9 @@ const getDetailRoute = (item: UIMailItem) => {
         <div
           class="flex items-center gap-2 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg border border-primary-100 dark:border-primary-800">
           <Tag class="w-4 h-4" />
-          <span class="font-bold text-sm">Label View</span>
+
+          <span class="font-bold text-sm">{{ labelName }}</span>
+
         </div>
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-2"></div>

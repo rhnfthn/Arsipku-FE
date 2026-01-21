@@ -19,27 +19,34 @@
   <div
     class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
   >
-    <div
-      class="sticky top-0 z-40 bg-white flex items-start gap-3 p-3 relative z-50"
-    >
-      <div class="flex flex-wrap gap-3">
+    <div class="top-0 bg-white p-3 relative z-50">
+      <div class="flex items-center gap-2 flex-nowrap w-full">
         <!-- Refresh -->
         <button
           @click="refreshData"
           :disabled="loading"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 disabled:opacity-50"
+          class="p-1.5 hover:bg-gray-100 rounded-md text-gray-500"
         >
           <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
 
-        <div class="relative min-w-[220px]">
+        <select
+          v-model="rowsPerPage"
+          class="h-8 text-xs border border-gray-300 bg-white rounded-md px-2"
+        >
+          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
+
+        <div class="relative w-[160px] shrink-0">
           <input
             v-model="jenisSearch"
             @focus="openDropdown = 'type'"
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Jenis"
-            class="w-full rounded-md p-2 text-sm bg-gray-100 pr-8 focus:outline-none placeholder:text-black"
+            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
           />
 
           <ChevronDown
@@ -79,11 +86,114 @@
           </div>
         </div>
 
+        <div class="relative w-[160px] shrink-0">
+          <input
+            v-model="lokasiSearch"
+            @focus="openDropdown = 'lokasi'"
+            @keydown.escape="openDropdown = null"
+            type="text"
+            placeholder="Semua Lokasi"
+            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+          />
+
+          <ChevronDown
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+          />
+
+          <div
+            v-if="openDropdown === 'lokasi'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+          >
+            <button
+              @click="selectLokasi(null)"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Semua Lokasi
+            </button>
+
+            <!-- OPTIONS -->
+            <button
+              v-for="item in filteredLokasiOptions"
+              :key="item.value"
+              @click="selectLokasi(item)"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              {{ item.label }}
+            </button>
+
+            <!-- EMPTY -->
+            <div
+              v-if="filteredLokasiOptions.length === 0"
+              class="px-3 py-2 text-sm text-gray-400 italic"
+            >
+              Data tidak ditemukan
+            </div>
+          </div>
+        </div>
+
+        <!-- STATUS FILTER -->
+        <div class="relative w-[180px] shrink-0">
+          <!-- INPUT LOOKALIKE -->
+          <div
+            @click="toggle('status')"
+            class="h-8 w-full px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+          >
+            <!-- PLACEHOLDER -->
+            <span v-if="!selectedStatuses.length" class="text-black truncate">
+              Semua Status
+            </span>
+
+            <div
+              v-else
+              class="flex items-center gap-1 flex-nowrap overflow-hidden"
+            >
+              <span
+                v-for="status in selectedStatuses"
+                :key="status"
+                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary text-[10px] whitespace-nowrap"
+              >
+                {{ statusOptions.find((s) => s.value === status)?.label }}
+                <button
+                  @click.stop="removeStatus(status)"
+                  class="hover:text-red-500"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+
+            <ChevronDown class="w-4 h-4 ml-auto shrink-0 text-gray-500" />
+          </div>
+
+          <!-- DROPDOWN -->
+          <div
+            v-if="openDropdown === 'status'"
+            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full p-2"
+          >
+            <div class="flex flex-col gap-1">
+              <button
+                v-for="status in statusOptions"
+                :key="status.value"
+                @mousedown.prevent
+                @click="toggleStatus(status.value)"
+                class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                :class="
+                  selectedStatuses.includes(status.value)
+                    ? 'bg-primary text-white'
+                    : 'hover:bg-gray-100'
+                "
+              >
+                {{ status.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- BULAN -->
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
@@ -121,7 +231,7 @@
         <div class="relative">
           <button
             @click="toggle('year')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
+            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedYear || "Semua Tahun" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
@@ -142,84 +252,6 @@
             >
               {{ tahun }}
             </button>
-          </div>
-        </div>
-
-        <!-- LOKASI -->
-        <div class="relative">
-          <button
-            @click="toggle('lokasi')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[150px]"
-          >
-            <span>{{ selectedLokasi || "Semua Lokasi" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
-          </button>
-
-          <div
-            v-if="openDropdown === 'lokasi'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <button
-              @click="
-                selectedArea = '';
-                selectedLokasi = '';
-                openDropdown = null;
-              "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              Semua Lokasi
-            </button>
-
-            <button
-              v-for="area in areaOptions"
-              :key="area.value"
-              @click="
-                selectedArea = area.value;
-                selectedLokasi = area.label;
-                openDropdown = null;
-              "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              {{ area.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- STATUS -->
-        <div class="relative">
-          <button
-            @click="toggle('status')"
-            class="rounded-md p-2 text-sm bg-gray-100 flex items-center gap-2 min-w-[100px]"
-          >
-            <span>
-              {{
-                selectedStatuses.length === 0
-                  ? "Semua Status"
-                  : `${selectedStatuses.length} status dipilih`
-              }}
-            </span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
-          </button>
-
-          <div
-            v-if="openDropdown === 'status'"
-            class="absolute z-[999] p-2 bg-white text-sm mt-1 bg-whiterounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <div class="flex flex-wrap gap-3">
-              <button
-                v-for="status in statusOptions"
-                :key="status.value"
-                @click="toggleStatus(status.value)"
-                class="text-left text-sm transition-colors"
-                :class="
-                  selectedStatuses.includes(status.value)
-                    ? 'bg-primary-400 w-full text-white'
-                    : 'hover:bg-gray-100'
-                "
-              >
-                {{ status.label }}
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -286,7 +318,7 @@
 
             <tr
               v-else
-              v-for="row in filteredTableData"
+              v-for="row in paginatedTableData"
               :key="row.id"
               class="hover:bg-blue-50"
             >
@@ -330,120 +362,272 @@
         </table>
       </div>
     </div>
+    <!-- PAGINATION -->
+    <div
+      v-if="totalItems > 0"
+      class="flex items-center justify-between px-4 py-4"
+    >
+      <div class="text-xs text-gray-600">
+        Menampilkan {{ paginatedTableData.length }} dari {{ totalItems }} data
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- BACK -->
+        <button
+          @click="currentPage = Math.max(1, currentPage - 1)"
+          :disabled="currentPage === 1"
+          :class="[
+            'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+            currentPage === 1
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-primary border border-primary hover:bg-primary-50',
+          ]"
+        >
+          Back
+        </button>
+
+        <!-- PAGE NUMBERS -->
+        <div class="flex items-center gap-1">
+          <button
+            v-if="paginationPages[0] > 1"
+            @click="currentPage = 1"
+            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100"
+          >
+            1
+          </button>
+
+          <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400">
+            ...
+          </span>
+
+          <button
+            v-for="page in paginationPages"
+            :key="page"
+            @click="currentPage = page"
+            :class="[
+              'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium',
+              currentPage === page
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 hover:bg-primary-50',
+            ]"
+          >
+            {{ page }}
+          </button>
+
+          <span
+            v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
+            class="px-2 text-gray-400"
+          >
+            ...
+          </span>
+
+          <button
+            v-if="paginationPages[paginationPages.length - 1] < totalPages"
+            @click="currentPage = totalPages"
+            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100"
+          >
+            {{ totalPages }}
+          </button>
+        </div>
+
+        <!-- NEXT -->
+        <button
+          @click="currentPage = Math.min(totalPages, currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          :class="[
+            'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+            currentPage === totalPages
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-primary border border-primary hover:bg-primary-50',
+          ]"
+        >
+          Next
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
+//IMPORT
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
 import { useToast } from "#imports";
 import { useLaporan } from "~/composables/useLaporan";
 import * as XLSX from "xlsx";
 
+//COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
+const toast = useToast();
 
+//CONST UTIL
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
 ];
+
 const getStatusClass = (status: string) => {
   if (status === "terpakai") return "bg-green-100 text-green-700";
   if (status === "booking") return "bg-blue-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
 
-// const items = [
-//   {
-//     label: "Home",
-//     to: "/admin/dashboard",
-//   },
-//   {
-//     label: "Rekap Naskah",
-//     to: "/admin/laporan/rekap-naskah",
-//   },
-// ] satisfies BreadcrumbItem[];
+//STATE
 
-const selectedYear = ref(2025);
-const selectedType = ref("");
+// filter utama
+const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref("");
+const selectedType = ref("");
+const selectedArea = ref("");
 const selectedStatuses = ref<string[]>([]);
-const selectedArea = ref<string>("");
-const selectedLokasi = ref("");
-const isStatusOpen = ref(false);
+
+// dropdown & search
 const openDropdown = ref<null | string>(null);
+const openFilterLokasi = ref(false);
+const searchLokasi = ref("");
+const lokasiSearch = ref("");
+const jenisSearch = ref("");
 
-const toast = useToast();
+// pagination
+const currentPage = ref(1);
+const rowsPerPage = ref(10);
+const rowsPerPageOptions = [5, 10, 20, 50];
 
-const exportExcel = () => {
-  if (!filteredTableData.value.length) {
-    toast.add({
-      title: "Tidak ada data",
-      description: "Data kosong, tidak bisa diexport",
-      color: "warning",
-    });
-    return;
-  }
-
-  const rows: any[] = [];
-
-  filteredTableData.value.forEach((row) => {
-    const baseRow: any = {
-      Naskah: row.naskah,
-    };
-
-    if (selectedMonth.value) {
-      // export 1 bulan saja
-      baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
-    } else {
-      // export semua bulan
-      monthOptions.forEach((bulan) => {
-        baseRow[bulan.label] = row[bulan.value] ?? 0;
-      });
-    }
-
-    baseRow["Jumlah"] = row.jumlah;
-    baseRow["Status"] = row.status;
-
-    rows.push(baseRow);
-  });
-
-  // buat worksheet & workbook
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap");
-
-  // download
-  XLSX.writeFile(workbook, `rekap-naskah-${selectedYear.value}.xlsx`);
-
-  toast.add({
-    title: "Berhasil!",
-    description: `Rekap tahun ${selectedYear.value} berhasil diexport`,
-    color: "success",
-    icon: "i-lucide-check-circle",
-  });
-};
-
+// data
 const rekapData = ref<any[]>([]);
+const areaOptions = ref<{ label: string; value: string }[]>([]);
+const jenisOptions = ref<any[]>([]);
 const loading = ref(false);
 
+//COMPUTED
+
+const yearOptions = computed(() => {
+  const y = new Date().getFullYear();
+  return [y, y - 1, y - 2];
+});
+
+const monthOptions = [
+  { label: "Januari", value: "januari" },
+  { label: "Februari", value: "februari" },
+  { label: "Maret", value: "maret" },
+  { label: "April", value: "april" },
+  { label: "Mei", value: "mei" },
+  { label: "Juni", value: "juni" },
+  { label: "Juli", value: "juli" },
+  { label: "Agustus", value: "agustus" },
+  { label: "September", value: "september" },
+  { label: "Oktober", value: "oktober" },
+  { label: "November", value: "november" },
+  { label: "Desember", value: "desember" },
+];
+
+const statusOptions = [
+  { label: "Terpakai", value: "terpakai" },
+  { label: "Hangus", value: "hangus" },
+  { label: "Booking", value: "booking" },
+];
+
+const selectedMonthLabel = computed(() => {
+  return monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "";
+});
+
+const selectedTypeLabel = computed(() => {
+  if (!selectedType.value) return "Semua Jenis";
+  return (
+    jenisOptions.value.find((j) => j.jenis === selectedType.value)
+      ?.jenis_text ?? "Semua Jenis"
+  );
+});
+
+//FILTERING
+const filteredJenisOptions = computed(() => {
+  if (!jenisSearch.value) return jenisOptions.value;
+  return jenisOptions.value.filter((item) =>
+    item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase()),
+  );
+});
+
+const filteredLokasiOptions = computed(() => {
+  if (!searchLokasi.value) return areaOptions.value;
+  return areaOptions.value.filter((item) =>
+    item.label.toLowerCase().includes(searchLokasi.value.toLowerCase()),
+  );
+});
+
+const filteredTableData = computed(() => {
+  let data = [...rekapData.value];
+
+  if (selectedStatuses.value.length) {
+    data = data.filter((row) => selectedStatuses.value.includes(row.status));
+  }
+
+  if (selectedType.value) {
+    const jenisText = jenisOptions.value.find(
+      (j) => j.jenis === selectedType.value,
+    )?.jenis_text;
+
+    data = data.filter((row) => row.naskah === jenisText);
+  }
+
+  return data;
+});
+
+//PAGINATION
+const totalItems = computed(() => filteredTableData.value.length);
+
+const totalPages = computed(() =>
+  Math.ceil(totalItems.value / rowsPerPage.value),
+);
+
+const paginatedTableData = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredTableData.value.slice(start, start + rowsPerPage.value);
+});
+
+const paginationPages = computed(() => {
+  const windowSize = 5;
+  const pages: number[] = [];
+
+  let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2));
+  let end = start + windowSize - 1;
+
+  if (end > totalPages.value) {
+    end = totalPages.value;
+    start = Math.max(1, end - windowSize + 1);
+  }
+
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
+
+//WATCH
+watch(rowsPerPage, () => (currentPage.value = 1));
+
+watch(
+  [selectedYear, selectedArea, selectedStatuses, selectedType, selectedMonth],
+  () => (currentPage.value = 1),
+  { deep: true },
+);
+
+watch(selectedType, (val) => {
+  if (!val) {
+    jenisSearch.value = "";
+    return;
+  }
+  const found = jenisOptions.value.find((j) => j.jenis === val);
+  if (found) jenisSearch.value = found.jenis_text;
+});
+
+//API FETCH
 const fetchRekap = async () => {
   loading.value = true;
   try {
-    const params: any = {
-      tahun: selectedYear.value, // wajib
-    };
+    const params: any = { tahun: selectedYear.value };
 
-    if (selectedArea.value) {
-      params.area = selectedArea.value;
-    }
-
-    if (selectedStatuses.value.length === 1) {
+    if (selectedArea.value) params.area = selectedArea.value;
+    if (selectedStatuses.value.length === 1)
       params.status = selectedStatuses.value[0];
-    }
-
-    if (selectedType.value) {
-      params.jenis = selectedType.value;
-    }
+    if (selectedType.value) params.jenis = selectedType.value;
 
     const res = await getRekapNaskah(params);
 
@@ -471,147 +655,21 @@ const fetchRekap = async () => {
 };
 
 const fetchArea = async () => {
-  try {
-    const res = await getAreaList();
+  const res = await getAreaList();
+  const raw = res?.data?.data || res?.data || [];
 
-    const raw = res?.data?.data || res?.data || [];
-
-    areaOptions.value = raw.map((item: any) => ({
-      label: item.longText,
-      value: item.area,
-    }));
-  } catch (e) {
-    console.error("Gagal mengambil area", e);
-  }
+  areaOptions.value = raw.map((item: any) => ({
+    label: item.longText,
+    value: item.area,
+  }));
 };
-
-watch(
-  [selectedYear, selectedArea, selectedStatuses, selectedType],
-  fetchRekap,
-  { deep: true },
-);
-
-const jenisOptions = ref<any[]>([]);
-
-const selectedTypeLabel = computed(() => {
-  if (!selectedType.value) return "Semua Jenis";
-  return (
-    jenisOptions.value.find((j) => j.jenis === selectedType.value)
-      ?.jenis_text ?? "Semua Jenis"
-  );
-});
 
 const fetchJenis = async () => {
-  try {
-    const res = await getJenisList();
-    jenisOptions.value = res.data;
-  } catch (e) {
-    console.error("Gagal mengambil jenis", e);
-  }
+  const res = await getJenisList();
+  jenisOptions.value = res.data;
 };
 
-onMounted(() => {
-  fetchRekap();
-  fetchArea();
-  fetchJenis();
-});
-
-const tableColCount = computed(() => {
-  if (selectedMonth.value) return 4;
-  return 1 + monthOptions.length + 2;
-});
-
-const yearOptions = computed(() => {
-  const currentYear = new Date().getFullYear();
-  return [currentYear, currentYear - 1, currentYear - 2];
-});
-
-const monthOptions = [
-  { label: "Januari", value: "januari" },
-  { label: "Februari", value: "februari" },
-  { label: "Maret", value: "maret" },
-  { label: "April", value: "april" },
-  { label: "Mei", value: "mei" },
-  { label: "Juni", value: "juni" },
-  { label: "Juli", value: "juli" },
-  { label: "Agustus", value: "agustus" },
-  { label: "September", value: "september" },
-  { label: "Oktober", value: "oktober" },
-  { label: "November", value: "november" },
-  { label: "Desember", value: "desember" },
-];
-
-const areaOptions = ref<{ label: string; value: string }[]>([]);
-
-const statusOptions = [
-  { label: "Terpakai", value: "terpakai" },
-  { label: "Hangus", value: "hangus" },
-  { label: "Booking", value: "booking" },
-];
-
-const toggle = (key: string) => {
-  openDropdown.value = openDropdown.value === key ? null : key;
-};
-
-const handleClickOutside = (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (!target.closest(".relative")) {
-    openDropdown.value = null;
-  }
-};
-
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
-
-const selectedMonthLabel = computed(() => {
-  return monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "";
-});
-
-const toggleStatus = (status: string) => {
-  if (selectedStatuses.value[0] === status) {
-    selectedStatuses.value = [];
-  } else {
-    selectedStatuses.value = [status];
-  }
-  openDropdown.value = null;
-};
-
-const filteredTableData = computed(() => {
-  let data = [...rekapData.value];
-
-  // filter STATUS
-  if (selectedStatuses.value.length === 1) {
-    data = data.filter((row) => row.status === selectedStatuses.value[0]);
-  }
-
-  // filter JENIS
-  if (selectedType.value) {
-    data = data.filter(
-      (row) =>
-        row.naskah ===
-        jenisOptions.value.find((j) => j.jenis === selectedType.value)
-          ?.jenis_text,
-    );
-  }
-
-  return data;
-});
-
-const jenisSearch = ref("");
-
-const filteredJenisOptions = computed(() => {
-  if (!jenisSearch.value) return jenisOptions.value;
-
-  return jenisOptions.value.filter((item) =>
-    item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase()),
-  );
-});
-
+//SELECT HANDLER
 const selectJenis = (item: any | null) => {
   if (!item) {
     selectedType.value = "";
@@ -620,33 +678,128 @@ const selectJenis = (item: any | null) => {
     selectedType.value = item.jenis;
     jenisSearch.value = item.jenis_text;
   }
-
   openDropdown.value = null;
 };
 
-watch(selectedType, (val) => {
-  if (!val) {
-    jenisSearch.value = "";
+const selectLokasi = (item: { label: string; value: string } | null) => {
+  if (!item) {
+    selectedArea.value = "";
+    lokasiSearch.value = "";
+  } else {
+    selectedArea.value = item.value;
+    lokasiSearch.value = item.label;
+  }
+  openDropdown.value = null;
+};
+
+const toggleStatus = (status: string) => {
+  if (selectedStatuses.value.includes(status)) {
+    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+  } else {
+    selectedStatuses.value.push(status);
+  }
+};
+
+const removeStatus = (status: string) => {
+  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+};
+
+const toggle = (key: string) => {
+  openDropdown.value = openDropdown.value === key ? null : key;
+};
+
+//EXPORT
+const exportExcel = () => {
+  if (!filteredTableData.value.length) {
+    toast.add({
+      title: "Export dibatalkan",
+      description: "Data kosong, tidak ada yang bisa diexport",
+      color: "warning",
+      icon: "i-lucide-alert-circle",
+    });
     return;
   }
 
-  const found = jenisOptions.value.find((j) => j.jenis === val);
-  if (found) {
-    jenisSearch.value = found.jenis_text;
+  try {
+    const rows: any[] = [];
+
+    filteredTableData.value.forEach((row) => {
+      const baseRow: any = { Naskah: row.naskah };
+
+      if (selectedMonth.value) {
+        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
+      } else {
+        monthOptions.forEach((b) => {
+          baseRow[b.label] = row[b.value] ?? 0;
+        });
+      }
+
+      baseRow["Jumlah"] = row.jumlah;
+      baseRow["Status"] = row.status;
+      rows.push(baseRow);
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+
+    const fileName = `rekap-naskah-${selectedYear.value}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    toast.add({
+      title: "Export berhasil",
+      description: `File excel berhasil diunduh`,
+      color: "success",
+      icon: "i-lucide-file-check",
+    });
+  } catch (error) {
+    console.error(error);
+
+    toast.add({
+      title: "Export gagal",
+      description: "Terjadi kesalahan saat membuat file Excel",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
   }
+};
+
+//LIFECYLE
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (!target.closest(".relative")) {
+    openDropdown.value = null;
+    openFilterLokasi.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchRekap();
+  fetchArea();
+  fetchJenis();
+  document.addEventListener("click", handleClickOutside);
 });
 
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+
+//UI HELPER
 const refreshData = async () => {
   selectedMonth.value = "";
   selectedType.value = "";
   jenisSearch.value = "";
   selectedStatuses.value = [];
   selectedArea.value = "";
-  selectedLokasi.value = "";
   selectedYear.value = new Date().getFullYear();
 
   await fetchRekap();
 };
+
+const tableColCount = computed(() => {
+  if (selectedMonth.value) return 4;
+  return 1 + monthOptions.length + 2;
+});
 
 const skeletonRows = computed(() => {
   return selectedMonth.value ? 4 : 6;

@@ -13,7 +13,7 @@
         {{ item.nama }}
       </span>
 
-      <span v-if="count > 0" class="text-[10px] font-semibold px-2 py-0.5 rounded-full mr-2 group-hover:hidden"
+      <span v-if="count > 0" class="text-[10px] font-semibold px-2 py-0.5 rounded-full group-hover:hidden"
         :class="isActive ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'">
         {{ count }}
       </span>

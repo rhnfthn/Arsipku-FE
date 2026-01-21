@@ -1,19 +1,38 @@
 <template>
   <div class="space-y-4">
-    <div class="flex flex-wrap justify-between">
+    <div class="flex items-center justify-between mb-5">
       <div>
-        <Heading variant="heading6b">Detail Naskah Dinas</Heading>
+        <Heading variant="heading6b" class="text-mobile-md">
+          Detail Naskah Dinas
+        </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
+
+      <button
+        @click="exportExcel"
+        class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
+      >
+        <FileDown class="w-4 h-4" />
+        Export
+      </button>
     </div>
 
     <!-- Table -->
     <div
       class="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white"
     >
-      <div class="flex flex-wrap justify-between gap-4 my-3 items-center">
+      <div class="flex flex-wrap justify-between gap-4 p-2 items-center">
         <div class="flex items-center gap-3">
-          <span class="text-xs ml-5 text-gray-600">Tampilkan</span>
+          <button
+            @click="refreshData"
+            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 disabled:opacity-50"
+            :disabled="isRefreshing"
+          >
+            <RotateCcw
+              class="w-4 h-4 transition-transform duration-700"
+              :class="{ 'animate-spin': isRefreshing }"
+            />
+          </button>
 
           <select
             v-model="rowsPerPage"
@@ -23,43 +42,164 @@
               {{ n }}
             </option>
           </select>
-          <button
-            @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-            <RotateCcw class="w-4 h-4" />
-          </button>
+
           <!-- Filter Jenis -->
-          <select
-            v-model="filters.jenis"
-            class="bg-gray-100 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Semua Jenis</option>
-            <option value="ND">Nota Dinas</option>
-            <option value="ST">Surat Tugas</option>
-          </select>
+          <div class="relative" ref="jenisRef">
+            <input
+              v-model="jenisKeyword"
+              @focus="showJenisDropdown = true"
+              placeholder="Semua Jenis"
+              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus:ring-0 focus:border-transparent"
+            />
+
+            <ChevronDown
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+            />
+
+            <div
+              v-if="showJenisDropdown"
+              class="absolute z-20 mt-1 w-full bg-white rounded-lg shadow max-h-48 overflow-y-auto"
+            >
+              <div
+                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                @click="
+                  filters.jenis = '';
+                  jenisKeyword = 'Semua Jenis';
+                  showJenisDropdown = false;
+                "
+              >
+                Semua Jenis
+              </div>
+
+              <div
+                v-for="jenis in filteredJenisOptions"
+                :key="jenis.jenis"
+                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                @click="
+                  filters.jenis = jenis.jenis;
+                  jenisKeyword = jenis.jenis_text;
+                  showJenisDropdown = false;
+                "
+              >
+                {{ jenis.jenis_text }}
+              </div>
+
+              <div
+                v-if="filteredJenisOptions.length === 0"
+                class="px-3 py-2 text-sm text-gray-400 text-center"
+              >
+                Data tidak ditemukan
+              </div>
+            </div>
+          </div>
 
           <!-- Filter Lokasi -->
-          <select
-            v-model="filters.lokasi"
-            class="bg-gray-100 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Semua Lokasi</option>
-            <option v-for="lok in lokasiOptions" :key="lok" :value="lok">
-              {{ lok }}
-            </option>
-          </select>
+          <div class="relative" ref="lokasiRef">
+            <input
+              v-model="lokasiKeyword"
+              @focus="showLokasiDropdown = true"
+              placeholder="Semua Lokasi"
+              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus:ring-0 focus:border-transparent"
+            />
 
-          <!-- Filter Status -->
-          <select
-            v-model="filters.status"
-            class="bg-gray-100 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Semua Status</option>
-            <option value="Terpakai">Terpakai</option>
-            <option value="booking">Booking</option>
-            <option value="Hangus">Hangus</option>
-          </select>
+            <ChevronDown
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+            />
+
+            <div
+              v-if="showLokasiDropdown"
+              class="absolute z-20 mt-1 w-full bg-white rounded-lg shadow max-h-48 overflow-y-auto"
+            >
+              <div
+                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                @click="
+                  filters.lokasi = '';
+                  lokasiKeyword = 'Semua Lokasi';
+                  showLokasiDropdown = false;
+                "
+              >
+                Semua Lokasi
+              </div>
+
+              <div
+                v-for="area in filteredAreaOptions"
+                :key="area.kode"
+                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                @click="
+                  filters.lokasi = area.kode;
+                  lokasiKeyword = area.nama;
+                  showLokasiDropdown = false;
+                "
+              >
+                {{ area.nama }}
+              </div>
+              <div
+                v-if="filteredAreaOptions.length === 0"
+                class="px-3 py-2 text-sm text-gray-400 text-center"
+              >
+                Data tidak ditemukan
+              </div>
+            </div>
+          </div>
+
+          <!-- STATUS FILTER -->
+          <div class="relative w-[180px] shrink-0" ref="statusRef">
+            <!-- INPUT LOOKALIKE -->
+            <div
+              @click="toggle('status')"
+              class="h-9 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+            >
+              <!-- PLACEHOLDER -->
+              <span v-if="!selectedStatuses.length" class="text-black truncate">
+                Semua Status
+              </span>
+
+              <!-- SELECTED TAGS -->
+              <div
+                v-else
+                class="flex items-center gap-1 flex-nowrap overflow-hidden"
+              >
+                <span
+                  v-for="status in selectedStatuses"
+                  :key="status"
+                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary text-[10px] whitespace-nowrap"
+                >
+                  {{ statusOptions.find((s) => s.value === status)?.label }}
+                  <button
+                    @click.stop="removeStatus(status)"
+                    class="hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+
+              <ChevronDown class="w-4 h-4 ml-auto shrink-0 text-gray-500" />
+            </div>
+
+            <!-- DROPDOWN -->
+            <div
+              v-if="openDropdown === 'status'"
+              class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full p-2"
+            >
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="status in statusOptions"
+                  :key="status.value"
+                  @mousedown.prevent
+                  @click="toggleStatus(status.value)"
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    selectedStatuses.includes(status.value)
+                      ? 'bg-primary text-white'
+                      : 'hover:bg-gray-100'
+                  "
+                >
+                  {{ status.label }}
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Filter Tahun -->
           <select
@@ -72,65 +212,69 @@
             </option>
           </select>
         </div>
-        <button
-          class="flex items-center gap-2 mr-6 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
-        >
-          <FileDown class="w-4 h-4" />
-          Export
-        </button>
       </div>
 
-      <div class="relative flex-1 w-full my-3 px-2">
-        <!-- <Search
-          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          v-model="filters.search"
-          type="text"
-          placeholder="Cari perihal / nomor..."
-          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
-        /> -->
-      </div>
-      <table class="min-w-full border-collapse text-sm mt-3">
-        <thead class="text-left bg-primary-400 text-white">
-          <tr>
-            <th class="px-4 py-3 font-semibold">Nomor</th>
-            <th class="px-4 py-3 font-semibold">Tanggal</th>
-            <th class="px-4 py-3 font-semibold">Perihal</th>
-            <th class="px-4 py-3 font-semibold">Jabatan</th>
-            <th class="px-4 py-3 font-semibold">Lokasi</th>
-            <th class="px-4 py-3 font-semibold">Status</th>
-          </tr>
-        </thead>
+      <div class="relative overflow-x-auto">
+        <table class="min-w-max border-collapse text-sm mt-3 w-full">
+          <thead class="text-left bg-primary-400 text-white">
+            <tr>
+              <th class="px-4 py-3 font-semibold">Nomor</th>
+              <th class="px-4 py-3 font-semibold">Tanggal</th>
+              <th class="px-4 py-3 font-semibold">Perihal</th>
+              <th class="px-4 py-3 font-semibold">Jabatan</th>
+              <th class="px-4 py-3 font-semibold">Lokasi</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <tr
-            v-for="item in paginatedNaskah"
-            :key="item.id"
-            class="hover:bg-blue-50 border-b border-gray-200 transition-colors"
-          >
-            <td class="px-4 py-3">{{ item.nomor }}</td>
-            <td class="px-4 py-3">{{ item.tanggal }}</td>
-            <td class="px-4 py-3">{{ item.perihal }}</td>
-            <td class="px-4 py-3">{{ item.jabatan }}</td>
-            <td class="px-4 py-3">{{ item.lokasi }}</td>
-            <td class="px-4 py-3">
-              <span
-                class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                :class="
-                  item.status === 'Terpakai'
-                    ? 'bg-green-100 text-green-600'
-                    : item.status === 'booking'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-red-100 text-red-600'
-                "
+          <tbody>
+            <tr
+              v-for="item in paginatedNaskah"
+              :key="item.id"
+              class="hover:bg-blue-50 border-b border-gray-200 transition-colors"
+            >
+              <td class="px-4 py-3">{{ item.nomor }}</td>
+              <td class="px-4 py-3">{{ item.tanggal }}</td>
+              <td class="px-4 py-3">{{ item.perihal }}</td>
+              <td class="px-4 py-3">{{ item.jabatan }}</td>
+              <td class="px-4 py-3">{{ item.lokasi }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                  :class="{
+                    'bg-green-100 text-green-700': item.status === 'Terpakai',
+                    'bg-blue-100 text-blue-700': item.status === 'Booking',
+                    'bg-red-100 text-red-700': item.status === 'Hangus',
+                  }"
+                >
+                  {{ item.status }}
+                </span>
+              </td>
+            </tr>
+
+            <tr v-if="loading">
+              <td :colspan="tableColCount" class="px-4 py-6">
+                <div class="space-y-4 animate-pulse">
+                  <div
+                    v-for="n in skeletonRows"
+                    :key="'skeleton-' + n"
+                    class="h-12 w-full rounded-lg bg-gray-200"
+                  />
+                </div>
+              </td>
+            </tr>
+
+            <tr v-if="paginatedNaskah.length === 0">
+              <td
+                colspan="6"
+                class="px-4 py-6 text-center text-sm text-gray-400 italic"
               >
-                {{ item.status }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                Tidak ada data
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <!-- PAGINATION -->
       <div
         v-if="totalItems > 0"
@@ -255,125 +399,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { Search, FileDown, RotateCcw } from "lucide-vue-next";
+//IMPORT
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
+import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
+import { useToast } from "#imports";
+import { useLaporan } from "~/composables/useLaporan";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
-const data = ref([
-  {
-    id: 1,
-    nomor: "ND-001/SSF/KEU/III/2025",
-    tanggal: "03/03/2025",
-    perihal: "Persetujuan Proses Pembayaran Biaya Pegawai",
-    jabatan: "Manager of Finance",
-    lokasi: "Airnav Maintenance Facility",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 2,
-    nomor: "ST-002/SSF/KEU/III/2024",
-    tanggal: "03/03/2024",
-    perihal: "Pengajuan Dana Operasional Kantor Cabang Jakarta",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "booking",
-    jenis: "ST",
-  },
-  {
-    id: 3,
-    nomor: "ND-003/SSF/KEU/III/2023",
-    tanggal: "03/03/2023",
-    perihal: "Penggantian Biaya Pembelian",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "Hangus",
-    jenis: "ND",
-  },
-]);
+//GLOBAL UTIL
+const toast = useToast();
+const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
 
-// Filter state
+//FILTER STATE
+const loading = ref(false);
+const isRefreshing = ref(false);
+
+const jenisKeyword = ref("");
+const lokasiKeyword = ref("");
+
+const showJenisDropdown = ref(false);
+const showLokasiDropdown = ref(false);
+
+const openDropdown = ref<null | "status">(null);
+const selectedStatuses = ref<string[]>([]);
+
+//REF COUTSIDE CLICK
+const jenisRef = ref<HTMLElement | null>(null);
+const lokasiRef = ref<HTMLElement | null>(null);
+const statusRef = ref<HTMLElement | null>(null);
+
+//DATA STATE
+const rawData = ref<any[]>([]);
+const areaOptions = ref<{ kode: string; nama: string }[]>([]);
+const jenisOptions = ref<{ jenis: string; jenis_text: string }[]>([]);
+
+//FILTER STATE
 const filters = ref({
   jenis: "",
   lokasi: "",
-  status: "",
+  status: [] as string[],
   tahun: "",
   search: "",
 });
 
-// Options
-const lokasiOptions = computed(() => [
-  ...new Set(data.value.map((d) => d.lokasi)),
-]);
-const tahunOptions = computed(() => [
-  ...new Set(data.value.map((d) => d.tanggal.split("/")[2])),
-]);
+//DROPDOWN HANDLER
+const toggle = (key: "status") => {
+  openDropdown.value = openDropdown.value === key ? null : key;
+};
 
-// Filtered data
+const toggleStatus = (status: string) => {
+  if (selectedStatuses.value.includes(status)) {
+    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+  } else {
+    selectedStatuses.value.push(status);
+  }
+};
+
+const removeStatus = (status: string) => {
+  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+};
+
+//OUTSIDE HANDLER
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as Node;
+
+  if (jenisRef.value && !jenisRef.value.contains(target)) {
+    showJenisDropdown.value = false;
+  }
+
+  if (lokasiRef.value && !lokasiRef.value.contains(target)) {
+    showLokasiDropdown.value = false;
+  }
+
+  if (
+    openDropdown.value === "status" &&
+    statusRef.value &&
+    !statusRef.value.contains(target)
+  ) {
+    openDropdown.value = null;
+  }
+};
+
+//FILTERING
 const filteredData = computed(() => {
-  return data.value.filter((item) => {
-    const tahunItem = item.tanggal.split("/")[2];
-    return (
-      (filters.value.jenis === "" || item.jenis === filters.value.jenis) &&
-      (filters.value.lokasi === "" || item.lokasi === filters.value.lokasi) &&
-      (filters.value.status === "" || item.status === filters.value.status) &&
-      (filters.value.tahun === "" || tahunItem === filters.value.tahun) &&
-      (filters.value.search === "" ||
-        Object.values({
-          nomor: item.nomor,
-          tanggal: item.tanggal,
-          perihal: item.perihal,
-          jabatan: item.jabatan,
-          lokasi: item.lokasi,
-          status: item.status,
-          jenis: item.jenis,
-        })
-          .join(" ")
-          .toLowerCase()
-          .includes(filters.value.search.toLowerCase()))
+  let result = [...rawData.value];
+
+  if (selectedStatuses.value.length) {
+    result = result.filter((item) =>
+      selectedStatuses.value.includes(item.statusRaw),
     );
-  });
+  }
+
+  return result;
 });
 
-const refreshData = () => {
-  filters.value.jenis = "";
-  filters.value.lokasi = "";
-  filters.value.search = "";
-  filters.value.status = "";
-  filters.value.tahun = "";
-};
-const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
-];
-// ================================
-// PAGINATION
-// ================================
-import { ref, computed, watch } from "vue";
+const filteredJenisOptions = computed(() => {
+  if (!jenisKeyword.value) return jenisOptions.value;
+  return jenisOptions.value.filter((j) =>
+    j.jenis_text.toLowerCase().includes(jenisKeyword.value.toLowerCase()),
+  );
+});
 
-// pagination state
+const filteredAreaOptions = computed(() => {
+  if (!lokasiKeyword.value) return areaOptions.value;
+  return areaOptions.value.filter((a) =>
+    a.nama.toLowerCase().includes(lokasiKeyword.value.toLowerCase()),
+  );
+});
+
+const tahunOptions = computed(() => [
+  ...new Set(
+    rawData.value.map((d) => d.tanggal?.split("/")[2]).filter(Boolean),
+  ),
+]);
+
+//PAGINATION
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [5, 10, 15];
-// total items
+
 const totalItems = computed(() => filteredData.value.length);
 
-// total pages
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
 
-// paginated data
 const paginatedNaskah = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredData.value.slice(start, start + rowsPerPage.value);
 });
 
-// reset page saat filter berubah
-watch([filters, rowsPerPage], () => {
-  currentPage.value = 1;
-});
-
-// page window
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
@@ -391,4 +547,201 @@ const paginationPages = computed(() => {
 
   return pages;
 });
+
+const tableColCount = computed(() => 6);
+const skeletonRows = computed(() => rowsPerPage.value);
+
+//API FETCH
+const fetchDetailNaskah = async () => {
+  loading.value = true;
+  try {
+    const params: any = {};
+
+    if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
+    if (filters.value.lokasi) params.area = filters.value.lokasi;
+    if (filters.value.jenis) params.jenis = filters.value.jenis;
+
+    const res = await getRekapNaskahDetail(params);
+
+    rawData.value = res.data.map((item: any) => ({
+      id: item.id,
+      nomor: item.nomor,
+      tanggal: formatTanggal(item.tanggal),
+      perihal: item.perihal ?? "-",
+      jabatan: item.jabatan,
+      lokasi: item.lokasi,
+      status: capitalize(item.status),
+      statusRaw: item.status,
+      jenis: item.jenis,
+      jenis_text: item.jenis_text,
+    }));
+  } catch (err) {
+    console.error("Gagal ambil detail naskah", err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchAreaList = async () => {
+  try {
+    const res = await getAreaList();
+    areaOptions.value = res.data.map((item: any) => ({
+      kode: item.area,
+      nama: item.longText,
+    }));
+  } catch (err) {
+    console.error("Gagal ambil area", err);
+  }
+};
+
+const fetchJenis = async () => {
+  try {
+    const res = await getJenisList();
+    jenisOptions.value = res.data;
+  } catch (err) {
+    console.error("Gagal ambil jenis", err);
+  }
+};
+
+//HELPER
+const formatTanggal = (date: string) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const capitalize = (text: string) =>
+  text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+
+//EXCEL
+const exportExcel = () => {
+  if (!filteredData.value.length) {
+    toast.add({
+      title: "Export dibatalkan",
+      description: "Tidak ada data untuk diexport",
+      color: "warning",
+      icon: "i-lucide-alert-circle",
+    });
+    return;
+  }
+
+  const excelData = filteredData.value.map((item, index) => ({
+    No: index + 1,
+    Nomor: item.nomor,
+    Tanggal: item.tanggal,
+    Perihal: item.perihal,
+    Jabatan: item.jabatan,
+    Lokasi: item.lokasi,
+    Status: item.status,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  worksheet["!cols"] = [
+    { wch: 5 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 40 },
+    { wch: 25 },
+    { wch: 20 },
+    { wch: 15 },
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Naskah");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const today = new Date().toISOString().split("T")[0];
+  saveAs(blob, `detail-naskah-${today}.xlsx`);
+
+  toast.add({
+    title: "Export berhasil",
+    description: "File excel berhasil diunduh",
+    color: "success",
+    icon: "i-lucide-file-check",
+  });
+};
+
+//REFRESH
+const refreshData = async () => {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
+
+  try {
+    filters.value = {
+      jenis: "",
+      lokasi: "",
+      status: [],
+      tahun: "",
+      search: "",
+    };
+
+    jenisKeyword.value = "Semua Jenis";
+    lokasiKeyword.value = "Semua Lokasi";
+    selectedStatuses.value = [];
+
+    showJenisDropdown.value = false;
+    showLokasiDropdown.value = false;
+    openDropdown.value = null;
+
+    currentPage.value = 1;
+    await fetchDetailNaskah();
+  } catch (err) {
+    console.error("Gagal refresh data", err);
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
+//LIFECYCLE
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+  fetchDetailNaskah();
+  fetchAreaList();
+  fetchJenis();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+
+//WATCH
+watch(selectedStatuses, () => {
+  currentPage.value = 1;
+});
+
+watch(
+  () => [filters.value.tahun, filters.value.lokasi, filters.value.jenis],
+  () => {
+    currentPage.value = 1;
+    fetchDetailNaskah();
+  },
+);
+
+watch([filters, rowsPerPage], () => {
+  currentPage.value = 1;
+});
+
+//DATA STATIS
+const statusOptions = [
+  { label: "Terpakai", value: "terpakai" },
+  { label: "Booking", value: "booking" },
+  { label: "Hangus", value: "hangus" },
+];
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
+];
 </script>

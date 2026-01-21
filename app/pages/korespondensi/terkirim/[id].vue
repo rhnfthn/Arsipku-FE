@@ -4,12 +4,14 @@ import { onMounted, onUnmounted, ref, watch, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ArrowLeft, Printer, Paperclip, Loader2, FileText,
-  MoreHorizontal, ChevronUp, Calendar, Hash, Tag
+  MoreHorizontal, ChevronUp, Calendar, Hash, Tag,
+  Notebook,
+  Pencil
 } from 'lucide-vue-next';
 import { useTerkirimDetail } from '@/composables/useTerkirimDetail';
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Terkirim", to: "/korespondensi/terkirim" },
   { label: "Detail Surat", to: "#" },
 ];
@@ -30,7 +32,6 @@ const idNaskah = route.params.id as string;
 // [FIX] Gunakan computed untuk menangkap query param secara reaktif & normalisasi
 const currentJenis = computed(() => {
   const raw = (route.query.jenis as string)?.toUpperCase() || 'ND';
-  // Pastikan KAJIAN atau KA dinormalisasi menjadi 'KA' untuk endpoint
   return (raw === 'KAJIAN' || raw === 'KA') ? 'KA' : raw;
 });
 
@@ -49,7 +50,7 @@ const previewTitle = ref('Preview Dokumen');
 
 // --- COMPUTED PROPERTIES ---
 const categoryLabel = computed(() => {
-  const j = detail.value?.jenis || currentJenis.value; // Gunakan currentJenis
+  const j = detail.value?.jenis || currentJenis.value;
   const labels: Record<string, string> = {
     'ND': 'Nota Dinas',
     'INTERNAL': 'Surat Dinas Internal',
@@ -67,26 +68,15 @@ const categoryLabel = computed(() => {
 // LOGIC WARNA LABEL
 const getCategoryStyle = (cat: string) => {
   const c = (cat || '').toUpperCase();
-
-  if (['ND', 'NOTA DINAS'].includes(c))
-    return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
-
-  if (['DI', 'DISPOSISI'].includes(c))
-    return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
-
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
-    return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
-
-  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
-    return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
-
-  if (['KAJIAN', 'KA'].includes(c))
-    return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
-
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
   return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 
-// LOGIC TOTAL COUNT (NEW)
+// LOGIC TOTAL COUNT
 const totalRecipientCount = computed(() => {
   if (!detail.value) return 0;
   const type = (detail.value.jenis || currentJenis.value).toUpperCase();
@@ -103,20 +93,18 @@ const totalCCCount = computed(() => {
 // LOGIC VISIBLE PENERIMA
 const visiblePenerima = computed(() => {
   if (!detail.value) return [];
-
   const type = (detail.value.jenis || currentJenis.value).toUpperCase();
 
   // KHUSUS SDE
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
     const list = detail.value.kepada_yth.split(';').map((nama: string) => ({
       nama: nama.trim(),
-      positionText: ''
+      positionText: '' // Fallback
     })).filter((i: any) => i.nama);
-
     return showAllRecipients.value ? list : list.slice(0, LIMIT_DISPLAY);
   }
 
-  // DEFAULT
+  // DEFAULT (ND, DI, etc)
   if (!detail.value.penerima) return [];
   return showAllRecipients.value
     ? detail.value.penerima
@@ -125,13 +113,11 @@ const visiblePenerima = computed(() => {
 
 const remainingCount = computed(() => {
   if (!detail.value) return 0;
-
   const type = (detail.value.jenis || currentJenis.value).toUpperCase();
   if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
     const total = detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
     return Math.max(0, total - LIMIT_DISPLAY);
   }
-
   return Math.max(0, (detail.value?.penerima?.length || 0) - LIMIT_DISPLAY);
 });
 
@@ -172,7 +158,6 @@ const openDocumentPreview = async (url: string, title: string, filename?: string
     alert("URL dokumen tidak valid.");
     return;
   }
-
   previewTitle.value = title;
   showPdfModal.value = true;
   isLocalPdfLoading.value = true;
@@ -250,14 +235,17 @@ const contentToDisplay = computed(() => {
   return detail.value.konten || '';
 });
 
+// [FIX] Handle logic disposisi yang ada di root (sesuai JSON) atau nested
 const dispositionData = computed(() => {
   if (!detail.value) return null;
   const type = (detail.value.jenis || currentJenis.value).toUpperCase();
 
   if (type === 'DI' || type === 'DISPOSISI') {
+    // Cek root level (JSON baru)
     if (detail.value.disposisi) {
       return { instruksi: detail.value.disposisi };
     }
+    // Cek detail_disposisi object
     if (detail.value.detail_disposisi) {
       return { instruksi: detail.value.detail_disposisi.disposisi };
     }
@@ -279,7 +267,6 @@ onUnmounted(() => {
 
 onMounted(async () => {
   if (idNaskah) {
-    // [FIX] Mengambil jenis yang benar saat komponen di-mount
     await fetchDetail(idNaskah, currentJenis.value);
   }
 });
@@ -290,13 +277,53 @@ onMounted(async () => {
   <div class="w-full flex flex-col rounded-xl shadow-sm glass-blue">
     <div class="flex-1 ">
 
-      <div v-if="isLoading" class="flex flex-col items-center bg-white rounded-xl justify-center h-full gap-3 py-10">
-        <Loader2 class="w-8 h-8 text-blue-600 animate-spin" />
-        <span class="text-xs text-gray-500">Memuat data...</span>
+      <div v-if="isLoading" class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse">
+        <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <button @click="goBack"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
+              <ArrowLeft class="w-5 h-5" />
+            </button>
+            <div class="flex flex-col min-w-0">
+              <h1 class="text-base font-semibold text-gray-900 dark:text-white truncate">Kembali</h1>
+            </div>
+          </div>
+          <div class="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded"></div>
+        </div>
+
+        <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800">
+          <div class="h-8 w-3/4 sm:w-1/2 bg-gray-200 dark:bg-gray-800 rounded mb-4"></div>
+          <div class="flex gap-2">
+            <div class="h-5 w-20 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+            <div class="h-5 w-32 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+            <div class="h-5 w-24 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-8 bg-gray-50/60 dark:bg-gray-950/40">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-full shrink-0"></div>
+            <div class="flex-1 space-y-4">
+              <div class="space-y-2">
+                <div class="h-4 w-48 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                <div class="h-3 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
+              </div>
+              <div class="space-y-2 mt-4">
+                <div class="h-3 w-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                <div class="h-16 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-8 h-64 bg-white dark:bg-gray-900">
+          <div class="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded mb-2"></div>
+          <div class="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded mb-2"></div>
+          <div class="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
+        </div>
       </div>
 
-      <div v-else-if="detail"
-        class="w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
+      <div v-else-if="detail" class="w-full bg-white dark:bg-gray-900 rounded-xl dark:border-gray-800 overflow-hidden">
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
@@ -320,7 +347,7 @@ onMounted(async () => {
 
         <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
-            {{ detail.perihal || '-' }}
+            {{ detail.perihal || detail.kop_judul || '-' }}
           </h2>
 
           <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
@@ -342,7 +369,7 @@ onMounted(async () => {
 
             <div
               class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-              :class="categoryStyle">
+              :class="getCategoryStyle(categoryLabel)">
               <Tag class="w-3 h-3" />
               {{ categoryLabel }}
             </div>
@@ -360,7 +387,7 @@ onMounted(async () => {
             <div class="flex-1 min-w-0 space-y-6">
               <div>
                 <span class="text-sm font-semibold text-gray-900 dark:text-white block">
-                  {{ detail.pengirim?.positionText || detail.pengirim?.nama }}
+                  {{ detail.pengirim?.position_text || detail.pengirim?.positionText || detail.pengirim?.nama }}
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
                   {{ detail.pengirim?.nama }}
@@ -398,9 +425,12 @@ onMounted(async () => {
                           {{ idx + 1 }}.
                         </span>
                         <div class="break-words">
-                          <span class="font-medium">{{ penerima.positionText || penerima.nama }}</span>
-                          <span v-if="penerima.positionText" class="text-gray-500 font-normal ml-1 text-xs">
-                            ({{ penerima.nama }})
+                          <span class="font-medium">
+                            {{ penerima.position_text || penerima.positionText || penerima.nama }}
+                          </span>
+                          <span v-if="penerima.position_text || penerima.positionText"
+                            class="text-gray-500 font-normal text-xs">
+                            ({{ penerima.nama || "Empty" }})
                           </span>
                         </div>
                       </div>
@@ -423,8 +453,10 @@ onMounted(async () => {
                         {{ idx + 1 }}.
                       </span>
                       <div class="break-words">
-                        <span class="font-medium">{{ cc.positionText || cc.nama }}</span>
-                        <span v-if="cc.positionText" class="text-gray-500 font-normal ml-1 text-xs">
+                        <span class="font-medium">
+                          {{ cc.position_text || cc.positionText || cc.nama }}
+                        </span>
+                        <span v-if="cc.position_text || cc.positionText" class="text-gray-500 font-normal ml-1 text-xs">
                           ({{ cc.nama }})
                         </span>
                       </div>
@@ -456,8 +488,18 @@ onMounted(async () => {
           <div class="relative overflow-hidden transition-all duration-500 ease-in-out"
             :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
 
-            <iframe ref="iframe" :srcdoc="contentToDisplay" class="w-full bg-transparent block" style="border: none;"
-              scrolling="no">
+            <div v-if="dispositionData"
+              class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-3 flex items-center gap-2">
+              <!-- <FileText class="w-3.5 h-3.5" /> -->
+              Catatan
+            </div>
+
+            <div v-if="!contentToDisplay" class="text-gray-400 text-sm italic text-center py-4">
+              Tidak ada catatan tambahan.
+            </div>
+
+            <iframe v-else ref="iframe" :srcdoc="contentToDisplay" class="w-full bg-transparent block"
+              style="border: none;" scrolling="no">
             </iframe>
 
             <div v-show="showReadMoreButton && !isContentExpanded"
@@ -500,26 +542,6 @@ onMounted(async () => {
                 </p>
               </div>
             </button>
-          </div>
-        </div>
-
-        <div v-if="detail.detail_disposisi" class="px-5 sm:px-8 pb-8 pt-4 bg-white dark:bg-gray-900">
-          <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30 rounded-lg p-4">
-            <div class="flex gap-3">
-              <span class="text-lg pt-0.5">📝</span>
-              <div>
-                <h4 class="text-[10px] font-bold text-amber-700 dark:text-amber-500 uppercase tracking-widest mb-1">
-                  Instruksi Disposisi
-                </h4>
-                <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line leading-relaxed">
-                  {{ detail.detail_disposisi.disposisi }}
-                </p>
-                <div v-if="detail.detail_disposisi.catatan"
-                  class="mt-2 pt-2 border-t border-amber-200/50 dark:border-amber-800/30">
-                  <p class="text-xs text-gray-500 italic">"{{ detail.detail_disposisi.catatan }}"</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

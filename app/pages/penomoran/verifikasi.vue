@@ -18,7 +18,6 @@
       >
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Tampilkan</span>
           <select
             v-model="rowsPerPage"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
@@ -526,7 +525,7 @@
                   <!-- Show existing file if available -->
                   <div
                     v-if="detail.file_name && !fileStates[idx]?.isReplacing"
-                    class="border border-green-200 bg-green-50 rounded-lg p-3"
+                    class="border border-green-200 bg-green-50 hover:bg-green-100 rounded-lg p-3"
                   >
                     <a
                       :href="
@@ -538,13 +537,13 @@
                       "
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="block hover:bg-green-100 transition rounded-md"
+                      class="block transition rounded-md"
                     >
                       <div class="flex items-start gap-3">
                         <!-- FILE INFO -->
                         <div class="flex-1">
                           <p
-                            class="text-sm font-medium text-green-700 hover:bg-green-100 underline"
+                            class="text-sm font-medium text-green-700 underline"
                           >
                             📄 {{ detail.file_name }}
                           </p>
@@ -776,7 +775,7 @@ const {
 } = usePenomoran();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Verifikasi", to: "/admin/verifikasi" },
 ];
 

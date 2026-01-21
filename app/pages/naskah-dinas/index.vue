@@ -37,7 +37,7 @@ const skeletonRows = computed(() => {
 const items = [
   {
     label: "Dashboard",
-    to: "/admin/dashboard",
+    to: "/dashboard",
   },
   {
     label: "Naskah Dinas",
@@ -569,7 +569,7 @@ function exportExcel() {
   <div class="flex items-center justify-between w-full mb-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md">
-        Daftar Naskah Dinas
+        Daftar Naskah Masuk
       </Heading>
       <PageHeader :items="items" />
     </div>
@@ -580,7 +580,7 @@ function exportExcel() {
       class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-xs transition"
     >
       <Plus class="w-4 h-4" />
-      Tambah Naskah Dinas
+      Tambah
     </button>
   </div>
   <div class="w-full min-w-0 min-h-screen bg-gray-50">
@@ -713,7 +713,7 @@ function exportExcel() {
                 v-else
                 v-for="item in paginatedData"
                 :key="item.id"
-                class="hover:bg-blue-50 transition-colors"
+                class="hover:bg-blue-50 transition-colors border-b border-gray-100"
               >
                 <td class="px-4 py-3 text-black whitespace-nowrap">
                   <div class="font-medium">
@@ -860,7 +860,7 @@ function exportExcel() {
       >
         <template #title>
           <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold"
-            >Tambah Naskah Dinas</Heading
+            >Tambah Naskah Masuk</Heading
           >
         </template>
 
