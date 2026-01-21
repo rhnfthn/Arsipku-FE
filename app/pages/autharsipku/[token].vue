@@ -1,15 +1,44 @@
 <template>
   <Teleport to="body">
-    <transition name="fade">
-      <div v-if="visible" class="fixed inset-0 z-[99999] flex items-center justify-center bg-white">
-        <div class="text-center">
-          <div class="loader mx-auto mb-4"></div>
-          <p class="text-gray-600 text-lg">
-            Memverifikasi akses, mohon tunggu...
-          </p>
+    <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0"
+      enter-to-class="opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100"
+      leave-to-class="opacity-0">
+      <div v-if="visible"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px]">
+
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          </div>
         </div>
+
+        <div class="relative flex flex-col items-center gap-6 z-10">
+
+          <div class="relative flex items-center justify-center w-24 h-24">
+            <div
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#175fa4] border-r-[#749fc8] animate-spin"
+              style="animation-duration: 1.5s;">
+            </div>
+
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+              <div class="plane-float">
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#175fa4] -rotate-45" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-gray-900 font-semibold text-lg">
+              Memverifikasi Akses
+            </span>
+            <span class="text-sm text-gray-600">
+              Mohon tunggu sebentar...
+            </span>
+          </div>
+
+        </div>
+
       </div>
-    </transition>
+    </Transition>
   </Teleport>
 </template>
 
@@ -41,25 +70,23 @@ onMounted(async () => {
     if (result?.success) {
       const accessToken = result?.data?.accessToken;
       const sessionId = result?.data?.sessionId;
-      const role = result?.data?.user?.role; // ⬅️ ambil role
+      const role = result?.data?.user?.role;
 
       if (!accessToken || !sessionId) {
         console.error("Token/sessionId missing from API response:", result);
-        return navigateTo("/login");
+        return navigateTo("/");
       }
 
       // Simpan token
       localStorage.setItem("token", accessToken);
       localStorage.setItem("sessionId", sessionId);
 
-      // ⬅️ ROUTING DINAMIS DIUBAH DISINI
-      // Karena folder admin dan user sudah digabung ke folder "app",
-      // maka semua role yang valid diarahkan ke /dashboard.
+      // Routing Dinamis
       if (["admin", "superadmin", "user"].includes(role)) {
         return navigateTo("/dashboard");
       }
 
-      // fallback jika role tidak dikenal
+      // fallback
       return navigateTo("/");
     }
   } catch (error) {
@@ -79,29 +106,25 @@ function delayWithFade() {
 }
 </script>
 
-<style>
-.loader {
-  width: 45px;
-  height: 45px;
-  border: 4px solid #ddd;
-  border-top-color: #457fb6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
+<style scoped>
+/* STYLE BARU */
+@keyframes planeFloat {
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
   }
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
+.plane-float {
+  animation: planeFloat 2s ease-in-out infinite;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.bg-gradient-radial {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 70%);
 }
 </style>
