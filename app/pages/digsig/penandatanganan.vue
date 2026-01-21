@@ -12,57 +12,6 @@
       </div>
     </div>
 
-    <!-- SUMMARY CARDS -->
-    <!-- <div v-if="summary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-lg shadow-sm p-5 border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 mb-1">Menunggu</p>
-            <p class="text-3xl font-bold text-yellow-600">
-              {{ summary.totalPending }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center"
-          >
-            <Clock class="w-6 h-6 text-yellow-600" />
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm p-5 border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 mb-1">Sudah TTD</p>
-            <p class="text-3xl font-bold text-green-600">
-              {{ summary.totalSigned }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
-          >
-            <CheckCircle2 class="w-6 h-6 text-green-600" />
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm p-5 border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 mb-1">Ditolak</p>
-            <p class="text-3xl font-bold text-red-600">
-              {{ summary.totalRejected }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center"
-          >
-            <XCircle class="w-6 h-6 text-red-600" />
-          </div>
-        </div>
-      </div>
-    </div> -->
-
     <!-- TABLE CONTAINER -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
       <!-- TOP BAR -->
@@ -143,17 +92,14 @@
           </thead>
 
           <tbody>
-            <tr v-if="loading">
-              <td colspan="7" class="p-12 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div
-                    class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-                  ></div>
-                  <p class="text-gray-500 text-sm">Memuat data...</p>
-                </div>
-              </td>
-            </tr>
-
+            <!-- LOADING (SHIMMER) -->
+            <div v-if="loading" class="space-y-3 p-4">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
+              ></div>
+            </div>
             <tr v-else-if="paginatedRows.length === 0">
               <td colspan="7" class="p-12 text-center">
                 <div class="flex flex-col items-center gap-3">
@@ -238,19 +184,33 @@
                   </button>
 
                   <button
-                    v-if="row.canSign"
-                    @click="handleOpenSign(row)"
-                    class="p-2 text-primary hover:bg-blue-50 rounded-lg transition"
-                    title="Tanda Tangan"
+                    @click="row.canSign ? handleOpenSign(row) : null"
+                    :disabled="!row.canSign"
+                    :class="[
+                      'p-2 rounded-lg transition',
+                      row.canSign
+                        ? 'text-primary hover:bg-blue-50 cursor-pointer'
+                        : 'text-gray-300 cursor-not-allowed',
+                    ]"
+                    :title="
+                      row.canSign
+                        ? 'Tanda Tangan'
+                        : 'Tidak dapat ditandatangani'
+                    "
                   >
                     <Signature class="w-5 h-5" />
                   </button>
 
                   <button
-                    v-if="row.canReject"
-                    @click="handleReject(row)"
-                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                    title="Tolak"
+                    @click="row.canReject ? handleReject(row) : null"
+                    :disabled="!row.canReject"
+                    :class="[
+                      'p-2 rounded-lg transition',
+                      row.canReject
+                        ? 'text-red-600 hover:bg-red-50 cursor-pointer'
+                        : 'text-gray-300 cursor-not-allowed',
+                    ]"
+                    :title="row.canReject ? 'Tolak' : 'Tidak dapat ditolak'"
                   >
                     <X class="w-5 h-5" />
                   </button>
@@ -265,26 +225,106 @@
       <div
         class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-4"
       >
-        <div class="text-sm text-gray-600">
+        <div class="text-xs text-gray-600">
           Menampilkan {{ startRow }} - {{ endRow }} dari {{ totalRows }} data
         </div>
         <div class="flex gap-2">
           <button
-            @click="prevPage"
-            :disabled="page === 1"
-            class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
           >
-            <ChevronLeft class="w-4 h-4" />
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
           </button>
-          <span class="px-4 py-2 text-sm font-medium"
-            >{{ page }} / {{ totalPages }}</span
-          >
+
+          <div class="flex items-center gap-1">
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+              >...</span
+            >
+
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+              >...</span
+            >
+
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
           <button
-            @click="nextPage"
-            :disabled="!hasNextPage"
-            class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
           >
-            <ChevronRight class="w-4 h-4" />
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -307,7 +347,6 @@
         </div>
 
         <div v-else-if="penandatanganDetail" class="px-2 pb-6 space-y-4">
-          <!-- Info Dokumen -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <p class="text-gray-600 mb-1">ID Dokumen</p>
@@ -345,21 +384,8 @@
                 {{ penandatanganDetail.perihal }}
               </p>
             </div>
-            <!-- <div>
-              <p class="text-gray-600 mb-1">Dibuat Oleh</p>
-              <p class="font-medium text-gray-900">
-                {{ penandatanganDetail.createdByName }}
-              </p>
-            </div>
-            <div>
-              <p class="text-gray-600 mb-1">Jabatan Pembuat</p>
-              <p class="font-medium text-gray-900">
-                {{ penandatanganDetail.createdByPosition }}
-              </p>
-            </div> -->
           </div>
 
-          <!-- Tabel Penandatangan -->
           <div class="border border-gray-200 rounded-xl overflow-hidden mt-6">
             <table class="w-full text-sm">
               <thead class="bg-primary text-white">
@@ -402,30 +428,6 @@
               </tbody>
             </table>
           </div>
-
-          <!-- Preview Files -->
-          <!-- <div class="space-y-2 mt-4">
-            <div v-if="penandatanganDetail.filePreviewUrl">
-              <a
-                :href="penandatanganDetail.filePreviewUrl"
-                target="_blank"
-                class="inline-flex items-center gap-2 text-primary hover:text-primary-700 font-medium"
-              >
-                <File class="w-4 h-4" />
-                Lihat Dokumen Asli
-              </a>
-            </div>
-            <div v-if="penandatanganDetail.signedFilePreviewUrl">
-              <a
-                :href="penandatanganDetail.signedFilePreviewUrl"
-                target="_blank"
-                class="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
-              >
-                <FileCheck class="w-4 h-4" />
-                Lihat Dokumen Tertandatangan
-              </a>
-            </div>
-          </div> -->
         </div>
       </Modal>
     </Teleport>
@@ -440,7 +442,6 @@
         </template>
 
         <div class="px-6 pb-6 space-y-5">
-          <!-- Info Penandatangan -->
           <div
             v-if="selectedDoc"
             class="border rounded-xl p-4 flex gap-4 items-start bg-blue-50 border-blue-200"
@@ -463,7 +464,6 @@
             </div>
           </div>
 
-          <!-- Passphrase -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Passphrase <span class="text-red-500">*</span>
@@ -479,7 +479,6 @@
             </p>
           </div>
 
-          <!-- Keterangan (Optional) -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Keterangan <span class="text-gray-400 text-xs">(Opsional)</span>
@@ -495,7 +494,6 @@
             </p>
           </div>
 
-          <!-- Tombol Proses -->
           <button
             @click="handleSign"
             :disabled="!passphrase || loadingSign"
@@ -524,13 +522,15 @@
     <!-- MODAL REJECT -->
     <Teleport to="body">
       <Modal v-model="confirmRejectOpen" :hideDefaultFooter="true" size="xl">
+        <!-- TITLE SLOT -->
         <template #title>
-          <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 text-red-600">
+          <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 text-black">
             Tolak Dokumen
           </h2>
         </template>
 
-        <div class="px-6 pb-6 space-y-4">
+        <!-- DEFAULT SLOT (CONTENT) -->
+        <div class="pb-6 space-y-4 p-2">
           <div
             class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg"
           >
@@ -550,29 +550,34 @@
             </label>
             <textarea
               v-model="rejectReason"
-              rows="4"
+              rows="3"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Masukkan alasan penolakan..."
             ></textarea>
           </div>
+        </div>
 
-          <div class="flex gap-3 justify-end">
-            <button
-              @click="confirmRejectOpen = false"
-              class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-            >
-              Batal
-            </button>
+        <!-- FOOTER SLOT -->
+        <template #footer>
+          <div class="border-t border-gray-300"></div>
+          <div class="p-4 flex gap-3 justify-end">
             <button
               @click="rejectNow"
               :disabled="!rejectReason || loadingReject"
-              class="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              class="flex-1 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span v-if="loadingReject">Memproses...</span>
               <span v-else>Tolak Dokumen</span>
             </button>
+
+            <button
+              @click="confirmRejectOpen = false"
+              class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 hover:bg-gray-200 rounded-lg transition"
+            >
+              Batal
+            </button>
           </div>
-        </div>
+        </template>
       </Modal>
     </Teleport>
   </div>
@@ -581,13 +586,10 @@
 <script setup lang="ts">
 import {
   Search,
-  File,
   Eye,
   X,
   Signature,
   User,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Clock,
   CheckCircle2,
@@ -608,41 +610,34 @@ const {
   penandatanganSummary,
   loading,
   loadingDetail,
-  error,
   fetchPenandatanganDocuments,
   fetchPenandatanganDetail,
   signDocument,
   rejectDocument,
 } = useDigsig();
 
-// MODAL STATES
 const openDetail = ref(false);
 const openSign = ref(false);
 const selectedDoc = ref<PenandatangananDocument | null>(null);
 const loadingSign = ref(false);
 
-// REJECT
 const confirmRejectOpen = ref(false);
 const itemToReject = ref<PenandatangananDocument | null>(null);
 const rejectReason = ref("");
 const loadingReject = ref(false);
 
-// SIGN FORM
 const passphrase = ref("");
 const keterangan = ref("");
 
-// FILTER & PAGINATION
 const search = ref("");
 const filterStatus = ref("");
 const openFilterStatus = ref(false);
-const page = ref(1);
+const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
 
-const summary = computed(() => penandatanganSummary.value);
-
 const filterOptions = [
-  { label: "Semua ", value: "" },
+  { label: "Semua", value: "" },
   { label: "Menunggu", value: "waiting" },
   { label: "Sudah TTD", value: "signed" },
   { label: "Ditolak", value: "rejected" },
@@ -650,7 +645,7 @@ const filterOptions = [
 
 const filterStatusLabel = computed(() => {
   const found = filterOptions.find((opt) => opt.value === filterStatus.value);
-  return found?.label || "Semua ";
+  return found?.label || "Semua";
 });
 
 const breadcrumbs = [
@@ -658,7 +653,6 @@ const breadcrumbs = [
   { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
 ];
 
-// COMPUTED
 const filteredRows = computed(() => {
   let filtered = penandatanganDocuments.value || [];
 
@@ -681,23 +675,38 @@ const filteredRows = computed(() => {
 });
 
 const paginatedRows = computed(() => {
-  const start = (page.value - 1) * rowsPerPage.value;
+  const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredRows.value.slice(start, start + rowsPerPage.value);
 });
 
 const totalRows = computed(() => filteredRows.value.length);
 const totalPages = computed(() =>
-  Math.ceil(totalRows.value / rowsPerPage.value),
+  Math.max(1, Math.ceil(totalRows.value / rowsPerPage.value)),
 );
 const startRow = computed(() =>
-  totalRows.value === 0 ? 0 : (page.value - 1) * rowsPerPage.value + 1,
+  totalRows.value === 0 ? 0 : (currentPage.value - 1) * rowsPerPage.value + 1,
 );
 const endRow = computed(() =>
-  Math.min(page.value * rowsPerPage.value, totalRows.value),
+  Math.min(currentPage.value * rowsPerPage.value, totalRows.value),
 );
-const hasNextPage = computed(() => page.value < totalPages.value);
 
-// METHODS
+const paginationPages = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+
+  if (end - start < maxVisible - 1) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
+
 const formatDate = (dateString: string) => {
   if (!dateString) return "-";
   const date = new Date(dateString);
@@ -733,15 +742,7 @@ const getSignerStatusLabel = (status: string) => {
 const selectFilterStatus = (item: { label: string; value: string }) => {
   filterStatus.value = item.value;
   openFilterStatus.value = false;
-  page.value = 1;
-};
-
-const prevPage = () => {
-  if (page.value > 1) page.value--;
-};
-
-const nextPage = () => {
-  if (hasNextPage.value) page.value++;
+  currentPage.value = 1;
 };
 
 const isUUID = (str: string) => {
@@ -752,11 +753,9 @@ const isUUID = (str: string) => {
 
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
-    console.error("ID bukan UUID:", doc.id);
     alert("Data dokumen tidak valid");
     return;
   }
-
   openDetail.value = true;
   await fetchPenandatanganDetail(doc.id);
 };
@@ -770,12 +769,10 @@ const handleOpenSign = (doc: PenandatangananDocument) => {
 
 const viewDocument = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
-
   if (!url) {
     alert("Preview dokumen tidak tersedia");
     return;
   }
-
   window.open(url, "_blank");
 };
 
@@ -787,36 +784,22 @@ const handleSign = async () => {
 
   loadingSign.value = true;
   try {
-    const payload: any = {
-      passphrase: passphrase.value,
-    };
-
-    // Tambahkan keterangan jika diisi
+    const payload: any = { passphrase: passphrase.value };
     if (keterangan.value.trim()) {
       payload.keterangan = keterangan.value.trim();
     }
 
     await signDocument(selectedDoc.value.id, payload);
-
     alert("Dokumen berhasil ditandatangani");
     openSign.value = false;
     passphrase.value = "";
     keterangan.value = "";
-
-    // Refresh data
-    await fetchPenandatanganDocuments({
-      page: page.value,
-      limit: rowsPerPage.value,
-    });
+    await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    console.error("Sign error:", err);
-
-    // Handle specific error messages
     const errorMsg =
       err?.response?.data?.message ||
       err?.message ||
       "Gagal menandatangani dokumen";
-
     if (errorMsg.toLowerCase().includes("passphrase")) {
       alert("Passphrase yang Anda masukkan salah. Silakan coba lagi.");
     } else {
@@ -841,21 +824,12 @@ const rejectNow = async () => {
 
   loadingReject.value = true;
   try {
-    // API expects "alasan" not "reason"
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
-
     alert("Dokumen berhasil ditolak");
     confirmRejectOpen.value = false;
     rejectReason.value = "";
-
-    // Refresh data
-    await fetchPenandatanganDocuments({
-      page: page.value,
-      limit: rowsPerPage.value,
-    });
+    await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    console.error("Reject error:", err);
-
     const errorMsg =
       err?.response?.data?.message || err?.message || "Gagal menolak dokumen";
     alert(errorMsg);
@@ -864,7 +838,6 @@ const rejectNow = async () => {
   }
 };
 
-// Close dropdown when clicking outside
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (!target.closest("[data-custom-dropdown]")) {
@@ -872,32 +845,16 @@ const handleClickOutside = (e: MouseEvent) => {
   }
 };
 
-// LIFECYCLE
 onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
-
-  console.log("🔍 Fetching penandatanganan documents...");
-  await fetchPenandatanganDocuments({
-    page: page.value,
-    limit: rowsPerPage.value,
-  });
-
-  console.log("📊 Penandatanganan Documents:", penandatanganDocuments.value);
-  console.log("📈 Meta:", penandatanganMeta.value);
-  console.log("📉 Summary:", penandatanganSummary.value);
+  await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
 });
 
-// Watch page & rowsPerPage changes
-watch([page, rowsPerPage], async () => {
-  console.log("🔄 Page/RowsPerPage changed:", page.value, rowsPerPage.value);
-  await fetchPenandatanganDocuments({
-    page: page.value,
-    limit: rowsPerPage.value,
-  });
-  console.log("📊 Updated Documents:", penandatanganDocuments.value);
+watch([search, filterStatus, rowsPerPage], () => {
+  currentPage.value = 1;
 });
 </script>

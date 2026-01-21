@@ -115,7 +115,7 @@
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="min-w-max bg-white text-sm">
+        <table class="min-w-max bg-white text-sm w-full">
           <thead class="bg-primary text-white">
             <tr>
               <th
@@ -409,7 +409,6 @@
               class="border border-gray-300 rounded-lg p-4 bg-gray-50"
             >
               <!-- Nomor surat dengan status badge -->
-              <!-- Nomor surat + status -->
               <div class="flex items-center gap-2 mb-3">
                 <div
                   class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
@@ -455,7 +454,7 @@
                 <!-- 1️⃣ ADA FILE (backend / lokal) -->
                 <div
                   v-if="detail.file_name || filesByDetailId[detail.id]"
-                  class="flex items-center justify-between bg-white border border-green-200 hover:bg-green-100rounded-md px-3 py-2"
+                  class="flex items-center justify-between bg-white border border-green-200 hover:bg-green-50 rounded-md px-3 py-2"
                 >
                   <a
                     :href="
@@ -463,22 +462,48 @@
                         ? detail.file_url
                         : detail.file_text
                           ? `${apiBaseUrl}/${detail.file_text}`
-                          : '#'
+                          : filesByDetailId[detail.id]
+                            ? URL.createObjectURL(filesByDetailId[detail.id])
+                            : '#'
                     "
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="block transition rounded-md"
+                    class="block transition rounded-md flex-1"
                   >
                     <div class="flex items-start gap-3">
                       <!-- FILE INFO -->
                       <div class="flex-1">
                         <p class="text-sm font-medium text-green-700 underline">
-                          📄 {{ detail.file_name }}
+                          📄
+                          {{
+                            detail.file_name || filesByDetailId[detail.id]?.name
+                          }}
                         </p>
                         <p class="text-xs text-gray-600">Klik untuk preview</p>
                       </div>
                     </div>
                   </a>
+
+                  <!-- Remove button for local files only -->
+                  <button
+                    v-if="filesByDetailId[detail.id] && !detail.file_name"
+                    @click="removeFile(detail.id)"
+                    class="ml-2 p-2 rounded-lg hover:bg-red-100 transition"
+                  >
+                    <svg
+                      class="w-4 h-4 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
 
                 <!-- 2️⃣ BELUM ADA FILE & MASIH BISA UPLOAD -->
@@ -505,10 +530,7 @@
 
                     <div class="flex-1">
                       <span class="text-gray-700 font-medium block">
-                        {{
-                          filesByDetailId[detail.id]?.name ||
-                          "Pilih file (Opsional)"
-                        }}
+                        Pilih file (Opsional)
                       </span>
                       <span class="text-xs text-gray-500 block">
                         PDF, DOC, DOCX (Max 5MB)
@@ -519,7 +541,7 @@
                       type="file"
                       class="hidden"
                       accept=".pdf,.doc,.docx"
-                      @change="handleFile(idx, $event, detail)"
+                      @change="handleFile(detail.id, $event)"
                     />
                   </label>
                 </div>
@@ -597,24 +619,6 @@
             Kirim Usulan
           </button>
 
-          <!-- Show status badge if not "Belum Diajukan" -->
-          <!-- <div v-else class="flex items-center gap-2">
-            <span
-              :class="[
-                'px-3 py-1 rounded-full text-xs font-medium',
-                {
-                  'bg-yellow-100 text-yellow-700':
-                    selectedRow?.status === 'Menunggu Verifikasi',
-                  'bg-green-100 text-green-700':
-                    selectedRow?.status === 'Disetujui',
-                  'bg-red-100 text-red-700': selectedRow?.status === 'Ditolak',
-                },
-              ]"
-            >
-              {{ selectedRow?.status }}
-            </span>
-          </div> -->
-
           <button
             @click="openConfirmDelete = true"
             :disabled="isLoadingBooking || isDeletingUsulan"
@@ -678,13 +682,16 @@ const {
 } = usePenomoran();
 
 const toast = useToast();
+const config = useRuntimeConfig();
+const apiBaseUrl = config.public.apiBase;
+
 const openDetail = ref(false);
 const isDeletingUsulan = ref(false);
 const selectedRow = ref(null);
 const rows = ref([]);
 const loading = ref<boolean>(true);
 
-// ✅ FIXED: Gunakan object mapping dengan detail.id sebagai key
+// File mapping dengan detail.id sebagai key
 const filesByDetailId = ref<Record<string, File>>({});
 
 const openAdd = ref<boolean>(false);
@@ -695,90 +702,6 @@ const openConfirmSubmit = ref(false);
 const personMap = ref(new Map());
 // Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
-
-// Format file size
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-};
-
-// ✅ FIXED: Preview file berdasarkan detail.id
-const previewFile = (detail: any) => {
-  // File dari backend
-  if (detail?.file_url) {
-    window.open(detail.file_url, "_blank");
-    return;
-  }
-  /* Start replacing file */
-  const startReplacingFile = (idx: number) => {
-    const detail = selectedRow.value.details[idx];
-    fileStates.value[idx] = {
-      isReplacing: true,
-      isUploading: false,
-      file: null,
-      originalFileName: detail.file_name,
-    };
-  };
-  // File baru (belum submit) berdasarkan detail.id
-  if (filesByDetailId.value[detail.id]) {
-    const url = URL.createObjectURL(filesByDetailId.value[detail.id]);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-};
-
-// ✅ FIXED: Remove file berdasarkan detail.id
-const removeFile = (detailId: string) => {
-  delete filesByDetailId.value[detailId];
-  toast.add({
-    title: "File dihapus",
-    description: "File berhasil dihapus dari daftar upload",
-    color: "green",
-  });
-};
-
-/* Upload replace file */
-const uploadReplaceFile = async (idx: number, detail: any) => {
-  if (!detail.id) {
-    toast.add({
-      title: "Gagal",
-      description: "Detail ID tidak ditemukan",
-      color: "red",
-    });
-    return;
-  }
-
-  const fileState = fileStates.value[idx];
-  if (!fileState || !fileState.file) {
-    toast.add({
-      title: "Peringatan",
-      description: "Pilih file terlebih dahulu",
-      color: "yellow",
-    });
-    return;
-  }
-
-  fileState.isUploading = true;
-
-  try {
-    const result = await uploadDetailFile(detail.id, fileState.file);
-
-    if (result) {
-      detail.file_name = result.file_name;
-      detail.file_text = result.file_text;
-      detail.file_url = result.file_url;
-
-      delete fileStates.value[idx];
-    }
-  } catch (error: any) {
-    console.error("❌ Error replace file:", error);
-  } finally {
-    fileState.isUploading = false;
-  }
-};
 
 const fetchPersonMap = async () => {
   try {
@@ -830,12 +753,10 @@ const fetchKlasifikasiMap = async () => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    // ✅ Ambil position ID dari user
     const positionId = user.value?.position?.id || user.value?.position;
 
     console.log("📤 Fetching data for position:", positionId);
 
-    // ✅ Panggil getListUsulan dengan parameter positionId
     const data = await getListUsulan(positionId);
 
     if (!Array.isArray(data)) {
@@ -862,6 +783,7 @@ const fetchData = async () => {
       const year = String(wibTime.getFullYear()).slice(-2);
       const hours = String(wibTime.getHours()).padStart(2, "0");
       const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+
       return {
         id: item.id,
         id_usulan: item.id,
@@ -877,21 +799,6 @@ const fetchData = async () => {
         tglUsulanSort: tglUsulanTimestamp,
         status: mappedStatus,
       };
-
-      // return {
-      //   id_usulan: item.id_usulan ?? item.id,
-      //   jenis: item.jenis,
-      //   tanggal: formattedTanggal,
-      //   perihal: item.perihal,
-      //   jumlah: item.jumlah,
-      //   penandatangan: item.penandatangan || "-",
-      //   klasifikasi: item.klasifikasi || "-",
-      //   klasifikasiDisplay,
-      //   pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
-      //   tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
-      //   tglUsulanSort: tglUsulanTimestamp,
-      //   status: mappedStatus,
-      // };
     });
     console.log("✅ Data loaded:", rows.value.length, "rows");
   } catch (err) {
@@ -905,14 +812,10 @@ const fetchData = async () => {
 // openRowModal dengan logging lebih detail
 const openRowModal = async (row) => {
   console.log("🟦 ROW CLICKED:", row);
-  console.log("🆔 row.id:", row?.id);
-  console.log("🆔 row.id_usulan:", row?.id_usulan);
   try {
     loading.value = true;
 
     const id = row.id || row.id_usulan;
-
-    console.log("🆔 ID DIKIRIM:", id);
 
     if (!id) {
       toast.add({
@@ -922,10 +825,6 @@ const openRowModal = async (row) => {
       });
       return;
     }
-
-    // console.log("📤 FETCH DETAIL URL:", `/admin/nomor-request/${id}`);
-    // const res = await get(`/admin/nomor-request/${id}`);
-    // console.log("📥 RESPONSE:", res);
 
     const detail = await getDetailUsulan(id);
 
@@ -950,8 +849,8 @@ const openRowModal = async (row) => {
         detail.template_nomor || "",
       ),
     };
-    console.log("🟨 SELECTED ROW:", selectedRow.value);
 
+    // Reset file mapping
     filesByDetailId.value = {};
     openDetail.value = true;
   } finally {
@@ -963,20 +862,56 @@ const openRowModal = async (row) => {
 const handleFile = (detailId: string, event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
+
   if (!file) return;
 
+  // Validasi ukuran file
   if (file.size > 5 * 1024 * 1024) {
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
       color: "red",
     });
+    input.value = ""; // Reset input
     return;
   }
 
+  // Validasi tipe file
+  const validTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  if (!validTypes.includes(file.type)) {
+    toast.add({
+      title: "Tipe file tidak valid",
+      description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
+      color: "red",
+    });
+    input.value = ""; // Reset input
+    return;
+  }
+
+  // Simpan file berdasarkan detail ID
   filesByDetailId.value[detailId] = file;
 
-  console.log("📎 File disimpan:", detailId, file.name);
+  console.log("📎 File disimpan untuk detail ID:", detailId, "=>", file.name);
+
+  toast.add({
+    title: "File dipilih",
+    description: `File "${file.name}" siap diupload`,
+    color: "green",
+  });
+};
+
+// ✅ Remove file berdasarkan detail.id
+const removeFile = (detailId: string) => {
+  delete filesByDetailId.value[detailId];
+  toast.add({
+    title: "File dihapus",
+    description: "File berhasil dihapus dari daftar upload",
+    color: "green",
+  });
 };
 
 // JUMLAH SURAT
@@ -985,7 +920,7 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
 
   while (result.length < jumlah) {
     result.push({
-      id: `index-${result.length + 1}`,
+      id: `temp-${result.length + 1}`,
       nomor: null,
       status: "booking",
       file_name: null,
@@ -1016,81 +951,59 @@ function handlePreview(data: any) {
   openAdd.value = false;
   openDetail.value = true;
 
-  const length = Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1;
-
-  // ✅ FIXED: Reset file mapping
+  // Reset file mapping
   filesByDetailId.value = {};
 }
 
-// ✅ FIXED: CONFIRM SUBMIT USULAN dengan file mapping yang konsisten
+// ✅ FIXED: CONFIRM SUBMIT USULAN dengan format backend yang benar
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
   try {
     const formData = new FormData();
+    let fileCount = 0;
 
-    // ✅ FIXED: Ambil file berdasarkan detail.id dan urutkan sesuai dengan urutan details
-    const detailsWithFiles = selectedRow.value.details
-      .map((detail: any) => ({
-        detail,
-        file: filesByDetailId.value[detail.id],
-      }))
-      .filter(
-        (item: any) =>
-          item.file &&
-          item.file instanceof File &&
-          item.file.type === "application/pdf",
-      );
+    selectedRow.value.details.forEach((detail: any) => {
+      const file = filesByDetailId.value[detail.id];
 
-    console.log(
-      `📤 Submitting ${detailsWithFiles.length} valid PDF files in correct order`,
-    );
+      if (file instanceof File) {
+        fileCount++;
 
-    // Append files dalam urutan yang benar sesuai dengan urutan details
-    detailsWithFiles.forEach((item: any, index: number) => {
-      formData.append("file", item.file);
-      console.log(
-        `📎 [${index}] Appending file for detail ID ${item.detail.id}:`,
-        item.file.name,
-      );
+        // ⬇️ SEMUA FILE PAKAI FIELD YANG SAMA
+        formData.append("file", file);
+
+        // kalau backend butuh nama
+        formData.append("file_name", file.name);
+      }
     });
 
-    const response = await submitBooking(selectedRow.value.id_usulan, formData);
+    console.log("📦 FormData:");
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1] instanceof File ? pair[1].name : pair[1]);
+    }
 
-    console.log("✅ Booking response:", response);
+    await submitBooking(selectedRow.value.id_usulan, formData);
 
-    // Close modals immediately after success
     openConfirmSubmit.value = false;
     openDetail.value = false;
 
-    // Show success toast
     toast.add({
       title: "Berhasil",
       description:
-        detailsWithFiles.length > 0
-          ? `Usulan berhasil dikirim dengan ${detailsWithFiles.length} file PDF`
-          : "Usulan berhasil dikirim tanpa file",
+        fileCount > 0
+          ? `Usulan dikirim dengan ${fileCount} file`
+          : "Usulan dikirim tanpa file",
       color: "green",
     });
 
-    // Refresh data in background
+    filesByDetailId.value = {};
     await fetchData();
   } catch (e) {
-    console.error("❌ Submit gagal:", e);
-
-    // Close confirm popup but keep detail modal open on error
     openConfirmSubmit.value = false;
-
-    // Improved error message handling
-    const errorMessage =
-      e?.response?.data?.message ||
-      e?.response?.data?.error ||
-      e?.message ||
-      "Gagal mengirim usulan. Silakan coba lagi.";
 
     toast.add({
       title: "Gagal",
-      description: errorMessage,
+      description: e?.response?.data?.message || "Gagal mengirim usulan",
       color: "red",
     });
   }
@@ -1128,7 +1041,7 @@ const confirmDeleteUsulan = async () => {
   }
 };
 
-// HANDLE SUBMIT FROM MODAL
+// ✅ IMPROVED: HANDLE SUBMIT FROM MODAL - Data baru muncul paling atas
 const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
@@ -1168,17 +1081,43 @@ const handleSubmitFromModal = async (payload: any) => {
 
     console.log("📦 Formatted payload:", formattedPayload);
 
-    await createUsulanDraft(formattedPayload);
+    const response = await createUsulanDraft(formattedPayload);
 
-    // Set sorting ke ID usulan desc agar data baru muncul paling atas
-    sortBy.value = "id_usulan";
+    // ✅ OPTIMISTIC UPDATE: Tambahkan data baru langsung ke array TANPA refresh
+    const newRow = {
+      id: response.id || Date.now(),
+      id_usulan: response.id || Date.now(),
+      jenis: formattedPayload.jenis,
+      tanggal: new Date(formattedPayload.tanggal).toLocaleDateString("id-ID"),
+      perihal: formattedPayload.perihal,
+      jumlah: formattedPayload.jumlah,
+      penandatangan: formattedPayload.penandatangan,
+      klasifikasi: formattedPayload.klasifikasi,
+      klasifikasiDisplay:
+        klasifikasiMap.value.get(formattedPayload.klasifikasi) ||
+        formattedPayload.klasifikasi,
+      pengusul: user.value?.nama || "-",
+      tglUsulan: new Date().toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      tglUsulanSort: Date.now(),
+      status: "Belum Diajukan",
+    };
+
+    // ✅ Tambahkan di PALING ATAS array
+    rows.value.unshift(newRow);
+
+    // Set sorting otomatis ke terbaru
+    sortBy.value = "tglUsulan";
     sortDir.value = "desc";
 
-    // Reset filter dan search agar data baru terlihat
+    // Reset filter dan search
     filterStatus.value = "Semua";
     search.value = "";
-
-    await fetchData();
 
     // Reset ke halaman pertama
     currentPage.value = 1;
@@ -1190,6 +1129,9 @@ const handleSubmitFromModal = async (payload: any) => {
     });
 
     openAdd.value = false;
+
+    // Refresh data di background untuk sinkronisasi
+    setTimeout(() => fetchData(), 1000);
   } catch (err) {
     console.error("❌ Error submit modal:", err);
 

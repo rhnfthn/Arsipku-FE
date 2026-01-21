@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 min-h-screen p-6">
+  <div class="space-y-6 min-h-screen">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -132,7 +132,7 @@
 
           <tbody>
             <tr
-              v-for="doc in documents"
+              v-for="doc in paginatedRows"
               :key="doc.id"
               class="border-b border-gray-100 hover:bg-gray-50"
             >
@@ -178,26 +178,123 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="meta && meta.totalPages > 1"
-        class="flex justify-center items-center gap-2 p-4"
+        v-if="filteredRows.length > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
-        <button
-          @click="goToPage(meta.page - 1)"
-          :disabled="meta.page === 1"
-          class="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
-        <span class="text-sm text-gray-600">
-          Page {{ meta.page }} of {{ meta.totalPages }}
-        </span>
-        <button
-          @click="goToPage(meta.page + 1)"
-          :disabled="meta.page === meta.totalPages"
-          class="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
+        <div class="text-xs text-gray-600">
+          Menampilkan {{ paginatedRows.length }} dari
+          {{ filteredRows.length }} data
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Back Button -->
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
+
+          <!-- Page Numbers -->
+          <div class="flex items-center gap-1">
+            <!-- First page -->
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <!-- Left ellipsis -->
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- Visible pages -->
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- Right ellipsis -->
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- Last page -->
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- Next Button -->
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -558,7 +655,7 @@
                   <tr>
                     <th class="p-3 text-left text-white font-semibold">NO</th>
                     <th class="p-3 text-left font-semibold text-white">
-                      PERSNUM
+                      E-NIK
                     </th>
                     <th class="p-3 text-left font-semibold text-white">
                       NAMA / JABATAN
@@ -671,6 +768,81 @@ const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
+/* FILTER + SEARCH */
+const filteredRows = computed(() => {
+  const s = search.value.toLowerCase();
+  const fs = statusFilter.value;
+
+  return documents.value.filter((r) => {
+    if (!r) return false;
+
+    const matchSearch = Object.values(r).some((v) =>
+      String(v ?? "")
+        .toLowerCase()
+        .includes(s),
+    );
+
+    const matchStatus = !fs || r.status === fs;
+    return matchSearch && matchStatus;
+  });
+});
+
+/* SORT */
+const rowsPerPage = ref(10);
+
+const sortedRows = computed(() => {
+  if (!sortKey.value) return filteredRows.value;
+
+  return [...filteredRows.value].sort((a, b) => {
+    let A = a[sortKey.value];
+    let B = b[sortKey.value];
+
+    if (sortKey.value.toLowerCase().includes("tanggal")) {
+      A = new Date(A).getTime();
+      B = new Date(B).getTime();
+      return sortOrder.value === "asc" ? A - B : B - A;
+    }
+
+    A = String(A ?? "").toLowerCase();
+    B = String(B ?? "").toLowerCase();
+
+    if (A < B) return sortOrder.value === "asc" ? -1 : 1;
+    if (A > B) return sortOrder.value === "asc" ? 1 : -1;
+    return 0;
+  });
+});
+
+/* PAGINATION */
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return sortedRows.value.slice(start, start + rowsPerPage.value);
+});
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
+);
+
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/dashboard" },
@@ -755,14 +927,12 @@ const loadDocuments = async () => {
 
 const handleSearch = () => {
   currentPage.value = 1;
-  loadDocuments();
 };
 
-const selectFilterStatus = (item: { label: string; value: string }) => {
+const selectFilterStatus = (item) => {
   statusFilter.value = item.value;
   openFilterStatus.value = false;
   currentPage.value = 1;
-  loadDocuments();
 };
 
 const handleClickOutside = (e: MouseEvent) => {
@@ -780,19 +950,11 @@ const handleDropdownClickOutside = (e: MouseEvent) => {
 
 const sortBy = (key: string) => {
   if (sortKey.value === key) {
-    if (sortOrder.value === "asc") {
-      sortOrder.value = "desc";
-    } else if (sortOrder.value === "desc") {
-      sortKey.value = "";
-      sortOrder.value = "asc";
-    } else {
-      sortOrder.value = "asc";
-    }
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
     sortKey.value = key;
     sortOrder.value = "asc";
   }
-  loadDocuments();
 };
 
 const goToPage = (page: number) => {
@@ -824,8 +986,8 @@ const getStatusClass = (status: string) => {
 const getStatusLabel = (status: string) => {
   const statusMap = {
     on_progress: "On Progress",
-    completed: "Completed",
-    rejected: "Rejected",
+    completed: "Selesai",
+    rejected: "Ditolak",
     draft: "Draft",
   };
   return statusMap[status] || status;
