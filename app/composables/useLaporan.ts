@@ -32,11 +32,21 @@ export const useLaporan = () => {
     return apiGet("/rekap-naskah/naskah-masuk", { params });
   };
 
+  const getRekapNaskahMasukDetail = (params?: {
+    tahun?: number;
+    area?: string;
+    status?: string;
+    jenis?: string;
+  }) => {
+    return apiGet("/rekap-naskah/naskah-masuk/detail", { params });
+  };
+
   return {
     getRekapNaskah,
     getAreaList,
     getJenisList,
     getRekapNaskahDetail,
     getRekapNaskahMasuk,
+    getRekapNaskahMasukDetail,
   };
 };

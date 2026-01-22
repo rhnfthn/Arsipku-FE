@@ -628,6 +628,9 @@ const adminMenuAdministrasi = computed(() => {
       children: [
         { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
         { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
+        { label: "Company", to: "/master/company" },
+        { label: "Klasifikasi", to: "/master/klasifikasi" },
+        { label: "Jenis", to: "/master/jenis" },
       ],
     });
   }
