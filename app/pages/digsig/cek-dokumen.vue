@@ -13,7 +13,7 @@
       <!-- UPLOAD SECTION -->
       <!-- ================== -->
       <div
-        class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3"
+        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3"
       >
         <Heading variant="heading10sb">Unggah Dokumen</Heading>
 

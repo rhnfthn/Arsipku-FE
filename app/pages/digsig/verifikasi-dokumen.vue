@@ -92,7 +92,7 @@
           <thead class="bg-primary text-white text-[15px]">
             <tr>
               <th
-                class="px-4 py-3 text-left cursor-pointer"
+                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
                 @click="sortBy('tanggalDokumen')"
               >
                 <div class="flex items-center gap-2">
@@ -103,20 +103,32 @@
                 </div>
               </th>
               <th
-                class="px-4 py-3 text-left cursor-pointer"
+                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
                 @click="sortBy('nomorDokumen')"
               >
                 <div class="flex items-center gap-2">
-                  No Dokumen / Perihal
+                  No Dokumen
                   <span v-if="sortKey === 'nomorDokumen'" class="text-xs">
                     {{ sortOrder === "asc" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
+              <th
+                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
+                @click="sortBy('perihal')"
+              >
+                <div class="flex items-center gap-2">
+                  Perihal
+                  <span v-if="sortKey === 'perihal'" class="text-xs">
+                    {{ sortOrder === "asc" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <!-- <th class="px-4 py-3 text-center">Klasifikasi</th> -->
               <th class="px-4 py-3 text-center">Penandatangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th
-                class="px-4 py-3 text-center cursor-pointer"
+                class="px-4 py-3 text-center cursor-pointer hover:bg-primary-700"
                 @click="sortBy('status')"
               >
                 <div class="flex items-center justify-center gap-2">
@@ -126,7 +138,7 @@
                   </span>
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">Action</th>
+              <th class="px-4 py-3 text-center">Aksi</th>
             </tr>
           </thead>
 
@@ -139,8 +151,15 @@
               <td class="p-4">{{ formatDate(doc.tanggalDokumen) }}</td>
               <td class="p-4">
                 <div class="font-medium">{{ doc.nomorDokumen }}</div>
-                <div class="text-gray-500 text-xs">{{ doc.perihal }}</div>
               </td>
+              <td class="p-4">
+                <div class="text-gray-700 text-sm">{{ doc.perihal }}</div>
+              </td>
+              <!-- <td class="p-4 text-center">
+                <span class="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {{ getKlasifikasiText(doc.klasifikasi, doc.klasifikasiText) }}
+                </span>
+              </td> -->
               <td class="p-4 text-center">{{ doc.totalSigners }}</td>
               <td class="p-4 text-center">
                 <button
@@ -309,174 +328,121 @@
           </div>
         </template>
 
-        <div class="flex flex-col px-6 gap-4 mt-1 max-h-[70vh] overflow-y-auto">
-          <div>
-            <Heading variant="body2m">
-              Tanggal Dokumen <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="addForm.tanggal"
-              type="date"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-            />
-          </div>
-
-          <div>
-            <Heading variant="body2m">
-              Klasifikasi <span class="text-red-500">*</span>
-            </Heading>
-            <select
-              v-model="addForm.klasifikasi"
-              :disabled="loadingKlasifikasi"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-            >
-              <option value="">
-                {{ loadingKlasifikasi ? "Loading..." : "Pilih Klasifikasi" }}
-              </option>
-              <option
-                v-for="k in klasifikasiList"
-                :key="k.id"
-                :value="k.klasifikasi"
-              >
-                {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <Heading variant="body2m">
-              Jenis Naskah <span class="text-red-500">*</span>
-            </Heading>
-            <select
-              v-model="addForm.jenisNaskah"
-              :disabled="loadingJenisNaskah"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-            >
-              <option value="">
-                {{ loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah" }}
-              </option>
-              <option v-for="j in jenisNaskahList" :key="j.id" :value="j.jenis">
-                {{ j.jenis }} - {{ j.jenis_text }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <Heading variant="body2m">
-              Nomor Dokumen <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="addForm.nomorDokumen"
-              placeholder="Masukkan Nomor Dokumen"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-            />
-          </div>
-
-          <div>
-            <Heading variant="body2m">
-              Perihal <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="addForm.perihal"
-              placeholder="Masukkan Perihal Dokumen"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-            />
-          </div>
-
-          <!-- File Attachment -->
-          <div>
-            <Heading variant="body2m" class="mb-2">
-              File Attachment <span class="text-red-500">*</span>
-            </Heading>
-            <div
-              class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-              @click="triggerFileUpload"
-            >
-              <div class="flex flex-col items-center gap-2">
-                <svg
-                  class="w-10 h-10 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                <p class="text-sm text-gray-600">Pilih File atau Drag & Drop</p>
-                <p class="text-xs text-gray-400">PDF, DOC, DOCX (Max. 10MB)</p>
-              </div>
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".pdf,.doc,.docx"
-                class="hidden"
-                @change="handleFileUpload"
-              />
-            </div>
-            <p
-              v-if="addForm.fileName"
-              class="text-sm text-blue-600 mt-2 flex items-center gap-2"
-            >
-              <FileCheck class="w-4 h-4" />
-              {{ addForm.fileName }}
-            </p>
-          </div>
-
-          <!-- Visible Sign -->
-          <div class="flex items-center justify-between mt-1 mb-2">
+        <div class="px-6 mt-1 max-h-[calc(100vh-180px)] overflow-y-auto">
+          <!-- FORM FIELDS -->
+          <div class="space-y-4">
             <div>
-              <Heading variant="body2m">Visible Sign</Heading>
-              <p class="text-xs text-red-500 mt-1">
-                *Visible Sign hanya berlaku pada penanda tangan terakhir
-              </p>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                v-model="addForm.visibleSign"
-                class="sr-only peer"
-              />
-              <div
-                class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-              ></div>
-            </label>
-          </div>
-
-          <!-- Penanda Tangan -->
-          <div>
-            <div class="flex items-center justify-between mb-2">
               <Heading variant="body2m">
-                Penanda Tangan <span class="text-red-500">*</span>
+                Tanggal Dokumen <span class="text-red-500">*</span>
               </Heading>
+              <input
+                v-model="addForm.tanggal"
+                type="date"
+                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+              />
             </div>
 
-            <!-- Selected Signers Display -->
-            <div
-              v-if="addForm.selectedSigners.length > 0"
-              class="mb-4 space-y-2"
-            >
-              <div
-                v-for="(signer, index) in addForm.selectedSigners"
-                :key="index"
-                class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3"
-              >
-                <div class="flex-1">
-                  <p class="font-medium text-sm">
-                    {{ index + 1 }}. {{ signer.jabatan }} -
-                    {{ signer.lokasi }} - {{ signer.nama }}
+            <div>
+              <Heading variant="body2m">
+                Klasifikasi <span class="text-red-500">*</span>
+              </Heading>
+              <div class="relative mt-2">
+                <select
+                  v-model="addForm.klasifikasi"
+                  @change="onKlasifikasiChange"
+                  :disabled="loadingKlasifikasi"
+                  class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                >
+                  <option value="">
+                    {{
+                      loadingKlasifikasi ? "Loading..." : "Pilih Klasifikasi"
+                    }}
+                  </option>
+                  <option
+                    v-for="k in klasifikasiList"
+                    :key="k.id"
+                    :value="k.klasifikasi"
+                  >
+                    {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
+                  </option>
+                </select>
+                <div
+                  v-if="selectedKlasifikasiDetail"
+                  class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md"
+                >
+                  <p class="text-xs text-blue-800">
+                    <span class="font-semibold">{{
+                      selectedKlasifikasiDetail.klasifikasi
+                    }}</span>
+                    -
+                    {{ selectedKlasifikasiDetail.klasifikasi_text }}
+                  </p>
+                  <p
+                    v-if="selectedKlasifikasiDetail.deskripsi"
+                    class="text-xs text-blue-600 mt-1"
+                  >
+                    {{ selectedKlasifikasiDetail.deskripsi }}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <Heading variant="body2m">
+                Jenis Naskah <span class="text-red-500">*</span>
+              </Heading>
+              <select
+                v-model="addForm.jenisNaskah"
+                :disabled="loadingJenisNaskah"
+                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+              >
+                <option value="">
+                  {{ loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah" }}
+                </option>
+                <option
+                  v-for="j in jenisNaskahList"
+                  :key="j.id"
+                  :value="j.jenis"
+                >
+                  {{ j.jenis }} - {{ j.jenis_text }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <Heading variant="body2m">
+                Nomor Dokumen <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="addForm.nomorDokumen"
+                placeholder="Masukkan Nomor Dokumen"
+                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+              />
+            </div>
+
+            <div>
+              <Heading variant="body2m">
+                Perihal <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="addForm.perihal"
+                placeholder="Masukkan Perihal Dokumen"
+                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+              />
+            </div>
+
+            <!-- File Attachment - Compact -->
+            <div>
+              <Heading variant="body2m" class="mb-2">
+                File Attachment <span class="text-red-500">*</span>
+              </Heading>
+              <div class="flex items-center gap-3">
                 <button
-                  type="button"
-                  @click="removeSelectedSigner(index)"
-                  class="text-red-600 hover:text-red-800 ml-2"
+                  @click="triggerFileUpload"
+                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-sm font-medium transition flex items-center gap-2"
                 >
                   <svg
-                    class="w-5 h-5"
+                    class="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -485,81 +451,179 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
+                  Pilih File
                 </button>
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  class="hidden"
+                  @change="handleFileUpload"
+                />
+                <div class="flex items-center gap-2 flex-1">
+                  <p
+                    v-if="addForm.fileName"
+                    class="text-sm text-blue-600 flex items-center gap-2"
+                  >
+                    <FileCheck class="w-4 h-4" />
+                    {{ addForm.fileName }}
+                  </p>
+                  <p v-else class="text-xs text-gray-400">
+                    PDF, DOC, DOCX (Max. 10MB)
+                  </p>
+                  <button
+                    v-if="previewUrl || (isEditMode && !addForm.file)"
+                    @click="previewFileInModal"
+                    class="ml-auto px-3 py-1 bg-blue-50 text-primary text-xs font-medium rounded-md hover:bg-blue-100 transition flex items-center gap-1"
+                  >
+                    <Eye class="w-3 h-3" />
+                    Preview
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- Dropdown with Search -->
-            <div class="relative" ref="dropdownRef">
-              <div
-                @click="toggleSignerDropdown"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white flex items-center justify-between"
-              >
-                <span class="text-gray-500">Pilih Jabatan</span>
-                <svg
-                  class="w-4 h-4 text-gray-400 transition-transform"
-                  :class="{ 'rotate-180': showSignerDropdown }"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+            <!-- Visible Sign -->
+            <div class="flex items-center justify-between mt-1 mb-2">
+              <div>
+                <Heading variant="body2m">Visible Sign</Heading>
+                <p class="text-xs text-red-500 mt-1">
+                  *Visible Sign hanya berlaku pada penanda tangan terakhir
+                </p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="addForm.visibleSign"
+                  class="sr-only peer"
+                />
+                <div
+                  class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+                ></div>
+              </label>
+            </div>
+
+            <!-- Penanda Tangan -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <Heading variant="body2m">
+                  Penanda Tangan <span class="text-red-500">*</span>
+                </Heading>
               </div>
 
-              <!-- Dropdown Menu -->
+              <!-- Selected Signers Display -->
               <div
-                v-if="showSignerDropdown"
-                class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden"
+                v-if="addForm.selectedSigners.length > 0"
+                class="mb-4 space-y-2"
               >
-                <!-- Search Input -->
-                <div class="p-2 border-b border-gray-200 sticky top-0 bg-white">
-                  <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      v-model="signerSearchQuery"
-                      type="text"
-                      placeholder="Cari jabatan, nama, atau lokasi..."
-                      class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      @click.stop
-                    />
-                  </div>
-                </div>
-
-                <!-- Options List -->
-                <div class="overflow-y-auto max-h-64">
-                  <div
-                    v-for="v in filteredVerifikatorList"
-                    :key="v.persnum"
-                    @click="selectSigner(v)"
-                    class="px-3 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
-                    :class="{
-                      'bg-blue-50':
-                        addForm.selectedSigners.findIndex(
-                          (s) => s.persnum === v.persnum,
-                        ) !== -1,
-                    }"
-                  >
-                    <p class="font-medium">
-                      {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
+                <div
+                  v-for="(signer, index) in addForm.selectedSigners"
+                  :key="index"
+                  class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3"
+                >
+                  <div class="flex-1">
+                    <p class="font-medium text-sm">
+                      {{ index + 1 }}. {{ signer.jabatan }} -
+                      {{ signer.lokasi }} -
+                      {{ signer.nama }}
                     </p>
                   </div>
-
-                  <div
-                    v-if="filteredVerifikatorList.length === 0"
-                    class="px-3 py-4 text-center text-gray-500 text-sm"
+                  <button
+                    type="button"
+                    @click="removeSelectedSigner(index)"
+                    class="text-red-600 hover:text-red-800 ml-2"
                   >
-                    Tidak ada data ditemukan
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Dropdown with Search -->
+              <div class="relative" ref="dropdownRef">
+                <div
+                  @click="toggleSignerDropdown"
+                  class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white flex items-center justify-between"
+                >
+                  <span class="text-gray-500">Pilih Jabatan</span>
+                  <svg
+                    class="w-4 h-4 text-gray-400 transition-transform"
+                    :class="{ 'rotate-180': showSignerDropdown }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showSignerDropdown"
+                  class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden"
+                >
+                  <!-- Search Input -->
+                  <div
+                    class="p-2 border-b border-gray-200 sticky top-0 bg-white"
+                  >
+                    <div class="relative">
+                      <Search
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <input
+                        v-model="signerSearchQuery"
+                        type="text"
+                        placeholder="Cari jabatan, nama, atau lokasi..."
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @click.stop
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options List -->
+                  <div class="overflow-y-auto max-h-64">
+                    <div
+                      v-for="v in filteredVerifikatorList"
+                      :key="v.persnum"
+                      @click="selectSigner(v)"
+                      class="px-3 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      :class="{
+                        'bg-blue-50':
+                          addForm.selectedSigners.findIndex(
+                            (s) => s.persnum === v.persnum,
+                          ) !== -1,
+                      }"
+                    >
+                      <p class="font-medium">
+                        {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-if="filteredVerifikatorList.length === 0"
+                      class="px-3 py-4 text-center text-gray-500 text-sm"
+                    >
+                      Tidak ada data ditemukan
+                    </div>
                   </div>
                 </div>
               </div>
@@ -568,17 +632,19 @@
         </div>
 
         <!-- Footer Buttons -->
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <div
+          class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200"
+        >
           <button
             @click="closeModal"
-            class="flex-1 w-full px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition"
+            class="flex-1 px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition"
           >
             Batal
           </button>
           <button
             @click="saveDokumen"
             :disabled="loading"
-            class="flex-1 w-full px-6 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-700 transition disabled:opacity-50"
+            class="flex-1 px-6 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-700 transition disabled:opacity-50"
           >
             {{ loading ? "Menyimpan..." : "Simpan Perubahan" }}
           </button>
@@ -598,7 +664,7 @@
           </Heading>
         </template>
 
-        <div class="px-3 max-h-[70vh] overflow-y-auto">
+        <div class="px-3 max-h-[calc(100vh-150px)] overflow-y-auto">
           <div v-if="loadingDetail" class="text-center py-8">
             <p class="text-gray-500">Loading...</p>
           </div>
@@ -607,10 +673,10 @@
             v-else-if="documentDetail"
             class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-2"
           >
-            <div>
+            <!-- <div>
               <p class="text-gray-600 mb-1">ID</p>
               <p class="font-medium">{{ documentDetail.id }}</p>
-            </div>
+            </div> -->
 
             <div>
               <p class="text-gray-600 mb-1">No Dokumen</p>
@@ -631,12 +697,48 @@
 
             <div>
               <p class="text-gray-600 mb-1">Klasifikasi</p>
-              <p class="font-medium">{{ documentDetail.klasifikasiText }}</p>
+              <p class="font-medium">
+                {{
+                  documentDetail.klasifikasiText ||
+                  (documentDetail.klasifikasi
+                    ? `${documentDetail.klasifikasi}`
+                    : "-")
+                }}
+              </p>
             </div>
 
             <div>
               <p class="text-gray-600 mb-1">Perihal</p>
               <p class="font-medium">{{ documentDetail.perihal }}</p>
+            </div>
+
+            <div>
+              <p class="text-gray-600 mb-1">Status</p>
+              <span
+                class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
+                :class="getStatusClass(documentDetail.status)"
+              >
+                {{ getStatusLabel(documentDetail.status) }}
+              </span>
+            </div>
+
+            <!-- <div>
+              <p class="text-gray-600 mb-1">Dibuat Oleh</p>
+              <p class="font-medium">{{ documentDetail.createdByName }}</p>
+              <p class="text-xs text-gray-500">
+                {{ documentDetail.createdByPosition }}
+              </p>
+            </div> -->
+
+            <div class="md:col-span-2">
+              <p class="text-gray-600 mb-2">Dokumen</p>
+              <button
+                @click="viewDocumentFromDetail"
+                class="flex items-center gap-2 bg-blue-50 text-primary px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 transition"
+              >
+                <FileCheck class="w-4 h-4" />
+                Lihat Preview Dokumen
+              </button>
             </div>
           </div>
 
@@ -709,7 +811,7 @@
             </div>
           </div>
 
-          <!-- Empty state jika tidak ada penandatangan -->
+          <!-- Empty state -->
           <div
             v-else-if="
               documentDetail &&
@@ -724,11 +826,47 @@
         </div>
       </Modal>
     </Teleport>
+
+    <!-- DOCUMENT VIEWER SLIDEOVER -->
+    <USlideover
+      v-model:open="isOpenPreview"
+      title="Pratinjau Dokumen"
+      side="bottom"
+      :dismissible="true"
+      :ui="{
+        content: 'h-screen max-h-screen',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+      }"
+    >
+      <template #body>
+        <div
+          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+        >
+          <iframe
+            v-if="pdfUrl"
+            :key="pdfUrl"
+            :src="pdfUrl"
+            allowfullscreen
+            class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+          />
+
+          <div v-else class="flex flex-col items-center gap-2">
+            <UIcon
+              name="i-lucide-loader-2"
+              class="animate-spin w-8 h-8 text-primary-500"
+            />
+            <span class="text-gray-500">Memuat Pratinjau...</span>
+          </div>
+        </div>
+      </template>
+    </USlideover>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+
 import {
   Plus,
   Search,
@@ -748,6 +886,7 @@ const {
   loading,
   loadingDetail,
   klasifikasiList,
+  klasifikasiDetail,
   jenisNaskahList,
   verifikatorList,
   loadingKlasifikasi,
@@ -758,9 +897,14 @@ const {
   createDocument,
   updateDocument,
   fetchKlasifikasi,
+  fetchKlasifikasiDetail,
   fetchJenisNaskah,
   fetchVerifikator,
 } = useDigsig();
+
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+const previewUrl = ref<string | null>(null);
 
 const openDetail = ref(false);
 const openAdd = ref(false);
@@ -768,7 +912,53 @@ const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
-/* FILTER + SEARCH */
+
+const selectedKlasifikasiDetail = ref<any>(null);
+
+// Filter + Search
+const statusFilter = ref("");
+const openFilterStatus = ref(false);
+const sortKey = ref("");
+const sortOrder = ref<"asc" | "desc">("asc");
+const search = ref("");
+const currentPage = ref(1);
+const limit = ref(10);
+const rowsPerPage = ref(10);
+
+const addForm = ref({
+  tanggal: "",
+  klasifikasi: "",
+  jenisNaskah: "",
+  nomorDokumen: "",
+  perihal: "",
+  fileName: "",
+  file: null as File | null,
+  visibleSign: false,
+  signers: [] as { urutan: number; persnum: number }[],
+  selectedSigners: [] as Verifikator[],
+});
+
+const showSignerDropdown = ref(false);
+const signerSearchQuery = ref("");
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
+];
+
+const filterOptions = [
+  { label: "Semua", value: "" },
+  { label: "Draft", value: "draft" },
+  { label: "On Progress", value: "on_progress" },
+  { label: "Selesai", value: "completed" },
+  { label: "Ditolak", value: "rejected" },
+];
+
+const filterStatusLabel = computed(() => {
+  const found = filterOptions.find((opt) => opt.value === statusFilter.value);
+  return found?.label || "Semua Status";
+});
+
 const filteredRows = computed(() => {
   const s = search.value.toLowerCase();
   const fs = statusFilter.value;
@@ -776,19 +966,14 @@ const filteredRows = computed(() => {
   return documents.value.filter((r) => {
     if (!r) return false;
 
-    const matchSearch = Object.values(r).some((v) =>
-      String(v ?? "")
-        .toLowerCase()
-        .includes(s),
-    );
+    const matchSearch =
+      r.nomorDokumen?.toLowerCase().includes(s) ||
+      r.perihal?.toLowerCase().includes(s);
 
     const matchStatus = !fs || r.status === fs;
     return matchSearch && matchStatus;
   });
 });
-
-/* SORT */
-const rowsPerPage = ref(10);
 
 const sortedRows = computed(() => {
   if (!sortKey.value) return filteredRows.value;
@@ -812,7 +997,6 @@ const sortedRows = computed(() => {
   });
 });
 
-/* PAGINATION */
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return sortedRows.value.slice(start, start + rowsPerPage.value);
@@ -834,8 +1018,8 @@ const paginationPages = computed(() => {
   } else {
     if (current <= 2) {
       pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
+    } else if (current >= total - 2) {
+      pages.push(total - 4, total - 3, total - 2, total - 1, total);
     } else {
       pages.push(current - 1, current, current + 1);
     }
@@ -843,47 +1027,6 @@ const paginationPages = computed(() => {
 
   return pages;
 });
-
-const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
-];
-
-const filterOptions = [
-  { label: "Semua", value: "" },
-  { label: "Menunggu", value: "waiting" },
-  { label: "Sudah TTD", value: "signed" },
-  { label: "Ditolak", value: "rejected" },
-];
-
-const filterStatusLabel = computed(() => {
-  const found = filterOptions.find((opt) => opt.value === statusFilter.value);
-  return found?.label || "Semua Status";
-});
-
-const statusFilter = ref("");
-const openFilterStatus = ref(false);
-const sortKey = ref("");
-const sortOrder = ref<"asc" | "desc">("asc");
-const search = ref("");
-const currentPage = ref(1);
-const limit = ref(10);
-
-const addForm = ref({
-  tanggal: "",
-  klasifikasi: "",
-  jenisNaskah: "",
-  nomorDokumen: "",
-  perihal: "",
-  fileName: "",
-  file: null as File | null,
-  visibleSign: false,
-  signers: [] as { urutan: number; persnum: number }[],
-  selectedSigners: [] as Verifikator[],
-});
-
-const showSignerDropdown = ref(false);
-const signerSearchQuery = ref("");
 
 const filteredVerifikatorList = computed(() => {
   if (!signerSearchQuery.value) {
@@ -912,6 +1055,12 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
   document.removeEventListener("click", handleDropdownClickOutside);
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+  if (pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
 });
 
 const loadDocuments = async () => {
@@ -957,20 +1106,22 @@ const sortBy = (key: string) => {
   }
 };
 
-const goToPage = (page: number) => {
-  currentPage.value = page;
-  loadDocuments();
-};
-
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
+  // Convert to WIB (UTC+7)
+  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  return (
+    wibDate.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }) + " WIB"
+  );
 };
 
 const getStatusClass = (status: string) => {
@@ -1008,9 +1159,34 @@ const getSignerStatusLabel = (status: string) => {
     waiting: "Waiting",
     pending: "Pending",
     signed: "Sudah TTD",
-    rejected: "Rejected",
+    rejected: "Ditolak",
   };
   return statusMap[status] || status;
+};
+
+const getKlasifikasiText = (kode: string, text: string | null) => {
+  if (text) return text;
+
+  const klasifikasi = klasifikasiList.value.find((k) => k.klasifikasi === kode);
+  if (klasifikasi) {
+    return `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`;
+  }
+
+  return kode || "-";
+};
+
+const onKlasifikasiChange = async () => {
+  if (addForm.value.klasifikasi) {
+    const selected = klasifikasiList.value.find(
+      (k) => k.klasifikasi === addForm.value.klasifikasi,
+    );
+    if (selected) {
+      const detail = await fetchKlasifikasiDetail(selected.id);
+      selectedKlasifikasiDetail.value = detail;
+    }
+  } else {
+    selectedKlasifikasiDetail.value = null;
+  }
 };
 
 const toggleSignerDropdown = () => {
@@ -1041,12 +1217,18 @@ const triggerFileUpload = () => {
   fileInput.value?.click();
 };
 
-const handleFileUpload = (event: Event) => {
+const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
     addForm.value.fileName = file.name;
     addForm.value.file = file;
+
+    // Create preview URL
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value);
+    }
+    previewUrl.value = URL.createObjectURL(file);
   }
 };
 
@@ -1099,17 +1281,87 @@ const openEditModal = async (id: string) => {
       signers: [],
       selectedSigners: mappedSigners,
     };
+
+    // Load klasifikasi detail
+    if (doc.klasifikasi) {
+      const selected = klasifikasiList.value.find(
+        (k) => k.klasifikasi === doc.klasifikasi,
+      );
+      if (selected) {
+        const detail = await fetchKlasifikasiDetail(selected.id);
+        selectedKlasifikasiDetail.value = detail;
+      }
+    }
   }
 
   openAdd.value = true;
 };
 
 const openDetailModal = async (id: string) => {
+  loadingDetail.value = true;
+
+  // Ensure klasifikasi list is loaded
+  if (klasifikasiList.value.length === 0) {
+    await fetchKlasifikasi();
+  }
+
   const res = await fetchDocumentDetail(id);
   if (res) {
+    // Load klasifikasi detail if klasifikasiText is null
+    if (!res.klasifikasiText && res.klasifikasi) {
+      const klasifikasi = klasifikasiList.value.find(
+        (k) => k.klasifikasi === res.klasifikasi,
+      );
+
+      if (klasifikasi) {
+        // Set klasifikasiText manually
+        if (documentDetail.value) {
+          documentDetail.value.klasifikasiText = `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`;
+        }
+      } else {
+        // If not found in list, just show the code
+        if (documentDetail.value) {
+          documentDetail.value.klasifikasiText = res.klasifikasi;
+        }
+      }
+    }
     openDetail.value = true;
   } else {
     alert("Gagal memuat detail dokumen");
+  }
+};
+
+const viewDocumentFromDetail = async () => {
+  if (!documentDetail.value) return;
+
+  const url =
+    documentDetail.value.signedFilePreviewUrl ||
+    documentDetail.value.filePreviewUrl;
+
+  if (!url) {
+    alert("File pratinjau tidak tersedia");
+    return;
+  }
+
+  isOpenPreview.value = false;
+  pdfUrl.value = null;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (err) {
+    alert("Gagal memuat pratinjau dokumen");
   }
 };
 
@@ -1131,16 +1383,45 @@ const resetForm = () => {
     signers: [],
     selectedSigners: [],
   };
+  selectedKlasifikasiDetail.value = null;
   showSignerDropdown.value = false;
   signerSearchQuery.value = "";
   if (fileInput.value) {
     fileInput.value.value = "";
   }
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
 };
 
-const viewDocument = (doc: any) => {
-  if (doc.filePreviewUrl) {
-    window.open(doc.filePreviewUrl, "_blank");
+const viewDocument = async (doc: any) => {
+  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
+
+  if (!url) {
+    alert("File pratinjau tidak tersedia");
+    return;
+  }
+
+  isOpenPreview.value = false;
+  pdfUrl.value = null;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (err) {
+    alert("Gagal memuat pratinjau dokumen");
   }
 };
 
@@ -1225,4 +1506,11 @@ const saveDokumen = async () => {
     alert(`❌ Gagal menyimpan dokumen: ${err.message || "Unknown error"}`);
   }
 };
+
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
+  }
+});
 </script>

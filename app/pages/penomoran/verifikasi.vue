@@ -130,7 +130,7 @@
               </th>
               <th
                 @click="sort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <div class="flex items-center gap-1">
                   <span>Status</span>
@@ -147,7 +147,7 @@
               class="hover:bg-gray-50 border-b border-gray-200 cursor-pointer transition"
               @click="showPreview(row)"
             >
-              <td class="px-5 py-4 text-xs">{{ row.id }}</td>
+              <!-- <td class="px-5 py-4 text-xs">{{ row.id }}</td> -->
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
@@ -178,7 +178,7 @@
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
 
               <td
-                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+                class="sticky right-0 z-20 bg-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <span
                   :class="[
@@ -407,14 +407,20 @@
               </p>
               <p class="text-xs text-gray-500">Dokumen lampiran</p>
             </div>
-            <a
-              :href="`${apiBaseUrl}/${selectedRow.file_path}`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+            <div
+              v-if="detail.file_name && !fileStates[idx]?.isReplacing"
+              class="border border-green-200 bg-green-50 hover:bg-green-100 rounded-lg p-3 cursor-pointer"
+              @click="previewFile(detail)"
             >
-              Lihat
-            </a>
+              <div class="flex items-start gap-3">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-green-700 underline">
+                    📄 {{ detail.file_name }}
+                  </p>
+                  <p class="text-xs text-gray-600">Klik untuk preview</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -726,7 +732,39 @@
       </template>
     </Modal>
   </Teleport>
+  <USlideover
+    v-model:open="isOpenPreview"
+    title="Pratinjau"
+    side="bottom"
+    :dismissible="true"
+    :ui="{
+      content: 'h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }"
+  >
+    <template #body>
+      <div
+        class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+      >
+        <iframe
+          v-if="pdfUrl"
+          :key="pdfUrl"
+          :src="pdfUrl"
+          allowfullscreen
+          class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+        />
 
+        <div v-else class="flex flex-col items-center gap-2">
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin w-8 h-8 text-primary-500"
+          />
+          <span class="text-gray-500">Memuat Pratinjau...</span>
+        </div>
+      </div>
+    </template>
+  </USlideover>
   <!-- CONFIRM MODAL APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
@@ -781,7 +819,7 @@ const breadcrumbs = [
 
 /* TABLE CONFIG */
 const headers = [
-  { label: "ID", key: "id", sortable: true },
+  // { label: "ID", key: "id", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
@@ -792,6 +830,51 @@ const headers = [
 ];
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
+
+//======== FILE ===========
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+
+const viewDocument = async (doc: any) => {
+  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
+
+  if (!url) {
+    alert("File pratinjau tidak tersedia");
+    return;
+  }
+
+  isOpenPreview.value = false;
+  pdfUrl.value = null;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (err) {
+    alert("Gagal memuat pratinjau dokumen");
+  }
+};
+watch(isOpenPreview, (open) => {
+  if (!open) {
+    pdfUrl.value = null;
+  }
+});
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
+  }
+});
 
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -958,23 +1041,44 @@ const showPreview = async (row: any) => {
 };
 
 /* Preview file */
-const previewFile = (detail: NomorDetail) => {
-  // Prioritas: file_url > file_text > fallback
-  if (detail.file_url) {
-    window.open(detail.file_url, "_blank");
+const previewFile = async (detail: NomorDetail) => {
+  const url =
+    detail.file_url ||
+    (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
+
+  if (!url) {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "yellow",
+    });
     return;
   }
 
-  if (detail.file_text) {
-    window.open(`${apiBaseUrl}/${detail.file_text}`, "_blank");
-    return;
-  }
+  pdfUrl.value = null;
+  isOpenPreview.value = false;
 
-  toast.add({
-    title: "File tidak ditemukan",
-    description: "File tidak tersedia untuk ditampilkan",
-    color: "yellow",
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (e) {
+    toast.add({
+      title: "Gagal memuat file",
+      description: "Tidak dapat menampilkan pratinjau dokumen",
+      color: "red",
+    });
+  }
 };
 
 /* Start replacing file */

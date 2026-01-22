@@ -43,6 +43,7 @@ export const useDigsig = () => {
   const jenisNaskahList = ref<JenisNaskah[]>([]);
   const verifikatorList = ref<Verifikator[]>([]);
   const userEnik = ref<string | null>(null);
+  const klasifikasiDetail = ref<Klasifikasi | null>(null);
 
   const loading = ref(false);
   const loadingHealth = ref(false);
@@ -181,7 +182,6 @@ export const useDigsig = () => {
   /* ======================
    * CREATE DOCUMENT
    * POST /digsig/document
-   * ✅ FIXED: Properly format signers array
    * ====================== */
   const createDocument = async (payload: CreateDocumentPayload) => {
     loading.value = true;
@@ -197,14 +197,11 @@ export const useDigsig = () => {
       formData.append("file", payload.file);
       formData.append("visibleSign", payload.visibleSign.toString());
 
-      // ✅ Clean signers - only send urutan and persnum
       const cleanSigners = payload.signers.map((s) => ({
         urutan: Number(s.urutan),
         persnum: Number(s.persnum),
       }));
 
-      // ✅ Append each signer individually or as JSON string
-      // Try JSON string first (most common approach)
       formData.append("signers", JSON.stringify(cleanSigners));
 
       console.log("📤 Creating document with signers:", cleanSigners);
@@ -242,7 +239,6 @@ export const useDigsig = () => {
   /* ======================
    * UPDATE DOCUMENT
    * PUT /digsig/document/:id
-   * ✅ FIXED: Properly format signers array
    * ====================== */
   const updateDocument = async (id: string, payload: UpdateDocumentPayload) => {
     loading.value = true;
@@ -265,7 +261,6 @@ export const useDigsig = () => {
         formData.append("visibleSign", payload.visibleSign.toString());
 
       if (payload.signers) {
-        // ✅ Clean signers - only send urutan and persnum
         const cleanSigners = payload.signers.map((s) => ({
           urutan: Number(s.urutan),
           persnum: Number(s.persnum),
@@ -549,6 +544,35 @@ export const useDigsig = () => {
   };
 
   /* ======================
+   * FETCH KLASIFIKASI DETAIL
+   * GET /persuratan/klasifikasi/:id
+   * ====================== */
+  const fetchKlasifikasiDetail = async (id: string) => {
+    loadingKlasifikasi.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet<{ success: boolean; data: Klasifikasi }>(
+        `/persuratan/klasifikasi/${id}`,
+      );
+
+      if (res.success && res.data) {
+        klasifikasiDetail.value = res.data;
+        console.log("✅ Klasifikasi detail loaded:", res.data);
+        return res.data;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch klasifikasi detail";
+      console.error("❌ fetchKlasifikasiDetail error:", err);
+      return null;
+    } finally {
+      loadingKlasifikasi.value = false;
+    }
+  };
+
+  /* ======================
    * FETCH JENIS NASKAH
    * GET /jenis
    * ====================== */
@@ -636,6 +660,7 @@ export const useDigsig = () => {
     meta,
     bsreHealth,
     klasifikasiList,
+    klasifikasiDetail,
     jenisNaskahList,
     verifikatorList,
     userEnik,
@@ -673,6 +698,7 @@ export const useDigsig = () => {
     rejectDocument,
 
     fetchKlasifikasi,
+    fetchKlasifikasiDetail,
     fetchJenisNaskah,
     fetchVerifikator,
     fetchUserEnik,
