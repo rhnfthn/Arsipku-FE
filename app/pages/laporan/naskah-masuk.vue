@@ -192,7 +192,7 @@
             </thead>
 
             <tbody v-if="filteredTableData.length">
-              <tr v-for="row in filteredTableData" :key="row.id">
+              <tr v-for="row in paginatedTable1Data" :key="row.id">
                 <td class="px-4 py-3 text-gray-900 font-medium max-w-[350px]">
                   {{ row.naskah }}
                 </td>
@@ -227,6 +227,68 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div
+          v-if="totalItemsTable1 > 0"
+          class="flex items-center justify-between px-6 py-4 border-t border-gray-200"
+        >
+          <div class="text-xs text-gray-600">
+            Menampilkan
+            {{
+              Math.min(currentPageTable1 * itemsPerPageTable1, totalItemsTable1)
+            }}
+            dari {{ totalItemsTable1 }} data
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- BACK -->
+            <button
+              @click="currentPageTable1 = Math.max(1, currentPageTable1 - 1)"
+              :disabled="currentPageTable1 === 1"
+              :class="[
+                'px-4 py-1 text-sm rounded-lg',
+                currentPageTable1 === 1
+                  ? 'bg-gray-100 text-gray-400'
+                  : 'bg-white border border-primary-600 text-primary-600 hover:bg-blue-50',
+              ]"
+            >
+              Back
+            </button>
+
+            <!-- PAGE NUMBER -->
+            <button
+              v-for="page in paginationPagesTable1"
+              :key="page"
+              @click="currentPageTable1 = page"
+              :class="[
+                'w-8 h-8 text-sm rounded-lg',
+                currentPageTable1 === page
+                  ? 'bg-primary text-white'
+                  : 'bg-white border border-gray-300 hover:bg-blue-50',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- NEXT -->
+            <button
+              @click="
+                currentPageTable1 = Math.min(
+                  totalPagesTable1,
+                  currentPageTable1 + 1,
+                )
+              "
+              :disabled="currentPageTable1 === totalPagesTable1"
+              :class="[
+                'px-4 py-1 text-sm rounded-lg',
+                currentPageTable1 === totalPagesTable1
+                  ? 'bg-gray-100 text-gray-400'
+                  : 'bg-white border border-primary-600 text-primary-600 hover:bg-blue-50',
+              ]"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -519,7 +581,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeMount } from "vue";
 import { RotateCcw } from "lucide-vue-next";
 import { useLaporan } from "~/composables/useLaporan";
 import { useToast } from "#imports";
@@ -532,43 +594,13 @@ const breadcrumbs = [
   { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
 ];
 
-const { getRekapNaskahMasuk } = useLaporan();
+const { getRekapNaskahMasuk, getRekapNaskahMasukDetail } = useLaporan();
 
 const table1Raw = ref<any[]>([]);
 const loadingTable1 = ref(false);
 
-const data2 = ref([
-  {
-    id: 1,
-    nomor: "ND-001/SSF/KEU/III/2025",
-    tanggal: "03/03/2025",
-    perihal: "Persetujuan Proses Pembayaran Biaya Pegawai",
-    jabatan: "Manager of Finance",
-    lokasi: "Airnav Maintenance Facility",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 2,
-    nomor: "ST-002/SSF/KEU/III/2024",
-    tanggal: "03/03/2024",
-    perihal: "Pengajuan Dana Operasional Kantor Cabang Jakarta",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "booking",
-    jenis: "ST",
-  },
-  {
-    id: 3,
-    nomor: "ND-003/SSF/KEU/III/2023",
-    tanggal: "03/03/2023",
-    perihal: "Penggantian Biaya Pembelian",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "Hangus",
-    jenis: "ND",
-  },
-]);
+const table2Data = ref<any[]>([]);
+const loadingTable2 = ref(false);
 
 const toggleJenis = () => {
   jenisOpen.value = !jenisOpen.value;
@@ -617,7 +649,7 @@ const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
   direction: "asc",
 });
 const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const itemsPerPage = ref(5);
 
 const monthOptions = [
   { label: "Januari", value: "jan" },
@@ -649,6 +681,57 @@ const fetchTable1 = async () => {
   }
 };
 
+const fetchTable2 = async () => {
+  loadingTable2.value = true;
+  try {
+    const params: any = {};
+
+    if (filters.value.tahun) {
+      params.tahun = Number(filters.value.tahun);
+    }
+
+    if (filters.value.jenis) {
+      params.jenis = filters.value.jenis;
+    }
+
+    if (filters.value.status) {
+      // API pakai lowercase
+      params.status = filters.value.status.toLowerCase();
+    }
+
+    const res = await getRekapNaskahMasukDetail(params);
+
+    table2Data.value = res.data.map((item: any) => ({
+      id: item.id,
+      jenis: item.naskah, // ND / ST
+      jenis_text: item.naskah_text,
+      nomor: item.nomor,
+      tanggal: formatTanggal(item.tanggal),
+      perihal: item.perihal ?? "-",
+      jabatan: item.jabatan,
+      lokasi: item.lokasi,
+      status: capitalize(item.status),
+    }));
+  } catch (err) {
+    console.error("Gagal ambil detail naskah masuk", err);
+  } finally {
+    loadingTable2.value = false;
+  }
+};
+
+const formatTanggal = (date: string) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const capitalize = (text: string) =>
+  text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+
 const filteredTableData = computed(() => {
   return table1Raw.value
     .filter((row) => {
@@ -671,6 +754,20 @@ const filteredTableData = computed(() => {
       ...row,
       jumlah: row.total ?? 0,
     }));
+});
+
+watch(
+  () => ({ ...filters.value }),
+  () => {
+    currentPage.value = 1;
+    fetchTable2();
+  },
+  { deep: true },
+);
+
+onMounted(() => {
+  fetchTable1();
+  fetchTable2();
 });
 
 const jenisOptions = computed(() => {
@@ -699,28 +796,26 @@ const yearOptions = computed(() => {
 });
 
 const lokasiOptions = computed(() => [
-  ...new Set(data2.value.map((d) => d.lokasi)),
+  ...new Set(table2Data.value.map((d) => d.lokasi)),
 ]);
 
 const tahunOptions = computed(() =>
-  [...new Set(data2.value.map((d) => d.tanggal.split("/")[2]))].sort(
-    (a, b) => Number(b) - Number(a),
-  ),
+  [
+    ...new Set(
+      table2Data.value.map((d) => d.tanggal?.split("/")?.[2]).filter(Boolean),
+    ),
+  ].sort((a, b) => Number(b) - Number(a)),
 );
 
 const filteredData = computed(() => {
-  return data2.value.filter((item) => {
+  return table2Data.value.filter((item) => {
     const tahunItem = item.tanggal.split("/")[2];
+
     return (
       (!filters.value.jenis || item.jenis === filters.value.jenis) &&
       (!filters.value.lokasi || item.lokasi === filters.value.lokasi) &&
       (!filters.value.status || item.status === filters.value.status) &&
-      (!filters.value.tahun || tahunItem === filters.value.tahun) &&
-      (!filters.value.search ||
-        Object.values(item)
-          .join(" ")
-          .toLowerCase()
-          .includes(filters.value.search.toLowerCase()))
+      (!filters.value.tahun || tahunItem === filters.value.tahun)
     );
   });
 });
@@ -734,6 +829,43 @@ const sortedData = computed(() => {
     if (aVal > bVal) return sortConfig.value.direction === "asc" ? 1 : -1;
     return 0;
   });
+});
+
+// ===== PAGINATION TABLE 1 =====
+const currentPageTable1 = ref(1);
+const itemsPerPageTable1 = ref(5);
+
+const totalItemsTable1 = computed(() => filteredTableData.value.length);
+
+const totalPagesTable1 = computed(() =>
+  Math.ceil(totalItemsTable1.value / itemsPerPageTable1.value),
+);
+
+const paginatedTable1Data = computed(() => {
+  const start = (currentPageTable1.value - 1) * itemsPerPageTable1.value;
+
+  return filteredTableData.value.slice(start, start + itemsPerPageTable1.value);
+});
+
+const paginationPagesTable1 = computed(() => {
+  const pages: number[] = [];
+  const maxVisible = 5;
+
+  let start = Math.max(1, currentPageTable1.value - Math.floor(maxVisible / 2));
+
+  let end = Math.min(totalPagesTable1.value, start + maxVisible - 1);
+
+  if (end - start < maxVisible - 1) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  return pages;
+});
+
+watch([selectedJenis, jenisSearch, selectedMonth, selectedYear], () => {
+  currentPageTable1.value = 1;
 });
 
 const totalItems = computed(() => sortedData.value.length);
@@ -780,7 +912,7 @@ const handleSort = (key: string) => {
 
 const getStatusClass = (status: string) => {
   if (status === "Terpakai") return "bg-green-100 text-green-700";
-  if (status === "booking") return "bg-primary-100 text-blue-700";
+  if (status === "Booking") return "bg-primary-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
 
@@ -829,14 +961,11 @@ const exportTable1 = () => {
       return data;
     });
 
-    // ===== SHEET =====
     const worksheetData = [headers, ...rows];
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-    // Auto width column
     worksheet["!cols"] = headers.map(() => ({ wch: 20 }));
 
-    // ===== WORKBOOK =====
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Naskah Masuk");
 
