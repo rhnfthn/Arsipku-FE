@@ -912,6 +912,7 @@ const handleSort = (key: string) => {
 
 const getStatusClass = (status: string) => {
   if (status === "Terpakai") return "bg-green-100 text-green-700";
+  if (status === "Terpakai_final") return "bg-green-300 text-green-700";
   if (status === "Booking") return "bg-primary-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };

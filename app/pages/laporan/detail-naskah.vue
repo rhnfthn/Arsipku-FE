@@ -292,6 +292,8 @@
                   class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
                   :class="{
                     'bg-green-100 text-green-700': item.status === 'Terpakai',
+                    'bg-green-300 text-green-700':
+                      item.status === 'Terpakai_final',
                     'bg-blue-100 text-blue-700': item.status === 'Booking',
                     'bg-red-100 text-red-700': item.status === 'Hangus',
                   }"

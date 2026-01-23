@@ -6,7 +6,7 @@ export interface Klasifikasi {
 }
 
 export const useKlasifikasi = () => {
-  const { apiGet, api } = useApi();
+  const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
 
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
@@ -20,12 +20,32 @@ export const useKlasifikasi = () => {
     }
   };
 
+  const getKlasifikasiDetail = (id: string) => {
+    return apiGet<Klasifikasi>(`/persuratan/klasifikasi/${id}`);
+  };
+
   const getKlasifikasiList = async (): Promise<Klasifikasi[]> => {
     return await apiGet<Klasifikasi[]>("/persuratan/klasifikasi");
+  };
+
+  const createKlasifikasi = (payload: KlasifikasiPayload) => {
+    return apiPost("/persuratan/klasifikasi", payload);
+  };
+
+  const updateKlasifikasi = (id: string, payload: KlasifikasiPayload) => {
+    return apiPut(`/persuratan/klasifikasi/${id}`, payload);
+  };
+
+  const deleteKlasifikasi = (id: string) => {
+    return apiDelete(`/persuratan/klasifikasi/${id}`);
   };
 
   return {
     getKlasifikasi,
     getKlasifikasiList,
+    getKlasifikasiDetail,
+    createKlasifikasi,
+    updateKlasifikasi,
+    deleteKlasifikasi,
   };
 };
