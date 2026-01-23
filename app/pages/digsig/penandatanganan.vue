@@ -93,13 +93,18 @@
 
           <tbody>
             <!-- LOADING (SHIMMER) -->
-            <div v-if="loading" class="space-y-3 p-4">
-              <div
-                v-for="i in 5"
-                :key="i"
-                class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
-              ></div>
-            </div>
+            <tr v-if="loading">
+              <td colspan="7" class="p-4">
+                <div class="space-y-3">
+                  <div
+                    v-for="i in 5"
+                    :key="i"
+                    class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
+                  ></div>
+                </div>
+              </td>
+            </tr>
+
             <tr v-else-if="paginatedRows.length === 0">
               <td colspan="7" class="p-12 text-center">
                 <div class="flex flex-col items-center gap-3">
@@ -346,14 +351,11 @@
           </div>
         </div>
 
-        <div v-else-if="penandatanganDetail" class="px-2 pb-6 space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p class="text-gray-600 mb-1">ID Dokumen</p>
-              <p class="font-medium text-gray-900 break-all">
-                {{ penandatanganDetail.id }}
-              </p>
-            </div>
+        <div
+          v-else-if="penandatanganDetail"
+          class="px-6 pb-6 space-y-6 max-h-[calc(100vh-150px)] overflow-y-auto"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div>
               <p class="text-gray-600 mb-1">No. Dokumen</p>
               <p class="font-medium text-gray-900">
@@ -363,19 +365,25 @@
             <div>
               <p class="text-gray-600 mb-1">Tanggal Dokumen</p>
               <p class="font-medium text-gray-900">
-                {{ penandatanganDetail.tanggalDokumen }}
+                {{ formatDate(penandatanganDetail.tanggalDokumen) }}
               </p>
             </div>
             <div>
               <p class="text-gray-600 mb-1">Jenis Naskah</p>
               <p class="font-medium text-gray-900">
-                {{ penandatanganDetail.jenisNaskahText }}
+                {{
+                  penandatanganDetail.jenisNaskahText ||
+                  penandatanganDetail.jenisNaskah
+                }}
               </p>
             </div>
             <div>
               <p class="text-gray-600 mb-1">Klasifikasi</p>
               <p class="font-medium text-gray-900">
-                {{ penandatanganDetail.klasifikasiText }}
+                {{
+                  penandatanganDetail.klasifikasiText ||
+                  penandatanganDetail.klasifikasi
+                }}
               </p>
             </div>
             <div>
@@ -384,16 +392,54 @@
                 {{ penandatanganDetail.perihal }}
               </p>
             </div>
+            <div>
+              <p class="text-gray-600 mb-1">Status Dokumen</p>
+              <span
+                class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
+                :class="getDocStatusClass(penandatanganDetail.documentStatus)"
+              >
+                {{ getDocStatusLabel(penandatanganDetail.documentStatus) }}
+              </span>
+            </div>
+
+            <!-- Rejection Info (if rejected) -->
+            <!-- <div v-if="penandatanganDetail.rejectedAt" class="md:col-span-2">
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-red-800 mb-2">
+                  Dokumen Ditolak
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p class="text-red-600 mb-1">Ditolak Oleh</p>
+                    <p class="font-medium text-red-900">
+                      {{ penandatanganDetail.rejectedBy || "-" }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-red-600 mb-1">Waktu Ditolak</p>
+                    <p class="font-medium text-red-900">
+                      {{ formatDate(penandatanganDetail.rejectedAt) }}
+                    </p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <p class="text-red-600 mb-1">Alasan Penolakan</p>
+                    <p class="font-medium text-red-900">
+                      {{ penandatanganDetail.rejectionReason || "-" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div> -->
           </div>
 
-          <div class="border border-gray-200 rounded-xl overflow-hidden mt-6">
+          <div class="border border-gray-200 rounded-xl overflow-hidden">
             <table class="w-full text-sm">
               <thead class="bg-primary text-white">
                 <tr>
                   <th class="p-3 text-left font-semibold">No</th>
                   <th class="p-3 text-left font-semibold">E-NIK</th>
                   <th class="p-3 text-left font-semibold">Nama/Jabatan</th>
-                  <th class="p-3 text-left font-semibold">Status</th>
+                  <th class="p-3 text-center font-semibold">Status</th>
                   <th class="p-3 text-left font-semibold">Keterangan</th>
                 </tr>
               </thead>
@@ -413,16 +459,42 @@
                       {{ signer.jabatan }}
                     </div>
                   </td>
-                  <td class="p-3">
+                  <td class="p-3 text-center">
                     <span
-                      class="px-3 py-1 rounded-full text-xs font-semibold"
+                      class="px-3 py-1 rounded-full text-xs font-semibold inline-block"
                       :class="getSignerStatusClass(signer.status)"
                     >
                       {{ getSignerStatusLabel(signer.status) }}
                     </span>
                   </td>
                   <td class="p-3">
-                    {{ signer.signedAt ? formatDate(signer.signedAt) : "-" }}
+                    <div v-if="signer.status === 'signed' && signer.signedAt">
+                      <p class="text-xs text-gray-600">Ditandatangani</p>
+                      <p class="font-medium">
+                        {{ formatDate(signer.signedAt) }}
+                      </p>
+                      <p
+                        v-if="signer.keterangan"
+                        class="text-xs text-gray-600 mt-1"
+                      >
+                        {{ signer.keterangan }}
+                      </p>
+                    </div>
+                    <div
+                      v-else-if="
+                        signer.status === 'rejected' && signer.rejectedAt
+                      "
+                    >
+                      <p
+                        v-if="signer.keterangan"
+                        class="text-xs mt-1 text-center"
+                      >
+                        {{ signer.keterangan }}
+                      </p>
+                    </div>
+                    <div v-else>
+                      <p class="text-gray-400">-</p>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -456,10 +528,10 @@
                 Ditandatangani secara digital oleh
               </p>
               <p class="font-semibold text-gray-900">
-                {{ selectedDoc.signers?.[0]?.nama }}
+                {{ selectedDoc.mySignerInfo?.nama }}
               </p>
               <p class="text-sm text-gray-700 mt-0.5">
-                {{ selectedDoc.signers?.[0]?.jabatan }}
+                {{ selectedDoc.mySignerInfo?.jabatan }}
               </p>
             </div>
           </div>
@@ -522,15 +594,13 @@
     <!-- MODAL REJECT -->
     <Teleport to="body">
       <Modal v-model="confirmRejectOpen" :hideDefaultFooter="true" size="xl">
-        <!-- TITLE SLOT -->
         <template #title>
           <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 text-black">
             Tolak Dokumen
           </h2>
         </template>
 
-        <!-- DEFAULT SLOT (CONTENT) -->
-        <div class="pb-6 space-y-4 p-2">
+        <div class="px-6 pb-6 space-y-4">
           <div
             class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg"
           >
@@ -555,12 +625,14 @@
               placeholder="Masukkan alasan penolakan..."
             ></textarea>
           </div>
-        </div>
 
-        <!-- FOOTER SLOT -->
-        <template #footer>
-          <div class="border-t border-gray-300"></div>
-          <div class="p-4 flex gap-3 justify-end">
+          <div class="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              @click="confirmRejectOpen = false"
+              class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 hover:bg-gray-100 rounded-lg transition"
+            >
+              Batal
+            </button>
             <button
               @click="rejectNow"
               :disabled="!rejectReason || loadingReject"
@@ -569,15 +641,8 @@
               <span v-if="loadingReject">Memproses...</span>
               <span v-else>Tolak Dokumen</span>
             </button>
-
-            <button
-              @click="confirmRejectOpen = false"
-              class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 hover:bg-gray-200 rounded-lg transition"
-            >
-              Batal
-            </button>
           </div>
-        </template>
+        </div>
       </Modal>
     </Teleport>
   </div>
@@ -710,13 +775,20 @@ const paginationPages = computed(() => {
 const formatDate = (dateString: string) => {
   if (!dateString) return "-";
   const date = new Date(dateString);
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
+  // Convert to WIB (UTC+7)
+  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  return (
+    wibDate.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }) + " WIB"
+  );
 };
 
 const getSignerStatusClass = (status: string) => {
@@ -735,6 +807,26 @@ const getSignerStatusLabel = (status: string) => {
     pending: "Pending",
     signed: "Sudah TTD",
     rejected: "Ditolak",
+  };
+  return statusMap[status] || status;
+};
+
+const getDocStatusClass = (status: string) => {
+  const statusMap = {
+    draft: "bg-gray-100 text-gray-600",
+    on_progress: "bg-blue-100 text-blue-600",
+    completed: "bg-green-100 text-green-600",
+    rejected: "bg-red-100 text-red-600",
+  };
+  return statusMap[status] || "bg-gray-100 text-gray-600";
+};
+
+const getDocStatusLabel = (status: string) => {
+  const statusMap = {
+    on_progress: "On Progress",
+    completed: "Selesai",
+    rejected: "Ditolak",
+    draft: "Draft",
   };
   return statusMap[status] || status;
 };
