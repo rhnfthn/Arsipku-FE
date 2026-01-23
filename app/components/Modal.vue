@@ -38,6 +38,7 @@
 
         <!-- DEFAULT FOOTER -->
         <div
+          v-if="!hideDefaultFooter"
           class="flex justify-between border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2"
         >
           <button

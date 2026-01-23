@@ -341,7 +341,7 @@
         <AddUsulan
           v-model="openAdd"
           @submit="handleSubmitFromModal"
-          @preview="handlePreview"
+          @preview="handlePreview" :hideDefaultFooter="true"
         />
       </Teleport>
     </div>
