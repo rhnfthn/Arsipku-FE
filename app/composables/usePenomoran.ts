@@ -411,18 +411,18 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET LIST USULAN (ADMIN - by position ID)
+   * endpoint: /admin/nomor-request-by-position/{{position_id}}
    * =========================== */
-  const getListUsulan = async (positionId?: string | number) => {
+  const getListUsulan = async (positionId: string | number) => {
     isLoadingList.value = true;
     try {
-      let endpoint = "/admin/nomor-request";
-
-      if (positionId) {
-        endpoint = `/admin/nomor-request-by-position/${positionId}`;
-        console.log("📤 Fetching usulan for position (admin):", positionId);
-      } else {
-        console.log("📤 Fetching all usulan (admin)");
+      if (!positionId) {
+        console.error("❌ Position ID is required");
+        return [];
       }
+
+      const endpoint = `/admin/nomor-request-by-position/${positionId}`;
+      console.log("📤 Fetching usulan for position (admin):", positionId);
 
       const res = await get(endpoint);
       console.log("✅ Admin usulan data received:", res);

@@ -153,19 +153,17 @@
             <tr
               v-for="row in paginatedRows"
               :key="row.id"
-              class="group hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition relative"
+              class="group hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
+              @mousemove="onMouseMove($event, 'Klik untuk lihat detail')"
+              @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
             >
-              <!-- ROW TOOLTIP -->
-             
               <!-- <td class="px-5 py-4 text-xs">{{ row.id_usulan }}</td> -->
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
-                  <p
-                    class="whitespace-normal break-words line-clamp-3 cursor-help"
-                  >
+                  <p class="whitespace-normal break-words line-clamp-3">
                     {{ row.perihal }}
                   </p>
                 </div>
@@ -204,11 +202,11 @@
                 >
                   {{ row.status }}
                 </span>
-                <td
+                <!-- <td
                 class="pointer-events-none absolute right-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-gray-900 text-white text-xs px-3 py-1 rounded-md shadow-lg z-40 whitespace-nowrap"
               >
                 Klik untuk lihat detail
-              </td>
+              </td> -->
               </td>
             </tr>
           </tbody>
@@ -672,6 +670,19 @@
     @confirm="confirmDeleteUsulan"
     @cancel="openConfirmDelete = false"
   />
+  <!-- TOOLTIP -->
+  <Teleport to="body">
+    <div
+      v-if="tooltip.show"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1 rounded-md shadow-lg transition-opacity"
+      :style="{
+        left: tooltip.x + 'px',
+        top: tooltip.y + 'px',
+      }"
+    >
+      {{ tooltip.text }}
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -1393,6 +1404,25 @@ const paginationPages = computed(() => {
 watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
   currentPage.value = 1;
 });
+
+const tooltip = ref({
+  show: false,
+  text: "",
+  x: 0,
+  y: 0,
+});
+const onMouseMove = (e: MouseEvent, text: string) => {
+  tooltip.value = {
+    show: true,
+    text,
+    x: e.clientX + 12,
+    y: e.clientY + 12,
+  };
+};
+
+const onMouseLeave = () => {
+  tooltip.value.show = false;
+};
 </script>
 
 <style scoped>
