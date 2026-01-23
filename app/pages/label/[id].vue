@@ -8,6 +8,8 @@ import {
 import { useAuth } from '@/composables/useAuth';
 import { useLabel } from '~/composables/useLabel';
 import { useSirkulasi } from '@/composables/useTerkirim';
+import { useInbox } from '@/composables/useInbox'; // [BARU]
+import { useDraft } from '@/composables/useDraft'; // [BARU]
 
 // --- TYPE DEFINITIONS ---
 interface UIMailItem {
@@ -29,6 +31,7 @@ interface UIMailItem {
   recipient: string;
   note: any;
   originalData: any;
+  sourceType: 'inbox' | 'sent' | 'draft'; // [BARU] Untuk debugging/styling
 }
 
 const route = useRoute();
@@ -38,10 +41,12 @@ const { user } = useAuth();
 // Destructure composables
 const { fetchNaskahByLabel, naskahByLabel } = useLabel();
 const { fetchSentBox } = useSirkulasi();
+const { fetchInbox } = useInbox();
+const { fetchDrafts } = useDraft();
 
 // --- STATE ---
 const labelId = computed(() => route.params.id as string);
-const labelName = ref("Label View"); // [BARU] State untuk Nama Label
+const labelName = ref("Label View");
 const isLoading = ref(false);
 const emails = ref<UIMailItem[]>([]);
 
@@ -61,97 +66,147 @@ const loadData = async () => {
 
   try {
     // ----------------------------------------------------------------
-    // 1. Ambil Data Label (ID & Nama)
+    // 1. Ambil Data Label (Daftar ID & Source)
     // ----------------------------------------------------------------
     console.log("1. Fetching Label Data...");
     await fetchNaskahByLabel(labelId.value);
 
-    const rawData = naskahByLabel.value;
+    // Struktur data label berdasarkan JSON Anda:
+    // { namaLabel: "Penting", naskah: [{ naskahId: "...", source: "inbox" }, ...] }
+    const labelData = naskahByLabel.value;
 
-    // [FIXED] Inisialisasi labelIds sebagai array kosong
-    let labelIds: string[] = [];
+    if (!labelData) {
+      isLoading.value = false;
+      return;
+    }
 
-    // [FIXED] Logika Ekstraksi & Normalisasi yang "Defensive"
-    if (Array.isArray(rawData)) {
-      // Gunakan spread operator [...] untuk memastikan ini array murni (bukan Proxy)
-      labelIds = [...rawData];
-      labelName.value = "Label View";
-    } else if (rawData && typeof rawData === 'object') {
-      // Ambil Nama Label
-      labelName.value = rawData.namaLabel || rawData.name || "Label View";
+    // Set Nama Label
+    labelName.value = labelData.namaLabel || labelData.name || "Label View";
 
-      // Cari Array ID di dalam object properti
-      if (Array.isArray(rawData.data)) {
-        labelIds = [...rawData.data];
-      } else if (Array.isArray(rawData.list)) {
-        labelIds = [...rawData.list];
-      } else if (Array.isArray(rawData.naskah_ids)) {
-        labelIds = [...rawData.naskah_ids];
-      } else {
-        console.warn("Struktur array ID tidak ditemukan dalam objek:", rawData);
-        labelIds = [];
+    const labeledItems = Array.isArray(labelData.naskah) ? labelData.naskah : [];
+
+    if (labeledItems.length === 0) {
+      console.log("Label kosong.");
+      isLoading.value = false;
+      return;
+    }
+
+    // ----------------------------------------------------------------
+    // 2. Kelompokkan ID berdasarkan Source
+    // ----------------------------------------------------------------
+    const inboxIds = new Set<string>();
+    const sentIds = new Set<string>();
+    const draftIds = new Set<string>();
+
+    labeledItems.forEach((item: any) => {
+      const src = (item.source || '').toLowerCase();
+      if (src === 'inbox') inboxIds.add(item.naskahId);
+      else if (src === 'sent' || src === 'terkirim') sentIds.add(item.naskahId);
+      else if (src === 'draft' || src === 'konsep') draftIds.add(item.naskahId);
+    });
+
+    console.log(`Source Distribution -> Inbox: ${inboxIds.size}, Sent: ${sentIds.size}, Draft: ${draftIds.size}`);
+
+    // ----------------------------------------------------------------
+    // 3. Fetch Data secara Paralel (hanya jika diperlukan)
+    // ----------------------------------------------------------------
+    const promises = [];
+
+    // Fetch Inbox jika ada ID inbox
+    if (inboxIds.size > 0) {
+      promises.push(fetchInbox(userPositionId).then((res: any) => ({ type: 'inbox', data: res?.data?.items || [] })));
+    } else {
+      promises.push(Promise.resolve({ type: 'inbox', data: [] }));
+    }
+
+    // Fetch Sent jika ada ID sent
+    if (sentIds.size > 0) {
+      promises.push(fetchSentBox(userPositionId).then((res: any) => ({ type: 'sent', data: res }))); // Perhatikan fetchSentBox mungkin me-return array langsung atau object wrapper, sesuaikan dengan composable Anda
+    } else {
+      promises.push(Promise.resolve({ type: 'sent', data: [] }));
+    }
+
+    // Fetch Draft jika ada ID draft
+    if (draftIds.size > 0) {
+      promises.push(fetchDraft(userPositionId).then((res: any) => ({ type: 'draft', data: res?.data?.items || [] })));
+    } else {
+      promises.push(Promise.resolve({ type: 'draft', data: [] }));
+    }
+
+    const results = await Promise.all(promises);
+
+    // ----------------------------------------------------------------
+    // 4. Filter & Mapping Data
+    // ----------------------------------------------------------------
+    let combinedEmails: UIMailItem[] = [];
+
+    for (const result of results) {
+      if (result.type === 'inbox') {
+        const filtered = result.data.filter((item: any) => inboxIds.has(item.id_naskah));
+        combinedEmails.push(...filtered.map(mapInboxToUI));
+      }
+      else if (result.type === 'sent') {
+        // Handle jika structure sent box berbeda (kadang array langsung, kadang .data.items)
+        const sentItems = Array.isArray(result.data) ? result.data : (result.data?.data?.items || []);
+        const filtered = sentItems.filter((item: any) => sentIds.has(item.id_naskah));
+        combinedEmails.push(...filtered.map(mapSentToUI));
+      }
+      else if (result.type === 'draft') {
+        const filtered = result.data.filter((item: any) => draftIds.has(item.id_naskah));
+        combinedEmails.push(...filtered.map(mapDraftToUI));
       }
     }
 
-    console.log("   Label Name:", labelName.value);
-    console.log("   Label IDs:", labelIds);
-
-    // [FIXED] Validasi Akhir: Jika entah bagaimana masih bukan array, paksa jadi array kosong
-    if (!Array.isArray(labelIds)) {
-      console.error("   Fatal: labelIds is not an array:", labelIds);
-      labelIds = [];
-    }
-
-    if (labelIds.length === 0) {
-      console.log("   Label kosong.");
-      isLoading.value = false;
-      return;
-    }
-
     // ----------------------------------------------------------------
-    // 2. Ambil Data Sent Box
+    // 5. Sorting (Terbaru di atas)
     // ----------------------------------------------------------------
-    console.log("2. Fetching Sent Box...");
-    const sentBoxItems = await fetchSentBox(userPositionId);
+    combinedEmails.sort((a, b) => new Date(b.fullDate).getTime() - new Date(a.fullDate).getTime());
 
-    if (!Array.isArray(sentBoxItems)) {
-      console.error("   Fatal: sentBoxItems is not an array");
-      isLoading.value = false;
-      return;
-    }
-
-    // ----------------------------------------------------------------
-    // 3. Filter Data
-    // ----------------------------------------------------------------
-    console.log("3. Filtering...");
-
-    const matchedItems = sentBoxItems.filter((item: any) => {
-      // Pastikan item dan id_naskah ada
-      if (!item || !item.id_naskah) return false;
-
-      const sentItemId = String(item.id_naskah); // Convert ke string untuk keamanan
-      return labelIds.includes(sentItemId);
-    });
-
-    console.log(`   Ditemukan ${matchedItems.length} naskah cocok.`);
-
-    // ----------------------------------------------------------------
-    // 4. Mapping ke UI
-    // ----------------------------------------------------------------
-    emails.value = matchedItems.map(mapToUIMailItem);
+    emails.value = combinedEmails;
 
   } catch (e: any) {
     console.error("ERROR LOAD DATA:", e);
-    toast.add({ title: 'Error', description: 'Gagal memuat data', color: 'error' });
+    toast.add({ title: 'Error', description: 'Gagal memuat data label', color: 'error' });
   } finally {
     isLoading.value = false;
   }
 };
-// ... (SISA KODE SAMA: mapToUIMailItem, watcher, utils, dll) ...
-// Pastikan copy paste helper function di bawah ini agar kode lengkap
 
-const mapToUIMailItem = (item: any): UIMailItem => {
-  const daftarPenerima = item.penerima || [];
+// --- MAPPING FUNCTIONS (SESUAI STRUKTUR JSON) ---
+
+// 1. MAPPING INBOX
+const mapInboxToUI = (item: any): UIMailItem => {
+  // Inbox biasanya punya object 'pengirim'
+  const senderName = item.pengirim?.nama || item.pengirim?.position_text || "Tanpa Nama";
+  const senderPos = item.pengirim?.organization_text || item.pengirim?.position_text || "";
+
+  return {
+    id: item.id_naskah,
+    from: senderName,
+    email: senderPos,
+    subject: item.perihal || "Tanpa Perihal",
+    body: item.nomor || '-', // Tampilkan Nomor Surat di body preview
+    category: item.jenis || 'ND',
+    date: formatDate(item.created_at || item.tanggal),
+    fullDate: item.created_at || item.tanggal,
+    initial: getInitials(senderName),
+    color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
+    viewCount: 0, // Inbox jarang ada view count diri sendiri
+    isRead: item.status_baca === 'terbaca',
+    isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
+    isLocked: false,
+    isArchived: item.is_arsip,
+    recipient: "Saya", // Inbox ditujukan ke user
+    note: item.sifat,
+    originalData: item,
+    sourceType: 'inbox'
+  };
+};
+
+// 2. MAPPING SENT (KOTAK KELUAR)
+const mapSentToUI = (item: any): UIMailItem => {
+  // Logic penerima seperti kode sebelumnya
+  const daftarPenerima = Array.isArray(item.penerima) ? item.penerima : (item.penerima ? [item.penerima] : []);
   let displayRecipient = "Tanpa Penerima";
   let firstRecipientTitle = "Tanpa Jabatan";
 
@@ -159,7 +214,6 @@ const mapToUIMailItem = (item: any): UIMailItem => {
     const firstPerson = daftarPenerima[0];
     const title = firstPerson.position_text || firstPerson.nama;
     firstRecipientTitle = title;
-
     if (daftarPenerima.length > 1) {
       displayRecipient = `${title} +${daftarPenerima.length - 1} lainnya`;
     } else {
@@ -167,29 +221,68 @@ const mapToUIMailItem = (item: any): UIMailItem => {
     }
   }
 
-  const dateObj = new Date(item.created_at || item.tanggal);
-  const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
   return {
     id: item.id_naskah,
-    from: displayRecipient,
+    from: `Ke: ${displayRecipient}`, // Bedakan tampilan sent
     email: firstRecipientTitle,
     subject: item.perihal || "Tanpa Perihal",
     body: item.nomor || '-',
-    category: item.jenis,
-    date: dateStr,
+    category: item.jenis || 'ND',
+    date: formatDate(item.created_at || item.tanggal),
     fullDate: item.created_at || item.tanggal,
-    initial: (daftarPenerima[0]?.nama || '?').substring(0, 1).toUpperCase(),
+    initial: getInitials(displayRecipient.replace('Ke: ', '')),
     color: getCategoryStyle(item.jenis).split(' ')[0] + ' text-white',
     viewCount: item.summary_baca?.terbaca || 0,
-    isRead: true,
+    isRead: true, // Sent item dianggap read oleh pengirim
     isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
     isLocked: item.status === 'final_tte' || item.status === 'final',
     isArchived: item.arsip,
     recipient: daftarPenerima.map((p: any) => p.position_text || p.nama).join(', '),
     note: item.sifat,
-    originalData: item
+    originalData: item,
+    sourceType: 'sent'
   };
+};
+
+// 3. MAPPING DRAFT (KONSEP)
+const mapDraftToUI = (item: any): UIMailItem => {
+  // Draft struktur JSON-nya agak beda (isi_pesan, jenis_text)
+  const daftarPenerima = item.penerima || [];
+  let displayTo = "Draft Kosong";
+
+  if (daftarPenerima.length > 0) {
+    displayTo = `${daftarPenerima[0].nama || daftarPenerima[0].position_text}`;
+    if (item.penerima_count > 1) displayTo += ` +${item.penerima_count - 1}`;
+  }
+
+  return {
+    id: item.id_naskah,
+    from: "Draft / Konsep",
+    email: `Kepada: ${displayTo}`,
+    subject: item.isi_pesan || item.perihal || "(Tanpa Judul)", // Draft kadang pakai isi_pesan
+    body: "Belum dikirim",
+    category: item.jenis || 'KONSEP',
+    date: formatDate(item.tanggal || item.waktu),
+    fullDate: item.tanggal, // Draft pakai tanggal/waktu
+    initial: 'D',
+    color: 'bg-gray-400 text-white',
+    viewCount: 0,
+    isRead: true,
+    isFlagged: false,
+    isLocked: false,
+    isArchived: false,
+    recipient: daftarPenerima.map((p: any) => p.nama).join(', '),
+    note: 'Konsep',
+    originalData: item,
+    sourceType: 'draft'
+  };
+};
+
+// --- HELPER FUNCTIONS ---
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-';
+  const dateObj = new Date(dateString);
+  return dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 watch(
@@ -203,7 +296,7 @@ watch(
 );
 
 const getInitials = (name: string) => {
-  if (!name) return "";
+  if (!name) return "?";
   const parts = name.trim().split(" ");
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 };
@@ -228,7 +321,7 @@ const getCategoryLabel = (cat: string) => {
   return 'K';
 };
 
-// --- UI LOGIC (Filter, Sort, dll) ---
+// --- UI LOGIC (Filter, Sort, dll - TETAP SAMA) ---
 const selected = ref<UIMailItem | null>(null);
 const selectedIds = ref(new Set<string>());
 const activeTab = ref("ALL");
@@ -245,7 +338,14 @@ const filteredEmails = computed(() => {
     else if (tab === 'SDE') targetCats = ['SDE', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'];
     else if (tab === 'DI') targetCats = ['DI', 'DISPOSISI'];
     else if (tab === 'ND') targetCats = ['ND', 'NOTA DINAS'];
-    result = result.filter(mail => targetCats.includes((mail.category || '').toUpperCase()));
+    else if (tab === 'KONSEP') targetCats = ['KONSEP']; // Tambahan untuk tab konsep
+
+    // Filter khusus jika tab KONSEP dipilih, cek sourceType
+    if (tab === 'KONSEP') {
+      result = result.filter(mail => mail.sourceType === 'draft');
+    } else {
+      result = result.filter(mail => targetCats.includes((mail.category || '').toUpperCase()));
+    }
   }
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
@@ -255,7 +355,6 @@ const filteredEmails = computed(() => {
       mail.body.toLowerCase().includes(q)
     );
   }
-  result.sort((a, b) => new Date(b.fullDate).getTime() - new Date(a.fullDate).getTime());
   return result;
 });
 
@@ -282,17 +381,28 @@ const toggleSelectAll = () => { if (selectedIds.value.size === paginatedEmails.v
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
 const toggleSelection = (id: string) => { if (selectedIds.value.has(id)) selectedIds.value.delete(id); else selectedIds.value.add(id); };
 
+// Modal logic (Reader)
 const showReaderModal = ref(false);
 const currentReaderData = ref({ subject: '', readList: [] as any[], unreadList: [] as any[] });
 const openReaderModal = (mail: UIMailItem) => {
   const item = mail.originalData;
-  const read = (item.penerima || []).filter((p: any) => p.status_baca === 'terbaca').map((p: any) => ({
+  const penerima = item.penerima || [];
+
+  // Handle perbedaan struktur Draft vs Sent/Inbox
+  const listPenerima = Array.isArray(penerima) ? penerima : [penerima];
+
+  const read = listPenerima.filter((p: any) => p.status_baca === 'terbaca').map((p: any) => ({
     name: p.nama, position: p.position_text, date: '-', initial: (p.nama || '?').substring(0, 1), bg: 'bg-blue-500'
   }));
-  const unread = (item.penerima || []).filter((p: any) => p.status_baca !== 'terbaca').map((p: any) => ({
+  const unread = listPenerima.filter((p: any) => p.status_baca !== 'terbaca').map((p: any) => ({
     name: p.nama, position: p.position_text, status: 'Belum', initial: (p.nama || '?').substring(0, 1), bg: 'bg-gray-400'
   }));
-  currentReaderData.value = { subject: item.perihal, readList: read, unreadList: unread };
+
+  currentReaderData.value = {
+    subject: mail.subject,
+    readList: read,
+    unreadList: unread
+  };
   showReaderModal.value = true;
 };
 
@@ -306,6 +416,14 @@ const tabs = [
 ];
 
 const getDetailRoute = (item: UIMailItem) => {
+  // Routing dinamis berdasarkan source
+  if (item.sourceType === 'draft') {
+    return { path: `/korespondensi/konsep/${item.id}` }; // Asumsi route draft
+  }
+  if (item.sourceType === 'inbox') {
+    return { path: `/korespondensi/surat-masuk/${item.id}`, query: { jenis: item.category } };
+  }
+  // Sent
   return { path: `/korespondensi/terkirim/${item.id}`, query: { jenis: item.category } };
 };
 </script>

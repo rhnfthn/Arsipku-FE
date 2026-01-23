@@ -216,6 +216,15 @@
             </div>
           </ClientOnly>
 
+          <div class="flex items-center py-3 mt-2 gap-2">
+            <input type="checkbox" id="check_english" v-model="isEnglish"
+              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer" />
+            <label for="check_english"
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+              Aktifkan Format Bahasa Inggris
+            </label>
+          </div>
+
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
