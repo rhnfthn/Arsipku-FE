@@ -52,13 +52,22 @@
         </div>
 
         <template #delegation-item="{ item }">
-          <div class="flex items-center justify-between w-full gap-2">
-            <UTooltip :text="item.label" :popper="{ placement: 'left' }">
-              <span class="text-sm truncate transition-colors"
-                :class="item.isActive ? 'font-bold text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-200'">
-                {{ item.label }}
+          <div class="flex items-center justify-between w-full gap-2 min-w-0">
+            <div class="flex flex-col items-start min-w-0 w-full">
+              <div class="flex items-center gap-2 max-w-full">
+                <span class="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">
+                  {{ item.uiName }}
+                </span>
+                <UBadge size="xs" variant="subtle" color="primary"
+                  class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize">
+                  {{ item.uiBadge }}
+                </UBadge>
+              </div>
+
+              <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left">
+                {{ item.uiPosition }}
               </span>
-            </UTooltip>
+            </div>
 
             <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
               class="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -96,7 +105,7 @@
             <span class="text-sm text-gray-700 dark:text-gray-200">Bahasa</span>
             <div
               class="flex items-center bg-gray-50 dark:bg-gray-800 rounded-lg p-0.5 gap-0.5 border border-gray-200 dark:border-gray-700">
-              <UButton v-for="lang in locales" :key="lang.code" :label="lang.name"
+              <UButton v-for="lang in locales" :key="lang.code" :label="lang.name" color="primary"
                 :variant="currentLocale === lang.code ? 'solid' : 'ghost'" @click="setLocale(lang.code)"
                 class="h-6 text-[10px] px-2" />
             </div>
@@ -260,16 +269,30 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0;
 
   const mainAccountItem = {
-    label: originalRoleLabel.value,
+    // Data UI Custom
+    uiName: user.value?.nama || 'User',
+    uiBadge: user.value?.role,
+    uiPosition: originalRoleLabel.value,
+
+    // Config Menu Standard
+    label: originalRoleLabel.value, // Fallback untuk search/tooltip standard
     slot: 'delegation-item',
     isActive: isMainAccountActive,
-    disabled: !hasDelegationData, // Disable jika tidak ada data delegasi
+    disabled: !hasDelegationData,
     click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
     onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
   };
 
   const delegasiItems = delegationRoles.value.map(role => {
     return {
+      // Data UI Custom
+      // Pastikan object 'role' dari API memiliki property 'nama'.
+      // Jika tidak muncul, cek console.log(delegationRoles.value) untuk nama field yang benar (misal: role.user.nama)
+      uiName: role.delegator_name || 'Empty Name',
+      uiBadge: role.position_status_label,
+      uiPosition: role.position_text,
+
+      // Config Menu Standard
       label: role.position_text,
       slot: 'delegation-item',
       isActive: currentId === role.id,

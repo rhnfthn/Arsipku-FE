@@ -228,12 +228,19 @@ const isAllSelected = computed(
 );
 
 const selectMail = async (mail) => {
+  // Simpan data selected (opsional, tapi dibiarkan agar tidak error jika ada ref lain yg pakai)
   selected.value = mail;
 
   const posId = user.value?.position;
-  if (!posId) return;
 
-  await markAsRead(mail, posId);
+  // Tandai sudah dibaca (jalankan di background atau await jika ingin memastikan)
+  if (posId) {
+    markAsRead(mail, posId);
+  }
+
+  // LANGSUNG NAVIGASI KE DETAIL
+  // Menggunakan format link yang sama seperti tombol "Lihat Detail Lengkap" sebelumnya
+  navigateTo(`/korespondensi/kotak-masuk/${mail.naskahId}?jenis=${mail.category}`);
 };
 
 const closeDetail = () => {
@@ -339,6 +346,7 @@ const downloadExcel = () => {
 <template>
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
+
     <div
       class="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 dark:border-gray-800 transition-colors">
       <div class="flex items-center gap-1 shrink-0 relative">
@@ -484,11 +492,7 @@ const downloadExcel = () => {
 
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div
-        class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden"
-        :class="selected
-          ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0'
-          : 'flex-1 w-full'
-          ">
+        class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden flex-1 w-full">
         <div class="py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
@@ -511,9 +515,8 @@ const downloadExcel = () => {
 
           <div v-else>
             <div v-for="mail in paginatedEmails" :key="mail.id" @click="selectMail(mail)"
-              class="group flex gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px]"
-              :class="selected?.id === mail.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-                ">
+              class="group flex gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50">
+
               <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
                 <div
                   class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 rounded-sm flex items-center justify-center transition-colors"
@@ -570,10 +573,6 @@ const downloadExcel = () => {
               <div
                 class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                 <div class="flex items-center gap-2 p-1">
-                  <!-- <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-neutral-300'
-                    " @click.stop="toggleFlag(mail, 'favorit')" /> -->
                   <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
                     ? 'text-orange-400 fill-orange-400'
                     : 'text-neutral-300'
@@ -588,78 +587,12 @@ const downloadExcel = () => {
                     " @click.stop="toggleFlag(mail, 'arsip')" />
                 </div>
               </div>
+
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="selected"
-        class="flex flex-col bg-white absolute inset-0 z-40 lg:static lg:flex-1 lg:z-0 animate-in slide-in-from-right-8 duration-200 overflow-hidden border-l border-gray-200">
-        <div class="flex items-start justify-between px-6 py-5 border-b border-transparent shrink-0">
-          <h2 class="text-xl font-bold text-gray-900 leading-tight pr-4">
-            {{ selected.subject }}
-          </h2>
-          <button class="p-1 hover:bg-gray-100 rounded text-gray-400" @click="closeDetail">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto px-6 pb-6">
-          <div class="flex gap-4 mb-5">
-            <div
-              class="w-10 h-10 rounded-full flex bg-primary-400 text-white items-center justify-center text-lg font-bold shadow-sm shrink-0"
-              :class="selected.color">
-              {{ selected.initial }}
-            </div>
-            <div>
-              <div class="font-bold text-gray-900">
-                {{ selected.fromPosition }}
-              </div>
-              <div class="text-sm text-gray-600">
-                {{ selected.fromName }}
-              </div>
-            </div>
-          </div>
-
-          <div class="mb-6">
-            <span :class="[
-              getCategoryStyle(selected.category),
-              'px-3 py-1 rounded text-[13px] font-medium inline-block',
-            ]">
-              {{ getCategoryLabel(selected.category) }}
-            </span>
-          </div>
-
-          <div class="space-y-4 mb-8">
-            <div>
-              <div class="text-sm text-gray-500 mb-0.5">No Surat</div>
-              <div class="text-sm text-gray-900">
-                {{ selected.nomor || "-" }}
-              </div>
-            </div>
-
-            <div>
-              <div class="text-sm text-gray-500 mb-0.5">Penerima</div>
-              <div v-for="(p, i) in selected.kepada" :key="i" class="mb-2">
-                <div class="text-xs">{{ p.position_text }},</div>
-              </div>
-            </div>
-            <div>
-              <div class="text-sm text-gray-500 mb-0.5">Sifat</div>
-              <div class="text-sm text-gray-900 capitalize">
-                {{ selected.sifat || "-" }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-6 pt-0 mt-auto bg-white shrink-0">
-          <NuxtLink :to="`/korespondensi/kotak-masuk/${selected.naskahId}?jenis=${selected.category}`"
-            class="flex items-center justify-center w-full bg-primary hover:bg-primary-600 text-white font-medium py-2 rounded-lg shadow-sm transition-colors">
-            Lihat Detail Lengkap
-          </NuxtLink>
-        </div>
-      </div>
     </div>
   </div>
 </template>

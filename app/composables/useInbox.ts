@@ -237,5 +237,6 @@ export function useInbox(positionId: any) {
     markAsRead,
     toggleFlag,
     fetchInboxDetail,
+    fetchInbox
   };
 }
