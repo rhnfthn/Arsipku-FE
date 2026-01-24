@@ -158,7 +158,6 @@
               @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
             >
-              <!-- <td class="px-5 py-4 text-xs">{{ row.id_usulan }}</td> -->
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
@@ -179,10 +178,6 @@
               <td class="px-5 py-4">{{ row.pengusul }}</td>
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
 
-              <!-- <td
-                @click.stop
-                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[inset_8px_0_8px_-8px_rgba(0,0,0,0.25)]"
-              > -->
               <td
                 @click.stop
                 class="sticky right-0 z-20 bg-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
@@ -202,11 +197,6 @@
                 >
                   {{ row.status }}
                 </span>
-                <!-- <td
-                class="pointer-events-none absolute right-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-gray-900 text-white text-xs px-3 py-1 rounded-md shadow-lg z-40 whitespace-nowrap"
-              >
-                Klik untuk lihat detail
-              </td> -->
               </td>
             </tr>
           </tbody>
@@ -339,7 +329,7 @@
         <AddUsulan
           v-model="openAdd"
           @submit="handleSubmitFromModal"
-          @preview="handlePreview" :hideDefaultFooter="true"
+          @preview="handlePreview"
         />
       </Teleport>
     </div>
@@ -452,30 +442,26 @@
                 </button>
               </div>
 
-              <!-- ================= FILE SECTION (FIXED) ================= -->
+              <!-- FILE SECTION -->
               <div class="mt-2 space-y-2">
-                <!-- 1️⃣ ADA FILE (backend / lokal) -->
+                <!-- ADA FILE (backend / lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
                   class="flex items-center justify-between bg-white border border-green-200 hover:bg-green-50 rounded-md px-3 py-2"
                 >
-                  <a
-                    :href="getFileUrl(detail, idx)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="block transition rounded-md flex-1"
+                  <button
+                    @click="openPreview(detail, idx)"
+                    class="flex items-start gap-3 flex-1 text-left transition rounded-md"
                   >
-                    <div class="flex items-start gap-3">
-                      <!-- FILE INFO -->
-                      <div class="flex-1">
-                        <p class="text-sm font-medium text-green-700 underline">
-                          📄
-                          {{ detail.file_name || filesByIndex[idx]?.name }}
-                        </p>
-                        <p class="text-xs text-gray-600">Klik untuk preview</p>
-                      </div>
+                    <!-- FILE INFO -->
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-green-700 underline">
+                        📄
+                        {{ detail.file_name || filesByIndex[idx]?.name }}
+                      </p>
+                      <p class="text-xs text-gray-600">Klik untuk preview</p>
                     </div>
-                  </a>
+                  </button>
 
                   <!-- Remove button for local files only -->
                   <button
@@ -499,7 +485,7 @@
                   </button>
                 </div>
 
-                <!-- 2️⃣ BELUM ADA FILE & MASIH BISA UPLOAD -->
+                <!-- BELUM ADA FILE & MASIH BISA UPLOAD -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
@@ -539,7 +525,7 @@
                   </label>
                 </div>
 
-                <!-- 3️⃣ BELUM ADA FILE & TIDAK BISA UPLOAD -->
+                <!-- BELUM ADA FILE & TIDAK BISA UPLOAD -->
                 <div
                   v-else
                   class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
@@ -670,6 +656,7 @@
     @confirm="confirmDeleteUsulan"
     @cancel="openConfirmDelete = false"
   />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -682,6 +669,123 @@
     >
       {{ tooltip.text }}
     </div>
+  </Teleport>
+
+  <!-- PREVIEW SLIDEOVER (FULL PAGE) -->
+  <Teleport to="body">
+    <USlideover
+      v-model="isOpenPreview"
+      side="bottom"
+      :ui="{
+        width: 'w-screen max-w-full',
+        overlay: {
+          background: 'bg-gray-900/90 dark:bg-gray-900/90',
+        },
+        base: 'h-screen max-h-screen',
+        body: 'p-0 flex-1',
+        header:
+          'border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900',
+        footer:
+          'border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900',
+      }"
+    >
+      <template #header>
+        <div class="flex items-center justify-between w-full px-6 py-4">
+          <div class="flex items-center gap-3">
+            <svg
+              class="w-5 h-5 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <h3 class="text-lg font-semibold">Preview Dokumen</h3>
+          </div>
+          <button
+            @click="closePreview"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <template #body>
+        <div
+          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+        >
+          <iframe
+            v-if="previewUrl"
+            :key="previewUrl"
+            :src="previewUrl"
+            class="w-full h-full border-none"
+            allowfullscreen
+          />
+
+          <div v-else class="flex flex-col items-center gap-3">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+            <span class="text-gray-500 dark:text-gray-400"
+              >Memuat Pratinjau...</span
+            >
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex items-center justify-between px-6 py-4">
+          <div
+            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>{{ previewFileName || "Dokumen" }}</span>
+          </div>
+          <button
+            @click="closePreview"
+            class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition"
+          >
+            Tutup
+          </button>
+        </div>
+      </template>
+    </USlideover>
   </Teleport>
 </template>
 
@@ -700,7 +804,8 @@ const { user, getProfile } = useAuth();
 const {
   createUsulanDraft,
   deleteUsulanUser,
-  getListUsulanByPosition,
+  getListUsulan,
+  getDetailUsulan,
   getPersonWithPosition,
   submitBooking,
   isLoadingBooking,
@@ -718,12 +823,17 @@ const selectedRow = ref(null);
 const rows = ref([]);
 const loading = ref<boolean>(true);
 
-// ✅ FIXED: File mapping dengan INDEX (bukan detail.id) karena backend pakai array
+// File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
 
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const openConfirmSubmit = ref(false);
+
+// Preview state
+const isOpenPreview = ref(false);
+const previewUrl = ref("");
+const previewFileName = ref("");
 
 // Person mapping
 const personMap = ref(new Map());
@@ -775,7 +885,7 @@ const fetchKlasifikasiMap = async () => {
   }
 };
 
-// FETCH DATA
+// FETCH DATA - Menggunakan endpoint baru
 const fetchData = async () => {
   loading.value = true;
 
@@ -786,7 +896,8 @@ const fetchData = async () => {
       return;
     }
 
-    const data = await getListUsulanByPosition(String(user.value.position));
+    // ✅ GUNAKAN ENDPOINT BARU: /admin/nomor-request-by-position/{id_posisi}
+    const data = await getListUsulan(String(user.value.position));
 
     if (!Array.isArray(data)) {
       rows.value = [];
@@ -851,36 +962,51 @@ const fetchData = async () => {
   }
 };
 
-// OPEN ROW MODAL
+// ✅ OPEN ROW MODAL - HIT ENDPOINT DETAIL
 const openRowModal = async (row) => {
   try {
     console.log("🔍 Opening row modal for:", row.id);
 
+    // ✅ HIT ENDPOINT DETAIL: GET /admin/nomor-request/{id}
+    const detailData = await getDetailUsulan(row.id);
+
+    if (!detailData) {
+      toast.add({
+        title: "Gagal memuat detail",
+        description: "Data detail tidak ditemukan",
+        color: "red",
+      });
+      return;
+    }
+
+    console.log("📥 Detail data received:", detailData);
+
     const klasifikasiDisplay =
-      klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi;
+      klasifikasiMap.value.get(detailData.klasifikasi) ||
+      detailData.klasifikasi;
 
     const normalizedDetails = normalizeDetails(
-      row.details || [],
-      row.jumlah,
-      row.template_nomor || "",
+      detailData.details || [],
+      detailData.jumlah,
+      detailData.template_nomor || "",
     );
 
     selectedRow.value = {
-      id_usulan: row.id,
-      jenis: row.jenis,
-      jenis_naskah: row.jenis,
-      tanggal: row.tanggal,
-      perihal: row.perihal,
-      jumlah: row.jumlah,
-      penandatangan: row.penandatangan || "-",
-      klasifikasi: row.klasifikasi || "-",
+      id_usulan: detailData.id,
+      jenis: detailData.jenis,
+      jenis_naskah: detailData.jenis,
+      tanggal: detailData.tanggal,
+      perihal: detailData.perihal,
+      jumlah: detailData.jumlah,
+      penandatangan: detailData.penandatangan || "-",
+      klasifikasi: detailData.klasifikasi || "-",
       klasifikasiDisplay,
-      status: row.status,
-      template_nomor: row.template_nomor || "",
+      status: detailData.status || row.status,
+      template_nomor: detailData.template_nomor || "",
       details: normalizedDetails,
     };
 
-    // ✅ Reset file mapping
+    // Reset file mapping
     filesByIndex.value = {};
 
     openDetail.value = true;
@@ -895,9 +1021,8 @@ const openRowModal = async (row) => {
   }
 };
 
-// ✅ GET FILE URL - Helper function untuk construct URL yang benar
+// GET FILE URL - Helper function untuk construct URL yang benar
 const getFileUrl = (detail, idx) => {
-  // Prioritas: lokal file > file_url > construct dari file_text
   if (filesByIndex.value[idx]) {
     return URL.createObjectURL(filesByIndex.value[idx]);
   }
@@ -913,7 +1038,52 @@ const getFileUrl = (detail, idx) => {
   return "#";
 };
 
-// ✅ FIXED: HANDLE FILE UPLOAD berdasarkan INDEX
+// ✅ OPEN PREVIEW - Buka slideover dan tutup modal
+const openPreview = (detail, idx) => {
+  const url = getFileUrl(detail, idx);
+  const fileName =
+    detail.file_name || filesByIndex.value[idx]?.name || "Dokumen";
+
+  if (url === "#") {
+    toast.add({
+      title: "File tidak tersedia",
+      description: "Tidak ada file untuk ditampilkan",
+      color: "yellow",
+    });
+    return;
+  }
+
+  previewUrl.value = url;
+  previewFileName.value = fileName;
+
+  // Tutup modal detail
+  openDetail.value = false;
+
+  // Buka slideover preview
+  isOpenPreview.value = true;
+
+  console.log("📄 Opening preview for:", fileName);
+};
+
+// ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
+const closePreview = () => {
+  isOpenPreview.value = false;
+
+  // Buka kembali modal detail setelah slideover tertutup
+  setTimeout(() => {
+    openDetail.value = true;
+  }, 100);
+
+  // Clean up URL object jika ada
+  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+
+  previewUrl.value = "";
+  previewFileName.value = "";
+};
+
+// HANDLE FILE UPLOAD berdasarkan INDEX
 const handleFile = (index: number, event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -947,7 +1117,7 @@ const handleFile = (index: number, event: Event) => {
     return;
   }
 
-  // ✅ Simpan file berdasarkan INDEX
+  // Simpan file berdasarkan INDEX
   filesByIndex.value[index] = file;
 
   console.log("📎 File disimpan untuk index:", index, "=>", file.name);
@@ -959,7 +1129,7 @@ const handleFile = (index: number, event: Event) => {
   });
 };
 
-// ✅ Remove file berdasarkan index
+// Remove file berdasarkan index
 const removeFile = (index: number) => {
   delete filesByIndex.value[index];
   toast.add({
@@ -1010,7 +1180,7 @@ function handlePreview(data: any) {
   filesByIndex.value = {};
 }
 
-// ✅ GET CONFIRM MESSAGE - Dynamic message based on files
+// GET CONFIRM MESSAGE - Dynamic message based on files
 const getConfirmMessage = () => {
   const fileCount = Object.keys(filesByIndex.value).length;
 
@@ -1021,7 +1191,7 @@ const getConfirmMessage = () => {
   return `Apakah Anda yakin ingin mengirim usulan ini dengan ${fileCount} file? Usulan akan dikirim untuk diverifikasi.`;
 };
 
-// ✅ FIXED: SUBMIT USULAN sesuai format backend (file, file_name, file_text)
+// SUBMIT USULAN sesuai format backend
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
@@ -1031,7 +1201,7 @@ const confirmSubmitUsulan = async () => {
     const formData = new FormData();
     let fileCount = 0;
 
-    // ✅ Loop berdasarkan INDEX untuk match dengan backend
+    // Loop berdasarkan INDEX untuk match dengan backend
     Object.keys(filesByIndex.value).forEach((indexStr) => {
       const index = parseInt(indexStr);
       const file = filesByIndex.value[index];
@@ -1039,10 +1209,7 @@ const confirmSubmitUsulan = async () => {
       if (file instanceof File) {
         fileCount++;
 
-        // ✅ SESUAI FORMAT BACKEND:
-        // - file (array of files)
-        // - file_name (array of file names)
-        // - file_text (array of file names - for text field)
+        // SESUAI FORMAT BACKEND
         formData.append("file", file);
         formData.append("file_name", file.name);
         formData.append("file_text", file.name);
@@ -1052,10 +1219,6 @@ const confirmSubmitUsulan = async () => {
     });
 
     console.log("📦 Total files to upload:", fileCount);
-    console.log("📦 FormData entries:");
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1] instanceof File ? pair[1].name : pair[1]);
-    }
 
     await submitBooking(selectedRow.value.id_usulan, formData);
 
@@ -1161,7 +1324,7 @@ const handleSubmitFromModal = async (payload: any) => {
 
     const response = await createUsulanDraft(formattedPayload);
 
-    // ✅ OPTIMISTIC UPDATE
+    // OPTIMISTIC UPDATE
     const newRow = {
       id: response.id || Date.now(),
       id_usulan: response.id || Date.now(),
@@ -1254,6 +1417,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
+
+  // Clean up any blob URLs
+  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
 });
 
 /* Breadcrumb */
@@ -1264,7 +1432,6 @@ const breadcrumbs = [
 
 /* TABLE CONFIG */
 const headers = [
-  // { label: "ID Usulan", key: "id_usulan", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
