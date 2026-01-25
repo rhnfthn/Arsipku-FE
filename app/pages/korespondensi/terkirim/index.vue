@@ -533,6 +533,8 @@ watch(() => route.query.q, (newVal) => {
 </script>
 
 <template>
+
+  <PageHeader title="Terkirim" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div

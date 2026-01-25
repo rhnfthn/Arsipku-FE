@@ -222,9 +222,10 @@
                 <div class="p-0 min-h-[300px] relative group">
                   <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
 
-                  <div class="relative" v-if="showEditor">
+                  <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
+
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
@@ -283,7 +284,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
@@ -298,6 +299,7 @@ import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
 // Types & Logic
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 
+const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -388,6 +390,28 @@ const formattedDate = computed(() => {
 // LOGIC BARU: Editor hanya muncul jika "Lainnya" dipilih
 const showEditor = computed(() => {
   return selectedChecklist.value.includes("Lainnya");
+});
+
+watch(showEditor, async (isShown) => {
+  if (isShown) {
+    // Tunggu sampai Vue selesai merender elemen v-if="showEditor" ke DOM
+    await nextTick();
+
+    // Lakukan scroll ke elemen tersebut
+    if (editorContainerRef.value) {
+      editorContainerRef.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center' // Posisikan di tengah layar agar nyaman dilihat
+      });
+
+      // Opsional: Fokus ke editor jika instance sudah siap (sedikit delay agar TinyMCE load)
+      setTimeout(() => {
+        if (tinymceEditor.value) {
+          tinymceEditor.value.focus();
+        }
+      }, 500);
+    }
+  }
 });
 
 // --- METHODS ---

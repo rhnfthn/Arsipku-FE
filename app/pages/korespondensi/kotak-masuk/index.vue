@@ -31,6 +31,13 @@ import { useInbox } from "~/composables/useInbox";
 
 const { user, getProfile } = useAuth();
 
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Kotak Masuk", to: "#" },
+];
+
+
 // Ambil profil user saat page load
 onMounted(async () => {
   if (!user.value) {
@@ -344,6 +351,8 @@ const downloadExcel = () => {
 </script>
 
 <template>
+
+  <PageHeader title="Kotak Masuk" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
 
