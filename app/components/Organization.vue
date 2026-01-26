@@ -15,7 +15,7 @@
       <!-- Main Node -->
       <div
         :class="[
-          'flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors relative',
+          'flex items-center gap-3 p-3 rounded-lg bg:primary hover:bg-gray-50  transition-colors relative',
           getBorderColorClass(),
         ]"
       >
@@ -257,7 +257,7 @@ const getIcon = () => {
 
 const getBorderColorClass = () => {
   if (nodeType.value === "direktorat")
-    return "bg-white border-l-4 border-primary";
+    return "bg-primary-50 border-l-4 border-primary";
   if (nodeType.value === "direktur")
     return "bg-orange-50 border-l-4 border-orange-500";
   if (nodeType.value === "division")

@@ -336,9 +336,9 @@
 
     <!-- Add/Edit Area Modal -->
     <Teleport to="body">
-      <Modal v-model="openAddArea" size="lg" @save="submitArea">
+      <Modal v-model="openAddArea" size="xl" @save="submitArea">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-xl font-bold">
               {{ isEditing ? "Edit" : "Tambah" }}
               {{ activeTab === "area" ? "Area" : "Sub Area" }}
