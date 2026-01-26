@@ -42,7 +42,7 @@
       <div
         class="bg-white shadow-lg border border-gray-100 rounded-xl overflow-hidden"
       >
-        <!-- Company Header -->
+        <!------------ COMPANY HEADER -------------->
         <div class="bg-primary text-white px-6 py-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -63,24 +63,25 @@
                   {{ company?.tanggalMulai }} - {{ company?.tanggalBerakhir }}
                 </p>
               </div>
-            </div>
-            <div class="flex items-center gap-2">
               <span class="px-2 py-1 bg-white/20 rounded text-xs font-medium"
                 >KP</span
               >
-              <button
-                @click="openAddUnitModal(null, 'company')"
-                class="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm"
-              >
-                <Plus class="w-4 h-4" />
-                Tambah Unit
-              </button>
               <button
                 @click="openEditModal(company, 'company')"
                 class="p-2 hover:bg-white/20 rounded transition-colors"
               >
                 <Info class="w-4 h-4" />
               </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                @click="openAddUnitModal(null, 'company')"
+                class="flex items-center gap-2 px-4 py-1 bg-white hover:bg-white/30 rounded-lg transition-colors text-primary hover:text-white text-sm"
+              >
+                <Plus class="w-4 h-4" />
+                Tambah Unit
+              </button>
+
               <button
                 @click="openEditModal(company, 'company')"
                 class="p-2 hover:bg-white/20 rounded transition-colors"
@@ -97,7 +98,7 @@
           </div>
         </div>
 
-        <!-- Organization Tree -->
+        <!-------- ORGANIZATION  -------------->
         <div v-if="companyExpanded" class="p-6">
           <Organization
             v-for="(node, idx) in organizationTree"
@@ -120,13 +121,12 @@
       </div>
     </div>
 
-    <!-- Add Unit Modal -->
+    <!-------------- ADD UNIT MODAL -------------->
     <Teleport to="body">
       <Modal v-model="showAddUnitModal" size="xl" @save="handleSaveUnit">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-lg font-bold">Tambah Unit</h3>
-            <p class="text-sm mt-1 text-gray-600">Isi form di bawah ini</p>
           </div>
         </template>
 
@@ -215,7 +215,8 @@
         </div>
       </Modal>
     </Teleport>
-    <!-- Add Position Modal -->
+
+    <!-------------- ADD POSITION MODAL -------------->
     <Teleport to="body">
       <Modal
         v-model="showAddPositionModal"
@@ -223,7 +224,7 @@
         @save="handleSavePosition"
       >
         <template #title>
-          <div>
+          <div clas="p-3">
             <h3 class="text-lg font-bold">Tambah Posisi</h3>
             <p class="text-sm mt-1 text-gray-600">Isi form di bawah ini</p>
           </div>
@@ -326,11 +327,12 @@
         </div>
       </Modal>
     </Teleport>
-    <!-- Add Anggota Modal -->
+
+    <!------------ ADD ANGGOTA MODAL -------------->
     <Teleport to="body">
       <Modal v-model="showAddAnggotaModal" size="xl" @save="handleSaveAnggota">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-lg font-bold">Tambah Anggota</h3>
             <p class="text-sm mt-1 text-gray-600">Isi form di bawah ini</p>
           </div>
@@ -365,7 +367,7 @@
     <Teleport to="body">
       <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-lg font-bold">Edit {{ editType }}</h3>
           </div>
         </template>

@@ -132,9 +132,9 @@
 
     <!-- Add Company Modal -->
     <Teleport to="body">
-      <Modal v-model="openAddCompany" size="lg" @save="handleSaveCompany">
+      <Modal v-model="openAddCompany" size="xl" @save="handleSaveCompany">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-xl font-bold">Tambah Perusahaan</h3>
             <p class="text-sm mt-1 text-gray-600">
               Lengkapi formulir untuk menambahkan perusahaan baru
@@ -206,10 +206,10 @@
     </Teleport>
     <!-- Edit Modal -->
     <Teleport to="body">
-      <Modal v-model="showEditModal" size="lg" @save="handleSaveEdit">
+      <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
         <template #title>
           <div>
-            <h3 class="text-lg font-bold">Edit Perusahaan</h3>
+            <h3 class="text-lg font-bold p-3">Edit Perusahaan</h3>
           </div>
         </template>
 
