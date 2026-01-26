@@ -201,7 +201,7 @@
 const items = [
   {
     label: "Dashboard",
-    to: "/dashboard",
+    to: "/beranda",
   },
   {
     label: "Tertuju Eksternal",

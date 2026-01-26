@@ -121,10 +121,10 @@
                     class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
                     {{ item.nomor }}
                   </span>
-                  <span v-if="item.klasifikasi"
+                  <!-- <span v-if="item.klasifikasi"
                     class="text-[10px] font-mono text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-900/50">
                     {{ item.klasifikasi }}
-                  </span>
+                  </span> -->
                   <UIcon v-if="item.hasAttachment" name="i-heroicons-paper-clip" class="w-3.5 h-3.5 text-gray-400" />
                 </div>
               </div>
@@ -132,7 +132,7 @@
               <div
                 class="w-full md:w-auto shrink-0 flex flex-row md:items-center justify-between md:justify-end gap-4 mt-2 md:mt-0">
                 <span
-                  class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase shadow-sm border border-transparent min-w-[60px] text-center"
+                  class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-transparent min-w-[60px] text-center"
                   :class="getCategoryStyle(item.jenis)">
                   {{ getCategoryLabel(item.jenis) }}
                 </span>
@@ -235,11 +235,11 @@ const getCategoryStyle = (cat: string) => {
 
 const getCategoryLabel = (cat: string) => {
   const c = (cat || '').toUpperCase();
-  if (['KA', 'KAJIAN'].includes(c)) return 'KAJIAN';
+  if (['KA', 'KAJIAN'].includes(c)) return 'KA';
   if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'SDI';
   if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'SDE';
   if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'DISPOSISI';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
   return c || 'UMUM';
 };
 

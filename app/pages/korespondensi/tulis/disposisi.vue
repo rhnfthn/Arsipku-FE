@@ -308,7 +308,7 @@ const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Disposisi", to: "#" },
 ];
 

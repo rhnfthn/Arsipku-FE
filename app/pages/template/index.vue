@@ -502,7 +502,7 @@ const addData = ref<any>({
 });
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Template", to: "/admin/template" },
 ];
 

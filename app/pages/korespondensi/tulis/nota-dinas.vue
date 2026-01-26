@@ -461,7 +461,7 @@ const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
 const { getKtp } = useDigSign(); // Init composable getKtp
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 

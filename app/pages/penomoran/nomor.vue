@@ -646,7 +646,7 @@ const currentPage = ref<number>(1);
 const sortBy = ref<string>("created_at");
 const sortDir = ref<"asc" | "desc">("desc");
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Penomoran", to: "/admin/penomoran" },
 ];
 
