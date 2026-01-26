@@ -96,7 +96,7 @@
         <!-- Horizontal Line -->
         <div class="absolute left-[-18px] top-5 w-4 h-0.5 bg-gray-300"></div>
 
-        <OrganizationNode
+        <Organization
           :node="node.direktur"
           :level="level + 1"
           :is-last="false"
@@ -129,7 +129,7 @@
             class="absolute left-[-18px] top-5 w-4 h-0.5 bg-gray-300"
           ></div>
 
-          <OrganizationNode
+          <Organization
             :node="division"
             :level="level + 1"
             :is-last="idx === node.divisions.length - 1"
@@ -152,7 +152,7 @@
         <div v-for="anggota in node.anggota" :key="anggota.id" class="relative">
           <div class="absolute left-[-18px] top-5 w-4 h-0.5 bg-gray-300"></div>
 
-          <OrganizationNode
+          <Organization
             :node="anggota"
             :level="level + 1"
             :is-last="false"
@@ -221,10 +221,11 @@ defineEmits([
 ]);
 
 const nodeType = computed(() => {
+  if (props.node.pn) return "anggota";
   if (props.node.direktur || props.node.divisions) return "direktorat";
   if (props.node.pn && props.node.divisions) return "direktur";
   if (props.node.divisions) return "division";
-  if (props.node.pn) return "anggota";
+
   return "unit";
 });
 
