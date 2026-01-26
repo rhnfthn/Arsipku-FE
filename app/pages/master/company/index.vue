@@ -1,11 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="flex items-center justify-between mb-8">
+      <!-- <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Master Perusahaan</h1>
-          <p class="text-gray-500 text-sm">Kelola daftar perusahaan Anda</p>
+          <h2 class="text-2xl font-bold text-gray-900">Master Perusahaan</h2>
+        </div>
+        <PageHeader :items="breadcrumbs" />
+        <button
+          @click="openAddCompany = true"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all shadow-lg"
+        >
+          <Plus class="w-4 h-4" />
+          Tambah Perusahaan
+        </button>
+      </div> -->
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6"
+      >
+        <div>
+          <Heading variant="heading6b" class="text-mobile-md"
+            >Master Perusahaan</Heading
+          >
+          <PageHeader :items="breadcrumbs" />
         </div>
         <button
           @click="openAddCompany = true"
@@ -15,10 +32,9 @@
           Tambah Perusahaan
         </button>
       </div>
-
       <!-- Card -->
       <div
-        class="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
       >
         <!-- Search -->
         <div
@@ -295,6 +311,10 @@ const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
 const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
+const breadcrumbs = [
+  { label: "beranda", to: "/beranda" },
+  { label: "Penandatanganan", to: "/beranda/digsig/penandatanganan" },
+];
 
 const formCompany = ref({
   tanggalMulai: "",

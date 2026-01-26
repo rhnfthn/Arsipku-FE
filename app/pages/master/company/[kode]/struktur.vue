@@ -66,10 +66,7 @@
               <span class="px-2 py-1 bg-white/20 rounded text-xs font-medium"
                 >KP</span
               >
-              <button
-                @click="openEditModal(company, 'company')"
-                class="p-2 hover:bg-white/20 rounded transition-colors"
-              >
+              <button class="p-2 hover:bg-white/20 rounded transition-colors">
                 <Info class="w-4 h-4" />
               </button>
             </div>
