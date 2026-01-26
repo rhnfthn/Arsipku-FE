@@ -130,7 +130,7 @@
               </th>
               <th
                 @click="sort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <div class="flex items-center gap-1">
                   <span>Status</span>
@@ -145,25 +145,18 @@
               v-for="row in paginatedRows"
               :key="row.id"
               class="hover:bg-gray-50 border-b border-gray-200 cursor-pointer transition"
+              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
+              @mouseleave="onRowMouseLeave"
               @click="showPreview(row)"
             >
-              <td class="px-5 py-4 text-xs">{{ row.id }}</td>
+              <!-- <td class="px-5 py-4 text-xs">{{ row.id }}</td> -->
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
-                  <p
-                    class="whitespace-normal break-words line-clamp-3 cursor-help"
-                  >
+                  <p class="whitespace-normal break-words line-clamp-3">
                     {{ row.perihal }}
                   </p>
-
-                  <!-- Tooltip -->
-                  <div
-                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
-                  >
-                    {{ row.perihal }}
-                  </div>
                 </div>
               </td>
               <td class="px-5 py-4">
@@ -178,7 +171,7 @@
               <td class="px-5 py-4">{{ row.tglUsulan }}</td>
 
               <td
-                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+                class="sticky right-0 z-20 bg-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <span
                   :class="[
@@ -327,7 +320,7 @@
     <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
       <!-- HEADER -->
       <template #title>
-        <div class="flex items-center justify-between w-full px-6 pt-6 pb-4">
+        <div class="flex items-center justify-between w-full px-6 pt-4 pb-4">
           <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
             {{ selectedRow?.perihal }}
           </h2>
@@ -345,14 +338,14 @@
       <!-- BODY -->
       <div
         v-if="selectedRow"
-        class="px-6 pb-6 space-y-5 overflow-y-auto max-h-[70vh]"
+        class="px-5 pb-3 space-y-5 overflow-y-auto max-h-[70vh]"
       >
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <!-- Tanggal -->
           <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-600 text-xs">Tanggal</p>
-            <p class="font-medium text-gray-900 mt-1">
+            <p class="text-gray-500 text-xs">Tanggal</p>
+            <p class="font-medium mt-1">
               {{ selectedRow.tanggal }}
             </p>
           </div>
@@ -365,16 +358,16 @@
 
           <!-- Klasifikasi -->
           <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-600 text-xs">Klasifikasi</p>
-            <p class="font-medium text-gray-900 mt-1">
+            <p class="text-gray-500 text-xs">Klasifikasi</p>
+            <p class="font-medium mt-1">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
 
           <!-- Jenis Naskah -->
           <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-600 text-xs">Jenis Naskah</p>
-            <p class="font-medium text-gray-900 mt-1">
+            <p class="text-gray-500 text-xs">Jenis Naskah</p>
+            <p class="font-medium mt-1">
               {{ selectedRow.jenis }}
             </p>
           </div>
@@ -407,21 +400,13 @@
               </p>
               <p class="text-xs text-gray-500">Dokumen lampiran</p>
             </div>
-            <a
-              :href="`${apiBaseUrl}/${selectedRow.file_path}`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
-            >
-              Lihat
-            </a>
           </div>
         </div>
 
         <!-- Nomor Surat Section dengan Upload File -->
-        <div class="pt-2">
-          <label class="block text-base font-medium text-gray-900 mb-3"
-            >Nomor Surat</label
+        <div class="mt-4">
+          <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)</label
           >
 
           <!-- Warning jika ada nomor tanpa ID -->
@@ -523,24 +508,12 @@
                 <!-- File Upload/Replace Section -->
                 <div class="relative">
                   <!-- Show existing file if available -->
-                  <div
-                    v-if="detail.file_name && !fileStates[idx]?.isReplacing"
-                    class="border border-green-200 bg-green-50 hover:bg-green-100 rounded-lg p-3"
-                  >
-                    <a
-                      :href="
-                        detail.file_url
-                          ? detail.file_url
-                          : detail.file_text
-                            ? `${apiBaseUrl}/${detail.file_text}`
-                            : '#'
-                      "
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="block transition rounded-md"
+                  <div v-if="detail.file_name && !fileStates[idx]?.isReplacing">
+                    <div
+                      class="border border-green-200 bg-green-50 hover:bg-green-100 rounded-lg p-3 cursor-pointer"
+                      @click="previewFile(detail)"
                     >
                       <div class="flex items-start gap-3">
-                        <!-- FILE INFO -->
                         <div class="flex-1">
                           <p
                             class="text-sm font-medium text-green-700 underline"
@@ -548,11 +521,21 @@
                             📄 {{ detail.file_name }}
                           </p>
                           <p class="text-xs text-gray-600">
-                            Klik untuk preview
+                            lihat untuk preview
                           </p>
                         </div>
                       </div>
-                    </a>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <!-- FILE INFO -->
+                      <!-- <div class="flex-1">
+                        <p class="text-sm font-medium text-green-700 underline">
+                          📄 {{ detail.file_name }}
+                        </p>
+                        <p class="text-xs text-gray-600">Klik untuk preview</p>
+                      </div> -->
+                    </div>
                   </div>
 
                   <!-- Upload/Replace form -->
@@ -726,7 +709,39 @@
       </template>
     </Modal>
   </Teleport>
+  <USlideover
+    v-model:open="isOpenPreview"
+    title="Pratinjau"
+    side="bottom"
+    :dismissible="true"
+    :ui="{
+      content: 'h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }"
+  >
+    <template #body>
+      <div
+        class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+      >
+        <iframe
+          v-if="pdfUrl"
+          :key="pdfUrl"
+          :src="pdfUrl"
+          allowfullscreen
+          class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+        />
 
+        <div v-else class="flex flex-col items-center gap-2">
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin w-8 h-8 text-primary-500"
+          />
+          <span class="text-gray-500">Memuat Pratinjau...</span>
+        </div>
+      </div>
+    </template>
+  </USlideover>
   <!-- CONFIRM MODAL APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
@@ -747,6 +762,19 @@
     cancelText="Batal"
     @confirm="processRejection"
   />
+  <!-- TOOLTIP -->
+  <Teleport to="body">
+    <div
+      v-if="tooltip.show"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md shadow-lg transition-opacity"
+      :style="{
+        left: tooltip.x + 'px',
+        top: tooltip.y + 'px',
+      }"
+    >
+      {{ tooltip.text }}
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -781,7 +809,7 @@ const breadcrumbs = [
 
 /* TABLE CONFIG */
 const headers = [
-  { label: "ID", key: "id", sortable: true },
+  // { label: "ID", key: "id", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
@@ -793,6 +821,51 @@ const headers = [
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
 
+//======== FILE ===========
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+
+const viewDocument = async (doc: any) => {
+  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
+
+  if (!url) {
+    alert("File pratinjau tidak tersedia");
+    return;
+  }
+
+  isOpenPreview.value = false;
+  pdfUrl.value = null;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (err) {
+    alert("Gagal memuat pratinjau dokumen");
+  }
+};
+watch(isOpenPreview, (open) => {
+  if (!open) {
+    pdfUrl.value = null;
+  }
+});
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
+  }
+});
+
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 
@@ -803,8 +876,6 @@ const search = ref<string>("");
 const selectedRow = ref<any>(null);
 const keterangan_ditolak = ref("");
 const isProcessing = ref(false);
-
-const loading = ref<boolean>(true);
 
 /* Confirm Modals */
 const showConfirmApprove = ref(false);
@@ -868,6 +939,7 @@ const fetchPersonMap = async () => {
     console.error("❌ Error fetch person map:", error);
   }
 };
+const loading = ref(false);
 
 // GET DATA DARI API
 const fetchData = async () => {
@@ -958,23 +1030,44 @@ const showPreview = async (row: any) => {
 };
 
 /* Preview file */
-const previewFile = (detail: NomorDetail) => {
-  // Prioritas: file_url > file_text > fallback
-  if (detail.file_url) {
-    window.open(detail.file_url, "_blank");
+const previewFile = async (detail: NomorDetail) => {
+  const url =
+    detail.file_url ||
+    (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
+
+  if (!url) {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "yellow",
+    });
     return;
   }
 
-  if (detail.file_text) {
-    window.open(`${apiBaseUrl}/${detail.file_text}`, "_blank");
-    return;
-  }
+  pdfUrl.value = null;
+  isOpenPreview.value = false;
 
-  toast.add({
-    title: "File tidak ditemukan",
-    description: "File tidak tersedia untuk ditampilkan",
-    color: "yellow",
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/pdf",
+      },
+    });
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    pdfUrl.value = blobUrl;
+    isOpenPreview.value = true;
+  } catch (e) {
+    toast.add({
+      title: "Gagal memuat file",
+      description: "Tidak dapat menampilkan pratinjau dokumen",
+      color: "red",
+    });
+  }
 };
 
 /* Start replacing file */
@@ -1380,6 +1473,37 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
+});
+
+const tooltip = ref({
+  show: false,
+  text: "",
+  x: 0,
+  y: 0,
+});
+
+const onRowMouseMove = (e: MouseEvent, text: string) => {
+  const offset = 12;
+  const maxX = window.innerWidth - 200;
+  const maxY = window.innerHeight - 40;
+
+  tooltip.value = {
+    show: true,
+    text,
+    x: Math.min(e.clientX + offset, maxX),
+    y: Math.min(e.clientY + offset, maxY),
+  };
+};
+
+const onRowMouseLeave = () => {
+  tooltip.value.show = false;
+};
+watch(isOpenPreview, (open) => {
+  if (open) {
+    openPreview.value = false;
+  } else if (selectedRow.value) {
+    openPreview.value = true;
+  }
 });
 </script>
 

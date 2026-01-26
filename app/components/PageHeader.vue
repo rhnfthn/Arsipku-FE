@@ -8,9 +8,10 @@ const props = defineProps({
 <template>
   <div class="space-y-1 mb-5">
     <!-- TITLE -->
-    <Heading variant="heading6sb" class="text-gray-900 dark:text-white">
+    <!-- <Heading variant="heading6sb" class="text-gray-900 dark:text-white"> -->
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
       {{ title }}
-    </Heading>
+    </h1>
 
     <!-- BREADCRUMB -->
     <UBreadcrumb :items="items" :ui="{

@@ -90,7 +90,6 @@ export const usePenomoran = () => {
         return userCounts.value;
       }
 
-      // Convert to number and validate
       const numericPositionId = Number(positionId);
 
       if (isNaN(numericPositionId) || numericPositionId <= 0) {
@@ -99,22 +98,13 @@ export const usePenomoran = () => {
           positionId,
           "Converted:",
           numericPositionId,
-          "Type:",
-          typeof positionId,
         );
         return userCounts.value;
       }
 
-      console.log("📤 Fetching user counts for position:", {
-        original: positionId,
-        originalType: typeof positionId,
-        numeric: numericPositionId,
-        numericType: typeof numericPositionId,
-      });
+      console.log("📤 Fetching user counts for position:", numericPositionId);
 
       const endpoint = `/nomor-request-count/${numericPositionId}`;
-      console.log("📍 Calling endpoint:", endpoint);
-
       const res = await get(endpoint);
 
       console.log("📥 User count response:", res);
@@ -130,21 +120,12 @@ export const usePenomoran = () => {
         };
 
         console.log("✅ User counts updated:", userCounts.value);
-      } else {
-        console.error("❌ Invalid response structure:", res);
       }
 
       return userCounts.value;
     } catch (e: any) {
       console.error("❌ User count error:", e);
-      console.error("❌ Error details:", {
-        status: e.response?.status,
-        statusText: e.response?.statusText,
-        message: e.response?.data?.message,
-        endpoint: `/nomor-request-count/${positionId}`,
-      });
 
-      // Jangan tampilkan toast untuk error 404, hanya log
       if (e.response?.status !== 404) {
         toast.add({
           title: "Gagal mengambil count",
@@ -266,7 +247,6 @@ export const usePenomoran = () => {
         color: "green",
       });
 
-      // Refresh count sesuai role
       const { user } = useAuth();
       if (user.value?.position?.id) {
         await getNomorRequestCountUser(user.value.position.id);
@@ -280,29 +260,45 @@ export const usePenomoran = () => {
 
   /** ===========================
    * SUBMIT BOOKING WITH FILES (USER)
+   * ✅ UPDATED: Support both user and admin endpoints
+   * User endpoint: POST /nomor-request/:id_request/booking
+   * Admin endpoint: POST /admin/nomor-request/:id_request/booking
    * =========================== */
   const submitBooking = async (
     id_request: string | number,
     formData: FormData,
+    isAdmin: boolean = false,
   ) => {
     isLoadingBooking.value = true;
 
     try {
       console.log("📤 Submitting booking for request:", id_request);
+      console.log("📍 Mode:", isAdmin ? "Admin" : "User");
 
+      // Log FormData content
+      console.log("📦 FormData content:");
       for (const pair of formData.entries()) {
-        console.log(`📎 FormData: ${pair[0]} =`, pair[1]);
+        if (pair[1] instanceof File) {
+          console.log(
+            `  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`,
+          );
+        } else {
+          console.log(`  ${pair[0]}: ${pair[1]}`);
+        }
       }
 
-      const response = await api.post(
-        `/nomor-request/${id_request}/booking`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      // Determine endpoint based on role
+      const endpoint = isAdmin
+        ? `/admin/nomor-request/${id_request}/booking`
+        : `/nomor-request/${id_request}/booking`;
+
+      console.log("📍 Using endpoint:", endpoint);
+
+      const response = await api.post(endpoint, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
 
       console.log("✅ Booking response:", response.data);
 
@@ -316,7 +312,11 @@ export const usePenomoran = () => {
 
       // Refresh count sesuai role
       const { user } = useAuth();
-      if (user.value?.role === "admin" || user.value?.role === "superadmin") {
+      if (
+        isAdmin ||
+        user.value?.role === "admin" ||
+        user.value?.role === "superadmin"
+      ) {
         await getNomorRequestCountAdmin();
       } else if (user.value?.position?.id) {
         await getNomorRequestCountUser(user.value.position.id);
@@ -325,6 +325,7 @@ export const usePenomoran = () => {
       return response.data;
     } catch (error: any) {
       console.error("❌ Error submit booking:", error);
+      console.error("❌ Error response:", error.response?.data);
 
       const msg =
         error.response?.data?.message ||
@@ -410,20 +411,18 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET LIST USULAN (ADMIN - by position ID)
-   * ✅ UPDATED: Sekarang menggunakan /admin/nomor-request/{id_posisi}
+   * endpoint: /admin/nomor-request-by-position/{{position_id}}
    * =========================== */
-  const getListUsulan = async (positionId?: string | number) => {
+  const getListUsulan = async (positionId: string | number) => {
     isLoadingList.value = true;
     try {
-      let endpoint = "/admin/nomor-request";
-
-      // Jika positionId diberikan, gunakan endpoint dengan ID
-      if (positionId) {
-        endpoint = `/admin/nomor-request-by-position/${positionId}`;
-        console.log("📤 Fetching usulan for position (admin):", positionId);
-      } else {
-        console.log("📤 Fetching all usulan (admin)");
+      if (!positionId) {
+        console.error("❌ Position ID is required");
+        return [];
       }
+
+      const endpoint = `/admin/nomor-request-by-position/${positionId}`;
+      console.log("📤 Fetching usulan for position (admin):", positionId);
 
       const res = await get(endpoint);
       console.log("✅ Admin usulan data received:", res);
@@ -443,7 +442,6 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET DETAIL USULAN (ADMIN)
-   * ✅ IMPROVED: Better response handling
    * =========================== */
   const getDetailUsulan = async (id?: string) => {
     if (!id) {
@@ -460,7 +458,6 @@ export const usePenomoran = () => {
 
       const data = res?.data;
 
-      // ⛔ Deteksi SALAH endpoint
       if (Array.isArray(data)) {
         throw new Error("Endpoint mengembalikan LIST, bukan DETAIL");
       }
@@ -562,7 +559,6 @@ export const usePenomoran = () => {
         color: "green",
       });
 
-      // Refresh user count
       const { user } = useAuth();
       if (user.value?.position?.id) {
         await getNomorRequestCountUser(user.value.position.id);
@@ -604,7 +600,6 @@ export const usePenomoran = () => {
         color: "green",
       });
 
-      // Refresh admin count
       await getNomorRequestCountAdmin();
 
       return res.data ?? res;
@@ -694,7 +689,6 @@ export const usePenomoran = () => {
         color: "green",
       });
 
-      // Refresh admin count
       await getNomorRequestCountAdmin();
 
       return response;
@@ -756,7 +750,6 @@ export const usePenomoran = () => {
         color: "green",
       });
 
-      // Refresh admin count
       await getNomorRequestCountAdmin();
 
       return response;
@@ -864,8 +857,8 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * UPLOAD DETAIL FILE (ADMIN) - UPDATED
-   * Endpoint: PATCH /admin/nomor-request-detail/:detail_id/file
+   * UPLOAD DETAIL FILE (ADMIN)
+   * Endpoint: POST /admin/nomor-request-detail/:detail_id/file
    * =========================== */
   const uploadDetailFile = async (detailId: string, file: File) => {
     try {
@@ -910,8 +903,8 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
-   * HANGUS DETAIL NOMOR (ADMIN) - NEW
-   * Endpoint: PATCH /admin/nomor-request-detail/:detail_id/hangus
+   * HANGUS DETAIL NOMOR (ADMIN)
+   * Endpoint: POST /admin/nomor-request-detail/:detail_id/hangus
    * =========================== */
   const hangusDetailNomor = async (detailId: string) => {
     try {

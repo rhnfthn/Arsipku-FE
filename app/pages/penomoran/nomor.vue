@@ -85,10 +85,14 @@
               >
                 <div class="flex items-center gap-1">
                   <span>{{ col.label }}</span>
-                  <ArrowUpDown
-                    v-if="col.sortable"
-                    class="inline w-3 h-3 opacity-70"
-                  />
+
+                  <!-- ICON SLOT (SELALU ADA, TAPI INVISIBLE JIKA TIDAK SORTABLE) -->
+                  <span class="w-3 h-3 inline-flex items-center justify-center">
+                    <ArrowUpDown
+                      v-if="col.sortable"
+                      class="w-3 h-3 opacity-70"
+                    />
+                  </span>
                 </div>
               </th>
             </tr>
@@ -99,6 +103,8 @@
               v-for="row in paginatedRows"
               :key="row.id_request"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
+              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail ')"
+              @mouseleave="onRowMouseLeave"
               @click="openRowModal(row)"
             >
               <td class="px-5 py-4">{{ row.jenis }}</td>
@@ -108,13 +114,6 @@
                   <p class="whitespace-normal break-words line-clamp-3">
                     {{ row.perihal }}
                   </p>
-
-                  <!-- Tooltip -->
-                  <div
-                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
-                  >
-                    {{ row.perihal }}
-                  </div>
                 </div>
               </td>
 
@@ -267,6 +266,30 @@
         </div>
       </div>
     </div>
+    <!-- FILE PREVIEW SLIDEOVER -->
+    <USlideover
+      v-model:open="isOpenPreviewFile"
+      title="Pratinjau Dokumen"
+      side="bottom"
+      :dismissible="true"
+      :ui="{
+        content: 'h-screen max-h-screen',
+        body: 'p-0 h-full',
+      }"
+      class="z-[9999]"
+    >
+      <template #body>
+        <div class="h-full w-full bg-gray-100">
+          <iframe
+            v-if="previewPdfUrl"
+            :key="previewPdfUrl"
+            :src="previewPdfUrl"
+            allowfullscreen
+            class="w-full h-full border-0"
+          />
+        </div>
+      </template>
+    </USlideover>
 
     <!-- COMPONENT ADD USULAN -->
     <Teleport to="body">
@@ -280,7 +303,7 @@
       v-model="openPreview"
       :hideDefaultFooter="true"
       size="xl"
-      :prevent-close="false"
+      class="z-[9000]"
     >
       <template #title>
         <div class="flex items-center justify-between w-full">
@@ -554,6 +577,19 @@
     :is-loading="isHangusing"
     @confirm="executeHangusNomor"
   />
+  <!-- TOOLTIP -->
+  <Teleport to="body">
+    <div
+      v-if="tooltip.show"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md shadow-lg"
+      :style="{
+        left: tooltip.x + 'px',
+        top: tooltip.y + 'px',
+      }"
+    >
+      {{ tooltip.text }}
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -708,25 +744,54 @@ const fetchPersonMap = async () => {
   }
 };
 
-// ==================== FILE MANAGEMENT ====================
 const getFileUrl = (filePath: string) => {
   return `${config.public.apiBaseUrl}/${filePath}`;
 };
 
-const previewFile = (item: any) => {
-  if (item.file_url) {
-    window.open(item.file_url, "_blank");
+// ===== PREVIEW STATE =====
+
+const isOpenPreviewFile = ref(false);
+const previewPdfUrl = ref<string | null>(null);
+const previewFile = async (item: any) => {
+  const fileUrl =
+    item.file_url || (item.file_text ? getFileUrl(item.file_text) : null);
+
+  if (!fileUrl) {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "yellow",
+    });
     return;
   }
-  if (item.file_text) {
-    window.open(getFileUrl(item.file_text), "_blank");
-    return;
+
+  try {
+    openPreview.value = false;
+
+    // Reset preview state
+    previewPdfUrl.value = null;
+    isOpenPreviewFile.value = false;
+
+    const res = await fetch(fileUrl, {
+      headers: { Accept: "application/pdf" },
+    });
+
+    const blob = await res.blob();
+
+    previewPdfUrl.value = URL.createObjectURL(
+      new Blob([blob], { type: "application/pdf" }),
+    );
+
+    // SLIDEOVER
+    isOpenPreviewFile.value = true;
+  } catch (err) {
+    console.error("❌ Error preview file:", err);
+    toast.add({
+      title: "Gagal membuka file",
+      description: "File tidak dapat dipratinjau",
+      color: "red",
+    });
   }
-  toast.add({
-    title: "File tidak ditemukan",
-    description: "File tidak tersedia untuk ditampilkan",
-    color: "yellow",
-  });
 };
 
 const startUploadFile = (detailId: string) => {
@@ -1101,12 +1166,12 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// ==================== WATCHERS ====================
+// ======= WATCHERS ==========
 watch([search, rowsPerPage], () => {
   currentPage.value = 1;
 });
 
-// ==================== MOUNTED ====================
+// ======== MOUNTED ============
 onMounted(async () => {
   loading.value = true;
   await fetchKlasifikasiMap();
@@ -1114,6 +1179,35 @@ onMounted(async () => {
   const data = await getListNomor();
   rows.value = data;
   loading.value = false;
+});
+// ========= TOOLTIP ===========
+const tooltip = ref({
+  show: false,
+  text: "",
+  x: 0,
+  y: 0,
+});
+const onRowMouseMove = (e: MouseEvent, text: string) => {
+  const offset = 12;
+  const maxX = window.innerWidth - 200;
+  const maxY = window.innerHeight - 40;
+
+  tooltip.value = {
+    show: true,
+    text,
+    x: Math.min(e.clientX + offset, maxX),
+    y: Math.min(e.clientY + offset, maxY),
+  };
+};
+
+const onRowMouseLeave = () => {
+  tooltip.value.show = false;
+};
+watch(isOpenPreviewFile, (open) => {
+  if (!open && previewPdfUrl.value) {
+    URL.revokeObjectURL(previewPdfUrl.value);
+    previewPdfUrl.value = null;
+  }
 });
 </script>
 

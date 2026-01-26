@@ -348,7 +348,7 @@
                 {{ row.jumlah }}
               </td>
               <td
-                class="px-4 py-3 text-sm sticky right-0 z-10 min-w-[140px] shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+                class="bg-white px-4 py-3 text-sm sticky right-0 z-10 min-w-[140px] shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
               >
                 <span
                   class="px-2 py-1 rounded-full text-xs font-semibold capitalize"
@@ -468,6 +468,7 @@ const breadcrumbs = [
 
 const getStatusClass = (status: string) => {
   if (status === "terpakai") return "bg-green-100 text-green-700";
+  if (status === "terpakai_final") return "bg-green-200 text-green-700";
   if (status === "booking") return "bg-blue-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };

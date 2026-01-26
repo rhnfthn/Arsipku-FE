@@ -110,12 +110,7 @@
               >
                 <div class="flex items-center gap-2">Api</div>
               </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointertransition"
-                @click="handleSort('nomorNaskah')"
-              >
-                <div class="flex items-center gap-2">Naskah</div>
-              </th>
+
               <th
                 class="px-4 py-3 text-left cursor-pointer transition"
                 @click="handleSort('jenisNaskah')"
@@ -169,9 +164,7 @@
               >
                 {{ row.apiEndpoint }}
               </td>
-              <td class="px-4 py-4 border-b border-gray-200">
-                {{ row.nomorNaskah }}
-              </td>
+
               <td class="px-4 py-4 border-b border-gray-200">
                 {{ row.jenisNaskah }}
               </td>

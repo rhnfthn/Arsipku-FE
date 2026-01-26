@@ -34,26 +34,49 @@
             />
           </button>
 
-          <select
-            v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+          <!-- ROWS PER PAGE -->
+          <div class="relative" ref="rowsRef">
+            <div
+              @click="showRowsDropdown = !showRowsDropdown"
+              class="h-7 px-2 text-xs bg-white border border-gray-300 rounded-md flex items-center gap-1 cursor-pointer focus-within:ring-1 focus-within:ring-primary-400"
+            >
+              {{ rowsPerPage }}
+              <ChevronDown
+                class="w-3 h-3 ml-auto transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </div>
+
+            <div
+              v-if="showRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white rounded-md shadow"
+            >
+              <div
+                v-for="n in rowsChoices"
+                :key="n"
+                @click="
+                  rowsPerPage = n;
+                  showRowsDropdown = false;
+                "
+                class="px-2 py-1 text-xs hover:bg-primary-50 cursor-pointer"
+              >
+                {{ n }}
+              </div>
+            </div>
+          </div>
 
           <!-- Filter Jenis -->
           <div class="relative" ref="jenisRef">
             <input
               v-model="jenisKeyword"
-              @focus="showJenisDropdown = true"
+              @click="showJenisDropdown = !showJenisDropdown"
               placeholder="Semua Jenis"
-              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus:ring-0 focus:border-transparent"
+              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 placeholder-black"
             />
 
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200"
+              :class="{ 'rotate-180': showJenisDropdown }"
             />
 
             <div
@@ -97,13 +120,14 @@
           <div class="relative" ref="lokasiRef">
             <input
               v-model="lokasiKeyword"
-              @focus="showLokasiDropdown = true"
+              @click="showLokasiDropdown = !showLokasiDropdown"
               placeholder="Semua Lokasi"
-              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus:ring-0 focus:border-transparent"
+              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
             />
 
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200"
+              :class="{ 'rotate-180': showLokasiDropdown }"
             />
 
             <div
@@ -146,8 +170,9 @@
           <div class="relative w-[180px] shrink-0" ref="statusRef">
             <!-- INPUT LOOKALIKE -->
             <div
+              tabindex="0"
               @click="toggle('status')"
-              class="h-9 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+              class="h-9 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary-400"
             >
               <!-- PLACEHOLDER -->
               <span v-if="!selectedStatuses.length" class="text-black truncate">
@@ -174,7 +199,10 @@
                 </span>
               </div>
 
-              <ChevronDown class="w-4 h-4 ml-auto shrink-0 text-gray-500" />
+              <ChevronDown
+                class="w-4 h-4 ml-auto shrink-0 text-gray-500 transition-transform duration-200"
+                :class="{ 'rotate-180': openDropdown === 'status' }"
+              />
             </div>
 
             <!-- DROPDOWN -->
@@ -201,16 +229,37 @@
             </div>
           </div>
 
-          <!-- Filter Tahun -->
-          <select
-            v-model="filters.tahun"
-            class="bg-gray-100 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Semua Tahun</option>
-            <option v-for="tahun in tahunOptions" :key="tahun" :value="tahun">
-              {{ tahun }}
-            </option>
-          </select>
+          <!-- FILTER TAHUN -->
+          <div class="relative">
+            <div
+              tabindex="0"
+              @click="showTahunDropdown = !showTahunDropdown"
+              class="bg-gray-100 rounded-lg px-3 py-2 text-sm flex items-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-400"
+            >
+              {{ filters.tahun }}
+              <ChevronDown
+                class="w-4 h-4 ml-auto transition-transform duration-200"
+                :class="{ 'rotate-180': showTahunDropdown }"
+              />
+            </div>
+
+            <div
+              v-if="showTahunDropdown"
+              class="absolute z-30 mt-1 w-full bg-white rounded-lg shadow"
+            >
+              <div
+                v-for="tahun in tahunOptions"
+                :key="tahun"
+                @click="
+                  filters.tahun = tahun;
+                  showTahunDropdown = false;
+                "
+                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+              >
+                {{ tahun }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -243,6 +292,8 @@
                   class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
                   :class="{
                     'bg-green-100 text-green-700': item.status === 'Terpakai',
+                    'bg-green-300 text-green-700':
+                      item.status === 'Terpakai_final',
                     'bg-blue-100 text-blue-700': item.status === 'Booking',
                     'bg-red-100 text-red-700': item.status === 'Hangus',
                   }"
@@ -424,6 +475,11 @@ const showLokasiDropdown = ref(false);
 const openDropdown = ref<null | "status">(null);
 const selectedStatuses = ref<string[]>([]);
 
+const currentYear = new Date().getFullYear();
+const showTahunDropdown = ref(false);
+
+const showRowsDropdown = ref(false);
+
 //REF COUTSIDE CLICK
 const jenisRef = ref<HTMLElement | null>(null);
 const lokasiRef = ref<HTMLElement | null>(null);
@@ -439,7 +495,7 @@ const filters = ref({
   jenis: "",
   lokasi: "",
   status: [] as string[],
-  tahun: "",
+  tahun: currentYear,
   search: "",
 });
 
@@ -508,11 +564,18 @@ const filteredAreaOptions = computed(() => {
   );
 });
 
-const tahunOptions = computed(() => [
-  ...new Set(
-    rawData.value.map((d) => d.tanggal?.split("/")[2]).filter(Boolean),
-  ),
-]);
+const tahunOptions = computed(() => {
+  const years = new Set<number>();
+
+  rawData.value.forEach((d) => {
+    const y = Number(d.tanggal?.split("/")[2]);
+    if (!isNaN(y)) years.add(y);
+  });
+
+  years.add(currentYear);
+
+  return Array.from(years).sort((a, b) => b - a);
+});
 
 //PAGINATION
 const currentPage = ref(1);
@@ -683,7 +746,7 @@ const refreshData = async () => {
       jenis: "",
       lokasi: "",
       status: [],
-      tahun: "",
+      tahun: currentYear,
       search: "",
     };
 

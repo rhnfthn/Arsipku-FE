@@ -21,37 +21,132 @@
             >
               <RotateCcw class="w-4 h-4" />
             </button>
-            <select
-              v-model="selectedType"
-              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-            >
-              <option value="">Semua Jenis</option>
-              <option v-for="item in data" :key="item.id" :value="item.naskah">
-                {{ item.naskah }}
-              </option>
-            </select>
-            <select
-              v-model="selectedMonth"
-              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-            >
-              <option value="">Semua Bulan</option>
-              <option
-                v-for="bulan in monthOptions"
-                :key="bulan.value"
-                :value="bulan.value"
+
+            <div class="relative w-[220px] jenis-dropdown">
+              <input
+                v-model="jenisSearch"
+                @mousedown.stop="toggleJenis"
+                @input="jenisOpen = true"
+                type="text"
+                :placeholder="selectedJenis || 'Cari jenis naskah'"
+                class="bg-gray-100 rounded-lg px-4 py-2 text-sm w-full placeholder-black border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              />
+
+              <svg
+                class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-300"
+                :class="jenisOpen ? 'rotate-180' : 'rotate-0'"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {{ bulan.label }}
-              </option>
-            </select>
-            <select
-              v-model="selectedYear"
-              class="bg-gray-100 rounded-lg px-4 py-2 text-sm"
-            >
-              <option v-for="tahun in yearOptions" :key="tahun" :value="tahun">
-                {{ tahun }}
-              </option>
-            </select>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+
+              <!-- Dropdown -->
+              <div
+                v-if="jenisOpen"
+                class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+              >
+                <ul class="max-h-60 overflow-auto text-sm">
+                  <li
+                    @click="selectJenis('')"
+                    class="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                  >
+                    Semua Jenis
+                  </li>
+
+                  <li
+                    v-for="jenis in jenisOptions"
+                    :key="jenis"
+                    @click="selectJenis(jenis)"
+                    class="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                  >
+                    {{ jenis }}
+                  </li>
+
+                  <li
+                    v-if="!jenisOptions.length"
+                    class="px-4 py-2 text-gray-400"
+                  >
+                    Tidak ditemukan
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="relative w-[180px]">
+              <select
+                v-model="selectedMonth"
+                @mousedown="monthOpen = !monthOpen"
+                @change="monthOpen = false"
+                class="appearance-none bg-gray-100 rounded-lg px-4 py-2 pr-10 text-sm w-full cursor-pointer border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              >
+                <option value="">Semua Bulan</option>
+                <option
+                  v-for="bulan in monthOptions"
+                  :key="bulan.value"
+                  :value="bulan.value"
+                >
+                  {{ bulan.label }}
+                </option>
+              </select>
+
+              <!-- ICON -->
+              <svg
+                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-300"
+                :class="monthOpen ? 'rotate-180' : 'rotate-0'"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+
+            <div class="relative w-[140px]">
+              <select
+                v-model="selectedYear"
+                @mousedown="yearOpen = !yearOpen"
+                @change="yearOpen = false"
+                class="appearance-none bg-gray-100 rounded-lg px-4 py-2 pr-10 text-sm w-full cursor-pointer border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              >
+                <option
+                  v-for="tahun in yearOptions"
+                  :key="tahun"
+                  :value="tahun"
+                >
+                  {{ tahun }}
+                </option>
+              </select>
+
+              <!-- ICON -->
+              <svg
+                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-300"
+                :class="yearOpen ? 'rotate-180' : 'rotate-0'"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
           </div>
+
           <button
             class="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             @click="exportTable1"
@@ -95,12 +190,9 @@
                 <th class="px-4 py-3 text-center font-semibold">Jumlah</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr
-                v-for="row in filteredTableData"
-                :key="row.id"
-                class="hover:bg-blue-50 transition-colors"
-              >
+
+            <tbody v-if="filteredTableData.length">
+              <tr v-for="row in paginatedTable1Data" :key="row.id">
                 <td class="px-4 py-3 text-gray-900 font-medium max-w-[350px]">
                   {{ row.naskah }}
                 </td>
@@ -123,7 +215,80 @@
                 </td>
               </tr>
             </tbody>
+
+            <tbody v-else>
+              <tr>
+                <td
+                  :colspan="monthOptions.length + 2"
+                  class="text-center py-6 text-gray-400"
+                >
+                  Tidak ada data
+                </td>
+              </tr>
+            </tbody>
           </table>
+        </div>
+        <div
+          v-if="totalItemsTable1 > 0"
+          class="flex items-center justify-between px-6 py-4 border-t border-gray-200"
+        >
+          <div class="text-xs text-gray-600">
+            Menampilkan
+            {{
+              Math.min(currentPageTable1 * itemsPerPageTable1, totalItemsTable1)
+            }}
+            dari {{ totalItemsTable1 }} data
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- BACK -->
+            <button
+              @click="currentPageTable1 = Math.max(1, currentPageTable1 - 1)"
+              :disabled="currentPageTable1 === 1"
+              :class="[
+                'px-4 py-1 text-sm rounded-lg',
+                currentPageTable1 === 1
+                  ? 'bg-gray-100 text-gray-400'
+                  : 'bg-white border border-primary-600 text-primary-600 hover:bg-blue-50',
+              ]"
+            >
+              Back
+            </button>
+
+            <!-- PAGE NUMBER -->
+            <button
+              v-for="page in paginationPagesTable1"
+              :key="page"
+              @click="currentPageTable1 = page"
+              :class="[
+                'w-8 h-8 text-sm rounded-lg',
+                currentPageTable1 === page
+                  ? 'bg-primary text-white'
+                  : 'bg-white border border-gray-300 hover:bg-blue-50',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- NEXT -->
+            <button
+              @click="
+                currentPageTable1 = Math.min(
+                  totalPagesTable1,
+                  currentPageTable1 + 1,
+                )
+              "
+              :disabled="currentPageTable1 === totalPagesTable1"
+              :class="[
+                'px-4 py-1 text-sm rounded-lg',
+                currentPageTable1 === totalPagesTable1
+                  ? 'bg-gray-100 text-gray-400'
+                  : 'bg-white border border-primary-600 text-primary-600 hover:bg-blue-50',
+              ]"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -416,153 +581,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onBeforeMount } from "vue";
 import { RotateCcw } from "lucide-vue-next";
+import { useLaporan } from "~/composables/useLaporan";
+import { useToast } from "#imports";
+import * as XLSX from "xlsx";
+
+const toast = useToast();
+
 const breadcrumbs = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
 ];
-const data = ref([
-  {
-    id: 1,
-    naskah: "Surat Dinas Eksternal",
-    years: [
-      {
-        tahun: 2025,
-        januari: 1552,
-        februari: 1747,
-        maret: 1616,
-        april: 1383,
-        mei: 1656,
-        juni: 1547,
-        juli: 97,
-        agustus: 0,
-        september: 1,
-        oktober: 0,
-        november: 1000,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 1200,
-        februari: 1100,
-        maret: 900,
-        april: 800,
-        mei: 950,
-        juni: 1000,
-        juli: 70,
-        agustus: 5,
-        september: 10,
-        oktober: 0,
-        november: 50,
-        desember: 10,
-      },
-      {
-        tahun: 2023,
-        januari: 800,
-        februari: 600,
-        maret: 500,
-        april: 450,
-        mei: 400,
-        juni: 350,
-        juli: 40,
-        agustus: 10,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 5,
-      },
-    ],
-  },
-  {
-    id: 2,
-    naskah: "Surat Undangan",
-    years: [
-      {
-        tahun: 2025,
-        januari: 143,
-        februari: 161,
-        maret: 175,
-        april: 196,
-        mei: 179,
-        juni: 152,
-        juli: 7,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 0,
-        desember: 0,
-      },
-      {
-        tahun: 2024,
-        januari: 200,
-        februari: 240,
-        maret: 180,
-        april: 210,
-        mei: 190,
-        juni: 170,
-        juli: 10,
-        agustus: 0,
-        september: 4,
-        oktober: 3,
-        november: 1,
-        desember: 0,
-      },
-      {
-        tahun: 2023,
-        januari: 120,
-        februari: 130,
-        maret: 150,
-        april: 100,
-        mei: 90,
-        juni: 80,
-        juli: 10,
-        agustus: 0,
-        september: 0,
-        oktober: 0,
-        november: 3,
-        desember: 1,
-      },
-    ],
-  },
-]);
 
-const data2 = ref([
-  {
-    id: 1,
-    nomor: "ND-001/SSF/KEU/III/2025",
-    tanggal: "03/03/2025",
-    perihal: "Persetujuan Proses Pembayaran Biaya Pegawai",
-    jabatan: "Manager of Finance",
-    lokasi: "Airnav Maintenance Facility",
-    status: "Terpakai",
-    jenis: "ND",
-  },
-  {
-    id: 2,
-    nomor: "ST-002/SSF/KEU/III/2024",
-    tanggal: "03/03/2024",
-    perihal: "Pengajuan Dana Operasional Kantor Cabang Jakarta",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "booking",
-    jenis: "ST",
-  },
-  {
-    id: 3,
-    nomor: "ND-003/SSF/KEU/III/2023",
-    tanggal: "03/03/2023",
-    perihal: "Penggantian Biaya Pembelian",
-    jabatan: "Manager of HC Admin and General Affairs",
-    lokasi: "Jakarta Pusat",
-    status: "Hangus",
-    jenis: "ND",
-  },
-]);
+const { getRekapNaskahMasuk, getRekapNaskahMasukDetail } = useLaporan();
+
+const table1Raw = ref<any[]>([]);
+const loadingTable1 = ref(false);
+
+const table2Data = ref<any[]>([]);
+const loadingTable2 = ref(false);
+
+const toggleJenis = () => {
+  jenisOpen.value = !jenisOpen.value;
+};
+
+const jenisSearch = ref("");
+const selectedJenis = ref("");
+const jenisOpen = ref(false);
+
+const monthOpen = ref(false);
+const yearOpen = ref(false);
+
+const selectJenis = (jenis: string) => {
+  selectedJenis.value = jenis;
+  jenisSearch.value = "";
+  jenisOpen.value = false;
+};
+
+const handleClickOutside = (e: MouseEvent) => {
+  const el = document.querySelector(".jenis-dropdown");
+  if (el && !el.contains(e.target as Node)) {
+    jenisOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 
 const selectedType = ref("");
 const selectedMonth = ref("");
-const selectedYear = ref(2025);
+const selectedYear = ref<number>(new Date().getFullYear());
 const filters = ref({
   jenis: "",
   lokasi: "",
@@ -575,77 +649,173 @@ const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
   direction: "asc",
 });
 const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const itemsPerPage = ref(5);
 
 const monthOptions = [
-  { label: "Januari", value: "januari" },
-  { label: "Februari", value: "februari" },
-  { label: "Maret", value: "maret" },
-  { label: "April", value: "april" },
+  { label: "Januari", value: "jan" },
+  { label: "Februari", value: "feb" },
+  { label: "Maret", value: "mar" },
+  { label: "April", value: "apr" },
   { label: "Mei", value: "mei" },
-  { label: "Juni", value: "juni" },
-  { label: "Juli", value: "juli" },
-  { label: "Agustus", value: "agustus" },
-  { label: "September", value: "september" },
-  { label: "Oktober", value: "oktober" },
-  { label: "November", value: "november" },
-  { label: "Desember", value: "desember" },
+  { label: "Juni", value: "jun" },
+  { label: "Juli", value: "jul" },
+  { label: "Agustus", value: "agu" },
+  { label: "September", value: "sep" },
+  { label: "Oktober", value: "okt" },
+  { label: "November", value: "nov" },
+  { label: "Desember", value: "des" },
 ];
+
+const fetchTable1 = async () => {
+  loadingTable1.value = true;
+  try {
+    const res = await getRekapNaskahMasuk({
+      tahun: selectedYear.value,
+    });
+
+    table1Raw.value = res.data.rekap ?? [];
+  } catch (err) {
+    console.error("Gagal ambil rekap naskah masuk", err);
+  } finally {
+    loadingTable1.value = false;
+  }
+};
+
+const fetchTable2 = async () => {
+  loadingTable2.value = true;
+  try {
+    const params: any = {};
+
+    if (filters.value.tahun) {
+      params.tahun = Number(filters.value.tahun);
+    }
+
+    if (filters.value.jenis) {
+      params.jenis = filters.value.jenis;
+    }
+
+    if (filters.value.status) {
+      // API pakai lowercase
+      params.status = filters.value.status.toLowerCase();
+    }
+
+    const res = await getRekapNaskahMasukDetail(params);
+
+    table2Data.value = res.data.map((item: any) => ({
+      id: item.id,
+      jenis: item.naskah, // ND / ST
+      jenis_text: item.naskah_text,
+      nomor: item.nomor,
+      tanggal: formatTanggal(item.tanggal),
+      perihal: item.perihal ?? "-",
+      jabatan: item.jabatan,
+      lokasi: item.lokasi,
+      status: capitalize(item.status),
+    }));
+  } catch (err) {
+    console.error("Gagal ambil detail naskah masuk", err);
+  } finally {
+    loadingTable2.value = false;
+  }
+};
+
+const formatTanggal = (date: string) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const capitalize = (text: string) =>
+  text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+
+const filteredTableData = computed(() => {
+  return table1Raw.value
+    .filter((row) => {
+      if (selectedJenis.value && row.jenis_text !== selectedJenis.value) {
+        return false;
+      }
+
+      if (
+        jenisSearch.value &&
+        !row.jenis_text?.toLowerCase().includes(jenisSearch.value.toLowerCase())
+      ) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((row) => ({
+      id: row.jenis,
+      naskah: row.jenis_text,
+      ...row,
+      jumlah: row.total ?? 0,
+    }));
+});
+
+watch(
+  () => ({ ...filters.value }),
+  () => {
+    currentPage.value = 1;
+    fetchTable2();
+  },
+  { deep: true },
+);
+
+onMounted(() => {
+  fetchTable1();
+  fetchTable2();
+});
+
+const jenisOptions = computed(() => {
+  const all = [...new Set(table1Raw.value.map((r) => r.jenis_text))];
+  if (!jenisSearch.value) return all;
+  return all.filter((j) =>
+    j.toLowerCase().includes(jenisSearch.value.toLowerCase()),
+  );
+});
 
 const selectedMonthLabel = computed(
   () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
 );
 
+watch(selectedYear, () => {
+  fetchTable1();
+});
+
+onMounted(() => {
+  fetchTable1();
+});
+
 const yearOptions = computed(() => {
-  const years = new Set<number>();
-  data.value.forEach((d) => d.years.forEach((y) => years.add(y.tahun)));
-  return Array.from(years).sort((a, b) => b - a);
+  const currentYear = new Date().getFullYear();
+  return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
 });
 
 const lokasiOptions = computed(() => [
-  ...new Set(data2.value.map((d) => d.lokasi)),
+  ...new Set(table2Data.value.map((d) => d.lokasi)),
 ]);
 
 const tahunOptions = computed(() =>
-  [...new Set(data2.value.map((d) => d.tanggal.split("/")[2]))].sort(
-    (a, b) => Number(b) - Number(a),
-  ),
+  [
+    ...new Set(
+      table2Data.value.map((d) => d.tanggal?.split("/")?.[2]).filter(Boolean),
+    ),
+  ].sort((a, b) => Number(b) - Number(a)),
 );
 
-const filteredTableData = computed(() => {
-  return data.value
-    .filter((item) => !selectedType.value || item.naskah === selectedType.value)
-    .map((item) => {
-      const yearData = item.years.find((y) => y.tahun === selectedYear.value);
-      if (!yearData) return null;
-
-      const totalJumlah = Object.entries(yearData)
-        .filter(([key, val]) => typeof val === "number" && key !== "tahun")
-        .reduce((acc, [, val]) => acc + val, 0);
-
-      return {
-        id: item.id,
-        naskah: item.naskah,
-        ...yearData,
-        jumlah: totalJumlah,
-      };
-    })
-    .filter(Boolean);
-});
-
 const filteredData = computed(() => {
-  return data2.value.filter((item) => {
+  return table2Data.value.filter((item) => {
     const tahunItem = item.tanggal.split("/")[2];
+
     return (
       (!filters.value.jenis || item.jenis === filters.value.jenis) &&
       (!filters.value.lokasi || item.lokasi === filters.value.lokasi) &&
       (!filters.value.status || item.status === filters.value.status) &&
-      (!filters.value.tahun || tahunItem === filters.value.tahun) &&
-      (!filters.value.search ||
-        Object.values(item)
-          .join(" ")
-          .toLowerCase()
-          .includes(filters.value.search.toLowerCase()))
+      (!filters.value.tahun || tahunItem === filters.value.tahun)
     );
   });
 });
@@ -659,6 +829,43 @@ const sortedData = computed(() => {
     if (aVal > bVal) return sortConfig.value.direction === "asc" ? 1 : -1;
     return 0;
   });
+});
+
+// ===== PAGINATION TABLE 1 =====
+const currentPageTable1 = ref(1);
+const itemsPerPageTable1 = ref(5);
+
+const totalItemsTable1 = computed(() => filteredTableData.value.length);
+
+const totalPagesTable1 = computed(() =>
+  Math.ceil(totalItemsTable1.value / itemsPerPageTable1.value),
+);
+
+const paginatedTable1Data = computed(() => {
+  const start = (currentPageTable1.value - 1) * itemsPerPageTable1.value;
+
+  return filteredTableData.value.slice(start, start + itemsPerPageTable1.value);
+});
+
+const paginationPagesTable1 = computed(() => {
+  const pages: number[] = [];
+  const maxVisible = 5;
+
+  let start = Math.max(1, currentPageTable1.value - Math.floor(maxVisible / 2));
+
+  let end = Math.min(totalPagesTable1.value, start + maxVisible - 1);
+
+  if (end - start < maxVisible - 1) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  return pages;
+});
+
+watch([selectedJenis, jenisSearch, selectedMonth, selectedYear], () => {
+  currentPageTable1.value = 1;
 });
 
 const totalItems = computed(() => sortedData.value.length);
@@ -705,51 +912,80 @@ const handleSort = (key: string) => {
 
 const getStatusClass = (status: string) => {
   if (status === "Terpakai") return "bg-green-100 text-green-700";
-  if (status === "booking") return "bg-primary-100 text-blue-700";
+  if (status === "Terpakai_final") return "bg-green-300 text-green-700";
+  if (status === "Booking") return "bg-primary-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
 
 const refreshData = () => {
   selectedMonth.value = "";
-  selectedType.value = "";
-  selectedYear.value = 2025;
-  filters.value = { jenis: "", lokasi: "", status: "", tahun: "", search: "" };
-  sortConfig.value = { key: null, direction: "asc" };
-  currentPage.value = 1;
+  jenisSearch.value = "";
+  selectedYear.value = new Date().getFullYear();
+  fetchTable1();
 };
 
 const exportTable1 = () => {
-  const headers = ["Naskah"];
-  if (!selectedMonth.value) {
-    headers.push(...monthOptions.map((m) => m.label));
-  } else {
-    headers.push(selectedMonthLabel.value);
+  if (!filteredTableData.value.length) {
+    toast.add({
+      title: "Export gagal",
+      description: "Tidak ada data untuk diexport",
+      color: "warning",
+    });
+    return;
   }
-  headers.push("Jumlah");
 
-  const rows = filteredTableData.value.map((row) => {
-    const data = [row.naskah];
+  try {
+    // ===== HEADER =====
+    const headers: string[] = ["Naskah"];
+
     if (!selectedMonth.value) {
-      monthOptions.forEach((m) => data.push(row[m.value] || "0"));
+      headers.push(...monthOptions.map((m) => m.label));
     } else {
-      data.push(row[selectedMonth.value] || "0");
+      headers.push(selectedMonthLabel.value);
     }
-    data.push(row.jumlah.toString());
-    return data;
-  });
 
-  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute(
-    "download",
-    `naskah-masuk-summary-${selectedYear.value}.csv`,
-  );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    headers.push("Jumlah");
+
+    // ===== ROWS =====
+    const rows = filteredTableData.value.map((row) => {
+      const data: (string | number)[] = [row.naskah];
+
+      if (!selectedMonth.value) {
+        monthOptions.forEach((m) => {
+          data.push(Number(row[m.value] ?? 0));
+        });
+      } else {
+        data.push(Number(row[selectedMonth.value] ?? 0));
+      }
+
+      data.push(Number(row.jumlah ?? 0));
+      return data;
+    });
+
+    const worksheetData = [headers, ...rows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    worksheet["!cols"] = headers.map(() => ({ wch: 20 }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Naskah Masuk");
+
+    // ===== DOWNLOAD =====
+    XLSX.writeFile(workbook, `naskah-masuk-summary-${selectedYear.value}.xlsx`);
+
+    toast.add({
+      title: "Export berhasil",
+      description: "File Excel berhasil diunduh",
+      color: "success",
+    });
+  } catch (err) {
+    console.error(err);
+    toast.add({
+      title: "Export gagal",
+      description: "Terjadi kesalahan saat membuat file Excel",
+      color: "error",
+    });
+  }
 };
 
 const exportTable2 = () => {

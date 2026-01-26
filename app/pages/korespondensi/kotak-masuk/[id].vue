@@ -2,23 +2,9 @@
 import { ref, onMounted, computed, nextTick, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
-  Hash,
-  Calendar,
-  Tag,
-  Paperclip,
-  FileText,
-  Loader2,
-  X,
-  ArrowLeft,
-  Printer,
-  MoreHorizontal,
-  ChevronUp,
-  Info,
-  CheckSquare,
-  Edit3,
-  Users,
-  Building2,
-  ChevronRight
+  Hash, Calendar, Tag, Paperclip, FileText, Loader2, X, ArrowLeft, Printer, MoreHorizontal, ChevronUp, Info, CheckSquare, Edit3, Users, Building2, ChevronRight, Send, ChevronDown, FileType,
+  Archive,
+  Star
 } from "lucide-vue-next";
 
 // --- SETUP & COMPOSABLES ---
@@ -29,6 +15,20 @@ const { fetchInboxDetail } = useInbox(null);
 
 const id = route.params.id as string;
 const jenis = route.query.jenis as string;
+
+// --- STATE DROPDOWN MENU ---
+const showKonsepMenu = ref(false)
+
+const toggleKonsepMenu = () => {
+  showKonsepMenu.value = !showKonsepMenu.value
+}
+
+const selectKonsepOption = (option: string) => {
+  console.log('Selected option:', option)
+  showKonsepMenu.value = false
+  // Logika navigasi tambahan bisa ditaruh di sini
+  // Misalnya: if (option === 'draft') router.push(...)
+}
 
 const breadcrumbs = [
   { label: "Dashboard", to: "/dashboard" },
@@ -58,7 +58,7 @@ const activePdfUrl = ref<string | null>(null);
 const isPdfLoading = ref(false);
 
 /* ===============================
-   MANUAL FETCH DATA (CRITICAL FIX)
+   MANUAL FETCH DATA
 ================================ */
 const loadData = async () => {
   if (!jenis) return;
@@ -143,6 +143,7 @@ const getCategoryStyle = (cat: string) => {
   return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 
+// --- FIX ERROR "Return outside function" DI SINI ---
 const isJenisDI = computed(() => {
   const j = selected.value?.jenis || '';
   const l = selected.value?.jenis_label || '';
@@ -230,7 +231,7 @@ const openMainPdfPreview = async () => {
 };
 onUnmounted(() => { if (activePdfUrl.value?.startsWith("blob:")) URL.revokeObjectURL(activePdfUrl.value); });
 
-// --- KONSEP MODAL LOGIC ---
+// --- KONSEP MODAL LOGIC (Existing) ---
 const isOpenKonsepModal = ref(false);
 const konsepOptions = [
   {
@@ -328,46 +329,81 @@ const selectKonsep = (option: any) => {
 
         <div
           class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 z-30 bg-white dark:bg-gray-900 transition-colors">
-          <div class="flex items-center gap-3 min-w-0">
+
+          <div class="flex items-center gap-2 sm:gap-3 min-w-0">
             <button @click="goBack"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
+              class="rounded-full text-gray-600 dark:text-gray-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div class="flex flex-col min-w-0">
               <h1 class="text-base font-semibold text-gray-900 dark:text-white truncate">Kembali</h1>
             </div>
           </div>
+
           <div class="flex items-center gap-1 shrink-0">
-            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400"
-              title="Cetak / Preview PDF" @click="openMainPdfPreview">
-              <Printer class="w-4 h-4" />
-            </button>
+
+            <UTooltip text="Tandai Favorit">
+              <button
+                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
+                <Star class="w-4 h-4" />
+              </button>
+            </UTooltip>
+
+            <UTooltip text="Tindak Lanjut">
+              <button
+                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
+                <Tag class="w-4 h-4 -rotate-45" />
+              </button>
+            </UTooltip>
+
+            <UTooltip text="Arsipkan">
+              <button
+                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
+                <Archive class="w-4 h-4" />
+              </button>
+            </UTooltip>
+
+            <UTooltip text="Pratinjau Surat">
+              <button @click="openMainPdfPreview"
+                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
+                <Printer class="w-4 h-4" />
+              </button>
+            </UTooltip>
+
           </div>
         </div>
 
         <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-4">
+
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-4 break-words">
             {{ selected.perihal || '(Tidak ada perihal)' }}
           </h2>
-          <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-            <div class="flex items-center gap-1">
+
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
+
+            <div class="flex items-center gap-1 shrink-0">
               <Hash class="w-3.5 h-3.5" />
               <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
                 {{ selected.nomor || '-' }}
               </span>
             </div>
-            <span class="opacity-40">•</span>
-            <div class="flex items-center gap-1">
+
+            <span class="opacity-40 hidden sm:inline">•</span>
+
+            <div class="flex items-center gap-1 shrink-0">
               <Calendar class="w-3.5 h-3.5" />
               <span>{{ formatDate(selected.tanggal) }}</span>
             </div>
-            <span class="opacity-40">•</span>
+
+            <span class="opacity-40 hidden sm:inline">•</span>
+
             <div
-              class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
               :class="getCategoryStyle(selected.jenis_label)">
               <Tag class="w-3 h-3" />
               {{ selected.jenis_label }}
             </div>
+
           </div>
         </div>
 
@@ -399,7 +435,7 @@ const selectKonsep = (option: any) => {
                       <div class="break-words">
                         <span class="font-medium">{{ k.nama }}</span>
                         <span v-if="k.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ k.position_text
-                          }})</span>
+                        }})</span>
                       </div>
                     </div>
                     <button v-if="hiddenKepadaCount > 0" @click="showAllKepada = !showAllKepada"
@@ -410,7 +446,8 @@ const selectKonsep = (option: any) => {
                 </div>
 
                 <div v-if="tembusanList.length > 0" class="flex flex-col md:flex-row">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">Tembusan
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">
+                    Tembusan
                   </div>
                   <div class="flex flex-col">
                     <div v-for="(t, idx) in displayedTembusan" :key="idx"
@@ -419,7 +456,7 @@ const selectKonsep = (option: any) => {
                       <div class="break-words">
                         <span class="font-medium">{{ t.nama }}</span>
                         <span v-if="t.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ t.position_text
-                          }})</span>
+                        }})</span>
                       </div>
                     </div>
                     <button v-if="hiddenTembusanCount > 0" @click="showAllTembusan = !showAllTembusan"
@@ -429,8 +466,9 @@ const selectKonsep = (option: any) => {
                   </div>
                 </div>
 
-                <div v-if="isJenisDI && selected.disposisi" class="flex flex-col md:flex-row">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">Disposisi
+                <div v-if="selected.disposisi" class="flex flex-col md:flex-row">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">
+                    Disposisi
                   </div>
                   <div class="flex flex-col">
                     <div class="text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
@@ -446,16 +484,14 @@ const selectKonsep = (option: any) => {
 
         <div class="p-5 sm:p-8 min-h-[150px] bg-white dark:bg-gray-900">
 
-          <div v-if="isJenisDI && selected.catatan" class="">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300"
-              v-html="selected.catatan"></div>
+          <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Catatan</div>
+          <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300" v-html="selected.catatan">
           </div>
 
           <div class="relative overflow-hidden transition-all duration-500 ease-in-out"
             :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
 
-            <div v-if="!selected.konten && !isJenisDI" class="text-gray-400 text-sm italic text-center py-4">
+            <div v-if="!selected.konten" class="text-gray-400 italic text-sm py-4">
               Tidak ada konten tambahan.
             </div>
 
@@ -505,21 +541,64 @@ const selectKonsep = (option: any) => {
         </div>
 
         <div
-          class="p-5 sm:p-8 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 w-full flex flex-wrap gap-3">
+          class="p-5 sm:p-8 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 w-full flex flex-col sm:flex-row flex-wrap gap-3">
+
           <div @click="handleLanjutNotaDinas"
-            class="flex-1 min-w-[200px] flex bg-primary-500 hover:bg-primary-600 cursor-pointer py-2.5 px-4 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
+            class="w-full sm:w-auto flex bg-emerald-600 hover:bg-emerald-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
             <FileText class="w-4 h-4" />
-            <span class="text-sm font-medium">Lanjut Nota Dinas</span>
+            <span class="text-sm font-medium whitespace-nowrap">Lanjut Nota Dinas</span>
           </div>
+
           <div
-            class="flex-1 min-w-[200px] flex bg-purple-500 hover:bg-purple-600 cursor-pointer py-2.5 px-4 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm">
-            <FileText class="w-4 h-4" />
-            <span class="text-sm font-medium">Lanjut Disposisi</span>
+            class="w-full sm:w-auto flex bg-sky-600 hover:bg-sky-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
+            <Send class="w-4 h-4" />
+            <span class="text-sm font-medium whitespace-nowrap">Lanjut Disposisi</span>
           </div>
-          <div v-if="isJenisDI" @click="handleLanjutKonsep"
-            class="flex-1 min-w-[200px] flex bg-gray-700 hover:bg-gray-800 cursor-pointer py-2.5 px-4 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
-            <Edit3 class="w-4 h-4" />
-            <span class="text-sm font-medium">Lanjut Konsep</span>
+
+          <div v-if="isJenisDI" class="relative w-full sm:w-auto">
+
+            <div @click="toggleKonsepMenu"
+              class="w-full sm:w-auto flex bg-yellow-500 hover:bg-yellow-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98] select-none">
+              <Edit3 class="w-4 h-4" />
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Konsep</span>
+              <ChevronDown class="w-4 h-4 transition-transform duration-200 ml-1"
+                :class="{ 'rotate-180': showKonsepMenu }" />
+            </div>
+
+            <Transition enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in" leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0">
+
+              <div v-if="showKonsepMenu"
+                class="absolute bottom-full mb-2 left-0 w-full sm:w-auto sm:min-w-[240px] sm:left-auto sm:right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+
+                <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
+                  <li>
+                    <button @click="selectKonsepOption('draft')"
+                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
+                      Lanjut Nota Dinas
+                    </button>
+                  </li>
+                  <li>
+                    <button @click="selectKonsepOption('review')"
+                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
+                      Lanjut Surat Dinas Internal
+                    </button>
+                  </li>
+                  <li>
+                    <button @click="selectKonsepOption('review')"
+                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
+                      Lanjut Surat Dinas Eksternal
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </Transition>
+
+            <div v-if="showKonsepMenu" @click="showKonsepMenu = false"
+              class="fixed inset-0 z-40 bg-transparent cursor-default"></div>
+
           </div>
         </div>
 
@@ -574,7 +653,7 @@ const selectKonsep = (option: any) => {
           </div>
           <iframe v-if="activePdfUrl" :src="activePdfUrl" class="w-full h-full border-none flex-1" />
           <div v-else-if="!isPdfLoading" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
-            <FileText class="w-12 h-12 opacity-30" />
+            <FileText class="w-12 h-12l opacity-30" />
             <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
           </div>
         </div>

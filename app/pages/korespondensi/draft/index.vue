@@ -36,6 +36,13 @@ const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [5, 10, 25, 50];
 
+
+const breadcrumbs = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Draft", to: "#" },
+];
+
+
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
@@ -356,6 +363,7 @@ const getCategoryLabel = (cat) => {
 </script>
 
 <template>
+  <PageHeader title="Draft" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div

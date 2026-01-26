@@ -13,7 +13,7 @@
       <!-- UPLOAD SECTION -->
       <!-- ================== -->
       <div
-        class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3"
+        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3"
       >
         <Heading variant="heading10sb">Unggah Dokumen</Heading>
 
@@ -56,10 +56,7 @@
         </div>
 
         <!-- SUBMIT BUTTON -->
-        <div
-          v-if="selectedFile && !fileUploaded"
-          class="flex justify-start mt-2"
-        >
+        <div v-if="selectedFile && !fileUploaded" class="flex justify-end mt-2">
           <UButton
             @click="showConfirmation"
             :disabled="loadingCheck"
@@ -272,10 +269,10 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex justify-between items-center gap-3">
+        <div class="flex justify-end items-center gap-3">
           <UButton
             @click="resetCheck"
-            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium"
+            class="bg-primary hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium"
           >
             Periksa Dokumen Lain
           </UButton>

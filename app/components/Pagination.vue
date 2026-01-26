@@ -54,7 +54,7 @@ const pageNumbers = computed(() => {
 
 <template>
   <div
-    class="w-full flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-4 px-2"
+    class="w-full flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-4"
   >
     <div
       class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"

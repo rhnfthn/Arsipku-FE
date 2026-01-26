@@ -83,42 +83,46 @@ export const useDashboard = () => {
   };
 
   /**
-   * Get stat cards configuration
+   * Get stat cards configuration - Updated dengan data baru
    */
   const stats = computed<StatCard[]>(() => {
     if (!dashboardData.value?.summary) {
       return [
         {
-          label: "Surat Masuk",
+          label: "Pesan Baru",
           value: "0",
-          icon: "i-heroicons-inbox",
+          subtitle: "",
+          icon: "i-heroicons-envelope",
           bgSolid: "bg-blue-100",
           borderColor: "bg-blue-500",
           iconColor: "text-blue-600",
         },
         {
-          label: "Terkirim",
+          label: "Perlu Tindak Lanjut",
           value: "0",
-          icon: "i-heroicons-paper-airplane",
-          bgSolid: "bg-green-100",
-          borderColor: "bg-green-500",
-          iconColor: "text-green-600",
+          subtitle: "",
+          icon: "i-heroicons-clock",
+          bgSolid: "bg-orange-100",
+          borderColor: "bg-orange-500",
+          iconColor: "text-orange-600",
         },
         {
-          label: "Draft Tersimpan",
+          label: "Disposisi Belum Dibaca",
           value: "0",
-          icon: "i-heroicons-document",
+          subtitle: "",
+          icon: "i-lucide-signature",
           bgSolid: "bg-purple-100",
           borderColor: "bg-purple-500",
           iconColor: "text-purple-600",
         },
         {
-          label: "Disposisi Masuk",
+          label: "Menunggu Tanda Tangan",
           value: "0",
-          icon: "i-lucide-signature",
-          bgSolid: "bg-yellow-100",
-          borderColor: "bg-yellow-500",
-          iconColor: "text-yellow-600",
+          subtitle: "",
+          icon: "i-heroicons-document-check",
+          bgSolid: "bg-green-100",
+          borderColor: "bg-green-500",
+          iconColor: "text-green-600",
         },
       ];
     }
@@ -126,36 +130,40 @@ export const useDashboard = () => {
     const summary = dashboardData.value.summary;
     return [
       {
-        label: "Surat Masuk",
-        value: summary.total_pesan_masuk || 0,
-        icon: "i-heroicons-inbox",
+        label: "Pesan Baru",
+        value: summary.pesan_baru || 0,
+        subtitle: `dari ${summary.total_pesan_masuk || 0} total`,
+        icon: "i-heroicons-envelope",
         bgSolid: "bg-blue-100",
         borderColor: "bg-blue-500",
         iconColor: "text-blue-600",
       },
       {
-        label: "Terkirim",
-        value: summary.surat_terkirim || 0,
-        icon: "i-heroicons-paper-airplane",
-        bgSolid: "bg-green-100",
-        borderColor: "bg-green-500",
-        iconColor: "text-green-600",
+        label: "Perlu Tindak Lanjut",
+        value: summary.perlu_tindak_lanjut || 0,
+        subtitle: "",
+        icon: "i-heroicons-clock",
+        bgSolid: "bg-orange-100",
+        borderColor: "bg-orange-500",
+        iconColor: "text-orange-600",
       },
       {
-        label: "Draft Tersimpan",
-        value: summary.draft_tersimpan || 0,
-        icon: "i-heroicons-document",
+        label: "Disposisi Belum Dibaca",
+        value: summary.disposisi_belum_dibaca || 0,
+        subtitle: `dari ${summary.disposisi_masuk || 0} total`,
+        icon: "i-lucide-signature",
         bgSolid: "bg-purple-100",
         borderColor: "bg-purple-500",
         iconColor: "text-purple-600",
       },
       {
-        label: "Disposisi Masuk",
-        value: summary.disposisi_masuk || 0,
-        icon: "i-lucide-signature",
-        bgSolid: "bg-yellow-100",
-        borderColor: "bg-yellow-500",
-        iconColor: "text-yellow-600",
+        label: "Menunggu Tanda Tangan",
+        value: summary.digsig_menunggu_ttd || 0,
+        subtitle: "",
+        icon: "i-heroicons-document-check",
+        bgSolid: "bg-green-100",
+        borderColor: "bg-green-500",
+        iconColor: "text-green-600",
       },
     ];
   });
@@ -169,10 +177,10 @@ export const useDashboard = () => {
   });
 
   /**
-   * Get chart data for statistics
+   * Get chart data for statistics - Updated dengan statistik_bulanan
    */
   const chartData = computed(() => {
-    if (!dashboardData.value?.statistik) {
+    if (!dashboardData.value?.statistik_bulanan) {
       return {
         labels: [],
         suratMasuk: [],
@@ -181,9 +189,11 @@ export const useDashboard = () => {
     }
 
     return {
-      labels: dashboardData.value.statistik.map((item) => item.bulan),
-      suratMasuk: dashboardData.value.statistik.map((item) => item.surat_masuk),
-      suratTerkirim: dashboardData.value.statistik.map(
+      labels: dashboardData.value.statistik_bulanan.map((item) => item.bulan),
+      suratMasuk: dashboardData.value.statistik_bulanan.map(
+        (item) => item.surat_masuk,
+      ),
+      suratTerkirim: dashboardData.value.statistik_bulanan.map(
         (item) => item.surat_terkirim,
       ),
     };
@@ -197,6 +207,9 @@ export const useDashboard = () => {
       ND: "bg-blue-500", // Naskah Dinas
       DI: "bg-orange-500", // Disposisi
       SK: "bg-purple-500", // Surat Keputusan
+      SDE: "bg-green-500", // Surat Dinas Eksternal
+      SDI: "bg-indigo-500", // Surat Dinas Internal
+      KA: "bg-pink-500", // Kajian
       default: "bg-gray-400",
     };
     return colors[jenis] || colors.default;

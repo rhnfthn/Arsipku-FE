@@ -317,7 +317,16 @@ const selectPageSize = (size: number) => { itemsPerPage.value = size; currentPag
 const toggleSelection = (id: string) => { if (selectedIds.value.has(id)) selectedIds.value.delete(id); else selectedIds.value.add(id); };
 const toggleSelectAll = () => { if (selectedIds.value.size === paginatedEmails.value.length) selectedIds.value.clear(); else paginatedEmails.value.forEach(mail => selectedIds.value.add(mail.id)); };
 const isAllSelected = computed(() => paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length);
-const selectMail = (mail: UIMailItem) => { selected.value = mail; };
+const selectMail = async (mail: UIMailItem) => {
+  // Gunakan helper getDetailRoute yang sudah ada di kode Anda
+  const routeData = getDetailRoute(mail);
+
+  // Lakukan navigasi langsung
+  await navigateTo({
+    path: routeData.path,
+    query: routeData.query
+  });
+};
 const closeDetail = () => { selected.value = null; };
 
 // --- METHODS BULK ACTION ---
@@ -524,6 +533,8 @@ watch(() => route.query.q, (newVal) => {
 </script>
 
 <template>
+
+  <PageHeader title="Terkirim" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
@@ -739,8 +750,8 @@ watch(() => route.query.q, (newVal) => {
 
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div
-        class="flex flex-col bg-white dark:bg-gray-900 transition-all duration-300 border-r border-gray-200 dark:border-gray-800 overflow-y-auto overflow-x-hidden"
-        :class="selected ? 'hidden lg:flex lg:w-5/12 xl:w-[450px] shrink-0' : 'flex-1 w-full'">
+        class="flex flex-col bg-white dark:bg-gray-900 transition-all duration-300 border-r border-gray-200 dark:border-gray-800 overflow-y-auto overflow-x-hidden flex-1 w-full">
+
         <div
           class="py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
@@ -751,14 +762,13 @@ watch(() => route.query.q, (newVal) => {
             </UButton>
           </div>
         </div>
+
         <div class="flex-1 w-full relative">
 
           <div v-if="isLoading" class="w-full">
             <div v-for="n in 10" :key="n"
               class="flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full">
-
               <USkeleton class="w-3.5 h-3.5 rounded-sm shrink-0" />
-
               <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
                 <div class="sm:basis-[35%] sm:min-w-[180px] lg:min-w-[220px] shrink-0">
                   <USkeleton class="h-3 w-24 sm:w-32" />
@@ -770,11 +780,9 @@ watch(() => route.query.q, (newVal) => {
                   <USkeleton class="h-5 w-20 rounded" />
                 </div>
               </div>
-
               <div class="pl-2 shrink-0 text-right w-24">
                 <USkeleton class="h-3 w-16 ml-auto" />
               </div>
-
               <div class="min-w-10 pl-2 shrink-0 w-8 flex justify-end">
                 <USkeleton class="h-3 w-6" />
               </div>
@@ -788,8 +796,7 @@ watch(() => route.query.q, (newVal) => {
           </div>
 
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="selectMail(mail)"
-            class="group flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:shadow-sm cursor-pointer transition-colors relative w-full"
-            :class="selected?.id === mail.id ? 'bg-blue-50/50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'">
+            class="group flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:shadow-sm cursor-pointer transition-colors relative w-full hover:bg-gray-50 dark:hover:bg-gray-800/50">
 
             <div class="flex items-center shrink-0" @click.stop>
               <div
@@ -838,66 +845,6 @@ watch(() => route.query.q, (newVal) => {
         </div>
       </div>
 
-      <div v-if="selected"
-        class="flex flex-col bg-white dark:bg-gray-900 absolute inset-0 z-40 lg:static lg:flex-1 lg:z-0 animate-in slide-in-from-right-8 duration-200 overflow-hidden border-l border-gray-200 dark:border-gray-800">
-        <div class="flex flex-col bg-white dark:bg-gray-900 z-20 shrink-0">
-          <div class="flex items-start justify-between px-6 pt-5 pb-2">
-            <h2 class="text-xl text-gray-800 dark:text-gray-100 leading-tight pr-4 font-normal">{{ selected.subject }}
-            </h2>
-            <button
-              class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors"
-              @click="closeDetail">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="px-6 pb-4 pt-2">
-            <div class="flex gap-3 items-center">
-              <UAvatar size="md"
-                class="ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center shrink-0">
-                {{ getInitials(selected.originalData.pengirim.nama) }}
-              </UAvatar>
-              <div class="flex-1 min-w-0">
-                <div class="flex flex-col items-start leading-snug">
-                  <div class="text-[14px] text-gray-900 dark:text-gray-100"><span class="font-semibold">{{
-                    selected.originalData.pengirim.nama }}</span></div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full text-left"
-                    :title="selected.originalData.pengirim.position_text">{{
-                      selected.originalData.pengirim.position_text }}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="mt-4">
-              <span
-                :class="[getCategoryStyle(selected.category), 'px-3 py-1 rounded-full text-[13px] font-medium inline-block']">
-                {{ getCategoryLabel(selected.category) }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="flex-1 overflow-y-auto px-6 py-6 bg-white dark:bg-gray-900">
-          <div class="space-y-4 mb-8">
-            <div>
-              <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Nomor Surat</div>
-              <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.body || '-' }}</div>
-            </div>
-            <div>
-              <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Penerima</div>
-              <div class="text-[15px] text-gray-900 dark:text-gray-200">{{ selected.recipient || '-' }}</div>
-            </div>
-            <div v-if="selected.note">
-              <div class="text-[13px] text-gray-500 dark:text-gray-400 mb-0.5">Sifat</div>
-              <div class="text-[15px] text-gray-900 dark:text-gray-200 capitalize">{{ selected.note }}</div>
-            </div>
-          </div>
-        </div>
-        <div
-          class="p-6 pt-0 mt-auto bg-white dark:bg-gray-900 shrink-0 border-t border-gray-100 dark:border-gray-800 pt-4">
-          <NuxtLink :to="getDetailRoute(selected)"
-            class="flex items-center justify-center w-full bg-primary text-white font-medium py-3 rounded-lg shadow-sm transition-colors text-[14px] hover:bg-primary-600">
-            Lihat Detail Lengkap</NuxtLink>
-        </div>
-      </div>
     </div>
 
     <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" />

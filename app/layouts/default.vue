@@ -14,7 +14,7 @@
         <Navbar @open-mobile-sidebar="openMobileSidebar" />
       </div>
 
-      <main class="flex-1 mx-8 z-[91]">
+      <main class="flex-1 mx-4 sm:mx-8 z-[91]">
         <div class="mx-auto w-full">
           <NuxtPage />
         </div>
