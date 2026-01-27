@@ -7,6 +7,7 @@
       <USelectMenu
         v-model="model"
         :items="processedItems"
+        multiple
         :placeholder="placeholder"
         class="w-full p-0"
         variant="none"
@@ -18,20 +19,25 @@
           trigger: { base: 'px-0 py-1 w-full' },
         }"
       >
-        <template #item="{ item, selected }">
+        <template #item="{ item }">
           <div
             class="flex items-start gap-3 w-full py-1 overflow-hidden"
             :class="{ 'opacity-50 cursor-not-allowed': item.disabled }"
           >
+            <UCheckbox
+              :model-value="isSelected(item)"
+              class="pointer-events-none shrink-0"
+              :checked="isSelected(item)"
+              :disabled="item.disabled"
+            />
             <img
               v-if="item.image"
               :src="item.image"
               :alt="item.label"
               class="w-7 h-7 rounded-full object-cover shrink-0"
-              :class="{ 'ring-2 ring-primary-500': selected }"
             />
             <div class="flex-1 min-w-0">
-              <span class="block text-sm text-left truncate w-full" :class="{ 'font-semibold text-primary-500': selected }">
+              <span class="block text-sm text-left truncate w-full">
                 {{ item.label }}
               </span>
               <span v-if="item.disabled" class="text-xs text-red-500 italic">
@@ -42,34 +48,37 @@
         </template>
 
         <template #default>
-          <div class="flex items-center justify-between w-full min-h-[28px] pr-2 dark:bg-gray-800">
-
-            <div v-if="model" class="flex items-center gap-2 overflow-hidden">
+          <div class="flex items-center gap-1.5 flex-wrap min-h-[28px] pr-10 w-full dark:bg-gray-800">
+            <UBadge
+              v-for="item in model"
+              :key="item.value"
+              color="primary"
+              variant="soft"
+              size="md"
+              class="gap-1.5 pl-2 pr-1 flex items-center justify-start rounded-md max-w-full"
+            >
               <img
-                v-if="model.image"
-                :src="model.image"
-                :alt="model.label"
-                class="w-5 h-5 rounded-full object-cover shrink-0"
+                v-if="item.image"
+                :src="item.image"
+                :alt="item.label"
+                class="w-3.5 h-3.5 rounded-full object-cover shrink-0"
               />
-              <span class="text-sm text-gray-900 dark:text-gray-100 truncate">
-                {{ model.label }}
+              <span class="text-xs font-medium text-left truncate">
+                {{ item.label }}
               </span>
-            </div>
-
-            <span v-else class="text-sm text-gray-400 dark:text-gray-500">
+              <UButton
+                icon="i-lucide-x"
+                size="2xs"
+                color="gray"
+                variant="ghost"
+                :padded="false"
+                class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
+                @click.stop="removeItem(item)"
+              />
+            </UBadge>
+            <span v-if="!model.length" class="text-sm text-gray-400 dark:text-gray-500">
               {{ placeholder }}
             </span>
-
-            <UButton
-              v-if="model"
-              icon="i-lucide-x"
-              size="2xs"
-              color="gray"
-              variant="ghost"
-              :padded="false"
-              class="w-5 h-5 ml-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
-              @click.stop="clearSelection"
-            />
           </div>
         </template>
       </USelectMenu>
