@@ -341,7 +341,7 @@ import {
 import type { DigsigLog, BsreHealthResponse } from "~/types/digsig";
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
 ];
 

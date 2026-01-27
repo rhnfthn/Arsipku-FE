@@ -1,25 +1,40 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+  <div class="min-h-screen">
     <div class="max-w-7xl mx-auto">
-      <!-- Back Button -->
-      <button
-        @click="navigateTo(`/master/company/${route.params.kode}/struktur`)"
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-5 group"
-      >
-        <ChevronLeft
-          class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-        />
-        <span class="font-medium">Kembali ke Struktur Organisasi</span>
-      </button>
-
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Kelola Area</h1>
-          <p class="text-gray-500 text-sm">
-            Kelola area dan sub area perusahaan
-          </p>
-          <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <h1 class="text-2xl font-bold text-gray-900">Kelola Area</h1>
+
+          <div class="mb-5">
+            <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
+              <NuxtLink
+                to="/master/perusahaan"
+                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
+              >
+                Master Perusahaan
+              </NuxtLink>
+              <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+                >/</span
+              >
+              <NuxtLink
+                to="/master/perusahaan/${route.params.kode}/struktur"
+                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
+              >
+                Struktur Organisasi
+              </NuxtLink>
+              <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+                >/</span
+              >
+              <span class="text-primary-400 font-semibold text-xs"
+                >Kelola Area</span
+              >
+            </nav>
+          </div>
+          <div
+            class="flex gap-3 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+          >
+            <Building2 class="w-4 h-4 text-blue-900" />
             <p class="text-sm text-blue-900">
               Perusahaan:
               <span class="font-bold">{{ company?.namaPanjang }}</span>
@@ -37,7 +52,7 @@
 
       <!-- Card -->
       <div
-        class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+        class="bg-white rounded-2xl mt-5 shadow-lg border border-gray-100 overflow-hidden"
       >
         <!-- Tab & Actions -->
         <div
@@ -131,17 +146,19 @@
                       <ChevronRight v-else class="w-5 h-5 text-gray-400" />
                     </button>
                   </td>
-                  <td class="px-6 py-4">
+                  <td class="px-1 py-3">
                     <span
-                      class="inline-flex items-center text-sm font-semibold"
+                      class="flex text-nowrap items-center text-sm font-semibold"
                     >
                       {{ area.kode }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                  <td
+                    class="px-6 py-4 text-nowrap text-sm font-medium text-gray-900"
+                  >
                     {{ area.nama }}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-700">
+                  <td class="px-6 py-4 text-nowrap text-sm text-gray-700">
                     {{ area.alamat }}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-700">
@@ -152,7 +169,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <span
-                      class="inline-flex items-center text-xs font-semibold"
+                      class="flex text-nowrap items-center text-xs font-medium"
                     >
                       {{ area.subCount }} sub areas
                     </span>
@@ -290,17 +307,17 @@
                     >{{ sub.kode }}</span
                   >
                 </td>
-                <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                <td class="px-6 py-4 text-sm font-medium text-gray-900">
                   {{ sub.nama }}
                 </td>
                 <td class="px-6 py-4">
                   <span
-                    class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
+                    class="flex text-nowrap items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
                   >
                     {{ sub.areaName }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-center text-gray-700">
                   {{ sub.alamat }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ sub.mulai }}</td>
@@ -336,9 +353,9 @@
 
     <!-- Add/Edit Area Modal -->
     <Teleport to="body">
-      <Modal v-model="openAddArea" size="lg" @save="submitArea">
+      <Modal v-model="openAddArea" size="xl" @save="submitArea">
         <template #title>
-          <div>
+          <div class="p-3">
             <h3 class="text-xl font-bold">
               {{ isEditing ? "Edit" : "Tambah" }}
               {{ activeTab === "area" ? "Area" : "Sub Area" }}
@@ -434,7 +451,8 @@
     <!-- Delete Confirm Modal -->
     <ConfirmPopup
       v-model="showDeleteConfirm"
-      title="Hapus Item"
+      type="danger"
+      title="Hapus Data"
       :message="`Apakah Anda yakin ingin menghapus ${selectedItem?.nama}?`"
       confirm-text="Hapus"
       cancel-text="Batal"
@@ -446,9 +464,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   ChevronLeft,
+  Building2,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -459,7 +478,16 @@ import {
   Trash2,
 } from "lucide-vue-next";
 
+import { useArea } from "~/composables/useArea";
+import { useCompany } from "~/composables/useCompany";
+
 const route = useRoute();
+const companyId = computed(() => route.params.kode as string);
+
+const { getAreasByCompany, getSubAreasByCompanyAndArea, getSubAreasByCompany } =
+  useArea();
+
+const { getCompanyByCode } = useCompany();
 
 const activeTab = ref<"area" | "subArea">("area");
 const searchQuery = ref("");
@@ -479,77 +507,100 @@ const formArea = ref({
   berakhir: "",
 });
 
-const company = ref({
-  kode: route.params.kode,
-  namaPanjang: "Perum LPPNPI",
+const company = ref<{
+  kode: string;
+  namaPanjang: string;
+} | null>(null);
+
+const areas = ref<any[]>([]);
+const subAreas = ref<any[]>([]);
+
+const fetchAreas = async () => {
+  try {
+    const res = await getAreasByCompany(companyId.value);
+
+    areas.value = res.data.map((item) => ({
+      id: item.id,
+      kode: item.area,
+      nama: item.shortText,
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+      subCount: item.subAreasCount ?? 0,
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil area", error);
+  }
+};
+
+const fetchSubAreas = async (areaCode: string) => {
+  try {
+    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
+
+    const mapped = res.data.map((item) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || "",
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    }));
+
+    subAreas.value = [
+      ...subAreas.value.filter((s) => s.area !== areaCode),
+      ...mapped,
+    ];
+  } catch (error) {
+    console.error("Gagal mengambil sub area", error);
+  }
+};
+
+const fetchAllSubAreas = async () => {
+  try {
+    const res = await getSubAreasByCompany(companyId.value);
+
+    subAreas.value = res.data.map((item) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || "",
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil sub area", error);
+  }
+};
+
+const fetchCompany = async () => {
+  try {
+    const data = await getCompanyByCode(companyId.value);
+
+    if (!data) return;
+
+    company.value = {
+      kode: String(data.company),
+      namaPanjang: data.longText,
+    };
+  } catch (error) {
+    console.error("Gagal mengambil data company", error);
+  }
+};
+
+watch(activeTab, async (tab) => {
+  if (tab === "subArea" && subAreas.value.length === 0) {
+    await fetchAllSubAreas();
+  }
 });
 
-const areas = ref([
-  {
-    kode: "AREA-001",
-    nama: "KANTOR PUSAT",
-    alamat: "Kantor Pusat Jakarta",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-    subCount: 4,
-  },
-  {
-    kode: "AREA-002",
-    nama: "CABANG BATISE",
-    alamat: "Cabang Batam",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-    subCount: 1,
-  },
-]);
-
-const subAreas = ref([
-  {
-    kode: "SUB-001",
-    nama: "KANTOR PUSAT",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-002",
-    nama: "CABANG JATSC",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-003",
-    nama: "CABANG MASSC",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-004",
-    nama: "CABANG MALUM",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-005",
-    nama: "CABANG PENGATU CVENT",
-    area: "AREA-002",
-    areaName: "CABANG BATISE",
-    alamat: "-",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-  },
-]);
+onMounted(() => {
+  fetchCompany();
+  fetchAreas();
+});
 
 const filteredAreas = computed(() => {
   if (!searchQuery.value) return areas.value;
@@ -574,8 +625,12 @@ const filteredSubAreas = computed(() => {
   );
 });
 
-const toggleAreaExpand = (kode: string) => {
-  expandedAreas.value[kode] = !expandedAreas.value[kode];
+const toggleAreaExpand = async (areaCode: string) => {
+  expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
+
+  if (expandedAreas.value[areaCode]) {
+    await fetchSubAreas(areaCode);
+  }
 };
 
 const getSubAreasForArea = (areaKode: string) => {

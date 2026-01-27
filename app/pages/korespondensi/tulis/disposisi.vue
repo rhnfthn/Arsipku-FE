@@ -308,7 +308,7 @@ const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Disposisi", to: "#" },
 ];
 
@@ -540,7 +540,7 @@ const confirmSaveDraft = async () => {
       await saveDraft(fd);
     }
     toast.add({ title: 'Draft Disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     toast.add({ title: 'Gagal Simpan', description: e.response?.data?.message, color: 'error' });
   } finally {

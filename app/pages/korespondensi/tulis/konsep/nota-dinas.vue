@@ -37,6 +37,137 @@
 
     <PageHeader title="Lanjut Konsep Nota Dinas" :items="breadcrumbs" />
 
+    <div v-if="refData" class="mb-4 mt-6">
+      <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm">
+
+        <div @click="isRefExpanded = !isRefExpanded"
+          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
+          <div class="flex items-center py-2 gap-3">
+            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
+              <UIcon name="i-lucide-mail" class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">
+                Referensi Surat Asal
+              </h3>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                Klik untuk melihat/menyembunyikan detail surat referensi
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank"
+              @click.stop
+              class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
+              Buka Tab Baru
+              <UIcon name="i-lucide-external-link" class="w-3 h-3" />
+            </NuxtLink>
+
+            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': isRefExpanded }" />
+          </div>
+        </div>
+
+        <div v-show="isRefExpanded">
+
+          <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-3 break-words">
+              {{ refData.perihal || '(Tidak ada perihal)' }}
+            </h2>
+
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div class="flex items-center gap-1 shrink-0">
+                <Hash class="w-3.5 h-3.5" />
+                <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
+                  {{ refData.nomor || '-' }}
+                </span>
+              </div>
+              <span class="opacity-40 hidden sm:inline">•</span>
+              <div class="flex items-center gap-1 shrink-0">
+                <Calendar class="w-3.5 h-3.5" />
+                <span>{{ formatDateRef(refData.tanggal) }}</span>
+              </div>
+              <span class="opacity-40 hidden sm:inline">•</span>
+              <div
+                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
+                :class="getCategoryStyle(refData.jenis_label)">
+                <Tag class="w-3 h-3" />
+                {{ refData.jenis_label }}
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-700">
+            <div class="flex items-start gap-4">
+              <UAvatar size="md"
+                class="bg-primary-500 text-white font-semibold flex items-center justify-center shrink-0">
+                {{ refSenderInitials }}
+              </UAvatar>
+
+              <div class="flex-1 min-w-0 space-y-4">
+                <div>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white block">
+                    {{ refData.pengirim_jabatan }}
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                    {{ refData.pengirim_nama }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 text-xs">
+
+                  <div class="flex flex-col md:flex-row gap-2 md:gap-4">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
+                      Kepada</div>
+                    <div class="flex flex-col gap-1 w-full">
+                      <div v-for="(k, idx) in refData.kepada" :key="idx"
+                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
+                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
+                        <span class="font-medium">{{ k.nama }}</span>
+                      </div>
+                      <span v-if="!refData.kepada || !refData.kepada.length" class="text-gray-400 italic">-</span>
+                    </div>
+                  </div>
+
+                  <div v-if="refData.tembusan && refData.tembusan.length > 0"
+                    class="flex flex-col md:flex-row gap-2 md:gap-4">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
+                      Tembusan</div>
+                    <div class="flex flex-col gap-1 w-full">
+                      <div v-for="(t, idx) in refData.tembusan" :key="idx"
+                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
+                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
+                        <span class="font-medium">{{ t.nama }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="refData.disposisi" class="flex flex-col md:flex-row gap-2 md:gap-4">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
+                      Disposisi</div>
+                    <div class="text-gray-800 dark:text-gray-200 font-medium">
+                      {{ formatDisposisiInline(refData.disposisi) }}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="refData.catatan"
+            class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 rounded-b-lg">
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
+            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm pb-4"
+              v-html="refData.catatan">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
     }">
@@ -46,7 +177,6 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-
         <div class="pt-2">
           <div class="flex justify-between items-center gap-4">
             <div class="flex gap-3 sm:gap-4">
@@ -56,7 +186,6 @@
             <USkeleton class="h-8 w-36 rounded" />
           </div>
         </div>
-
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -72,12 +201,6 @@
             <USkeleton class="h-3 w-11/12" />
             <USkeleton class="h-3 w-full" />
           </div>
-        </div>
-
-        <USkeleton class="h-30 w-full rounded-md" />
-
-        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
-          <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
 
@@ -140,7 +263,6 @@
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
 
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
-
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <div class="flex items-center pb-2 mb-6">
                     <div class="flex items-end gap-4">
@@ -186,8 +308,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                                                  </div>`
+                                                                                                        ${i + 1}. ${s.labelJob || s.label}
+                                                                                                      </div>`
                               )
                               .join('')
                             : '................................................'
@@ -244,42 +366,6 @@
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
                   class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
-
-                  <div class="flex justify-end mb-10 text-[14px]">
-                    <div class="text-left min-w-[300px]">
-                      <table class="w-full">
-                        <tr>
-                          <td class="align-top pr-2">Lampiran Surat</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Nomor Surat :</td>
-                          <td>.....................................</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Tanggal Surat :</td>
-                          <td>{{ formattedDate }}</td>
-                        </tr>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div v-if="selectedTertuju.length > 5" class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
-                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">
-                        {{ item.labelJob || item.label }}
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div v-if="selectedTembusan.length > 5">
-                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
-                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}
-                      </li>
-                    </ol>
-                  </div>
                 </div>
               </div>
             </div>
@@ -322,7 +408,6 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -331,14 +416,12 @@
         </div>
       </template>
 
-      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
         </p>
 
         <div class="space-y-4">
-          <!-- Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -352,7 +435,6 @@
                 Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
-              <!-- Signer Info -->
               <div v-if="selectedSendType === 'digsig'"
                 class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div class="flex items-start gap-4 p-4">
@@ -375,7 +457,6 @@
                   </div>
                 </div>
 
-                <!-- Passphrase -->
                 <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div @click.stop>
                     <UFormGroup label="Passphrase" required>
@@ -388,7 +469,6 @@
             </div>
           </label>
 
-          <!-- Without Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -406,7 +486,6 @@
         </div>
       </template>
 
-      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -428,6 +507,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
+import {
+  Hash, Calendar, Tag, Paperclip, FileText, Loader2, X, ArrowLeft, Printer, MoreHorizontal, ChevronUp, Info, CheckSquare, Edit3, Users, Building2, ChevronRight, Send, ChevronDown,
+  Archive,
+  Star
+} from "lucide-vue-next";
 
 // Components
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
@@ -441,7 +525,7 @@ import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
 // Composables
-import { useDigSign } from "@/composables/useDigSign"; // Pastikan path ini benar
+import { useDigSign } from "@/composables/useDigSign";
 
 /* -------------------------------------------------------------------------- */
 /* 2. LOCAL TYPES                                                             */
@@ -477,17 +561,68 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useRecipients();
 const { isLoadingDraft, getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign(); // Init composable getKtp
+const { getKtp } = useDigSign();
+const { fetchInboxDetail } = useInbox(null);
 
-const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
-  { label: "Detail Surat", to: "#" },
-  { label: "Lanjut Konsep Nota Dinas", to: "#" },
-];
+/* --- HELPER FUNCTIONS (Tambahkan ini untuk memperbaiki error template) --- */
+const getCategoryStyle = (cat: string) => {
+  const c = (cat || '').toUpperCase();
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
+};
+
+const formatDisposisiInline = (val: any) => {
+  if (!val) return '';
+  if (Array.isArray(val)) return val.join(', ');
+  return String(val).replace(/(\r\n|\n|\r)/gm, ", ");
+};
+
+const formatDateRef = (value?: string) => {
+  if (!value) return "-";
+  try {
+    return new Date(value).toLocaleDateString("id-ID", {
+      day: "numeric", month: "short", year: "numeric",
+    });
+  } catch (e) { return value; }
+};
+/* ----------------------------------------------------------------------- */
+
+const refData = ref<any>(null);
+const isRefExpanded = ref(true);
+
+const refSenderInitials = computed(() => {
+  if (!refData.value) return "?";
+  const name = refData.value.pengirim_nama || refData.value.pengirim?.nama;
+  if (!name) return "?";
+  return name.trim().split(" ").filter(Boolean).slice(0, 2)
+    .map((n: string) => n.charAt(0).toUpperCase()).join("");
+});
+
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string;
+  const refJenis = route.query.ref_jenis as string;
+
+  const detailLink = refId
+    ? `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis || 'surat'}`
+    : '#';
+
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    {
+      label: "Detail Surat",
+      to: detailLink,
+      class: !refId ? 'opacity-50 cursor-default' : ''
+    },
+    { label: "Lanjut Konsep Nota Dinas", to: "#" },
+  ];
+});
 
 const maxPerihal = 200;
-
 const sifatOptions: SifatOption[] = [
   { label: "Sangat Rahasia", value: "sangat rahasia" },
   { label: "Rahasia", value: "rahasia" },
@@ -683,7 +818,7 @@ const confirmSaveDraft = async () => {
     'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
     'Ya, Simpan',
     'Batal',
-    false
+    'false'
   );
 
   if (!isConfirmed) return;
@@ -728,7 +863,7 @@ const handlePassphraseSubmit = async () => {
     confirmMessage,
     'Ya, Kirim Sekarang',
     'Periksa Lagi',
-    false
+    'false'
   );
 
   if (isConfirmed) {
@@ -736,7 +871,7 @@ const handlePassphraseSubmit = async () => {
   }
 };
 
-// --- CORE FUNCTION YANG DIPERBAIKI SESUAI GAMBAR ---
+// --- CORE FUNCTION ---
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
@@ -744,24 +879,17 @@ const handleKirimDokumen = async () => {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. [BARU] Fetch KTP jika metode TTE dipilih
-    // Menggunakan variable 'noktp' sesuai respon API di gambar
+    // 1. Fetch KTP jika metode TTE dipilih
     let noktpValue = '';
 
     if (selectedSendType.value === 'digsig') {
       try {
         const ktpResponse = await getKtp();
-
-        // Debugging untuk melihat respon di console browser
-        console.log("Respon API KTP:", ktpResponse);
-
-        // Ambil value dari path: response.data.noktp
         if (ktpResponse?.data?.noktp) {
           noktpValue = ktpResponse.data.noktp;
         } else {
           console.warn("Field 'noktp' tidak ditemukan dalam respon");
         }
-
       } catch (err) {
         console.error("Gagal mengambil data KTP:", err);
         throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
@@ -776,15 +904,10 @@ const handleKirimDokumen = async () => {
     // 3. Buat FormData Utama
     const formData = createFormData(payload, true);
 
-    console.log("Mengirim Sign Option:", selectedSendType.value);
-    console.log("Mengirim Passphrase (RAW):", passphrase.value);
-
     // 4. Append Data Tambahan
     formData.append('passphrase', passphrase.value);
     formData.append('sign_option', selectedSendType.value);
 
-    // [BARU] Masukkan NOKTP ke Body dengan key 'nik' (atau 'noktp' tergantung backend kirim surat)
-    // Biasanya backend TTE standar menggunakan key 'nik'
     if (noktpValue) {
       formData.append('nik', noktpValue);
     }
@@ -833,7 +956,7 @@ const handleSaveDraft = async () => {
     await saveND(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     toast.add({
@@ -850,6 +973,46 @@ const handleSaveDraft = async () => {
 /* 7. LIFECYCLE HOOKS                                                         */
 /* -------------------------------------------------------------------------- */
 onMounted(async () => {
+  // [LOGIC BARU] Fetch Data Referensi
+  const refId = route.query.ref_id as string;
+  const refJenis = route.query.ref_jenis as string;
+
+  if (refId && refJenis) {
+    (async () => {
+      try {
+        const result = await fetchInboxDetail(refId, refJenis);
+
+        if (result) {
+          const rawFlow = (result.raw && result.raw.flow && Array.isArray(result.raw.flow) && result.raw.flow.length > 0)
+            ? result.raw.flow[0]
+            : result;
+
+          refData.value = {
+            id: rawFlow.id,
+            nomor: rawFlow.nomor || '-',
+            tanggal: rawFlow.tanggal,
+            perihal: rawFlow.perihal,
+            jenis: rawFlow.jenis,
+            jenis_label: rawFlow.jenis === 'DI' ? 'DISPOSISI' : (rawFlow.jenis || 'SURAT'),
+            // Mapping Pengirim agar sesuai layout detail
+            pengirim: rawFlow.pengirim,
+            pengirim_nama: rawFlow.pengirim?.nama || rawFlow.pengirim?.name || '-',
+            pengirim_jabatan: rawFlow.pengirim?.positionText || rawFlow.pengirim?.position_text || '-',
+            // Arrays
+            kepada: rawFlow.penerima || [],
+            tembusan: rawFlow.tembusan || [],
+            lampiran_files: rawFlow.lampiran_files || [],
+            // Content
+            catatan: rawFlow.catatan,
+            disposisi: rawFlow.disposisi,
+          };
+        }
+      } catch (e) {
+        console.error("Gagal memuat referensi", e);
+      }
+    })();
+  }
+
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -942,10 +1105,7 @@ onMounted(async () => {
 }
 
 .tox-fullscreen {
-  /* Harus lebih besar dari z-index Sidebar (93) dan Navbar (92) */
   z-index: 9999 !important;
-
-  /* Memastikan posisinya menutupi seluruh layar */
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -953,16 +1113,9 @@ onMounted(async () => {
   height: 100vh !important;
 }
 
-/* Opsional: Fix untuk Shadow DOM atau popup dialog TinyMCE agar juga di atas */
 .tox-dialog-wrap,
 .tox-dropzone,
 .tox-promotions {
   z-index: 10000 !important;
-}
-</style>
-
-<style scoped>
-:deep(.tox-tinymce) {
-  border: none !important;
 }
 </style>

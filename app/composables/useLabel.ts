@@ -45,8 +45,15 @@ export const useLabel = () => {
     return await del(`/labels/${id}`);
   };
 
-  const addNaskahToLabel = async (naskahId: string, labelId: string) => {
-    return await post(`/labels/naskah/${naskahId}`, { labelIds: [labelId] });
+  const addNaskahToLabel = async (
+    naskahId: string,
+    labelId: string,
+    source: string,
+  ) => {
+    return await post(`/labels/naskah/${naskahId}`, {
+      labelIds: [labelId],
+      source: source,
+    });
   };
 
   const removeNaskahFromLabel = async (naskahId: string, labelId: string) => {

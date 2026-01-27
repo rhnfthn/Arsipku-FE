@@ -803,7 +803,7 @@ const {
 } = usePenomoran();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Verifikasi", to: "/admin/verifikasi" },
 ];
 

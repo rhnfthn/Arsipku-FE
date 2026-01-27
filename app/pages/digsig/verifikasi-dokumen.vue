@@ -366,7 +366,7 @@
                     {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
                   </option>
                 </select>
-                <div
+                <!-- <div
                   v-if="selectedKlasifikasiDetail"
                   class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md"
                 >
@@ -383,7 +383,7 @@
                   >
                     {{ selectedKlasifikasiDetail.deskripsi }}
                   </p>
-                </div>
+                </div> -->
               </div>
             </div>
 
@@ -924,7 +924,15 @@ const search = ref("");
 const currentPage = ref(1);
 const limit = ref(10);
 const rowsPerPage = ref(10);
+const filteredDocuments = computed(() => {
+  if (!search.value) return documents.value;
 
+  return documents.value.filter(
+    (doc) =>
+      doc.nomorDokumen?.toLowerCase().includes(search.value.toLowerCase()) ||
+      doc.perihal?.toLowerCase().includes(search.value.toLowerCase()),
+  );
+});
 const addForm = ref({
   tanggal: "",
   klasifikasi: "",
@@ -942,7 +950,7 @@ const showSignerDropdown = ref(false);
 const signerSearchQuery = ref("");
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 
@@ -1028,20 +1036,20 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-const filteredVerifikatorList = computed(() => {
-  if (!signerSearchQuery.value) {
-    return verifikatorList.value;
-  }
+// const filteredVerifikatorList = computed(() => {
+//   if (!signerSearchQuery.value) {
+//     return verifikatorList.value;
+//   }
 
-  const query = signerSearchQuery.value.toLowerCase();
-  return verifikatorList.value.filter(
-    (v) =>
-      v.jabatan.toLowerCase().includes(query) ||
-      v.nama.toLowerCase().includes(query) ||
-      v.lokasi.toLowerCase().includes(query) ||
-      v.areaText.toLowerCase().includes(query),
-  );
-});
+//   const query = signerSearchQuery.value.toLowerCase();
+//   return verifikatorList.value.filter(
+//     (v) =>
+//       v.jabatan.toLowerCase().includes(query) ||
+//       v.nama.toLowerCase().includes(query) ||
+//       v.lokasi.toLowerCase().includes(query) ||
+//       v.areaText.toLowerCase().includes(query),
+//   );
+// });
 
 onMounted(() => {
   loadDocuments();
@@ -1062,6 +1070,19 @@ onUnmounted(() => {
     URL.revokeObjectURL(pdfUrl.value);
   }
 });
+// search
+const filteredVerifikatorList = computed(() => {
+  if (!signerSearchQuery.value) return verifikatorList.value;
+
+  const q = signerSearchQuery.value.toLowerCase();
+
+  return verifikatorList.value.filter(
+    (v) =>
+      v.jabatan?.toLowerCase().includes(q) ||
+      v.nama?.toLowerCase().includes(q) ||
+      v.lokasi?.toLowerCase().includes(q),
+  );
+});
 
 const loadDocuments = async () => {
   await fetchDocuments({
@@ -1073,6 +1094,9 @@ const loadDocuments = async () => {
     sortOrder: sortOrder.value,
   });
 };
+watch(search, () => {
+  loadDocuments();
+});
 
 const handleSearch = () => {
   currentPage.value = 1;
@@ -1112,16 +1136,14 @@ const formatDate = (dateString: string) => {
   // Convert to WIB (UTC+7)
   const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
 
-  return (
-    wibDate.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Asia/Jakarta",
-    }) + " WIB"
-  );
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 const getStatusClass = (status: string) => {

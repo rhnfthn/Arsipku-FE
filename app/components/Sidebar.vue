@@ -461,7 +461,7 @@ const userMenuUtama = computed(() => {
   return [
     {
       label: "Dashboard",
-      to: "/dashboard",
+      to: "/beranda",
       icon: "i-lucide-layout-dashboard",
     },
     tulisMenu.value,
@@ -477,8 +477,8 @@ const userMenuUtama = computed(() => {
       icon: "i-lucide-send",
     },
     {
-      label: "Draft",
-      to: "/korespondensi/draft",
+      label: "Draf",
+      to: "/korespondensi/draf",
       icon: "i-lucide-file-text",
     },
   ];
@@ -492,7 +492,11 @@ const userMenuUtilitas = computed(() => {
       to: "/penandatangan",
       icon: "i-lucide-signature",
     },
-    { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
+    {
+      label: "Penyingkat Tautan",
+      to: "/penyingkat-tautan",
+      icon: "i-lucide-link",
+    },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Titelatur Inggris",
@@ -544,7 +548,7 @@ const tulisChildrenByBod = computed(() => {
 });
 
 const adminMenuUtama = computed(() => [
-  { label: "Dashboard", to: "/dashboard", icon: "i-lucide-layout-dashboard" },
+  { label: "Beranda", to: "/beranda", icon: "i-lucide-layout-dashboard" },
   tulisMenu.value,
   {
     label: "Kotak Masuk",
@@ -553,7 +557,7 @@ const adminMenuUtama = computed(() => [
     badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
   { label: "Terkirim", to: "/korespondensi/terkirim", icon: "i-lucide-send" },
-  { label: "Draft", to: "/korespondensi/draft", icon: "i-lucide-file-text" },
+  { label: "Draf", to: "/korespondensi/draf", icon: "i-lucide-file-text" },
 ]);
 
 const adminMenuUtilitas = computed(() => {
@@ -568,8 +572,12 @@ const adminMenuUtilitas = computed(() => {
         { label: "Log Digsig", to: "/digsig/log-digsig" },
       ],
     },
-    { label: "Short URL", to: "/short-url", icon: "i-lucide-link" },
-    { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
+    {
+      label: "Penyingkat Tautan",
+      to: "/penyingkat-tautan",
+      icon: "i-lucide-link",
+    },
+    // { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Usulan Penomoran",
@@ -629,8 +637,8 @@ const adminMenuAdministrasi = computed(() => {
         { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
         { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
         {
-          label: "Company",
-          to: "/master/company",
+          label: "Perusahaan",
+          to: "/master/perusahaan",
           icon: "i-lucide-building-2",
         },
         { label: "Klasifikasi", to: "/master/klasifikasi" },

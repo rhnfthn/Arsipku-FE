@@ -253,7 +253,7 @@ const {
 } = useKajian();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Kajian", to: "#" },
 ];
 
@@ -417,7 +417,7 @@ const confirmSaveDraft = async () => {
     if (res?.data?.success || res?.success) {
       toast.add({ title: 'Draft Berhasil Disimpan', color: 'success' });
       if (res.data?.id) editDraftId.value = res.data.id;
-      router.push("/korespondensi/draft");
+      router.push("/korespondensi/draf");
     }
   } catch (e: any) {
     toast.add({ title: 'Gagal Simpan Draft', description: e.response?.data?.message, color: 'error' });

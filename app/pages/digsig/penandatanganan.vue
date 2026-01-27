@@ -645,6 +645,39 @@
         </div>
       </Modal>
     </Teleport>
+    <USlideover
+      v-model:open="isOpenPreview"
+      title="Pratinjau Dokumen"
+      side="bottom"
+      :dismissible="true"
+      :ui="{
+        content: 'h-screen max-h-screen',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+      }"
+    >
+      <template #body>
+        <div
+          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+        >
+          <iframe
+            v-if="pdfUrl"
+            :key="pdfUrl"
+            :src="pdfUrl"
+            class="w-full h-full border-0"
+            allowfullscreen
+          />
+
+          <div v-else class="flex flex-col items-center gap-2">
+            <UIcon
+              name="i-lucide-loader-2"
+              class="animate-spin w-8 h-8 text-primary-500"
+            />
+            <span class="text-gray-500">Memuat Pratinjau...</span>
+          </div>
+        </div>
+      </template>
+    </USlideover>
   </div>
 </template>
 
@@ -714,7 +747,7 @@ const filterStatusLabel = computed(() => {
 });
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
 ];
 
@@ -738,7 +771,11 @@ const filteredRows = computed(() => {
 
   return filtered;
 });
+// uslideover file
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
 
+// pagination
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredRows.value.slice(start, start + rowsPerPage.value);
@@ -861,11 +898,14 @@ const handleOpenSign = (doc: PenandatangananDocument) => {
 
 const viewDocument = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
+
   if (!url) {
     alert("Preview dokumen tidak tersedia");
     return;
   }
-  window.open(url, "_blank");
+
+  pdfUrl.value = url;
+  isOpenPreview.value = true;
 };
 
 const handleSign = async () => {
@@ -948,5 +988,10 @@ onBeforeUnmount(() => {
 
 watch([search, filterStatus, rowsPerPage], () => {
   currentPage.value = 1;
+});
+watch(isOpenPreview, (open) => {
+  if (!open) {
+    pdfUrl.value = null;
+  }
 });
 </script>

@@ -38,8 +38,8 @@ const pageOptions = [5, 10, 25, 50];
 
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Draft", to: "#" },
+  { label: "Beranda", to: "/beranda" },
+  { label: "Draf", to: "#" },
 ];
 
 
@@ -363,7 +363,7 @@ const getCategoryLabel = (cat) => {
 </script>
 
 <template>
-  <PageHeader title="Draft" :items="breadcrumbs" />
+  <PageHeader title="Draf" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
@@ -577,10 +577,10 @@ const getCategoryLabel = (cat) => {
             <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle class="w-6 h-6 text-red-600" />
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draft?</h3>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draf?</h3>
 
             <p class="text-sm text-gray-500 mb-6" v-if="itemToDelete">
-              Apakah Anda yakin ingin menghapus draft <br>
+              Apakah Anda yakin ingin menghapus draf <br>
               <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>? <br>
             </p>
             <p class="text-sm text-gray-500 mb-6" v-else>

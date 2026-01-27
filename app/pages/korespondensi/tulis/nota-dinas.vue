@@ -461,7 +461,7 @@ const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
 const { getKtp } = useDigSign(); // Init composable getKtp
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Nota Dinas", to: "#" },
 ];
 
@@ -812,7 +812,7 @@ const handleSaveDraft = async () => {
     await saveND(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     toast.add({

@@ -6,17 +6,22 @@ export default defineNuxtConfig({
       link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
     },
   },
+
   compatibilityDate: "2025-07-15",
-  devtools: { enabled: true },
+
+  devtools: {
+    enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || true,
+  },
+
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n"],
+
   build: {
     transpile: ["@vuepic/vue-datepicker"],
   },
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: "http://172.20.16.116:3011",
-      // apiBaseUrl: "https://arsipku-api.rizan.app",
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || "",
     },
   },
 
@@ -24,7 +29,6 @@ export default defineNuxtConfig({
     defaultLocale: "id",
     langDir: "locales/",
     lazy: true,
-
     locales: [
       { code: "id", name: "ID", file: "id.json" },
       { code: "en", name: "EN", file: "en.json" },
@@ -55,10 +59,4 @@ export default defineNuxtConfig({
       componentDetection: ["Modal", "Dropdown", "Popover"],
     },
   },
-  // devServer: {
-  //   port: 7010,
-  //   host: "0.0.0.0",
-  //   host: "0.0.0.0", // kalau mau bisa diakses dari device lain di jaringan
-
-  // },
 });

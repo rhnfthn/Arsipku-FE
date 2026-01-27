@@ -16,22 +16,8 @@ const { fetchInboxDetail } = useInbox(null);
 const id = route.params.id as string;
 const jenis = route.query.jenis as string;
 
-// --- STATE DROPDOWN MENU ---
-const showKonsepMenu = ref(false)
-
-const toggleKonsepMenu = () => {
-  showKonsepMenu.value = !showKonsepMenu.value
-}
-
-const selectKonsepOption = (option: string) => {
-  console.log('Selected option:', option)
-  showKonsepMenu.value = false
-  // Logika navigasi tambahan bisa ditaruh di sini
-  // Misalnya: if (option === 'draft') router.push(...)
-}
-
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
   { label: "Detail Surat", to: "#" },
 ];
@@ -143,7 +129,6 @@ const getCategoryStyle = (cat: string) => {
   return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 
-// --- FIX ERROR "Return outside function" DI SINI ---
 const isJenisDI = computed(() => {
   const j = selected.value?.jenis || '';
   const l = selected.value?.jenis_label || '';
@@ -229,16 +214,17 @@ const openMainPdfPreview = async () => {
   } catch (err) { activePdfUrl.value = fileUrl; }
   finally { isPdfLoading.value = false; }
 };
-onUnmounted(() => { if (activePdfUrl.value?.startsWith("blob:")) URL.revokeObjectURL(activePdfUrl.value); });
 
-// --- KONSEP MODAL LOGIC (Existing) ---
+// --- KONSEP MODAL LOGIC ---
 const isOpenKonsepModal = ref(false);
+
+// UPDATED: Path disesuaikan dengan kebutuhan route konsep (/konsep/...)
 const konsepOptions = [
   {
     type: 'ND',
     label: 'Nota Dinas',
     desc: 'Untuk komunikasi internal antar unit kerja',
-    path: '/korespondensi/tulis/nota-dinas',
+    path: '/korespondensi/tulis/konsep/nota-dinas',
     icon: FileText,
     colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
   },
@@ -246,7 +232,7 @@ const konsepOptions = [
     type: 'SDI',
     label: 'Surat Dinas Internal',
     desc: 'Surat resmi untuk keperluan internal organisasi',
-    path: '/korespondensi/tulis/surat-dinas-internal',
+    path: '/korespondensi/tulis/konsep/surat-dinas-internal',
     icon: Users,
     colorClass: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
   },
@@ -254,13 +240,38 @@ const konsepOptions = [
     type: 'SDE',
     label: 'Surat Dinas Eksternal',
     desc: 'Surat resmi untuk pihak eksternal atau mitra',
-    path: '/korespondensi/tulis/surat-dinas-eksternal',
+    path: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
     icon: Building2,
     colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
   }
 ];
-const handleLanjutKonsep = () => { isOpenKonsepModal.value = true; };
-const handleLanjutNotaDinas = () => { /* Logic Nota Dinas */ };
+
+const handleLanjutNotaDinas = () => {
+  if (!selected.value?.id) return;
+
+  router.push({
+    path: '/korespondensi/tulis/nota-dinas',
+    query: {
+      ref_id: selected.value.id,
+      ref_jenis: selected.value.jenis,
+      action: 'tindak_lanjut'
+    }
+  });
+};
+
+const handleLanjutDisposisi = () => {
+  if (!selected.value?.id) return;
+
+  router.push({
+    path: '/korespondensi/tulis/disposisi',
+    query: {
+      ref_id: selected.value.id,
+      ref_jenis: selected.value.jenis,
+      action: 'disposisi'
+    }
+  });
+};
+
 const selectKonsep = (option: any) => {
   isOpenKonsepModal.value = false;
   if (!selected.value?.id) return;
@@ -284,44 +295,11 @@ const selectKonsep = (option: any) => {
       <div v-if="isLoading" class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse">
         <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4">
           <div class="flex items-center gap-3 min-w-0">
-            <button @click="goBack"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
-              <ArrowLeft class="w-5 h-5" />
-            </button>
-            <div class="flex flex-col min-w-0">
-              <h1 class="text-base font-semibold text-gray-900 dark:text-white truncate">Kembali</h1>
-            </div>
-          </div>
-          <div class="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-        <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800">
-          <div class="h-8 w-3/4 sm:w-1/2 bg-gray-200 dark:bg-gray-800 rounded mb-4"></div>
-          <div class="flex gap-2">
-            <div class="h-5 w-20 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-            <div class="h-5 w-32 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-            <div class="h-5 w-24 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+            <div class="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+            <div class="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
           </div>
         </div>
-        <div class="p-5 sm:p-8 bg-gray-50/60 dark:bg-gray-950/40">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-full shrink-0"></div>
-            <div class="flex-1 space-y-4">
-              <div class="space-y-2">
-                <div class="h-4 w-48 bg-gray-200 dark:bg-gray-800 rounded"></div>
-                <div class="h-3 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
-              </div>
-              <div class="space-y-2 mt-4">
-                <div class="h-3 w-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
-                <div class="h-16 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="p-5 sm:p-8 h-64 bg-white dark:bg-gray-900">
-          <div class="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded mb-2"></div>
-          <div class="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded mb-2"></div>
-          <div class="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
+        <div class="p-8 h-64"></div>
       </div>
 
       <div v-else-if="selected"
@@ -341,69 +319,45 @@ const selectKonsep = (option: any) => {
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
-
             <UTooltip text="Tandai Favorit">
               <button
                 class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
                 <Star class="w-4 h-4" />
               </button>
             </UTooltip>
-
-            <UTooltip text="Tindak Lanjut">
-              <button
-                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
-                <Tag class="w-4 h-4 -rotate-45" />
-              </button>
-            </UTooltip>
-
-            <UTooltip text="Arsipkan">
-              <button
-                class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
-                <Archive class="w-4 h-4" />
-              </button>
-            </UTooltip>
-
             <UTooltip text="Pratinjau Surat">
               <button @click="openMainPdfPreview"
                 class="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 dark:text-gray-400 transition-colors">
                 <Printer class="w-4 h-4" />
               </button>
             </UTooltip>
-
           </div>
         </div>
 
         <div class="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-
           <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-4 break-words">
             {{ selected.perihal || '(Tidak ada perihal)' }}
           </h2>
 
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
-
             <div class="flex items-center gap-1 shrink-0">
               <Hash class="w-3.5 h-3.5" />
               <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
                 {{ selected.nomor || '-' }}
               </span>
             </div>
-
             <span class="opacity-40 hidden sm:inline">•</span>
-
             <div class="flex items-center gap-1 shrink-0">
               <Calendar class="w-3.5 h-3.5" />
               <span>{{ formatDate(selected.tanggal) }}</span>
             </div>
-
             <span class="opacity-40 hidden sm:inline">•</span>
-
             <div
               class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
               :class="getCategoryStyle(selected.jenis_label)">
               <Tag class="w-3 h-3" />
               {{ selected.jenis_label }}
             </div>
-
           </div>
         </div>
 
@@ -445,45 +399,21 @@ const selectKonsep = (option: any) => {
                   </div>
                 </div>
 
-                <div v-if="tembusanList.length > 0" class="flex flex-col md:flex-row">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">
-                    Tembusan
-                  </div>
-                  <div class="flex flex-col">
-                    <div v-for="(t, idx) in displayedTembusan" :key="idx"
-                      class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                      <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                      <div class="break-words">
-                        <span class="font-medium">{{ t.nama }}</span>
-                        <span v-if="t.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ t.position_text
-                        }})</span>
-                      </div>
-                    </div>
-                    <button v-if="hiddenTembusanCount > 0" @click="showAllTembusan = !showAllTembusan"
-                      class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
-                      {{ showAllTembusan ? 'Sembunyikan' : `+${hiddenTembusanCount} lainnya` }}
-                    </button>
-                  </div>
-                </div>
-
                 <div v-if="selected.disposisi" class="flex flex-col md:flex-row">
                   <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-25 mb-2 mt-0.5">
-                    Disposisi
-                  </div>
+                    Disposisi</div>
                   <div class="flex flex-col">
                     <div class="text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
                       <span class="font-medium">{{ formatDisposisiInline(selected.disposisi) }}</span>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         </div>
 
         <div class="p-5 sm:p-8 min-h-[150px] bg-white dark:bg-gray-900">
-
           <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Catatan</div>
           <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300" v-html="selected.catatan">
           </div>
@@ -491,15 +421,12 @@ const selectKonsep = (option: any) => {
           <div class="relative overflow-hidden transition-all duration-500 ease-in-out"
             :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
 
-            <div v-if="!selected.konten" class="text-gray-400 italic text-sm py-4">
-              Tidak ada konten tambahan.
-            </div>
-
+            <div v-if="!selected.konten" class="text-gray-400 italic text-sm py-4">Tidak ada konten tambahan.</div>
             <iframe v-else ref="iframe" :srcdoc="selected.konten" class="w-full bg-transparent block"
               style="border: none;" scrolling="no"></iframe>
 
             <div v-show="showReadMoreButton && !isContentExpanded"
-              class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 z-10 pointer-events-none flex items-end justify-center pb-2">
+              class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 z-10 pointer-events-none">
             </div>
           </div>
 
@@ -549,56 +476,18 @@ const selectKonsep = (option: any) => {
             <span class="text-sm font-medium whitespace-nowrap">Lanjut Nota Dinas</span>
           </div>
 
-          <div
+          <div @click="handleLanjutDisposisi"
             class="w-full sm:w-auto flex bg-sky-600 hover:bg-sky-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
             <Send class="w-4 h-4" />
             <span class="text-sm font-medium whitespace-nowrap">Lanjut Disposisi</span>
           </div>
 
           <div v-if="isJenisDI" class="relative w-full sm:w-auto">
-
-            <div @click="toggleKonsepMenu"
+            <div @click="isOpenKonsepModal = true"
               class="w-full sm:w-auto flex bg-yellow-500 hover:bg-yellow-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98] select-none">
               <Edit3 class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Konsep</span>
-              <ChevronDown class="w-4 h-4 transition-transform duration-200 ml-1"
-                :class="{ 'rotate-180': showKonsepMenu }" />
             </div>
-
-            <Transition enter-active-class="transition duration-100 ease-out"
-              enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
-              leave-active-class="transition duration-75 ease-in" leave-from-class="transform scale-100 opacity-100"
-              leave-to-class="transform scale-95 opacity-0">
-
-              <div v-if="showKonsepMenu"
-                class="absolute bottom-full mb-2 left-0 w-full sm:w-auto sm:min-w-[240px] sm:left-auto sm:right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
-
-                <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
-                  <li>
-                    <button @click="selectKonsepOption('draft')"
-                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Nota Dinas
-                    </button>
-                  </li>
-                  <li>
-                    <button @click="selectKonsepOption('review')"
-                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Surat Dinas Internal
-                    </button>
-                  </li>
-                  <li>
-                    <button @click="selectKonsepOption('review')"
-                      class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Surat Dinas Eksternal
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </Transition>
-
-            <div v-if="showKonsepMenu" @click="showKonsepMenu = false"
-              class="fixed inset-0 z-40 bg-transparent cursor-default"></div>
-
           </div>
         </div>
 

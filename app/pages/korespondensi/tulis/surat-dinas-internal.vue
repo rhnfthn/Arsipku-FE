@@ -289,7 +289,7 @@ const { getDraftDetail } = useDraft(); // Asumsi generic draft logic
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Tulis Surat Dinas Internal", to: "#" },
 ];
 
@@ -501,7 +501,7 @@ const confirmSaveDraft = async () => {
     const fd = createFormData(payload, false); // Draft tidak wajib PDF binary
     await saveDraft(fd, editDraftId.value);
     toast.add({ title: 'Draft Disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     toast.add({ title: 'Gagal Simpan Draft', description: e.response?.data?.message, color: 'error' });
   } finally {
