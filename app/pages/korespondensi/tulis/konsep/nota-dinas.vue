@@ -43,8 +43,7 @@
         <div @click="isRefExpanded = !isRefExpanded"
           class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
           <div class="flex items-center py-2 gap-3">
-            <div
-              class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
+            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
             </div>
             <div>
@@ -58,7 +57,8 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank" @click.stop
+            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank"
+              @click.stop
               class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
               Buka Tab Baru
               <UIcon name="i-lucide-external-link" class="w-3 h-3" />
@@ -159,7 +159,7 @@
           <div v-if="refData.catatan"
             class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 rounded-b-lg">
             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm"
+            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm pb-4"
               v-html="refData.catatan">
             </div>
           </div>
@@ -956,7 +956,7 @@ const handleSaveDraft = async () => {
     await saveND(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     toast.add({

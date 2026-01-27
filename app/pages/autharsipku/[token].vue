@@ -83,7 +83,7 @@ onMounted(async () => {
 
       // Routing Dinamis
       if (["admin", "superadmin", "user"].includes(role)) {
-        return navigateTo("/dashboard");
+        return navigateTo("/beranda");
       }
 
       // fallback

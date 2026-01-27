@@ -453,10 +453,10 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   isLabelProcessing.value = true;
 
   try {
-    // Loop semua item terpilih dan tambahkan label (API addNaskahToLabel biasanya single item)
-    // Kita gunakan Promise.all untuk paralel
+    // Loop semua item terpilih dan tambahkan label
     const promises = Array.from(selectedIds.value).map(naskahId =>
-      addNaskahToLabel(naskahId, labelId)
+      // PERUBAHAN DISINI: Tambahkan parameter 'sent'
+      addNaskahToLabel(naskahId, labelId, 'sent')
     );
 
     await Promise.all(promises);
