@@ -484,8 +484,18 @@ import { useCompany } from "~/composables/useCompany";
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
 
-const { getAreasByCompany, getSubAreasByCompanyAndArea, getSubAreasByCompany } =
-  useArea();
+const {
+  getAreasByCompany,
+  getSubAreasByCompanyAndArea,
+  createAreaByCompany,
+  updateAreaByCompany,
+  deleteArea,
+
+  getSubAreasByCompany,
+  createSubAreaByCompany,
+  updateSubAreaByCompany,
+  deleteSubArea,
+} = useArea();
 
 const { getCompanyByCode } = useCompany();
 
@@ -592,7 +602,8 @@ const fetchCompany = async () => {
 };
 
 watch(activeTab, async (tab) => {
-  if (tab === "subArea" && subAreas.value.length === 0) {
+  if (tab === "subArea") {
+    subAreas.value = [];
     await fetchAllSubAreas();
   }
 });
@@ -653,7 +664,16 @@ const openAddAreaModal = () => {
 const openEditModal = (item: any) => {
   isEditing.value = true;
   selectedItem.value = item;
-  formArea.value = { ...item };
+
+  formArea.value = {
+    nama: item.nama,
+    kode: item.kode,
+    area: item.area,
+    alamat: item.alamat,
+    mulai: item.mulai,
+    berakhir: item.berakhir,
+  };
+
   openAddArea.value = true;
 };
 
@@ -662,78 +682,122 @@ const openDeleteConfirm = (item: any) => {
   showDeleteConfirm.value = true;
 };
 
-const submitArea = () => {
-  console.log("SUBMIT:", { type: activeTab.value, ...formArea.value });
+const submitArea = async () => {
+  try {
+    // AREA
+    if (activeTab.value === "area") {
+      const payload = {
+        area: formArea.value.kode,
+        shortText: formArea.value.nama,
+        longText: formArea.value.alamat,
+        startDate: formArea.value.mulai,
+        endDate: formArea.value.berakhir,
+      };
 
-  if (isEditing.value) {
-    if (activeTab.value === "area") {
-      const index = areas.value.findIndex(
-        (a) => a.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        areas.value[index] = {
-          ...formArea.value,
-          subCount: areas.value[index].subCount,
-        };
+      if (!isEditing.value) {
+        await createAreaByCompany(companyId.value, payload);
+        showToast("Berhasil", "Area berhasil ditambahkan", "success");
+      } else {
+        await updateAreaByCompany(
+          companyId.value,
+          selectedItem.value.id,
+          payload,
+        );
+        showToast("Berhasil", "Area berhasil diperbarui", "success");
       }
-    } else {
-      const index = subAreas.value.findIndex(
-        (s) => s.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        const areaName =
-          areas.value.find((a) => a.kode === formArea.value.area)?.nama || "";
-        subAreas.value[index] = { ...formArea.value, areaName };
+
+      await fetchAreas();
+    }
+
+    //SUB AREA
+    if (activeTab.value === "subArea") {
+      const payload = {
+        area: formArea.value.area,
+        sub_area: Number(formArea.value.kode),
+        shortText: formArea.value.nama,
+        longText: formArea.value.alamat,
+        startDate: formArea.value.mulai,
+        endDate: formArea.value.berakhir,
+      };
+
+      if (!isEditing.value) {
+        await createSubAreaByCompany(companyId.value, payload);
+        showToast("Berhasil", "Sub Area berhasil ditambahkan", "success");
+      } else {
+        await updateSubAreaByCompany(
+          companyId.value,
+          selectedItem.value.id,
+          payload,
+        );
+        showToast("Berhasil", "Sub Area berhasil diperbarui", "success");
       }
+
+      await fetchAllSubAreas();
     }
-  } else {
-    if (activeTab.value === "area") {
-      areas.value.push({ ...formArea.value, subCount: 0 });
-    } else {
-      const areaName =
-        areas.value.find((a) => a.kode === formArea.value.area)?.nama || "";
-      subAreas.value.push({ ...formArea.value, areaName });
-    }
+
+    openAddArea.value = false;
+    isEditing.value = false;
+    selectedItem.value = null;
+
+    formArea.value = {
+      nama: "",
+      kode: "",
+      area: "",
+      alamat: "",
+      mulai: "",
+      berakhir: "",
+    };
+  } catch (error) {
+    console.error("Gagal menyimpan data", error);
+    showToast("Gagal", "Terjadi kesalahan saat menyimpan data", "error");
   }
-
-  openAddArea.value = false;
-  formArea.value = {
-    nama: "",
-    kode: "",
-    area: "",
-    alamat: "",
-    mulai: "",
-    berakhir: "",
-  };
 };
 
 const handleDelete = async () => {
   try {
     isDeleting.value = true;
-    console.log("DELETE:", selectedItem.value);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    if (selectedItem.value.kode.startsWith("AREA")) {
-      const index = areas.value.findIndex(
-        (a) => a.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        areas.value.splice(index, 1);
-      }
-    } else {
-      const index = subAreas.value.findIndex(
-        (s) => s.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        subAreas.value.splice(index, 1);
-      }
+    if (activeTab.value === "area") {
+      await deleteArea(selectedItem.value.id);
+      await fetchAreas();
+      showToast("Berhasil", "Area berhasil dihapus", "success");
+    }
+
+    if (activeTab.value === "subArea") {
+      await deleteSubArea(selectedItem.value.id);
+      await fetchAllSubAreas();
+      showToast("Berhasil", "Sub Area berhasil dihapus", "success");
     }
 
     showDeleteConfirm.value = false;
-  } catch (e) {
-    console.error(e);
+    selectedItem.value = null;
+  } catch (error) {
+    console.error("Gagal menghapus data", error);
+    showToast("Gagal", "Data gagal dihapus", "error");
   } finally {
     isDeleting.value = false;
   }
+};
+
+import { useToast } from "#imports";
+
+const toast = useToast();
+
+const showToast = (
+  title: string,
+  message: string,
+  color: "success" | "error" | "warning" | "primary" = "success",
+) => {
+  toast.add({
+    title,
+    description: message,
+    color,
+    icon:
+      color === "success"
+        ? "i-lucide-check-circle"
+        : color === "error"
+          ? "i-lucide-x-circle"
+          : "i-lucide-info",
+  });
 };
 </script>
