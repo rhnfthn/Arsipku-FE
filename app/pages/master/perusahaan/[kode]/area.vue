@@ -464,7 +464,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   ChevronLeft,
   Building2,
@@ -478,7 +478,16 @@ import {
   Trash2,
 } from "lucide-vue-next";
 
+import { useArea } from "~/composables/useArea";
+import { useCompany } from "~/composables/useCompany";
+
 const route = useRoute();
+const companyId = computed(() => route.params.kode as string);
+
+const { getAreasByCompany, getSubAreasByCompanyAndArea, getSubAreasByCompany } =
+  useArea();
+
+const { getCompanyByCode } = useCompany();
 
 const activeTab = ref<"area" | "subArea">("area");
 const searchQuery = ref("");
@@ -498,77 +507,100 @@ const formArea = ref({
   berakhir: "",
 });
 
-const company = ref({
-  kode: route.params.kode,
-  namaPanjang: "Perum LPPNPI",
+const company = ref<{
+  kode: string;
+  namaPanjang: string;
+} | null>(null);
+
+const areas = ref<any[]>([]);
+const subAreas = ref<any[]>([]);
+
+const fetchAreas = async () => {
+  try {
+    const res = await getAreasByCompany(companyId.value);
+
+    areas.value = res.data.map((item) => ({
+      id: item.id,
+      kode: item.area,
+      nama: item.shortText,
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+      subCount: item.subAreasCount ?? 0,
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil area", error);
+  }
+};
+
+const fetchSubAreas = async (areaCode: string) => {
+  try {
+    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
+
+    const mapped = res.data.map((item) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || "",
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    }));
+
+    subAreas.value = [
+      ...subAreas.value.filter((s) => s.area !== areaCode),
+      ...mapped,
+    ];
+  } catch (error) {
+    console.error("Gagal mengambil sub area", error);
+  }
+};
+
+const fetchAllSubAreas = async () => {
+  try {
+    const res = await getSubAreasByCompany(companyId.value);
+
+    subAreas.value = res.data.map((item) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || "",
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil sub area", error);
+  }
+};
+
+const fetchCompany = async () => {
+  try {
+    const data = await getCompanyByCode(companyId.value);
+
+    if (!data) return;
+
+    company.value = {
+      kode: String(data.company),
+      namaPanjang: data.longText,
+    };
+  } catch (error) {
+    console.error("Gagal mengambil data company", error);
+  }
+};
+
+watch(activeTab, async (tab) => {
+  if (tab === "subArea" && subAreas.value.length === 0) {
+    await fetchAllSubAreas();
+  }
 });
 
-const areas = ref([
-  {
-    kode: "AREA-001",
-    nama: "KANTOR PUSAT",
-    alamat: "Kantor Pusat Jakarta",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-    subCount: 4,
-  },
-  {
-    kode: "AREA-002",
-    nama: "CABANG BATISE",
-    alamat: "Cabang Batam",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-    subCount: 1,
-  },
-]);
-
-const subAreas = ref([
-  {
-    kode: "SUB-001",
-    nama: "KANTOR PUSAT",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-002",
-    nama: "CABANG JATSC",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-003",
-    nama: "CABANG MASSC",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2020",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-004",
-    nama: "CABANG MALUM",
-    area: "AREA-001",
-    areaName: "KANTOR PUSAT",
-    alamat: "-",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-  },
-  {
-    kode: "SUB-005",
-    nama: "CABANG PENGATU CVENT",
-    area: "AREA-002",
-    areaName: "CABANG BATISE",
-    alamat: "-",
-    mulai: "01/01/2021",
-    berakhir: "31/12/2030",
-  },
-]);
+onMounted(() => {
+  fetchCompany();
+  fetchAreas();
+});
 
 const filteredAreas = computed(() => {
   if (!searchQuery.value) return areas.value;
@@ -593,8 +625,12 @@ const filteredSubAreas = computed(() => {
   );
 });
 
-const toggleAreaExpand = (kode: string) => {
-  expandedAreas.value[kode] = !expandedAreas.value[kode];
+const toggleAreaExpand = async (areaCode: string) => {
+  expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
+
+  if (expandedAreas.value[areaCode]) {
+    await fetchSubAreas(areaCode);
+  }
 };
 
 const getSubAreasForArea = (areaKode: string) => {
