@@ -804,7 +804,7 @@ const statusOptions = [
 ];
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Beranda", to: "/admin/dashboard" },
   { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
 ];
 </script>

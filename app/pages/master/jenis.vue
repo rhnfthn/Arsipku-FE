@@ -679,7 +679,7 @@ import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
 
 const items = [
-  { label: "Home", to: "/dashboard" },
+  { label: "Home", to: "/beranda" },
   { label: "Jenis", to: "/master/jenis" },
 ] satisfies BreadcrumbItem[];
 

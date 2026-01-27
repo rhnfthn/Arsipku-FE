@@ -33,7 +33,7 @@ const { user, getProfile } = useAuth();
 
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Kotak Masuk", to: "#" },
 ];
 

@@ -950,7 +950,7 @@ const showSignerDropdown = ref(false);
 const signerSearchQuery = ref("");
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
 ];
 

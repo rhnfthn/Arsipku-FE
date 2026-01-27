@@ -1,36 +1,34 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
     <div class="max-w-7xl mx-auto">
-      <!-- Back Button -->
-      <button
-        @click="navigateTo('/master/company')"
-        class="flex items-center gap-2 mb-5 text-gray-600 hover:text-gray-900 group"
-      >
-        <ChevronLeft
-          class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-        />
-        <span class="font-medium">Kembali ke Master Perusahaan</span>
-      </button>
-
       <!-- Header -->
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="text-3xl font-bold text-gray-900">Struktur Organisasi</h1>
-          <p class="text-gray-500 text-sm">
-            Kelola struktur organisasi perusahaan
-          </p>
+          <!-- Breadcrumb -->
+          <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
+            <NuxtLink
+              to="/master/perusahaan"
+              class="hover:text-primary-600 transition-colors"
+            >
+              Master Perusahaan
+            </NuxtLink>
+            <ChevronRight class="w-4 h-4" />
+            <span class="text-gray-900 font-medium">Struktur Organisasi</span>
+          </nav>
+
           <div
-            class="flex gap-3 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+            class="flex gap-3 mt-7 p-4 bg-primary-50 border border-primary-200 rounded-xl"
           >
-            <Building2 class="w-4 h-4 text-blue-900" />
-            <p class="text-sm text-blue-900">
+            <Building2 class="w-4 h-4 text-primary-900" />
+            <p class="text-sm text-primary-900">
               Perusahaan:
-              <span class="font-bold">{{ company?.namaPanjang }}</span>
+              <span class="font-bold">{{ company.namaPanjang }}</span>
             </p>
           </div>
         </div>
         <NuxtLink
-          :to="`/master/company/${route.params.kode}/area`"
+          :to="`/master/perusahaan/${route.params.kode}/area`"
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all shadow-lg"
         >
           <MapPin class="w-4 h-4" />
@@ -42,7 +40,7 @@
       <div
         class="bg-white shadow-lg border border-gray-100 rounded-xl overflow-hidden"
       >
-        <!------------ COMPANY HEADER -------------->
+        <!-- Company Header -->
         <div class="bg-primary text-white px-6 py-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -58,9 +56,9 @@
               </button>
               <Building2 class="w-5 h-5" />
               <div>
-                <h2 class="text-lg font-bold">{{ company?.namaPanjang }}</h2>
-                <p class="text-blue-100 text-xs">
-                  {{ company?.tanggalMulai }} - {{ company?.tanggalBerakhir }}
+                <h2 class="text-lg font-bold">{{ company.namaPanjang }}</h2>
+                <p class="text-primary-100 text-xs">
+                  {{ company.tanggalMulai }} - {{ company.tanggalBerakhir }}
                 </p>
               </div>
               <span class="px-2 py-1 bg-white/20 rounded text-xs font-medium"
@@ -73,12 +71,11 @@
             <div class="flex items-center gap-2">
               <button
                 @click="openAddUnitModal(null, 'company')"
-                class="flex items-center gap-2 px-4 py-1 bg-white hover:bg-white/30 rounded-lg transition-colors text-primary hover:text-white text-sm"
+                class="flex items-center gap-2 px-4 py-1 bg-white hover:bg-white/90 rounded-lg transition-colors text-primary-600 text-sm font-medium"
               >
                 <Plus class="w-4 h-4" />
                 Tambah Unit
               </button>
-
               <button
                 @click="openEditModal(company, 'company')"
                 class="p-2 hover:bg-white/20 rounded transition-colors"
@@ -95,7 +92,7 @@
           </div>
         </div>
 
-        <!-------- ORGANIZATION  -------------->
+        <!-- Organization Tree -->
         <div v-if="companyExpanded" class="p-6">
           <Organization
             v-for="(node, idx) in organizationTree"
@@ -103,7 +100,6 @@
             :node="node"
             :level="0"
             :is-last="idx === organizationTree.length - 1"
-            :parent-type="'direktorat'"
             :expanded-nodes="expandedNodes"
             :hovered-node="hoveredNode"
             @toggle-node="toggleNode"
@@ -112,100 +108,95 @@
             @open-delete="openDeleteConfirm"
             @open-add-unit="openAddUnitModal"
             @open-add-position="openAddPositionModal"
-            @open-add-anggota="openAddAnggotaModal"
+            @open-add-member="openAddMemberModal"
           />
         </div>
       </div>
     </div>
 
-    <!-------------- ADD UNIT MODAL -------------->
+    <!-- Add Unit Modal -->
     <Teleport to="body">
       <Modal v-model="showAddUnitModal" size="xl" @save="handleSaveUnit">
         <template #title>
-          <div class="p-3">
-            <h3 class="text-lg font-bold">Tambah Unit</h3>
-          </div>
+          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Unit</h3>
         </template>
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               Nama Unit <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formUnit.namaUnit"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Contoh: DIVISI KEUANGAN"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               ID Unit <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formUnit.idUnit"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Contoh: UNIT-001"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Titelatur</label>
+            <label class="text-sm font-semibold block mb-1">Titelatur</label>
             <input
               v-model="formUnit.titelatur"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Contoh: Manager"
             />
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold">ID Area</label>
+              <label class="text-sm font-semibold block mb-1">ID Area</label>
               <input
                 v-model="formUnit.idArea"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Masukkan ID Area"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold">Area</label>
+              <label class="text-sm font-semibold block mb-1">Area</label>
               <input
                 v-model="formUnit.area"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Deskripsi Lengkap</label>
+            <label class="text-sm font-semibold block mb-1"
+              >Deskripsi Lengkap</label
+            >
             <textarea
               v-model="formUnit.deskripsi"
-              rows="2"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Deskripsi lengkap unit"
             />
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold">
+              <label class="text-sm font-semibold block mb-1">
                 Tanggal Mulai <span class="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 v-model="formUnit.mulai"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold">
+              <label class="text-sm font-semibold block mb-1">
                 Tanggal Berakhir <span class="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 v-model="formUnit.berakhir"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -213,7 +204,7 @@
       </Modal>
     </Teleport>
 
-    <!-------------- ADD POSITION MODAL -------------->
+    <!-- Add Position Modal -->
     <Teleport to="body">
       <Modal
         v-model="showAddPositionModal"
@@ -221,103 +212,95 @@
         @save="handleSavePosition"
       >
         <template #title>
-          <div clas="p-3">
-            <h3 class="text-lg font-bold">Tambah Posisi</h3>
-            <p class="text-sm mt-1 text-gray-600">Isi form di bawah ini</p>
-          </div>
+          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Posisi</h3>
         </template>
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               Nama Posisi <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formPosition.namaPos"
               placeholder="Direktur Utama"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               ID Posisi <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formPosition.idPos"
               placeholder="POS-001"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Titelatur</label>
+            <label class="text-sm font-semibold block mb-1">Titelatur</label>
             <input
               v-model="formPosition.titelatur"
               placeholder="Masukkan titelatur"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">ID Area</label>
+            <label class="text-sm font-semibold block mb-1">ID Area</label>
             <input
               v-model="formPosition.idArea"
               placeholder="Masukkan ID area"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Area</label>
+            <label class="text-sm font-semibold block mb-1">Area</label>
             <select
               v-model="formPosition.area"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Pilih unit</option>
             </select>
           </div>
-
           <div>
             <label class="flex items-center gap-2">
               <input
                 type="checkbox"
                 v-model="formPosition.chief"
-                class="w-4 h-4"
+                class="w-4 h-4 rounded"
               />
               <span class="text-sm font-semibold">Chief</span>
             </label>
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Deskripsi Lengkap</label>
+            <label class="text-sm font-semibold block mb-1"
+              >Deskripsi Lengkap</label
+            >
             <textarea
               v-model="formPosition.deskripsi"
-              rows="2"
+              rows="3"
               placeholder="Deskripsi lengkap posisi"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold">
+              <label class="text-sm font-semibold block mb-1">
                 Tanggal Mulai <span class="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 v-model="formPosition.mulai"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold">
+              <label class="text-sm font-semibold block mb-1">
                 Tanggal Berakhir <span class="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 v-model="formPosition.berakhir"
-                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -325,84 +308,97 @@
       </Modal>
     </Teleport>
 
-    <!------------ ADD ANGGOTA MODAL -------------->
+    <!-- Add Member Modal -->
     <Teleport to="body">
-      <Modal v-model="showAddAnggotaModal" size="xl" @save="handleSaveAnggota">
+      <Modal v-model="showAddMemberModal" size="md" @save="handleSaveMember">
         <template #title>
-          <div class="p-3">
-            <h3 class="text-lg font-bold">Tambah Anggota</h3>
-            <p class="text-sm mt-1 text-gray-600">Isi form di bawah ini</p>
-          </div>
+          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Anggota</h3>
         </template>
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               Nama Anggota <span class="text-red-500">*</span>
             </label>
             <input
-              v-model="formAnggota.nama"
+              v-model="formMember.nama"
               placeholder="Ahmad Wijaya"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">
+            <label class="text-sm font-semibold block mb-1">
               Personal Number <span class="text-red-500">*</span>
             </label>
             <input
-              v-model="formAnggota.pn"
+              v-model="formMember.pn"
               placeholder="PN-1001"
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
       </Modal>
-    </Teleport>
-    <!-- Edit Modal -->
-    <Teleport to="body">
-      <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
+
+      <!-- Edit Modal -->
+      <Modal v-model="showEditModal" size="md" @save="handleSaveEdit">
         <template #title>
-          <div class="p-3">
-            <h3 class="text-lg font-bold">Edit {{ editType }}</h3>
-          </div>
+          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">
+            Edit {{ editType }}
+          </h3>
         </template>
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-semibold">Nama</label>
+            <label class="text-sm font-semibold block mb-1">Nama</label>
             <input
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
           <div>
-            <label class="text-sm font-semibold">Kode/ID</label>
+            <label class="text-sm font-semibold block mb-1">Kode/ID</label>
             <input
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
       </Modal>
     </Teleport>
+
     <!-- Delete Confirm Modal -->
-    <ConfirmPopup
-      v-model="showDeleteConfirm"
-      title="Hapus Item"
-      message="Apakah Anda yakin ingin menghapus item ini?"
-      confirm-text="Hapus"
-      cancel-text="Batal"
-      @confirm="handleDelete"
-      @cancel="showDeleteConfirm = false"
-    />
+    <Teleport to="body">
+      <Modal v-model="showDeleteConfirm" size="sm" hide-default-footer>
+        <template #title>
+          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Hapus Item</h3>
+        </template>
+
+        <p class="text-gray-600 mb-6">
+          Apakah Anda yakin ingin menghapus item ini?
+        </p>
+
+        <template #footer>
+          <div class="flex justify-end gap-3 px-5 py-2">
+            <button
+              @click="showDeleteConfirm = false"
+              class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              @click="handleDelete"
+              class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Hapus
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import {
-  ChevronLeft,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -411,18 +407,25 @@ import {
   Trash2,
   Building2,
   Info,
+  X,
 } from "lucide-vue-next";
 
 const route = useRoute();
 
 const companyExpanded = ref(true);
-const expandedNodes = ref<Record<string, boolean>>({});
+const expandedNodes = ref<Record<string, boolean>>({
+  "dir-1": true,
+  "pos-1": true,
+  "dir-2": true,
+  "pos-2": true,
+  "unit-3": true,
+});
 const hoveredNode = ref<string | null>(null);
 
 // Modals
 const showAddUnitModal = ref(false);
 const showAddPositionModal = ref(false);
-const showAddAnggotaModal = ref(false);
+const showAddMemberModal = ref(false);
 const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
 const editType = ref<string | null>(null);
@@ -451,7 +454,7 @@ const formPosition = ref({
   berakhir: "",
 });
 
-const formAnggota = ref({
+const formMember = ref({
   nama: "",
   pn: "",
 });
@@ -459,63 +462,115 @@ const formAnggota = ref({
 // Data
 const company = ref({
   kode: route.params.kode,
-  tanggalMulai: "01/01/2023",
+  tanggalMulai: "01/01/2020",
   tanggalBerakhir: "31/12/2025",
   namaPendek: "AIRNAV",
   namaPanjang: "Perum LPPNPI",
 });
 
+// Struktur yang diperbaiki: Unit sejajar dengan Posisi
 const organizationTree = ref([
   {
     id: "dir-1",
     name: "DIREKTORAT UTAMA",
-    direktur: {
-      id: "direktur-1",
-      name: "DIREKTUR UTAMA",
-      pn: "PN-1000",
-      anggota: [
-        {
-          id: "anggota-1",
-          name: "NOVIE RIYANTO",
-          pn: "PN-1000",
-        },
-      ],
-      divisions: [
-        {
-          id: "div-1",
-          name: "CORPORATE SECRETARY DIVISION",
-        },
-        {
-          id: "div-2",
-          name: "DIREKTORAT KESELAMATAN, KEAMANAN DAN STAN",
-        },
-      ],
-    },
+    type: "direktorat",
+    children: [
+      {
+        id: "pos-1",
+        name: "DIREKTUR UTAMA",
+        type: "position",
+        children: [
+          {
+            id: "member-1",
+            name: "NOVIE RIYANTO",
+            pn: "PN-1000",
+            type: "member",
+          },
+        ],
+      },
+      {
+        id: "unit-1",
+        name: "CORPORATE SECRETARY DIVISION",
+        type: "unit",
+        children: [],
+      },
+      {
+        id: "unit-2",
+        name: "DIREKTORAT KESELAMATAN, KEAMANAN DAN STAN",
+        type: "unit",
+        children: [],
+      },
+    ],
   },
   {
     id: "dir-2",
     name: "DIREKTORAT OPERASI",
-    divisions: [],
+    type: "direktorat",
+    children: [
+      {
+        id: "pos-2",
+        name: "DIREKTUR OPERASI",
+        type: "position",
+        children: [
+          {
+            id: "member-2",
+            name: "BAMBANG SUGIARTO",
+            pn: "PN-1002",
+            type: "member",
+          },
+        ],
+      },
+      {
+        id: "unit-3",
+        name: "AIR NAVIGATION SERVICES PLANNING DIVISION",
+        type: "unit",
+        children: [
+          {
+            id: "pos-4",
+            name: "MANAGER PLANNING",
+            type: "position",
+            children: [
+              {
+                id: "member-3",
+                name: "SITI NURHALIZA",
+                pn: "PN-1003",
+                type: "member",
+              },
+            ],
+          },
+          {
+            id: "unit-5",
+            name: "SUB DIVISION STRATEGIC PLANNING",
+            type: "unit",
+            children: [],
+          },
+        ],
+      },
+      {
+        id: "unit-4",
+        name: "AIR NAVIGATION CONTROL DIVISION",
+        type: "unit",
+        children: [],
+      },
+      {
+        id: "pos-3",
+        name: "AIR NAVIGATION INFORMATION MANAGEMENT",
+        type: "position",
+        children: [],
+      },
+    ],
   },
   {
     id: "dir-3",
     name: "DIREKTORAT SDM DAN UMUM",
-    divisions: [],
+    type: "direktorat",
+    children: [],
   },
   {
     id: "dir-4",
     name: "DIREKTORAT TEKNIK",
-    direktur: {
-      id: "direktur-teknik",
-      name: "DIREKTUR TEKNIK",
-      pn: "PN-4000",
-      divisions: [
-        {
-          id: "subdiv-1",
-          name: "TECHNOLOGY SOLUTION DIVISION",
-        },
-      ],
-    },
+    type: "direktorat",
+    children: [],
   },
 ]);
 
@@ -545,8 +600,8 @@ const openAddPositionModal = (parent: any) => {
   showAddPositionModal.value = true;
 };
 
-const openAddAnggotaModal = (parent: any) => {
-  showAddAnggotaModal.value = true;
+const openAddMemberModal = (parent: any) => {
+  showAddMemberModal.value = true;
 };
 
 const handleSaveUnit = () => {
@@ -580,10 +635,10 @@ const handleSavePosition = () => {
   };
 };
 
-const handleSaveAnggota = () => {
-  console.log("SAVE ANGGOTA:", formAnggota.value);
-  showAddAnggotaModal.value = false;
-  formAnggota.value = { nama: "", pn: "" };
+const handleSaveMember = () => {
+  console.log("SAVE MEMBER:", formMember.value);
+  showAddMemberModal.value = false;
+  formMember.value = { nama: "", pn: "" };
 };
 
 const handleSaveEdit = () => {

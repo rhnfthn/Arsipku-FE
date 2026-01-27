@@ -92,7 +92,7 @@
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
-                    :to="`/master/company/${row.kode}/struktur`"
+                    :to="`/master/perusahaan/${row.kode}/struktur`"
                     class="flex px-3 py-1 rounded-lg bg-blue-100 hover:bg-primary hover:text-white text-blue-700 transition-colors w-fit"
                   >
                     <div class="flex p-2 rounded-lg transition-colors">
@@ -130,7 +130,7 @@
                       />
                     </button>
                     <NuxtLink
-                      :to="`/master/company/${row.kode}/area`"
+                      :to="`/master/perusahaan/${row.kode}/area`"
                       class="p-2 hover:bg-green-100 rounded-lg transition-colors group"
                     >
                       <MapPin
@@ -313,7 +313,7 @@ const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
 const breadcrumbs = [
   { label: "beranda", to: "/beranda" },
-  { label: "Penandatanganan", to: "/beranda/digsig/penandatanganan" },
+  { label: "Perusahaan", to: "/master/perusahaan" },
 ];
 
 const formCompany = ref({

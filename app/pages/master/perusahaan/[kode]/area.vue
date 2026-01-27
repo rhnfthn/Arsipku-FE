@@ -1,24 +1,30 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
     <div class="max-w-7xl mx-auto">
-      <!-- Back Button -->
-      <button
-        @click="navigateTo(`/master/company/${route.params.kode}/struktur`)"
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-5 group"
-      >
-        <ChevronLeft
-          class="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-        />
-        <span class="font-medium">Kembali ke Struktur Organisasi</span>
-      </button>
-
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
           <h1 class="text-3xl font-bold text-gray-900">Kelola Area</h1>
-          <p class="text-gray-500 text-sm">
-            Kelola area dan sub area perusahaan
-          </p>
+
+          <div class="mb-5">
+            <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
+              <NuxtLink
+                to="/master/perusahaan"
+                class="hover:text-primary-600 transition-colors"
+              >
+                Master Perusahaan
+              </NuxtLink>
+              <ChevronRight class="w-4 h-4" />
+              <NuxtLink
+                :to="`/master/perusahaan/${route.params.kode}/struktur`"
+                class="hover:text-primary-600 transition-colors"
+              >
+                Struktur Organisasi
+              </NuxtLink>
+              <ChevronRight class="w-4 h-4" />
+              <span class="text-gray-900 font-medium">Kelola Area</span>
+            </nav>
+          </div>
           <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
             <p class="text-sm text-blue-900">
               Perusahaan:

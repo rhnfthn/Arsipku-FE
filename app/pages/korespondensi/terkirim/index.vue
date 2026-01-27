@@ -15,7 +15,7 @@ import * as XLSX from 'xlsx';
 import { CalendarDate } from '@internationalized/date';
 
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Terkirim", to: "#" },
 ];
 

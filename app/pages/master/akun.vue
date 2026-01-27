@@ -185,7 +185,7 @@ const openDelete = (user) => {
 };
 
 const items = [
-  { label: "Dashboard", to: "/" },
+  { label: "Beranda", to: "/" },
   { label: "Manajemen Akun", to: "/admin/master/akun" },
 ];
 

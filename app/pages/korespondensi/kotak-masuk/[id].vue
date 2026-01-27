@@ -22,16 +22,40 @@ const showKonsepMenu = ref(false)
 const toggleKonsepMenu = () => {
   showKonsepMenu.value = !showKonsepMenu.value
 }
-
 const selectKonsepOption = (option: string) => {
-  console.log('Selected option:', option)
-  showKonsepMenu.value = false
-  // Logika navigasi tambahan bisa ditaruh di sini
-  // Misalnya: if (option === 'draft') router.push(...)
-}
+  showKonsepMenu.value = false;
 
+  if (!selected.value?.id) return;
+
+  let targetPath = '';
+
+  // Mapping opsi ke path router
+  switch (option) {
+    case 'konsep_nota_dinas':
+      targetPath = '/korespondensi/tulis/konsep/nota-dinas';
+      break;
+    case 'konsep_surat_dinas_internal':
+      targetPath = '/korespondensi/tulis/konsep/surat-dinas-internal';
+      break;
+    case 'konsep_surat_dinas_eksternal':
+      targetPath = '/korespondensi/tulis/konsep/surat-dinas-eksternal';
+      break;
+    default:
+      console.warn('Opsi konsep tidak dikenal:', option);
+      return;
+  }
+
+  router.push({
+    path: targetPath,
+    query: {
+      ref_id: selected.value.id,
+      ref_jenis: selected.value.jenis,
+      workflow: 'konsep'
+    }
+  });
+}
 const breadcrumbs = [
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
   { label: "Detail Surat", to: "#" },
 ];
@@ -260,7 +284,32 @@ const konsepOptions = [
   }
 ];
 const handleLanjutKonsep = () => { isOpenKonsepModal.value = true; };
-const handleLanjutNotaDinas = () => { /* Logic Nota Dinas */ };
+const handleLanjutNotaDinas = () => {
+  if (!selected.value?.id) return;
+
+  router.push({
+    path: '/korespondensi/tulis/nota-dinas',
+    query: {
+      ref_id: selected.value.id,
+      ref_jenis: selected.value.jenis, // Mengirim jenis surat asal sebagai referensi
+      action: 'tindak_lanjut' // Opsional: penanda ini adalah tindak lanjut
+    }
+  });
+};
+
+const handleLanjutDisposisi = () => {
+  if (!selected.value?.id) return;
+
+  router.push({
+    path: '/korespondensi/tulis/disposisi',
+    query: {
+      ref_id: selected.value.id,
+      ref_jenis: selected.value.jenis,
+      action: 'disposisi'
+    }
+  });
+};
+
 const selectKonsep = (option: any) => {
   isOpenKonsepModal.value = false;
   if (!selected.value?.id) return;
@@ -435,7 +484,7 @@ const selectKonsep = (option: any) => {
                       <div class="break-words">
                         <span class="font-medium">{{ k.nama }}</span>
                         <span v-if="k.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ k.position_text
-                        }})</span>
+                          }})</span>
                       </div>
                     </div>
                     <button v-if="hiddenKepadaCount > 0" @click="showAllKepada = !showAllKepada"
@@ -456,7 +505,7 @@ const selectKonsep = (option: any) => {
                       <div class="break-words">
                         <span class="font-medium">{{ t.nama }}</span>
                         <span v-if="t.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ t.position_text
-                        }})</span>
+                          }})</span>
                       </div>
                     </div>
                     <button v-if="hiddenTembusanCount > 0" @click="showAllTembusan = !showAllTembusan"
@@ -549,7 +598,7 @@ const selectKonsep = (option: any) => {
             <span class="text-sm font-medium whitespace-nowrap">Lanjut Nota Dinas</span>
           </div>
 
-          <div
+          <div @click="handleLanjutDisposisi"
             class="w-full sm:w-auto flex bg-sky-600 hover:bg-sky-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 justify-center items-center transition-colors shadow-sm active:scale-[0.98]">
             <Send class="w-4 h-4" />
             <span class="text-sm font-medium whitespace-nowrap">Lanjut Disposisi</span>
@@ -571,25 +620,25 @@ const selectKonsep = (option: any) => {
               leave-to-class="transform scale-95 opacity-0">
 
               <div v-if="showKonsepMenu"
-                class="absolute bottom-full mb-2 left-0 w-full sm:w-auto sm:min-w-[240px] sm:left-auto sm:right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+                class="absolute bottom-full mb-2 left-0 w-full sm:w-auto sm:left-auto sm:right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
 
                 <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
                   <li>
-                    <button @click="selectKonsepOption('draft')"
+                    <button @click="selectKonsepOption('konsep_nota_dinas')"
                       class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Nota Dinas
+                      Nota Dinas
                     </button>
                   </li>
                   <li>
-                    <button @click="selectKonsepOption('review')"
+                    <button @click="selectKonsepOption('konsep_surat_dinas_internal')"
                       class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Surat Dinas Internal
+                      Surat Dinas Internal
                     </button>
                   </li>
                   <li>
-                    <button @click="selectKonsepOption('review')"
+                    <button @click="selectKonsepOption('konsep_surat_dinas_eksternal')"
                       class="flex items-center gap-2 w-full px-4 py-3 sm:py-2 text-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 text-left">
-                      Lanjut Surat Dinas Eksternal
+                      Surat Dinas Eksternal
                     </button>
                   </li>
                 </ul>
