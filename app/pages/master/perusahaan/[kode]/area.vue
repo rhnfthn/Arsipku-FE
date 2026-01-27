@@ -1,31 +1,40 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+  <div class="min-h-screen">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Kelola Area</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Kelola Area</h1>
 
           <div class="mb-5">
             <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
               <NuxtLink
                 to="/master/perusahaan"
-                class="hover:text-primary-600 transition-colors"
+                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
               >
                 Master Perusahaan
               </NuxtLink>
-              <ChevronRight class="w-4 h-4" />
+              <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+                >/</span
+              >
               <NuxtLink
-                :to="`/master/perusahaan/${route.params.kode}/struktur`"
-                class="hover:text-primary-600 transition-colors"
+                to="/master/perusahaan/${route.params.kode}/struktur"
+                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
               >
                 Struktur Organisasi
               </NuxtLink>
-              <ChevronRight class="w-4 h-4" />
-              <span class="text-gray-900 font-medium">Kelola Area</span>
+              <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+                >/</span
+              >
+              <span class="text-primary-400 font-semibold text-xs"
+                >Kelola Area</span
+              >
             </nav>
           </div>
-          <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div
+            class="flex gap-3 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+          >
+            <Building2 class="w-4 h-4 text-blue-900" />
             <p class="text-sm text-blue-900">
               Perusahaan:
               <span class="font-bold">{{ company?.namaPanjang }}</span>
@@ -43,7 +52,7 @@
 
       <!-- Card -->
       <div
-        class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+        class="bg-white rounded-2xl mt-5 shadow-lg border border-gray-100 overflow-hidden"
       >
         <!-- Tab & Actions -->
         <div
@@ -137,17 +146,19 @@
                       <ChevronRight v-else class="w-5 h-5 text-gray-400" />
                     </button>
                   </td>
-                  <td class="px-6 py-4">
+                  <td class="px-1 py-3">
                     <span
-                      class="inline-flex items-center text-sm font-semibold"
+                      class="flex text-nowrap items-center text-sm font-semibold"
                     >
                       {{ area.kode }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                  <td
+                    class="px-6 py-4 text-nowrap text-sm font-medium text-gray-900"
+                  >
                     {{ area.nama }}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-700">
+                  <td class="px-6 py-4 text-nowrap text-sm text-gray-700">
                     {{ area.alamat }}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-700">
@@ -158,7 +169,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <span
-                      class="inline-flex items-center text-xs font-semibold"
+                      class="flex text-nowrap items-center text-xs font-medium"
                     >
                       {{ area.subCount }} sub areas
                     </span>
@@ -296,17 +307,17 @@
                     >{{ sub.kode }}</span
                   >
                 </td>
-                <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                <td class="px-6 py-4 text-sm font-medium text-gray-900">
                   {{ sub.nama }}
                 </td>
                 <td class="px-6 py-4">
                   <span
-                    class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
+                    class="flex text-nowrap items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
                   >
                     {{ sub.areaName }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-center text-gray-700">
                   {{ sub.alamat }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ sub.mulai }}</td>
@@ -440,7 +451,8 @@
     <!-- Delete Confirm Modal -->
     <ConfirmPopup
       v-model="showDeleteConfirm"
-      title="Hapus Item"
+      type="danger"
+      title="Hapus Data"
       :message="`Apakah Anda yakin ingin menghapus ${selectedItem?.nama}?`"
       confirm-text="Hapus"
       cancel-text="Batal"
@@ -455,6 +467,7 @@
 import { ref, computed } from "vue";
 import {
   ChevronLeft,
+  Building2,
   ChevronDown,
   ChevronRight,
   Plus,

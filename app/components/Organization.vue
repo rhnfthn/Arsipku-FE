@@ -76,7 +76,7 @@
           <button
             v-if="getNodeConfig().canAddMember"
             @click="$emit('openAddMember', node)"
-            class="flex items-center gap-1 px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded transition-colors"
+            class="flex items-center gap-1 px-2 py-1 text-xs hover:bg-gray-50 rounded transition-colors"
           >
             <UserPlus class="w-3 h-3" />
             Tambah Anggota
@@ -185,7 +185,7 @@ const getNodeConfig = () => {
         iconColor: "text-primary-700",
         icon: Building2,
         canAddPosition: true,
-        canAddUnit: true,
+        canAddUnit: false,
         canAddMember: false,
         hideEdit: false,
         hideDelete: false,
@@ -193,8 +193,8 @@ const getNodeConfig = () => {
     case "position":
       return {
         bgColor: "bg-orange-50 hover:bg-orange-100",
-        borderColor: "border-l-4 border-orange-500",
-        textColor: "text-orange-900 font-medium",
+        borderColor: "border-l-4 border-orange-600",
+        textColor: "text-orange-900 font-semibold",
         iconColor: "text-orange-700",
         icon: User,
         canAddPosition: false,
@@ -211,17 +211,17 @@ const getNodeConfig = () => {
         iconColor: "text-primary-700",
         icon: Building,
         canAddPosition: true,
-        canAddUnit: true,
+        canAddUnit: false,
         canAddMember: false,
         hideEdit: false,
         hideDelete: false,
       };
     case "member":
       return {
-        bgColor: "bg-green-50 hover:bg-green-100",
-        borderColor: "border-l-4 border-green-500",
-        textColor: "text-green-900 font-medium",
-        iconColor: "text-green-700",
+        bgColor: "bg-gray-50 hover:bg-gray-100",
+        borderColor: "border-l-4 border-gray-500",
+        textColor: "text-black font-medium",
+        // iconColor: "text-green-700",
         icon: User,
         canAddPosition: false,
         canAddUnit: false,

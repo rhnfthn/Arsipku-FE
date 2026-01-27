@@ -1,31 +1,34 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+  <div class="min-h-screen">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Struktur Organisasi</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Struktur Organisasi</h1>
           <!-- Breadcrumb -->
           <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
             <NuxtLink
               to="/master/perusahaan"
-              class="hover:text-primary-600 transition-colors"
+              class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
             >
               Master Perusahaan
             </NuxtLink>
-            <ChevronRight class="w-4 h-4" />
-            <span class="text-gray-900 font-medium">Struktur Organisasi</span>
+            <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+              >/</span
+            >
+            <span class="text-primary-400 font-semibold text-xs"
+              >Struktur Organisasi</span
+            >
           </nav>
-
-          <div
-            class="flex gap-3 mt-7 p-4 bg-primary-50 border border-primary-200 rounded-xl"
+          <!-- <div
+            class="flex mt-4 p-4 gap-3 bg-blue-50 border border-blue-200 rounded-xl"
           >
-            <Building2 class="w-4 h-4 text-primary-900" />
-            <p class="text-sm text-primary-900">
+            <Building2 class="w-4 h-4 text-blue-900" />
+            <p class="text-sm text-blue-900">
               Perusahaan:
-              <span class="font-bold">{{ company.namaPanjang }}</span>
+              <span class="font-bold">{{ company?.namaPanjang }}</span>
             </p>
-          </div>
+          </div> -->
         </div>
         <NuxtLink
           :to="`/master/perusahaan/${route.params.kode}/area`"
@@ -38,7 +41,7 @@
 
       <!-- Organization Tree Card -->
       <div
-        class="bg-white shadow-lg border border-gray-100 rounded-xl overflow-hidden"
+        class="bg-white shadow-lg border mt-5 border-gray-100 rounded-xl overflow-hidden"
       >
         <!-- Company Header -->
         <div class="bg-primary text-white px-6 py-4">
@@ -71,7 +74,7 @@
             <div class="flex items-center gap-2">
               <button
                 @click="openAddUnitModal(null, 'company')"
-                class="flex items-center gap-2 px-4 py-1 bg-white hover:bg-white/90 rounded-lg transition-colors text-primary-600 text-sm font-medium"
+                class="flex items-center gap-2 px-3 py-1 bg-white hover:bg-white/90 rounded-lg transition-colors text-primary-600 text-sm font-medium"
               >
                 <Plus class="w-4 h-4" />
                 Tambah Unit
@@ -82,8 +85,9 @@
               >
                 <Pencil class="w-4 h-4" />
               </button>
+
               <button
-                @click="openDeleteConfirm(company)"
+                @click="openDelete(company)"
                 class="p-2 hover:bg-red-500/30 rounded transition-colors"
               >
                 <Trash2 class="w-4 h-4" />
@@ -91,7 +95,16 @@
             </div>
           </div>
         </div>
-
+        <div class="relative w-full mt-5 ml-5 pr-5">
+          <Search
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            v-model="searchQuery"
+            placeholder="Cari..."
+            class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
         <!-- Organization Tree -->
         <div v-if="companyExpanded" class="p-6">
           <Organization
@@ -105,7 +118,7 @@
             @toggle-node="toggleNode"
             @set-hovered="setHoveredNode"
             @open-edit="openEditModal"
-            @open-delete="openDeleteConfirm"
+            @open-delete="openDelete"
             @open-add-unit="openAddUnitModal"
             @open-add-position="openAddPositionModal"
             @open-add-member="openAddMemberModal"
@@ -118,85 +131,94 @@
     <Teleport to="body">
       <Modal v-model="showAddUnitModal" size="xl" @save="handleSaveUnit">
         <template #title>
-          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Unit</h3>
+          <h3 class="font-semibold text-lg mb-3 mt-3 ml-5">Tambah Unit</h3>
         </template>
 
-        <div class="space-y-4">
+        <div class="space-y-4 p-1">
           <div>
-            <label class="text-sm font-semibold block mb-1">
+            <Heading variant="heading11m" class="text-xs">
               Nama Unit <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <input
               v-model="formUnit.namaUnit"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               placeholder="Contoh: DIVISI KEUANGAN"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">
+            <Heading variant="heading11m" class="text-xs">
               ID Unit <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <input
               v-model="formUnit.idUnit"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               placeholder="Contoh: UNIT-001"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">Titelatur</label>
+            <Heading variant="heading11m" class="text-xs">
+              Titelatur <span class="text-red-500">*</span>
+            </Heading>
             <input
               v-model="formUnit.titelatur"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               placeholder="Contoh: Manager"
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold block mb-1">ID Area</label>
+              <Heading variant="heading11m" class="text-xs">
+                ID Area <span class="text-red-500">*</span>
+              </Heading>
               <input
                 v-model="formUnit.idArea"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
                 placeholder="Masukkan ID Area"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold block mb-1">Area</label>
+              <Heading variant="heading11m" class="text-xs">
+                Area <span class="text-red-500">*</span>
+              </Heading>
               <input
                 v-model="formUnit.area"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               />
             </div>
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1"
-              >Deskripsi Lengkap</label
-            >
+            <Heading variant="heading11m" class="text-xs">
+              Deskripsi Lengkap <span class="text-red-500">*</span>
+            </Heading>
+
             <textarea
               v-model="formUnit.deskripsi"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              rows="2"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               placeholder="Deskripsi lengkap unit"
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold block mb-1">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Mulai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
+
               <input
                 type="date"
                 v-model="formUnit.mulai"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold block mb-1">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Berakhir <span class="text-red-500">*</span>
-              </label>
+              </Heading>
+
               <input
                 type="date"
                 v-model="formUnit.berakhir"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               />
             </div>
           </div>
@@ -212,51 +234,58 @@
         @save="handleSavePosition"
       >
         <template #title>
-          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Posisi</h3>
+          <h3 class="font-semibold text-lg mb-3 mt-3 ml-5">Tambah Posisi</h3>
         </template>
 
-        <div class="space-y-4">
+        <div class="space-y-4 p-1">
           <div>
-            <label class="text-sm font-semibold block mb-1">
+            <Heading variant="heading11m" class="text-xs">
               Nama Posisi <span class="text-red-500">*</span>
-            </label>
+            </Heading>
+
             <input
               v-model="formPosition.namaPos"
               placeholder="Direktur Utama"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">
+            <Heading variant="heading11m" class="text-xs">
               ID Posisi <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <input
               v-model="formPosition.idPos"
               placeholder="POS-001"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">Titelatur</label>
+            <Heading variant="heading11m" class="text-xs">
+              Titelatur <span class="text-red-500">*</span>
+            </Heading>
             <input
               v-model="formPosition.titelatur"
               placeholder="Masukkan titelatur"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">ID Area</label>
+            <Heading variant="heading11m" class="text-xs">
+              ID Area <span class="text-red-500">*</span>
+            </Heading>
             <input
               v-model="formPosition.idArea"
               placeholder="Masukkan ID area"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">Area</label>
+            <Heading variant="heading11m" class="text-xs">
+              Area <span class="text-red-500">*</span>
+            </Heading>
             <select
               v-model="formPosition.area"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             >
               <option value="">Pilih unit</option>
             </select>
@@ -268,39 +297,42 @@
                 v-model="formPosition.chief"
                 class="w-4 h-4 rounded"
               />
-              <span class="text-sm font-semibold">Chief</span>
+              <span class="text-sm font-medium">Chief</span>
             </label>
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1"
-              >Deskripsi Lengkap</label
-            >
+            <Heading variant="heading11m" class="text-xs">
+              Deskripsi Lengkap <span class="text-red-500">*</span>
+            </Heading>
+
             <textarea
               v-model="formPosition.deskripsi"
               rows="3"
               placeholder="Deskripsi lengkap posisi"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-sm font-semibold block mb-1">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Mulai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
+
               <input
                 type="date"
                 v-model="formPosition.mulai"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               />
             </div>
             <div>
-              <label class="text-sm font-semibold block mb-1">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Berakhir <span class="text-red-500">*</span>
-              </label>
+              </Heading>
+
               <input
                 type="date"
                 v-model="formPosition.berakhir"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               />
             </div>
           </div>
@@ -310,89 +342,78 @@
 
     <!-- Add Member Modal -->
     <Teleport to="body">
-      <Modal v-model="showAddMemberModal" size="md" @save="handleSaveMember">
+      <Modal v-model="showAddMemberModal" size="xl" @save="handleSaveMember">
         <template #title>
-          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Tambah Anggota</h3>
+          <h3 class="font-semibold text-lg mb-3 mt-3 ml-5">Tambah Anggota</h3>
         </template>
 
-        <div class="space-y-4">
+        <div class="space-y-4 p-1">
           <div>
-            <label class="text-sm font-semibold block mb-1">
+            <Heading variant="heading11m" class="text-xs">
               Nama Anggota <span class="text-red-500">*</span>
-            </label>
+            </Heading>
+
             <input
               v-model="formMember.nama"
               placeholder="Ahmad Wijaya"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">
-              Personal Number <span class="text-red-500">*</span>
-            </label>
+            <Heading variant="heading11m" class="text-xs">
+              Personal Number<span class="text-red-500">*</span>
+            </Heading>
+
             <input
               v-model="formMember.pn"
               placeholder="PN-1001"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
         </div>
       </Modal>
 
       <!-- Edit Modal -->
-      <Modal v-model="showEditModal" size="md" @save="handleSaveEdit">
+      <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
         <template #title>
           <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">
             Edit {{ editType }}
           </h3>
         </template>
 
-        <div class="space-y-4">
+        <div class="space-y-5">
           <div>
-            <label class="text-sm font-semibold block mb-1">Nama</label>
+            <Heading variant="heading11m" class="text-xs">
+              Nama <span class="text-red-500">*</span>
+            </Heading>
             <input
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
           <div>
-            <label class="text-sm font-semibold block mb-1">Kode/ID</label>
+            <Heading variant="heading11m" class="text-xs">
+              Kode ID <span class="text-red-500">*</span>
+            </Heading>
             <input
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
         </div>
       </Modal>
     </Teleport>
 
-    <!-- Delete Confirm Modal -->
-    <Teleport to="body">
-      <Modal v-model="showDeleteConfirm" size="sm" hide-default-footer>
-        <template #title>
-          <h3 class="font-semibold text-lg mb-3 mt-5 ml-5">Hapus Item</h3>
-        </template>
-
-        <p class="text-gray-600 mb-6">
-          Apakah Anda yakin ingin menghapus item ini?
-        </p>
-
-        <template #footer>
-          <div class="flex justify-end gap-3 px-5 py-2">
-            <button
-              @click="showDeleteConfirm = false"
-              class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              @click="handleDelete"
-              class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Hapus
-            </button>
-          </div>
-        </template>
-      </Modal>
-    </Teleport>
+    <!-- Delete Confirm Popup -->
+    <ConfirmPopup
+      v-model="confirmDeleteOpen"
+      type="danger"
+      title="Hapus Data"
+      message="Yakin ingin menghapus data ini?"
+      confirmText="Hapus"
+      cancelText="Batal"
+      cancelColor="primary"
+      @confirm="deleteNow"
+      @cancel="confirmDeleteOpen = false"
+    />
   </div>
 </template>
 
@@ -407,9 +428,12 @@ import {
   Trash2,
   Building2,
   Info,
+  Search,
   X,
 } from "lucide-vue-next";
 
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref(null);
 const route = useRoute();
 
 const companyExpanded = ref(true);
@@ -427,7 +451,6 @@ const showAddUnitModal = ref(false);
 const showAddPositionModal = ref(false);
 const showAddMemberModal = ref(false);
 const showEditModal = ref(false);
-const showDeleteConfirm = ref(false);
 const editType = ref<string | null>(null);
 
 // Forms
@@ -588,8 +611,25 @@ const openEditModal = (item: any, type: string) => {
   showEditModal.value = true;
 };
 
-const openDeleteConfirm = (item: any) => {
-  showDeleteConfirm.value = true;
+const openDelete = (item: any) => {
+  itemToDelete.value = item;
+  confirmDeleteOpen.value = true;
+};
+
+const deleteNow = async () => {
+  if (!itemToDelete.value) return;
+
+  try {
+    console.log("🗑️ Deleting item:", itemToDelete.value);
+    // Uncomment when API is ready
+    // await deleteItem(itemToDelete.value.id);
+    confirmDeleteOpen.value = false;
+    // await fetchData();
+  } catch (error) {
+    console.error("❌ Error deleting item:", error);
+  } finally {
+    itemToDelete.value = null;
+  }
 };
 
 const openAddUnitModal = (parent: any, type: string) => {
@@ -644,10 +684,5 @@ const handleSaveMember = () => {
 const handleSaveEdit = () => {
   console.log("SAVE EDIT");
   showEditModal.value = false;
-};
-
-const handleDelete = () => {
-  console.log("DELETE CONFIRMED");
-  showDeleteConfirm.value = false;
 };
 </script>
