@@ -38,23 +38,33 @@ const { user, getProfile } = useAuth();
 const { labels, fetchLabels, createLabel, addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 const addNaskahToLabel = async (naskahId, labelId) => {
-  // Pastikan source adalah 'inbox' untuk halaman ini
   return await _addNaskahToLabel(naskahId, labelId, 'inbox');
 };
 
-// ... kode lain tetap sama ...
-
-// --- UPDATE DI BAGIAN ASSIGN LABEL ---
 const assignLabelToSelected = async (labelId: string, labelName: string) => {
   if (selectedIds.value.size === 0) return;
   isLabelProcessing.value = true;
 
   try {
     // Loop semua item terpilih dan tambahkan label
-    const promises = Array.from(selectedIds.value).map(naskahId =>
-      // Cukup panggil fungsi wrapper, tidak perlu 'sent' lagi disini
-      addNaskahToLabel(naskahId, labelId)
-    );
+    const promises = Array.from(selectedIds.value).map(selectedId => {
+
+      // 1. Cari object surat di array 'emails' berdasarkan ID yang dipilih (ID Sirkulasi)
+      const mailItem = emails.value.find(e => e.id === selectedId);
+
+      // 2. Ambil ID Naskah yang valid
+      // PERBAIKAN: Cek properti 'naskahId' (camelCase) atau 'naskah_id' (snake_case) di root object dulu
+      // 'originalData' hanya dijadikan fallback terakhir
+      const realNaskahId =
+        mailItem?.naskahId ||
+        mailItem?.naskah_id ||
+        mailItem?.originalData?.id_naskah ||
+        selectedId; // Fallback jika semua gagal (meski berisiko salah)
+
+      // 3. Kirim ID Naskah ke fungsi label dengan tipe 'inbox'
+      // Pastikan parameter ke-3 adalah 'inbox' (sesuai API backend biasanya)
+      return addNaskahToLabel(realNaskahId, labelId, 'inbox');
+    });
 
     await Promise.all(promises);
 
@@ -725,7 +735,9 @@ const downloadExcel = () => {
 
     </div>
 
-    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" />
+    <!-- <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" /> -->
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @assign="assignLabelToSelected"
+      @success="selectedIds.clear()" />
 
     <Teleport to="body">
       <div v-if="showDeleteModal"

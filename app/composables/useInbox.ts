@@ -58,7 +58,7 @@ export function useInbox(positionId: any) {
         const name = it.pengirim?.nama || "-";
 
         return {
-          id: it.id_sirkulasi,
+          id: it.id_naskah,
           naskahId: it.id_naskah,
           sifat: it.sifat || null,
 

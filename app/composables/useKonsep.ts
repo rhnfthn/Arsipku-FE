@@ -30,6 +30,11 @@ export const useKonsep = () => {
     return res.data;
   };
 
+  const createKonsep = async (formData: FormData) => {
+    // Endpoint sesuai request: /KONSEP/create
+    return await apiPost("/KONSEP/create", formData);
+  };
+
   // Actions
   const finalizeKonsep = async (id: string, formData: FormData) => {
     return await apiPost(`/KONSEP/finalize/${id}`, formData);
@@ -50,5 +55,6 @@ export const useKonsep = () => {
     finalizeKonsep,
     forwardKonsep,
     rejectKonsep,
+    createKonsep
   };
 };
