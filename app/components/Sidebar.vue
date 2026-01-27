@@ -492,7 +492,11 @@ const userMenuUtilitas = computed(() => {
       to: "/penandatangan",
       icon: "i-lucide-signature",
     },
-    { label: "Penyingkat Tautan", to: "/penyingkat-tautan", icon: "i-lucide-link" },
+    {
+      label: "Penyingkat Tautan",
+      to: "/penyingkat-tautan",
+      icon: "i-lucide-link",
+    },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Titelatur Inggris",
@@ -568,8 +572,12 @@ const adminMenuUtilitas = computed(() => {
         { label: "Log Digsig", to: "/digsig/log-digsig" },
       ],
     },
-    { label: "Penyingkat Tautan", to: "/penyingkat-tautan", icon: "i-lucide-link" },
-    { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
+    {
+      label: "Penyingkat Tautan",
+      to: "/penyingkat-tautan",
+      icon: "i-lucide-link",
+    },
+    // { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Usulan Penomoran",
