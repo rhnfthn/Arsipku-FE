@@ -279,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   Search,
   Plus,
@@ -288,6 +288,14 @@ import {
   Trash2,
   Building2,
 } from "lucide-vue-next";
+import { useCompany } from "~/composables/useCompany";
+
+const { getCompanies, createCompany, updateCompany, deleteCompany } =
+  useCompany();
+
+import { useToast } from "#imports";
+
+const toast = useToast();
 
 const search = ref("");
 const openAddCompany = ref(false);
@@ -304,30 +312,27 @@ const formCompany = ref({
   namaPanjang: "",
 });
 
-const editForm = ref({
-  tanggalMulai: "",
-  tanggalBerakhir: "",
-  kode: "",
-  namaPendek: "",
-  namaPanjang: "",
-});
+//get
+const rows = ref<any[]>([]);
 
-const rows = ref([
-  {
-    tanggalMulai: "01/01/2023",
-    tanggalBerakhir: "31/12/2025",
-    kode: "10000",
-    namaPendek: "AIRNAV",
-    namaPanjang: "Perum LPPNPI",
-  },
-  {
-    tanggalMulai: "15/03/2023",
-    tanggalBerakhir: "14/03/2026",
-    kode: "1001",
-    namaPendek: "test",
-    namaPanjang: "test123",
-  },
-]);
+const fetchCompanies = async () => {
+  try {
+    const res = await getCompanies();
+
+    rows.value = res.data.map((item) => ({
+      id: item.id,
+      tanggalMulai: item.startDate,
+      tanggalBerakhir: item.endDate,
+      kode: String(item.company),
+      namaPendek: item.shortText,
+      namaPanjang: item.longText,
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil data company", error);
+  }
+};
+
+onMounted(fetchCompanies);
 
 const filteredRows = computed(() => {
   if (!search.value) return rows.value;
@@ -340,53 +345,134 @@ const filteredRows = computed(() => {
   );
 });
 
+// post
+const handleSaveCompany = async () => {
+  try {
+    await createCompany({
+      company: Number(formCompany.value.kode),
+      shortText: formCompany.value.namaPendek,
+      longText: formCompany.value.namaPanjang,
+      startDate: formCompany.value.tanggalMulai,
+      endDate: formCompany.value.tanggalBerakhir,
+    });
+
+    await fetchCompanies();
+
+    toast.add({
+      title: "Berhasil",
+      description: "Perusahaan berhasil ditambahkan",
+      color: "success",
+      icon: "i-lucide-check-circle",
+    });
+
+    openAddCompany.value = false;
+
+    formCompany.value = {
+      tanggalMulai: "",
+      tanggalBerakhir: "",
+      kode: "",
+      namaPendek: "",
+      namaPanjang: "",
+    };
+  } catch (error) {
+    toast.add({
+      title: "Gagal",
+      description: "Gagal menambahkan perusahaan",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    console.error(error);
+  }
+};
+
+//put
+const editForm = ref({
+  id: "",
+  tanggalMulai: "",
+  tanggalBerakhir: "",
+  kode: "",
+  namaPendek: "",
+  namaPanjang: "",
+});
+
 const openEditModal = (row: any) => {
   selectedRow.value = row;
-  editForm.value = { ...row };
+
+  editForm.value = {
+    id: row.id,
+    tanggalMulai: row.tanggalMulai,
+    tanggalBerakhir: row.tanggalBerakhir,
+    kode: row.kode,
+    namaPendek: row.namaPendek,
+    namaPanjang: row.namaPanjang,
+  };
+
   showEditModal.value = true;
 };
 
+const handleSaveEdit = async () => {
+  try {
+    await updateCompany(editForm.value.id, {
+      company: Number(editForm.value.kode),
+      shortText: editForm.value.namaPendek,
+      longText: editForm.value.namaPanjang,
+      startDate: editForm.value.tanggalMulai,
+      endDate: editForm.value.tanggalBerakhir,
+    });
+
+    await fetchCompanies();
+
+    toast.add({
+      title: "Berhasil",
+      description: "Perusahaan berhasil diperbarui",
+      color: "success",
+      icon: "i-lucide-check-circle",
+    });
+
+    showEditModal.value = false;
+  } catch (error) {
+    toast.add({
+      title: "Gagal",
+      description: "Gagal memperbarui perusahaan",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    console.error(error);
+  }
+};
+
+//delete
 const openDeleteConfirm = (row: any) => {
   selectedRow.value = row;
   showDeleteConfirm.value = true;
 };
 
-const handleSaveCompany = () => {
-  console.log("SAVE COMPANY:", formCompany.value);
-  rows.value.push({ ...formCompany.value });
-  openAddCompany.value = false;
-  formCompany.value = {
-    tanggalMulai: "",
-    tanggalBerakhir: "",
-    kode: "",
-    namaPendek: "",
-    namaPanjang: "",
-  };
-};
-
-const handleSaveEdit = () => {
-  console.log("SAVE EDIT:", editForm.value);
-  const index = rows.value.findIndex((r) => r.kode === selectedRow.value.kode);
-  if (index !== -1) {
-    rows.value[index] = { ...editForm.value };
-  }
-  showEditModal.value = false;
-};
-
 const handleDelete = async () => {
+  if (!selectedRow.value?.id) return;
+
   try {
     isDeleting.value = true;
-    console.log("DELETE:", selectedRow.value);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const index = rows.value.findIndex(
-      (r) => r.kode === selectedRow.value.kode,
-    );
-    if (index !== -1) {
-      rows.value.splice(index, 1);
-    }
+
+    await deleteCompany(selectedRow.value.id);
+    await fetchCompanies();
+
+    toast.add({
+      title: "Berhasil",
+      description: `Perusahaan ${selectedRow.value.namaPendek} berhasil dihapus`,
+      color: "success",
+      icon: "i-lucide-trash-2",
+    });
+
     showDeleteConfirm.value = false;
-  } catch (e) {
-    console.error(e);
+    selectedRow.value = null;
+  } catch (error) {
+    toast.add({
+      title: "Gagal",
+      description: "Gagal menghapus perusahaan",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    console.error(error);
   } finally {
     isDeleting.value = false;
   }
