@@ -1,13 +1,13 @@
 <template>
-  <div class="">
+  <div class="min-h-screen">
     <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader title="Tertuju Eksternal" :items="items" />
       <button
         @click="showModal = true"
-        class="flex items-center gap-2 bg-primary text-white space-y-6 h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -15,41 +15,69 @@
     </div>
 
     <div
-      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white mt-5"
+      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
     >
+      <!-- Top Bar -->
       <div class="flex flex-wrap gap-4 items-center p-3">
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
 
+        <!-- Rows per page -->
+        <select
+          v-model="rowsPerPage"
+          class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+        >
+          <option v-for="n in rowsChoices" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
+
         <div class="relative flex-1 w-full px-2">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
             v-model="filters.search"
             type="text"
-            placeholder="Cari perihal / nomor..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            placeholder="Cari nama / alamat / telepon..."
+            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
         >
           <FileDown class="w-4 h-4" />
           Export
         </button>
       </div>
 
+      <!-- Table -->
       <table class="min-w-full border-collapse text-sm">
         <thead class="text-left bg-primary-400 text-white">
           <tr>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
-              Nama
+            <th
+              @click="sortBy('nama')"
+              class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold cursor-pointer select-none hover:bg-primary-500 transition-colors"
+            >
+              <div class="flex items-center gap-2">
+                <span>Nama</span>
+                <span class="w-4 h-4 inline-flex items-center justify-center">
+                  <ArrowUpDown
+                    v-if="sortColumn !== 'nama'"
+                    class="w-3 h-3 opacity-70"
+                  />
+                  <ChevronUp
+                    v-else-if="sortDirection === 'asc'"
+                    class="w-4 h-4"
+                  />
+                  <ChevronDown v-else class="w-4 h-4" />
+                </span>
+              </div>
             </th>
             <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
               Alamat
@@ -71,9 +99,12 @@
 
         <tbody>
           <tr
-            v-for="item in filteredData"
+            v-for="(item, idx) in paginatedData"
             :key="item.id"
-            class="hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize"
+            :class="[
+              'hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize',
+              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+            ]"
           >
             <td class="px-4 py-3 font-medium">
               {{ item.nama }}
@@ -105,11 +136,17 @@
             </td>
 
             <td class="px-4 py-3 text-center flex justify-center gap-5">
-              <button class="text-yellow-500" @click="openEdit(item)">
+              <button
+                class="text-yellow-500 hover:text-yellow-600 transition-colors"
+                @click="openEdit(item)"
+              >
                 <Pencil class="w-4 h-4" />
               </button>
 
-              <button class="text-red-500" @click="handleDelete(item.id)">
+              <button
+                class="text-red-500 hover:text-red-600 transition-colors"
+                @click="handleDelete(item.id)"
+              >
                 <Trash2 class="w-4 h-4" />
               </button>
             </td>
@@ -117,83 +154,200 @@
         </tbody>
       </table>
 
-      <Teleport to="body">
-        <AddUsulan
-          v-model="openAdd"
-          @submit="handleSubmitFromModal"
-          @preview="handlePreview"
-      /></Teleport>
-      <Teleport to="body">
-        <Modal v-model="showModal" @save="handleSave">
-          <template #title>
-            <Heading
-              variant="heading9b"
-              class="font-semibold text-sm mb-3 mt-5 ml-5"
+      <!-- Pagination -->
+      <div
+        v-if="filteredData.length > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+      >
+        <div class="text-xs text-gray-600">
+          Menampilkan {{ paginatedData.length }} dari {{ filteredData.length }}
+          data
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Back Button -->
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              {{
-                editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal"
-              }}
-            </Heading>
-          </template>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
 
-          <!-- FIELD PERSNUM -->
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-semibold text-gray-700">Nama</label>
-            <input
-              v-model="form.nama"
-              type="text"
-              placeholder="Masukkan nama"
-              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-semibold text-gray-700">Alamat</label>
-            <textarea
-              v-model="form.alamat"
-              type="text"
-              placeholder="Masukkan alamat"
-              class="border border-gray-300 rounded-md px-3 py-4 text-sm"
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-semibold text-gray-700">Telephone</label>
-            <input
-              v-model="form.telephone"
-              type="text"
-              placeholder="Masukkan no telphone"
-              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-
-          <!-- FIELD ROLE -->
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-semibold text-gray-700">Status</label>
-            <select
-              v-model="form.aktif"
-              class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          <!-- Page Numbers -->
+          <div class="flex items-center gap-1">
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
-              <option value="" disabled>Pilih status</option>
-              <option :value="true">Aktif</option>
-              <option :value="false">Tidak Aktif</option>
-            </select>
-          </div>
-        </Modal>
-      </Teleport>
+              1
+            </button>
 
-      <ConfirmPopup
-        v-model="showConfirmDelete"
-        type="danger"
-        title="Hapus Data"
-        message="Data yang dihapus tidak dapat dikembalikan. Yakin ingin melanjutkan?"
-        confirm-text="Hapus"
-        cancel-text="Batal"
-        :is-loading="isDeleting"
-        @confirm="confirmDelete"
-        @cancel="showConfirmDelete = false"
-      />
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- Next Button -->
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <Teleport to="body">
+      <AddUsulan
+        v-model="openAdd"
+        @submit="handleSubmitFromModal"
+        @preview="handlePreview"
+    /></Teleport>
+
+    <Teleport to="body">
+      <Modal v-model="showModal" @save="handleSave" size="xl">
+        <template #title>
+          <Heading
+            variant="heading9b"
+            class="font-semibold text-sm mb-3 mt-5 ml-5"
+          >
+            {{ editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal" }}
+          </Heading>
+        </template>
+
+        <!-- FIELD NAMA -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-gray-700">Nama</label>
+          <input
+            v-model="form.nama"
+            type="text"
+            placeholder="Masukkan nama"
+            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+
+        <!-- FIELD ALAMAT -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-gray-700">Alamat</label>
+          <textarea
+            v-model="form.alamat"
+            type="text"
+            placeholder="Masukkan alamat"
+            class="border border-gray-300 rounded-md px-3 py-4 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+
+        <!-- FIELD TELEPHONE -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-gray-700">Telephone</label>
+          <input
+            v-model="form.telephone"
+            type="text"
+            placeholder="Masukkan no telphone"
+            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+
+        <!-- FIELD STATUS -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-gray-700">Status</label>
+          <select
+            v-model="form.aktif"
+            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+            <option value="" disabled>Pilih status</option>
+            <option :value="true">Aktif</option>
+            <option :value="false">Tidak Aktif</option>
+          </select>
+        </div>
+      </Modal>
+    </Teleport>
+
+    <ConfirmPopup
+      v-model="showConfirmDelete"
+      type="danger"
+      title="Hapus Data"
+      message="Data yang dihapus tidak dapat dikembalikan. Yakin ingin melanjutkan?"
+      confirm-text="Hapus"
+      cancel-text="Batal"
+      :is-loading="isDeleting"
+      @confirm="confirmDelete"
+      @cancel="showConfirmDelete = false"
+    />
   </div>
 </template>
 
@@ -209,7 +363,7 @@ const items = [
   },
 ] satisfies BreadcrumbItem[];
 
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import {
   Search,
   FileDown,
@@ -217,6 +371,9 @@ import {
   Trash2,
   Pencil,
   Plus,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-vue-next";
 import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 import { useAuth } from "~/composables/useAuth";
@@ -249,6 +406,15 @@ onMounted(() => {
 const showModal = ref(false);
 const editId = ref<string | null>(null);
 
+// Pagination
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref<number>(1);
+
+// Sorting
+const sortColumn = ref<string>("nama");
+const sortDirection = ref<"asc" | "desc">("asc");
+
 const handleSave = async () => {
   if (editId.value) {
     await updateTertujuEksternal(editId.value, {
@@ -271,6 +437,14 @@ const handleSave = async () => {
 
   showModal.value = false;
   editId.value = null;
+
+  // Reset form
+  form.value = {
+    nama: "",
+    alamat: "",
+    telephone: "",
+    aktif: true,
+  };
 };
 
 const showConfirmDelete = ref(false);
@@ -338,8 +512,92 @@ const filteredData = computed(() => {
   );
 });
 
+// Sorted data
+const sortedData = computed(() => {
+  const sorted = [...filteredData.value];
+
+  sorted.sort((a, b) => {
+    const aVal = String(a[sortColumn.value] || "").toLowerCase();
+    const bVal = String(b[sortColumn.value] || "").toLowerCase();
+
+    if (aVal < bVal) return sortDirection.value === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDirection.value === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  return sorted;
+});
+
+// Pagination computed
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(sortedData.value.length / rowsPerPage.value)),
+);
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return sortedData.value.slice(start, start + rowsPerPage.value);
+});
+
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
+
+// Sorting function
+const sortBy = (column: string) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+};
+
+// Watch for changes that should reset pagination
+watch([() => filters.value.search, rowsPerPage], () => {
+  currentPage.value = 1;
+});
+
 const refreshData = async () => {
   filters.value.search = "";
+  currentPage.value = 1;
   await fetchTertujuEksternal();
 };
 </script>
+
+<style scoped>
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>
