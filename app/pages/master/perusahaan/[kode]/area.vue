@@ -317,7 +317,7 @@
                     {{ sub.areaName }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-center text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700">
                   {{ sub.alamat }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700">{{ sub.mulai }}</td>

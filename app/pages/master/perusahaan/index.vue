@@ -16,7 +16,7 @@
         </button>
       </div> -->
       <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6"
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3"
       >
         <div>
           <Heading variant="heading6b" class="text-mobile-md"
