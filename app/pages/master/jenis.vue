@@ -1,8 +1,8 @@
 <template>
-  <div class="">
+  <div class="min-h-screen">
     <!-- Header -->
     <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
       <div>
         <PageHeader title="Jenis" :items="items" />
@@ -10,7 +10,7 @@
 
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 bg-primary text-white space-y-6 h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -18,19 +18,44 @@
     </div>
 
     <!-- Card Table -->
-    <div class="rounded-lg border border-gray-200 shadow-sm bg-white mt-5">
-      <!-- Toolbar (TIDAK ikut scroll) -->
+    <div class="rounded-lg border border-gray-200 shadow-sm bg-white">
+      <!-- Toolbar -->
       <div class="flex flex-wrap gap-4 items-center p-3 justify-between">
-        <button
-          @click="fetchJenis()"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          title="Refresh"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
+        <div class="flex items-center gap-3">
+          <button
+            @click="fetchJenis()"
+            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+            title="Refresh"
+          >
+            <RotateCcw class="w-4 h-4" />
+          </button>
+
+          <!-- Rows per page -->
+          <select
+            v-model="perPage"
+            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+          >
+            <option v-for="n in rowsChoices" :key="n" :value="n">
+              {{ n }}
+            </option>
+          </select>
+
+          <!-- Search -->
+          <div class="relative flex-1 w-full md:w-200">
+            <Search
+              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari kode / nama / format..."
+              class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
 
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-500 text-xs"
+          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
           @click="onExport"
         >
           <FileDown class="w-4 h-4" />
@@ -43,9 +68,23 @@
           <thead class="text-left bg-primary-400 text-white">
             <tr>
               <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold whitespace-nowrap"
+                @click="sortBy('jenis')"
+                class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary-500 transition-colors"
               >
-                Kode Jenis
+                <div class="flex items-center gap-2">
+                  <span>Kode Jenis</span>
+                  <span class="w-4 h-4 inline-flex items-center justify-center">
+                    <ArrowUpDown
+                      v-if="sortColumn !== 'jenis'"
+                      class="w-3 h-3 opacity-70"
+                    />
+                    <ChevronUp
+                      v-else-if="sortDirection === 'asc'"
+                      class="w-4 h-4"
+                    />
+                    <ChevronDown v-else class="w-4 h-4" />
+                  </span>
+                </div>
               </th>
               <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
                 Nama Jenis
@@ -85,9 +124,12 @@
             <!-- Rows -->
             <tr
               v-else
-              v-for="row in paginatedJenis"
+              v-for="(row, idx) in paginatedJenis"
               :key="row.id"
-              class="hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize"
+              :class="[
+                'hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize',
+                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+              ]"
             >
               <!-- KODE -->
               <td class="px-4 py-3">
@@ -99,12 +141,14 @@
               </td>
 
               <!-- NAMA -->
-              <td class="px-4 py-3 font-medium text-gray-900 normal-case">
+              <td
+                class="px-4 py-3 font-medium text-nowrap text-gray-900 normal-case"
+              >
                 {{ row.jenis_text }}
               </td>
 
               <!-- PERIHAL -->
-              <td class="px-4 py-3 text-gray-900 normal-case">
+              <td class="px-4 py-3 text-gray-900 text-nowrap normal-case">
                 <span class="text-sm">
                   {{ row.jenis_text }}
                 </span>
@@ -115,7 +159,7 @@
                 <button
                   v-if="row.file_url"
                   @click="downloadFile(row.file_url)"
-                  class="text-green-600 hover:text-green-700"
+                  class="text-green-600 hover:text-green-700 transition-colors"
                   title="Download format"
                 >
                   <Download class="w-4 h-4" />
@@ -132,17 +176,17 @@
 
               <!-- AKSI -->
               <td class="px-4 py-3">
-                <div class="flex items-center justify-end gap-5">
+                <div class="flex justify-center gap-2">
                   <button
-                    class="text-green-600 hover:text-green-700"
-                    title="Lihat"
+                    class="text-gray-600 hover:bg-gray-200 group-hover:text-gray-600 p-2 rounded-lg transition-colors group"
+                    title="Detail"
                     @click="onView(row)"
                   >
                     <Eye class="w-4 h-4" />
                   </button>
 
                   <button
-                    class="text-blue-600 hover:text-blue-700"
+                    class="text-yellow-500 hover:bg-yellow-100 group-hover:text-yellow-600 p-2 rounded-lg transition-colors group"
                     title="Edit"
                     @click="onEdit(row)"
                   >
@@ -150,10 +194,9 @@
                   </button>
 
                   <button
-                    class="text-red-600 hover:text-red-700"
-                    title="Hapus"
+                    class="p-2 hover:bg-red-100 rounded-lg transition-colors group text-red-600 group-hover:text-red-600"
+                    title="Delete"
                     @click="onDelete(row)"
-                    :disabled="deletingId === row.id"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -289,7 +332,7 @@
                         <button
                           v-if="detailJenis.file_url"
                           @click="downloadFile(detailJenis.file_url)"
-                          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white h-9 px-5 rounded-xl text-sm font-medium"
+                          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white h-9 px-5 rounded-xl text-sm font-medium transition-colors"
                         >
                           <Download class="w-4 h-4" />
                           Unduh
@@ -321,7 +364,7 @@
               <div class="border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2">
                 <button
                   @click="showDetailModal = false"
-                  class="w-full h-12 rounded-xl bg-primary-400 hover:bg-primary-500 text-white font-medium"
+                  class="w-full h-12 rounded-xl bg-primary-400 hover:bg-primary-500 text-white font-medium transition-colors"
                 >
                   Tutup
                 </button>
@@ -342,17 +385,17 @@
               </Heading>
             </template>
 
-            <div class="space-y-5">
+            <div class="space-y-5 p-1">
               <!-- Kode Jenis -->
-              <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs">
                   Kode Jenis <span class="text-red-500">*</span>
-                </label>
+                </Heading>
                 <input
                   v-model="addForm.jenis"
                   type="text"
                   placeholder="PER"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                 />
                 <p v-if="addErrors.jenis" class="text-xs text-red-500">
                   {{ addErrors.jenis }}
@@ -360,15 +403,15 @@
               </div>
 
               <!-- Nama Jenis -->
-              <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs">
                   Nama Jenis <span class="text-red-500">*</span>
-                </label>
+                </Heading>
                 <input
                   v-model="addForm.jenis_text"
                   type="text"
                   placeholder="Peraturan Direksi"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                 />
                 <p v-if="addErrors.jenis_text" class="text-xs text-red-500">
                   {{ addErrors.jenis_text }}
@@ -376,15 +419,15 @@
               </div>
 
               <!-- Perihal -->
-              <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs">
                   Perihal <span class="text-red-500">*</span>
-                </label>
+                </Heading>
                 <input
                   v-model="addForm.file_text"
                   type="text"
                   placeholder="PERATURAN DIREKSI"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                 />
                 <p v-if="addErrors.file_text" class="text-xs text-red-500">
                   {{ addErrors.file_text }}
@@ -392,15 +435,15 @@
               </div>
 
               <!-- Format Penomoran -->
-              <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs">
                   Format Penomoran <span class="text-red-500">*</span>
-                </label>
+                </Heading>
                 <input
                   v-model="addForm.format_penomoran"
                   type="text"
                   placeholder="{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 font-mono"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                 />
                 <p
                   v-if="addErrors.format_penomoran"
@@ -411,13 +454,13 @@
               </div>
 
               <!-- Upload File Template -->
-              <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs">
                   Upload File Template <span class="text-red-500">*</span>
-                </label>
+                </Heading>
 
                 <label
-                  class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
                 >
                   <span class="text-gray-600 truncate">
                     {{
@@ -515,7 +558,7 @@
               </label>
 
               <label
-                class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50"
+                class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 transition-colors"
               >
                 <span class="text-gray-600 truncate">
                   {{
@@ -546,7 +589,7 @@
       <!-- PAGINATION -->
       <div
         v-if="totalItems > 0"
-        class="flex items-center justify-between px-4 py-4"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
           Menampilkan {{ paginatedJenis.length }} dari {{ totalItems }} data
@@ -564,6 +607,19 @@
                 : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
           >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
             Back
           </button>
 
@@ -573,7 +629,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
               1
             </button>
@@ -615,7 +671,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
               {{ totalPages }}
             </button>
@@ -633,6 +689,19 @@
             ]"
           >
             Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -671,6 +740,10 @@ import {
   Calendar,
   Upload,
   Save,
+  Search,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-vue-next";
 
 import type { BreadcrumbItem } from "~/types/breadcrumb";
@@ -679,7 +752,7 @@ import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
 
 const items = [
-  { label: "Home", to: "/beranda" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Jenis", to: "/master/jenis" },
 ] satisfies BreadcrumbItem[];
 
@@ -711,6 +784,13 @@ const deletingId = ref<string | null>(null);
 const search = ref("");
 const jenisList = ref<JenisItem[]>([]);
 
+// Pagination & Sorting
+const currentPage = ref(1);
+const perPage = ref(10);
+const rowsChoices = [5, 10, 20, 50];
+const sortColumn = ref<string>("jenis");
+const sortDirection = ref<"asc" | "desc">("asc");
+
 const fetchJenis = async () => {
   try {
     loading.value = true;
@@ -737,6 +817,67 @@ const filteredJenis = computed(() => {
       x.format_penomoran.toLowerCase().includes(q)
     );
   });
+});
+
+// Sorted data
+const sortedJenis = computed(() => {
+  const sorted = [...filteredJenis.value];
+
+  sorted.sort((a, b) => {
+    const aVal = String(a[sortColumn.value] || "").toLowerCase();
+    const bVal = String(b[sortColumn.value] || "").toLowerCase();
+
+    if (aVal < bVal) return sortDirection.value === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDirection.value === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  return sorted;
+});
+
+const totalItems = computed(() => sortedJenis.value.length);
+
+const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
+
+const paginatedJenis = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  return sortedJenis.value.slice(start, start + perPage.value);
+});
+
+// window page number
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
+
+// Sorting function
+const sortBy = (column: string) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+};
+
+// Watch for changes
+watch([search, perPage], () => {
+  currentPage.value = 1;
 });
 
 const router = useRouter();
@@ -1014,44 +1155,12 @@ const getTemplateName = (data: any) => {
   return "-";
 };
 
-//pagination
-const currentPage = ref(1);
-const perPage = ref(10);
-
-const totalItems = computed(() => filteredJenis.value.length);
-
-const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
-
-const paginatedJenis = computed(() => {
-  const start = (currentPage.value - 1) * perPage.value;
-  return filteredJenis.value.slice(start, start + perPage.value);
-});
-
-// window page number (mirip contoh kamu)
-const paginationPages = computed(() => {
-  const windowSize = 5;
-  const half = Math.floor(windowSize / 2);
-
-  let start = Math.max(1, currentPage.value - half);
-  let end = Math.min(totalPages.value, start + windowSize - 1);
-
-  if (end - start < windowSize - 1) {
-    start = Math.max(1, end - windowSize + 1);
-  }
-
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-});
-
-watch(search, () => {
-  currentPage.value = 1;
-});
-
 //export
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 const onExport = () => {
-  const data = filteredJenis.value.map((row, index) => ({
+  const data = sortedJenis.value.map((row, index) => ({
     No: index + 1,
     "Kode Jenis": row.jenis,
     "Nama Jenis": row.jenis_text,
@@ -1104,3 +1213,25 @@ const onExport = () => {
   });
 };
 </script>
+
+<style scoped>
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>

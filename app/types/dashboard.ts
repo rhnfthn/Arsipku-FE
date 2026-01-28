@@ -1,4 +1,17 @@
-// types/dashboard.ts
+// Dashboard API Response Types
+export interface DashboardResponse {
+  success: boolean;
+  message: string;
+  data: DashboardData;
+}
+
+export interface DashboardData {
+  summary: DashboardSummary;
+  surat_masuk_terbaru: SuratMasukTerbaru[];
+  digsig_menunggu_ttd?: DigsigMenungguTTD[];
+  statistik_bulanan: StatistikBulanan[];
+  statistik_jenis_surat?: StatistikJenisSurat[];
+}
 
 export interface DashboardSummary {
   total_pesan_masuk: number;
@@ -7,6 +20,8 @@ export interface DashboardSummary {
   draft_tersimpan: number;
   disposisi_masuk: number;
   disposisi_belum_dibaca: number;
+  disposisi_high_priority: number;
+  disposisi_belum_tinjut: number;
   digsig_menunggu_ttd: number;
   digsig_on_progress: number;
   konsep_masuk: number;
@@ -14,6 +29,7 @@ export interface DashboardSummary {
   surat_favorit: number;
   surat_arsip: number;
   perlu_tindak_lanjut: number;
+  surat_sudah_ditinjut: number;
 }
 
 export interface SuratMasukTerbaru {
@@ -31,7 +47,7 @@ export interface SuratMasukTerbaru {
   flag_arsip: boolean;
 }
 
-export interface DigSigMenungguTtd {
+export interface DigsigMenungguTTD {
   id: string;
   id_document: string;
   nomor_dokumen: string;
@@ -50,6 +66,7 @@ export interface StatistikBulanan {
   tahun: number;
   surat_masuk: number;
   surat_terkirim: number;
+  surat_sudah_ditinjut?: number;
 }
 
 export interface StatistikJenisSurat {
@@ -59,26 +76,21 @@ export interface StatistikJenisSurat {
   jumlah_keluar: number;
 }
 
-export interface DashboardData {
-  summary: DashboardSummary;
-  surat_masuk_terbaru: SuratMasukTerbaru[];
-  digsig_menunggu_ttd: DigSigMenungguTtd[];
-  statistik_bulanan: StatistikBulanan[];
-  statistik_jenis_surat: StatistikJenisSurat[];
-}
-
-export interface DashboardResponse {
-  success: boolean;
-  message: string;
-  data: DashboardData;
-}
-
+// UI Component Types
 export interface StatCard {
   label: string;
-  value: number | string;
+  value: string | number;
   subtitle?: string;
   icon: string;
   bgSolid: string;
   borderColor: string;
   iconColor: string;
+  link: string; // Navigation link for clickable cards
+}
+
+export interface ChartData {
+  labels: string[];
+  suratMasuk: number[];
+  suratTerkirim: number[];
+  suratDitinjut: number[];
 }

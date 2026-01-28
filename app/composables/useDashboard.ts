@@ -13,24 +13,16 @@ export const useDashboard = () => {
   const dashboardData = ref<DashboardData | null>(null);
 
   /**
-   * Fetch dashboard data from API
+   * Fetch dashboard data from API - Updated to use /dashboard/ without positionId
    */
-  const fetchDashboardData = async (positionId: string) => {
-    if (!positionId) {
-      error.value = "Position ID is required";
-      console.error("❌ Position ID not found");
-      return;
-    }
-
+  const fetchDashboardData = async () => {
     isLoading.value = true;
     error.value = null;
 
     try {
-      console.log("🔍 Fetching dashboard data for position:", positionId);
+      console.log("🔍 Fetching dashboard data from /dashboard/");
 
-      const response = await apiGet<DashboardResponse>(
-        `/dashboard/${positionId}`,
-      );
+      const response = await apiGet<DashboardResponse>("/dashboard/");
 
       console.log("📦 Raw API Response:", response);
 
@@ -59,7 +51,7 @@ export const useDashboard = () => {
         });
 
         if (status === 404) {
-          error.value = `Endpoint tidak ditemukan. Pastikan position_id "${positionId}" valid.`;
+          error.value = "Endpoint tidak ditemukan. Pastikan API valid.";
         } else if (status === 401) {
           error.value = "Tidak terautentikasi. Silakan login kembali.";
         } else if (status === 403) {
@@ -83,20 +75,11 @@ export const useDashboard = () => {
   };
 
   /**
-   * Get stat cards configuration - Updated dengan data baru
+   * Get stat cards configuration - Updated with new fields and navigation links
    */
   const stats = computed<StatCard[]>(() => {
     if (!dashboardData.value?.summary) {
       return [
-        {
-          label: "Pesan Baru",
-          value: "0",
-          subtitle: "",
-          icon: "i-heroicons-envelope",
-          bgSolid: "bg-blue-100",
-          borderColor: "bg-blue-500",
-          iconColor: "text-blue-600",
-        },
         {
           label: "Perlu Tindak Lanjut",
           value: "0",
@@ -105,15 +88,27 @@ export const useDashboard = () => {
           bgSolid: "bg-orange-100",
           borderColor: "bg-orange-500",
           iconColor: "text-orange-600",
+          link: "/korespondensi/kotak-masuk",
         },
         {
           label: "Disposisi Belum Dibaca",
           value: "0",
           subtitle: "",
-          icon: "i-lucide-signature",
+          icon: "i-heroicons-eye-slash",
           bgSolid: "bg-purple-100",
           borderColor: "bg-purple-500",
           iconColor: "text-purple-600",
+          link: "/korespondensi/kotak-masuk",
+        },
+        {
+          label: "Disposisi Belum Tindak Lanjut",
+          value: "0",
+          subtitle: "",
+          icon: "i-lucide-signature",
+          bgSolid: "bg-blue-100",
+          borderColor: "bg-blue-500",
+          iconColor: "text-blue-600",
+          link: "/korespondensi/kotak-masuk",
         },
         {
           label: "Menunggu Tanda Tangan",
@@ -123,21 +118,13 @@ export const useDashboard = () => {
           bgSolid: "bg-green-100",
           borderColor: "bg-green-500",
           iconColor: "text-green-600",
+          link: "/digsig/penandatanganan",
         },
       ];
     }
 
     const summary = dashboardData.value.summary;
     return [
-      {
-        label: "Pesan Baru",
-        value: summary.pesan_baru || 0,
-        subtitle: `dari ${summary.total_pesan_masuk || 0} total`,
-        icon: "i-heroicons-envelope",
-        bgSolid: "bg-blue-100",
-        borderColor: "bg-blue-500",
-        iconColor: "text-blue-600",
-      },
       {
         label: "Perlu Tindak Lanjut",
         value: summary.perlu_tindak_lanjut || 0,
@@ -146,24 +133,37 @@ export const useDashboard = () => {
         bgSolid: "bg-orange-100",
         borderColor: "bg-orange-500",
         iconColor: "text-orange-600",
+        link: "/korespondensi/kotak-masuk",
       },
       {
         label: "Disposisi Belum Dibaca",
         value: summary.disposisi_belum_dibaca || 0,
         subtitle: `dari ${summary.disposisi_masuk || 0} total`,
-        icon: "i-lucide-signature",
+        icon: "i-heroicons-eye-slash",
         bgSolid: "bg-purple-100",
         borderColor: "bg-purple-500",
         iconColor: "text-purple-600",
+        link: "/korespondensi/kotak-masuk",
+      },
+      {
+        label: "Disposisi Belum Tindak Lanjut",
+        value: summary.disposisi_belum_tinjut || 0,
+        subtitle: "",
+        icon: "i-heroicons-document-check",
+        bgSolid: "bg-blue-100",
+        borderColor: "bg-blue-500",
+        iconColor: "text-blue-600",
+        link: "/korespondensi/kotak-masuk",
       },
       {
         label: "Menunggu Tanda Tangan",
         value: summary.digsig_menunggu_ttd || 0,
         subtitle: "",
-        icon: "i-heroicons-document-check",
+        icon: "i-lucide-signature",
         bgSolid: "bg-green-100",
         borderColor: "bg-green-500",
         iconColor: "text-green-600",
+        link: "/digsig/penandatanganan",
       },
     ];
   });
@@ -177,7 +177,7 @@ export const useDashboard = () => {
   });
 
   /**
-   * Get chart data for statistics - Updated dengan statistik_bulanan
+   * Get chart data for statistics - Updated with surat_sudah_ditinjut
    */
   const chartData = computed(() => {
     if (!dashboardData.value?.statistik_bulanan) {
@@ -185,6 +185,7 @@ export const useDashboard = () => {
         labels: [],
         suratMasuk: [],
         suratTerkirim: [],
+        suratDitinjut: [],
       };
     }
 
@@ -195,6 +196,9 @@ export const useDashboard = () => {
       ),
       suratTerkirim: dashboardData.value.statistik_bulanan.map(
         (item) => item.surat_terkirim,
+      ),
+      suratDitinjut: dashboardData.value.statistik_bulanan.map(
+        (item) => item.surat_sudah_ditinjut || 0,
       ),
     };
   });
