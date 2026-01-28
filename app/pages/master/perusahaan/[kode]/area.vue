@@ -43,7 +43,7 @@
         </div>
         <button
           @click="openAddAreaModal"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all shadow-lg"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
           Tambah {{ activeTab === "area" ? "Area" : "Sub Area" }}
@@ -64,7 +64,7 @@
               <button
                 @click="activeTab = 'area'"
                 :class="[
-                  'flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
                   activeTab === 'area'
                     ? 'bg-primary text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900',
@@ -76,7 +76,7 @@
               <button
                 @click="activeTab = 'subArea'"
                 :class="[
-                  'flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
                   activeTab === 'subArea'
                     ? 'bg-primary text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900',
@@ -87,16 +87,29 @@
               </button>
             </div>
 
-            <!-- Search -->
-            <div class="relative flex-1 w-full">
-              <Search
-                class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                v-model="searchQuery"
-                placeholder="Cari..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+            <!-- Rows per page & Search -->
+            <div class="flex justify-between items-center gap-3">
+              <!-- Rows dropdown -->
+              <select
+                v-model="rowsPerPage"
+                class="border text-sm border-gray-200 bg-white rounded-md px-3 py-2"
+              >
+                <option v-for="n in rowsChoices" :key="n" :value="n">
+                  {{ n }}
+                </option>
+              </select>
+
+              <!-- Search -->
+              <div class="relative flex-1 w-full md:w-160">
+                <Search
+                  class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  v-model="searchQuery"
+                  placeholder="Cari..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -107,7 +120,7 @@
             <thead>
               <tr class="bg-primary text-white">
                 <th class="px-6 py-4 text-left text-sm font-semibold w-12"></th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Kode</th>
+                <th class="px-0 py-4 text-left text-sm font-semibold">Kode</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Nama</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
                   Alamat
@@ -127,14 +140,14 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="(area, idx) in filteredAreas" :key="area.kode">
+              <template v-for="(area, idx) in paginatedAreas" :key="area.kode">
                 <tr
                   :class="[
                     'border-b border-gray-100 hover:bg-blue-50 transition-colors',
                     idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
                   ]"
                 >
-                  <td class="px-6 py-4">
+                  <td class="px-2 py-4">
                     <button
                       @click="toggleAreaExpand(area.kode)"
                       class="p-1 hover:bg-blue-100 rounded-lg transition-colors"
@@ -178,10 +191,10 @@
                     <div class="flex items-center justify-center gap-2">
                       <button
                         @click="openEditModal(area)"
-                        class="p-2 hover:bg-blue-100 rounded-lg transition-colors group"
+                        class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
                       >
                         <Pencil
-                          class="w-4 h-4 text-gray-400 group-hover:text-blue-600"
+                          class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
                         />
                       </button>
                       <button
@@ -189,7 +202,7 @@
                         class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
                       >
                         <Trash2
-                          class="w-4 h-4 text-gray-400 group-hover:text-red-600"
+                          class="w-4 h-4 text-red-600 group-hover:text-red-600"
                         />
                       </button>
                     </div>
@@ -198,10 +211,7 @@
 
                 <!-- Expanded Sub Areas -->
                 <tr v-if="expandedAreas[area.kode]">
-                  <td
-                    colspan="8"
-                    class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50"
-                  >
+                  <td colspan="8" class="px-6 py-4 bg-gray-100">
                     <div class="ml-12">
                       <div class="flex items-center gap-2 mb-3">
                         <Map class="w-4 h-4 text-blue-600" />
@@ -213,15 +223,15 @@
                         <div
                           v-for="sub in getSubAreasForArea(area.kode)"
                           :key="sub.kode"
-                          class="bg-white rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-shadow"
+                          class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
                         >
                           <div class="grid grid-cols-5 gap-4 items-center">
-                            <div>
+                            <div class="ml-7">
                               <span class="text-xs text-gray-500 block mb-1"
                                 >Kode</span
                               >
                               <span
-                                class="inline-flex items-center px-2 py-1 rounded-md bg-indigo-100 text-indigo-700 text-xs font-semibold"
+                                class="inline-flex items-center px-5 py-2 rounded-md bg-indigo-100 text-indigo-700 text-xs font-semibold"
                               >
                                 {{ sub.kode }}
                               </span>
@@ -268,6 +278,124 @@
               </template>
             </tbody>
           </table>
+
+          <!-- PAGINATION AREA -->
+          <div
+            v-if="filteredAreas.length > 0"
+            class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+          >
+            <div class="text-xs text-gray-600">
+              Menampilkan {{ paginatedAreas.length }} dari
+              {{ filteredAreas.length }} data
+            </div>
+
+            <div class="flex items-center gap-2">
+              <!-- Back Button -->
+              <button
+                @click="currentPage = Math.max(1, currentPage - 1)"
+                :disabled="currentPage === 1"
+                :class="[
+                  'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back
+              </button>
+
+              <!-- Page Numbers -->
+              <div class="flex items-center gap-1">
+                <button
+                  v-if="paginationPages[0] > 1"
+                  @click="currentPage = 1"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  1
+                </button>
+
+                <span
+                  v-if="paginationPages[0] > 2"
+                  class="px-2 text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+
+                <button
+                  v-for="page in paginationPages"
+                  :key="page"
+                  @click="currentPage = page"
+                  :class="[
+                    'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                    currentPage === page
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ]"
+                >
+                  {{ page }}
+                </button>
+
+                <span
+                  v-if="
+                    paginationPages[paginationPages.length - 1] < totalPages - 1
+                  "
+                  class="px-2 text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+
+                <button
+                  v-if="
+                    paginationPages[paginationPages.length - 1] < totalPages
+                  "
+                  @click="currentPage = totalPages"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  {{ totalPages }}
+                </button>
+              </div>
+
+              <!-- Next Button -->
+              <button
+                @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                :class="[
+                  'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                Next
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- SUB AREA TABLE -->
@@ -281,10 +409,14 @@
                 <th class="px-6 py-4 text-left text-sm font-semibold">
                   Alamat
                 </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
+                <th
+                  class="px-6 py-4 text-nowrap text-left text-sm font-semibold"
+                >
                   Tanggal Mulai
                 </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
+                <th
+                  class="px-6 py-4 text-nowrap text-left text-sm font-semibold"
+                >
                   Tanggal Berakhir
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
@@ -294,7 +426,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="(sub, idx) in filteredSubAreas"
+                v-for="(sub, idx) in paginatedSubAreas"
                 :key="sub.kode"
                 :class="[
                   'border-b border-gray-100 hover:bg-blue-50 transition-colors',
@@ -312,7 +444,7 @@
                 </td>
                 <td class="px-6 py-4">
                   <span
-                    class="flex text-nowrap items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
+                    class="flex text-nowrap items-center text-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
                   >
                     {{ sub.areaName }}
                   </span>
@@ -320,7 +452,9 @@
                 <td class="px-6 py-4 text-sm text-gray-700">
                   {{ sub.alamat }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">{{ sub.mulai }}</td>
+                <td class="text-nowrap flex px-6 py-4 text-sm text-gray-700">
+                  {{ sub.mulai }}
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-700">
                   {{ sub.berakhir }}
                 </td>
@@ -328,10 +462,10 @@
                   <div class="flex items-center justify-center gap-2">
                     <button
                       @click="openEditModal(sub)"
-                      class="p-2 hover:bg-blue-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
                     >
                       <Pencil
-                        class="w-4 h-4 text-gray-400 group-hover:text-blue-600"
+                        class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
                       />
                     </button>
                     <button
@@ -339,7 +473,7 @@
                       class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
                     >
                       <Trash2
-                        class="w-4 h-4 text-gray-400 group-hover:text-red-600"
+                        class="w-4 h-4 text-red-600 group-hover:text-red-600"
                       />
                     </button>
                   </div>
@@ -347,6 +481,128 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- PAGINATION SUB AREA -->
+          <div
+            v-if="filteredSubAreas.length > 0"
+            class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+          >
+            <div class="text-xs text-gray-600">
+              Menampilkan {{ paginatedSubAreas.length }} dari
+              {{ filteredSubAreas.length }} data
+            </div>
+
+            <div class="flex items-center gap-2">
+              <!-- Back Button -->
+              <button
+                @click="currentPageSub = Math.max(1, currentPageSub - 1)"
+                :disabled="currentPageSub === 1"
+                :class="[
+                  'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                  currentPageSub === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back
+              </button>
+
+              <!-- Page Numbers -->
+              <div class="flex items-center gap-1">
+                <button
+                  v-if="paginationPagesSub[0] > 1"
+                  @click="currentPageSub = 1"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  1
+                </button>
+
+                <span
+                  v-if="paginationPagesSub[0] > 2"
+                  class="px-2 text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+
+                <button
+                  v-for="page in paginationPagesSub"
+                  :key="page"
+                  @click="currentPageSub = page"
+                  :class="[
+                    'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                    currentPageSub === page
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ]"
+                >
+                  {{ page }}
+                </button>
+
+                <span
+                  v-if="
+                    paginationPagesSub[paginationPagesSub.length - 1] <
+                    totalPagesSub - 1
+                  "
+                  class="px-2 text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+
+                <button
+                  v-if="
+                    paginationPagesSub[paginationPagesSub.length - 1] <
+                    totalPagesSub
+                  "
+                  @click="currentPageSub = totalPagesSub"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  {{ totalPagesSub }}
+                </button>
+              </div>
+
+              <!-- Next Button -->
+              <button
+                @click="
+                  currentPageSub = Math.min(totalPagesSub, currentPageSub + 1)
+                "
+                :disabled="currentPageSub === totalPagesSub"
+                :class="[
+                  'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                  currentPageSub === totalPagesSub
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                Next
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -355,50 +611,45 @@
     <Teleport to="body">
       <Modal v-model="openAddArea" size="xl" @save="submitArea">
         <template #title>
-          <div class="p-3">
+          <div class="p-3 ml-2">
             <h3 class="text-xl font-bold">
               {{ isEditing ? "Edit" : "Tambah" }}
               {{ activeTab === "area" ? "Area" : "Sub Area" }}
             </h3>
-            <p class="text-sm mt-1 text-gray-600">
-              Lengkapi formulir untuk
-              {{ isEditing ? "mengubah" : "menambahkan" }}
-              {{ activeTab === "area" ? "area" : "sub area" }}
-            </p>
           </div>
         </template>
 
-        <div class="space-y-4">
+        <div class="space-y-4 p-1">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <Heading variant="heading11m" class="text-xs">
               Nama {{ activeTab === "area" ? "Area" : "Sub Area" }}
               <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <input
               v-model="formArea.nama"
               type="text"
               placeholder="Contoh: KANTOR PUSAT"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <Heading variant="heading11m" class="text-xs">
               Kode {{ activeTab === "area" ? "Area" : "Sub Area" }}
               <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <input
               v-model="formArea.kode"
               type="text"
               placeholder="Contoh: AREA-001"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
           </div>
 
           <div v-if="activeTab === 'subArea'">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <Heading variant="heading11m" class="text-xs">
               Area <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <select
               v-model="formArea.area"
               class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -411,36 +662,36 @@
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2"
-              >Alamat Lengkap</label
-            >
+            <Heading variant="heading11m" class="text-xs">
+              Alamat Lengkap <span class="text-red-500">*</span>
+            </Heading>
             <textarea
               v-model="formArea.alamat"
               rows="3"
               placeholder="Masukkan alamat lengkap..."
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             ></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Mulai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="formArea.mulai"
                 type="date"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <Heading variant="heading11m" class="text-xs">
                 Tanggal Berakhir <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="formArea.berakhir"
                 type="date"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
               />
             </div>
           </div>
@@ -484,8 +735,18 @@ import { useCompany } from "~/composables/useCompany";
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
 
-const { getAreasByCompany, getSubAreasByCompanyAndArea, getSubAreasByCompany } =
-  useArea();
+const {
+  getAreasByCompany,
+  getSubAreasByCompanyAndArea,
+  createAreaByCompany,
+  updateAreaByCompany,
+  deleteArea,
+
+  getSubAreasByCompany,
+  createSubAreaByCompany,
+  updateSubAreaByCompany,
+  deleteSubArea,
+} = useArea();
 
 const { getCompanyByCode } = useCompany();
 
@@ -497,6 +758,12 @@ const showDeleteConfirm = ref(false);
 const selectedItem = ref<any>(null);
 const isDeleting = ref(false);
 const isEditing = ref(false);
+
+// Pagination
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref<number>(1);
+const currentPageSub = ref<number>(1);
 
 const formArea = ref({
   nama: "",
@@ -592,9 +859,13 @@ const fetchCompany = async () => {
 };
 
 watch(activeTab, async (tab) => {
-  if (tab === "subArea" && subAreas.value.length === 0) {
+  if (tab === "subArea") {
+    subAreas.value = [];
     await fetchAllSubAreas();
   }
+  // Reset pagination when switching tabs
+  currentPage.value = 1;
+  currentPageSub.value = 1;
 });
 
 onMounted(() => {
@@ -625,6 +896,72 @@ const filteredSubAreas = computed(() => {
   );
 });
 
+// Pagination for Areas
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredAreas.value.length / rowsPerPage.value)),
+);
+
+const paginatedAreas = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredAreas.value.slice(start, start + rowsPerPage.value);
+});
+
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
+
+// Pagination for Sub Areas
+const totalPagesSub = computed(() =>
+  Math.max(1, Math.ceil(filteredSubAreas.value.length / rowsPerPage.value)),
+);
+
+const paginatedSubAreas = computed(() => {
+  const start = (currentPageSub.value - 1) * rowsPerPage.value;
+  return filteredSubAreas.value.slice(start, start + rowsPerPage.value);
+});
+
+const paginationPagesSub = computed(() => {
+  const total = totalPagesSub.value;
+  const current = currentPageSub.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
+
+// Watch for changes that should reset pagination
+watch([searchQuery, rowsPerPage], () => {
+  currentPage.value = 1;
+  currentPageSub.value = 1;
+});
+
 const toggleAreaExpand = async (areaCode: string) => {
   expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
 
@@ -653,7 +990,16 @@ const openAddAreaModal = () => {
 const openEditModal = (item: any) => {
   isEditing.value = true;
   selectedItem.value = item;
-  formArea.value = { ...item };
+
+  formArea.value = {
+    nama: item.nama,
+    kode: item.kode,
+    area: item.area,
+    alamat: item.alamat,
+    mulai: item.mulai,
+    berakhir: item.berakhir,
+  };
+
   openAddArea.value = true;
 };
 
@@ -662,78 +1008,122 @@ const openDeleteConfirm = (item: any) => {
   showDeleteConfirm.value = true;
 };
 
-const submitArea = () => {
-  console.log("SUBMIT:", { type: activeTab.value, ...formArea.value });
+const submitArea = async () => {
+  try {
+    // AREA
+    if (activeTab.value === "area") {
+      const payload = {
+        area: formArea.value.kode,
+        shortText: formArea.value.nama,
+        longText: formArea.value.alamat,
+        startDate: formArea.value.mulai,
+        endDate: formArea.value.berakhir,
+      };
 
-  if (isEditing.value) {
-    if (activeTab.value === "area") {
-      const index = areas.value.findIndex(
-        (a) => a.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        areas.value[index] = {
-          ...formArea.value,
-          subCount: areas.value[index].subCount,
-        };
+      if (!isEditing.value) {
+        await createAreaByCompany(companyId.value, payload);
+        showToast("Berhasil", "Area berhasil ditambahkan", "success");
+      } else {
+        await updateAreaByCompany(
+          companyId.value,
+          selectedItem.value.id,
+          payload,
+        );
+        showToast("Berhasil", "Area berhasil diperbarui", "success");
       }
-    } else {
-      const index = subAreas.value.findIndex(
-        (s) => s.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        const areaName =
-          areas.value.find((a) => a.kode === formArea.value.area)?.nama || "";
-        subAreas.value[index] = { ...formArea.value, areaName };
+
+      await fetchAreas();
+    }
+
+    //SUB AREA
+    if (activeTab.value === "subArea") {
+      const payload = {
+        area: formArea.value.area,
+        sub_area: Number(formArea.value.kode),
+        shortText: formArea.value.nama,
+        longText: formArea.value.alamat,
+        startDate: formArea.value.mulai,
+        endDate: formArea.value.berakhir,
+      };
+
+      if (!isEditing.value) {
+        await createSubAreaByCompany(companyId.value, payload);
+        showToast("Berhasil", "Sub Area berhasil ditambahkan", "success");
+      } else {
+        await updateSubAreaByCompany(
+          companyId.value,
+          selectedItem.value.id,
+          payload,
+        );
+        showToast("Berhasil", "Sub Area berhasil diperbarui", "success");
       }
+
+      await fetchAllSubAreas();
     }
-  } else {
-    if (activeTab.value === "area") {
-      areas.value.push({ ...formArea.value, subCount: 0 });
-    } else {
-      const areaName =
-        areas.value.find((a) => a.kode === formArea.value.area)?.nama || "";
-      subAreas.value.push({ ...formArea.value, areaName });
-    }
+
+    openAddArea.value = false;
+    isEditing.value = false;
+    selectedItem.value = null;
+
+    formArea.value = {
+      nama: "",
+      kode: "",
+      area: "",
+      alamat: "",
+      mulai: "",
+      berakhir: "",
+    };
+  } catch (error) {
+    console.error("Gagal menyimpan data", error);
+    showToast("Gagal", "Terjadi kesalahan saat menyimpan data", "error");
   }
-
-  openAddArea.value = false;
-  formArea.value = {
-    nama: "",
-    kode: "",
-    area: "",
-    alamat: "",
-    mulai: "",
-    berakhir: "",
-  };
 };
 
 const handleDelete = async () => {
   try {
     isDeleting.value = true;
-    console.log("DELETE:", selectedItem.value);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    if (selectedItem.value.kode.startsWith("AREA")) {
-      const index = areas.value.findIndex(
-        (a) => a.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        areas.value.splice(index, 1);
-      }
-    } else {
-      const index = subAreas.value.findIndex(
-        (s) => s.kode === selectedItem.value.kode,
-      );
-      if (index !== -1) {
-        subAreas.value.splice(index, 1);
-      }
+    if (activeTab.value === "area") {
+      await deleteArea(selectedItem.value.id);
+      await fetchAreas();
+      showToast("Berhasil", "Area berhasil dihapus", "success");
+    }
+
+    if (activeTab.value === "subArea") {
+      await deleteSubArea(selectedItem.value.id);
+      await fetchAllSubAreas();
+      showToast("Berhasil", "Sub Area berhasil dihapus", "success");
     }
 
     showDeleteConfirm.value = false;
-  } catch (e) {
-    console.error(e);
+    selectedItem.value = null;
+  } catch (error) {
+    console.error("Gagal menghapus data", error);
+    showToast("Gagal", "Data gagal dihapus", "error");
   } finally {
     isDeleting.value = false;
   }
+};
+
+import { useToast } from "#imports";
+
+const toast = useToast();
+
+const showToast = (
+  title: string,
+  message: string,
+  color: "success" | "error" | "warning" | "primary" = "success",
+) => {
+  toast.add({
+    title,
+    description: message,
+    color,
+    icon:
+      color === "success"
+        ? "i-lucide-check-circle"
+        : color === "error"
+          ? "i-lucide-x-circle"
+          : "i-lucide-info",
+  });
 };
 </script>

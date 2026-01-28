@@ -43,8 +43,7 @@
         <div @click="isRefExpanded = !isRefExpanded"
           class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
           <div class="flex items-center py-2 gap-3">
-            <div
-              class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
+            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
             </div>
             <div>
@@ -58,7 +57,8 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank" @click.stop
+            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank"
+              @click.stop
               class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
               Buka Tab Baru
               <UIcon name="i-lucide-external-link" class="w-3 h-3" />
@@ -159,7 +159,7 @@
           <div v-if="refData.catatan"
             class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 rounded-b-lg">
             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm"
+            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm pb-4"
               v-html="refData.catatan">
             </div>
           </div>
@@ -223,8 +223,8 @@
           </div>
         </div>
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Pengirim" placeholder="Pilih Pengirim" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima v-model="selectedSender" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems"
+          :exclude-items="[]" :max-items="1" />
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
@@ -526,6 +526,179 @@ import { Alert } from "@/composables/useAlert";
 
 // Composables
 import { useDigSign } from "@/composables/useDigSign";
+const { createKonsep, getManagerialRecipients } = useKonsep();
+
+const senderItems = ref<RecipientItem[]>([]);
+const selectedSender = ref<RecipientItem[]>([]);
+
+// const items = ref<RecipientItem[]>([]);
+
+const fetchSenderList = async () => {
+  try {
+    const res = await getManagerialRecipients();
+    if (res.success && Array.isArray(res.data)) {
+      senderItems.value = res.data.map((r: any): RecipientItem => ({
+        label: `${r.persnum_person_text || ''} - ${r.position_text}`,
+        labelJob: r.position_text,
+        value: String(r.position),
+        raw: r,
+      }));
+
+      // Default: Set pengirim ke user yang sedang login jika ada dalam list
+      // atau set user saat ini manual jika tidak ada
+      if (user.value?.position) {
+        const currentUserInList = senderItems.value.find(s => s.value === String(user.value.position));
+        if (currentUserInList) {
+          selectedSender.value = [currentUserInList];
+        } else {
+          // Fallback jika user login tidak ada di list managerial (opsional)
+          selectedSender.value = [{
+            label: `${user.value.nama} - ${user.value.positionText}`,
+            labelJob: user.value.positionText,
+            value: String(user.value.position),
+            raw: user.value
+          }];
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Gagal memuat list pengirim", e);
+  }
+};
+
+// [BARU] Fungsi Fetch Recipients berdasarkan ID Pengirim yang dipilih
+const fetchRecipientsBySender = async (senderPositionId: string) => {
+  // Reset items tertuju/tembusan saat pengirim berubah
+  items.value = [];
+
+  try {
+    const resRec = await getRecipients(senderPositionId);
+    const rawData = resRec.recipients || resRec.data || [];
+
+    items.value = rawData.map((r: any): RecipientItem => ({
+      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+      labelJob: r.position_text || r.positionText,
+      value: String(r.position || r.position_id || r.id),
+      raw: r,
+    }));
+  } catch (e) {
+    console.error("Gagal memuat penerima", e);
+    toast.add({ title: 'Gagal memuat daftar tujuan', color: 'error' });
+  }
+};
+
+// [UPDATE] Watcher untuk memantau perubahan Pengirim
+import { watch } from 'vue';
+
+watch(selectedSender, (newVal) => {
+  if (newVal && newVal.length > 0) {
+    const senderId = newVal[0].value;
+    // Ambil ulang data Tertuju/Tembusan berdasarkan ID Pengirim baru
+    fetchRecipientsBySender(senderId);
+
+    // Opsional: Reset pilihan tertuju/tembusan jika pengirim berubah
+    // selectedTertuju.value = [];
+    // selectedTembusan.value = [];
+  }
+});
+
+
+// [UPDATE] getBasePayload agar menggunakan data Selected Sender
+const getBasePayload = (): DraftPayload => {
+  // Ambil data dari sender yang dipilih, bukan user.value login
+  const currentSender = selectedSender.value[0] || {};
+  const senderRaw = currentSender.raw || {};
+
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : "";
+
+  // ... (kode tanggal preview sama)
+
+  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+
+  return {
+    id_naskah: editDraftId.value || null,
+    // Gunakan Value dari Dropdown Pengirim
+    pengirim: currentSender.value || user.value?.position || "",
+    penerima: selectedTertuju.value.map(i => i.value),
+    tembusan: selectedTembusan.value.map(i => i.value),
+    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+    sifat: selectedSifat.value?.value || 'biasa',
+    perihal: subject.value,
+    konten: String(editorContent.value || ''),
+    htmlContent: String(editorContent.value || ''),
+    english: english.value,
+
+    // Update Meta Data dari Raw Data Pengirim Terpilih
+    nama_tempat: senderRaw.area_text || senderRaw.areaText || user.value?.areaText || "Kantor Pusat",
+    nama_jabatan: senderRaw.position_text || senderRaw.positionText || currentSender.labelJob || "",
+    nama_lengkap: senderRaw.persnum_person_text || senderRaw.nama || user.value?.nama || "",
+
+    tgl: tglDb,
+    tanggal: tglPreview,
+    lampiran_temp_ids: lampiranIds,
+  };
+};
+
+// [UPDATE] prepareKonsepFormData juga harus disesuaikan
+// const prepareKonsepFormData = (includePdf = false) => {
+//   const formData = new FormData();
+//   const currentSender = selectedSender.value[0] || {};
+
+//   formData.append('formdatajenis', refData.value?.jenis || 'ND');
+
+//   // GUNAKAN ID DARI PILIHAN PENGIRIM
+//   formData.append('from_position_id', currentSender.value || user.value?.position || '');
+//   formData.append('pengirim_position_id', currentSender.value || user.value?.position || '');
+
+//   // ... (Sisa logic to_position_id, array penerima, dll TETAP SAMA)
+//   // ...
+
+//   // Update Identitas Text
+//   const senderRaw = currentSender.raw || {};
+//   formData.append('nama_tempat', senderRaw.area_text || user.value?.areaText || "Jakarta");
+//   formData.append('nama_jabatan', senderRaw.position_text || user.value?.positionText || "");
+//   formData.append('nama_lengkap', senderRaw.persnum_person_text || user.value?.nama || "");
+
+//   // ... (Sisa logic konten, lampiran TETAP SAMA)
+
+//   return formData;
+// };
+
+/* -------------------------------------------------------------------------- */
+/* 7. LIFECYCLE HOOKS (UPDATE)                                                */
+/* -------------------------------------------------------------------------- */
+onMounted(async () => {
+  // ... (logic ref_id tetap sama)
+
+  loadingMessage.value = "Memuat Data...";
+  isLoadingData.value = true;
+
+  if (!user.value) await getProfile();
+
+  // 1. Load Klasifikasi
+  // ... (kode klasifikasi sama)
+
+  // 2. [BARU] Load List Pengirim Dulu
+  await fetchSenderList();
+
+  // 3. Load Recipients (Otomatis tertrigger oleh watcher selectedSender,
+  // tapi untuk inisialisasi awal jika watcher belum jalan, kita panggil manual berdasarkan default sender)
+  if (selectedSender.value.length > 0) {
+    await fetchRecipientsBySender(selectedSender.value[0].value);
+  } else {
+    // Fallback jika tidak ada sender terpilih, pakai user login
+    await fetchRecipientsBySender(user.value?.position);
+  }
+
+  // ... (logic load draft tetap sama, tapi pastikan selectedSender diset dari draft jika ada)
+  // Jika ada draft, set selectedSender.value = ... dari draft.pengirim
+
+  isLoadingData.value = false;
+});
 
 /* -------------------------------------------------------------------------- */
 /* 2. LOCAL TYPES                                                             */
@@ -727,40 +900,40 @@ const validateAndToast = (payload: DraftPayload) => {
   return true;
 };
 
-const getBasePayload = (): DraftPayload => {
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
+// const getBasePayload = (): DraftPayload => {
+//   const tglDb = date.value
+//     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+//     : "";
 
-  const tglPreview = date.value
-    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-    : "";
+//   const tglPreview = date.value
+//     ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
+//     : "";
 
-  const lampiranIds = existingFiles.value
-    .map((f) => f.id)
-    .filter((id): id is string => !!id);
+//   const lampiranIds = existingFiles.value
+//     .map((f) => f.id)
+//     .filter((id): id is string => !!id);
 
-  return {
-    id_naskah: editDraftId.value || null,
-    pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),
-    tembusan: selectedTembusan.value.map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-    sifat: selectedSifat.value?.value || 'biasa',
-    perihal: subject.value,
-    konten: String(editorContent.value || ''),
-    htmlContent: String(editorContent.value || ''),
-    english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
-    tgl: tglDb,
-    tanggal: tglPreview,
-    lampiran_temp_ids: lampiranIds,
-  };
-};
+//   return {
+//     id_naskah: editDraftId.value || null,
+//     pengirim: user.value?.position || "",
+//     penerima: selectedTertuju.value.map(i => i.value),
+//     tembusan: selectedTembusan.value.map(i => i.value),
+//     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+//     klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+//     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+//     sifat: selectedSifat.value?.value || 'biasa',
+//     perihal: subject.value,
+//     konten: String(editorContent.value || ''),
+//     htmlContent: String(editorContent.value || ''),
+//     english: english.value,
+//     nama_tempat: user.value?.areaText || "Kantor Pusat",
+//     nama_jabatan: user.value?.positionText || "",
+//     nama_lengkap: user.value?.nama || "",
+//     tgl: tglDb,
+//     tanggal: tglPreview,
+//     lampiran_temp_ids: lampiranIds,
+//   };
+// };
 
 const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   const formData = new FormData();
@@ -871,78 +1044,120 @@ const handlePassphraseSubmit = async () => {
   }
 };
 
-// --- CORE FUNCTION ---
+const prepareKonsepFormData = (includePdf = false) => {
+  const formData = new FormData();
+
+  // 1. Mapping Data Dasar
+  // Sesuaikan 'SDE' dengan logic jenis surat Anda, default 'ND' jika kosong
+  formData.append('formdatajenis', refData.value?.jenis || 'ND');
+
+  // Posisi Pembuat (User Login)
+  formData.append('from_position_id', user.value?.position || '');
+
+  // Posisi Pengirim (Secara Organisasi/Kop Surat)
+  formData.append('pengirim_position_id', user.value?.position || '');
+
+  // !!! PENTING: Tentukan siapa target flow berikutnya (Reviewer/Signer)
+  // Jika ini submit pertama, biasanya dikirim ke atasan atau penandatangan.
+  // Anda perlu menyesuaikan logic ini. Contoh: mengambil dari signerInfo atau selection
+  const targetId = '70008057'; // CONTOH: Ganti dengan logic selection approval
+  formData.append('to_position_id', targetId);
+
+  // 2. Mapping Array (Penerima & Tembusan)
+  // Mengambil value (ID Posisi) dari state selectedTertuju
+  const penerimaIds = selectedTertuju.value.map(item => item.value);
+  const tembusanIds = selectedTembusan.value.map(item => item.value);
+
+  // Kirim sebagai JSON String sesuai contoh payload
+  formData.append('penerima_position_ids', JSON.stringify(penerimaIds));
+  formData.append('tembusan_position_ids', JSON.stringify(tembusanIds));
+
+  // 3. Tanggal & Meta
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : new Date().toISOString().split('T')[0];
+
+  formData.append('tgl', tglDb);
+
+  // Klasifikasi
+  if (selectedKlasifikasi.value) {
+    formData.append('klasifikasi', selectedKlasifikasi.value.klasifikasi);
+    formData.append('klasifikasi_text', selectedKlasifikasi.value.klasifikasi_text);
+  }
+
+  formData.append('sifat', selectedSifat.value?.value || 'biasa');
+  formData.append('perihal', subject.value);
+  formData.append('konten', editorContent.value); // HTML Content
+  formData.append('english', String(english.value)); // 'true'/'false'
+
+  // 4. Identitas di Surat
+  formData.append('nama_tempat', user.value?.areaText || "Jakarta");
+  formData.append('nama_jabatan', user.value?.positionText || "");
+  formData.append('nama_lengkap', user.value?.nama || "");
+
+  // 5. Catatan (Optional, ambil dari input jika ada, atau default)
+  formData.append('catatan', 'Mohon diperiksa');
+
+  // 6. Lampiran (Existing IDs)
+  // Mengambil ID dari file yang sudah ada (bukan file baru upload)
+  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
+
+  // 7. Lampiran Baru (File Binary)
+  // Logic ini tergantung komponen upload Anda, jika ada file raw yang belum diupload:
+  // newFiles.value.forEach(file => formData.append('lampiran', file));
+
+  return formData;
+};
+
+// -------------------------------------------------------------------------- //
+// [UPDATE] FUNGSI KIRIM (Menggantikan/Memodifikasi handleKirimDokumen)
+// -------------------------------------------------------------------------- //
+
 const handleKirimDokumen = async () => {
-  const payload = getBasePayload();
+  // 1. Validasi Input
+  const payloadDraft = getBasePayload(); // Gunakan validasi existing
+  if (!validateAndToast(payloadDraft)) return;
 
   try {
-    loadingMessage.value = "Mengirim Nota Dinas...";
+    loadingMessage.value = "Membuat Konsep Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. Fetch KTP jika metode TTE dipilih
-    let noktpValue = '';
+    // 2. Persiapkan FormData sesuai spesifikasi /KONSEP/create
+    const formData = prepareKonsepFormData();
 
-    if (selectedSendType.value === 'digsig') {
-      try {
-        const ktpResponse = await getKtp();
-        if (ktpResponse?.data?.noktp) {
-          noktpValue = ktpResponse.data.noktp;
-        } else {
-          console.warn("Field 'noktp' tidak ditemukan dalam respon");
-        }
-      } catch (err) {
-        console.error("Gagal mengambil data KTP:", err);
-        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
-      }
-    }
+    // 3. Call API
+    const result = await createKonsep(formData);
 
-    // 2. Generate PDF Final
-    const formDataPreview = createFormData(payload, false);
-    const blobResponse = await generatePdf(formDataPreview);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
+    if (result.success) {
+      toast.add({
+        title: 'Berhasil',
+        description: 'Konsep Nota Dinas berhasil dibuat',
+        color: 'success'
+      });
 
-    // 3. Buat FormData Utama
-    const formData = createFormData(payload, true);
-
-    // 4. Append Data Tambahan
-    formData.append('passphrase', passphrase.value);
-    formData.append('sign_option', selectedSendType.value);
-
-    if (noktpValue) {
-      formData.append('nik', noktpValue);
-    }
-
-    // 5. Panggil API Kirim
-    const result = await sendNotaDinas(formData);
-
-    if (result.data.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      Alert.close();
-      router.push("/korespondensi/terkirim");
+      // Redirect ke halaman list konsep atau detail
+      router.push("/konsep/keluar"); // Sesuaikan route
     } else {
-      throw new Error(result.data.message || 'Pengiriman gagal');
+      throw new Error(result.message || 'Gagal membuat konsep');
     }
+
   } catch (e: any) {
-    isLoadingData.value = false;
-    Alert.close();
-
-    console.error("Gagal mengirim:", e);
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-
-    if (errMsg.toLowerCase().includes('passphrase')) {
-      isPassphraseModalOpen.value = true;
-    }
+    console.error("Gagal kirim konsep:", e);
+    const errMsg = e.response?.data?.message || e.message || 'Terjadi kesalahan saat mengirim';
 
     toast.add({
-      title: 'Gagal Mengirim',
+      title: 'Gagal',
       description: errMsg,
       color: 'error'
     });
   } finally {
     isLoadingData.value = false;
+    isPassphraseModalOpen.value = false; // Tutup modal jika terbuka
+    Alert.close();
   }
 };
+
 
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
@@ -956,7 +1171,7 @@ const handleSaveDraft = async () => {
     await saveND(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draft");
+    router.push("/korespondensi/draf");
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     toast.add({

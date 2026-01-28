@@ -1,109 +1,241 @@
 <template>
-  <div class="flex flex-wrap justify-between">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-    >
-      <PageHeader title="Manajemen Akun" :items="items" />
-    </div>
-    <UButton
-      @click="showAddModal = true"
-      class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
-    >
-      <Plus class="w-4 h-4" />
-      Tambah
-    </UButton>
-  </div>
-
-  <div
-    class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white mt-5"
-  >
-    <div class="flex flex-wrap gap-4 items-center p-3">
-      <button
-        @click="refreshData"
-        class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+  <div class="min-h-screen">
+    <div class="flex flex-wrap justify-between mb-5">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
       >
-        <RotateCcw class="w-4 h-4" />
-      </button>
+        <PageHeader title="Manajemen Akun" :items="items" />
+      </div>
+      <UButton
+        @click="showAddModal = true"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
+      >
+        <Plus class="w-4 h-4" />
+        Tambah
+      </UButton>
+    </div>
 
-      <div class="relative flex-1 w-full px-2">
-        <Search
-          class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          v-model="filters.search"
-          type="text"
-          placeholder="Cari perihal / nomor..."
-          class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
-        />
+    <div
+      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+    >
+      <!-- Top Bar -->
+      <div class="flex flex-wrap gap-4 items-center p-3">
+        <button
+          @click="refreshData"
+          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+
+        <!-- Rows per page -->
+        <select
+          v-model="rowsPerPage"
+          class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+        >
+          <option v-for="n in rowsChoices" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
+
+        <div class="relative flex-1 w-full px-2">
+          <Search
+            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            v-model="filters.search"
+            type="text"
+            placeholder="Cari username / nama..."
+            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+          />
+        </div>
+
+        <button
+          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
+        >
+          <FileDown class="w-4 h-4" />
+          Export
+        </button>
       </div>
 
-      <button
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
-      >
-        <FileDown class="w-4 h-4" />
-        Export
-      </button>
-    </div>
+      <!-- Table -->
+      <table class="min-w-full border-collapse text-sm">
+        <thead class="bg-primary-400 text-white text-left">
+          <tr>
+            <th class="px-7 py-3 border-primary-600 font-semibold">Username</th>
+            <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
+            <th class="px-4 py-3 border-primary-600 font-semibold">Status</th>
+            <th class="px-4 py-3 border-primary-600 font-semibold text-center">
+              Aksi
+            </th>
+          </tr>
+        </thead>
 
-    <!-- Table -->
-    <table class="min-w-full border-collapse text-sm">
-      <thead class="bg-primary-400 text-white text-left">
-        <tr>
-          <th class="px-4 py-3 border-primary-600 font-semibold">Username</th>
-          <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
-          <th class="px-4 py-3 border-primary-600 font-semibold">Status</th>
-          <th class="px-4 py-3 border-primary-600 font-semibold text-center">
-            Aksi
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr
-          v-for="user in filteredUsers"
-          :key="user.username"
-          class="border-b border-gray-100 hover:bg-blue-50 transition-colors"
-        >
-          <td class="px-4 py-3">
-            <div class="flex items-start space-x-3">
-              <UserRound class="w-4 h-4 text-gray-500 mt-1" />
-              <div>
-                <p class="font-semibold text-gray-700">{{ user.persnum }}</p>
-                <p class="text-xs text-gray-600">{{ user.name }}</p>
+        <tbody>
+          <tr
+            v-for="(user, idx) in paginatedUsers"
+            :key="user.username"
+            :class="[
+              'border-b border-gray-100 hover:bg-blue-50 transition-colors',
+              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+            ]"
+          >
+            <td class="px-4 py-3">
+              <div class="flex items-start space-x-3 ml-3">
+                <UserRound class="w-4 h-4 text-gray-500 mt-1" />
+                <div>
+                  <p class="font-semibold text-gray-700">{{ user.persnum }}</p>
+                  <p class="text-xs text-gray-600">{{ user.name }}</p>
+                </div>
               </div>
-            </div>
-          </td>
+            </td>
 
-          <td class="px-4 py-3">
-            <span
-              class="px-3 py-1 text-xs rounded-full font-medium flex items-center gap-1 w-fit"
-              :class="getRoleColor(user.role)"
+            <td class="px-4 py-3">
+              <span
+                class="px-3 py-1 text-xs rounded-full font-medium flex items-center gap-1 w-fit"
+                :class="getRoleColor(user.role)"
+              >
+                <Shield class="w-3 h-3" />
+                {{ user.role }}
+              </span>
+            </td>
+
+            <td class="px-4 py-3">
+              <span
+                class="px-3 py-1 text-xs rounded-full font-medium"
+                :class="getStatusColor(user.status)"
+              >
+                {{ user.status }}
+              </span>
+            </td>
+
+            <td class="px-4 py-3 text-center space-x-3">
+              <button
+                class="text-red-600 hover:text-red-800 transition-colors"
+                @click="openDelete(user)"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div
+        v-if="filteredUsers.length > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+      >
+        <div class="text-xs text-gray-600">
+          Menampilkan {{ paginatedUsers.length }} dari
+          {{ filteredUsers.length }} data
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Back Button -->
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <Shield class="w-3 h-3" />
-              {{ user.role }}
-            </span>
-          </td>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
 
-          <td class="px-4 py-3">
-            <span
-              class="px-3 py-1 text-xs rounded-full font-medium"
-              :class="getStatusColor(user.status)"
-            >
-              {{ user.status }}
-            </span>
-          </td>
-
-          <td class="px-4 py-3 text-center space-x-3">
+          <!-- Page Numbers -->
+          <div class="flex items-center gap-1">
             <button
-              class="text-red-600 hover:text-red-800 transition-colors"
-              @click="openDelete(user)"
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
-              <Trash2 class="w-4 h-4" />
+              1
             </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <span
+              v-if="
+                paginationPages[paginationPages.length - 1] < totalPages - 1
+              "
+              class="px-2 text-gray-400 text-sm"
+            >
+              ...
+            </span>
+
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- Next Button -->
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+            ]"
+          >
+            Next
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <Teleport to="body">
@@ -112,6 +244,7 @@
       @submit="handleSubmitFromModal"
       @preview="handlePreview"
   /></Teleport>
+
   <Teleport to="body">
     <Modal v-model="showAddModal" @save="saveAccount">
       <template #title>
@@ -160,7 +293,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import {
   Trash2,
   UserRound,
@@ -195,6 +328,11 @@ const filters = ref({
   status: "",
 });
 
+// Pagination
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref<number>(1);
+
 const saveAccount = async () => {
   if (!form.value.persnum || !form.value.role) {
     alert("Persnum dan role wajib diisi");
@@ -226,6 +364,11 @@ const deleteNow = async () => {
   } catch (err) {
     alert("Gagal menghapus role!");
   }
+};
+
+const refreshData = () => {
+  fetchAccounts();
+  currentPage.value = 1;
 };
 
 const showAddModal = ref(false);
@@ -262,8 +405,44 @@ const filteredUsers = computed(() => {
   });
 });
 
+// Pagination computed
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredUsers.value.length / rowsPerPage.value)),
+);
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredUsers.value.slice(start, start + rowsPerPage.value);
+});
+
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
+
+// Watch for changes that should reset pagination
+watch([() => filters.value.search, rowsPerPage], () => {
+  currentPage.value = 1;
+});
+
 const resetFilter = () => {
   filters.value = { search: "", role: "", status: "" };
+  currentPage.value = 1;
 };
 
 const getRoleColor = (role: string) =>
@@ -276,3 +455,25 @@ const getStatusColor = (status: string) =>
     ? "bg-green-100 text-green-700"
     : "bg-red-100 text-red-600";
 </script>
+
+<style scoped>
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>

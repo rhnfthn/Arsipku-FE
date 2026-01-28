@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import {
   Inbox,
@@ -23,20 +23,73 @@ import {
   Download,
   Lock,
   Tag,
+  Loader2, // Added
+  AlertTriangle, // Added
 } from "lucide-vue-next";
 
 import * as XLSX from "xlsx";
 
 import { useInbox } from "~/composables/useInbox";
+import { useLabel } from '~/composables/useLabel'; // Added useLabel
 
 const { user, getProfile } = useAuth();
 
+// Inisialisasi useLabel
+const { labels, fetchLabels, createLabel, addNaskahToLabel: _addNaskahToLabel } = useLabel();
+
+const addNaskahToLabel = async (naskahId, labelId) => {
+  return await _addNaskahToLabel(naskahId, labelId, 'inbox');
+};
+
+const assignLabelToSelected = async (labelId: string, labelName: string) => {
+  if (selectedIds.value.size === 0) return;
+  isLabelProcessing.value = true;
+
+  try {
+    // Loop semua item terpilih dan tambahkan label
+    const promises = Array.from(selectedIds.value).map(selectedId => {
+
+      // 1. Cari object surat di array 'emails' berdasarkan ID yang dipilih (ID Sirkulasi)
+      const mailItem = emails.value.find(e => e.id === selectedId);
+
+      // 2. Ambil ID Naskah yang valid
+      // PERBAIKAN: Cek properti 'naskahId' (camelCase) atau 'naskah_id' (snake_case) di root object dulu
+      // 'originalData' hanya dijadikan fallback terakhir
+      const realNaskahId =
+        mailItem?.naskahId ||
+        mailItem?.naskah_id ||
+        mailItem?.originalData?.id_naskah ||
+        selectedId; // Fallback jika semua gagal (meski berisiko salah)
+
+      // 3. Kirim ID Naskah ke fungsi label dengan tipe 'inbox'
+      // Pastikan parameter ke-3 adalah 'inbox' (sesuai API backend biasanya)
+      return addNaskahToLabel(realNaskahId, labelId, 'inbox');
+    });
+
+    await Promise.all(promises);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `Label "${labelName}" ditambahkan ke ${selectedIds.value.size} item.`,
+      color: 'success'
+    });
+
+    showLabelAssignModal.value = false;
+    selectedIds.value.clear();
+  } catch (error) {
+    console.error("Gagal assign label:", error);
+    toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
+  } finally {
+    isLabelProcessing.value = false;
+  }
+};
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Kotak Masuk", to: "#" },
 ];
 
+const toast = useToast(); // Added toast for notifications
 
 // Ambil profil user saat page load
 onMounted(async () => {
@@ -254,6 +307,75 @@ const closeDetail = () => {
   selected.value = null;
 };
 
+// --- STATE BULK ACTION & LABEL ---
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
+const currentBulkAction = ref('delete');
+const showLabelAssignModal = ref(false);
+
+const firstSelectedItem = computed(() => {
+  if (selectedIds.value.size === 0) return null;
+  const firstId = [...selectedIds.value][0];
+  return emails.value.find(e => e.id === firstId);
+});
+
+const modalTitle = computed(() => currentBulkAction.value === 'archive' ? 'Arsipkan Surat?' : 'Hapus Surat?');
+const actionLabel = computed(() => currentBulkAction.value === 'archive' ? 'Arsipkan' : 'Hapus');
+
+// --- METHODS BULK ACTION ---
+const confirmAction = (action) => {
+  if (selectedIds.value.size === 0) return;
+  currentBulkAction.value = action;
+  showDeleteModal.value = true;
+};
+
+const openLabelAssignModal = () => {
+  showLabelAssignModal.value = true;
+};
+
+const handleBulkExecute = async () => {
+  if (!user.value?.position) return;
+
+  isDeleting.value = true;
+  try {
+    // Note: Anda mungkin perlu menyesuaikan payload/fungsi API
+    // sesuai dengan useInbox atau endpoint inbox Anda yang sebenarnya.
+    // Kode ini meniru logika useSirkulasi dari kode atas.
+    const payload = {
+      position_id: Number(user.value.position),
+      naskah_ids: Array.from(selectedIds.value),
+      action: currentBulkAction.value
+    };
+
+    // Placeholder: Gunakan fungsi delete/archive dari useInbox jika ada,
+    // atau panggil API langsung.
+    // await inboxBulkAction(payload);
+
+    // Simulasi sukses untuk UI
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    toast.add({
+      title: 'Berhasil',
+      description: `${selectedIds.value.size} item berhasil di-${currentBulkAction.value === 'archive' ? 'arsipkan' : 'hapus'}.`,
+      color: 'success'
+    });
+
+    // Reset state
+    selectedIds.value.clear();
+    showDeleteModal.value = false;
+
+    // Refresh data
+    await refreshData();
+
+  } catch (error) {
+    console.error(error);
+    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan saat memproses.', color: 'error' });
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+
 // --- HELPER: COLOR MAPPING (UPDATED to match Sent Box) ---
 const getCategoryStyle = (cat) => {
   const c = (cat || '').toUpperCase();
@@ -405,15 +527,25 @@ const downloadExcel = () => {
 
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
-          <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded">
+          <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
+
+            <button @click="confirmAction('delete')"
+              class="p-1.5 text-red-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded transition-colors"
+              title="Hapus">
               <Trash2 class="w-4 h-4" />
             </button>
-            <button
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block">
+            <button @click="confirmAction('archive')"
+              class="p-1.5 text-primary dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
+              title="Arsipkan">
               <Archive class="w-4 h-4" />
             </button>
+            <button @click="openLabelAssignModal"
+              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
+              title="Label">
+              <Tag class="w-4 h-4" />
+            </button>
+
+            <span class="text-xs text-neutral-500 ms-2">{{ selectedIds.size }} dipilih</span>
           </div>
         </template>
       </div>
@@ -466,8 +598,7 @@ const downloadExcel = () => {
         <div class="flex items-center gap-1">
           <div class="relative">
             <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-              title="Jumlah per halaman">
+              class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
               <Layers class="w-4 h-4" />
             </button>
             <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -603,6 +734,59 @@ const downloadExcel = () => {
       </div>
 
     </div>
+
+    <!-- <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @success="selectedIds.clear()" /> -->
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @assign="assignLabelToSelected"
+      @success="selectedIds.clear()" />
+
+    <Teleport to="body">
+      <div v-if="showDeleteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+          <div class="p-5 text-center">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              :class="currentBulkAction === 'delete' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'">
+              <AlertTriangle class="w-6 h-6"
+                :class="currentBulkAction === 'delete' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'" />
+            </div>
+
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{{ modalTitle }}</h3>
+
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <div v-if="selectedIds.size === 1 && firstSelectedItem">
+                Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br>
+                <span class="font-semibold text-gray-700 dark:text-gray-200">"{{ firstSelectedItem.subject }}"</span>?
+              </div>
+              <div v-else>
+                Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br>
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
+
+                <div v-if="firstSelectedItem"
+                  class="mt-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
+                  Contoh: <span class="italic">"{{ firstSelectedItem.subject }}"</span>
+                  <span v-if="selectedIds.size > 1">...dan {{ selectedIds.size - 1 }} lainnya.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3 justify-center">
+              <button @click="showDeleteModal = false" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                Batal
+              </button>
+              <button @click="handleBulkExecute" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="currentBulkAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-600'">
+                <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+                {{ isDeleting ? 'Memproses...' : actionLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 

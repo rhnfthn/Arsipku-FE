@@ -26,10 +26,10 @@
         </div>
         <button
           @click="openAddCompany = true"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all shadow-lg"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          Tambah Perusahaan
+          Tambah
         </button>
       </div>
       <!-- Card -->
@@ -38,14 +38,14 @@
       >
         <!-- Search -->
         <div class="p-5 border-b w-full border-gray-100">
-          <div class="relative max-w-md w-full">
+          <div class="relative flex-1 w-full md:w-255">
             <Search
-              class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
               v-model="search"
               placeholder="Cari perusahaan..."
-              class="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-12 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -113,10 +113,10 @@
                   <div class="flex items-center justify-center gap-2">
                     <button
                       @click="openEditModal(row)"
-                      class="p-2 hover:bg-blue-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
                     >
                       <Pencil
-                        class="w-4 h-4 text-gray-400 group-hover:text-blue-600"
+                        class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
                       />
                     </button>
                     <button
@@ -124,7 +124,7 @@
                       class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
                     >
                       <Trash2
-                        class="w-4 h-4 text-gray-400 group-hover:text-red-600"
+                        class="w-4 h-4 text-red-600 group-hover:text-red-600"
                       />
                     </button>
                     <NuxtLink
@@ -132,7 +132,7 @@
                       class="p-2 hover:bg-green-100 rounded-lg transition-colors group"
                     >
                       <MapPin
-                        class="w-4 h-4 text-gray-400 group-hover:text-green-600"
+                        class="w-4 h-4 text-green-600 group-hover:text-green-600"
                       />
                     </NuxtLink>
                   </div>
@@ -148,7 +148,7 @@
     <Teleport to="body">
       <Modal v-model="openAddCompany" size="xl" @save="handleSaveCompany">
         <template #title>
-          <div class="p-3">
+          <div class="p-3 ml-2">
             <h3 class="text-xl font-bold">Tambah Perusahaan</h3>
           </div>
         </template>

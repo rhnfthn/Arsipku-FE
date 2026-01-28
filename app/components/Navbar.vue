@@ -670,6 +670,7 @@ const resetAdvancedFilters = () => {
 
 const handleReset = () => {
   search.value = "";
+  router.push({ path: "/beranda", query: {} });
 };
 
 const isDark = useDark();

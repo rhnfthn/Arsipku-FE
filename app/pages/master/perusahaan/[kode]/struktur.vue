@@ -95,14 +95,14 @@
             </div>
           </div>
         </div>
-        <div class="relative w-full mt-5 ml-5 pr-5">
+        <div class="mt-3 ml-5 relative flex-1 w-full md:w-260">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
             v-model="searchQuery"
             placeholder="Cari..."
-            class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
         </div>
         <!-- Organization Tree -->

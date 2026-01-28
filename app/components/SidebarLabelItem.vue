@@ -5,7 +5,7 @@
       : 'hover:bg-gray-200/60 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'"
       :style="{ paddingLeft: (16 + (level * 20)) + 'px', paddingRight: '16px' }" @click="navigateToLabel">
       <button v-if="item.children && item.children.length > 0" @click.stop="toggleOpen"
-        class="p-0.5 -ml-1 mr-0.5 rounded hover:text-gray-700 dark:hover:text-gray-300 text-gray-400 dark:text-gray-500 transition-colors">
+        class="p-0.5 -ml-1 rounded hover:text-gray-700 dark:hover:text-gray-300 text-gray-400 dark:text-gray-500 transition-colors">
         <UIcon :name="isOpen ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-4 h-4" />
       </button>
 

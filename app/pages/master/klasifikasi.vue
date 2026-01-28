@@ -21,7 +21,7 @@
     <div class="rounded-lg border border-gray-200 shadow-sm bg-white">
       <!-- TOOLBAR (TIDAK ikut scroll) -->
       <div
-        class="sticky left-0 z-40 bg-white flex flex-wrap gap-4 items-center p-3 justify-between border-b border-gray-200"
+        class="rounded-lg shadow-sm sticky left-0 z-40 bg-white flex flex-wrap gap-4 items-center p-3 justify-between border-b border-gray-200"
       >
         <button
           @click="fetchKlasifikasi"
@@ -31,6 +31,16 @@
           <RotateCcw class="w-4 h-4" />
         </button>
 
+        <div class="relative flex-1 w-full md:w-56">
+          <Search
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            v-model="search"
+            placeholder="Cari Klasifikasi..."
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+          />
+        </div>
         <button
           class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-500 text-xs"
           @click="onExport"
@@ -90,9 +100,9 @@
               </td>
 
               <td class="px-4 py-3">
-                <div class="flex justify-center gap-4">
+                <div class="flex justify-center gap-3">
                   <button
-                    class="text-green-600"
+                    class="text-gray-600 hover:bg-gray-200 group-hover:text-gray-600 p-2 rounded-lg transition-colors group"
                     title="Detail"
                     @click="onView(row)"
                   >
@@ -100,7 +110,7 @@
                   </button>
 
                   <button
-                    class="text-blue-600"
+                    class="text-yellow-500 hover:bg-yellow-100 group-hover:text-yellow-600 p-2 rounded-lg transition-colors group"
                     title="Edit"
                     @click="onEdit(row)"
                   >
@@ -108,7 +118,7 @@
                   </button>
 
                   <button
-                    class="text-red-600"
+                    class="p-2 hover:bg-red-100 rounded-lg transition-colors group text-red-600 group-hover:text-red-600"
                     title="Delete"
                     @click="onDelete(row)"
                   >
@@ -309,18 +319,18 @@
           </Heading>
         </template>
 
-        <div class="space-y-5">
+        <div class="space-y-5 p-1">
           <!-- KODE KLASIFIKASI -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
               Kode Klasifikasi <span class="text-red-500">*</span>
-            </label>
+            </Heading>
 
             <input
               v-model="addForm.klasifikasi"
               type="text"
               placeholder="OPS.0123"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
@@ -329,16 +339,16 @@
           </div>
 
           <!-- NAMA KLASIFIKASI -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
               Nama Klasifikasi <span class="text-red-500">*</span>
-            </label>
+            </Heading>
 
             <input
               v-model="addForm.klasifikasi_text"
               type="text"
               placeholder="Air Traffic Flow Management (ATFM)"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
@@ -347,14 +357,16 @@
           </div>
 
           <!-- DESKRIPSI -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">Deskripsi</label>
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
+              Deskripsi <span class="text-red-500">*</span>
+            </Heading>
 
             <textarea
               v-model="addForm.deskripsi"
               rows="4"
               placeholder="Rekaman kegiatan atau peristiwa yang berkaitan ..."
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p class="text-xs text-gray-500">Opsional, boleh dikosongkan.</p>
@@ -380,18 +392,17 @@
           </Heading>
         </template>
 
-        <div class="space-y-5">
+        <div class="space-y-5 p-1">
           <!-- KODE -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
               Kode Klasifikasi <span class="text-red-500">*</span>
-            </label>
-
+            </Heading>
             <input
               v-model="editForm.klasifikasi"
               type="text"
               placeholder="OPS.01234"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
@@ -400,16 +411,16 @@
           </div>
 
           <!-- NAMA -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
               Nama Klasifikasi <span class="text-red-500">*</span>
-            </label>
+            </Heading>
 
             <input
               v-model="editForm.klasifikasi_text"
               type="text"
               placeholder="Air Traffic Flow Management (ATFM)"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p v-if="editErrors.klasifikasi_text" class="text-xs text-red-500">
@@ -418,14 +429,16 @@
           </div>
 
           <!-- DESKRIPSI -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm text-gray-700">Deskripsi</label>
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs">
+              Deskripsi <span class="text-red-500">*</span>
+            </Heading>
 
             <textarea
               v-model="editForm.deskripsi"
               rows="4"
               placeholder="Deskripsi klasifikasi..."
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
             />
 
             <p class="text-xs text-gray-500">Opsional, boleh dikosongkan.</p>
@@ -456,6 +469,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import {
   Eye,
+  Search,
   Pencil,
   Trash2,
   RotateCcw,
@@ -474,7 +488,7 @@ import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
 
 const items: BreadcrumbItem[] = [
-  { label: "Home", to: "/beranda" },
+  { label: "Beranda", to: "/beranda" },
   { label: "Klasifikasi", to: "/master/klasifikasi" },
 ];
 
