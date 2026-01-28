@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="bg-[#F6F8FC] dark:bg-gray-900 dark:border-gray-800 h-20 flex items-center transition-colors duration-300 gap-3 md:gap-5 justify-between sticky top-0 z-[99] relative">
+    class="bg-[#F6F8FC] dark:bg-gray-900 dark:border-gray-800 h-20 flex items-center transition-colors duration-300 gap-3 md:gap-5 justify-between sticky top-0 z-[50] relative">
 
     <div class="flex items-center gap-3 flex-1">
       <button
@@ -13,12 +13,17 @@
         ArsipKu
       </h1>
 
-      <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl relative z-50">
+      <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl relative z-[60]">
 
-        <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false" class="fixed inset-0 z-40 bg-transparent"></div>
+        <Teleport to="body">
+          <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false"
+            class="fixed inset-0 z-[40] bg-black/50 backdrop-blur-sm transition-all duration-300">
+          </div>
+        </Teleport>
+
 
         <UInput v-model="search" :placeholder="searchConfig.placeholder" variant="none" size="xl"
-          class="w-full rounded-full relative z-50 [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400"
+          class="w-full rounded-full relative bg-transparent [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400"
           @keyup.enter="handleSearch" :ui="{
             base: 'py-3 px-5 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-md dark:focus:bg-gray-700 transition-all',
             icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } },
@@ -43,8 +48,7 @@
         </UInput>
 
         <div v-if="isAdvancedOpen"
-          class="absolute top-full right-0 mt-2 w-full bg-white dark:bg-gray-900 shadow-xl rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh] z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-
+          class="absolute top-full right-0 mt-2 w-full bg-white dark:bg-gray-900 shadow-xl rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-top-2 duration-200">
           <div
             class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
             <h3 class="font-bold text-base text-gray-900 dark:text-gray-100 flex items-center gap-2">
