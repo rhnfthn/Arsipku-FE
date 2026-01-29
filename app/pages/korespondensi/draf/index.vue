@@ -1,44 +1,32 @@
 <script setup>
 import { useRouter, useRoute } from "vue-router";
 import { ref, computed, watch, onMounted } from "vue";
-import {
-  Inbox, FileText, Send, Building, Building2, FilePen, Trash2, ChevronLeft,
-  ChevronRight, RotateCw, Check, Edit, History, ArrowUpDown, Layers, Loader2, AlertTriangle
-} from 'lucide-vue-next';
-
-// import { useAuth } from '@/composables/useAuth'; // Jika diperlukan
+import { Inbox, FileText, Send, Building, Building2, FilePen, Trash2, ChevronLeft, ChevronRight, RotateCw, Check, Edit, History, ArrowUpDown, Loader2, AlertTriangle, BookOpen, Tag } from 'lucide-vue-next';
 import { useDraft } from '@/composables/useDraft';
+import { useLabel } from '~/composables/useLabel';
 
-// Destructuring composable yang baru
-const {
-  items,
-  pagination,
-  pending,
-  fetchDrafts,
-  deleteDraft,
-  bulkDeleteDrafts
-} = useDraft();
+const { items, pagination, pending, summary, fetchDrafts, deleteDraft, bulkDeleteDrafts } = useDraft();
+const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
-// --- STATE UI ---
 const selectedIds = ref(new Set());
 const activeTab = ref("ALL");
 const searchQuery = ref("");
 const showDeleteModal = ref(false);
 const itemToDelete = ref(null);
 const isDeleting = ref(false);
+const showLabelAssignModal = ref(false);
+const isLabelProcessing = ref(false);
 
-// Filter & Menu UI States
-const showFilterMenu = ref(false);
 const showDateMenu = ref(false);
 const activeDateLabel = ref("30 Hari");
 const showSortMenu = ref(false);
 const activeSortLabel = ref("Terbaru");
 const showPageMenu = ref(false);
 
-// Options Data
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [5, 10, 25, 50];
@@ -55,32 +43,90 @@ const tabs = [
   { label: "Internal", value: "SDI", icon: Building },
   { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Konsep", value: "KONSEP", icon: FilePen },
+  { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 
-// --- METHODS ---
+const formatShortDate = (dateString) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
 
-// 1. EDIT Routing
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const isThisYear = date.getFullYear() === now.getFullYear();
+
+  const time = `${date.getHours().toString().padStart(2, '0')}.${date.getMinutes().toString().padStart(2, '0')}`;
+  const day = date.getDate();
+  const month = new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date);
+
+  if (isToday) return time;
+  if (isThisYear) return `${day} ${month} ${time}`;
+  return `${day} ${month} ${date.getFullYear()} ${time}`;
+};
+
+const getTabCount = (tabValue) => {
+  if (!summary.value) return 0;
+  if (tabValue === 'ALL') return summary.value.total_semua || 0;
+
+  const counts = summary.value.total_per_jenis || {};
+  return counts[tabValue] || counts[tabValue.toUpperCase()] || counts[tabValue.toLowerCase()] || 0;
+};
+
 const handleEdit = (mail) => {
   const jenis = (mail.category || '').trim().toUpperCase();
-  let path = '';
+  const routes = {
+    'ND': '/korespondensi/tulis/nota-dinas',
+    'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
+    'DI': '/korespondensi/tulis/disposisi',
+    'DISPOSISI': '/korespondensi/tulis/disposisi',
+    'SDI': '/korespondensi/tulis/surat-dinas-internal',
+    'INTERNAL': '/korespondensi/tulis/surat-dinas-internal',
+    'SDE': '/korespondensi/tulis/surat-dinas-eksternal',
+    'EXTERNAL': '/korespondensi/tulis/surat-dinas-eksternal',
+    'KA': '/korespondensi/tulis/kajian',
+    'KAJIAN': '/korespondensi/tulis/kajian'
+  };
 
-  // Sesuaikan path ini dengan routing aplikasi Anda
-  if (['ND', 'NOTA DINAS'].includes(jenis)) path = '/korespondensi/tulis/nota-dinas';
-  else if (['DI', 'DISPOSISI'].includes(jenis)) path = '/korespondensi/tulis/disposisi';
-  else if (['SDI', 'INTERNAL'].includes(jenis)) path = '/korespondensi/tulis/surat-dinas-internal';
-  else if (['SDE', 'EXTERNAL'].includes(jenis)) path = '/korespondensi/tulis/surat-dinas-eksternal';
-  else if (['KA', 'KAJIAN'].includes(jenis)) path = '/korespondensi/tulis/kajian';
-  else path = '/korespondensi/tulis/nota-dinas'; // Default fallback
+  const path = routes[jenis] || '/korespondensi/tulis/nota-dinas';
+  router.push({ path, query: { draft_id: mail.id, mode: 'edit' } });
+};
+const addNaskahToLabel = async (naskahId, labelId) => {
+  return await _addNaskahToLabel(naskahId, labelId, 'draft');
+};
 
-  if (path) {
-    router.push({
-      path: path,
-      query: { draft_id: mail.id, mode: 'edit' }
+const assignLabelToSelected = async (labelId, labelName) => {
+  if (selectedIds.value.size === 0) return;
+  isLabelProcessing.value = true;
+
+  try {
+    const promises = Array.from(selectedIds.value).map(id => {
+      const item = items.value.find(e => e.id === id);
+      return addNaskahToLabel(item?.naskahId || id, labelId);
     });
+
+    await Promise.all(promises);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `Label "${labelName}" ditambahkan ke draf.`,
+      color: 'success'
+    });
+
+    showLabelAssignModal.value = false;
+    selectedIds.value.clear();
+    await refreshData();
+  } catch (error) {
+    console.error("Gagal assign label:", error);
+    toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
+  } finally {
+    isLabelProcessing.value = false;
   }
 };
 
-// 2. Refresh Wrapper
+const openLabelAssignModal = () => {
+  showLabelAssignModal.value = true;
+};
+
 const refreshData = async () => {
   await fetchDrafts({
     page: pagination.value.page,
@@ -93,57 +139,23 @@ const refreshData = async () => {
   selectedIds.value.clear();
 };
 
-// --- WATCHERS ---
-
-// Watch Page (Pindah Halaman)
-watch(() => pagination.value.page, () => {
-  refreshData();
-});
-
-// Watch Limit (Ganti jumlah per halaman)
+watch(() => pagination.value.page, refreshData);
 watch(() => pagination.value.limit, () => {
-  if (pagination.value.page !== 1) {
-    pagination.value.page = 1; // Ini akan trigger watcher Page
-  } else {
-    refreshData();
-  }
+  pagination.value.page = 1;
+  refreshData();
 });
-
-// Watch Filter (Tab, Search, Date, Sort)
 watch([activeTab, searchQuery, activeDateLabel, activeSortLabel], () => {
-  if (pagination.value.page !== 1) {
-    pagination.value.page = 1;
-  } else {
-    refreshData();
-  }
-});
-
-// Initial Load
-onMounted(() => {
+  pagination.value.page = 1;
   refreshData();
 });
 
-// --- PAGINATION ACTIONS ---
-const nextPage = () => {
-  if (pagination.value.page < pagination.value.totalPages) {
-    pagination.value.page++;
-  }
-};
-const prevPage = () => {
-  if (pagination.value.page > 1) {
-    pagination.value.page--;
-  }
-};
-const selectPageOption = (opt) => {
-  pagination.value.limit = opt;
-  showPageMenu.value = false;
-};
+onMounted(refreshData);
 
-// --- FILTER ACTIONS ---
+const nextPage = () => { if (pagination.value.page < pagination.value.totalPages) pagination.value.page++; };
+const prevPage = () => { if (pagination.value.page > 1) pagination.value.page--; };
 const selectDateFilter = (opt) => { activeDateLabel.value = opt; showDateMenu.value = false; };
 const selectSortOption = (opt) => { activeSortLabel.value = opt; showSortMenu.value = false; };
 
-// --- SELECTION LOGIC ---
 const toggleSelection = (id) => {
   if (selectedIds.value.has(id)) selectedIds.value.delete(id);
   else selectedIds.value.add(id);
@@ -154,15 +166,9 @@ const toggleSelectAll = () => {
 };
 const isAllSelected = computed(() => items.value.length > 0 && selectedIds.value.size === items.value.length);
 
-// --- DELETE LOGIC ---
-const confirmDeleteModal = (mail) => {
-  itemToDelete.value = mail;
-  showDeleteModal.value = true;
-};
-const confirmBulkDelete = () => {
-  itemToDelete.value = null;
-  showDeleteModal.value = true;
-};
+const confirmDeleteModal = (mail) => { itemToDelete.value = mail; showDeleteModal.value = true; };
+const confirmBulkDelete = () => { itemToDelete.value = null; showDeleteModal.value = true; };
+
 const handleDelete = async () => {
   isDeleting.value = true;
   try {
@@ -176,32 +182,25 @@ const handleDelete = async () => {
         selectedIds.value.clear();
       }
     }
-
-    // Logic mundur page jika kosong
-    if (items.value.length === 0 && pagination.value.page > 1) {
-      pagination.value.page--;
-    } else {
-      await refreshData();
-    }
-
+    items.value.length === 0 && pagination.value.page > 1 ? pagination.value.page-- : await refreshData();
     showDeleteModal.value = false;
-    itemToDelete.value = null;
   } catch (e) {
-    // Handle error (bisa tambah toast notification di sini)
     console.error(e);
   } finally {
     isDeleting.value = false;
+    itemToDelete.value = null;
   }
 };
 
-// --- STYLING UTILS ---
 const getCategoryStyle = (cat) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500';
-  if (['SDI', 'INTERNAL'].includes(c)) return 'bg-green-50 text-green-500';
-  if (['SDE', 'EXTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500';
-  return 'bg-gray-50 text-gray-500';
+  const styles = {
+    'ND': 'bg-blue-50 text-blue-500',
+    'DI': 'bg-purple-50 text-purple-500',
+    'SDI': 'bg-green-50 text-green-500',
+    'SDE': 'bg-orange-50 text-orange-500',
+    'KA': 'bg-cyan-50 text-cyan-500'
+  };
+  return styles[(cat || '').toUpperCase()] || 'bg-gray-50 text-gray-500';
 };
 </script>
 
@@ -212,7 +211,6 @@ const getCategoryStyle = (cat) => {
 
     <div
       class="h-14 border-b border-transparent flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white">
-
       <div class="flex items-center gap-1 shrink-0 relative">
         <div class="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition-colors group" @click="toggleSelectAll">
           <div
@@ -221,109 +219,89 @@ const getCategoryStyle = (cat) => {
             <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
           </div>
         </div>
-        <button @click="refreshData"
-          class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors"
-          title="Muat Ulang" :disabled="pending">
+        <button @click="refreshData" class="p-1.5 text-neutral-500 hover:bg-gray-100 rounded" :disabled="pending">
           <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending }" />
         </button>
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 mx-1 hidden md:block"></div>
-          <div class="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button @click="confirmBulkDelete"
-              class="p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"
-              title="Hapus Terpilih">
-              <Trash2 class="w-4 h-4" />
-            </button>
-            <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
-          </div>
+          <button @click="confirmBulkDelete" class="p-1.5 text-red-500 hover:bg-red-50 rounded" title="Hapus">
+            <Trash2 class="w-4 h-4" />
+          </button>
+          <button @click="openLabelAssignModal" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
+            title="Beri Label">
+            <Tag class="w-4 h-4" />
+          </button>
+          <span class="text-xs text-neutral-500">{{ selectedIds.size }} dipilih</span>
         </template>
       </div>
 
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <div class="relative">
           <button @click="showDateMenu = !showDateMenu"
-            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center justify-center relative">
+            class="p-1.5 text-neutral-500 hover:bg-gray-100 rounded relative">
             <History class="w-4 h-4" />
             <span v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white"></span>
+              class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
           </button>
           <div v-if="showDateMenu"
             class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
             <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
-              class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-              :class="{ 'text-primary font-semibold bg-gray-50': activeDateLabel === opt }">
+              class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50"
+              :class="{ 'text-primary font-semibold': activeDateLabel === opt }">
               {{ opt }}
             </button>
           </div>
         </div>
 
         <div class="relative">
-          <button @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
+          <button @click="showSortMenu = !showSortMenu" class="p-1.5 text-neutral-500 hover:bg-gray-100 rounded">
             <ArrowUpDown class="w-4 h-4" />
           </button>
           <div v-if="showSortMenu"
             class="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
             <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
-              class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-              :class="{ 'text-primary font-semibold bg-gray-50': activeSortLabel === opt }">
+              class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50"
+              :class="{ 'text-primary font-semibold': activeSortLabel === opt }">
               {{ opt }}
             </button>
           </div>
         </div>
 
-        <div class="w-px h-5 bg-gray-200 mx-1 hidden sm:block"></div>
-
-        <div class="flex items-center gap-1">
-          <div class="relative">
-            <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 hover:bg-gray-100 hover:text-neutral-900 rounded transition-colors flex items-center gap-1">
-              <Layers class="w-4 h-4" />
-            </button>
-            <div v-if="showPageMenu"
-              class="absolute top-full right-0 mt-1 w-24 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
-              <button v-for="opt in pageOptions" :key="opt" @click="selectPageOption(opt)"
-                class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 hover:bg-gray-50 hover:text-primary transition-colors"
-                :class="{ 'text-primary font-semibold bg-gray-50': pagination.limit === opt }">
-                {{ opt }} Item
-              </button>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-1 text-caption1 text-neutral-600 shrink-0 h-[34px]">
-            <span class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500">
-              {{ pagination.total === 0 ? '0-0' : `${pagination.from}-${pagination.to}` }} Dari {{ pagination.total }}
-            </span>
-            <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="prevPage"
-              :disabled="pagination.page === 1">
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-            <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="nextPage"
-              :disabled="pagination.page >= pagination.totalPages">
-              <ChevronRight class="w-4 h-4" />
-            </button>
-          </div>
+        <div class="flex items-center gap-1 text-caption1 text-neutral-600 shrink-0 h-[34px]">
+          <span class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500">
+            {{ pagination.total === 0 ? '0-0' : `${pagination.from}-${pagination.to}` }} Dari {{ pagination.total }}
+          </span>
+          <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="prevPage"
+            :disabled="pagination.page === 1">
+            <ChevronLeft class="w-4 h-4" />
+          </button>
+          <button class="p-1.5 hover:bg-gray-100 rounded text-neutral-500 disabled:opacity-30" @click="nextPage"
+            :disabled="pagination.page >= pagination.totalPages">
+            <ChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
 
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div class="flex flex-col bg-white transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
-
         <div
           class="py-2.5 border-b border-t border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
-          <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
+          <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full py-1">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
-              class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 active:bg-primary-100 active:text-primary-500 first:ms-2 last:me-2"
+              class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="activeTab === tab.value ? 'bg-primary-400 text-white border-primary-400' : 'bg-white text-primary-500 border-neutral-200/50 hover:bg-primary-50'">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
+              <span v-if="getTabCount(tab.value) > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                :class="activeTab === tab.value ? 'bg-white text-primary-500' : 'bg-primary-50 text-primary-500'">
+                {{ getTabCount(tab.value) }}
+              </span>
             </UButton>
           </div>
         </div>
 
         <div class="flex-1 pb-10 w-full relative min-h-[200px]">
-
           <div v-if="pending" class="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
             <Loader2 class="w-8 h-8 text-primary animate-spin" />
           </div>
@@ -348,28 +326,32 @@ const getCategoryStyle = (cat) => {
 
             <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3 overflow-hidden">
               <div class="flex md:hidden w-full mb-0.5">
-                <span class="text-caption2b text-neutral-500 text-[10px] whitespace-nowrap">{{ mail.fullDate }}</span>
-              </div>
-              <div class="flex md:hidden w-full mb-1">
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap"
-                  :class="getCategoryStyle(mail.category)">
-                  {{ mail.category_text }}
-                </span>
+                <span class="text-neutral-500 text-[10px]">{{ formatShortDate(mail.created_at || mail.date) }}</span>
               </div>
 
-              <span class="w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 shrink-0 font-semibold">
-                {{ mail.from }}
-              </span>
-
-              <div class="flex-1 min-w-0 flex items-center text-caption1 text-neutral-500 overflow-hidden w-full">
-                <span class="text-neutral-900 truncate mr-1 w-full md:w-auto text-[13px] font-medium">
-                  {{ mail.subject }}
-                </span>
-              </div>
-
-              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
+              <UTooltip :text="mail.fullRecipients"
+                :ui="{ content: 'h-auto py-2 px-3 max-w-xs', text: 'whitespace-pre-line text-left' }"
+                class="min-w-0 truncate">
                 <span
-                  class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                  class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 shrink-0 font-semibold cursor-help">
+                  {{ mail.from }}
+                </span>
+              </UTooltip>
+
+              <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                <div v-if="mail.category_label && mail.category_label.length > 0" class="flex flex-wrap gap-1 shrink-0">
+                  <span v-for="lbl in mail.category_label" :key="lbl" :title="lbl"
+                    class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
+                    {{ lbl }}
+                  </span>
+                </div>
+                <div class="text-[13px] text-neutral-900 truncate flex-1 min-w-[120px]">
+                  {{ mail.subject }}
+                </div>
+              </div>
+
+              <div class="hidden xl:flex shrink-0 w-[100px] justify-start items-center">
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
                   :class="getCategoryStyle(mail.category)">
                   {{ mail.category }}
                 </span>
@@ -377,57 +359,46 @@ const getCategoryStyle = (cat) => {
             </div>
 
             <div class="hidden md:flex pl-2 shrink-0 justify-end w-[130px]">
-              <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap truncate">{{ mail.fullDate
-                }}</span>
+              <span class="text-neutral-500 text-[12px] truncate">{{ formatShortDate(mail.created_at || mail.date)
+              }}</span>
             </div>
 
-            <div class="pl-2 sm:pl-5 shrink-0 flex justify-end gap-1 sm:gap-2 mt-0.5 md:mt-0">
-              <button class="text-primary hover:text-neutral-800 transition-colors p-1" title="Edit"
-                @click.stop="handleEdit(mail)">
+            <div class="pl-2 shrink-0 flex justify-end gap-1">
+              <button class="text-primary hover:text-neutral-800 p-1" @click.stop="handleEdit(mail)">
                 <Edit class="w-4 h-4" />
               </button>
-              <button class="text-error hover:text-red-800 transition-colors p-1" title="Hapus"
-                @click.stop="confirmDeleteModal(mail)">
+              <button class="text-red-500 hover:text-red-800 p-1" @click.stop="confirmDeleteModal(mail)">
                 <Trash2 class="w-4 h-4" />
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
 
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" source="draft"
+      @assign="assignLabelToSelected" @success="selectedIds.clear()" />
+
     <Teleport to="body">
       <div v-if="showDeleteModal"
-        class="fixed inset-0 z-99 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-          <div class="p-5 text-center">
-            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle class="w-6 h-6 text-red-600" />
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draf?</h3>
-            <p class="text-sm text-gray-500 mb-6" v-if="itemToDelete">
-              Apakah Anda yakin ingin menghapus draf <br>
-              <span class="font-semibold text-gray-700">"{{ itemToDelete?.subject }}"</span>?
-            </p>
-            <p class="text-sm text-gray-500 mb-6" v-else>
-              Apakah Anda yakin ingin menghapus <br>
-              <span class="font-bold text-gray-800">{{ selectedIds.size }} item terpilih</span>?
-            </p>
-            <div class="flex gap-3 justify-center">
-              <button @click="showDeleteModal = false" :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</button>
-              <button @click="handleDelete" :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2">
-                <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-                {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
-              </button>
-            </div>
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-5 text-center">
+          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle class="w-6 h-6 text-red-600" />
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Draf?</h3>
+          <p class="text-sm text-gray-500 mb-6">Apakah Anda yakin ingin menghapus data ini?</p>
+          <div class="flex gap-3 justify-center">
+            <button @click="showDeleteModal = false" :disabled="isDeleting"
+              class="px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50">Batal</button>
+            <button @click="handleDelete" :disabled="isDeleting"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2">
+              <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" /> {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
+            </button>
           </div>
         </div>
       </div>
     </Teleport>
-
   </div>
 </template>
 

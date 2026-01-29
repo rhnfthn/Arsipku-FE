@@ -1,16 +1,20 @@
 import { ref } from "vue";
 import { useApi } from "./useApi";
 
-// --- HELPERS ---
 const formatDateShort = (isoString: string) => {
   if (!isoString) return "-";
   const date = new Date(isoString);
-  return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+  });
 };
 
 const formatFullDate = (isoString: string, time: string) => {
   if (!isoString) return "-";
   const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "-";
   const d = date.toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "short",
@@ -30,12 +34,10 @@ const getRandomColor = (id: string) => {
     "bg-indigo-100 text-indigo-600",
     "bg-orange-100 text-orange-600",
   ];
-  // Fallback jika id null/undefined
   const charCode = id ? id.charCodeAt(0) : 0;
   return colors[charCode % colors.length] || colors[0];
 };
 
-// --- INTERFACES ---
 export interface DraftParams {
   page?: number;
   limit?: number;
@@ -46,14 +48,15 @@ export interface DraftParams {
 }
 
 export const useDraft = () => {
-  const { get, post, del, patch, api } = useApi();
+  const { get, post, del, api } = useApi();
 
-  // --- STATE ---
+  const isLoadingDraft = ref(false);
   const items = ref<any[]>([]);
   const pending = ref(false);
   const error = ref<any>(null);
+  const drafts = ref([]);
+  const summary = ref<any>(null);
 
-  // Default Pagination State
   const pagination = ref({
     total: 0,
     page: 1,
@@ -63,17 +66,11 @@ export const useDraft = () => {
     to: 0,
   });
 
-  const multipartConfig = {
-    headers: { "Content-Type": "multipart/form-data" },
-  };
-
-  // --- 1. FETCH DRAFTS (Disesuaikan dengan JSON Anda) ---
   const fetchDrafts = async (params: DraftParams = {}) => {
     pending.value = true;
     error.value = null;
 
     try {
-      // 1. Setup Query Params
       const query = new URLSearchParams();
       const reqPage = params.page || pagination.value.page || 1;
       const reqLimit = params.limit || pagination.value.limit || 10;
@@ -87,21 +84,17 @@ export const useDraft = () => {
       if (params.date_filter) query.append("date_filter", params.date_filter);
       if (params.sort_by) query.append("sort_by", params.sort_by);
 
-      // 2. Call API
       const response = await get(`/draft/list?${query.toString()}`);
-
-      // 3. Extract Data berdasarkan JSON Response Anda
-      // Struktur: { success: true, data: [...], pagination: {...} }
       const rawData = response?.data || [];
       const meta = response?.pagination || {};
 
-      // 4. Update Pagination State
+      summary.value = response?.summary || null;
+
       const totalItems = meta.total || 0;
       const currentPage = meta.page || reqPage;
       const currentLimit = meta.limit || reqLimit;
       const totalPages = meta.totalPages || 1;
 
-      // Hitung 'from' dan 'to' secara manual untuk UI "1-10 Dari 100"
       const from = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
       const to = Math.min(currentPage * currentLimit, totalItems);
 
@@ -114,52 +107,54 @@ export const useDraft = () => {
         to: to,
       };
 
-      // 5. Mapping Data ke format UI
       items.value = rawData.map((item: any) => {
-        // Logic Display Penerima
         const listPenerima = item.penerima || [];
         let displayRecipient = "Tanpa Penerima";
         let displayNameForInitial = "NA";
+        let fullRecipientList = "Tanpa Penerima";
 
         if (listPenerima.length > 0) {
           const firstPerson = listPenerima[0];
           const jenisSurat = (item.jenis || "").toUpperCase();
           const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(jenisSurat);
 
-          // SDE pakai nama orang, Internal pakai Jabatan
           let primaryName = isSDE
             ? firstPerson.nama
             : firstPerson.position_text || firstPerson.nama;
 
           if (!primaryName) primaryName = "Tanpa Nama";
-
           displayNameForInitial = primaryName;
 
-          // Format: "Direktur X +2 lainnya"
           displayRecipient =
             listPenerima.length > 1
               ? `${primaryName} +${listPenerima.length - 1} lainnya`
               : primaryName;
+
+          fullRecipientList = listPenerima
+            .map(
+              (p: any, index: number) =>
+                `${index + 1}. ${isSDE ? p.nama : p.position_text || p.nama}`,
+            )
+            .join("\n");
         }
 
         return {
-          id: item.id_naskah, // Sesuai JSON: id_naskah
+          id: item.id_naskah,
           from: displayRecipient,
-          subject: item.isi_pesan || "Tanpa Subjek", // Sesuai JSON: isi_pesan
+          fullRecipients: fullRecipientList,
+          subject: item.isi_pesan || "Tanpa Keterangan",
           body: item.isi_pesan,
-
-          category: item.jenis || "", // DI, ND
-          category_text: item.jenis_text || item.jenis, // Disposisi, Nota Dinas
-
+          nomor: item.nomor || "-",
+          category: item.jenis || "",
+          category_text: item.jenis_text || item.jenis,
+          category_label: item.labels || "",
           date: formatDateShort(item.tanggal),
           fullDate: formatFullDate(item.tanggal, item.waktu),
-          rawDate: new Date(item.tanggal),
-
+          created_at: item.tanggal,
           initial: getInitial(displayNameForInitial),
           color: getRandomColor(item.id_naskah || "0"),
-          isRead: true, // Draft dianggap sudah dibaca pemiliknya
-
-          // Simpan data asli untuk keperluan edit/detail
+          isRead: true,
+          isStarred: false,
           originalData: item,
         };
       });
@@ -167,25 +162,91 @@ export const useDraft = () => {
       console.error("Fetch drafts error:", err);
       error.value = err;
       items.value = [];
+      summary.value = null;
       pagination.value = { ...pagination.value, total: 0, from: 0, to: 0 };
     } finally {
       pending.value = false;
     }
   };
 
-  // --- 2. DELETE ACTIONS ---
+  const multipartConfig = {
+    headers: { "Content-Type": "multipart/form-data" },
+  };
+
+  const saveDraft = async (formData: FormData, id_draft?: string | null) => {
+    isLoadingDraft.value = true;
+    try {
+      let response;
+      if (id_draft) {
+        response = await api.patch(
+          `/ND/update-draft/${id_draft}`,
+          formData,
+          multipartConfig,
+        );
+      } else {
+        response = await api.post(`/ND/save-draft`, formData, multipartConfig);
+      }
+      return response.data;
+    } catch (error: any) {
+      console.error("Save Draft Error:", error);
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
+  const sendMessage = async (formData: FormData) => {
+    isLoadingDraft.value = true;
+    try {
+      const response = await api.post(
+        `/ND/send-message`,
+        formData,
+        multipartConfig,
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Send Message Error:", error);
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
+  const getDraftDetail = async (idNaskah: string) => {
+    isLoadingDraft.value = true;
+    try {
+      return await get(`/ND/${idNaskah}`);
+    } catch (error: any) {
+      console.error("Gagal ambil detail:", error);
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
+  const generatePdf = async (payload: any) => {
+    try {
+      const url = "http://172.20.16.115:3011/ND/generate-pdf";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Gagal generate PDF");
+      return await res.blob();
+    } catch (error) {
+      console.error("Generate PDF Error:", error);
+      throw error;
+    }
+  };
+
   const deleteDraft = async (idNaskah: string) => {
     pending.value = true;
     try {
       await del(`/draft/delete/${idNaskah}`);
-
-      // Optimistic Update
       items.value = items.value.filter((i) => i.id !== idNaskah);
-
-      // Update pagination info locally
       if (pagination.value.total > 0) {
         pagination.value.total -= 1;
-        // Recalculate 'to'
         pagination.value.to = Math.min(
           pagination.value.page * pagination.value.limit,
           pagination.value.total,
@@ -203,11 +264,7 @@ export const useDraft = () => {
     pending.value = true;
     try {
       await post(`/draft/bulk-delete`, { naskah_ids: naskahIds });
-
-      // Optimistic Update
       items.value = items.value.filter((i) => !naskahIds.includes(i.id));
-
-      // Update pagination info locally
       if (pagination.value.total > 0) {
         pagination.value.total -= naskahIds.length;
         pagination.value.to = Math.min(
@@ -228,8 +285,14 @@ export const useDraft = () => {
     pagination,
     pending,
     error,
+    summary,
+    drafts,
     fetchDrafts,
     deleteDraft,
     bulkDeleteDrafts,
+    getDraftDetail,
+    generatePdf,
+    sendMessage,
+    saveDraft,
   };
 };

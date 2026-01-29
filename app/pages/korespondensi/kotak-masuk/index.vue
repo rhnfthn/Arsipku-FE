@@ -569,8 +569,8 @@ onMounted(async () => {
       <div
         class="flex flex-col bg-white transition-all duration-300 border-r border-gray-200 overflow-y-auto overflow-x-hidden flex-1 w-full">
 
-        <div class="py-2.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
-          <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full">
+        <div class="py-1.5 border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 w-full overflow-hidden">
+          <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full py-1">
             <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="activeTab === tab.value
@@ -587,134 +587,144 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="flex-1 w-full">
-          <div v-if="items.length === 0 && !pending"
-            class="flex flex-col items-center justify-center h-full text-neutral-400 mt-10">
-            <Inbox class="w-12 h-12 mb-2 opacity-50" />
-            <span class="text-sm">Tidak ada data</span>
-          </div>
+        <div v-if="items.length === 0 && !pending"
+          class="flex flex-col items-center justify-center py-10 text-neutral-400 w-full">
+          <Inbox class="w-12 h-12 mb-2 opacity-50" />
+          <span class="text-sm">Tidak ada data</span>
+        </div>
 
-          <div v-else-if="pending" class="w-full">
-            <div v-for="n in 10" :key="n"
-              class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
+        <div v-else class="w-full overflow-x-auto pb-2">
+          <div class="w-full min-w-full md:min-w-[800px]">
 
-              <div class="flex items-center shrink-0 gap-2">
-                <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-              </div>
+            <div v-if="pending" class="w-full">
+              <div v-for="n in 10" :key="n"
+                class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
 
-              <div class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4">
-
-                <div class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0">
-                  <div class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
+                <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
+                  <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div class="md:hidden h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-2"></div>
                 </div>
 
-                <div class="flex-1 flex flex-wrap items-center gap-2 w-full">
-                  <div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-
-                <div class="hidden xl:flex shrink-0 w-[50px] justify-start">
-                  <div class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                </div>
-
-                <div class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0">
-                  <div class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"></div>
+                <div class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4">
+                  <div class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0">
+                    <div class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
+                  </div>
+                  <div class="flex-1 flex flex-wrap items-center gap-2 w-full">
+                    <div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </div>
+                  <div class="hidden md:flex shrink-0 w-[50px] justify-start">
+                    <div class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  </div>
+                  <div class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0">
+                    <div class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div v-else>
-            <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
-              class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50">
+            <div v-else class="w-full">
+              <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
+                class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50">
 
-              <div class="flex items-center shrink-0 pt-1 gap-2" @click.stop>
-                <div
-                  class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 rounded-sm flex items-center justify-center transition-colors"
-                  :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white'"
-                  @click="toggleSelection(mail.id)">
-                  <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
-                </div>
-                <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
-                  ? 'text-yellow-400 fill-yellow-400'
-                  : 'text-neutral-300'
-                  " @click.stop="toggleFlag(mail, 'favorit')" />
-                <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300" :class="mail.isTinjut
-                  ? 'text-primary-300 fill-primary-300'
-                  : 'text-neutral-300'
-                  " />
-              </div>
-
-              <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
-                <div class="flex items-center md:w-44 lg:w-52 shrink-0 mb-1 md:mb-0">
-                  <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2" title="Belum Dibaca">
+                <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
+                  <div
+                    class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 rounded-sm flex items-center justify-center transition-colors"
+                    :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white'"
+                    @click="toggleSelection(mail.id)">
+                    <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
-                  <div class="flex flex-col min-w-0">
-                    <div class="text-[11px] text-neutral-500 uppercase truncate font-bold">
-                      {{ mail.from }}
-                    </div>
-                    <div class="text-[11px] text-neutral-400">
-                      {{ mail.nomor }}
-                    </div>
-                  </div>
-                </div>
+                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-neutral-300'
+                    " @click.stop="toggleFlag(mail, 'favorit')" />
+                  <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300" :class="mail.isTinjut
+                    ? 'text-primary-300 fill-primary-300'
+                    : 'text-neutral-300'
+                    " />
 
-                <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                  <div v-if="mail.labels && mail.labels.length > 0" class="flex flex-wrap gap-1 shrink-0">
-                    <span v-for="lbl in mail.labels" :key="lbl" :title="lbl"
-                      class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
-                      {{ lbl }}
-                    </span>
-                  </div>
-                  <div class="text-[13px] text-neutral-900 truncate flex-1 min-w-[120px]"
-                    :class="!mail.isRead ? 'font-bold' : 'font-normal'">
-                    {{ mail.subject }}
-                  </div>
-                </div>
-
-                <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
                   <span
-                    class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                    class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
                     :class="getCategoryStyle(mail.category)">
                     {{ getCategoryLabel(mail.category) }}
                   </span>
                 </div>
 
-                <div class="shrink-0 pt-0.5 w-full md:w-[130px] md:text-right text-left md:pe-2 mt-1 md:mt-0">
-                  <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap">
-                    {{ formatShortDate(mail.raw?.created_at) }}
-                  </span>
-                </div>
-              </div>
+                <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
+                  <div class="flex items-center md:w-44 lg:w-52 shrink-0 mb-1 md:mb-0">
+                    <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
+                      title="Belum Dibaca">
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <div class="text-[11px] text-neutral-500 uppercase truncate font-bold">
+                        {{ mail.from }}
+                      </div>
+                      <div class="text-[11px] text-neutral-400">
+                        {{ mail.nomor }}
+                      </div>
+                    </div>
+                  </div>
 
-              <div
-                class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
-                <div class="flex items-center gap-2 p-1">
-                  <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
-                    ? 'text-orange-400 fill-orange-400'
-                    : 'text-neutral-300'
-                    " @click.stop="toggleFlag(mail, 'note')" />
-                  <Lock class="w-4 h-4 transition-colors" :class="mail.isLocked
-                    ? 'text-red-500'
-                    : 'text-neutral-300'
-                    " />
-                  <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
-                    ? 'text-purple-500 fill-purple-500'
-                    : 'text-neutral-300'
-                    " @click.stop="toggleFlag(mail, 'arsip')" />
+                  <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                    <div v-if="mail.labels && mail.labels.length > 0" class="flex flex-wrap gap-1 shrink-0">
+                      <span v-for="lbl in mail.labels" :key="lbl" :title="lbl"
+                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
+                        {{ lbl }}
+                      </span>
+                    </div>
+                    <div class="text-[13px] text-neutral-900 truncate flex-1 min-w-[120px]"
+                      :class="!mail.isRead ? 'font-bold' : 'font-normal'">
+                      {{ mail.subject }}
+                    </div>
+                  </div>
+
+                  <div class="hidden md:flex shrink-0 w-[50px] justify-start items-center">
+                    <span
+                      class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                      :class="getCategoryStyle(mail.category)">
+                      {{ getCategoryLabel(mail.category) }}
+                    </span>
+                  </div>
+
+                  <div class="shrink-0 pt-0.5 w-full md:w-[130px] md:text-right text-left md:pe-2 mt-1 md:mt-0">
+                    <span class="text-caption2b text-neutral-500 text-[12px] whitespace-nowrap">
+                      {{ formatShortDate(mail.raw?.created_at) }}
+                    </span>
+                  </div>
                 </div>
+
+                <div
+                  class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
+                  <div class="flex items-center gap-2 p-1">
+                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
+                      ? 'text-orange-400 fill-orange-400'
+                      : 'text-neutral-300'
+                      " @click.stop="toggleFlag(mail, 'note')" />
+                    <Lock class="w-4 h-4 transition-colors" :class="mail.isLocked
+                      ? 'text-red-500'
+                      : 'text-neutral-300'
+                      " />
+                    <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
+                      ? 'text-purple-500 fill-purple-500'
+                      : 'text-neutral-300'
+                      " @click.stop="toggleFlag(mail, 'arsip')" />
+                  </div>
+                </div>
+
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </div>
 
-    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" @assign="assignLabelToSelected"
-      @success="selectedIds.clear()" />
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" source="inbox"
+      @assign="assignLabelToSelected" @success="selectedIds.clear()" />
 
     <Teleport to="body">
       <div v-if="showDeleteModal"

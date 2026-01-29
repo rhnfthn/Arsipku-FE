@@ -13,11 +13,10 @@ export const useSde = () => {
    * Mengambil info pengirim (Sender) SDE
    * Endpoint: GET /SDE/get-recipient/{positionId}
    */
-  const getRecipientInfo = async (positionId: number | string) => {
-    if (!positionId) throw new Error("Position ID kosong");
+  const getRecipientInfo = async () => {
 
     const res = await apiGet<SdeRecipientApiResponse>(
-      `/SDE/get-tembusan/${positionId}`,
+      `/SDE/get-tembusan/`,
     );
 
     return {

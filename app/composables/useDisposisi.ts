@@ -65,10 +65,9 @@ export const useDisposisi = () => {
 
   // --- API Actions ---
 
-  const getRecipients = async (positionId: number | string) => {
-    if (!positionId) throw new Error("positionId kosong");
+  const getRecipients = async () => {
     const res = await apiGet<RecipientApiResponse>(
-      `/DI/get-recipient/${positionId}`,
+      `/DI/get-recipient/`,
     );
     return {
       sender: res?.data?.sender ?? null,
