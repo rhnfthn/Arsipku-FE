@@ -17,13 +17,13 @@
 
         <Teleport to="body">
           <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false"
-            class="fixed inset-0 z-[40] bg-black/50 backdrop-blur-sm transition-all duration-300">
+            class="fixed inset-0 z-[1] bg-black/50 backdrop-blur-sm transition-all duration-300">
           </div>
         </Teleport>
 
 
         <UInput v-model="search" :placeholder="searchConfig.placeholder" variant="none" size="xl"
-          class="w-full rounded-full relative bg-transparent [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400"
+          class="w-full rounded-full relative bg-transparent [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400 z-[90]"
           @keyup.enter="handleSearch" :ui="{
             base: 'py-3 px-5 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-md dark:focus:bg-gray-700 transition-all',
             icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } },

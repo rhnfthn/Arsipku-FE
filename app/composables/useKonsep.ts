@@ -16,9 +16,9 @@ export const useKonsep = () => {
   };
 
   // Fetch Recipients (Managerial / BOD)
-  const getManagerialRecipients = async () => {
+  const getSendersById = async (pengirimId: string | number) => {
     return await apiGet<{ success: boolean; data: any[] }>(
-      "/org-data/pengirim/managerial",
+      `/ND/get-senders?pengirim=${pengirimId}`,
     );
   };
 
@@ -50,11 +50,11 @@ export const useKonsep = () => {
 
   return {
     getKonsepDetail,
-    getManagerialRecipients,
     previewPdf,
     finalizeKonsep,
     forwardKonsep,
     rejectKonsep,
-    createKonsep
+    createKonsep,
+    getSendersById
   };
 };

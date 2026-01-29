@@ -92,3 +92,50 @@ body,
   --color-warning-800: #7a3108;
   --color-warning-900: #602706;
 }
+
+/* Styling Scrollbar Modern */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  /* Firefox */
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  /* Lebar scrollbar */
+  height: 5px;
+  /* Tinggi scrollbar horizontal */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  /* Track transparan agar menyatu */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  /* Warna abu-abu transparan */
+  border-radius: 20px;
+  /* Membuat sudut bulat */
+  border: 2px solid transparent;
+  /* Padding trick agar terlihat lebih kecil */
+  background-clip: content-box;
+}
+
+/* Hover effect */
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  /* Lebih gelap saat di-hover */
+}
+
+/* Dark Mode Adjustment */
+:is(.dark .custom-scrollbar)::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  /* Putih transparan di dark mode */
+}
+
+:is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}

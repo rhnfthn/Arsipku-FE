@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, type PropType } from "vue";
 import { X, Tag, Plus, Loader2 } from 'lucide-vue-next';
-import { useLabel } from '~/composables/useLabel'; // Sesuaikan path composable
-import { useToast } from '#imports'; // Sesuaikan import toast di nuxt/vue project kamu
+import { useLabel } from '~/composables/useLabel';
+import { useToast } from '#imports';
 
 const props = defineProps({
   modelValue: {
@@ -12,6 +12,10 @@ const props = defineProps({
   selectedIds: {
     type: Set as PropType<Set<string>>,
     default: () => new Set()
+  },
+  source: {
+    type: String,
+    default: 'inbox' // Ini akan digunakan jika parent tidak mengirimkan prop source
   }
 });
 
@@ -58,19 +62,20 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   isLabelProcessing.value = true;
 
   try {
+    // KUNCI: Pastikan props.source dikirim ke sini
     const promises = Array.from(props.selectedIds).map(naskahId =>
-      addNaskahToLabel(naskahId, labelId)
+      addNaskahToLabel(naskahId, labelId, props.source)
     );
     await Promise.all(promises);
 
     toast.add({
       title: 'Berhasil',
-      description: `Label "${labelName}" ditambahkan ke ${props.selectedIds.size} item.`,
+      description: `Label "${labelName}" ditambahkan.`,
       color: 'success'
     });
 
     closeModal();
-    emit('success'); // Trigger parent refresh jika perlu
+    emit('success');
   } catch (error) {
     console.error("Gagal assign label:", error);
     toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
@@ -92,16 +97,19 @@ const createNewAndAssign = async () => {
     }
 
     const res = await createLabel(payload);
-    const newLabel = res.data || res.data?.data; // Adjust sesuai response API
+    // Terkadang response bersarang di res.data.data tergantung interceptor API kamu
+    const newLabel = res.data?.data || res.data;
 
-    if (newLabel && newLabel.id) {
-      await assignLabelToSelected(newLabel.id, newLabel.nama);
-      await fetchLabels(); // Refresh local list
+    if (newLabel && (newLabel.id || newLabel._id)) {
+      // Memanggil fungsi assign di atas yang sudah menggunakan props.source
+      await assignLabelToSelected(newLabel.id || newLabel._id, newLabel.nama);
+      await fetchLabels();
     }
   } catch (error: any) {
     console.error("Gagal buat label:", error);
     const msg = error.response?.data?.message || 'Gagal membuat label baru.';
     toast.add({ title: 'Gagal', description: Array.isArray(msg) ? msg.join(', ') : msg, color: 'error' });
+  } finally {
     isLabelProcessing.value = false;
   }
 };
@@ -168,7 +176,8 @@ watch(() => props.modelValue, (val) => {
           <div v-if="labelSearchQuery && !isExactLabelMatch"
             class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
             <div class="text-xs text-gray-500 mb-2">Buat Label Baru</div>
-            <div class="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg border border-primary-100 dark:border-primary-900/30">
+            <div
+              class="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg border border-primary-100 dark:border-primary-900/30">
               <div class="font-medium text-sm text-primary-700 dark:text-primary-300 mb-2 flex items-center gap-1">
                 <Plus class="w-3.5 h-3.5" /> "{{ labelSearchQuery }}"
               </div>

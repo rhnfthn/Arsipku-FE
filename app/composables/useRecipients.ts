@@ -35,18 +35,12 @@ export const useRecipients = () => {
   /**
    * GET /ND/get-recipient/{positionId}
    */
-  const getRecipients = async (
-    positionId: number,
-  ): Promise<{
+  const getRecipients = async (): Promise<{
     sender: RecipientApiData["sender"] | null;
     recipients: RecipientItem[];
   }> => {
-    if (!positionId) throw new Error("positionId kosong");
-
     // tipe otomatis jadi RecipientApiResponse
-    const res = await apiGet<RecipientApiResponse>(
-      `/ND/get-recipient/${positionId}`,
-    );
+    const res = await apiGet<RecipientApiResponse>(`/ND/get-recipient/`);
 
     return {
       sender: res?.data?.sender ?? null,

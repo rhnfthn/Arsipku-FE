@@ -5,9 +5,9 @@ export const useKajian = () => {
   const { api, get } = useApi();
 
   // 1. Get Recipients (Structure: ATASAN, BAWAHAN, REKAN)
-  const getRecipients = async (positionId: string | number) => {
+  const getRecipients = async () => {
     // Endpoint: /KA/get-recipient/{{position_id}}
-    const response = await get(`/KA/get-recipient/${positionId}`);
+    const response = await get(`/KA/get-recipient/`);
     return response;
   };
 
