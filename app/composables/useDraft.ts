@@ -1,139 +1,211 @@
-// composables/useDraft.ts
-import axios from "axios";
+import { ref } from "vue";
 import { useApi } from "./useApi";
 
+const formatDateShort = (isoString: string) => {
+  if (!isoString) return "-";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+  });
+};
+
+const formatFullDate = (isoString: string, time: string) => {
+  if (!isoString) return "-";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "-";
+  const d = date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  return `${d} ${time || ""}`;
+};
+
+const getInitial = (name: string) =>
+  name ? name.substring(0, 2).toUpperCase() : "NA";
+
+const getRandomColor = (id: string) => {
+  const colors = [
+    "bg-blue-100 text-blue-600",
+    "bg-purple-100 text-purple-600",
+    "bg-emerald-100 text-emerald-600",
+    "bg-indigo-100 text-indigo-600",
+    "bg-orange-100 text-orange-600",
+  ];
+  const charCode = id ? id.charCodeAt(0) : 0;
+  return colors[charCode % colors.length] || colors[0];
+};
+
+export interface DraftParams {
+  page?: number;
+  limit?: number;
+  jenis?: string;
+  search?: string;
+  date_filter?: string;
+  sort_by?: string;
+}
+
 export const useDraft = () => {
-  const { post, get, patch, del, api } = useApi();
-  const toast = useToast();
+  const { get, post, del, api } = useApi();
 
   const isLoadingDraft = ref(false);
+  const items = ref<any[]>([]);
+  const pending = ref(false);
+  const error = ref<any>(null);
   const drafts = ref([]);
-  const totalDrafts = ref(0);
+  const summary = ref<any>(null);
 
-  // Helper config for multipart
-  const multipartConfig = {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  const pagination = ref({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    from: 0,
+    to: 0,
+  });
+
+  const fetchDrafts = async (params: DraftParams = {}) => {
+    pending.value = true;
+    error.value = null;
+
+    try {
+      const query = new URLSearchParams();
+      const reqPage = params.page || pagination.value.page || 1;
+      const reqLimit = params.limit || pagination.value.limit || 10;
+
+      query.append("page", reqPage.toString());
+      query.append("limit", reqLimit.toString());
+
+      if (params.search) query.append("q", params.search);
+      if (params.jenis && params.jenis !== "ALL")
+        query.append("jenis", params.jenis);
+      if (params.date_filter) query.append("date_filter", params.date_filter);
+      if (params.sort_by) query.append("sort_by", params.sort_by);
+
+      const response = await get(`/draft/list?${query.toString()}`);
+      const rawData = response?.data || [];
+      const meta = response?.pagination || {};
+
+      summary.value = response?.summary || null;
+
+      const totalItems = meta.total || 0;
+      const currentPage = meta.page || reqPage;
+      const currentLimit = meta.limit || reqLimit;
+      const totalPages = meta.totalPages || 1;
+
+      const from = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
+      const to = Math.min(currentPage * currentLimit, totalItems);
+
+      pagination.value = {
+        total: totalItems,
+        page: currentPage,
+        limit: currentLimit,
+        totalPages: totalPages,
+        from: from,
+        to: to,
+      };
+
+      items.value = rawData.map((item: any) => {
+        const listPenerima = item.penerima || [];
+        let displayRecipient = "Tanpa Penerima";
+        let displayNameForInitial = "NA";
+        let fullRecipientList = "Tanpa Penerima";
+
+        if (listPenerima.length > 0) {
+          const firstPerson = listPenerima[0];
+          const jenisSurat = (item.jenis || "").toUpperCase();
+          const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(jenisSurat);
+
+          let primaryName = isSDE
+            ? firstPerson.nama
+            : firstPerson.position_text || firstPerson.nama;
+
+          if (!primaryName) primaryName = "Tanpa Nama";
+          displayNameForInitial = primaryName;
+
+          displayRecipient =
+            listPenerima.length > 1
+              ? `${primaryName} +${listPenerima.length - 1} lainnya`
+              : primaryName;
+
+          fullRecipientList = listPenerima
+            .map(
+              (p: any, index: number) =>
+                `${index + 1}. ${isSDE ? p.nama : p.position_text || p.nama}`,
+            )
+            .join("\n");
+        }
+
+        return {
+          id: item.id_naskah,
+          from: displayRecipient,
+          fullRecipients: fullRecipientList,
+          subject: item.isi_pesan || "Tanpa Keterangan",
+          body: item.isi_pesan,
+          nomor: item.nomor || "-",
+          category: item.jenis || "",
+          category_text: item.jenis_text || item.jenis,
+          category_label: item.labels || "",
+          date: formatDateShort(item.tanggal),
+          fullDate: formatFullDate(item.tanggal, item.waktu),
+          created_at: item.tanggal,
+          initial: getInitial(displayNameForInitial),
+          color: getRandomColor(item.id_naskah || "0"),
+          isRead: true,
+          isStarred: false,
+          originalData: item,
+        };
+      });
+    } catch (err) {
+      console.error("Fetch drafts error:", err);
+      error.value = err;
+      items.value = [];
+      summary.value = null;
+      pagination.value = { ...pagination.value, total: 0, from: 0, to: 0 };
+    } finally {
+      pending.value = false;
+    }
   };
 
-  // 1. Save drafts (HAPUS final_pdf logic di component nanti)
+  const multipartConfig = {
+    headers: { "Content-Type": "multipart/form-data" },
+  };
+
   const saveDraft = async (formData: FormData, id_draft?: string | null) => {
     isLoadingDraft.value = true;
     try {
       let response;
       if (id_draft) {
-        const url = `/ND/update-draft/${id_draft}`;
-        response = await api.patch(url, formData, multipartConfig);
+        response = await api.patch(
+          `/ND/update-draft/${id_draft}`,
+          formData,
+          multipartConfig,
+        );
       } else {
-        const url = `/ND/save-draft`;
-        response = await api.post(url, formData, multipartConfig);
+        response = await api.post(`/ND/save-draft`, formData, multipartConfig);
       }
-
-      toast.add({
-        title: "Berhasil",
-        description: id_draft ? "Draft diperbarui." : "Draft disimpan.",
-        icon: "i-heroicons-check-circle",
-        color: "success",
-      });
       return response.data;
     } catch (error: any) {
       console.error("Save Draft Error:", error);
-      toast.add({
-        title: "Gagal",
-        description: error.response?.data?.message || "Gagal menyimpan draft.",
-        icon: "i-heroicons-exclamation-circle",
-        color: "error",
-      });
       throw error;
     } finally {
       isLoadingDraft.value = false;
     }
   };
 
-  // --- BARU: PROSES KIRIM (SEND MESSAGE) ---
   const sendMessage = async (formData: FormData) => {
-    isLoadingDraft.value = true; // Gunakan loading state yang sama atau buat baru
+    isLoadingDraft.value = true;
     try {
-      const url = `/ND/send-message`;
-      console.log("Sending Message (POST):", url);
-
-      // Endpoint ini menerima Multipart (Body + Attachments + Final PDF)
-      const response = await api.post(url, formData, multipartConfig);
-
-      toast.add({
-        title: "Terkirim",
-        description: "Nota Dinas berhasil dikirim.",
-        icon: "i-heroicons-paper-airplane",
-        color: "success",
-      });
-
+      const response = await api.post(
+        `/ND/send-message`,
+        formData,
+        multipartConfig,
+      );
       return response.data;
     } catch (error: any) {
       console.error("Send Message Error:", error);
-      toast.add({
-        title: "Gagal Kirim",
-        description:
-          error.response?.data?.message ||
-          "Terjadi kesalahan saat mengirim data.",
-        icon: "i-heroicons-exclamation-circle",
-        color: "error",
-      });
-      throw error;
-    } finally {
-      isLoadingDraft.value = false;
-    }
-  };
-
-  // 2. Fetch Draft List
-  const fetchDrafts = async (positionId: string) => {
-    isLoadingDraft.value = true;
-    try {
-      const response = await get(`/draft/list/${positionId}`);
-
-      if (response.success) {
-        drafts.value = response.data.items;
-        totalDrafts.value = response.data.total;
-      }
-      return response;
-    } catch (error: any) {
-      console.error("Fetch drafts error:", error);
-      toast.add({
-        title: "Gagal Memuat",
-        description: "Gagal mengambil daftar draft.",
-        color: "error",
-      });
-    } finally {
-      isLoadingDraft.value = false;
-    }
-  };
-
-  // 3. Delete Draft
-  const deleteDraft = async (idNaskah: string, positionId: string) => {
-    isLoadingDraft.value = true;
-    try {
-      const url = `/draft/delete/${positionId}/${idNaskah}`;
-      const response = await del(url);
-
-      toast.add({
-        title: "Berhasil",
-        description: "Draft berhasil dihapus.",
-        icon: "i-heroicons-trash",
-        color: "success",
-      });
-
-      drafts.value = drafts.value.filter(
-        (item: any) => item.id_naskah !== idNaskah,
-      );
-      totalDrafts.value -= 1;
-
-      return response;
-    } catch (error: any) {
-      toast.add({
-        title: "Gagal",
-        description: error.response?.data?.message || "Gagal menghapus draft.",
-        color: "error",
-      });
       throw error;
     } finally {
       isLoadingDraft.value = false;
@@ -143,38 +215,24 @@ export const useDraft = () => {
   const getDraftDetail = async (idNaskah: string) => {
     isLoadingDraft.value = true;
     try {
-      const response = await get(`/ND/${idNaskah}`);
-      return response;
+      return await get(`/ND/${idNaskah}`);
     } catch (error: any) {
       console.error("Gagal ambil detail:", error);
-      toast.add({
-        title: "Error",
-        description: "Gagal memuat data draft.",
-        color: "error",
-      });
       throw error;
     } finally {
       isLoadingDraft.value = false;
     }
   };
 
-  // 4. Generate PDF (FIXED URL)
   const generatePdf = async (payload: any) => {
     try {
-      // --- PERBAIKAN DI SINI ---
-      // Gunakan URL Absolute karena native fetch tidak tahu BaseURL useApi
       const url = "http://172.20.16.115:3011/ND/generate-pdf";
-
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!res.ok) {
-        throw new Error("Gagal generate PDF dari server.");
-      }
-
+      if (!res.ok) throw new Error("Gagal generate PDF");
       return await res.blob();
     } catch (error) {
       console.error("Generate PDF Error:", error);
@@ -182,54 +240,59 @@ export const useDraft = () => {
     }
   };
 
-  const bulkDeleteDrafts = async (positionId: number, naskahIds: string[]) => {
-    isLoadingDraft.value = true;
+  const deleteDraft = async (idNaskah: string) => {
+    pending.value = true;
     try {
-      const url = `/draft/bulk-delete`;
-      const payload = {
-        position_id: positionId,
-        naskah_ids: naskahIds,
-      };
-
-      const response = await post(url, payload);
-
-      toast.add({
-        title: "Berhasil",
-        description: `${naskahIds.length} Draft berhasil dihapus.`,
-        icon: "i-heroicons-trash",
-        color: "success",
-      });
-
-      // Update local state: hapus item yang ada di list naskahIds
-      drafts.value = drafts.value.filter(
-        (item: any) => !naskahIds.includes(item.id_naskah),
-      );
-      totalDrafts.value -= naskahIds.length;
-
-      return response;
-    } catch (error: any) {
-      toast.add({
-        title: "Gagal",
-        description:
-          error.response?.data?.message || "Gagal menghapus beberapa draft.",
-        color: "error",
-      });
-      throw error;
+      await del(`/draft/delete/${idNaskah}`);
+      items.value = items.value.filter((i) => i.id !== idNaskah);
+      if (pagination.value.total > 0) {
+        pagination.value.total -= 1;
+        pagination.value.to = Math.min(
+          pagination.value.page * pagination.value.limit,
+          pagination.value.total,
+        );
+      }
+      return true;
+    } catch (err: any) {
+      throw err;
     } finally {
-      isLoadingDraft.value = false;
+      pending.value = false;
+    }
+  };
+
+  const bulkDeleteDrafts = async (naskahIds: string[]) => {
+    pending.value = true;
+    try {
+      await post(`/draft/bulk-delete`, { naskah_ids: naskahIds });
+      items.value = items.value.filter((i) => !naskahIds.includes(i.id));
+      if (pagination.value.total > 0) {
+        pagination.value.total -= naskahIds.length;
+        pagination.value.to = Math.min(
+          pagination.value.page * pagination.value.limit,
+          pagination.value.total,
+        );
+      }
+      return true;
+    } catch (err: any) {
+      throw err;
+    } finally {
+      pending.value = false;
     }
   };
 
   return {
+    items,
+    pagination,
+    pending,
+    error,
+    summary,
     drafts,
-    totalDrafts,
-    isLoadingDraft,
-    saveDraft,
     fetchDrafts,
     deleteDraft,
+    bulkDeleteDrafts,
     getDraftDetail,
     generatePdf,
     sendMessage,
-    bulkDeleteDrafts,
+    saveDraft,
   };
 };

@@ -13,7 +13,7 @@
 
       <UIcon name="i-lucide-tag" class="w-5 h-5 shrink-0 transition-transform" :class="[
         level > 0 ? 'scale-90' : '',
-        isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'
+      isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'
       ]" />
 
       <span class="flex-1 text-[14px] truncate leading-5" :class="{ 'font-semibold': isActive }">
