@@ -252,7 +252,7 @@
           <Heading variant="11sb">{{ form.klasifikasiDisplay }}</Heading>
 
           <Heading variant="10sb">Tanggal</Heading>
-          <Heading variant="11sb">{{ formatDate(form.tanggal) }}</Heading>
+          <Heading variant="11sb">{{ formatDate(tanggalString) }}</Heading>
 
           <Heading variant="10sb">Perihal</Heading>
           <Heading variant="11sb">{{ form.perihal }}</Heading>
@@ -482,7 +482,7 @@ function selectKlasifikasi(item) {
 function selectPenandatangan(item) {
   form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
-  penandatanganNama.value = item.nama; // ✅ Set nama penandatangan
+  penandatanganNama.value = item.nama;
   penandatanganSearch.value = item.displayText;
   openPenandatangan.value = false;
   console.log("✅ Penandatangan selected:", {
@@ -559,7 +559,6 @@ const fetchPositions = async () => {
       const positionText = item.position_text || "";
       const subAreaText = item.sub_area_text || "";
 
-      // Gabungkan position_text dan sub_area_text
       const displayText = subAreaText
         ? `${positionText} - ${subAreaText}`
         : positionText;
@@ -567,7 +566,7 @@ const fetchPositions = async () => {
       return {
         displayText: displayText,
         position: item.position,
-        nama: item.nama, // ✅ Simpan nama untuk preview
+        nama: item.nama,
       };
     });
 
@@ -618,7 +617,7 @@ const resetForm = () => {
   };
   klasifikasiSearch.value = "";
   penandatanganSearch.value = "";
-  penandatanganNama.value = ""; // ✅ Reset nama penandatangan
+  penandatanganNama.value = "";
   jumlahError.value = "";
   perihalError.value = "";
   openKlasifikasi.value = false;
@@ -639,9 +638,12 @@ const handleCancel = () => {
 };
 
 function submitAndClose() {
+  // ✅ Use the selected date from tanggalString (user's input)
+  const formattedTanggal = tanggalString.value;
+
   const payload = {
-    position_id: Number(user.value.position), // pengusul
-    tanggal: form.value.tanggal,
+    position_id: Number(user.value.position),
+    tanggal: formattedTanggal,
     jenis: form.value.jenis,
     klasifikasi: form.value.klasifikasi,
     perihal: form.value.perihal,
@@ -653,7 +655,7 @@ function submitAndClose() {
   console.log("🚀 PAYLOAD:", payload);
 
   emit("submit", payload);
-  handleClose();
+  handleClose(false);
 }
 
 onMounted(async () => {
@@ -664,7 +666,8 @@ onMounted(async () => {
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("id-ID", {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "long",
     year: "numeric",

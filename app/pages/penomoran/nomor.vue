@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
+  <div class="min-h-screen bg-gray-50">
     <!-- TITLE -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-5 px-6 pt-6">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Daftar Penomoran Dokumen
@@ -20,7 +20,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white shadow-lg rounded-xl mx-6 mb-6">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -116,8 +116,21 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">{{ row.nomor }}</td>
+              <td class="px-5 py-4">
+                <!-- ✅ GROUPED: Show date once and all nomor stacked -->
+                <div class="space-y-1">
+                  <div class="text-sm font-medium">{{ row.tanggal }}</div>
+                  <div class="space-y-0.5">
+                    <div
+                      v-for="(nomorItem, idx) in row.nomorList"
+                      :key="idx"
+                      class="text-xs text-gray-600 font-mono"
+                    >
+                      {{ nomorItem.nomor }}
+                    </div>
+                  </div>
+                </div>
+              </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
                   <p class="whitespace-normal break-words line-clamp-3">
@@ -260,9 +273,15 @@
       class="z-[9999]"
     >
       <template #body>
-        <div class="h-full w-full bg-gray-100">
+        <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+          <div v-if="loadingPreview" class="text-center">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
+            ></div>
+            <p class="text-sm text-gray-600">Memuat dokumen...</p>
+          </div>
           <iframe
-            v-if="previewPdfUrl"
+            v-else-if="previewPdfUrl"
             :key="previewPdfUrl"
             :src="previewPdfUrl"
             allowfullscreen
@@ -604,6 +623,7 @@ const klasifikasiMap = ref(new Map());
 const personMap = ref(new Map());
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
+const loadingPreview = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
 const openPreview = ref(false);
 const openConfirmHangus = ref(false);
@@ -641,11 +661,10 @@ const breadcrumbs = [
 
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Penandatangan", key: "jabatan", sortable: false },
+  { label: "Jabatan", key: "jabatan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Tanggal", key: "tanggal", sortable: true },
-  { label: "Nomor", key: "nomor", sortable: false },
-  { label: "Pengusul", key: "pengusul", sortable: false },
+  { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
+  { label: "Pengirim", key: "pengusul", sortable: false },
   { label: "Waktu", key: "waktu", sortable: true },
 ];
 
@@ -680,12 +699,9 @@ function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
   const wibTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-  const day = String(wibTime.getDate()).padStart(2, "0");
-  const month = String(wibTime.getMonth() + 1).padStart(2, "0");
-  const year = String(wibTime.getFullYear()).slice(-2);
   const hours = String(wibTime.getHours()).padStart(2, "0");
   const minutes = String(wibTime.getMinutes()).padStart(2, "0");
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  return `${hours}:${minutes}`;
 }
 
 // ==================== FETCH MASTER DATA ====================
@@ -748,10 +764,15 @@ const previewFile = async (item: any) => {
     openPreview.value = false;
     previewPdfUrl.value = null;
     isOpenPreviewFile.value = false;
+    loadingPreview.value = true;
 
     const res = await fetch(fileUrl, {
       headers: { Accept: "application/pdf" },
     });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch file");
+    }
 
     const blob = await res.blob();
     previewPdfUrl.value = URL.createObjectURL(
@@ -766,6 +787,8 @@ const previewFile = async (item: any) => {
       description: "File tidak dapat dipratinjau",
       color: "red",
     });
+  } finally {
+    loadingPreview.value = false;
   }
 };
 
@@ -921,12 +944,11 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ✅ FETCH DATA dengan backend pagination, search & sorting
+// ✅ FETCH DATA - KEEP ROWS GROUPED BY REQUEST ID
 const fetchData = async () => {
   loading.value = true;
 
   try {
-    // Build params object sesuai dokumentasi API
     const params = {
       search: search.value || undefined,
       page: currentPage.value,
@@ -949,10 +971,17 @@ const fetchData = async () => {
       return;
     }
 
+    // ✅ KEEP ROWS GROUPED: One row per request, showing all nomor in one cell
     rows.value = data.map((item) => {
       const pengusulInfo = personMap.value.get(item.persnum);
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+
+      // Collect all nomor from nomor_list
+      const nomorList =
+        item.nomor_list && Array.isArray(item.nomor_list)
+          ? item.nomor_list
+          : [{ nomor: item.nomor, status: "booking" }];
 
       return {
         id: item.id,
@@ -960,15 +989,17 @@ const fetchData = async () => {
         jabatan: item.jabatan || "-",
         perihal: item.perihal || "-",
         tanggal: formatTanggalWIB(item.tanggal),
-        nomor: item.nomor,
+        nomorList: nomorList, // Array of all nomor
         pengusul: pengusulInfo?.nama || item.nama_pengirim || "-",
         waktu: formatWaktuWIB(item.waktu),
         klasifikasi: item.klasifikasi || "-",
         klasifikasiDisplay,
+        // Keep original data for detail modal
+        nomor_list: nomorList,
       };
     });
 
-    console.log("✅ Data loaded:", rows.value.length, "rows");
+    console.log("✅ Data loaded:", rows.value.length, "grouped rows");
     console.log("📊 Pagination:", pagination.value);
   } catch (error) {
     console.error("❌ Error fetch data nomor:", error);
@@ -1102,10 +1133,10 @@ const openRowModal = async (row) => {
       ...row,
       klasifikasiDisplay:
         klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi,
-      nomor_list: [
+      nomor_list: row.nomor_list || [
         {
           id: row.id,
-          nomor: row.nomor,
+          nomor: row.nomor || "-",
           status: "booking",
           file_name: null,
           file_text: null,
