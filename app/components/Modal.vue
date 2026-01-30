@@ -7,12 +7,12 @@
     <Transition name="modal">
       <div
         v-if="modelValue"
-        class="relative bg-white dark:bg-gray-900 rounded-2xl p-1"
+        class="relative bg-white dark:bg-gray-800 rounded-2xl p-1"
         :class="modalSizeClass"
       >
         <!-- HEADER -->
         <div
-          class="flex justify-between items-start mb-4 border-b border-gray-300"
+          class="flex justify-between items-start mb-4 border-b border-gray-300 dark:border-gray-400"
         >
           <slot name="title">
             <Heading

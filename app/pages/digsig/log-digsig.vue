@@ -1,8 +1,9 @@
 <template>
-  <div class="space-y-6">
+  <div class="min-h-screen">
+    <!-- GLOBAL ALERT (STICKY) -->
     <div
       v-if="showGlobalAlert"
-      class="top-0 left-0 right-0 z-[9999] bg-red-600 border-lg text-white px-6 py-3 shadow-lg flex items-center gap-4"
+      class="sticky top-0 left-0 right-0 bg-red-600 text-white px-6 py-3 shadow-lg flex items-center gap-4 mb-5"
     >
       <!-- ICON -->
       <AlertTriangle class="w-5 h-5 flex-shrink-0" />
@@ -26,319 +27,483 @@
       </button>
     </div>
 
-    <!-- SPACER AGAR KONTEN TIDAK KETUTUP -->
-    <div v-if="showGlobalAlert" class="h-[5px]"></div>
-
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-    >
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md">
-          Log Digsig
-        </Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+    <!-- MAIN CONTENT -->
+    <div class="w-full">
       <!-- HEADER -->
-      <div class="flex items-center justify-between gap-4 p-5">
-        <!-- SEARCH -->
-        <div class="relative w-full">
-          <input
-            v-model="searchQuery"
-            @input="debounceSearch"
-            type="text"
-            placeholder="Cari..."
-            class="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <Search
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-          />
-        </div>
-
-        <!-- RIGHT ACTION -->
-        <div class="flex items-center gap-3">
-          <button
-            class="flex items-center gap-5 text-white text-sm px-3 py-2 rounded-lg font-medium whitespace-nowrap"
-            :class="bsreHealth?.isHealthy ? 'bg-red-600' : 'bg-red-600'"
-            @click="showConfirmModal = true"
-            :disabled="loadingHealth"
-          >
-            <AlertTriangle v-if="!bsreHealth?.isHealthy" class="w-4 h-4" />
-            <Check v-else class="w-4 h-4" />
-            {{
-              loadingHealth
-                ? "Memuat..."
-                : bsreHealth?.isHealthy
-                  ? "Gangguan BsrE"
-                  : "Gangguan BsrE"
-            }}
-          </button>
+      <div class="mb-6">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2"
+        >
+          <div>
+            <Heading
+              variant="heading6b"
+              class="text-2xl font-bold text-gray-900"
+            >
+              Log Digsig
+            </Heading>
+            <PageHeader :items="breadcrumbs" class="mt-1" />
+          </div>
         </div>
       </div>
 
-      <!-- TABLE -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-primary-400 text-white">
-            <tr>
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('tanggal')"
-              >
-                <div class="flex items-center gap-2">
-                  Tanggal
-                  <component :is="getSortIcon('tanggal')" class="w-4 h-4" />
-                </div>
-              </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('ipAddress')"
-              >
-                <div class="flex items-center gap-2">IP</div>
-              </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('userName')"
-              >
-                <div class="flex items-center gap-2">User</div>
-              </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('apiEndpoint')"
-              >
-                <div class="flex items-center gap-2">Api</div>
-              </th>
-
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('jenisNaskah')"
-              >
-                <div class="flex items-center gap-2">
-                  Jenis
-                  <component :is="getSortIcon('jenisNaskah')" class="w-4 h-4" />
-                </div>
-              </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer transition"
-                @click="handleSort('status')"
-              >
-                <div class="flex items-center gap-2">
-                  Note
-                  <component :is="getSortIcon('status')" class="w-4 h-4" />
-                </div>
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                <div class="flex items-center justify-center gap-2">
-                  <div
-                    class="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"
-                  ></div>
-                  Memuat data...
-                </div>
-              </td>
-            </tr>
-            <tr v-else-if="logs.length === 0">
-              <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                Tidak ada data
-              </td>
-            </tr>
-            <tr v-else v-for="row in sortedLogs">
-              <td :key="row.id" class="p-3 border-b border-gray-200">
-                {{ formatDate(row.tanggal) }}
-              </td>
-
-              <td class="px-4 py-4 border-b border-gray-200">
-                {{ row.ipAddress || "-" }}
-              </td>
-              <td class="px-3 py-3 border-b border-gray-200">
-                {{ row.userName }}
-              </td>
-              <td
-                class="px-4 py-4 font-mono text-xs text-gray-600 border-b border-gray-200"
-              >
-                {{ row.apiEndpoint }}
-              </td>
-
-              <td class="px-4 py-4 border-b border-gray-200">
-                {{ row.jenisNaskah }}
-              </td>
-              <td class="px-4 py-4 border-b border-gray-200">
-                <span
-                  :class="statusClass(row.status)"
-                  class="px-2 py-1 text-xs rounded-full font-medium inline-block whitespace-nowrap"
-                >
-                  {{ row.note }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- PAGINATION -->
-        <div v-if="meta" class="flex items-center justify-between px-5 py-4">
-          <div class="text-xs text-gray-600">
-            Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{
-              Math.min(meta.page * meta.limit, meta.total)
-            }}
-            dari {{ meta.total }} data
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="goToPage(meta.page - 1)"
-              :disabled="meta.page === 1"
-              :class="[
-                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-primary border border-primary hover:bg-primary-50',
-              ]"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Back
-            </button>
-
-            <template v-for="page in paginationPages" :key="page">
-              <button
-                v-if="page !== '...'"
-                @click="goToPage(page as number)"
-                :class="[
-                  'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                  page === meta.page
-                    ? 'bg-primary-500 text-white border-primary-500'
-                    : 'border-gray-200 hover:bg-gray-50',
-                ]"
-              >
-                {{ page }}
-              </button>
-              <span v-else class="px-2">...</span>
-            </template>
-
-            <!-- <button
-              @click="goToPage(meta.page + 1)"
-              :disabled="meta.page === meta.totalPages"
-              class="px-3 py-1 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight class="w-4 h-4" />
-            </button> -->
-            <button
-              @click="goToPage(meta.page + 1)"
-              :disabled="meta.page === meta.totalPages"
-              :class="[
-                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
-                currentPage === totalPages
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-primary border border-primary hover:bg-primary-50',
-              ]"
-            >
-              Next
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <Teleport to="body">
-          <Modal v-model="showConfirmModal" :hideDefaultFooter="true" size="xl">
-            <!-- TITLE -->
-            <template #title>
-              <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
-                <div class="bg-red-100 text-red-600 p-3 rounded-full">
-                  <AlertTriangle class="w-5 h-5" />
-                </div>
-                <Heading variant="heading9b" class="text-sm font-semibold">
-                  Konfirmasi Alert Gangguan
-                </Heading>
-              </div>
-            </template>
-
-            <!-- BODY -->
-            <div class="text-sm text-gray-600 space-y-4">
-              <p>
-                Apakah Anda yakin ingin mengaktifkan alert gangguan BsrE? Alert
-                ini akan ditampilkan ke seluruh pengguna sistem.
-              </p>
-
-              <div
-                class="flex items-center gap-5 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm"
-              >
-                <AlertTriangle class="w-8 h-8" />
-                <span>
-                  Tindakan ini sangat penting dan akan mempengaruhi seluruh
-                  pengguna!
-                </span>
-              </div>
+      <!-- WHITE CARD CONTAINER -->
+      <div
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <!-- TOOLBAR (FIXED - NO SCROLL) -->
+        <div class="p-5 border-b border-gray-200 bg-white">
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          >
+            <!-- SEARCH -->
+            <div class="relative w-full flex">
+              <input
+                v-model="searchQuery"
+                @input="debounceSearch"
+                type="text"
+                placeholder="Cari berdasarkan user, IP, atau jenis naskah..."
+                class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              />
+              <Search
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              />
             </div>
 
-            <!-- FOOTER -->
-            <template #footer>
-              <div
-                class="flex justify-end border-t border-gray-300 w-full gap-3 px-5 pb-5 mt-6"
-              >
-                <button
-                  @click="showConfirmModal = false"
-                  class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 rounded-md hover:bg-gray-100"
+            <!-- BSRE HEALTH BUTTON -->
+            <button
+              class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all"
+              :class="
+                bsreHealth?.isHealthy
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              "
+              @click="showConfirmModal = true"
+              :disabled="loadingHealth"
+            >
+              <AlertTriangle v-if="!bsreHealth?.isHealthy" class="w-4 h-4" />
+              <Check v-else class="w-4 h-4" />
+              {{
+                loadingHealth
+                  ? "Memuat..."
+                  : bsreHealth?.isHealthy
+                    ? "BsrE Normal"
+                    : "Gangguan BsrE"
+              }}
+            </button>
+          </div>
+        </div>
+
+        <!-- TABLE CONTAINER (SCROLLABLE) -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <!-- TABLE HEAD (STICKY) -->
+            <thead class="bg-primary text-white sticky top-0 z-10">
+              <tr>
+                <th
+                  @click="handleSort('tanggal')"
+                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
                 >
-                  Batal
+                  <div class="flex items-center gap-2">
+                    <span>Tanggal</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="[
+                        sortKey === 'tanggal' ? 'opacity-100' : 'opacity-40',
+                        sortKey === 'tanggal' && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : '',
+                      ]"
+                    />
+                  </div>
+                </th>
+                <th
+                  @click="handleSort('ipAddress')"
+                  class="px-6 py-4 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>IP Address</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="[
+                        sortKey === 'ipAddress' ? 'opacity-100' : 'opacity-40',
+                        sortKey === 'ipAddress' && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : '',
+                      ]"
+                    />
+                  </div>
+                </th>
+                <th
+                  @click="handleSort('userName')"
+                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>User</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="[
+                        sortKey === 'userName' ? 'opacity-100' : 'opacity-40',
+                        sortKey === 'userName' && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : '',
+                      ]"
+                    />
+                  </div>
+                </th>
+                <th class="px-6 py-4 text-left text-sm tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <span>API Endpoint</span>
+                  </div>
+                </th>
+                <th
+                  @click="handleSort('jenisNaskah')"
+                  class="px-6 py-4 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>Jenis Naskah</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="[
+                        sortKey === 'jenisNaskah'
+                          ? 'opacity-100'
+                          : 'opacity-40',
+                        sortKey === 'jenisNaskah' && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : '',
+                      ]"
+                    />
+                  </div>
+                </th>
+                <th
+                  @click="handleSort('status')"
+                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>Status </span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="[
+                        sortKey === 'status' ? 'opacity-100' : 'opacity-40',
+                        sortKey === 'status' && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : '',
+                      ]"
+                    />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <!-- TABLE BODY -->
+            <tbody class="bg-white divide-y divide-gray-200">
+              <!-- LOADING STATE -->
+              <tr v-if="loading">
+                <td colspan="6" class="px-6 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center gap-3">
+                    <div
+                      class="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin"
+                    ></div>
+                    <span class="text-sm text-gray-500 font-medium"
+                      >Memuat data...</span
+                    >
+                  </div>
+                </td>
+              </tr>
+
+              <!-- EMPTY STATE -->
+              <tr v-else-if="logs.length === 0">
+                <td colspan="6" class="px-6 py-12 text-center">
+                  <div class="flex flex-col items-center gap-2">
+                    <Search class="w-12 h-12 text-gray-300" />
+                    <span class="text-sm text-gray-500 font-medium"
+                      >Tidak ada data ditemukan</span
+                    >
+                    <span class="text-xs text-gray-400"
+                      >Coba ubah kriteria pencarian Anda</span
+                    >
+                  </div>
+                </td>
+              </tr>
+
+              <!-- DATA ROWS -->
+              <tr
+                v-else
+                v-for="row in sortedLogs"
+                :key="row.id"
+                class="hover:bg-gray-50 transition-colors"
+              >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="flex flex-col">
+                    <span class="font-medium">{{
+                      formatDate(row.tanggal)
+                    }}</span>
+                    <span class="text-xs text-gray-500">{{
+                      formatTime(row.tanggal)
+                    }}</span>
+                  </div>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono"
+                >
+                  {{ row.ipAddress || "-" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold text-xs"
+                    >
+                      {{ getUserInitials(row.userName) }}
+                    </div>
+                    <span>{{ row.userName }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  <code class="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                    {{ row.apiEndpoint || "-" }}
+                  </code>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ row.jenisNaskah || "-" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <span
+                    :class="statusClass(row.status)"
+                    class="px-3 py-1.5 text-xs rounded-full font-semibold inline-flex items-center gap-1.5"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full"
+                      :class="
+                        row.status === 'sukses' ? 'bg-green-600' : 'bg-red-600'
+                      "
+                    ></span>
+                    {{ row.note || row.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION (FIXED - NO SCROLL) -->
+        <div
+          v-if="meta && logs.length > 0"
+          class="px-6 py-4 border-t border-gray-200 bg-gray-50"
+        >
+          <div
+            class="flex flex-col sm:flex-row items-center justify-between gap-4"
+          >
+            <!-- INFO -->
+            <div class="text-xs text-gray-600">
+              Menampilkan
+              <span class="text-gray-600">{{
+                (meta.page - 1) * meta.limit + 1
+              }}</span>
+              -
+              <span class="text-gray-600">{{
+                Math.min(meta.page * meta.limit, meta.total)
+              }}</span>
+              dari
+              <span class="text-gray-600">{{ meta.total }}</span>
+              data
+            </div>
+
+            <!-- PAGINATION CONTROLS -->
+            <div class="flex items-center gap-2">
+              <!-- PREVIOUS -->
+              <button
+                @click="goToPage(meta.page - 1)"
+                :disabled="meta.page === 1"
+                :class="[
+                  'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                  meta.page === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back
+              </button>
+
+              <!-- PAGE NUMBERS -->
+              <!-- Page Numbers -->
+              <div class="flex items-center gap-1">
+                <!-- First page -->
+                <button
+                  v-if="paginationPages[0] > 1"
+                  @click="currentPage = 1"
+                  class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  1
                 </button>
 
-                <button
-                  @click="activateAlert"
-                  class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-800 text-white rounded-md font-medium"
+                <!-- Left ellipsis -->
+                <span
+                  v-if="paginationPages[0] > 2"
+                  class="px-2 text-gray-400 text-sm"
                 >
-                  Ya, Aktifkan Alert
+                  ...
+                </span>
+
+                <!-- Visible pages -->
+                <button
+                  v-for="page in paginationPages"
+                  :key="page"
+                  @click="currentPage = page"
+                  :class="[
+                    'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                    currentPage === page
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ]"
+                >
+                  {{ page }}
+                </button>
+
+                <!-- Right ellipsis -->
+                <span
+                  v-if="
+                    paginationPages[paginationPages.length - 1] < totalPages - 1
+                  "
+                  class="px-2 text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+
+                <!-- Last page -->
+                <button
+                  v-if="
+                    paginationPages[paginationPages.length - 1] < totalPages
+                  "
+                  @click="currentPage = totalPages"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                >
+                  {{ totalPages }}
                 </button>
               </div>
-            </template>
-          </Modal>
-        </Teleport>
+              <!-- <div class="flex items-center gap-1">
+                <template v-for="page in paginationPages" :key="page">
+                  <button
+                    v-if="page !== '...'"
+                    @click="goToPage(page as number)"
+                    :class="[
+                      'w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all',
+                      page === meta.page
+                        ? 'bg-primary text-white shadow-md'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50',
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                  <span v-else class="px-2 text-gray-400">...</span>
+                </template>
+              </div> -->
+
+              <!-- NEXT -->
+              <button
+                @click="goToPage(meta.page + 1)"
+                :disabled="meta.page === meta.totalPages"
+                :class="[
+                  'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
+                  meta.page === meta.totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ]"
+              >
+                Next
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <Teleport to="body">
+      <Modal v-model="showConfirmModal" :hideDefaultFooter="true" size="xl">
+        <!-- TITLE -->
+        <template #title>
+          <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
+            <div class="bg-red-100 text-red-600 p-3 rounded-full">
+              <AlertTriangle class="w-5 h-5" />
+            </div>
+            <Heading variant="heading9b" class="text-sm font-semibold">
+              Konfirmasi Alert Gangguan
+            </Heading>
+          </div>
+        </template>
+
+        <!-- BODY -->
+        <div class="px-6 text-sm text-gray-600 space-y-4">
+          <p>
+            Apakah Anda yakin ingin mengaktifkan alert gangguan BsrE? Alert ini
+            akan ditampilkan ke seluruh pengguna sistem.
+          </p>
+
+          <div
+            class="flex items-center gap-5 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm"
+          >
+            <AlertTriangle class="w-8 h-8 flex-shrink-0" />
+            <span>
+              Tindakan ini sangat penting dan akan mempengaruhi seluruh
+              pengguna!
+            </span>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <template #footer>
+          <div
+            class="flex justify-end border-t border-gray-300 w-full gap-3 px-5 pb-5 mt-6"
+          >
+            <button
+              @click="showConfirmModal = false"
+              class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 rounded-md hover:bg-gray-100 transition"
+            >
+              Batal
+            </button>
+
+            <button
+              @click="activateAlert"
+              class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition"
+            >
+              Ya, Aktifkan Alert
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import Modal from "~/components/Modal.vue";
-import {
-  Search,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Check,
-} from "lucide-vue-next";
-import type { DigsigLog, BsreHealthResponse } from "~/types/digsig";
+import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
+import type { DigsigLog } from "~/types/digsig";
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -358,17 +523,25 @@ const {
 
 // State
 const searchQuery = ref("");
-const sortBy = ref<string>("tanggal");
-const sortOrder = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const showConfirmModal = ref(false);
 const showGlobalAlert = ref(false);
+const sortKey = ref("tanggal");
+const sortOrder = ref<"asc" | "desc">("desc");
 
 // Client-side sorting
-const sortedLogs = computed(() => {
-  if (!sortBy.value) return logs.value;
+const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
+  tanggal: "tanggal",
+  ipAddress: "ipAddress",
+  userName: "userName",
+  jenisNaskah: "jenisNaskah",
+  status: "note",
+};
 
-  const field = SORT_FIELD_MAP[sortBy.value];
+const sortedLogs = computed(() => {
+  if (!sortKey.value) return logs.value;
+
+  const field = SORT_FIELD_MAP[sortKey.value];
   if (!field) return logs.value;
 
   return [...logs.value].sort((a, b) => {
@@ -378,7 +551,7 @@ const sortedLogs = computed(() => {
     if (aVal == null) return 1;
     if (bVal == null) return -1;
 
-    // tanggal → date
+    // Date sorting
     if (field === "tanggal") {
       return sortOrder.value === "asc"
         ? new Date(aVal as string).getTime() -
@@ -387,7 +560,7 @@ const sortedLogs = computed(() => {
             new Date(aVal as string).getTime();
     }
 
-    // string normalize
+    // String sorting
     const aStr = String(aVal).toLowerCase();
     const bStr = String(bVal).toLowerCase();
 
@@ -396,6 +569,16 @@ const sortedLogs = computed(() => {
       : bStr.localeCompare(aStr);
   });
 });
+
+// Sorting handler
+function handleSort(key: string) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
 
 // Fetch logs
 const loadLogs = async () => {
@@ -414,27 +597,6 @@ const loadBsreHealth = async () => {
   if (bsreHealth.value && !bsreHealth.value.isHealthy) {
     showGlobalAlert.value = true;
   }
-};
-
-// Sorting (client-side)
-const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
-  tanggal: "tanggal",
-  jenisNaskah: "jenisNaskah",
-  status: "note", // ⬅️ PENTING
-};
-
-const handleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = column;
-    sortOrder.value = "asc";
-  }
-};
-
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) return ArrowUpDown;
-  return sortOrder.value === "asc" ? ArrowUp : ArrowDown;
 };
 
 // Pagination
@@ -496,18 +658,34 @@ const activateAlert = () => {
 // Utils
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleString("id-ID", {
+  return date.toLocaleDateString("id-ID", {
     day: "2-digit",
-    month: "2-digit",
+    month: "short",
     year: "numeric",
+  });
+};
+
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
   });
 };
 
+const getUserInitials = (name: string) => {
+  if (!name) return "?";
+  const parts = name.split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
 const statusClass = (status: string) => {
-  if (status === "sukses") return "bg-green-100 text-green-700";
-  return "bg-red-100 text-red-700";
+  if (status === "sukses")
+    return "bg-green-100 text-green-700 border border-green-200";
+  return "bg-red-100 text-red-700 border border-red-200";
 };
 
 // Load data on mount
@@ -530,5 +708,24 @@ onMounted(() => {
 .animate-marquee {
   display: inline-block;
   animation: marquee 15s linear infinite;
+}
+
+/* Custom scrollbar */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>

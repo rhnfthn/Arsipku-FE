@@ -238,7 +238,9 @@
           <div
             class="flex justify-between items-center p-4 border-b border-b-gray-200"
           >
-            <h2 class="font-semibold text-sm">Detail Klasifikasi</h2>
+            <Heading variant="heading9sb">
+              Detail Jenis <span class="text-red-500">*</span>
+            </Heading>
             <button @click="showDetail = false">
               <X class="w-4 h-4" />
             </button>
@@ -297,8 +299,8 @@
           <!-- FOOTER -->
           <div class="border-t border-t-gray-200 p-4">
             <button
-              class="w-full h-10 bg-primary-400 hover:bg-primary-500 text-white rounded-lg"
               @click="showDetail = false"
+              class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
             >
               Tutup
             </button>

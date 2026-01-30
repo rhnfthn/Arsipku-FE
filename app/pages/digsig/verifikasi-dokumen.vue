@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 min-h-screen">
+  <div class="space-y-6 min-h-screen dark:bg-gray-900">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -18,7 +18,7 @@
       </button>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm w-full">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm w-full">
       <!-- TOP ACTION BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
@@ -27,7 +27,7 @@
         <div class="relative">
           <button
             data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 text-sm px-4 py-2 rounded-lg transition"
+            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 text-sm px-4 py-2 rounded-lg transition"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span>{{ filterStatusLabel }}</span>
@@ -42,7 +42,7 @@
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-700 dark:hover:text-gray-700 border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
           >
             <button
               v-for="item in filterOptions"
@@ -64,7 +64,7 @@
             v-model="search"
             @input="handleSearch"
             placeholder="Cari Dokumen"
-            class="w-full bg-gray-50 border border-gray-200 text-sm pl-9 pr-3 py-2 rounded-lg"
+            class="w-full bg-gray-50 border dark:bg-gray-700 border-gray-200 dark:border-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg"
           />
         </div>
       </div>
@@ -88,56 +88,74 @@
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="w-full bg-white text-sm">
-          <thead class="bg-primary text-white text-[15px]">
+        <table class="w-full bg-white dark:bg-gray-800 text-sm">
+          <thead class="bg-primary dark:bg-primary text-white text-sm">
             <tr>
-              <th
-                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
-                @click="sortBy('tanggalDokumen')"
-              >
-                <div class="flex items-center gap-2">
-                  Tanggal Dibuat
-                  <span v-if="sortKey === 'tanggalDokumen'" class="text-xs">
-                    {{ sortOrder === "asc" ? "↑" : "↓" }}
-                  </span>
+              <th @click="handleSort('tanggalDokumen')" class="cursor-pointer">
+                <div class="flex items-center gap-2 ml-5">
+                  <span>Tanggal Dibuat</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'tanggalDokumen'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
                 </div>
               </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
-                @click="sortBy('nomorDokumen')"
-              >
+
+              <th @click="handleSort('nomorDokumen')" class="cursor-pointer">
                 <div class="flex items-center gap-2">
-                  No Dokumen
-                  <span v-if="sortKey === 'nomorDokumen'" class="text-xs">
-                    {{ sortOrder === "asc" ? "↑" : "↓" }}
-                  </span>
+                  <span>No Dokumen</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'nomorDokumen'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
                 </div>
               </th>
-              <th
-                class="px-4 py-3 text-left cursor-pointer hover:bg-primary-700"
-                @click="sortBy('perihal')"
-              >
-                <div class="flex items-center gap-2">
-                  Perihal
-                  <span v-if="sortKey === 'perihal'" class="text-xs">
-                    {{ sortOrder === "asc" ? "↑" : "↓" }}
-                  </span>
+
+              <th @click="handleSort('perihal')" class="cursor-pointer">
+                <div class="flex items-center gap-2 dark:text-white">
+                  <span>Perihal</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'perihal'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
                 </div>
               </th>
-              <!-- <th class="px-4 py-3 text-center">Klasifikasi</th> -->
               <th class="px-4 py-3 text-center">Penandatangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
-              <th
-                class="px-4 py-3 text-center cursor-pointer hover:bg-primary-700"
-                @click="sortBy('status')"
-              >
-                <div class="flex items-center justify-center gap-2">
-                  Status
-                  <span v-if="sortKey === 'status'" class="text-xs">
-                    {{ sortOrder === "asc" ? "↑" : "↓" }}
-                  </span>
+              <th @click="handleSort('status')" class="cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <span>Status</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
                 </div>
               </th>
+
               <th class="px-4 py-3 text-center">Aksi</th>
             </tr>
           </thead>
@@ -146,25 +164,24 @@
             <tr
               v-for="doc in paginatedRows"
               :key="doc.id"
-              class="border-b border-gray-100 hover:bg-gray-50"
+              class="border-b border-gray-100 dark:border-gray-400 hover:bg-primary-50 dark:hover:bg-gray-700"
             >
               <td class="p-4">{{ formatDate(doc.tanggalDokumen) }}</td>
               <td class="p-4">
                 <div class="font-medium">{{ doc.nomorDokumen }}</div>
               </td>
               <td class="p-4">
-                <div class="text-gray-700 text-sm">{{ doc.perihal }}</div>
+                <div
+                  class="text-gray-700 dark:text-white text-sm dark:hover:text-gray-700"
+                >
+                  {{ doc.perihal }}
+                </div>
               </td>
-              <!-- <td class="p-4 text-center">
-                <span class="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {{ getKlasifikasiText(doc.klasifikasi, doc.klasifikasiText) }}
-                </span>
-              </td> -->
               <td class="p-4 text-center">{{ doc.totalSigners }}</td>
               <td class="p-4 text-center">
                 <button
                   @click="viewDocument(doc)"
-                  class="flex items-center gap-2 mx-auto bg-blue-50 text-primary px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-100"
+                  class="flex items-center gap-2 mx-auto bg-blue-200 text-primary-600 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-200"
                 >
                   <FileCheck class="w-4 h-4" />
                   Lihat
@@ -181,7 +198,7 @@
               <td class="p-4">
                 <div class="flex items-center justify-center gap-4">
                   <Eye
-                    class="w-4 h-4 text-gray-600 cursor-pointer hover:text-primary"
+                    class="w-4 h-4 text-gray-600 cursor-pointer hover:text-primary dark:text-white"
                     @click="openDetailModal(doc.id)"
                   />
                   <Pencil
@@ -200,7 +217,7 @@
         v-if="filteredRows.length > 0"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-white">
           Menampilkan {{ paginatedRows.length }} dari
           {{ filteredRows.length }} data
         </div>
@@ -338,7 +355,7 @@
               <input
                 v-model="addForm.tanggal"
                 type="date"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
@@ -351,7 +368,7 @@
                   v-model="addForm.klasifikasi"
                   @change="onKlasifikasiChange"
                   :disabled="loadingKlasifikasi"
-                  class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                  class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 >
                   <option value="">
                     {{
@@ -366,24 +383,6 @@
                     {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
                   </option>
                 </select>
-                <!-- <div
-                  v-if="selectedKlasifikasiDetail"
-                  class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md"
-                >
-                  <p class="text-xs text-blue-800">
-                    <span class="font-semibold">{{
-                      selectedKlasifikasiDetail.klasifikasi
-                    }}</span>
-                    -
-                    {{ selectedKlasifikasiDetail.klasifikasi_text }}
-                  </p>
-                  <p
-                    v-if="selectedKlasifikasiDetail.deskripsi"
-                    class="text-xs text-blue-600 mt-1"
-                  >
-                    {{ selectedKlasifikasiDetail.deskripsi }}
-                  </p>
-                </div> -->
               </div>
             </div>
 
@@ -394,7 +393,7 @@
               <select
                 v-model="addForm.jenisNaskah"
                 :disabled="loadingJenisNaskah"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               >
                 <option value="">
                   {{ loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah" }}
@@ -416,7 +415,7 @@
               <input
                 v-model="addForm.nomorDokumen"
                 placeholder="Masukkan Nomor Dokumen"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
@@ -427,7 +426,7 @@
               <input
                 v-model="addForm.perihal"
                 placeholder="Masukkan Perihal Dokumen"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
@@ -439,7 +438,7 @@
               <div class="flex items-center gap-3">
                 <button
                   @click="triggerFileUpload"
-                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-sm font-medium transition flex items-center gap-2"
+                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-300 dark:bg-gray-900 dark:border-gray-500 dark:text-white rounded-md text-sm font-medium transition flex items-center gap-2"
                 >
                   <svg
                     class="w-4 h-4"
@@ -522,10 +521,10 @@
                 <div
                   v-for="(signer, index) in addForm.selectedSigners"
                   :key="index"
-                  class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3"
+                  class="flex items-center justify-between dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 bg-gray-50 border border-gray-200 dark:text-gray-700 rounded-lg p-3"
                 >
                   <div class="flex-1">
-                    <p class="font-medium text-sm">
+                    <p class="font-medium text-sm dark:text-white">
                       {{ index + 1 }}. {{ signer.jabatan }} -
                       {{ signer.lokasi }} -
                       {{ signer.nama }}
@@ -557,7 +556,7 @@
               <div class="relative" ref="dropdownRef">
                 <div
                   @click="toggleSignerDropdown"
-                  class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white flex items-center justify-between"
+                  class="w-full border border-gray-300 dark:border-gray-500 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
                   <span class="text-gray-500">Pilih Jabatan</span>
                   <svg
@@ -583,7 +582,7 @@
                 >
                   <!-- Search Input -->
                   <div
-                    class="p-2 border-b border-gray-200 sticky top-0 bg-white"
+                    class="p-2 border-b border-gray-200 dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 sticky top-0 bg-white"
                   >
                     <div class="relative">
                       <Search
@@ -605,9 +604,9 @@
                       v-for="v in filteredVerifikatorList"
                       :key="v.persnum"
                       @click="selectSigner(v)"
-                      class="px-3 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      class="px-3 py-3 hover:bg-blue-50 dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
                       :class="{
-                        'bg-blue-50':
+                        'bg-blue-50 ':
                           addForm.selectedSigners.findIndex(
                             (s) => s.persnum === v.persnum,
                           ) !== -1,
@@ -673,30 +672,25 @@
             v-else-if="documentDetail"
             class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-2"
           >
-            <!-- <div>
-              <p class="text-gray-600 mb-1">ID</p>
-              <p class="font-medium">{{ documentDetail.id }}</p>
-            </div> -->
-
             <div>
-              <p class="text-gray-600 mb-1">No Dokumen</p>
+              <p class="text-gray-600 mb-1 dark:text-white">No Dokumen</p>
               <p class="font-medium">{{ documentDetail.nomorDokumen }}</p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Tanggal</p>
+              <p class="text-gray-600 mb-1 dark:text-white">Tanggal</p>
               <p class="font-medium">
                 {{ formatDate(documentDetail.tanggalDokumen) }}
               </p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Jenis Naskah</p>
+              <p class="text-gray-600 mb-1 dark:text-white">Jenis Naskah</p>
               <p class="font-medium">{{ documentDetail.jenisNaskah }}</p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Klasifikasi</p>
+              <p class="text-gray-600 mb-1 dark:text-white">Klasifikasi</p>
               <p class="font-medium">
                 {{
                   documentDetail.klasifikasiText ||
@@ -708,12 +702,12 @@
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Perihal</p>
+              <p class="text-gray-600 mb-1 dark:text-white">Perihal</p>
               <p class="font-medium">{{ documentDetail.perihal }}</p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1">Status</p>
+              <p class="text-gray-600 mb-1 dark:text-white">Status</p>
               <span
                 class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
                 :class="getStatusClass(documentDetail.status)"
@@ -722,16 +716,8 @@
               </span>
             </div>
 
-            <!-- <div>
-              <p class="text-gray-600 mb-1">Dibuat Oleh</p>
-              <p class="font-medium">{{ documentDetail.createdByName }}</p>
-              <p class="text-xs text-gray-500">
-                {{ documentDetail.createdByPosition }}
-              </p>
-            </div> -->
-
             <div class="md:col-span-2">
-              <p class="text-gray-600 mb-2">Dokumen</p>
+              <p class="text-gray-600 mb-2 dark:text-white">Dokumen</p>
               <button
                 @click="viewDocumentFromDetail"
                 class="flex items-center gap-2 bg-blue-50 text-primary px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 transition"
@@ -749,11 +735,13 @@
               documentDetail.signers &&
               documentDetail.signers.length > 0
             "
-            class="mt-6 mb-5 border border-gray-200 rounded-xl overflow-hidden"
+            class="mt-6 mb-5 border border-gray-200 dark:border-gray-400 dark:text-white rounded-xl overflow-hidden"
           >
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead class="bg-primary border-b border-gray-200">
+                <thead
+                  class="bg-primary border-b border-gray-200 dark:border-gray-400"
+                >
                   <tr>
                     <th class="p-3 text-left text-white font-semibold">NO</th>
                     <th class="p-3 text-left font-semibold text-white">
@@ -774,23 +762,23 @@
                   <tr
                     v-for="(s, i) in documentDetail.signers"
                     :key="i"
-                    class="border-b border-gray-100 hover:bg-gray-50"
+                    class="border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <td class="p-3">
                       <span
-                        class="inline-flex items-center justify-center text-xs font-semibold"
+                        class="inline-flex items-center justify-center text-xs font-semibold dark:text-white"
                       >
                         {{ s.urutan }}
                       </span>
                     </td>
-                    <td class="p-3 font-mono text-gray-700">
+                    <td class="p-3 font-mono text-gray-700 dark:text-white">
                       {{ s.persnum || "-" }}
                     </td>
                     <td class="p-3">
-                      <div class="font-semibold text-gray-900">
+                      <div class="font-semibold text-gray-900 dark:text-white">
                         {{ s.nama || "-" }}
                       </div>
-                      <div class="text-xs text-gray-500 mt-1">
+                      <div class="text-xs text-gray-500 mt-1 dark:text-white">
                         {{ s.jabatan || "-" }}
                       </div>
                     </td>
@@ -874,10 +862,13 @@ import {
   FileCheck,
   Eye,
   ChevronDown,
+  ArrowUpDown,
 } from "lucide-vue-next";
 
 import { useDigsig } from "~/composables/useDigsig";
 import type { Verifikator } from "~/types/digsig";
+
+const toast = useToast();
 
 const {
   documents,
@@ -919,20 +910,22 @@ const selectedKlasifikasiDetail = ref<any>(null);
 const statusFilter = ref("");
 const openFilterStatus = ref(false);
 const sortKey = ref("");
-const sortOrder = ref<"asc" | "desc">("asc");
+const sortOrder = ref("asc");
+
+function handleSort(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
+
 const search = ref("");
 const currentPage = ref(1);
 const limit = ref(10);
 const rowsPerPage = ref(10);
-const filteredDocuments = computed(() => {
-  if (!search.value) return documents.value;
 
-  return documents.value.filter(
-    (doc) =>
-      doc.nomorDokumen?.toLowerCase().includes(search.value.toLowerCase()) ||
-      doc.perihal?.toLowerCase().includes(search.value.toLowerCase()),
-  );
-});
 const addForm = ref({
   tanggal: "",
   klasifikasi: "",
@@ -1036,21 +1029,6 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// const filteredVerifikatorList = computed(() => {
-//   if (!signerSearchQuery.value) {
-//     return verifikatorList.value;
-//   }
-
-//   const query = signerSearchQuery.value.toLowerCase();
-//   return verifikatorList.value.filter(
-//     (v) =>
-//       v.jabatan.toLowerCase().includes(query) ||
-//       v.nama.toLowerCase().includes(query) ||
-//       v.lokasi.toLowerCase().includes(query) ||
-//       v.areaText.toLowerCase().includes(query),
-//   );
-// });
-
 onMounted(() => {
   loadDocuments();
   fetchKlasifikasi();
@@ -1070,7 +1048,7 @@ onUnmounted(() => {
     URL.revokeObjectURL(pdfUrl.value);
   }
 });
-// search
+
 const filteredVerifikatorList = computed(() => {
   if (!signerSearchQuery.value) return verifikatorList.value;
 
@@ -1085,15 +1063,24 @@ const filteredVerifikatorList = computed(() => {
 });
 
 const loadDocuments = async () => {
-  await fetchDocuments({
-    page: currentPage.value,
-    limit: limit.value,
-    search: search.value,
-    status: statusFilter.value,
-    sortBy: sortKey.value,
-    sortOrder: sortOrder.value,
-  });
+  try {
+    await fetchDocuments({
+      page: currentPage.value,
+      limit: limit.value,
+      search: search.value,
+      status: statusFilter.value,
+      sortBy: sortKey.value,
+      sortOrder: sortOrder.value,
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err.message || "Gagal memuat dokumen",
+      color: "red",
+    });
+  }
 };
+
 watch(search, () => {
   loadDocuments();
 });
@@ -1133,7 +1120,6 @@ const sortBy = (key: string) => {
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
 
-  // Convert to WIB (UTC+7)
   const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
 
   return date.toLocaleDateString("id-ID", {
@@ -1203,8 +1189,16 @@ const onKlasifikasiChange = async () => {
       (k) => k.klasifikasi === addForm.value.klasifikasi,
     );
     if (selected) {
-      const detail = await fetchKlasifikasiDetail(selected.id);
-      selectedKlasifikasiDetail.value = detail;
+      try {
+        const detail = await fetchKlasifikasiDetail(selected.id);
+        selectedKlasifikasiDetail.value = detail;
+      } catch (err: any) {
+        toast.add({
+          title: "Gagal",
+          description: err.message || "Gagal memuat detail klasifikasi",
+          color: "red",
+        });
+      }
     }
   } else {
     selectedKlasifikasiDetail.value = null;
@@ -1225,6 +1219,11 @@ const selectSigner = (verifikator: Verifikator) => {
 
   if (exists === -1) {
     addForm.value.selectedSigners.push(verifikator);
+    toast.add({
+      title: "Berhasil",
+      description: `${verifikator.nama} ditambahkan sebagai penandatangan`,
+      color: "green",
+    });
   }
 
   showSignerDropdown.value = false;
@@ -1232,7 +1231,13 @@ const selectSigner = (verifikator: Verifikator) => {
 };
 
 const removeSelectedSigner = (index: number) => {
+  const signer = addForm.value.selectedSigners[index];
   addForm.value.selectedSigners.splice(index, 1);
+  toast.add({
+    title: "Info",
+    description: `${signer.nama} dihapus dari daftar penandatangan`,
+    color: "blue",
+  });
 };
 
 const triggerFileUpload = () => {
@@ -1243,6 +1248,16 @@ const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.add({
+        title: "Gagal",
+        description: "Ukuran file maksimal 10MB",
+        color: "red",
+      });
+      return;
+    }
+
     addForm.value.fileName = file.name;
     addForm.value.file = file;
 
@@ -1251,6 +1266,12 @@ const handleFileUpload = async (event: Event) => {
       URL.revokeObjectURL(previewUrl.value);
     }
     previewUrl.value = URL.createObjectURL(file);
+
+    toast.add({
+      title: "Berhasil",
+      description: `File "${file.name}" berhasil dipilih`,
+      color: "green",
+    });
   }
 };
 
@@ -1265,91 +1286,109 @@ const openEditModal = async (id: string) => {
   isEditMode.value = true;
   editingId.value = id;
 
-  const doc = await fetchDocumentDetail(id);
-  if (doc) {
-    const mappedSigners: Verifikator[] = [];
+  try {
+    const doc = await fetchDocumentDetail(id);
+    if (doc) {
+      const mappedSigners: Verifikator[] = [];
 
-    if (doc.signers && doc.signers.length > 0) {
-      for (const s of doc.signers) {
-        const verifikator = verifikatorList.value.find(
-          (v) => v.persnum === Number(s.persnum),
-        );
+      if (doc.signers && doc.signers.length > 0) {
+        for (const s of doc.signers) {
+          const verifikator = verifikatorList.value.find(
+            (v) => v.persnum === Number(s.persnum),
+          );
 
-        if (verifikator) {
-          mappedSigners.push(verifikator);
-        } else {
-          mappedSigners.push({
-            positionId: Number(s.positionId) || 0,
-            persnum: Number(s.persnum) || 0,
-            nama: s.nama || "",
-            jabatan: s.jabatan || "",
-            lokasi: s.lokasi || "",
-            areaText: "",
-            companyText: "",
-          });
+          if (verifikator) {
+            mappedSigners.push(verifikator);
+          } else {
+            mappedSigners.push({
+              positionId: Number(s.positionId) || 0,
+              persnum: Number(s.persnum) || 0,
+              nama: s.nama || "",
+              jabatan: s.jabatan || "",
+              lokasi: s.lokasi || "",
+              areaText: "",
+              companyText: "",
+            });
+          }
         }
       }
-    }
 
-    addForm.value = {
-      tanggal: doc.tanggalDokumen.split("T")[0],
-      klasifikasi: doc.klasifikasi,
-      jenisNaskah: doc.jenisNaskah,
-      nomorDokumen: doc.nomorDokumen,
-      perihal: doc.perihal,
-      fileName: doc.fileName || "",
-      file: null,
-      visibleSign: Boolean(doc.visibleSign),
-      signers: [],
-      selectedSigners: mappedSigners,
-    };
+      addForm.value = {
+        tanggal: doc.tanggalDokumen.split("T")[0],
+        klasifikasi: doc.klasifikasi,
+        jenisNaskah: doc.jenisNaskah,
+        nomorDokumen: doc.nomorDokumen,
+        perihal: doc.perihal,
+        fileName: doc.fileName || "",
+        file: null,
+        visibleSign: Boolean(doc.visibleSign),
+        signers: [],
+        selectedSigners: mappedSigners,
+      };
 
-    // Load klasifikasi detail
-    if (doc.klasifikasi) {
-      const selected = klasifikasiList.value.find(
-        (k) => k.klasifikasi === doc.klasifikasi,
-      );
-      if (selected) {
-        const detail = await fetchKlasifikasiDetail(selected.id);
-        selectedKlasifikasiDetail.value = detail;
+      // Load klasifikasi detail
+      if (doc.klasifikasi) {
+        const selected = klasifikasiList.value.find(
+          (k) => k.klasifikasi === doc.klasifikasi,
+        );
+        if (selected) {
+          const detail = await fetchKlasifikasiDetail(selected.id);
+          selectedKlasifikasiDetail.value = detail;
+        }
       }
-    }
-  }
 
-  openAdd.value = true;
+      openAdd.value = true;
+    }
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err.message || "Gagal memuat data dokumen",
+      color: "red",
+    });
+  }
 };
 
 const openDetailModal = async (id: string) => {
   loadingDetail.value = true;
 
-  // Ensure klasifikasi list is loaded
-  if (klasifikasiList.value.length === 0) {
-    await fetchKlasifikasi();
-  }
+  try {
+    // Ensure klasifikasi list is loaded
+    if (klasifikasiList.value.length === 0) {
+      await fetchKlasifikasi();
+    }
 
-  const res = await fetchDocumentDetail(id);
-  if (res) {
-    // Load klasifikasi detail if klasifikasiText is null
-    if (!res.klasifikasiText && res.klasifikasi) {
-      const klasifikasi = klasifikasiList.value.find(
-        (k) => k.klasifikasi === res.klasifikasi,
-      );
+    const res = await fetchDocumentDetail(id);
+    if (res) {
+      // Load klasifikasi detail if klasifikasiText is null
+      if (!res.klasifikasiText && res.klasifikasi) {
+        const klasifikasi = klasifikasiList.value.find(
+          (k) => k.klasifikasi === res.klasifikasi,
+        );
 
-      if (klasifikasi) {
-        // Set klasifikasiText manually
-        if (documentDetail.value) {
-          documentDetail.value.klasifikasiText = `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`;
-        }
-      } else {
-        // If not found in list, just show the code
-        if (documentDetail.value) {
-          documentDetail.value.klasifikasiText = res.klasifikasi;
+        if (klasifikasi) {
+          if (documentDetail.value) {
+            documentDetail.value.klasifikasiText = `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`;
+          }
+        } else {
+          if (documentDetail.value) {
+            documentDetail.value.klasifikasiText = res.klasifikasi;
+          }
         }
       }
+      openDetail.value = true;
+    } else {
+      toast.add({
+        title: "Gagal",
+        description: "Gagal memuat detail dokumen",
+        color: "red",
+      });
     }
-    openDetail.value = true;
-  } else {
-    alert("Gagal memuat detail dokumen");
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err.message || "Gagal memuat detail dokumen",
+      color: "red",
+    });
   }
 };
 
@@ -1361,7 +1400,11 @@ const viewDocumentFromDetail = async () => {
     documentDetail.value.filePreviewUrl;
 
   if (!url) {
-    alert("File pratinjau tidak tersedia");
+    toast.add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "red",
+    });
     return;
   }
 
@@ -1383,7 +1426,11 @@ const viewDocumentFromDetail = async () => {
     pdfUrl.value = blobUrl;
     isOpenPreview.value = true;
   } catch (err) {
-    alert("Gagal memuat pratinjau dokumen");
+    toast.add({
+      title: "Gagal",
+      description: "Gagal memuat pratinjau dokumen",
+      color: "red",
+    });
   }
 };
 
@@ -1421,7 +1468,11 @@ const viewDocument = async (doc: any) => {
   const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
 
   if (!url) {
-    alert("File pratinjau tidak tersedia");
+    toast.add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "red",
+    });
     return;
   }
 
@@ -1443,37 +1494,79 @@ const viewDocument = async (doc: any) => {
     pdfUrl.value = blobUrl;
     isOpenPreview.value = true;
   } catch (err) {
-    alert("Gagal memuat pratinjau dokumen");
+    toast.add({
+      title: "Gagal",
+      description: "Gagal memuat pratinjau dokumen",
+      color: "red",
+    });
+  }
+};
+
+const previewFileInModal = async () => {
+  if (previewUrl.value) {
+    pdfUrl.value = previewUrl.value;
+    isOpenPreview.value = true;
+  } else if (isEditMode.value && documentDetail.value) {
+    await viewDocumentFromDetail();
   }
 };
 
 const saveDokumen = async () => {
+  // Validation
   if (!addForm.value.tanggal) {
-    alert("Tanggal Dokumen harus diisi");
+    toast.add({
+      title: "Gagal",
+      description: "Tanggal Dokumen harus diisi",
+      color: "red",
+    });
     return;
   }
   if (!addForm.value.klasifikasi) {
-    alert("Klasifikasi harus dipilih");
+    toast.add({
+      title: "Gagal",
+      description: "Klasifikasi harus dipilih",
+      color: "red",
+    });
     return;
   }
   if (!addForm.value.jenisNaskah) {
-    alert("Jenis Naskah harus dipilih");
+    toast.add({
+      title: "Gagal",
+      description: "Jenis Naskah harus dipilih",
+      color: "red",
+    });
     return;
   }
   if (!addForm.value.nomorDokumen) {
-    alert("Nomor Dokumen harus diisi");
+    toast.add({
+      title: "Gagal",
+      description: "Nomor Dokumen harus diisi",
+      color: "red",
+    });
     return;
   }
   if (!addForm.value.perihal) {
-    alert("Perihal harus diisi");
+    toast.add({
+      title: "Gagal",
+      description: "Perihal harus diisi",
+      color: "red",
+    });
     return;
   }
   if (!isEditMode.value && !addForm.value.file) {
-    alert("File Attachment harus diupload");
+    toast.add({
+      title: "Gagal",
+      description: "File Attachment harus diupload",
+      color: "red",
+    });
     return;
   }
   if (addForm.value.selectedSigners.length === 0) {
-    alert("Mohon pilih minimal satu penandatangan");
+    toast.add({
+      title: "Gagal",
+      description: "Mohon pilih minimal satu penandatangan",
+      color: "red",
+    });
     return;
   }
 
@@ -1499,10 +1592,19 @@ const saveDokumen = async () => {
       }
 
       await updateDocument(editingId.value, payload);
-      alert("✅ Dokumen berhasil diperbarui!");
+
+      toast.add({
+        title: "Berhasil",
+        description: "Dokumen berhasil diperbarui",
+        color: "green",
+      });
     } else {
       if (!addForm.value.file) {
-        alert("File harus diupload untuk dokumen baru");
+        toast.add({
+          title: "Gagal",
+          description: "File harus diupload untuk dokumen baru",
+          color: "red",
+        });
         return;
       }
 
@@ -1518,14 +1620,27 @@ const saveDokumen = async () => {
       };
 
       await createDocument(payload);
-      alert("✅ Dokumen berhasil dibuat!");
+
+      toast.add({
+        title: "Berhasil",
+        description: "Dokumen berhasil dibuat",
+        color: "green",
+      });
     }
 
     closeModal();
     await loadDocuments();
   } catch (err: any) {
     console.error("❌ Save error:", err);
-    alert(`❌ Gagal menyimpan dokumen: ${err.message || "Unknown error"}`);
+
+    const errorMsg =
+      err.response?.data?.message || err.message || "Gagal menyimpan dokumen";
+
+    toast.add({
+      title: "Gagal",
+      description: errorMsg,
+      color: "red",
+    });
   }
 };
 

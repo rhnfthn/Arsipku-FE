@@ -57,41 +57,50 @@
       </div>
 
       <!-- Table -->
-      <table class="min-w-full border-collapse text-sm">
+      <table class="min-w-full text-sm">
         <thead class="text-left bg-primary-400 text-white">
           <tr>
-            <th
-              @click="sortBy('nama')"
-              class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold cursor-pointer select-none hover:bg-primary-500 transition-colors"
-            >
-              <div class="flex items-center gap-2">
+            <th @click="handleSort('nama')" class="cursor-pointer">
+              <div class="flex items-center gap-2 ml-5">
                 <span>Nama</span>
-                <span class="w-4 h-4 inline-flex items-center justify-center">
-                  <ArrowUpDown
-                    v-if="sortColumn !== 'nama'"
-                    class="w-3 h-3 opacity-70"
-                  />
-                  <ChevronUp
-                    v-else-if="sortDirection === 'asc'"
-                    class="w-4 h-4"
-                  />
-                  <ChevronDown v-else class="w-4 h-4" />
-                </span>
+                <ArrowUpDown
+                  class="w-4 h-4 origin-center transition-transform duration-200"
+                  :class="
+                    sortColumn === 'nama'
+                      ? sortDirection === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0'
+                      : 'opacity-50'
+                  "
+                />
               </div>
             </th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+
+            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
               Alamat
             </th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
               Telephone
             </th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
-              Status
+            <th @click="handleSort('status')" class="cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span>Status</span>
+                <ArrowUpDown
+                  class="w-4 h-4 origin-center transition-transform duration-200"
+                  :class="
+                    sortKey === 'status'
+                      ? sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0'
+                      : 'opacity-50'
+                  "
+                />
+              </div>
             </th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
-              Dibuat Oleh
+            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
+              Pengusul
             </th>
-            <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
               Aksi
             </th>
           </tr>
@@ -135,19 +144,21 @@
               {{ item.nama_pembuat }}
             </td>
 
-            <td class="px-4 py-3 text-center flex justify-center gap-5">
+            <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
-                class="text-yellow-500 hover:text-yellow-600 transition-colors"
                 @click="openEdit(item)"
+                class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
               >
-                <Pencil class="w-4 h-4" />
+                <Pencil
+                  class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
+                />
               </button>
 
               <button
-                class="text-red-500 hover:text-red-600 transition-colors"
+                class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
-                <Trash2 class="w-4 h-4" />
+                <Trash2 class="w-4 h-4 text-red-600 group-hover:text-red-600" />
               </button>
             </td>
           </tr>
@@ -290,44 +301,52 @@
         </template>
 
         <!-- FIELD NAMA -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Nama</label>
+        <div class="flex flex-col gap-2 p-1">
+          <Heading variant="heading11m" class="text-xs">
+            Nama <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="form.nama"
             type="text"
             placeholder="Masukkan nama"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
         </div>
 
         <!-- FIELD ALAMAT -->
         <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Alamat</label>
+          <Heading variant="heading11m" class="text-xs">
+            Alamat <span class="text-red-500">*</span>
+          </Heading>
           <textarea
             v-model="form.alamat"
             type="text"
             placeholder="Masukkan alamat"
-            class="border border-gray-300 rounded-md px-3 py-4 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
         </div>
 
         <!-- FIELD TELEPHONE -->
         <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Telephone</label>
+          <Heading variant="heading11m" class="text-xs">
+            Nomor HP <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="form.telephone"
             type="text"
             placeholder="Masukkan no telphone"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           />
         </div>
 
         <!-- FIELD STATUS -->
         <div class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-gray-700">Status</label>
+          <Heading variant="heading11m" class="text-xs">
+            Status <span class="text-red-500">*</span>
+          </Heading>
           <select
             v-model="form.aktif"
-            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
           >
             <option value="" disabled>Pilih status</option>
             <option :value="true">Aktif</option>
@@ -391,6 +410,16 @@ const {
   deleteTertujuEksternal,
   updateTertujuEksternal,
 } = useTertujuEksternal();
+
+// sort
+const handleSort = (column: string) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+};
 
 const form = ref({
   nama: "",

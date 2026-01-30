@@ -268,11 +268,43 @@
           <thead class="text-left bg-primary-400 text-white">
             <tr>
               <th class="px-4 py-3 font-semibold">Nomor</th>
-              <th class="px-4 py-3 font-semibold">Tanggal</th>
+              <th
+                @click="handleSort('tanggal')"
+                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+              >
+                <div class="flex items-center gap-2">
+                  <span>Tanggal</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-200"
+                    :class="[
+                      sortKey === 'tanggal' ? 'opacity-100' : 'opacity-40',
+                      sortKey === 'tanggal' && sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : '',
+                    ]"
+                  />
+                </div>
+              </th>
               <th class="px-4 py-3 font-semibold">Perihal</th>
               <th class="px-4 py-3 font-semibold">Jabatan</th>
               <th class="px-4 py-3 font-semibold">Lokasi</th>
-              <th class="px-4 py-3 font-semibold">Status</th>
+              <th
+                @click="handleSort('status')"
+                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+              >
+                <div class="flex items-center gap-2">
+                  <span>Status</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-200"
+                    :class="[
+                      sortKey === 'status' ? 'opacity-100' : 'opacity-40',
+                      sortKey === 'status' && sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : '',
+                    ]"
+                  />
+                </div>
+              </th>
             </tr>
           </thead>
 
@@ -289,10 +321,10 @@
               <td class="px-4 py-3">{{ item.lokasi }}</td>
               <td class="px-4 py-3">
                 <span
-                  class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                  class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                   :class="{
                     'bg-green-100 text-green-700': item.status === 'Terpakai',
-                    'bg-green-300 text-green-700':
+                    'bg-green-100 text-green-700':
                       item.status === 'Terpakai_final',
                     'bg-blue-100 text-blue-700': item.status === 'Booking',
                     'bg-red-100 text-red-700': item.status === 'Hangus',
@@ -452,7 +484,7 @@
 <script setup lang="ts">
 //IMPORT
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
-import { FileDown, RotateCcw, ChevronDown } from "lucide-vue-next";
+import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from "lucide-vue-next";
 import { useToast } from "#imports";
 import { useLaporan } from "~/composables/useLaporan";
 import * as XLSX from "xlsx";
@@ -462,6 +494,18 @@ import { saveAs } from "file-saver";
 const toast = useToast();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
 
+//SORT
+const sortKey = ref("");
+const sortOrder = ref("asc");
+
+function handleSort(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
 //FILTER STATE
 const loading = ref(false);
 const isRefreshing = ref(false);

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-10">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
     <div class="mb-5">
       <Heading variant="heading6b" class="text-mobile-md">
@@ -13,7 +13,7 @@
       <!-- UPLOAD SECTION -->
       <!-- ================== -->
       <div
-        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3"
+        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
       >
         <Heading variant="heading10sb">Unggah Dokumen</Heading>
 
@@ -28,11 +28,11 @@
           />
 
           <div
-            class="flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+            class="flex items-center justify-between px-4 py-3 border border-gray-300 dark:text-white dark:hover:bg-gray-700 dark:bg-gray-900 dark:border-gray-600 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
             :class="{ 'opacity-50 cursor-not-allowed': loadingCheck }"
           >
             <FileText class="w-5 h-5 text-gray-500" />
-            <span class="text-gray-600 flex-1 text-center">
+            <span class="text-gray-600 dark:text-white flex-1 text-center">
               {{ fileName || "Pilih file PDF untuk diperiksa" }}
             </span>
             <Upload class="w-5 h-5 text-gray-600" />
@@ -75,7 +75,9 @@
         class="space-y-4"
       >
         <!-- Status Card -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div
+          class="bg-white dark:bg-gray-800 dark:text-white dark:border-gray-600 p-6 rounded-xl shadow-sm border border-gray-200"
+        >
           <div class="flex items-center justify-between mb-4">
             <Heading variant="heading10sb">Status Verifikasi</Heading>
             <span
@@ -108,43 +110,51 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <!-- Nama Dokumen -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">Nama Dokumen</p>
-              <p class="text-sm text-gray-900 break-all">
+              <p class="text-sm font-medium text-gray-700 dark:text-white mb-1">
+                Nama Dokumen
+              </p>
+              <p class="text-sm text-gray-900 dark:text-white break-all">
                 {{ documentCheck.data.namaDokumen }}
               </p>
             </div>
 
             <!-- Keterangan -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">Keterangan</p>
-              <p class="text-sm text-gray-900">
+              <p class="text-sm font-medium dark:text-white text-gray-700 mb-1">
+                Keterangan
+              </p>
+              <p class="text-sm dark:text-white text-gray-900">
                 {{ documentCheck.data.keterangan }}
               </p>
             </div>
 
             <!-- Jumlah Signature -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">
+              <p class="text-sm font-medium dark:text-white text-gray-700 mb-1">
                 Jumlah Tanda Tangan
               </p>
-              <p class="text-sm text-gray-900">
+              <p class="text-sm text-gray-900 dark:text-white">
                 {{ documentCheck.data.jumlahSignature }}
               </p>
             </div>
 
             <!-- Waktu Verifikasi -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">
+              <p class="text-sm font-medium text-gray-700 dark:text-white mb-1">
                 Waktu Verifikasi
               </p>
-              <p class="text-sm text-gray-900">
+              <p class="text-sm text-gray-900 dark:text-white">
                 {{ formatDate(documentCheck.data.verifiedAt) }}
               </p>
             </div>
 
             <!-- Valid -->
             <div>
-              <p class="text-sm font-medium text-gray-700 mb-1">Status Valid</p>
+              <p
+                class="text-sm font-medium dark:text-white dark:text-semibold text-gray-700 mb-1"
+              >
+                Status Valid
+              </p>
               <span
                 class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium"
                 :class="
@@ -170,12 +180,12 @@
           "
           v-for="(signer, index) in documentCheck.data.signers"
           :key="index"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+          class="bg-white dark:text-white rounded-xl shadow-sm border border-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 overflow-hidden"
         >
           <!-- HEADER ACCORDION -->
           <button
             @click="toggleSigner(index)"
-            class="w-full flex items-center justify-between px-6 py-4 border-b border-gray-200 hover:bg-gray-50 transition"
+            class="w-full flex items-center justify-between px-6 py-4 border-b border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             <div class="flex items-center gap-3">
               <div
@@ -185,10 +195,10 @@
               </div>
 
               <div class="text-left">
-                <p class="text-sm font-semibold text-gray-900">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">
                   Penanda Tangan {{ index + 1 }}
                 </p>
-                <p class="text-sm text-gray-600 mt-0.5">
+                <p class="text-sm text-gray-600 mt-0.5 dark:text-white">
                   {{ signer.name || "Tidak diketahui" }}
                 </p>
               </div>
@@ -212,10 +222,12 @@
             <div v-if="openSigners.has(index)" class="px-6 py-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 <div v-for="(value, key) in signer" :key="key">
-                  <p class="text-sm font-medium text-gray-500 mb-1 capitalize">
+                  <p
+                    class="text-sm font-medium text-gray-500 dark:text-white mb-1 capitalize"
+                  >
                     {{ formatKey(key) }}
                   </p>
-                  <p class="text-sm text-gray-900 break-all">
+                  <p class="text-sm text-gray-900 dark:text-white break-all">
                     {{ value || "-" }}
                   </p>
                 </div>
@@ -248,7 +260,7 @@
             documentCheck.data.verificationDetails &&
             Object.keys(documentCheck.data.verificationDetails).length > 0
           "
-          class="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          class="bg-white p-6 rounded-xl shadow-sm dark:text-white border border-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600"
         >
           <Heading variant="heading10sb" class="mb-4"
             >Detail Verifikasi</Heading
@@ -258,10 +270,12 @@
               v-for="(value, key) in documentCheck.data.verificationDetails"
               :key="key"
             >
-              <p class="text-sm font-medium text-gray-700 mb-1 capitalize">
+              <p
+                class="text-sm font-medium text-gray-700 dark:text-white mb-1 capitalize"
+              >
                 {{ formatKey(key) }}
               </p>
-              <p class="text-sm text-gray-900 break-all">
+              <p class="text-sm text-gray-900 dark:text-white break-all">
                 {{ value || "-" }}
               </p>
             </div>

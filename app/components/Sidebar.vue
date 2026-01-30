@@ -485,6 +485,7 @@ const userMenuUtama = computed(() => {
 });
 
 const userMenuUtilitas = computed(() => {
+  // ✅ UPDATED: Only show count for "Belum Diajukan" status
   const badgeCount = userCounts.value.belum_diajukan || 0;
   return [
     {
@@ -585,6 +586,7 @@ const adminMenuUtilitas = computed(() => {
       icon: "i-lucide-hash",
       hasNotification: false,
       onlyUser: true,
+      // ✅ UPDATED: Only show count for "Belum Diajukan" status
       badge:
         userCounts.value.belum_diajukan > 0
           ? userCounts.value.belum_diajukan
@@ -610,6 +612,7 @@ const adminMenuAdministrasi = computed(() => {
         {
           label: "Usulan",
           to: "/penomoran/usulan",
+          // ✅ UPDATED: Only show count for "Belum Diajukan" status
           badge:
             adminCounts.value.belum_diajukan > 0
               ? adminCounts.value.belum_diajukan
@@ -667,13 +670,12 @@ const adminMenuLaporan = [
   },
 ];
 
+// ✅ UPDATED: Notification only for "Menunggu Verifikasi" in Administrasi
 const hasAdministrasiNotification = computed(() => {
-  return (
-    adminCounts.value.menunggu_verifikasi > 0 ||
-    adminCounts.value.belum_diajukan > 0
-  );
+  return adminCounts.value.menunggu_verifikasi > 0;
 });
 
+// ✅ UPDATED: Notification only for "Belum Diajukan" in Utilitas
 const hasUtilitasNotification = computed(() => {
   if (!isAdminOrSuperadmin.value) {
     return userCounts.value.belum_diajukan > 0;
