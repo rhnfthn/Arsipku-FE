@@ -24,6 +24,8 @@ export const useLaporan = () => {
     area?: string;
     status?: string;
     jenis?: string;
+    page?: number;
+    limit?: number;
   }) => {
     return apiGet("/rekap-naskah/detail", { params });
   };

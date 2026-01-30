@@ -464,9 +464,7 @@
                 >
                   <span class="text-gray-600 truncate">
                     {{
-                      editForm.file
-                        ? editForm.file.name
-                        : "Wajib upload file baru"
+                      addForm.file ? addForm.file.name : "Pilih file template"
                     }}
                   </span>
 
@@ -474,12 +472,12 @@
                     type="file"
                     class="hidden"
                     accept=".doc,.docx,.pdf"
-                    @change="onPickFileEdit"
+                    @change="onPickFileAdd"
                   />
                 </label>
 
-                <p v-if="editErrors.file" class="text-xs text-red-500">
-                  {{ editErrors.file }}
+                <p v-if="addErrors.file" class="text-xs text-red-500">
+                  {{ addErrors.file }}
                 </p>
 
                 <p class="text-xs text-gray-500">Format: .doc, .docx, .pdf</p>
@@ -1030,6 +1028,12 @@ const submitAddJenis = async () => {
   } finally {
     savingAdd.value = false;
   }
+};
+
+const onPickFileAdd = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0] ?? null;
+  addForm.value.file = file;
 };
 
 const addErrors = ref<Record<string, string>>({});
