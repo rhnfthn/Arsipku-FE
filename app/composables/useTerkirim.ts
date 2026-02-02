@@ -2,8 +2,8 @@
 import { ref } from "vue";
 import { useApi } from "./useApi";
 
-// Helper format tanggal (sama dengan view)
-const formatDateTime = (value: string | null | undefined) => {
+// Helper format tanggal (dipindahkan agar lebih bersih)
+const formatDateTime = (value: string | null | undefined): string => {
   if (!value) return "-";
   const date = new Date(value);
   if (isNaN(date.getTime())) return "-";
@@ -23,18 +23,15 @@ export interface SentParams {
   jenis?: string;
   status_baca?: string;
   search?: string;
-  // start_date?: string;
-  // end_date?: string;
 }
 
 export const useSirkulasi = () => {
-  const { apiGet, post } = useApi(); // Asumsi apiGet wrapper axios/fetch
+  const { apiGet, post } = useApi();
 
   const items = ref<any[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  // State Pagination & Summary dari Server
   const pagination = ref({
     total: 0,
     page: 1,
@@ -56,22 +53,14 @@ export const useSirkulasi = () => {
       const query = new URLSearchParams();
       if (params.page) query.append("page", params.page.toString());
       if (params.limit) query.append("limit", params.limit.toString());
-      if (params.jenis && params.jenis !== "ALL" && params.jenis !== "Semua") {
+      if (params.jenis && !["ALL", "Semua"].includes(params.jenis)) {
         query.append("jenis", params.jenis);
       }
       if (params.status_baca && params.status_baca !== "Semua") {
         query.append("status_baca", params.status_baca);
       }
-      if (params.search) {
-        query.append("search", params.search);
-      }
-      // Support Custom Date Range
-      // if (params.start_date && params.end_date) {
-      //   query.append("start_date", params.start_date);
-      //   query.append("end_date", params.end_date);
-      // }
+      if (params.search) query.append("search", params.search);
 
-      // Endpoint baru tanpa positionId di URL
       const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
 
       // Normalisasi response
@@ -81,57 +70,69 @@ export const useSirkulasi = () => {
         : [];
 
       items.value = rawItems.map((item: any) => {
-        // Mapping Data sesuai struktur UI
-        const daftarPenerima = item.penerima || [];
-        let displayRecipient = "Tanpa Penerima";
-        let firstRecipientTitle = "Tanpa Jabatan";
+        const listPenerima = item.penerima || [];
+        const jenisSurat = (item.jenis || "").toUpperCase();
+        const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(jenisSurat);
 
-        if (daftarPenerima.length > 0) {
-          const firstPerson = daftarPenerima[0];
-          const title = firstPerson.position_text || firstPerson.nama;
-          firstRecipientTitle = title;
+        let displayRecipient = "Tanpa Penerima";
+        let fullRecipientList = "Tanpa Penerima";
+        let firstRecipientTitle = "Tanpa Penerima";
+        let initialLetter = "?";
+
+        if (listPenerima.length > 0) {
+          const firstPerson = listPenerima[0];
+
+          // Penentuan Nama Utama
+          const primaryName =
+            (isSDE
+              ? firstPerson.nama
+              : firstPerson.position_text || firstPerson.nama) || "Tanpa Nama";
+
+          firstRecipientTitle =
+            firstPerson.position_text || firstPerson.nama || "Tanpa Penerima";
+          initialLetter = primaryName.charAt(0).toUpperCase();
+
           displayRecipient =
-            daftarPenerima.length > 1
-              ? `${title} +${daftarPenerima.length - 1} lainnya`
-              : title;
+            listPenerima.length > 1
+              ? `${primaryName} +${listPenerima.length - 1} lainnya`
+              : primaryName;
+
+          fullRecipientList = listPenerima
+            .map((p: any, idx: number) => {
+              const pName = isSDE ? p.nama : p.position_text || p.nama;
+              return `${idx + 1}. ${pName}`;
+            })
+            .join("\n");
         }
 
         return {
-          id: item.id_naskah, // atau item.id_sirkulasi
+          id: item.id_naskah,
           naskahId: item.id_naskah,
-          from: displayRecipient, // Di Sentbox, 'from' ditampilkan sebagai Penerima Utama
+          fullRecipients: fullRecipientList,
+          from: displayRecipient,
           email: firstRecipientTitle,
-
           subject: item.perihal || "-",
           body: item.nomor || "-",
-
           category: item.jenis,
           category_label: item.jenis_label,
-
           date: formatDateTime(item.created_at),
-          fullDate: item.created_at || item.tanggal, // Untuk sorting client-side jika perlu
-
-          initial:
-            daftarPenerima[0]?.nama?.substring(0, 1).toUpperCase() || "?",
+          fullDate: item.created_at || item.tanggal,
+          initial: initialLetter,
           viewCount: item.summary_baca?.terbaca || 0,
-
-          isRead: true, // Sentbox selalu dianggap read oleh pengirim
+          isRead: true,
           isFlagged: ["rahasia", "penting", "segera"].includes(
             (item.sifat || "").toLowerCase(),
           ),
-          isLocked: item.status === "final_tte" || item.status === "final",
+          isLocked: ["final_tte", "final"].includes(item.status),
           isArchived: item.arsip,
-
-          recipient: daftarPenerima
+          recipient: listPenerima
             .map((p: any) => p.position_text || p.nama)
             .join(", "),
           labels: item.labels || [],
-
           originalData: item,
         };
       });
 
-      // Set Pagination & Summary
       if (responseBody?.pagination) pagination.value = responseBody.pagination;
       if (responseBody?.summary) summary.value = responseBody.summary;
     } catch (err: any) {
@@ -151,8 +152,6 @@ export const useSirkulasi = () => {
     isLoading.value = true;
     try {
       return await post("/naskah_sirkulasi/sent/bulk-action", payload);
-    } catch (err: any) {
-      throw err;
     } finally {
       isLoading.value = false;
     }
@@ -162,7 +161,7 @@ export const useSirkulasi = () => {
     items,
     pagination,
     summary,
-    isLoading, // mapping ke pending di view
+    isLoading,
     error,
     fetchSentBox,
     bulkActionSent,

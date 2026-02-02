@@ -15,11 +15,11 @@
 
       <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl relative z-[60]">
 
-        <Teleport to="body">
+        <!-- <Teleport to="body"> -->
           <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false"
             class="fixed inset-0 z-[1] bg-black/50 backdrop-blur-sm transition-all duration-300">
           </div>
-        </Teleport>
+        <!-- </Teleport> -->
 
 
         <UInput v-model="search" :placeholder="searchConfig.placeholder" variant="none" size="xl"

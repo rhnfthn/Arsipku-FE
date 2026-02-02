@@ -55,6 +55,6 @@ export const useKonsep = () => {
     forwardKonsep,
     rejectKonsep,
     createKonsep,
-    getSendersById
+    getSendersById,
   };
 };
