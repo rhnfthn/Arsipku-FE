@@ -367,12 +367,49 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET LIST NOMOR (ADMIN)
+   * ✅ UPDATED: Support backend pagination, search & sorting
+   * endpoint: /nomor?search=&page=1&limit=10&sort_by=&sort_order=
    * =========================== */
-  const getListNomor = async () => {
+  const getListNomor = async (params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: string;
+  }) => {
     isLoadingList.value = true;
     try {
-      const res = await get("/nomor");
-      return res.data ?? [];
+      // Build query params sesuai dokumentasi API
+      const queryParams = new URLSearchParams();
+      if (params?.search) {
+        queryParams.append("search", params.search);
+      }
+      if (params?.page) {
+        queryParams.append("page", String(params.page));
+      }
+      if (params?.limit) {
+        queryParams.append("limit", String(params.limit));
+      }
+      if (params?.sort_by) {
+        queryParams.append("sort_by", params.sort_by);
+      }
+      if (params?.sort_order) {
+        queryParams.append("sort_order", params.sort_order);
+      }
+
+      const queryString = queryParams.toString();
+      const endpoint = `/nomor${queryString ? `?${queryString}` : ""}`;
+
+      console.log("📤 Fetching nomor data with params:", params);
+      console.log("📍 Full endpoint:", endpoint);
+
+      const res = await get(endpoint);
+      console.log("✅ Nomor data received:", res);
+
+      return {
+        data: res.data ?? [],
+        pagination: res.pagination ?? null,
+      };
     } catch (e: any) {
       console.error("❌ Error ambil list nomor:", e);
       toast.add({
@@ -380,7 +417,7 @@ export const usePenomoran = () => {
         description: e.message || "Gagal mengambil daftar nomor",
         color: "red",
       });
-      return [];
+      return { data: [], pagination: null };
     } finally {
       isLoadingList.value = false;
     }
@@ -411,22 +448,67 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET LIST USULAN (ADMIN - by position ID)
-   * endpoint: /admin/nomor-request-by-position/{{position_id}}
+   * ✅ FIXED: Support backend pagination, search, filter & sorting dengan parameter yang benar
+   * endpoint: /admin/nomor-request-by-position/{{position_id}}?search=&page=1&limit=15&status=&sort_by=&sort_order=
    * =========================== */
-  const getListUsulan = async (positionId: string | number) => {
+  const getListUsulan = async (
+    positionId: string | number,
+    params?: {
+      search?: string;
+      page?: number;
+      limit?: number;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
+    },
+  ) => {
     isLoadingList.value = true;
     try {
       if (!positionId) {
         console.error("❌ Position ID is required");
-        return [];
+        return { data: [], pagination: null };
       }
 
-      const endpoint = `/admin/nomor-request-by-position/${positionId}`;
-      console.log("📤 Fetching usulan for position (admin):", positionId);
+      // Build query params sesuai dokumentasi API
+      const queryParams = new URLSearchParams();
+      if (params?.search) {
+        queryParams.append("search", params.search);
+      }
+      if (params?.page) {
+        queryParams.append("page", String(params.page));
+      }
+      if (params?.limit) {
+        queryParams.append("limit", String(params.limit));
+      }
+      if (params?.status && params.status !== "Semua") {
+        queryParams.append("status", params.status);
+      }
+      // ✅ FIX: Gunakan sort_by dan sort_order, BUKAN sortBy
+      if (params?.sort_by) {
+        queryParams.append("sort_by", params.sort_by);
+      }
+      if (params?.sort_order) {
+        queryParams.append("sort_order", params.sort_order);
+      }
+
+      const queryString = queryParams.toString();
+      const endpoint = `/admin/nomor-request-by-position/${positionId}${queryString ? `?${queryString}` : ""}`;
+
+      console.log(
+        "📤 Fetching usulan for position (admin):",
+        positionId,
+        "with params:",
+        params,
+      );
+      console.log("📍 Full endpoint:", endpoint);
 
       const res = await get(endpoint);
       console.log("✅ Admin usulan data received:", res);
-      return res.data ?? [];
+
+      return {
+        data: res.data ?? [],
+        pagination: res.pagination ?? null,
+      };
     } catch (e: any) {
       console.error("❌ Error ambil list usulan (admin):", e);
       toast.add({
@@ -434,7 +516,7 @@ export const usePenomoran = () => {
         description: e.message || "Gagal mengambil daftar usulan",
         color: "red",
       });
-      return [];
+      return { data: [], pagination: null };
     } finally {
       isLoadingList.value = false;
     }
@@ -505,12 +587,53 @@ export const usePenomoran = () => {
 
   /** ===========================
    * GET LIST SUBMITTED (ADMIN)
+   * ✅ UPDATED: Support backend pagination, search, filter & sorting
+   * endpoint: /admin/nomor-request-submitted?search=&page=1&limit=10&status=&sort_by=&sort_order=
    * =========================== */
-  const getListSubmitted = async () => {
+  const getListSubmitted = async (params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    status?: string;
+    sort_by?: string;
+    sort_order?: string;
+  }) => {
     isLoadingSubmitted.value = true;
     try {
-      const res = await get("/admin/nomor-request-submitted");
-      return res.data ?? [];
+      // Build query params sesuai dokumentasi API
+      const queryParams = new URLSearchParams();
+      if (params?.search) {
+        queryParams.append("search", params.search);
+      }
+      if (params?.page) {
+        queryParams.append("page", String(params.page));
+      }
+      if (params?.limit) {
+        queryParams.append("limit", String(params.limit));
+      }
+      if (params?.status && params.status !== "Semua") {
+        queryParams.append("status", params.status);
+      }
+      if (params?.sort_by) {
+        queryParams.append("sort_by", params.sort_by);
+      }
+      if (params?.sort_order) {
+        queryParams.append("sort_order", params.sort_order);
+      }
+
+      const queryString = queryParams.toString();
+      const endpoint = `/admin/nomor-request-submitted${queryString ? `?${queryString}` : ""}`;
+
+      console.log("📤 Fetching submitted data with params:", params);
+      console.log("📍 Full endpoint:", endpoint);
+
+      const res = await get(endpoint);
+      console.log("✅ Submitted data received:", res);
+
+      return {
+        data: res.data ?? [],
+        pagination: res.pagination ?? null,
+      };
     } catch (e: any) {
       console.error("❌ Error ambil list submitted:", e);
       toast.add({
@@ -518,7 +641,7 @@ export const usePenomoran = () => {
         description: e.message || "Gagal mengambil data submitted",
         color: "red",
       });
-      return [];
+      return { data: [], pagination: null };
     } finally {
       isLoadingSubmitted.value = false;
     }

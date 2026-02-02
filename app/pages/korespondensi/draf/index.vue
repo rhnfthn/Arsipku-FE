@@ -129,12 +129,12 @@ const openLabelAssignModal = () => {
 
 const refreshData = async () => {
   await fetchDrafts({
-    page: pagination.value.page,
-    limit: pagination.value.limit,
-    jenis: activeTab.value,
-    search: searchQuery.value,
-    date_filter: activeDateLabel.value,
-    sort_by: activeSortLabel.value
+    // page: pagination.value.page,
+    // limit: pagination.value.limit,
+    // jenis: activeTab.value,
+    // search: searchQuery.value,
+    // date_filter: activeDateLabel.value,
+    // sort_by: activeSortLabel.value
   });
   selectedIds.value.clear();
 };

@@ -28,7 +28,7 @@
         <!-- Expand/Collapse button -->
         <button
           v-if="hasChildren"
-          @click="$emit('toggleNode', node.id)"
+          @click="$emit('toggleNode', node)"
           class="p-1 hover:bg-gray-200 rounded transition-colors z-10 flex-shrink-0"
         >
           <ChevronDown v-if="expandedNodes[node.id]" class="w-4 h-4" />
@@ -172,6 +172,7 @@ defineEmits([
 ]);
 
 const hasChildren = computed(() => {
+  if (props.node.type === "position") return true;
   return !!props.node.children?.length;
 });
 

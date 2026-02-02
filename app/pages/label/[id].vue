@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 interface UIMailItem {
   id: string;
   from: string;
+  fullRecipients: string;
   position: string;
   subject: string;
   number: string;
@@ -37,7 +38,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const { user } = useAuth();
-const { fetchNaskahByLabel, naskahByLabel } = useLabel();
+const { fetchNaskahByLabel, naskahByLabel, removeNaskahFromLabel } = useLabel();
 
 // --- STATE UTAMA ---
 const labelId = computed(() => route.params.id as string);
@@ -119,16 +120,40 @@ const loadData = async () => {
 };
 
 // --- MAPPING FUNCTION ---
+// --- MAPPING FUNCTION ---
 const mapJsonToUI = (item: any): UIMailItem => {
   const senderName = item.pengirim?.nama || "Tanpa Nama";
   const senderPos = item.pengirim?.position_text || item.pengirim?.organization_text || "";
+
+  // Logic untuk Recipient Display (Singkat) dan Full Recipients (Detail)
   let recipientDisplay = "-";
-  if (item.penerima && Array.isArray(item.penerima) && item.penerima.length > 0) {
-    const first = item.penerima[0];
-    const name = first.position_text || first.nama;
-    recipientDisplay = item.penerima.length > 1 ? `${name} & ${item.penerima.length - 1} lainnya` : name;
+  let fullRecipientList = "Tanpa Penerima";
+
+  const listPenerima = item.penerima || item.kepada || [];
+
+  if (Array.isArray(listPenerima) && listPenerima.length > 0) {
+    const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((item.jenis || '').toUpperCase());
+
+    // 1. Ambil Nama/Jabatan Penerima Pertama
+    const first = listPenerima[0];
+    const primaryName = isSDE ? first.nama : (first.position_text || first.nama);
+
+    // 2. Set Display Singkat (untuk baris tabel)
+    recipientDisplay = listPenerima.length > 1
+      ? `${primaryName} & ${listPenerima.length - 1} lainnya`
+      : primaryName;
+
+    // 3. Set Daftar Lengkap (untuk tooltip/detail)
+    fullRecipientList = listPenerima
+      .map((p: any, index: number) => {
+        const pName = isSDE ? p.nama : (p.position_text || p.nama);
+        return `${index + 1}. ${pName}`;
+      })
+      .join("\n");
   }
+
   const isRead = item.summary_baca?.belum_terbaca === 0;
+
   return {
     id: item.id_naskah,
     from: senderName,
@@ -146,12 +171,33 @@ const mapJsonToUI = (item: any): UIMailItem => {
     isRead: isRead,
     labels: item.labels || [],
     recipient: recipientDisplay,
+    fullRecipients: fullRecipientList, // <-- Tambahkan ini
     sourceType: item.source || 'inbox',
     originalData: item
   };
 };
 
 // --- HELPER FUNCTIONS ---
+const getSourceIcon = (sourceType) => {
+  const type = sourceType?.toLowerCase()
+  switch (type) {
+    case 'inbox':
+    case 'masuk':
+      return 'i-heroicons-inbox-arrow-down'
+    case 'sent':
+    case 'terkirim':
+      return 'i-heroicons-paper-airplane'
+    case 'draft':
+    case 'konsep':
+      return 'i-heroicons-document-text'
+    case 'archive':
+    case 'arsip':
+      return 'i-heroicons-archive-box'
+    default:
+      return 'i-heroicons-envelope'
+  }
+}
+
 const formatDate = (dateString: string) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -198,13 +244,13 @@ const getSourceStyle = (source: string) => {
   return 'bg-gray-100 text-gray-600 border-gray-200';
 };
 
-const getSourceIcon = (source: string) => {
-  const s = (source || '').toLowerCase();
-  if (s === 'inbox') return Inbox;
-  if (s === 'draft') return FilePen;
-  if (s === 'sent') return Send;
-  return FileText;
-};
+// const getSourceIcon = (source: string) => {
+//   const s = (source || '').toLowerCase();
+//   if (s === 'inbox') return Inbox;
+//   if (s === 'draft') return FilePen;
+//   if (s === 'sent') return Send;
+//   return FileText;
+// };
 
 // --- FILTER & UI LOGIC ---
 const selectSourceFilter = (opt: any) => {
@@ -320,7 +366,37 @@ const selectDateFilter = (opt: string) => { isCustomDate.value = false; activeDa
 const applyCustomDate = () => { if (startDate.value && endDate.value) { isCustomDate.value = true; activeDateLabel.value = "Custom"; showDateMenu.value = false; } };
 
 const navigateToDetail = (mail: UIMailItem) => {
-  router.push({ path: `/korespondensi/kotak-masuk/${mail.id}`, query: { jenis: mail.category } });
+  const source = (mail.sourceType || '').toLowerCase();
+
+  if (source === 'draft' || source === 'konsep') {
+    // Jika draft, gunakan fungsi handleEdit yang sudah Anda buat
+    handleEdit(mail);
+  } else if (source === 'sent' || source === 'terkirim') {
+    // Jika sent, arahkan ke folder terkirim
+    router.push({ path: `/korespondensi/terkirim/${mail.id}`, query: { jenis: mail.category } });
+  } else {
+    // Default (inbox/masuk), arahkan ke kotak-masuk
+    router.push({ path: `/korespondensi/kotak-masuk/${mail.id}`, query: { jenis: mail.category } });
+  }
+};
+
+const handleEdit = (mail: UIMailItem) => {
+  const jenis = (mail.category || '').trim().toUpperCase();
+  const routes: Record<string, string> = {
+    'ND': '/korespondensi/tulis/nota-dinas',
+    'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
+    'DI': '/korespondensi/tulis/disposisi',
+    'DISPOSISI': '/korespondensi/tulis/disposisi',
+    'SDI': '/korespondensi/tulis/surat-dinas-internal',
+    'INTERNAL': '/korespondensi/tulis/surat-dinas-internal',
+    'SDE': '/korespondensi/tulis/surat-dinas-eksternal',
+    'EXTERNAL': '/korespondensi/tulis/surat-dinas-eksternal',
+    'KA': '/korespondensi/tulis/kajian',
+    'KAJIAN': '/korespondensi/tulis/kajian'
+  };
+
+  const path = routes[jenis] || '/korespondensi/tulis/nota-dinas';
+  router.push({ path, query: { draft_id: mail.id, mode: 'edit' } });
 };
 
 const confirmBulkDelete = () => { if (selectedIds.value.size === 0) return; showDeleteModal.value = true; }
@@ -328,16 +404,40 @@ const confirmBulkDelete = () => { if (selectedIds.value.size === 0) return; show
 const handleBulkDeleteExecute = async () => {
   isDeleting.value = true;
   try {
-    await new Promise(r => setTimeout(r, 1000));
-    toast.add({ title: 'Berhasil', description: 'Item berhasil dihapus dari label', color: 'success' });
+    // Ambil ID label dari route params
+    const currentLabelId = labelId.value;
+
+    // Jalankan penghapusan untuk semua naskah yang dipilih secara paralel
+    const deletePromises = Array.from(selectedIds.value).map(id =>
+      removeNaskahFromLabel(id, currentLabelId)
+    );
+
+    await Promise.all(deletePromises);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `${selectedIds.value.size} item berhasil dihapus dari label`,
+      color: 'success'
+    });
+
+    // Reset state
     selectedIds.value.clear();
     showDeleteModal.value = false;
-  } catch (e) {
-    toast.add({ title: 'Gagal', description: 'Gagal menghapus', color: 'error' });
+
+    // Refresh data agar list terupdate
+    await loadData();
+
+  } catch (e: any) {
+    console.error("Gagal menghapus naskah dari label:", e);
+    toast.add({
+      title: 'Gagal',
+      description: 'Terjadi kesalahan saat menghapus item',
+      color: 'error'
+    });
   } finally {
     isDeleting.value = false;
   }
-}
+};
 
 const openReaderModal = (mail: UIMailItem) => {
   const item = mail.originalData;
@@ -535,9 +635,33 @@ watch([() => user.value, labelId], ([newUser, newLabelId]) => {
         </div>
 
         <div class="flex-1 w-full relative">
-          <div v-if="isLoading" class="w-full flex flex-col items-center justify-center h-48">
-            <Loader2 class="w-10 h-10 animate-spin text-primary-500" />
-            <span class="text-sm text-gray-400 mt-2">Memuat data...</span>
+          <div v-if="isLoading" class="flex flex-col w-full">
+            <div v-for="i in 5" :key="i" class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 w-full">
+              <div class="flex flex-col md:flex-row items-start gap-3 md:gap-4 w-full">
+                <div class="shrink-0 flex items-center gap-3 pt-1 md:pt-0">
+                  <USkeleton class="h-4 w-4" />
+                  <USkeleton class="h-5 w-5 rounded-full" />
+                </div>
+
+                <div class="w-full md:w-[28%] shrink-0 space-y-2">
+                  <USkeleton class="h-4 w-3/4" />
+                  <USkeleton class="h-3 w-1/2" />
+                </div>
+
+                <div class="flex-1 space-y-2 w-full">
+                  <USkeleton class="h-4 w-full" />
+                  <div class="flex gap-2">
+                    <USkeleton class="h-3 w-32" />
+                    <USkeleton class="h-3 w-8" />
+                  </div>
+                </div>
+
+                <div class="w-full md:w-auto shrink-0 flex md:flex-col items-center md:items-end justify-between gap-2">
+                  <USkeleton class="h-6 w-16 rounded-full" />
+                  <USkeleton class="h-3 w-20" />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-else-if="paginatedEmails.length === 0"
@@ -547,62 +671,102 @@ watch([() => user.value, labelId], ([newUser, newLabelId]) => {
           </div>
 
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="navigateToDetail(mail)"
-            class="group flex gap-3 items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:shadow-sm cursor-pointer transition-colors relative w-full hover:bg-gray-50 dark:hover:bg-gray-800/50"
-            :class="!mail.isRead ? 'bg-blue-50/30' : ''">
+            class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 relative w-full"
+            :class="!mail.isRead ? 'bg-blue-50/10' : ''">
 
-            <div class="flex items-center shrink-0" @click.stop>
-              <div
-                class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
-                :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white dark:bg-gray-800'"
-                @click="toggleSelection(mail.id)">
-                <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
+            <div class="flex flex-col md:flex-row items-start gap-3 md:gap-4 px-6 py-4">
+              <div class="shrink-0 flex items-center gap-3 pt-1 md:pt-0">
+                <div @click.stop class="flex items-center">
+                  <div
+                    class="w-4 h-4 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
+                    :class="selectedIds.has(mail.id) ? 'bg-primary-500 border-primary-500' : 'bg-white dark:bg-gray-800'"
+                    @click="toggleSelection(mail.id)">
+                    <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" stroke-width="4" />
+                  </div>
+                </div>
+
+                <UTooltip :text="mail.sourceType.toUpperCase()" :popper="{ placement: 'right' }">
+                  <UIcon :name="getSourceIcon(mail.sourceType)"
+                    class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary-500 transition-colors" />
+                </UTooltip>
               </div>
-            </div>
 
-            <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4 overflow-hidden">
-              <div class="flex items-center sm:basis-[30%] sm:min-w-[180px] shrink-0">
-                <div class="text-[13px] uppercase truncate"
-                  :class="!mail.isRead ? 'font-bold text-gray-900' : 'font-medium text-neutral-500'">
-                  {{ mail.from }}
+              <div class="w-full md:w-[28%] shrink-0 min-w-0">
+                <div class="flex items-center gap-2">
+                  <UTooltip :popper="{ placement: 'top' }" class="max-w-full">
+                    <h4
+                      class="font-bold text-gray-700 dark:text-gray-200 uppercase truncate text-sm md:text-[13px] tracking-wide group-hover:text-primary-600 transition-colors">
+                      {{ mail.from }}
+                    </h4>
+                    <template #text>
+                      <span class="font-medium">{{ mail.position }}</span>
+                    </template>
+                  </UTooltip>
+                </div>
+
+                <div class="text-[11px] text-gray-400 truncate mt-0.5 flex items-center gap-1">
+                  <span class="text-xs opacity-70">Kepada:</span>
+                  <UTooltip :text="mail.fullRecipients" :popper="{ placement: 'top' }" class="max-w-xs">
+                    <span
+                      class="truncate font-medium text-gray-500 hover:text-primary-600 transition-colors cursor-help">
+                      {{ mail.recipient }}
+                    </span>
+                  </UTooltip>
+                </div>
+
+              </div>
+
+              <div class="flex-1 min-w-0 w-full">
+                <p class="text-sm leading-snug line-clamp-2 md:line-clamp-1 transition-colors font-medium"
+                  :class="!mail.isRead ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-600 dark:text-gray-400'">
+                  {{ mail.subject }}
+                </p>
+                <div class="flex items-center gap-2 mt-1.5">
+                  <span
+                    class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 uppercase">
+                    {{ mail.number }}
+                  </span>
+
+                  <UIcon v-if="mail.originalData.hasAttachment" name="i-heroicons-paper-clip"
+                    class="w-3.5 h-3.5 text-gray-400" />
+
+                  <template v-if="['inbox', 'masuk'].includes(mail.sourceType.toLowerCase())">
+                    <div v-if="['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(mail.category.toUpperCase())"
+                      class="flex items-center gap-1 ml-2 opacity-30 cursor-not-allowed"
+                      title="Status pembaca tidak tersedia untuk surat eksternal">
+                      <Eye class="w-3.5 h-3.5 text-gray-400" />
+                      <span class="text-[11px] font-medium text-gray-400">-</span>
+                    </div>
+
+                    <div v-else
+                      class="flex items-center gap-1 ml-2 opacity-60 hover:opacity-100 transition-opacity cursor-help"
+                      @click.stop="openReaderModal(mail)">
+                      <Eye class="w-3.5 h-3.5" :class="mail.viewCount > 0 ? 'text-primary-500' : 'text-gray-400'" />
+                      <span class="text-[11px] font-medium"
+                        :class="mail.viewCount > 0 ? 'text-primary-500' : 'text-gray-400'">
+                        {{ mail.viewCount }}
+                      </span>
+                    </div>
+                  </template>
                 </div>
               </div>
 
-              <div class="text-[13px] truncate flex-1 flex items-center gap-2">
+              <div
+                class="w-full md:w-auto shrink-0 flex flex-row md:items-center justify-between md:justify-end gap-4 mt-2 md:mt-0">
                 <span
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase shrink-0"
-                  :class="getSourceStyle(mail.sourceType)">
-                  <component :is="getSourceIcon(mail.sourceType)" class="w-3 h-3" />
-                  {{ mail.sourceType }}
-                </span>
-                <span
-                  :class="!mail.isRead ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'"
-                  class="truncate">
-                  {{ mail.subject }}
-                </span>
-              </div>
-
-              <div class="hidden xl:flex shrink-0 w-[50px] justify-start items-center">
-                <span class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
+                  class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-transparent min-w-[60px] text-center"
                   :class="mail.color">
                   {{ getCategoryLabelShort(mail.category) }}
                 </span>
+
+                <span class="text-xs whitespace-nowrap font-medium min-w-[90px] text-right"
+                  :class="!mail.isRead ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-gray-500'">
+                  {{ mail.date.split(',')[0] }}
+                </span>
               </div>
             </div>
-
-            <div class="pl-2 shrink-0 text-right w-24">
-              <span class="text-[12px] whitespace-nowrap" :class="!mail.isRead ? 'font-bold' : 'text-neutral-500'">
-                {{ mail.date.split(',')[0] }}
-              </span>
-            </div>
-
-            <div
-              class="min-w-10 pl-2 ml-2 shrink-0 text-right w-8 flex items-center gap-1 rounded p-1 text-neutral-500 hover:bg-gray-100"
-              @click.stop="openReaderModal(mail)">
-              <Eye class="w-3.5 h-3.5" :class="mail.viewCount > 0 ? 'text-primary' : 'text-gray-300'" />
-              <span class="text-[12px] font-medium" :class="mail.viewCount > 0 ? 'text-primary' : 'text-gray-300'">{{
-                mail.viewCount }}</span>
-            </div>
           </div>
+
         </div>
       </div>
     </div>

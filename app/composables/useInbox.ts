@@ -61,7 +61,7 @@ export function useInbox() {
       const query = new URLSearchParams();
       if (params.page) query.append("page", params.page.toString());
       if (params.limit) query.append("limit", params.limit.toString());
-      if (params.jenis && params.jenis !== "ALL" && params.jenis !== "Semua") {
+      if (params.jenis && !["ALL", "Semua"].includes(params.jenis)) {
         query.append("jenis", params.jenis);
       }
       if (params.status_baca) {
@@ -73,12 +73,8 @@ export function useInbox() {
 
       const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`);
 
-      // --- PERBAIKAN DI SINI ---
-      // Normalisasi response: Cek apakah data ada di res.data (style axios) atau res langsung (style fetch/custom)
-      // Kita cari object yang punya properti "pagination" atau "summary" atau "data" array
+      // Normalisasi response
       const responseBody = res?.data?.pagination ? res.data : res;
-
-      // Ambil array items. Berdasarkan JSON anda, array ada di property "data"
       const rawItems = Array.isArray(responseBody?.data)
         ? responseBody.data
         : [];
@@ -86,6 +82,23 @@ export function useInbox() {
       items.value = rawItems.map((it: any) => {
         const pengirimName = it.pengirim?.nama || "-";
         const pengirimPos = it.pengirim?.position_text || "-";
+
+        // --- LOGIKA FULL RECIPIENTS ---
+        // Inbox biasanya menggunakan field 'kepada' untuk daftar penerima
+        const listKepada = it.kepada || [];
+        const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(
+          (it.jenis || "").toUpperCase(),
+        );
+
+        const fullRecipientList =
+          listKepada.length > 0
+            ? listKepada
+                .map((p: any, idx: number) => {
+                  const pName = isSDE ? p.nama : p.position_text || p.nama;
+                  return `${idx + 1}. ${pName}`;
+                })
+                .join("\n")
+            : "Tanpa Penerima";
 
         return {
           // Mapping ID
@@ -99,8 +112,11 @@ export function useInbox() {
 
           // Konten Utama
           nomor: it.nomor,
-          date: formatDateTime(it.created_at), // Gunakan created_at agar sesuai urutan
+          date: formatDateTime(it.created_at),
           subject: (it.perihal || "").toString().trim(),
+
+          // Penerima (Baru ditambahkan)
+          fullRecipients: fullRecipientList,
 
           // Pengirim
           from: pengirimPos,
@@ -125,29 +141,24 @@ export function useInbox() {
           isTinjut: it.is_tindak_lanjut,
           isLocked: it.is_locked,
 
-          // Labels (Array string ["Penting", "Keuangan"])
+          // Labels
           labels: it.labels || [],
 
-          // Original Objects (untuk detail/popup)
+          // Original Objects
           pengirim: it.pengirim,
-          kepada: it.kepada || [],
+          kepada: listKepada,
           penerimaAktif: it.penerima || null,
 
           raw: it,
         };
       });
 
-      // Update Pagination & Summary dari responseBody
-      if (responseBody?.pagination) {
-        pagination.value = responseBody.pagination;
-      }
-
-      if (responseBody?.summary) {
-        summary.value = responseBody.summary;
-      }
-    } catch (err) {
+      // Update Pagination & Summary
+      if (responseBody?.pagination) pagination.value = responseBody.pagination;
+      if (responseBody?.summary) summary.value = responseBody.summary;
+    } catch (err: any) {
       console.error("useInbox error:", err);
-      error.value = err;
+      error.value = err.message || "Terjadi kesalahan";
       items.value = [];
     } finally {
       pending.value = false;

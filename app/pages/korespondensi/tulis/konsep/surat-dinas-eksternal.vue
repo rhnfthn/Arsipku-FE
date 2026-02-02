@@ -275,7 +275,7 @@
                       </div>
                     </div>
 
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
                       <div class="font-bold uppercase">
                         {{ user?.alamatInfo?.kantor }}
                       </div>

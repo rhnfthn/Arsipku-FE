@@ -80,7 +80,7 @@
                       <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
                     </div>
                   </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-right">
+                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
                     <div class="font-bold uppercase">
                       {{ user?.alamatInfo?.kantor }}
                     </div>

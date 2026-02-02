@@ -654,14 +654,19 @@ onMounted(async () => {
                 </div>
 
                 <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
-                  <div class="flex items-center md:w-44 lg:w-52 shrink-0 mb-1 md:mb-0">
+                  <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
                       title="Belum Dibaca">
                     </div>
                     <div class="flex flex-col min-w-0">
-                      <div class="text-[11px] text-neutral-500 uppercase truncate font-bold">
-                        {{ mail.from }}
-                      </div>
+                      <UTooltip :text="mail.fullRecipients"
+                        :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-pre-line text-left' }"
+                        class="min-w-0 truncate">
+                        <span
+                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 shrink-0 font-semibold cursor-help">
+                          {{ mail.from }}
+                        </span>
+                      </UTooltip>
                       <div class="text-[11px] text-neutral-400">
                         {{ mail.nomor }}
                       </div>

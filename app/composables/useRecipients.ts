@@ -35,12 +35,17 @@ export const useRecipients = () => {
   /**
    * GET /ND/get-recipient/{positionId}
    */
-  const getRecipients = async (): Promise<{
+  const getRecipients = async (
+    positionId?: string | number,
+  ): Promise<{
     sender: RecipientApiData["sender"] | null;
     recipients: RecipientItem[];
   }> => {
-    // tipe otomatis jadi RecipientApiResponse
-    const res = await apiGet<RecipientApiResponse>(`/ND/get-recipient/`);
+    const url = positionId
+      ? `/ND/get-recipient/${positionId}`
+      : `/ND/get-recipient/`;
+
+    const res = await apiGet<RecipientApiResponse>(url);
 
     return {
       sender: res?.data?.sender ?? null,

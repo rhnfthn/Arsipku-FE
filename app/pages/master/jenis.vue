@@ -225,10 +225,10 @@
               <div
                 class="flex justify-between items-start mb-4 border-b border-gray-300"
               >
-                <div class="mt-5 ml-5">
-                  <h2 class="font-semibold text-sm text-gray-900">
-                    Detail Jenis
-                  </h2>
+                <div class="p-4">
+                  <Heading variant="heading9sb">
+                    Detail Jenis <span class="text-red-500">*</span>
+                  </Heading>
                 </div>
 
                 <button
@@ -318,7 +318,7 @@
                       <p class="text-sm text-gray-600">File Template</p>
 
                       <div
-                        class="mt-3 flex items-center justify-between gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
+                        class="mt-3 flex items-center justify-between gap-3 border border-gray-200 rounded-xl px-4 py-2 bg-gray-50"
                       >
                         <div class="flex items-center gap-3 min-w-0">
                           <FileText
@@ -332,9 +332,9 @@
                         <button
                           v-if="detailJenis.file_url"
                           @click="downloadFile(detailJenis.file_url)"
-                          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white h-9 px-5 rounded-xl text-sm font-medium transition-colors"
+                          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                         >
-                          <Download class="w-4 h-4" />
+                          <Download class="w-3 h-3" />
                           Unduh
                         </button>
 
@@ -364,7 +364,7 @@
               <div class="border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2">
                 <button
                   @click="showDetailModal = false"
-                  class="w-full h-12 rounded-xl bg-primary-400 hover:bg-primary-500 text-white font-medium transition-colors"
+                  class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
                 >
                   Tutup
                 </button>
@@ -464,9 +464,7 @@
                 >
                   <span class="text-gray-600 truncate">
                     {{
-                      editForm.file
-                        ? editForm.file.name
-                        : "Wajib upload file baru"
+                      addForm.file ? addForm.file.name : "Pilih file template"
                     }}
                   </span>
 
@@ -474,12 +472,12 @@
                     type="file"
                     class="hidden"
                     accept=".doc,.docx,.pdf"
-                    @change="onPickFileEdit"
+                    @change="onPickFileAdd"
                   />
                 </label>
 
-                <p v-if="editErrors.file" class="text-xs text-red-500">
-                  {{ editErrors.file }}
+                <p v-if="addErrors.file" class="text-xs text-red-500">
+                  {{ addErrors.file }}
                 </p>
 
                 <p class="text-xs text-gray-500">Format: .doc, .docx, .pdf</p>
@@ -1030,6 +1028,12 @@ const submitAddJenis = async () => {
   } finally {
     savingAdd.value = false;
   }
+};
+
+const onPickFileAdd = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0] ?? null;
+  addForm.value.file = file;
 };
 
 const addErrors = ref<Record<string, string>>({});

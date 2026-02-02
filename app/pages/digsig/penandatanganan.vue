@@ -13,7 +13,9 @@
     </div>
 
     <!-- TABLE CONTAINER -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div
+      class="bg-white dark:bg-gray-800 dark:border-gray-600 rounded-xl shadow-sm border border-gray-200"
+    >
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-gray-200"
@@ -75,9 +77,23 @@
       <!-- TABLE -->
       <div class="overflow-x-auto">
         <table class="w-full text-left">
-          <thead class="bg-primary text-white">
+          <thead class="bg-primary text-white text-sm">
             <tr>
-              <th class="px-4 py-3 font-semibold text-sm">Tanggal Dibuat</th>
+              <th @click="handleSort('tanggalDibuat')" class="cursor-pointer">
+                <div class="flex items-center gap-2 ml-5">
+                  <span>Tanggal Dibuat</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'tanggalDibuat'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
+                </div>
+              </th>
               <th class="px-4 py-3 font-semibold text-sm">No Dokumen</th>
               <th class="px-4 py-3 font-semibold text-sm">Perihal</th>
               <th class="px-4 py-3 font-semibold text-sm text-center">
@@ -86,7 +102,21 @@
               <th class="px-4 py-3 font-semibold text-sm text-center">
                 Dokumen
               </th>
-              <th class="px-4 py-3 font-semibold text-sm">Status</th>
+              <th @click="handleSort('status')" class="cursor-pointer">
+                <div class="flex items-center gap-2 ml-5">
+                  <span>Status</span>
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortKey === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
+                  />
+                </div>
+              </th>
               <th class="px-4 py-3 font-semibold text-sm text-center">Aksi</th>
             </tr>
           </thead>
@@ -121,7 +151,7 @@
               v-else
               v-for="row in paginatedRows"
               :key="row.id"
-              class="border-b border-gray-100 hover:bg-gray-50 transition"
+              class="border-b border-gray-100 hover:bg-primary-50 transition"
             >
               <td class="px-4 py-3 text-sm text-gray-700">
                 {{ formatDate(row.tanggalDibuat) }}
@@ -695,6 +725,7 @@ import {
   FileX,
   FileCheck,
   AlertTriangle,
+  ArrowUpDown,
 } from "lucide-vue-next";
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import Modal from "~/components/Modal.vue";
@@ -733,6 +764,18 @@ const openFilterStatus = ref(false);
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
+
+// sort
+const sortKey = ref("");
+const sortOrder = ref("asc");
+function handleSort(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
 
 const filterOptions = [
   { label: "Semua", value: "" },
