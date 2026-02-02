@@ -617,10 +617,7 @@ const company = ref<any>(null);
 const fetchData = async (kode: string | number) => {
   try {
     const companyRes = await getCompanyByCode(String(kode));
-    if (!companyRes) {
-      console.error("Company tidak ditemukan");
-      return;
-    }
+    if (!companyRes) return;
 
     company.value = {
       kode: companyRes.company,
@@ -630,14 +627,34 @@ const fetchData = async (kode: string | number) => {
       tanggalBerakhir: companyRes.endDate,
     };
 
-    const rootOrgId = companyRes.company;
+    const res = await getCompanyTree(String(kode));
 
-    const res = await getOrganizationChildren(rootOrgId);
-
-    organizationTree.value = mapTree(res.data, 0);
+    // backend sudah kirim tree
+    organizationTree.value = mapCompanyTree(res.data.tree);
   } catch (err) {
     console.error("❌ fetchData error:", err);
   }
+};
+
+const mapCompanyTree = (nodes: any[], level = 0): any[] => {
+  return nodes.map((node) => ({
+    id: node.id, // UUID
+    organizationCode: node.organization,
+
+    type: level === 0 ? "direktorat" : "unit",
+    level,
+
+    shortText: node.shortText,
+    longText: node.longText,
+    name: node.longText || node.shortText,
+
+    startDate: node.startDate,
+    endDate: node.endDate,
+
+    children: node.children ? mapCompanyTree(node.children, level + 1) : [],
+
+    _positionsLoaded: false,
+  }));
 };
 
 const mapTree = (nodes: any[], level = 0): any[] => {
@@ -770,19 +787,6 @@ const toggleNode = async (node: any) => {
 
   if (node.type === "unit" && !node._positionsLoaded) {
     await loadPositions(node);
-  }
-
-  if (node.type !== "position" && !node._childrenLoaded) {
-    const res = await getOrganizationChildren(node.organizationCode);
-
-    const orgChildren = mapTree(res.data, node.level + 1);
-
-    node.children = [
-      ...(node.children || []).filter((c: any) => c.type === "position"),
-      ...orgChildren,
-    ];
-
-    node._childrenLoaded = true;
   }
 
   // member tetap terakhir
