@@ -29,6 +29,7 @@
         <div class="flex items-center gap-2 px-4 py-2">
           <select
             v-model="rowsPerPage"
+            @change="handleLimitChange"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
@@ -44,6 +45,7 @@
           />
           <input
             v-model="search"
+            @input="handleSearchInput"
             placeholder="Cari..."
             class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
@@ -61,7 +63,7 @@
 
       <!-- EMPTY -->
       <div
-        v-else-if="filteredRows.length === 0"
+        v-else-if="rows.length === 0"
         class="flex flex-col items-center justify-center py-20 text-gray-500"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
@@ -75,24 +77,22 @@
               <th
                 v-for="col in headers"
                 :key="col.key"
-                @click="col.sortable && sort(col.key)"
+                @click="col.sortable && handleSort(col.key)"
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary',
                   col.sortable
-                    ? 'cursor-pointer select-none'
+                    ? 'cursor-pointer select-none hover:bg-primary-600'
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-
-                  <!-- ICON SLOT (SELALU ADA, TAPI INVISIBLE JIKA TIDAK SORTABLE) -->
-                  <span class="w-3 h-3 inline-flex items-center justify-center">
-                    <ArrowUpDown
-                      v-if="col.sortable"
-                      class="w-3 h-3 opacity-70"
-                    />
-                  </span>
+                  <UIcon
+                    v-if="col.sortable"
+                    :name="getSortIcon(col.key)"
+                    class="w-4 h-4"
+                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
+                  />
                 </div>
               </th>
             </tr>
@@ -100,10 +100,10 @@
 
           <tbody>
             <tr
-              v-for="row in paginatedRows"
-              :key="row.id_request"
+              v-for="row in rows"
+              :key="row.id"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
-              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail ')"
+              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
               @mouseleave="onRowMouseLeave"
               @click="openRowModal(row)"
             >
@@ -116,27 +116,8 @@
                   </p>
                 </div>
               </td>
-
-              <!-- Tampilkan nomor dalam satu cell -->
-              <td class="px-5 py-4">
-                <div class="flex flex-col gap-0.5">
-                  <div class="text-sm text-gray-900">{{ row.tanggal }}</div>
-                  <div class="text-xs text-gray-600 space-y-0.5">
-                    <div
-                      v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
-                      :key="idx"
-                    >
-                      {{ nomor }}
-                    </div>
-                    <div
-                      v-if="row.nomor_list.length > 3"
-                      class="text-primary font-medium"
-                    >
-                      +{{ row.nomor_list.length - 3 }} nomor lainnya
-                    </div>
-                  </div>
-                </div>
-              </td>
+              <td class="px-5 py-4">{{ row.tanggal }}</td>
+              <td class="px-5 py-4">{{ row.nomor }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
                   <p class="whitespace-normal break-words line-clamp-3">
@@ -152,18 +133,17 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="filteredRows.length > 0"
+        v-if="rows.length > 0 && pagination"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
-          Menampilkan {{ paginatedRows.length }} dari
-          {{ filteredRows.length }} data
+          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
 
         <div class="flex items-center gap-2">
           <!-- Back Button -->
           <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
+            @click="handlePageChange(currentPage - 1)"
             :disabled="currentPage === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -192,7 +172,7 @@
           <div class="flex items-center gap-1">
             <button
               v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
+              @click="handlePageChange(1)"
               class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
             >
               1
@@ -208,7 +188,7 @@
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="currentPage = page"
+              @click="handlePageChange(page)"
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
@@ -230,7 +210,7 @@
 
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
+              @click="handlePageChange(totalPages)"
               class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
               {{ totalPages }}
@@ -239,7 +219,7 @@
 
           <!-- Next Button -->
           <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -266,6 +246,7 @@
         </div>
       </div>
     </div>
+
     <!-- FILE PREVIEW SLIDEOVER -->
     <USlideover
       v-model:open="isOpenPreviewFile"
@@ -577,6 +558,7 @@
     :is-loading="isHangusing"
     @confirm="executeHangusNomor"
   />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -593,8 +575,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { Search, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
@@ -611,11 +593,11 @@ const {
   createPenomoranFinal,
   getPersonWithPosition,
   getKlasifikasi,
+  getListNomor,
   getDetailNomor,
   uploadDetailFile,
   hangusDetailNomor,
 } = usePenomoran();
-const { get } = useApi();
 
 // State
 const klasifikasiMap = ref(new Map());
@@ -629,6 +611,7 @@ const isHangusing = ref(false);
 const selectedRow = ref(null);
 const detailData = ref(null);
 const rows = ref<any[]>([]);
+const pagination = ref(null);
 const selectedDetailId = ref<string | null>(null);
 
 // File states per detail ID
@@ -643,30 +626,30 @@ const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const search = ref<string>("");
 const currentPage = ref<number>(1);
-const sortBy = ref<string>("created_at");
-const sortDir = ref<"asc" | "desc">("desc");
+
+// Sorting State
+const sortBy = ref<string>("");
+const sortOrder = ref<"asc" | "desc">("desc");
+
+// Debounce timeout
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Penomoran", to: "/admin/penomoran" },
+  { label: "Penomoran", to: "/penomoran/nomor" },
 ];
 
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Penandatangan", key: "jabatan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
+  { label: "Tanggal", key: "tanggal", sortable: true },
+  { label: "Nomor", key: "nomor", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Waktu", key: "waktu", sortable: true },
 ];
 
 // ==================== STATUS LOGIC ====================
-/**
- * LOGIKA STATUS BARU:
- * - "booking" => nomor sudah digenerate, belum ada file
- * - "terpakai" => file sudah ada dari halaman verifikasi
- * - "terpakai_final" => file di-upload/ganti di halaman ini (penomoran)
- * - "hangus" => nomor sudah dihanguskan
- */
 const getStatusLabel = (item: any): string => {
   if (item.status === "hangus") return "Hangus";
   if (item.status === "terpakai_final") return "Final";
@@ -684,35 +667,25 @@ const getStatusClass = (item: any): string => {
 };
 
 // ==================== DATE FUNCTIONS ====================
-const WIB_OFFSET = 7 * 60 * 60 * 1000;
-
-function toWIB(dateStr: string) {
-  const utcDate = new Date(dateStr);
-  return new Date(utcDate.getTime() + WIB_OFFSET);
-}
-
 function formatTanggalWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const wib = toWIB(dateStr);
-  const day = String(wib.getDate()).padStart(2, "0");
-  const month = String(wib.getMonth() + 1).padStart(2, "0");
-  const year = wib.getFullYear();
+  const date = new Date(dateStr);
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
   return `${day}/${month}/${year}`;
 }
 
 function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const wib = toWIB(dateStr);
-  const day = String(wib.getDate()).padStart(2, "0");
-  const month = String(wib.getMonth() + 1).padStart(2, "0");
-  const year = String(wib.getFullYear()).slice(-2);
-  const hours = String(wib.getHours()).padStart(2, "0");
-  const minutes = String(wib.getMinutes()).padStart(2, "0");
-  return `${day}/${month}/${year} ${hours}:${minutes} WIB`;
-}
-
-function getWIBTimestamp(dateStr: string) {
-  return toWIB(dateStr).getTime();
+  const date = new Date(dateStr);
+  const wibTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const day = String(wibTime.getDate()).padStart(2, "0");
+  const month = String(wibTime.getMonth() + 1).padStart(2, "0");
+  const year = String(wibTime.getFullYear()).slice(-2);
+  const hours = String(wibTime.getHours()).padStart(2, "0");
+  const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
 // ==================== FETCH MASTER DATA ====================
@@ -724,6 +697,11 @@ const fetchKlasifikasiMap = async () => {
         klasifikasiMap.value.set(item.code, item.display);
       });
     }
+    console.log(
+      "✅ Klasifikasi map loaded:",
+      klasifikasiMap.value.size,
+      "items",
+    );
   } catch (error) {
     console.error("❌ Error fetch klasifikasi map:", error);
   }
@@ -739,6 +717,7 @@ const fetchPersonMap = async () => {
         position_text: item.position_text,
       });
     });
+    console.log("✅ Person map loaded:", personMap.value.size, "items");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
   }
@@ -749,9 +728,9 @@ const getFileUrl = (filePath: string) => {
 };
 
 // ===== PREVIEW STATE =====
-
 const isOpenPreviewFile = ref(false);
 const previewPdfUrl = ref<string | null>(null);
+
 const previewFile = async (item: any) => {
   const fileUrl =
     item.file_url || (item.file_text ? getFileUrl(item.file_text) : null);
@@ -767,8 +746,6 @@ const previewFile = async (item: any) => {
 
   try {
     openPreview.value = false;
-
-    // Reset preview state
     previewPdfUrl.value = null;
     isOpenPreviewFile.value = false;
 
@@ -777,12 +754,10 @@ const previewFile = async (item: any) => {
     });
 
     const blob = await res.blob();
-
     previewPdfUrl.value = URL.createObjectURL(
       new Blob([blob], { type: "application/pdf" }),
     );
 
-    // SLIDEOVER
     isOpenPreviewFile.value = true;
   } catch (err) {
     console.error("❌ Error preview file:", err);
@@ -841,14 +816,8 @@ const saveFile = async (detailId: string) => {
   state.isUploading = true;
 
   try {
-    console.log(`📤 Uploading file for detail ID: ${detailId}`);
-
-    // Hit endpoint - ini akan mengubah status menjadi 'terpakai_final'
     const result = await uploadDetailFile(detailId, state.file);
 
-    console.log("✅ Upload result:", result);
-
-    // Update local state - preserve semua data dari backend
     const target = detailData.value?.nomor_list?.find(
       (n: any) => n.id === detailId,
     );
@@ -857,10 +826,9 @@ const saveFile = async (detailId: string) => {
       target.file_name = result?.file_name || state.file.name;
       target.file_text = result?.file_text || null;
       target.file_url = result?.file_url || null;
-      target.status = result?.status || "terpakai_final"; // Status dari backend
+      target.status = result?.status || "terpakai_final";
     }
 
-    // Clear file state
     delete fileStates.value[detailId];
 
     toast.add({
@@ -869,8 +837,7 @@ const saveFile = async (detailId: string) => {
       color: "green",
     });
 
-    // Refresh list untuk sync dengan backend
-    await refreshList();
+    await fetchData();
   } catch (error) {
     console.error("❌ Error upload file:", error);
   } finally {
@@ -894,11 +861,8 @@ const executeHangusNomor = async () => {
   isHangusing.value = true;
 
   try {
-    console.log(`🗑️ Hangus nomor for detail ID: ${selectedDetailId.value}`);
-
     await hangusDetailNomor(selectedDetailId.value);
 
-    // Update local state
     const target = detailData.value?.nomor_list?.find(
       (n: any) => n.id === selectedDetailId.value,
     );
@@ -916,8 +880,7 @@ const executeHangusNomor = async () => {
       color: "green",
     });
 
-    // Refresh list
-    await refreshList();
+    await fetchData();
   } catch (error: any) {
     console.error("❌ Error hangus nomor:", error);
   } finally {
@@ -958,57 +921,55 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ==================== TABLE FUNCTIONS ====================
-const sort = (col: string) => {
-  if (sortBy.value === col) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = col;
-    sortDir.value = "asc";
-  }
-};
+// ✅ FETCH DATA dengan backend pagination, search & sorting
+const fetchData = async () => {
+  loading.value = true;
 
-// Grouping duplicate rows by id_request
-function groupDuplicateRows(dataArray) {
-  const grouped = new Map();
+  try {
+    // Build params object sesuai dokumentasi API
+    const params = {
+      search: search.value || undefined,
+      page: currentPage.value,
+      limit: rowsPerPage.value,
+      sort_by: sortBy.value || undefined,
+      sort_order: sortOrder.value || undefined,
+    };
 
-  dataArray.forEach((item) => {
-    const key = item.id_request;
+    console.log("📤 Fetching penomoran data with params:", params);
 
-    if (grouped.has(key)) {
-      const existing = grouped.get(key);
-      existing.nomor_list.push(item.nomor);
-    } else {
+    const response = await getListNomor(params);
+
+    console.log("📥 Backend response:", response);
+
+    const data = response.data || [];
+    pagination.value = response.pagination || null;
+
+    if (!Array.isArray(data)) {
+      rows.value = [];
+      return;
+    }
+
+    rows.value = data.map((item) => {
+      const pengusulInfo = personMap.value.get(item.persnum);
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
-      grouped.set(key, {
-        id_request: item.id_request,
+      return {
+        id: item.id,
         jenis: item.jenis,
         jabatan: item.jabatan || "-",
         perihal: item.perihal || "-",
-        pengusul: item.nama_pengirim || "-",
-        klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay: klasifikasiDisplay,
-        nomor_list: [item.nomor],
         tanggal: formatTanggalWIB(item.tanggal),
+        nomor: item.nomor,
+        pengusul: pengusulInfo?.nama || item.nama_pengirim || "-",
         waktu: formatWaktuWIB(item.waktu),
-        created_at: getWIBTimestamp(item.waktu),
-      });
-    }
-  });
+        klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay,
+      };
+    });
 
-  return Array.from(grouped.values());
-}
-
-// Get list nomor
-const getListNomor = async () => {
-  try {
-    const res = await get("/nomor");
-
-    if (!res?.success || !Array.isArray(res.data)) return [];
-
-    return groupDuplicateRows(res.data);
+    console.log("✅ Data loaded:", rows.value.length, "rows");
+    console.log("📊 Pagination:", pagination.value);
   } catch (error) {
     console.error("❌ Error fetch data nomor:", error);
     toast.add({
@@ -1016,19 +977,98 @@ const getListNomor = async () => {
       description: "Tidak dapat mengambil data penomoran",
       color: "red",
     });
-    return [];
+    rows.value = [];
+    pagination.value = null;
+  } finally {
+    loading.value = false;
   }
 };
+
+// Handle search input with debounce
+const handleSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchData();
+  }, 500);
+};
+
+// Handle sorting
+const handleSort = (column: string) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = column;
+    sortOrder.value = "desc";
+  }
+
+  currentPage.value = 1;
+  fetchData();
+};
+
+// Get sort icon for column
+const getSortIcon = (column: string) => {
+  if (sortBy.value !== column) {
+    return "i-lucide-arrow-up-down";
+  }
+  return sortOrder.value === "asc"
+    ? "i-lucide-arrow-up"
+    : "i-lucide-arrow-down";
+};
+
+// Handle page change
+const handlePageChange = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchData();
+};
+
+// Handle limit change
+const handleLimitChange = () => {
+  currentPage.value = 1;
+  fetchData();
+};
+
+// Computed total pages from backend pagination
+const totalPages = computed(() => {
+  return pagination.value?.totalPages || 1;
+});
+
+// Computed pagination pages for display
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 
 const openRowModal = async (row) => {
   selectedRow.value = row;
   openPreview.value = true;
   loadingDetail.value = true;
   detailData.value = null;
-  fileStates.value = {}; // Reset file states
+  fileStates.value = {};
 
   try {
-    const detail = await getDetailNomor(row.id_request);
+    const detail = await getDetailNomor(row.id);
 
     if (!detail) {
       throw new Error("Detail tidak ditemukan");
@@ -1040,12 +1080,12 @@ const openRowModal = async (row) => {
       row.klasifikasi;
 
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
-      id: item.id || `${row.id_request}-${idx}`,
+      id: item.id || `${row.id}-${idx}`,
       nomor: item.nomor,
-      status: item.status || "booking", // booking, terpakai, terpakai_final, hangus
-      file_name: item.file_name || null, // PRESERVE file_name
-      file_text: item.file_text || null, // PRESERVE file_text
-      file_url: item.file_url || null, // PRESERVE file_url
+      status: item.status || "booking",
+      file_name: item.file_name || null,
+      file_text: item.file_text || null,
+      file_url: item.file_url || null,
     }));
 
     detailData.value = {
@@ -1055,23 +1095,23 @@ const openRowModal = async (row) => {
     };
 
     console.log("✅ Detail loaded:", detailData.value);
-    console.log("✅ Nomor list with status:", nomorList);
   } catch (err) {
     console.error("❌ Error loading detail:", err);
 
-    // Fallback ke data row jika gagal
     detailData.value = {
       ...row,
       klasifikasiDisplay:
         klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi,
-      nomor_list: row.nomor_list.map((nomor, idx) => ({
-        id: `${row.id_request}-${idx}`,
-        nomor: typeof nomor === "string" ? nomor : nomor.nomor,
-        status: "booking",
-        file_name: null,
-        file_text: null,
-        file_url: null,
-      })),
+      nomor_list: [
+        {
+          id: row.id,
+          nomor: row.nomor,
+          status: "booking",
+          file_name: null,
+          file_text: null,
+          file_url: null,
+        },
+      ],
     };
   } finally {
     loadingDetail.value = false;
@@ -1081,8 +1121,8 @@ const openRowModal = async (row) => {
 // ==================== HANDLE SUBMIT ====================
 const handleSubmitFromModal = async (payload) => {
   try {
-    const response = await createPenomoranFinal(payload);
-    await refreshList();
+    await createPenomoranFinal(payload);
+    await fetchData();
     currentPage.value = 1;
     toast.add({
       title: "Berhasil",
@@ -1099,87 +1139,24 @@ const handleSubmitFromModal = async (payload) => {
   }
 };
 
-// Refresh list
-const refreshList = async () => {
-  loading.value = true;
-  const data = await getListNomor();
-  rows.value = data.sort((a, b) => b.created_at - a.created_at);
-  loading.value = false;
-};
-
-// ==================== COMPUTED PROPERTIES ====================
-const filteredRows = computed(() => {
-  return rows.value.filter((row) => {
-    const matchesSearch =
-      row.jenis?.toLowerCase().includes(search.value.toLowerCase()) ||
-      row.jabatan?.toLowerCase().includes(search.value.toLowerCase()) ||
-      row.perihal?.toLowerCase().includes(search.value.toLowerCase()) ||
-      row.pengusul?.toLowerCase().includes(search.value.toLowerCase());
-
-    return matchesSearch;
-  });
-});
-
-const sortedRows = computed(() => {
-  return [...filteredRows.value].sort((a, b) => {
-    if (sortBy.value === "waktu" || sortBy.value === "tanggal") {
-      const A = a.created_at ?? 0;
-      const B = b.created_at ?? 0;
-      return sortDir.value === "asc" ? A - B : B - A;
-    }
-
-    const A = String(a[sortBy.value] ?? "").toLowerCase();
-    const B = String(b[sortBy.value] ?? "").toLowerCase();
-
-    if (A < B) return sortDir.value === "asc" ? -1 : 1;
-    if (A > B) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-});
-
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return sortedRows.value.slice(start, start + rowsPerPage.value);
-});
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
-);
-
-const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
-  }
-
-  return pages;
-});
-
-// ======= WATCHERS ==========
-watch([search, rowsPerPage], () => {
-  currentPage.value = 1;
-});
-
 // ======== MOUNTED ============
 onMounted(async () => {
   loading.value = true;
   await fetchKlasifikasiMap();
   await fetchPersonMap();
-  const data = await getListNomor();
-  rows.value = data;
-  loading.value = false;
+  await fetchData();
 });
+
+onBeforeUnmount(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  if (previewPdfUrl.value) {
+    URL.revokeObjectURL(previewPdfUrl.value);
+  }
+});
+
 // ========= TOOLTIP ===========
 const tooltip = ref({
   show: false,
@@ -1187,6 +1164,7 @@ const tooltip = ref({
   x: 0,
   y: 0,
 });
+
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   const offset = 12;
   const maxX = window.innerWidth - 200;
@@ -1203,6 +1181,7 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
+
 watch(isOpenPreviewFile, (open) => {
   if (!open && previewPdfUrl.value) {
     URL.revokeObjectURL(previewPdfUrl.value);

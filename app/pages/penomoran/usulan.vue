@@ -29,6 +29,7 @@
         <div class="flex items-center gap-2 px-4 py-2">
           <select
             v-model="rowsPerPage"
+            @change="handleLimitChange"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
@@ -90,6 +91,7 @@
           />
           <input
             v-model="search"
+            @input="handleSearchInput"
             placeholder="Cari..."
             class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
@@ -107,7 +109,7 @@
 
       <!-- EMPTY -->
       <div
-        v-else-if="filteredRows.length === 0"
+        v-else-if="rows.length === 0"
         class="flex flex-col items-center justify-center py-20 text-gray-500"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
@@ -121,29 +123,35 @@
               <th
                 v-for="col in headers"
                 :key="col.key"
-                @click="col.sortable && sort(col.key)"
+                @click="col.sortable && handleSort(col.key)"
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none'
+                    ? 'cursor-pointer select-none '
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <ArrowUpDown
+                  <UIcon
                     v-if="col.sortable"
-                    class="inline w-3 h-3 opacity-70"
+                    :name="getSortIcon(col.key)"
+                    class="w-4 h-4"
+                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
                   />
                 </div>
               </th>
               <th
-                @click="sortStatus"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+                @click="handleSort('status')"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <ArrowUpDown class="inline w-3 h-3 opacity-70" />
+                  <UIcon
+                    :name="getSortIcon('status')"
+                    class="w-4 h-4"
+                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  />
                 </div>
               </th>
             </tr>
@@ -151,9 +159,9 @@
 
           <tbody>
             <tr
-              v-for="row in paginatedRows"
+              v-for="row in rows"
               :key="row.id"
-              class="group hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
+              class="group hover:bg-primary-50 cursor-pointer border-b border-gray-200 transition"
               @mousemove="onMouseMove($event, 'Klik untuk lihat detail')"
               @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
@@ -205,18 +213,17 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="filteredRows.length > 0"
+        v-if="rows.length > 0 && pagination"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
-          Menampilkan {{ paginatedRows.length }} dari
-          {{ filteredRows.length }} data
+          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
 
         <div class="flex items-center gap-2">
           <!-- Back Button -->
           <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
+            @click="handlePageChange(currentPage - 1)"
             :disabled="currentPage === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -246,7 +253,7 @@
             <!-- First page -->
             <button
               v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
+              @click="handlePageChange(1)"
               class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
             >
               1
@@ -264,7 +271,7 @@
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="currentPage = page"
+              @click="handlePageChange(page)"
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
@@ -288,7 +295,7 @@
             <!-- Last page -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
+              @click="handlePageChange(totalPages)"
               class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
               {{ totalPages }}
@@ -297,7 +304,7 @@
 
           <!-- Next Button -->
           <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -822,6 +829,7 @@ const isUploadingFiles = ref(false);
 const selectedRow = ref(null);
 const rows = ref([]);
 const loading = ref<boolean>(true);
+const pagination = ref(null);
 
 // File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
@@ -839,6 +847,23 @@ const previewFileName = ref("");
 const personMap = ref(new Map());
 // Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
+
+// Search and Pagination State
+const search = ref<string>("");
+const currentPage = ref<number>(1);
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+
+// Sorting State
+const sortBy = ref<string>("");
+const sortOrder = ref<"asc" | "desc">("desc");
+
+// Filter Status State
+const filterStatus = ref<string>("Semua");
+const openFilterStatus = ref<boolean>(false);
+
+// Debounce timeout
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const fetchPersonMap = async () => {
   try {
@@ -885,7 +910,7 @@ const fetchKlasifikasiMap = async () => {
   }
 };
 
-// FETCH DATA - Menggunakan endpoint baru
+// ✅ FETCH DATA - Menggunakan endpoint dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
   loading.value = true;
 
@@ -893,11 +918,30 @@ const fetchData = async () => {
     if (!user.value?.position) {
       console.error("❌ User position not available");
       rows.value = [];
+      pagination.value = null;
       return;
     }
 
-    // ✅ GUNAKAN ENDPOINT BARU: /admin/nomor-request-by-position/{id_posisi}
-    const data = await getListUsulan(String(user.value.position));
+    // Build params object sesuai dokumentasi API
+    // Parameter: sort_by dan sort_order (BUKAN sortBy)
+    const params = {
+      search: search.value || undefined,
+      page: currentPage.value,
+      limit: rowsPerPage.value,
+      status: filterStatus.value !== "Semua" ? filterStatus.value : undefined,
+      sort_by: sortBy.value || undefined,
+      sort_order: sortOrder.value || undefined,
+    };
+
+    console.log("📤 Fetching data with params:", params);
+
+    // ✅ HIT ENDPOINT
+    const response = await getListUsulan(String(user.value.position), params);
+
+    console.log("📥 Backend response:", response);
+
+    const data = response.data || [];
+    pagination.value = response.pagination || null;
 
     if (!Array.isArray(data)) {
       rows.value = [];
@@ -909,16 +953,18 @@ const fetchData = async () => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
-      let mappedStatus = "Belum Diajukan";
+      // Map status dari backend
+      let mappedStatus = item.status || "Belum Diajukan";
 
-      if (item.details?.length) {
-        if (item.details.some((d) => d.status === "terpakai")) {
-          mappedStatus = "Disetujui";
-        } else if (item.details.some((d) => d.status === "booking")) {
-          mappedStatus = "Menunggu Verifikasi";
-        } else if (item.details.some((d) => d.status === "ditolak")) {
-          mappedStatus = "Ditolak";
-        }
+      // Normalize status text
+      if (mappedStatus === "Menunggu Verifikasi") {
+        mappedStatus = "Menunggu Verifikasi";
+      } else if (mappedStatus === "Disetujui") {
+        mappedStatus = "Disetujui";
+      } else if (mappedStatus === "Ditolak") {
+        mappedStatus = "Ditolak";
+      } else {
+        mappedStatus = "Belum Diajukan";
       }
 
       const tanggalDate = new Date(item.tanggal);
@@ -926,7 +972,6 @@ const fetchData = async () => {
 
       const createdDate = new Date(item.created_at);
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
-      const tglUsulanTimestamp = wibTime.getTime();
 
       const day = String(wibTime.getDate()).padStart(2, "0");
       const month = String(wibTime.getMonth() + 1).padStart(2, "0");
@@ -946,7 +991,6 @@ const fetchData = async () => {
         klasifikasiDisplay,
         pengusul: pengusulInfo.nama || item.nama || user.value?.nama || "-",
         tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
-        tglUsulanSort: tglUsulanTimestamp,
         status: mappedStatus,
         details: item.details || [],
         template_nomor: item.template_nomor || "",
@@ -954,13 +998,101 @@ const fetchData = async () => {
     });
 
     console.log("✅ Data loaded:", rows.value.length, "rows");
+    console.log("📊 Pagination:", pagination.value);
   } catch (err) {
     console.error("❌ Gagal fetch data:", err);
     rows.value = [];
+    pagination.value = null;
   } finally {
     loading.value = false;
   }
 };
+
+// Handle search input with debounce
+const handleSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1; // Reset to first page on search
+    fetchData();
+  }, 500); // 500ms debounce
+};
+
+// Handle sorting
+const handleSort = (column: string) => {
+  if (sortBy.value === column) {
+    // Toggle sort order
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    // New column, default to desc (sesuai dokumentasi)
+    sortBy.value = column;
+    sortOrder.value = "desc";
+  }
+
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Get sort icon for column
+const getSortIcon = (column: string) => {
+  if (sortBy.value !== column) {
+    return "i-lucide-arrow-up-down"; // Default unsorted icon
+  }
+  return sortOrder.value === "asc"
+    ? "i-lucide-arrow-up"
+    : "i-lucide-arrow-down";
+};
+
+// Handle page change
+const handlePageChange = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchData();
+};
+
+// Handle limit change
+const handleLimitChange = () => {
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Select filter status
+const selectFilterStatus = (val: string) => {
+  filterStatus.value = val;
+  openFilterStatus.value = false;
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Computed total pages from backend pagination
+const totalPages = computed(() => {
+  return pagination.value?.totalPages || 1;
+});
+
+// Computed pagination pages for display
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 
 // ✅ OPEN ROW MODAL - HIT ENDPOINT DETAIL
 const openRowModal = async (row) => {
@@ -1322,40 +1454,7 @@ const handleSubmitFromModal = async (payload: any) => {
 
     console.log("📦 Formatted payload:", formattedPayload);
 
-    const response = await createUsulanDraft(formattedPayload);
-
-    // OPTIMISTIC UPDATE
-    const newRow = {
-      id: response.id || Date.now(),
-      id_usulan: response.id || Date.now(),
-      jenis: formattedPayload.jenis,
-      tanggal: new Date(formattedPayload.tanggal).toLocaleDateString("id-ID"),
-      perihal: formattedPayload.perihal,
-      jumlah: formattedPayload.jumlah,
-      penandatangan: formattedPayload.penandatangan,
-      klasifikasi: formattedPayload.klasifikasi,
-      klasifikasiDisplay:
-        klasifikasiMap.value.get(formattedPayload.klasifikasi) ||
-        formattedPayload.klasifikasi,
-      pengusul: user.value?.nama || "-",
-      tglUsulan: new Date().toLocaleString("id-ID", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      tglUsulanSort: Date.now(),
-      status: "Belum Diajukan",
-    };
-
-    rows.value.unshift(newRow);
-
-    sortBy.value = "tglUsulan";
-    sortDir.value = "desc";
-    filterStatus.value = "Semua";
-    search.value = "";
-    currentPage.value = 1;
+    await createUsulanDraft(formattedPayload);
 
     toast.add({
       title: "Berhasil",
@@ -1365,7 +1464,9 @@ const handleSubmitFromModal = async (payload: any) => {
 
     openAdd.value = false;
 
-    setTimeout(() => fetchData(), 1000);
+    // Reset pagination and fetch
+    currentPage.value = 1;
+    await fetchData();
   } catch (err) {
     console.error("❌ Error submit modal:", err);
 
@@ -1422,6 +1523,11 @@ onBeforeUnmount(() => {
   if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(previewUrl.value);
   }
+
+  // Clear search timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
 });
 
 /* Breadcrumb */
@@ -1438,25 +1544,8 @@ const headers = [
   { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
+  { label: "Tgl Usulan", key: "tanggal_usulan", sortable: true },
 ];
-
-/* SORT STATUS */
-const sortStatus = () => {
-  if (sortBy.value === "status") {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = "status";
-    sortDir.value = "asc";
-  }
-};
-
-const statusOrder = {
-  "Belum Diajukan": 1,
-  "Menunggu Verifikasi": 2,
-  Disetujui: 3,
-  Ditolak: 4,
-};
 
 const filterOptions = [
   "Semua",
@@ -1465,112 +1554,6 @@ const filterOptions = [
   "Disetujui",
   "Ditolak",
 ];
-
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [5, 10, 20, 50];
-const search = ref<string>("");
-const currentPage = ref<number>(1);
-
-/* SORT STATE */
-const sortBy = ref<string>("tglUsulan");
-const sortDir = ref<"asc" | "desc">("desc");
-
-const sort = (col: string) => {
-  if (sortBy.value === col) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = col;
-    sortDir.value = "asc";
-  }
-};
-
-/* STATUS FILTER */
-const filterStatus = ref<string>("Semua");
-const openFilterStatus = ref<boolean>(false);
-const selectFilterStatus = (val: string) => {
-  filterStatus.value = val;
-  openFilterStatus.value = false;
-};
-
-/* FILTER + SEARCH */
-const filteredRows = computed(() => {
-  const s = search.value.toLowerCase();
-  const fs = filterStatus.value;
-
-  return rows.value.filter((r) => {
-    if (!r || typeof r !== "object") return false;
-
-    const matchSearch = Object.values(r).some((v) =>
-      String(v ?? "")
-        .toLowerCase()
-        .includes(s),
-    );
-
-    const matchStatus = fs === "Semua" || r.status === fs;
-    return matchSearch && matchStatus;
-  });
-});
-
-/* SORT */
-const sortedRows = computed(() => {
-  return [...filteredRows.value].sort((a, b) => {
-    if (sortBy.value === "status") {
-      const A = statusOrder[a.status] ?? 99;
-      const B = statusOrder[b.status] ?? 99;
-      return sortDir.value === "asc" ? A - B : B - A;
-    }
-
-    if (sortBy.value === "tglUsulan") {
-      const A = a.tglUsulanSort ?? 0;
-      const B = b.tglUsulanSort ?? 0;
-      return sortDir.value === "asc" ? A - B : B - A;
-    }
-
-    const A = String(a[sortBy.value] ?? "").toLowerCase();
-    const B = String(b[sortBy.value] ?? "").toLowerCase();
-
-    if (A < B) return sortDir.value === "asc" ? -1 : 1;
-    if (A > B) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-});
-
-/* PAGINATION */
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return sortedRows.value.slice(start, start + rowsPerPage.value);
-});
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
-);
-
-const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
-  } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
-  }
-
-  return pages;
-});
-
-/* WATCHERS */
-watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
-  currentPage.value = 1;
-});
 
 const tooltip = ref({
   show: false,

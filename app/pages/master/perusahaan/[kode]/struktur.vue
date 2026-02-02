@@ -44,7 +44,7 @@
         class="bg-white shadow-lg border mt-5 border-gray-100 rounded-xl overflow-hidden"
       >
         <!-- Company Header -->
-        <div class="bg-primary text-white px-6 py-4">
+        <div class="bg-primary text-white px-6 py-4 " v-if="company">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <button
@@ -418,7 +418,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import {
   ChevronDown,
   ChevronRight,
@@ -432,18 +432,19 @@ import {
   X,
 } from "lucide-vue-next";
 
+import { useStruktur } from "~/composables/useStruktur";
+import { useCompany } from "~/composables/useCompany";
+
+const { getCompanyTree, getPositionsByOrganization, getPersonsByPosition } = useStruktur();
+const { getCompanyByCode } = useCompany();
+
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref(null);
 const route = useRoute();
 
 const companyExpanded = ref(true);
-const expandedNodes = ref<Record<string, boolean>>({
-  "dir-1": true,
-  "pos-1": true,
-  "dir-2": true,
-  "pos-2": true,
-  "unit-3": true,
-});
+const expandedNodes = ref<Record<string, boolean>>({});
+
 const hoveredNode = ref<string | null>(null);
 
 // Modals
@@ -483,124 +484,155 @@ const formMember = ref({
 });
 
 // Data
-const company = ref({
-  kode: route.params.kode,
-  tanggalMulai: "01/01/2020",
-  tanggalBerakhir: "31/12/2025",
-  namaPendek: "AIRNAV",
-  namaPanjang: "Perum LPPNPI",
+const company = ref<any>(null);
+
+
+// get organisasi
+// const fetchStructure = async () => {
+//   const res = await getCompanyTree(route.params.kode as string);
+//   organizationTree.value = res.data.tree;
+// };
+
+const fetchData = async (kode: string | number) => {
+  try {
+    // 🔥 AMBIL COMPANY DETAIL (SELALU ADA)
+    const companyRes = await getCompanyByCode(String(kode));
+
+    if (!companyRes) {
+      console.error("Company tidak ditemukan");
+      return;
+    }
+
+    company.value = {
+      kode: companyRes.company,
+      namaPendek: companyRes.shortText,
+      namaPanjang: companyRes.longText,
+      tanggalMulai: companyRes.startDate,
+      tanggalBerakhir: companyRes.endDate,
+    };
+
+    // 🔥 AMBIL STRUKTUR (BOLEH KOSONG)
+    const res = await getCompanyTree(kode);
+    const root = res.data?.tree?.[0];
+
+    organizationTree.value = root?.children
+      ? mapTree(root.children)
+      : [];
+  } catch (err) {
+    console.error("❌ fetchData error:", err);
+  }
+};
+
+const mapTree = (nodes: any[], level = 0): any[] => {
+  return nodes.map((node) => {
+    let type = "unit";
+
+    if (level === 0) type = "direktorat";
+
+    return {
+      id: node.id,                     // UUID (buat Vue key)
+      organizationCode: node.organization, // 🔥 INI PENTING
+      type,
+      name: node.shortText || node.longText,
+      children: node.children?.length
+        ? mapTree(node.children, level + 1)
+        : [],
+    };
+  });
+};
+
+const mapPositionToNode = (pos: any) => ({
+  id: pos.id,                 // id posisi (UUID)
+  positionCode: pos.position, // opsional kalau kepakai
+  type: "position",           // 🔥 penting
+  name: pos.shortText || pos.longText,
+  label: pos.abbreviation,    // O / P / S (kalau mau)
+  startDate: pos.startDate,
+  endDate: pos.endDate,
+  children: [],               // nanti member
 });
 
-// Struktur yang diperbaiki: Unit sejajar dengan Posisi
-const organizationTree = ref([
-  {
-    id: "dir-1",
-    name: "DIREKTORAT UTAMA",
-    type: "direktorat",
-    children: [
-      {
-        id: "pos-1",
-        name: "DIREKTUR UTAMA",
-        type: "position",
-        children: [
-          {
-            id: "member-1",
-            name: "NOVIE RIYANTO",
-            pn: "PN-1000",
-            type: "member",
-          },
-        ],
-      },
-      {
-        id: "unit-1",
-        name: "CORPORATE SECRETARY DIVISION",
-        type: "unit",
-        children: [],
-      },
-      {
-        id: "unit-2",
-        name: "DIREKTORAT KESELAMATAN, KEAMANAN DAN STAN",
-        type: "unit",
-        children: [],
-      },
-    ],
+const loadPositions = async (node: any) => {
+  if (node._positionsLoaded) return;
+  if (!node.organizationCode) return;
+
+  try {
+    const res = await getPositionsByOrganization(
+      String(node.organizationCode)
+    );
+
+    const positions = res.data.map(mapPositionToNode);
+
+    node.children = [...positions, ...(node.children || [])];
+    node._positionsLoaded = true;
+  } catch (err) {
+    console.error("❌ gagal load posisi:", err);
+  }
+};
+
+const mapPersonToNode = (person: any) => ({
+  id: person.id,              // UUID
+  type: "member",             // 🔥 penting buat UI
+  name: person.name,          // SETIO ANGGORO
+  persnum: person.persnum,    // optional
+  gender: person.gender,
+  startDate: person.start_date,
+  endDate: person.end_date,
+  children: [],
+});
+
+const loadPersons = async (node: any) => {
+  if (node._personsLoaded) return;
+  if (!node.positionCode) return;
+
+  try {
+    const res = await getPersonsByPosition(node.positionCode);
+
+    const persons = res.data.map(mapPersonToNode);
+
+    node.children = persons;
+    node._personsLoaded = true;
+  } catch (err) {
+    console.error("❌ gagal load person:", err);
+  }
+};
+
+watch(
+  () => route.params.kode,
+  (kode) => {
+    if (!kode) return;
+    fetchData(kode);
   },
-  {
-    id: "dir-2",
-    name: "DIREKTORAT OPERASI",
-    type: "direktorat",
-    children: [
-      {
-        id: "pos-2",
-        name: "DIREKTUR OPERASI",
-        type: "position",
-        children: [
-          {
-            id: "member-2",
-            name: "BAMBANG SUGIARTO",
-            pn: "PN-1002",
-            type: "member",
-          },
-        ],
-      },
-      {
-        id: "unit-3",
-        name: "AIR NAVIGATION SERVICES PLANNING DIVISION",
-        type: "unit",
-        children: [
-          {
-            id: "pos-4",
-            name: "MANAGER PLANNING",
-            type: "position",
-            children: [
-              {
-                id: "member-3",
-                name: "SITI NURHALIZA",
-                pn: "PN-1003",
-                type: "member",
-              },
-            ],
-          },
-          {
-            id: "unit-5",
-            name: "SUB DIVISION STRATEGIC PLANNING",
-            type: "unit",
-            children: [],
-          },
-        ],
-      },
-      {
-        id: "unit-4",
-        name: "AIR NAVIGATION CONTROL DIVISION",
-        type: "unit",
-        children: [],
-      },
-      {
-        id: "pos-3",
-        name: "AIR NAVIGATION INFORMATION MANAGEMENT",
-        type: "position",
-        children: [],
-      },
-    ],
-  },
-  {
-    id: "dir-3",
-    name: "DIREKTORAT SDM DAN UMUM",
-    type: "direktorat",
-    children: [],
-  },
-  {
-    id: "dir-4",
-    name: "DIREKTORAT TEKNIK",
-    type: "direktorat",
-    children: [],
-  },
-]);
+  { immediate: true }
+);
+
+
+const organizationTree = ref<any[]>([]);
 
 // Methods
-const toggleNode = (id: string) => {
-  expandedNodes.value[id] = !expandedNodes.value[id];
+const toggleNode = async (node: any) => {
+  const isExpanded = expandedNodes.value[node.id] ?? false;
+  expandedNodes.value[node.id] = !isExpanded;
+
+  // UNIT → LOAD POSISI
+  if (
+    !isExpanded &&
+    node.type === "unit" &&
+    !node._positionsLoaded
+  ) {
+    await loadPositions(node);
+  }
+
+  // POSISI → LOAD PERSON
+  if (
+    !isExpanded &&
+    node.type === "position" &&
+    !node._personsLoaded
+  ) {
+    await loadPersons(node);
+  }
 };
+
 
 const setHoveredNode = (id: string | null) => {
   hoveredNode.value = id;

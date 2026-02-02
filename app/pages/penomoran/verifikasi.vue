@@ -20,6 +20,7 @@
         <div class="flex items-center gap-2 px-4 py-2">
           <select
             v-model="rowsPerPage"
+            @change="handleLimitChange"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
@@ -81,6 +82,7 @@
           />
           <input
             v-model="search"
+            @input="handleSearchInput"
             placeholder="Cari..."
             class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
           />
@@ -98,7 +100,7 @@
 
       <!-- EMPTY -->
       <div
-        v-else-if="filteredRows.length === 0"
+        v-else-if="rows.length === 0"
         class="flex flex-col items-center justify-center py-20 text-gray-500"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
@@ -106,35 +108,42 @@
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="min-w-max bg-white text-sm">
+        <table class="min-w-max bg-white text-sm w-full">
           <thead class="bg-primary text-white text-[15px]">
             <tr>
               <th
                 v-for="col in headers"
                 :key="col.key"
-                @click="col.sortable && sort(col.key)"
+                @click="col.sortable && handleSort(col.key)"
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none'
+                    ? 'cursor-pointer select-none '
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <ArrowUpDown
+                  <UIcon
                     v-if="col.sortable"
-                    class="inline w-3 h-3 opacity-70"
+                    :name="getSortIcon(col.key)"
+                    class="w-4 h-4"
+                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
                   />
                 </div>
               </th>
+
               <th
-                @click="sort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+                @click="handleSort('status')"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <ArrowUpDown class="w-3 h-3 opacity-70" />
+                  <UIcon
+                    :name="getSortIcon('status')"
+                    class="w-4 h-4"
+                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  />
                 </div>
               </th>
             </tr>
@@ -142,14 +151,13 @@
 
           <tbody>
             <tr
-              v-for="row in paginatedRows"
+              v-for="row in rows"
               :key="row.id"
               class="hover:bg-gray-50 border-b border-gray-200 cursor-pointer transition"
               @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
               @mouseleave="onRowMouseLeave"
               @click="showPreview(row)"
             >
-              <!-- <td class="px-5 py-4 text-xs">{{ row.id }}</td> -->
               <td class="px-5 py-4">{{ row.jenis }}</td>
               <td class="px-5 py-4">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
@@ -194,18 +202,17 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="filteredRows.length > 0"
+        v-if="rows.length > 0 && pagination"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
-          Menampilkan {{ paginatedRows.length }} dari
-          {{ filteredRows.length }} data
+          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
 
         <div class="flex items-center gap-2">
           <!-- Back Button -->
           <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
+            @click="handlePageChange(currentPage - 1)"
             :disabled="currentPage === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -235,7 +242,7 @@
             <!-- First page -->
             <button
               v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
+              @click="handlePageChange(1)"
               class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
             >
               1
@@ -253,7 +260,7 @@
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="currentPage = page"
+              @click="handlePageChange(page)"
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
@@ -277,7 +284,7 @@
             <!-- Last page -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
+              @click="handlePageChange(totalPages)"
               class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
             >
               {{ totalPages }}
@@ -286,7 +293,7 @@
 
           <!-- Next Button -->
           <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
@@ -521,20 +528,10 @@
                             📄 {{ detail.file_name }}
                           </p>
                           <p class="text-xs text-gray-600">
-                            lihat untuk preview
+                            Klik untuk preview
                           </p>
                         </div>
                       </div>
-                    </div>
-
-                    <div class="flex items-start gap-3">
-                      <!-- FILE INFO -->
-                      <!-- <div class="flex-1">
-                        <p class="text-sm font-medium text-green-700 underline">
-                          📄 {{ detail.file_name }}
-                        </p>
-                        <p class="text-xs text-gray-600">Klik untuk preview</p>
-                      </div> -->
                     </div>
                   </div>
 
@@ -709,6 +706,8 @@
       </template>
     </Modal>
   </Teleport>
+
+  <!-- PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
     title="Pratinjau"
@@ -742,6 +741,7 @@
       </div>
     </template>
   </USlideover>
+
   <!-- CONFIRM MODAL APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
@@ -762,6 +762,7 @@
     cancelText="Batal"
     @confirm="processRejection"
   />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -779,7 +780,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, ArrowUpDown, Copy } from "lucide-vue-next";
+import { Search, Copy } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
@@ -804,114 +805,55 @@ const {
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Verifikasi", to: "/admin/verifikasi" },
+  { label: "Verifikasi", to: "/penomoran/verifikasi" },
 ];
 
 /* TABLE CONFIG */
 const headers = [
-  // { label: "ID", key: "id", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },
   { label: "Penandatangan", key: "penandatangan", sortable: false },
   { label: "Jumlah", key: "jumlah", sortable: false },
   { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
+  { label: "Tgl Usulan", key: "tanggal_usulan", sortable: true },
 ];
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
 
-//======== FILE ===========
+// State
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
-
-const viewDocument = async (doc: any) => {
-  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
-
-  if (!url) {
-    alert("File pratinjau tidak tersedia");
-    return;
-  }
-
-  isOpenPreview.value = false;
-  pdfUrl.value = null;
-
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
-    isOpenPreview.value = true;
-  } catch (err) {
-    alert("Gagal memuat pratinjau dokumen");
-  }
-};
-watch(isOpenPreview, (open) => {
-  if (!open) {
-    pdfUrl.value = null;
-  }
-});
-watch(isOpenPreview, (open) => {
-  if (!open && pdfUrl.value) {
-    URL.revokeObjectURL(pdfUrl.value);
-    pdfUrl.value = null;
-  }
-});
-
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
-
 const currentPage = ref<number>(1);
-
 const search = ref<string>("");
-
 const selectedRow = ref<any>(null);
 const keterangan_ditolak = ref("");
 const isProcessing = ref(false);
-
-/* Confirm Modals */
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
 
-/* SORT STATE */
-const sortBy = ref<string>("tglUsulan");
-const sortDir = ref<"asc" | "desc">("desc");
+// Sorting State
+const sortBy = ref<string>("");
+const sortOrder = ref<"asc" | "desc">("desc");
 
-const sort = (col: string) => {
-  if (sortBy.value === col) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = col;
-    sortDir.value = "asc";
-  }
-};
-
-/* STATUS FILTER */
+// Filter Status State
 const filterStatus = ref<string>("Menunggu Verifikasi");
 const openFilterStatus = ref<boolean>(false);
-const selectFilterStatus = (val: string) => {
-  filterStatus.value = val;
-  openFilterStatus.value = false;
-};
 
-/* Modal control */
+// Modal control
 const openPreview = ref(false);
 
-/* Data rows */
+// Data rows & pagination
 const rows = ref<any[]>([]);
+const pagination = ref(null);
+const loading = ref(false);
 
 // Person Map
 const personMap = ref(new Map());
 
-// Files state untuk upload
+// Files state
 const files = ref<any[]>([]);
 
 // File states untuk tracking replace
@@ -924,6 +866,10 @@ interface FileState {
 
 const fileStates = ref<Record<number, FileState>>({});
 
+// Debounce timeout
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Fetch person map
 const fetchPersonMap = async () => {
   try {
     const response = await getPersonWithPosition();
@@ -935,29 +881,43 @@ const fetchPersonMap = async () => {
         position_text: item.position_text,
       });
     });
+
+    console.log("✅ Person map loaded:", personMap.value.size, "items");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
   }
 };
-const loading = ref(false);
 
-// GET DATA DARI API
+// ✅ FETCH DATA dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
   loading.value = true;
 
   try {
-    const res = await getListSubmitted();
+    // Build params object sesuai dokumentasi API
+    const params = {
+      search: search.value || undefined,
+      page: currentPage.value,
+      limit: rowsPerPage.value,
+      status: filterStatus.value !== "Semua" ? filterStatus.value : undefined,
+      sort_by: sortBy.value || undefined,
+      sort_order: sortOrder.value || undefined,
+    };
 
-    if (!Array.isArray(res)) {
-      toast.add({
-        title: "Gagal",
-        description: "Tidak dapat mengambil data verifikasi",
-        color: "red",
-      });
+    console.log("📤 Fetching verification data with params:", params);
+
+    const res = await getListSubmitted(params);
+
+    console.log("📥 Backend response:", res);
+
+    const data = res.data || [];
+    pagination.value = res.pagination || null;
+
+    if (!Array.isArray(data)) {
+      rows.value = [];
       return;
     }
 
-    rows.value = res.map((item: any) => {
+    rows.value = data.map((item: any) => {
       const person = personMap.value.get(item.persnum);
 
       // Format tanggal: DD/MM/YYYY (UTC)
@@ -989,7 +949,8 @@ const fetchData = async () => {
       };
     });
 
-    console.log("✅ Data verifikasi berhasil dimuat:", rows.value);
+    console.log("✅ Data verifikasi loaded:", rows.value.length, "rows");
+    console.log("📊 Pagination:", pagination.value);
   } catch (error) {
     console.error("❌ Error fetch data verifikasi:", error);
     toast.add({
@@ -997,10 +958,98 @@ const fetchData = async () => {
       description: "Tidak dapat mengambil data verifikasi",
       color: "red",
     });
+    rows.value = [];
+    pagination.value = null;
   } finally {
     loading.value = false;
   }
 };
+
+// Handle search input with debounce
+const handleSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1; // Reset to first page on search
+    fetchData();
+  }, 500); // 500ms debounce
+};
+
+// Handle sorting
+const handleSort = (column: string) => {
+  if (sortBy.value === column) {
+    // Toggle sort order
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    // New column, default to desc
+    sortBy.value = column;
+    sortOrder.value = "desc";
+  }
+
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Get sort icon for column
+const getSortIcon = (column: string) => {
+  if (sortBy.value !== column) {
+    return "i-lucide-arrow-up-down"; // Default unsorted icon
+  }
+  return sortOrder.value === "asc"
+    ? "i-lucide-arrow-up"
+    : "i-lucide-arrow-down";
+};
+
+// Handle page change
+const handlePageChange = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchData();
+};
+
+// Handle limit change
+const handleLimitChange = () => {
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Select filter status
+const selectFilterStatus = (val: string) => {
+  filterStatus.value = val;
+  openFilterStatus.value = false;
+  currentPage.value = 1; // Reset to first page
+  fetchData();
+};
+
+// Computed total pages from backend pagination
+const totalPages = computed(() => {
+  return pagination.value?.totalPages || 1;
+});
+
+// Computed pagination pages for display
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 2, total - 1, total);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+
+  return pages;
+});
 
 /* Show Preview Modal */
 const showPreview = async (row: any) => {
@@ -1022,8 +1071,7 @@ const showPreview = async (row: any) => {
     keterangan_ditolak.value = "";
     openPreview.value = true;
 
-    console.log("✅ Jumlah nomor:", detailData.jumlah);
-    console.log("✅ Details loaded:", detailData.details);
+    console.log("✅ Detail loaded:", detailData);
   } catch (error) {
     console.error("❌ Error fetch detail:", error);
   }
@@ -1358,90 +1406,7 @@ const processRejection = async () => {
   }
 };
 
-/* FILTER + SEARCH */
-const filteredRows = computed(() => {
-  const s = search.value.toLowerCase();
-  const fs = filterStatus.value;
-
-  return rows.value.filter((r) => {
-    const matchSearch = Object.values(r).some((v) =>
-      String(v).toLowerCase().includes(s),
-    );
-    const matchStatus = fs === "Semua" || r.status === fs;
-    return matchSearch && matchStatus;
-  });
-});
-
-/* SORT */
-const sortedRows = computed(() => {
-  return [...filteredRows.value].sort((a, b) => {
-    // ✅ STATUS
-    if (sortBy.value === "status") {
-      const A = statusOrder[a.status] ?? 99;
-      const B = statusOrder[b.status] ?? 99;
-      return sortDir.value === "asc" ? A - B : B - A;
-    }
-
-    // ✅ TANGGAL USULAN (REAL DATE SORT)
-    if (sortBy.value === "tglUsulan") {
-      const A = a.tglUsulanSort ?? 0;
-      const B = b.tglUsulanSort ?? 0;
-      return sortDir.value === "asc" ? A - B : B - A;
-    }
-
-    // 🔁 DEFAULT STRING SORT
-    const A = String(a[sortBy.value] ?? "").toLowerCase();
-    const B = String(b[sortBy.value] ?? "").toLowerCase();
-
-    if (A < B) return sortDir.value === "asc" ? -1 : 1;
-    if (A > B) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-});
-
-/* PAGINATION */
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return sortedRows.value.slice(start, start + rowsPerPage.value);
-});
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
-);
-const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
-  }
-
-  return pages;
-});
-
-/* WATCHERS */
-watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
-  currentPage.value = 1;
-});
-
 /* Format helpers */
-function formatTanggal(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 function formatDateTime(dateStr: string | Date) {
   const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
   return `${date.toLocaleDateString("id-ID", {
@@ -1473,6 +1438,16 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
+
+  // Clear search timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  // Clean up blob URLs
+  if (pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
 });
 
 const tooltip = ref({
@@ -1498,11 +1473,19 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
+
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false;
   } else if (selectedRow.value) {
     openPreview.value = true;
+  }
+});
+
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
   }
 });
 </script>
