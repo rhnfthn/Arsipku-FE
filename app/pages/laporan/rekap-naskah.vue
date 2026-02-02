@@ -354,7 +354,7 @@
                   class="px-2 py-1 rounded-full text-xs font-semibold capitalize"
                   :class="getStatusClass(row.status)"
                 >
-                  {{ row.status }}
+                  {{ formatStatusLabel(row.status) }}
                 </span>
               </td>
             </tr>
@@ -805,4 +805,11 @@ const tableColCount = computed(() => {
 const skeletonRows = computed(() => {
   return selectedMonth.value ? 4 : 6;
 });
+
+const formatStatusLabel = (status: string) => {
+  if (!status) return "-";
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 </script>

@@ -981,10 +981,14 @@ export const usePenomoran = () => {
 
   /** ===========================
    * UPLOAD DETAIL FILE (ADMIN)
+   * ✅ UPDATED: Support uploading/replacing files regardless of status
    * Endpoint: POST /admin/nomor-request-detail/:detail_id/file
    * =========================== */
   const uploadDetailFile = async (detailId: string, file: File) => {
     try {
+      console.log("📤 Uploading file for detail ID:", detailId);
+      console.log("📄 File:", file.name, file.size, "bytes");
+
       const formData = new FormData();
       formData.append("file", file);
 
@@ -997,6 +1001,8 @@ export const usePenomoran = () => {
           },
         },
       );
+
+      console.log("✅ Upload response:", response.data);
 
       if (response.data?.success) {
         toast.add({
@@ -1012,8 +1018,14 @@ export const usePenomoran = () => {
 
       throw new Error(response.data?.message || "Gagal upload file");
     } catch (error: any) {
+      console.error("❌ Upload file error:", error);
+      console.error("❌ Error response:", error.response?.data);
+
       const errorMsg =
-        error.response?.data?.message || error.message || "Gagal upload file";
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal upload file";
 
       toast.add({
         title: "Gagal",

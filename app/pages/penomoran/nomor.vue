@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
     <!-- TITLE -->
-    <div class="flex items-center justify-between w-full mb-5 px-6 pt-6">
+    <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Daftar Penomoran Dokumen
@@ -20,7 +20,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl mx-6 mb-6">
+    <div class="bg-white shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -28,7 +28,7 @@
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
           <select
-            v-model="rowsPerPage"
+            v-model="limit"
             @change="handleLimitChange"
             class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
           >
@@ -44,7 +44,7 @@
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
-            v-model="search"
+            v-model="searchQuery"
             @input="handleSearchInput"
             placeholder="Cari..."
             class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
@@ -81,18 +81,18 @@
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary',
                   col.sortable
-                    ? 'cursor-pointer select-none hover:bg-primary-600'
+                    ? 'cursor-pointer select-none'
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
                   <span>{{ col.label }}</span>
-                  <UIcon
-                    v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
-                  />
+                  <span class="w-3 h-3 inline-flex items-center justify-center">
+                    <ArrowUpDown
+                      v-if="col.sortable"
+                      class="w-3 h-3 opacity-70"
+                    />
+                  </span>
                 </div>
               </th>
             </tr>
@@ -101,9 +101,9 @@
           <tbody>
             <tr
               v-for="row in rows"
-              :key="row.id"
+              :key="row.id_request"
               class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
-              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
+              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail ')"
               @mouseleave="onRowMouseLeave"
               @click="openRowModal(row)"
             >
@@ -116,21 +116,28 @@
                   </p>
                 </div>
               </td>
+
+              <!-- ✅ Tampilkan tanggal sekali dan semua nomor di bawahnya -->
               <td class="px-5 py-4">
-                <!-- ✅ GROUPED: Show date once and all nomor stacked -->
-                <div class="space-y-1">
+                <div class="flex flex-col gap-0.5">
                   <div class="text-sm font-medium">{{ row.tanggal }}</div>
-                  <div class="space-y-0.5">
+                  <div class="text-xs text-gray-600 font-mono">
                     <div
-                      v-for="(nomorItem, idx) in row.nomorList"
+                      v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
                       :key="idx"
-                      class="text-xs text-gray-600 font-mono"
                     >
-                      {{ nomorItem.nomor }}
+                      {{ nomor }}
+                    </div>
+                    <div
+                      v-if="row.nomor_list.length > 3"
+                      class="text-primary font-medium"
+                    >
+                      +{{ row.nomor_list.length - 3 }} nomor lainnya
                     </div>
                   </div>
                 </div>
               </td>
+
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
                   <p class="whitespace-normal break-words line-clamp-3">
@@ -146,7 +153,7 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="rows.length > 0 && pagination"
+        v-if="pagination && pagination.total > 0 && rows.length > 0"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
       >
         <div class="text-xs text-gray-600">
@@ -154,13 +161,12 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Back Button -->
           <button
-            @click="handlePageChange(currentPage - 1)"
-            :disabled="currentPage === 1"
+            @click="goToPage(pagination.current_page - 1)"
+            :disabled="pagination.current_page === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
+              pagination.current_page === 1
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
@@ -181,30 +187,32 @@
             Back
           </button>
 
-          <!-- Page Numbers -->
           <div class="flex items-center gap-1">
-            <button
-              v-if="paginationPages[0] > 1"
-              @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+            <!-- Show first page if not in visible range -->
+            <template
+              v-if="paginationPages.length > 0 && paginationPages[0] > 1"
             >
-              1
-            </button>
+              <button
+                @click="goToPage(1)"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              >
+                1
+              </button>
+              <span
+                v-if="paginationPages[0] > 2"
+                class="px-2 text-gray-400 text-sm"
+                >...</span
+              >
+            </template>
 
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
-            >
-              ...
-            </span>
-
+            <!-- Main pagination pages -->
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="handlePageChange(page)"
+              @click="goToPage(page)"
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
+                pagination.current_page === page
                   ? 'bg-primary text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
               ]"
@@ -212,31 +220,37 @@
               {{ page }}
             </button>
 
-            <span
+            <!-- Show last page if not in visible range -->
+            <template
               v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
+                paginationPages.length > 0 &&
+                paginationPages[paginationPages.length - 1] <
+                  pagination.total_pages
               "
-              class="px-2 text-gray-400 text-sm"
             >
-              ...
-            </span>
-
-            <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="handlePageChange(totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
-            >
-              {{ totalPages }}
-            </button>
+              <span
+                v-if="
+                  paginationPages[paginationPages.length - 1] <
+                  pagination.total_pages - 1
+                "
+                class="px-2 text-gray-400 text-sm"
+                >...</span
+              >
+              <button
+                @click="goToPage(pagination.total_pages)"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              >
+                {{ pagination.total_pages }}
+              </button>
+            </template>
           </div>
 
-          <!-- Next Button -->
           <button
-            @click="handlePageChange(currentPage + 1)"
-            :disabled="currentPage === totalPages"
+            @click="goToPage(pagination.current_page + 1)"
+            :disabled="pagination.current_page === pagination.total_pages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === totalPages
+              pagination.current_page === pagination.total_pages
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-white text-primary border border-primary hover:bg-primary-50',
             ]"
@@ -266,22 +280,13 @@
       title="Pratinjau Dokumen"
       side="bottom"
       :dismissible="true"
-      :ui="{
-        content: 'h-screen max-h-screen',
-        body: 'p-0 h-full',
-      }"
+      :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
       class="z-[9999]"
     >
       <template #body>
-        <div class="h-full w-full bg-gray-100 flex items-center justify-center">
-          <div v-if="loadingPreview" class="text-center">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-            ></div>
-            <p class="text-sm text-gray-600">Memuat dokumen...</p>
-          </div>
+        <div class="h-full w-full bg-gray-100">
           <iframe
-            v-else-if="previewPdfUrl"
+            v-if="previewPdfUrl"
             :key="previewPdfUrl"
             :src="previewPdfUrl"
             allowfullscreen
@@ -291,7 +296,7 @@
       </template>
     </USlideover>
 
-    <!-- COMPONENT ADD USULAN -->
+    <!-- ADD USULAN -->
     <Teleport to="body">
       <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
     </Teleport>
@@ -314,7 +319,6 @@
       </template>
 
       <div class="px-3 pb-6">
-        <!-- Loading state -->
         <div v-if="loadingDetail" class="space-y-3">
           <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
           <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
@@ -322,9 +326,7 @@
         </div>
 
         <template v-else-if="detailData">
-          <!-- INFO GRID -->
           <div class="gap-4 mb-2 space-y-6 overflow-y-auto text-sm">
-            <!-- Judul (Full Width) -->
             <div class="md:col-span-2">
               <template v-if="!isEditingTitle">
                 <div class="flex items-start justify-between gap-4 mb-2">
@@ -374,7 +376,6 @@
               </template>
             </div>
 
-            <!-- Tanggal -->
             <div class="pb-2 border-b border-gray-200">
               <p class="text-gray-500 text-xs">Tanggal</p>
               <p class="font-medium mt-1">
@@ -382,15 +383,11 @@
               </p>
             </div>
 
-            <!-- Penandatangan -->
             <div class="pb-2 border-b border-gray-200">
               <p class="text-gray-500 text-xs">Penandatangan</p>
-              <p class="font-medium mt-1">
-                {{ detailData.jabatan }}
-              </p>
+              <p class="font-medium mt-1">{{ detailData.jabatan }}</p>
             </div>
 
-            <!-- Klasifikasi -->
             <div class="pb-2 border-b border-gray-200">
               <p class="text-gray-500 text-xs">Klasifikasi</p>
               <p class="font-medium mt-1">
@@ -398,12 +395,9 @@
               </p>
             </div>
 
-            <!-- Jenis Naskah -->
             <div class="pb-2 border-b border-gray-200">
               <p class="text-gray-500 text-xs">Jenis Naskah</p>
-              <p class="font-medium mt-1">
-                {{ detailData.jenis }}
-              </p>
+              <p class="font-medium mt-1">{{ detailData.jenis }}</p>
             </div>
           </div>
 
@@ -427,17 +421,14 @@
                 :key="item.id || `nomor-${idx}`"
                 class="border border-gray-300 bg-gray-50 rounded-lg p-4 hover:shadow-md transition"
               >
-                <!-- HEADER -->
                 <div class="flex items-center gap-3 mb-3">
                   <div
                     class="flex-1 bg-white border border-gray-200 rounded-md px-4 py-2"
                   >
                     <div class="flex justify-between items-center">
-                      <span class="font-mono text-sm">
-                        {{ idx + 1 }}. {{ item.nomor }}
-                      </span>
-
-                      <!-- STATUS -->
+                      <span class="font-mono text-sm"
+                        >{{ idx + 1 }}. {{ item.nomor }}</span
+                      >
                       <span
                         :class="[
                           'px-3 py-1 rounded-full text-xs font-medium',
@@ -448,8 +439,6 @@
                       </span>
                     </div>
                   </div>
-
-                  <!-- COPY -->
                   <button
                     @click="handleCopy(item.nomor)"
                     class="p-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50"
@@ -458,9 +447,7 @@
                   </button>
                 </div>
 
-                <!-- FILE AREA -->
                 <div>
-                  <!-- FILE PREVIEW (jika ada file dan tidak sedang replace) -->
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
                     class="bg-green-50 border border-green-200 rounded-md p-3 cursor-pointer hover:bg-green-100 transition"
@@ -472,7 +459,6 @@
                     <p class="text-xs text-gray-600">Klik untuk preview</p>
                   </div>
 
-                  <!-- FILE INPUT (saat upload atau replace) -->
                   <div v-if="fileStates[item.id]?.isReplacing" class="mt-3">
                     <input
                       type="file"
@@ -486,9 +472,8 @@
                   </div>
                 </div>
 
-                <!-- ACTION BUTTONS -->
                 <div class="flex gap-2 mt-3">
-                  <!-- UPLOAD (jika belum ada file dan status bukan hangus) -->
+                  <!-- Upload button - tampil jika tidak ada file -->
                   <button
                     v-if="
                       !item.file_name &&
@@ -501,12 +486,11 @@
                     Upload File
                   </button>
 
-                  <!-- GANTI FILE (jika sudah ada file, status terpakai atau terpakai_final) -->
+                  <!-- Ganti File button - tampil jika sudah ada file (apapun statusnya) -->
                   <button
                     v-if="
                       item.file_name &&
-                      (item.status === 'terpakai' ||
-                        item.status === 'terpakai_final') &&
+                      item.status !== 'hangus' &&
                       !fileStates[item.id]?.isReplacing
                     "
                     @click="startReplacingFile(item.id)"
@@ -515,7 +499,6 @@
                     Ganti File
                   </button>
 
-                  <!-- SAVE / CANCEL (saat sedang upload/replace) -->
                   <template v-if="fileStates[item.id]?.isReplacing">
                     <button
                       @click="saveFile(item.id)"
@@ -546,7 +529,6 @@
                     </button>
                   </template>
 
-                  <!-- HANGUS (selalu ada kecuali status sudah hangus atau sedang upload) -->
                   <button
                     v-if="
                       item.status !== 'hangus' &&
@@ -566,7 +548,7 @@
     </Modal>
   </Teleport>
 
-  <!-- CONFIRM HANGUS POPUP -->
+  <!-- CONFIRM HANGUS -->
   <ConfirmPopup
     v-model="openConfirmHangus"
     type="danger"
@@ -583,10 +565,7 @@
     <div
       v-if="tooltip.show"
       class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md shadow-lg"
-      :style="{
-        left: tooltip.x + 'px',
-        top: tooltip.y + 'px',
-      }"
+      :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
     >
       {{ tooltip.text }}
     </div>
@@ -594,8 +573,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, Plus, Copy } from "lucide-vue-next";
+import { ref, computed, watch, onMounted } from "vue";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
@@ -607,23 +586,20 @@ import { usePenomoran } from "~/composables/usePenomoran";
 const toast = useToast();
 const config = useRuntimeConfig();
 
-// Composable
 const {
   createPenomoranFinal,
   getPersonWithPosition,
   getKlasifikasi,
-  getListNomor,
   getDetailNomor,
   uploadDetailFile,
   hangusDetailNomor,
+  getListNomor,
 } = usePenomoran();
 
-// State
 const klasifikasiMap = ref(new Map());
 const personMap = ref(new Map());
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
-const loadingPreview = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
 const openPreview = ref(false);
 const openConfirmHangus = ref(false);
@@ -631,28 +607,20 @@ const isHangusing = ref(false);
 const selectedRow = ref(null);
 const detailData = ref(null);
 const rows = ref<any[]>([]);
-const pagination = ref(null);
+const pagination = ref<any>(null);
 const selectedDetailId = ref<string | null>(null);
-
-// File states per detail ID
 const fileStates = ref<Record<string, any>>({});
-
-// Edit title
 const isEditingTitle = ref(false);
 const editedTitle = ref("");
 
-// Table config
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [5, 10, 20, 50];
-const search = ref<string>("");
+// Pagination & Search params
+const searchQuery = ref<string>("");
+const limit = ref<number>(10);
 const currentPage = ref<number>(1);
-
-// Sorting State
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
 
-// Debounce timeout
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+const rowsChoices = [5, 10, 20, 50];
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -661,14 +629,13 @@ const breadcrumbs = [
 
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Jabatan", key: "jabatan", sortable: false },
+  { label: "Penandatangan", key: "jabatan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
   { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
-  { label: "Pengirim", key: "pengusul", sortable: false },
+  { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Waktu", key: "waktu", sortable: true },
 ];
 
-// ==================== STATUS LOGIC ====================
 const getStatusLabel = (item: any): string => {
   if (item.status === "hangus") return "Hangus";
   if (item.status === "terpakai_final") return "Final";
@@ -685,26 +652,30 @@ const getStatusClass = (item: any): string => {
   return "bg-yellow-100 text-yellow-800";
 };
 
-// ==================== DATE FUNCTIONS ====================
+const WIB_OFFSET = 7 * 60 * 60 * 1000;
+
+function toWIB(dateStr: string) {
+  const utcDate = new Date(dateStr);
+  return new Date(utcDate.getTime() + WIB_OFFSET);
+}
+
 function formatTanggalWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const year = date.getUTCFullYear();
+  const wib = toWIB(dateStr);
+  const day = String(wib.getDate()).padStart(2, "0");
+  const month = String(wib.getMonth() + 1).padStart(2, "0");
+  const year = wib.getFullYear();
   return `${day}/${month}/${year}`;
 }
 
 function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const wibTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-  const hours = String(wibTime.getHours()).padStart(2, "0");
-  const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+  const wib = toWIB(dateStr);
+  const hours = String(wib.getHours()).padStart(2, "0");
+  const minutes = String(wib.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
 }
 
-// ==================== FETCH MASTER DATA ====================
 const fetchKlasifikasiMap = async () => {
   try {
     const response = await getKlasifikasi();
@@ -713,11 +684,6 @@ const fetchKlasifikasiMap = async () => {
         klasifikasiMap.value.set(item.code, item.display);
       });
     }
-    console.log(
-      "✅ Klasifikasi map loaded:",
-      klasifikasiMap.value.size,
-      "items",
-    );
   } catch (error) {
     console.error("❌ Error fetch klasifikasi map:", error);
   }
@@ -733,7 +699,6 @@ const fetchPersonMap = async () => {
         position_text: item.position_text,
       });
     });
-    console.log("✅ Person map loaded:", personMap.value.size, "items");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
   }
@@ -743,7 +708,6 @@ const getFileUrl = (filePath: string) => {
   return `${config.public.apiBaseUrl}/${filePath}`;
 };
 
-// ===== PREVIEW STATE =====
 const isOpenPreviewFile = ref(false);
 const previewPdfUrl = ref<string | null>(null);
 
@@ -764,15 +728,10 @@ const previewFile = async (item: any) => {
     openPreview.value = false;
     previewPdfUrl.value = null;
     isOpenPreviewFile.value = false;
-    loadingPreview.value = true;
 
     const res = await fetch(fileUrl, {
       headers: { Accept: "application/pdf" },
     });
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch file");
-    }
 
     const blob = await res.blob();
     previewPdfUrl.value = URL.createObjectURL(
@@ -787,8 +746,6 @@ const previewFile = async (item: any) => {
       description: "File tidak dapat dipratinjau",
       color: "red",
     });
-  } finally {
-    loadingPreview.value = false;
   }
 };
 
@@ -872,7 +829,6 @@ const cancelReplacing = (detailId: string) => {
   delete fileStates.value[detailId];
 };
 
-// ==================== HANGUS FUNCTIONS ====================
 const confirmHangusNomor = (detailId: string) => {
   selectedDetailId.value = detailId;
   openConfirmHangus.value = true;
@@ -911,7 +867,6 @@ const executeHangusNomor = async () => {
   }
 };
 
-// ==================== EDIT TITLE ====================
 function startEditTitle() {
   if (!detailData.value) return;
   editedTitle.value = detailData.value.perihal;
@@ -934,7 +889,6 @@ function saveTitle() {
   });
 }
 
-// ==================== COPY FUNCTION ====================
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   toast.add({
@@ -944,65 +898,117 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ✅ FETCH DATA - KEEP ROWS GROUPED BY REQUEST ID
+const handleSort = (col: string) => {
+  // Map frontend column names to backend field names
+  const columnMapping: Record<string, string> = {
+    jenis: "jenis",
+    tanggal: "tanggal",
+    waktu: "created_at",
+  };
+
+  const backendColumn = columnMapping[col] || col;
+
+  if (sortBy.value === backendColumn) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = backendColumn;
+    sortOrder.value = "asc";
+  }
+  currentPage.value = 1;
+  fetchData();
+};
+
+const handleLimitChange = () => {
+  currentPage.value = 1;
+  fetchData();
+};
+
+let searchTimeout: any = null;
+const handleSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchData();
+  }, 500);
+};
+
+const goToPage = (page: number) => {
+  if (page < 1 || (pagination.value && page > pagination.value.total_pages))
+    return;
+  currentPage.value = page;
+  fetchData();
+};
+
+function groupDuplicateRows(dataArray) {
+  const grouped = new Map();
+
+  dataArray.forEach((item) => {
+    const key = item.id_request;
+
+    if (grouped.has(key)) {
+      const existing = grouped.get(key);
+      existing.nomor_list.push(item.nomor);
+    } else {
+      const klasifikasiDisplay =
+        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+
+      grouped.set(key, {
+        id_request: item.id_request,
+        jenis: item.jenis,
+        jabatan: item.jabatan || "-",
+        perihal: item.perihal || "-",
+        pengusul: item.nama_pengirim || "-",
+        klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay: klasifikasiDisplay,
+        nomor_list: [item.nomor],
+        tanggal: formatTanggalWIB(item.tanggal),
+        waktu: formatWaktuWIB(item.waktu),
+      });
+    }
+  });
+
+  return Array.from(grouped.values());
+}
+
 const fetchData = async () => {
   loading.value = true;
 
   try {
-    const params = {
-      search: search.value || undefined,
+    const params: any = {
       page: currentPage.value,
-      limit: rowsPerPage.value,
-      sort_by: sortBy.value || undefined,
-      sort_order: sortOrder.value || undefined,
+      limit: limit.value,
     };
 
-    console.log("📤 Fetching penomoran data with params:", params);
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+
+    if (sortBy.value) {
+      params.sort_by = sortBy.value;
+      params.sort_order = sortOrder.value;
+    }
+
+    console.log("📤 Fetching with params:", params);
 
     const response = await getListNomor(params);
 
-    console.log("📥 Backend response:", response);
+    console.log("📥 Response received:", response);
+    console.log("📊 Pagination data:", response?.pagination);
 
-    const data = response.data || [];
-    pagination.value = response.pagination || null;
+    if (response?.data && Array.isArray(response.data)) {
+      rows.value = groupDuplicateRows(response.data);
+      pagination.value = response.pagination || null;
 
-    if (!Array.isArray(data)) {
+      console.log("✅ Rows processed:", rows.value.length);
+      console.log("✅ Pagination set:", pagination.value);
+    } else {
+      console.warn("⚠️ No data in response");
       rows.value = [];
-      return;
+      pagination.value = null;
     }
-
-    // ✅ KEEP ROWS GROUPED: One row per request, showing all nomor in one cell
-    rows.value = data.map((item) => {
-      const pengusulInfo = personMap.value.get(item.persnum);
-      const klasifikasiDisplay =
-        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
-
-      // Collect all nomor from nomor_list
-      const nomorList =
-        item.nomor_list && Array.isArray(item.nomor_list)
-          ? item.nomor_list
-          : [{ nomor: item.nomor, status: "booking" }];
-
-      return {
-        id: item.id,
-        jenis: item.jenis,
-        jabatan: item.jabatan || "-",
-        perihal: item.perihal || "-",
-        tanggal: formatTanggalWIB(item.tanggal),
-        nomorList: nomorList, // Array of all nomor
-        pengusul: pengusulInfo?.nama || item.nama_pengirim || "-",
-        waktu: formatWaktuWIB(item.waktu),
-        klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay,
-        // Keep original data for detail modal
-        nomor_list: nomorList,
-      };
-    });
-
-    console.log("✅ Data loaded:", rows.value.length, "grouped rows");
-    console.log("📊 Pagination:", pagination.value);
   } catch (error) {
-    console.error("❌ Error fetch data nomor:", error);
+    console.error("❌ Error fetch data:", error);
     toast.add({
       title: "Gagal memuat data",
       description: "Tidak dapat mengambil data penomoran",
@@ -1015,82 +1021,6 @@ const fetchData = async () => {
   }
 };
 
-// Handle search input with debounce
-const handleSearchInput = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
-};
-
-// Handle sorting
-const handleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = column;
-    sortOrder.value = "desc";
-  }
-
-  currentPage.value = 1;
-  fetchData();
-};
-
-// Get sort icon for column
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down";
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
-};
-
-// Handle page change
-const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return;
-  currentPage.value = page;
-  fetchData();
-};
-
-// Handle limit change
-const handleLimitChange = () => {
-  currentPage.value = 1;
-  fetchData();
-};
-
-// Computed total pages from backend pagination
-const totalPages = computed(() => {
-  return pagination.value?.totalPages || 1;
-});
-
-// Computed pagination pages for display
-const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
-  } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
-  }
-
-  return pages;
-});
-
 const openRowModal = async (row) => {
   selectedRow.value = row;
   openPreview.value = true;
@@ -1099,7 +1029,7 @@ const openRowModal = async (row) => {
   fileStates.value = {};
 
   try {
-    const detail = await getDetailNomor(row.id);
+    const detail = await getDetailNomor(row.id_request);
 
     if (!detail) {
       throw new Error("Detail tidak ditemukan");
@@ -1111,7 +1041,7 @@ const openRowModal = async (row) => {
       row.klasifikasi;
 
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
-      id: item.id || `${row.id}-${idx}`,
+      id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
       status: item.status || "booking",
       file_name: item.file_name || null,
@@ -1133,28 +1063,25 @@ const openRowModal = async (row) => {
       ...row,
       klasifikasiDisplay:
         klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi,
-      nomor_list: row.nomor_list || [
-        {
-          id: row.id,
-          nomor: row.nomor || "-",
-          status: "booking",
-          file_name: null,
-          file_text: null,
-          file_url: null,
-        },
-      ],
+      nomor_list: row.nomor_list.map((nomor, idx) => ({
+        id: `${row.id_request}-${idx}`,
+        nomor: typeof nomor === "string" ? nomor : nomor.nomor,
+        status: "booking",
+        file_name: null,
+        file_text: null,
+        file_url: null,
+      })),
     };
   } finally {
     loadingDetail.value = false;
   }
 };
 
-// ==================== HANDLE SUBMIT ====================
 const handleSubmitFromModal = async (payload) => {
   try {
     await createPenomoranFinal(payload);
-    await fetchData();
     currentPage.value = 1;
+    await fetchData();
     toast.add({
       title: "Berhasil",
       description: "Data penomoran berhasil ditambahkan",
@@ -1170,25 +1097,48 @@ const handleSubmitFromModal = async (payload) => {
   }
 };
 
-// ======== MOUNTED ============
+const paginationPages = computed(() => {
+  if (!pagination.value || !pagination.value.total_pages) return [];
+
+  const total = pagination.value.total_pages;
+  const current = pagination.value.current_page;
+  const pages: number[] = [];
+
+  if (total <= 7) {
+    // Show all pages if 7 or fewer
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    // Always show first page
+    pages.push(1);
+
+    if (current <= 3) {
+      // Near start
+      pages.push(2, 3, 4, 5);
+    } else if (current >= total - 2) {
+      // Near end
+      pages.push(total - 3, total - 2, total - 1);
+    } else {
+      // In middle
+      pages.push(current - 1, current, current + 1);
+    }
+
+    // Always show last page
+    if (!pages.includes(total)) {
+      pages.push(total);
+    }
+  }
+
+  return pages;
+});
+
 onMounted(async () => {
   loading.value = true;
   await fetchKlasifikasiMap();
   await fetchPersonMap();
   await fetchData();
+  loading.value = false;
 });
 
-onBeforeUnmount(() => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  if (previewPdfUrl.value) {
-    URL.revokeObjectURL(previewPdfUrl.value);
-  }
-});
-
-// ========= TOOLTIP ===========
 const tooltip = ref({
   show: false,
   text: "",
@@ -1245,7 +1195,6 @@ tbody tr:hover td:last-child {
   background-color: rgb(249 250 251);
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
