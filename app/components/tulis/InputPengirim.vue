@@ -21,9 +21,9 @@
                 :class="{ 'font-semibold text-primary-600': selected }">
                 {{ item.label }}
               </span>
-              <span class="block text-xs text-gray-500 truncate w-full">
+              <!-- <span class="block text-xs text-gray-500 truncate w-full">
                 {{ item.labelJob || 'No Job Title' }}
-              </span>
+              </span> -->
             </div>
             <UIcon v-if="selected" name="i-lucide-check" class="w-4 h-4 text-primary-500 ml-auto" />
           </div>

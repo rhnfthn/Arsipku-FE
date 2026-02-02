@@ -86,7 +86,7 @@ const tabs = [
   { label: "Disposisi", value: "DI", icon: Send },
   { label: "Internal", value: "SDI", icon: Building },
   { label: "Eksternal", value: "SDE", icon: Building2 },
-  { label: "Konsep", value: "KONSEP", icon: FilePen },
+  { label: "Konsep", value: "KO", icon: FilePen },
   { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 

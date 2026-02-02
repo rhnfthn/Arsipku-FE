@@ -22,7 +22,13 @@ export const useTerkirimDetail = () => {
       let endpoint = "";
       const type = jenis.toUpperCase();
 
+      // 1. Tambahkan case untuk KA / KAJIAN (Konsep)
       switch (type) {
+        case "KA":
+        case "KAJIAN":
+        case "K": // Jika dari query param ?jenis=K
+          endpoint = `/konsep/${id}`;
+          break;
         case "ND":
           endpoint = `/ND/${id}`;
           break;
@@ -38,9 +44,6 @@ export const useTerkirimDetail = () => {
         case "DISPOSISI":
           endpoint = `/DI/${id}`;
           break;
-        case "KA":
-          endpoint = `/KA/${id}`;
-          break;
         default:
           endpoint = `/ND/${id}`;
       }
@@ -50,23 +53,55 @@ export const useTerkirimDetail = () => {
       if (response.success) {
         let rawData = response.data;
 
-        // [FIX] Khusus DI, datanya ada di dalam array 'flow'
-        if (
-          (type === "DI" || type === "DISPOSISI") &&
-          rawData.flow &&
-          rawData.flow.length > 0
-        ) {
-          rawData = rawData.flow[0];
-        }
-        // Normalisasi untuk endpoint lain jika ada wrapper 'detail'
-        else if (rawData.detail) {
-          rawData = rawData.detail;
-        }
+        // 2. Logika Mapping Khusus untuk Endpoint Konsep (/konsep/${id})
+        if (type === "KA" || type === "KAJIAN" || type === "K") {
+          const resData = response.data;
 
-        detail.value = {
-          ...rawData,
-          jenis: type,
-        };
+          detail.value = {
+            // Sebarkan data dari naskah (nomor, perihal, konten, tanggal)
+            ...resData.naskah,
+
+            // Mapping data workflow ke objek pengirim yang diharapkan template
+            pengirim: resData.current_workflow?.pengirim,
+
+            // Mapping penerima & tembusan dari root JSON
+            penerima: resData.penerima || [],
+            tembusan: resData.tembusan || [],
+
+            // Sesuai permintaan: final_pdf_url menggunakan pdf_snapshot dari riwayat terakhir
+            final_pdf_url:
+              resData.riwayat?.[resData.riwayat.length - 1]?.pdf_snapshot ||
+              null,
+
+            // Pastikan properti jenis tetap ada untuk logic warna label
+            jenis: "KA",
+
+            // Mapping lampiran jika ada
+            lampiran_files:
+              resData.lampiran?.map((file: any) => ({
+                id: file.id,
+                fileName: file.name,
+                fileUrl: file.url,
+              })) || [],
+          };
+        }
+        // 3. Logika untuk Endpoint Lama (ND, DI, SDI, SDE)
+        else {
+          if (
+            (type === "DI" || type === "DISPOSISI") &&
+            rawData.flow &&
+            rawData.flow.length > 0
+          ) {
+            rawData = rawData.flow[0];
+          } else if (rawData.detail) {
+            rawData = rawData.detail;
+          }
+
+          detail.value = {
+            ...rawData,
+            jenis: type,
+          };
+        }
       }
     } catch (error) {
       console.error(`Gagal mengambil detail [${jenis}]:`, error);

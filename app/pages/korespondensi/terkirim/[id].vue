@@ -59,7 +59,7 @@ const categoryLabel = computed(() => {
     'SDE': 'Surat Dinas Eksternal',
     'DI': 'Disposisi',
     'DISPOSISI': 'Disposisi',
-    'KA': 'Kajian',
+    'KA': 'Konsep',
     'KAJIAN': 'Kajian'
   };
   return labels[j] || j;
