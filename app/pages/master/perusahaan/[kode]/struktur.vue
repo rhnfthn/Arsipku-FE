@@ -145,6 +145,18 @@
               placeholder="Contoh: DIVISI KEUANGAN"
             />
           </div>
+
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Nama Pendek <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formUnit.titelatur"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              placeholder="Contoh: Manager"
+            />
+          </div>
+
           <div>
             <Heading variant="heading11m" class="text-xs">
               ID Unit <span class="text-red-500">*</span>
@@ -157,57 +169,25 @@
           </div>
           <div>
             <Heading variant="heading11m" class="text-xs">
-              Titelatur <span class="text-red-500">*</span>
+              Sub Area <span class="text-red-500">*</span>
             </Heading>
-            <input
-              v-model="formUnit.titelatur"
+
+            <select
+              v-model="formUnit.idsubArea"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-              placeholder="Contoh: Manager"
-            />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <Heading variant="heading11m" class="text-xs">
-                ID Sub Area <span class="text-red-500">*</span>
-              </Heading>
+            >
+              <option value="">Pilih Sub Area</option>
 
-              <select
-                v-model="formUnit.idsubArea"
-                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+              <option
+                v-for="sub in subAreaOptions"
+                :key="sub.sub_area"
+                :value="sub.sub_area"
               >
-                <option value="">Pilih ID Sub Area</option>
-
-                <option
-                  v-for="sub in subAreaOptions"
-                  :key="sub.sub_area"
-                  :value="sub.sub_area"
-                >
-                  {{ sub.sub_area }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <Heading variant="heading11m" class="text-xs">
-                Sub Area <span class="text-red-500">*</span>
-              </Heading>
-              <select
-                v-model="formUnit.idsubArea"
-                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Pilih Sub Area</option>
-
-                <option
-                  v-for="sub in subAreaOptions"
-                  :key="sub.id"
-                  :value="sub.sub_area"
-                >
-                  {{ sub.shortText || sub.longText }}
-                </option>
-              </select>
-            </div>
+                {{ sub.sub_area }} - {{ sub.shortText || sub.longText }}
+              </option>
+            </select>
           </div>
-          <div>
+          <!-- <div>
             <Heading variant="heading11m" class="text-xs">
               Deskripsi Lengkap <span class="text-red-500">*</span>
             </Heading>
@@ -218,7 +198,7 @@
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
               placeholder="Deskripsi lengkap unit"
             />
-          </div>
+          </div> -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs">
@@ -270,6 +250,18 @@
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
+
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Nama Pendek <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formPosition.titelatur"
+              placeholder="Masukkan titelatur"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+            />
+          </div>
+
           <div>
             <Heading variant="heading11m" class="text-xs">
               ID Posisi <span class="text-red-500">*</span>
@@ -280,17 +272,8 @@
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
-          <div>
-            <Heading variant="heading11m" class="text-xs">
-              Titelatur <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formPosition.titelatur"
-              placeholder="Masukkan titelatur"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-            />
-          </div>
-          <div>
+
+          <!-- <div>
             <Heading variant="heading11m" class="text-xs">
               ID Area <span class="text-red-500">*</span>
             </Heading>
@@ -310,16 +293,26 @@
             >
               <option value="">Pilih unit</option>
             </select>
-          </div>
+          </div> -->
           <div>
             <label class="flex items-center gap-2">
               <input
                 type="checkbox"
                 v-model="formPosition.chief"
-                class="w-4 h-4 rounded"
+                :disabled="parentHasChief"
+                class="w-4 h-4 rounded disabled:opacity-50"
               />
-              <span class="text-sm font-medium">Chief</span>
+              <span
+                class="text-sm font-medium"
+                :class="{ 'text-gray-400': parentHasChief }"
+              >
+                Chief
+              </span>
             </label>
+
+            <p v-if="parentHasChief" class="text-xs text-red-500 mt-1">
+              Posisi chief sudah ada pada unit ini
+            </p>
           </div>
 
           <div v-if="formPosition.chief">
@@ -342,7 +335,7 @@
             </select>
           </div>
 
-          <div>
+          <!-- <div>
             <Heading variant="heading11m" class="text-xs">
               Deskripsi Lengkap <span class="text-red-500">*</span>
             </Heading>
@@ -353,7 +346,7 @@
               placeholder="Deskripsi lengkap posisi"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
-          </div>
+          </div> -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs">
@@ -395,22 +388,43 @@
               Nama Anggota <span class="text-red-500">*</span>
             </Heading>
 
-            <input
-              v-model="formMember.nama"
-              placeholder="Ahmad Wijaya"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-            />
-          </div>
-          <div>
-            <Heading variant="heading11m" class="text-xs">
-              Personal Number<span class="text-red-500">*</span>
-            </Heading>
+            <select
+              v-model="formMember.personId"
+              @focus="loadPersonsIfNeeded"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">
+                {{ loadingPersons ? "Memuat data..." : "Pilih Anggota" }}
+              </option>
 
-            <input
-              v-model="formMember.pn"
-              placeholder="PN-1001"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-            />
+              <option v-for="p in personOptions" :key="p.id" :value="p.id">
+                {{ p.persnum }} - {{ p.name }}
+              </option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Mulai <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                type="date"
+                v-model="formMember.mulai"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Berakhir <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                type="date"
+                v-model="formMember.berakhir"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              />
+            </div>
           </div>
         </div>
       </Modal>
@@ -441,6 +455,7 @@
             </Heading>
             <input
               v-model="formUnit.idUnit"
+              disabled
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
@@ -463,7 +478,8 @@
             </Heading>
             <input
               v-model="formPosition.idPos"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              disabled
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
             />
           </div>
         </div>
@@ -476,6 +492,7 @@
             </Heading>
             <input
               v-model="formMember.nama"
+              disabled
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
@@ -485,9 +502,35 @@
               Personal Number <span class="text-red-500">*</span>
             </Heading>
             <input
-              v-model="formMember.pn"
+              v-model="formMember.personId"
+              disabled
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Mulai <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                type="date"
+                v-model="formMember.mulai"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Berakhir <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                type="date"
+                v-model="formMember.berakhir"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              />
+            </div>
           </div>
         </div>
       </Modal>
@@ -527,6 +570,9 @@ import { useStruktur } from "~/composables/useStruktur";
 import { useCompany } from "~/composables/useCompany";
 import { useArea } from "~/composables/useArea";
 import { useToast } from "#imports";
+import { usePerson } from "~/composables/usePerson";
+
+const { getPersons } = usePerson();
 
 const {
   getCompanyTree,
@@ -541,9 +587,9 @@ const {
   updatePosition,
 
   getPersonsByPosition,
-  createPerson,
+  assignPersonToPosition,
   deletePerson,
-  updatePerson,
+  updateAssignPerson,
 } = useStruktur();
 
 const { getCompanyByCode } = useCompany();
@@ -569,6 +615,59 @@ const showSuccessToast = (message: string) => {
     color: "success",
     icon: "i-lucide-check-circle",
   });
+};
+
+const resetUnitForm = () => {
+  formUnit.value = {
+    namaUnit: "",
+    idUnit: "",
+    titelatur: "",
+    idsubArea: "",
+    subarea: "",
+    deskripsi: "",
+    mulai: "",
+    berakhir: "",
+  };
+};
+
+const resetPositionForm = () => {
+  formPosition.value = {
+    namaPos: "",
+    idPos: "",
+    kodePosisi: "",
+    chief: false,
+    chiefLevel: "",
+    mulai: "",
+    berakhir: "",
+  };
+};
+
+const resetMemberForm = () => {
+  formMember.value = {
+    personId: "",
+    nama: "",
+    mulai: "",
+    berakhir: "",
+  };
+};
+
+const personOptions = ref<any[]>([]);
+const loadingPersons = ref(false);
+const personsLoaded = ref(false);
+
+const loadPersonsIfNeeded = async () => {
+  if (personsLoaded.value || loadingPersons.value) return;
+
+  try {
+    loadingPersons.value = true;
+    const res = await getPersons();
+    personOptions.value = res.data || [];
+    personsLoaded.value = true;
+  } catch (err) {
+    console.error("❌ gagal load person:", err);
+  } finally {
+    loadingPersons.value = false;
+  }
 };
 
 // Modals
@@ -601,8 +700,9 @@ const formPosition = ref({
 });
 
 const formMember = ref({
-  nama: "",
-  pn: "",
+  personId: "",
+  mulai: "",
+  berakhir: "",
 });
 
 // Data
@@ -713,16 +813,18 @@ const loadPositions = async (node: any) => {
 };
 
 const mapPersonToNode = (person: any, positionCode: number) => ({
-  id: person.id,
+  id: person.id_relation_sp,
+
   type: "member",
+
   name: person.name,
   persnum: person.persnum,
-  gender: person.gender,
 
   positionCode,
 
   startDate: person.start_date,
   endDate: person.end_date,
+
   children: [],
 });
 
@@ -733,11 +835,10 @@ const loadPersons = async (node: any) => {
   try {
     const res = await getPersonsByPosition(node.positionCode);
 
-    const persons = res.data.map((p: any) =>
+    node.children = res.data.map((p: any) =>
       mapPersonToNode(p, node.positionCode),
     );
 
-    node.children = persons;
     node._personsLoaded = true;
   } catch (err) {
     console.error("❌ gagal load person:", err);
@@ -838,7 +939,9 @@ const openEditModal = (item: any) => {
 
     formMember.value = {
       nama: item.name,
-      pn: item.persnum,
+      personId: item.persnum,
+      mulai: toDateOnly(item.startDate),
+      berakhir: toDateOnly(item.endDate),
     };
   }
 
@@ -893,7 +996,8 @@ const deleteNow = async () => {
       await deletePerson(item.id);
 
       removeNodeById(organizationTree.value, item.id);
-      showSuccessToast("Berhasil menghapus anggota");
+
+      showSuccessToast("Anggota berhasil dikeluarkan dari posisi");
     } else if (item.type === "position") {
       await deletePosition(item.id);
       removeNodeById(organizationTree.value, item.id);
@@ -914,7 +1018,16 @@ const deleteNow = async () => {
 
 const subAreaOptions = ref<any[]>([]);
 const loadingSubArea = ref(false);
+const parentHasChief = ref(false);
+
+const checkParentHasChief = (parent: any) => {
+  if (!parent?.children) return false;
+
+  return parent.children.some((c: any) => c.type === "position" && !!c.bodTag);
+};
+
 const openAddUnitModal = async (parent: any, type: string) => {
+  resetUnitForm();
   selectedParentNode.value = parent;
   showAddUnitModal.value = true;
 
@@ -924,12 +1037,26 @@ const openAddUnitModal = async (parent: any, type: string) => {
   subAreaOptions.value = res.data || [];
 };
 
-const openAddPositionModal = (parent: any) => {
+const openAddPositionModal = async (parent: any) => {
+  resetPositionForm();
   selectedParentNode.value = parent;
+
+  if (!parent._positionsLoaded) {
+    await loadPositions(parent);
+  }
+
+  parentHasChief.value = checkParentHasChief(parent);
+
+  if (parentHasChief.value) {
+    formPosition.value.chief = false;
+    formPosition.value.chiefLevel = "";
+  }
+
   showAddPositionModal.value = true;
 };
 
 const openAddMemberModal = (parent: any) => {
+  resetMemberForm();
   selectedParentNode.value = parent;
   showAddMemberModal.value = true;
 };
@@ -1029,31 +1156,33 @@ const handleSaveMember = async () => {
   try {
     if (!company.value?.kode || !selectedParentNode.value) return;
 
+    // ambil person terpilih
+    const selectedPerson = personOptions.value.find(
+      (p) => p.id === formMember.value.personId,
+    );
+
+    if (!selectedPerson) return;
+
     const payload = {
-      persnum: Number(formMember.value.pn),
-      name: formMember.value.nama,
-      gender: "L",
+      persnum: Number(selectedPerson.persnum),
       company: Number(company.value.kode),
       position: Number(selectedParentNode.value.positionCode),
-      startDate: "2025-01-01",
-      endDate: "9999-12-31",
+      startDate: formMember.value.mulai,
+      endDate: formMember.value.berakhir,
     };
 
-    await createPerson(payload);
+    const res = await assignPersonToPosition(payload);
+
+    // reload anggota posisi
     selectedParentNode.value._personsLoaded = false;
     await loadPersons(selectedParentNode.value);
 
     showSuccessToast("Berhasil menambahkan anggota");
 
     showAddMemberModal.value = false;
-
-    // reset form
-    formMember.value = {
-      nama: "",
-      pn: "",
-    };
+    resetMemberForm();
   } catch (err) {
-    console.error("❌ gagal create person:", err);
+    console.error("❌ gagal assign person:", err);
   }
 };
 
@@ -1106,22 +1235,16 @@ const handleSaveEdit = async () => {
 
     if (editType.value === "Anggota") {
       const payload = {
-        persnum: Number(formMember.value.pn),
-        name: formMember.value.nama,
-        gender: editingNode.value.gender ?? "L",
-        company: Number(company.value.kode),
-
-        position: Number(editingNode.value.positionCode),
-
-        startDate: toDateOnly(editingNode.value.startDate),
-        endDate: toDateOnly(editingNode.value.endDate),
+        startDate: toDateOnly(formMember.value.mulai),
+        endDate: toDateOnly(formMember.value.berakhir),
       };
 
-      await updatePerson(editingNode.value.id, payload);
-      showSuccessToast("Berhasil mengubah anggota");
+      await updateAssignPerson(editingNode.value.id, payload);
 
-      editingNode.value.name = formMember.value.nama;
-      editingNode.value.persnum = formMember.value.pn;
+      showSuccessToast("Berhasil mengubah periode anggota");
+
+      editingNode.value.startDate = payload.startDate;
+      editingNode.value.endDate = payload.endDate;
     }
 
     showEditModal.value = false;
