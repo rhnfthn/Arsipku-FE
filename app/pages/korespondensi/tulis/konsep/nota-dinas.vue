@@ -79,8 +79,9 @@
           <div class="p-5 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-700">
             <div class="flex items-start gap-4">
               <UAvatar size="md"
-                class="bg-primary-500 text-white font-semibold flex items-center justify-center shrink-0">{{
-                refSenderInitials }}</UAvatar>
+                class="group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center shrink-0">
+                {{ refSenderInitials }}
+              </UAvatar>
               <div class="flex-1 min-w-0 space-y-4">
                 <div>
                   <span class="text-sm font-semibold text-gray-900 dark:text-white block">{{ refData.pengirim_jabatan
@@ -95,7 +96,11 @@
                       <div v-for="(k, idx) in refData.kepada" :key="idx"
                         class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
                         <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ k.position_text }} ({{ k.nama }})</span>
+                        <div class="break-words">
+                          <span class="font-medium text-gray-900 dark:text-white">{{ k.position_text }}</span>
+                          <span v-if="k.nama" class="text-gray-500 dark:text-gray-400 font-normal ml-1">({{ k.nama
+                          }})</span>
+                        </div>
                       </div>
                       <span v-if="!refData.kepada || !refData.kepada.length" class="text-gray-400 italic">-</span>
                     </div>

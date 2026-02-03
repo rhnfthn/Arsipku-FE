@@ -16,20 +16,15 @@ const formatDateTime = (value: string | null | undefined) => {
     hour12: false,
   }).format(date);
 };
-
-const DETAIL_ENDPOINT_BY_JENIS: Record<string, string> = {
-  ND: "/ND",
-  DI: "/DI",
-  SDI: "/SDI",
-  SDE: "/SDE",
-};
-
 export interface InboxParams {
   page?: number;
   limit?: number;
-  jenis?: string; // ND, DI, SDI, SDE
-  status_baca?: string; // terbaca, belum_terbaca
+  jenis?: string;
+  status_baca?: string;
   search?: string;
+  start_date?: string;
+  end_date?: string;
+  preset?: string;
 }
 
 export function useInbox() {
@@ -39,7 +34,6 @@ export function useInbox() {
   const pending = ref(false);
   const error = ref<any>(null);
 
-  // New State for Server-side Pagination & Summary
   const pagination = ref({
     total: 0,
     page: 1,
@@ -70,10 +64,18 @@ export function useInbox() {
       if (params.search) {
         query.append("search", params.search);
       }
+      if (params.preset) {
+        query.append("preset", params.preset);
+      }
+      if (params.start_date) {
+        query.append("start_date", params.start_date);
+      }
+      if (params.end_date) {
+        query.append("end_date", params.end_date);
+      }
 
       const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`);
 
-      // Normalisasi response
       const responseBody = res?.data?.pagination ? res.data : res;
       const rawItems = Array.isArray(responseBody?.data)
         ? responseBody.data
@@ -82,9 +84,6 @@ export function useInbox() {
       items.value = rawItems.map((it: any) => {
         const pengirimName = it.pengirim?.nama || "-";
         const pengirimPos = it.pengirim?.position_text || "-";
-
-        // --- LOGIKA FULL RECIPIENTS ---
-        // Inbox biasanya menggunakan field 'kepada' untuk daftar penerima
         const listKepada = it.kepada || [];
         const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(
           (it.jenis || "").toUpperCase(),
@@ -101,24 +100,16 @@ export function useInbox() {
             : "Tanpa Penerima";
 
         return {
-          // Mapping ID
-          id: it.id_naskah,
+          sirkulasiId: it.id_sirkulasi,
           naskahId: it.id_naskah,
 
-          // Kategori
           jenis: it.jenis,
           category: it.jenis,
           category_label: it.jenis_label,
-
-          // Konten Utama
           nomor: it.nomor,
           date: formatDateTime(it.created_at),
           subject: (it.perihal || "").toString().trim(),
-
-          // Penerima (Baru ditambahkan)
           fullRecipients: fullRecipientList,
-
-          // Pengirim
           from: pengirimPos,
           fromPosition: pengirimPos,
           fromName: pengirimName,
@@ -133,27 +124,20 @@ export function useInbox() {
                   .toUpperCase()
               : "?",
 
-          // Status & Flags
           isRead: it.status_baca === "terbaca",
           isStarred: it.is_favorit,
           isArsip: it.is_arsip,
           isNote: it.is_note,
           isTinjut: it.is_tindak_lanjut,
           isLocked: it.is_locked,
-
-          // Labels
           labels: it.labels || [],
-
-          // Original Objects
           pengirim: it.pengirim,
           kepada: listKepada,
           penerimaAktif: it.penerima || null,
-
           raw: it,
         };
       });
 
-      // Update Pagination & Summary
       if (responseBody?.pagination) pagination.value = responseBody.pagination;
       if (responseBody?.summary) summary.value = responseBody.summary;
     } catch (err: any) {
@@ -167,20 +151,16 @@ export function useInbox() {
 
   const markAsRead = async (mail: any, positionId: string) => {
     if (mail.isRead) return;
-
     try {
       await apiPut("/naskah_sirkulasi/update-read-status", {
         id_naskah: mail.naskahId,
         position_id: positionId,
       });
-
       mail.isRead = true;
       if (mail.raw) {
         mail.raw.status_baca = "terbaca";
         mail.raw.read_time = new Date().toISOString();
       }
-
-      // Optional: Update summary count locally
       if (summary.value.total_belum_dibaca > 0) {
         summary.value.total_belum_dibaca--;
       }
@@ -189,68 +169,87 @@ export function useInbox() {
     }
   };
 
+  // --- PERBAIKAN TOGGLE FLAG ---
   const toggleFlag = async (
     mail: any,
     flagType: "favorit" | "arsip" | "note",
   ) => {
+    // 1. Simpan state lama (Optimistic UI)
+    const oldVal =
+      flagType === "favorit"
+        ? mail.isStarred
+        : flagType === "arsip"
+          ? mail.isArsip
+          : mail.isNote;
+
+    // 2. Update UI duluan
+    if (flagType === "favorit") mail.isStarred = !oldVal;
+    if (flagType === "arsip") mail.isArsip = !oldVal;
+    if (flagType === "note") mail.isNote = !oldVal;
+
     try {
+      // 3. Gunakan 'sirkulasiId' yang sudah di-mapping di fetchInbox
+      // BUKAN mail.id_sirkulasi (karena id_sirkulasi ada di mail.raw, tapi di root object kita map ke sirkulasiId)
+      const idToSend = mail.sirkulasiId || mail.raw?.id_sirkulasi;
+
+      if (!idToSend) throw new Error("ID Sirkulasi tidak ditemukan");
+
       const res: any = await apiPatch("/naskah_sirkulasi/toggle-flag", {
-        id_sirkulasi: mail.id, // Ensure this uses id_sirkulasi
+        id_sirkulasi: idToSend,
         flag_type: flagType,
+        // action: !oldVal ? "add" : "delete", // Sesuaikan action add/delete
       });
 
-      const newValue = res?.data?.new_value;
-
-      // Update state local
-      if (flagType === "favorit") mail.isStarred = newValue;
-      if (flagType === "arsip") mail.isArsip = newValue;
-      if (flagType === "note") mail.isNote = newValue;
+      // Jika backend mengembalikan nilai baru, pastikan sinkron (opsional)
+      // const newValue = res?.data?.new_value;
     } catch (err) {
+      // 4. Revert jika error
       console.error("Gagal toggle flag:", flagType, err);
+      if (flagType === "favorit") mail.isStarred = oldVal;
+      if (flagType === "arsip") mail.isArsip = oldVal;
+      if (flagType === "note") mail.isNote = oldVal;
     }
   };
 
-  const fetchInboxDetail = async (idNaskah: string, jenis: string) => {
-    const JENIS_LABEL_MAP: Record<string, string> = {
-      ND: "Nota Dinas",
-      DI: "Disposisi",
-      SDI: "Surat Dinas Internal",
-      SDE: "Surat Dinas Eksternal",
-    };
+  // ... (fetchInboxDetail tetap sama) ...
+  const JENIS_LABEL_MAP: Record<string, string> = {
+    ND: "Nota Dinas",
+    DI: "Disposisi",
+    SDI: "Surat Dinas Internal",
+    SDE: "Surat Dinas Eksternal",
+  };
 
+  const fetchInboxDetail = async (idNaskah: string, jenis?: string) => {
+    // ... (kode fetchInboxDetail Anda tetap sama)
     pending.value = true;
     error.value = null;
-
     try {
-      const basePath = DETAIL_ENDPOINT_BY_JENIS[jenis];
-      if (!basePath) throw new Error(`Jenis naskah tidak dikenali: ${jenis}`);
-
-      const res = await apiGet(`${basePath}/${encodeURIComponent(idNaskah)}`);
-      const d = res?.data;
-
+      const res = await apiGet(
+        `/persuratan/naskah/${encodeURIComponent(idNaskah)}`,
+      );
+      const d = res?.data && Array.isArray(res.data) ? res.data[0] : res?.data;
       if (!d) return null;
-
       return {
         id: d.id,
         jenis: d.jenis,
-        jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || "-",
-        sifat: d.sifat,
-        status: d.status,
-        kepada_yth: d.kepada_yth,
-        disposisi: d.disposisi,
-        catatan: d.catatan,
-        final_pdf_url: d.final_pdf_url,
+        jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
         nomor: d.nomor,
         tanggal: d.tanggal,
         perihal: d.perihal,
+        sifat: d.sifat,
+        status: d.status,
+        pengirim: d.pengirim,
+        kepada: Array.isArray(d.penerima) ? d.penerima : d.kepada || [],
+        tembusan: d.tembusan || [],
+        kepada_yth: d.detail?.kepada_yth || d.kepada_yth,
+        disposisi: d.detail?.disposisi || d.disposisi,
+        catatan: d.detail?.catatan || d.catatan,
         konten: d.konten,
         lampiran_files: d.lampiran_files || [],
-        pengirim: d.pengirim,
-        kepada: Array.isArray(d.penerima) ? d.penerima : [],
-        tembusan: d.tembusan || [],
+        final_pdf_url: d.final_pdf_url || d.final_pdf,
         raw: d,
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error("fetchInboxDetail error:", err);
       error.value = err;
       return null;
@@ -261,11 +260,11 @@ export function useInbox() {
 
   return {
     items,
-    pagination, // Export pagination
-    summary, // Export summary
+    pagination,
+    summary,
     pending,
     error,
-    fetchInbox, // Updated signature
+    fetchInbox,
     markAsRead,
     toggleFlag,
     fetchInboxDetail,

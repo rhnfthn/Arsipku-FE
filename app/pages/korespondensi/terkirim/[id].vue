@@ -1,277 +1,3 @@
-<script setup lang="ts">
-// --- IMPORTS ---
-import { onMounted, onUnmounted, ref, watch, computed, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import {
-  ArrowLeft, Printer, Paperclip, Loader2, FileText,
-  MoreHorizontal, ChevronUp, Calendar, Hash, Tag,
-  Notebook,
-  Pencil
-} from 'lucide-vue-next';
-import { useTerkirimDetail } from '@/composables/useTerkirimDetail';
-
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Terkirim", to: "/korespondensi/terkirim" },
-  { label: "Detail Surat", to: "#" },
-];
-
-// --- SETUP & COMPOSABLES ---
-const route = useRoute();
-const router = useRouter();
-const {
-  detail,
-  isLoading,
-  fetchDetail,
-  showPdfModal
-} = useTerkirimDetail();
-
-// --- CONSTANTS & PARAMS ---
-const idNaskah = route.params.id as string;
-
-// [FIX] Gunakan computed untuk menangkap query param secara reaktif & normalisasi
-const currentJenis = computed(() => {
-  const raw = (route.query.jenis as string)?.toUpperCase() || 'ND';
-  return (raw === 'KAJIAN' || raw === 'KA') ? 'KA' : raw;
-});
-
-const LIMIT_DISPLAY = 2;
-const MAX_CONTENT_HEIGHT = 300;
-
-// --- LOCAL STATE ---
-const iframe = ref<HTMLIFrameElement | null>(null);
-const showAllRecipients = ref(false);
-const showAllCC = ref(false);
-const isContentExpanded = ref(false);
-const showReadMoreButton = ref(false);
-const activePdfUrl = ref<string | null>(null);
-const isLocalPdfLoading = ref(false);
-const previewTitle = ref('Preview Dokumen');
-
-// --- COMPUTED PROPERTIES ---
-const categoryLabel = computed(() => {
-  const j = detail.value?.jenis || currentJenis.value;
-  const labels: Record<string, string> = {
-    'ND': 'Nota Dinas',
-    'INTERNAL': 'Surat Dinas Internal',
-    'SDI': 'Surat Dinas Internal',
-    'EXTERNAL': 'Surat Dinas Eksternal',
-    'SDE': 'Surat Dinas Eksternal',
-    'DI': 'Disposisi',
-    'DISPOSISI': 'Disposisi',
-    'KA': 'Konsep',
-    'KAJIAN': 'Kajian'
-  };
-  return labels[j] || j;
-});
-
-// LOGIC WARNA LABEL
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
-  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
-  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
-  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
-};
-
-// LOGIC TOTAL COUNT
-const totalRecipientCount = computed(() => {
-  if (!detail.value) return 0;
-  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
-    return detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
-  }
-  return detail.value.penerima?.length || 0;
-});
-
-const totalCCCount = computed(() => {
-  return detail.value?.tembusan?.length || 0;
-});
-
-// LOGIC VISIBLE PENERIMA
-const visiblePenerima = computed(() => {
-  if (!detail.value) return [];
-  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
-
-  // KHUSUS SDE
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
-    const list = detail.value.kepada_yth.split(';').map((nama: string) => ({
-      nama: nama.trim(),
-      positionText: '' // Fallback
-    })).filter((i: any) => i.nama);
-    return showAllRecipients.value ? list : list.slice(0, LIMIT_DISPLAY);
-  }
-
-  // DEFAULT (ND, DI, etc)
-  if (!detail.value.penerima) return [];
-  return showAllRecipients.value
-    ? detail.value.penerima
-    : detail.value.penerima.slice(0, LIMIT_DISPLAY);
-});
-
-const remainingCount = computed(() => {
-  if (!detail.value) return 0;
-  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
-    const total = detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
-    return Math.max(0, total - LIMIT_DISPLAY);
-  }
-  return Math.max(0, (detail.value?.penerima?.length || 0) - LIMIT_DISPLAY);
-});
-
-const visibleTembusan = computed(() => {
-  if (!detail.value?.tembusan) return [];
-  return showAllCC.value
-    ? detail.value.tembusan
-    : detail.value.tembusan.slice(0, LIMIT_DISPLAY);
-});
-
-const remainingCCCount = computed(() =>
-  (detail.value?.tembusan?.length || 0) - LIMIT_DISPLAY
-);
-
-// --- METHODS: UTILS ---
-const goBack = () => router.back();
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'short', year: 'numeric'
-  });
-};
-
-const getInitials = (name: string) => {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-};
-
-const toggleContent = () => {
-  isContentExpanded.value = !isContentExpanded.value;
-};
-
-// --- METHODS: DOCUMENT PREVIEW ---
-const openDocumentPreview = async (url: string, title: string, filename?: string) => {
-  if (!url) {
-    alert("URL dokumen tidak valid.");
-    return;
-  }
-  previewTitle.value = title;
-  showPdfModal.value = true;
-  isLocalPdfLoading.value = true;
-  activePdfUrl.value = null;
-
-  try {
-    const response = await fetch(url);
-    const buffer = await response.arrayBuffer();
-
-    let mime = 'application/pdf';
-    const nameSource = (filename || url || '').toString();
-    const ext = nameSource.split('?')[0].split('/').pop()?.split('.').pop()?.toLowerCase() || '';
-    if (ext === 'pdf') mime = 'application/pdf';
-    else if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
-    else if (ext === 'png') mime = 'image/png';
-    else if (ext === 'txt') mime = 'text/plain';
-
-    const blob = new Blob([buffer], { type: mime });
-    activePdfUrl.value = URL.createObjectURL(blob);
-  } catch (error) {
-    console.error("Gagal memuat dokumen blob:", error);
-    activePdfUrl.value = url;
-  } finally {
-    isLocalPdfLoading.value = false;
-  }
-};
-
-const openPdfPreview = () => {
-  if (detail.value?.final_pdf_url) {
-    const filename = detail.value.final_pdf_name
-      || detail.value.final_pdf_filename
-      || (detail.value.final_pdf_url.split('?')[0].split('/').pop() || 'document.pdf');
-    openDocumentPreview(detail.value.final_pdf_url, 'Pratinjau', filename);
-  } else {
-    alert('Dokumen PDF belum tersedia');
-  }
-};
-
-// --- METHODS: IFRAME RESIZING ---
-const resizeIframe = () => {
-  if (!iframe.value) return;
-
-  const adjust = () => {
-    const iWindow = iframe.value?.contentWindow;
-    if (!iWindow) return;
-
-    const doc = iWindow.document;
-    iframe.value!.style.height = 'auto';
-    const contentHeight = Math.max(
-      doc.body.scrollHeight, doc.documentElement.scrollHeight,
-      doc.body.offsetHeight, doc.documentElement.offsetHeight
-    );
-    iframe.value!.style.height = (contentHeight + 20) + 'px';
-
-    if (contentHeight > MAX_CONTENT_HEIGHT) {
-      showReadMoreButton.value = true;
-    } else {
-      showReadMoreButton.value = false;
-      isContentExpanded.value = true;
-    }
-  };
-
-  iframe.value.onload = adjust;
-  setTimeout(adjust, 100);
-  setTimeout(adjust, 500);
-};
-
-const contentToDisplay = computed(() => {
-  if (!detail.value) return '';
-  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
-
-  if (type === 'DI' || type === 'DISPOSISI') {
-    return detail.value.catatan || '';
-  }
-  return detail.value.konten || '';
-});
-
-// [FIX] Handle logic disposisi yang ada di root (sesuai JSON) atau nested
-const dispositionData = computed(() => {
-  if (!detail.value) return null;
-  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
-
-  if (type === 'DI' || type === 'DISPOSISI') {
-    // Cek root level (JSON baru)
-    if (detail.value.disposisi) {
-      return { instruksi: detail.value.disposisi };
-    }
-    // Cek detail_disposisi object
-    if (detail.value.detail_disposisi) {
-      return { instruksi: detail.value.detail_disposisi.disposisi };
-    }
-  }
-  return null;
-});
-
-// --- LIFECYCLE ---
-watch(contentToDisplay, async () => {
-  await nextTick();
-  setTimeout(resizeIframe, 100);
-});
-
-onUnmounted(() => {
-  if (activePdfUrl.value && activePdfUrl.value.startsWith('blob:')) {
-    URL.revokeObjectURL(activePdfUrl.value);
-  }
-});
-
-onMounted(async () => {
-  if (idNaskah) {
-    await fetchDetail(idNaskah, currentJenis.value);
-  }
-});
-</script>
-
 <template>
   <PageHeader title="Detail Terkirim" :items="breadcrumbs" />
   <div class="w-full flex flex-col rounded-xl shadow-sm glass-blue">
@@ -350,7 +76,7 @@ onMounted(async () => {
             {{ detail.perihal || detail.kop_judul || '-' }}
           </h2>
 
-          <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+          <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
             <div class="flex items-center gap-1">
               <Hash class="w-3.5 h-3.5" />
               <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
@@ -375,6 +101,41 @@ onMounted(async () => {
             </div>
           </div>
 
+          <div v-if="(currentJenis === 'KA' || currentJenis === 'KAJIAN') && detail.konsep"
+            class="mt-5 p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-x-6 gap-y-2 text-xs">
+
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                <Notebook class="w-3.5 h-3.5" />
+                ID Konsep:
+              </span>
+              <span class="font-mono font-medium text-gray-900 dark:text-gray-200 select-all">
+                {{ detail.konsep.id }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 dark:text-gray-400">Status:</span>
+              <span
+                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                {{ detail.konsep.status }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 dark:text-gray-400">Dibuat:</span>
+              <span class="text-gray-700 dark:text-gray-300 font-medium">
+                {{ formatDate(detail.konsep.created_at) }}
+                <span class="text-gray-400 font-normal ml-1">
+                  {{ new Date(detail.konsep.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit', minute: '2-digit'
+                  })
+                  }}
+                </span>
+              </span>
+            </div>
+          </div>
+
         </div>
 
         <div class="p-5 sm:p-8 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-800">
@@ -396,15 +157,16 @@ onMounted(async () => {
 
               <div class="grid grid-cols-1 gap-6">
                 <div class="flex flex-col md:flex-row">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Kepada
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">
+                    Kepada
                   </div>
                   <div class="flex flex-col">
                     <template
                       v-if="['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((detail.jenis || currentJenis).toUpperCase())">
                       <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
                         class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                        <span v-if="totalRecipientCount > 2"
-                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+                        <span v-if="totalRecipientCount > 1"
+                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-4 shrink-0">
                           {{ idx + 1 }}.
                         </span>
                         <div class="break-words">
@@ -412,7 +174,7 @@ onMounted(async () => {
                         </div>
                       </div>
                       <button v-if="remainingCount > 0" @click="showAllRecipients = !showAllRecipients"
-                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
+                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1 w-fit">
                         {{ showAllRecipients ? 'Sembunyikan' : `+${remainingCount} lainnya` }}
                       </button>
                     </template>
@@ -420,8 +182,8 @@ onMounted(async () => {
                     <template v-else>
                       <div v-for="(penerima, idx) in visiblePenerima" :key="idx"
                         class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                        <span v-if="totalRecipientCount > 2"
-                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+                        <span v-if="totalRecipientCount > 1"
+                          class="text-gray-400 font-mono text-[10px] pt-0.5 w-4 shrink-0">
                           {{ idx + 1 }}.
                         </span>
                         <div class="break-words">
@@ -435,7 +197,7 @@ onMounted(async () => {
                         </div>
                       </div>
                       <button v-if="remainingCount > 0" @click="showAllRecipients = !showAllRecipients"
-                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
+                        class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1 w-fit">
                         {{ showAllRecipients ? 'Sembunyikan' : `+${remainingCount} lainnya` }}
                       </button>
                     </template>
@@ -444,14 +206,18 @@ onMounted(async () => {
                 </div>
 
                 <div class="flex flex-col md:flex-row" v-if="detail.tembusan && detail.tembusan.length > 0">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">Tembusan
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-2 mt-0.5">
+                    Tembusan
                   </div>
+
                   <div class="flex flex-col">
                     <div v-for="(cc, idx) in visibleTembusan" :key="idx"
                       class="flex items-start gap-2 text-gray-800 dark:text-gray-200 leading-snug text-xs sm:text-sm">
-                      <span v-if="totalCCCount > 2" class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">
+
+                      <span v-if="totalCCCount > 1" class="text-gray-400 font-mono text-[10px] pt-0.5 w-4 shrink-0">
                         {{ idx + 1 }}.
                       </span>
+
                       <div class="break-words">
                         <span class="font-medium">
                           {{ cc.position_text || cc.positionText || cc.nama }}
@@ -461,8 +227,9 @@ onMounted(async () => {
                         </span>
                       </div>
                     </div>
+
                     <button v-if="remainingCCCount > 0" @click="showAllCC = !showAllCC"
-                      class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1">
+                      class="text-xs font-semibold text-primary hover:text-primary-400 mt-1 flex items-center gap-1 w-fit">
                       {{ showAllCC ? 'Sembunyikan' : `+${remainingCCCount} lainnya` }}
                     </button>
                   </div>
@@ -490,7 +257,6 @@ onMounted(async () => {
 
             <div v-if="dispositionData"
               class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-25 mb-3 flex items-center gap-2">
-              <!-- <FileText class="w-3.5 h-3.5" /> -->
               Catatan
             </div>
 
@@ -576,3 +342,288 @@ onMounted(async () => {
 
   </div>
 </template>
+
+<script setup lang="ts">
+// --- IMPORTS ---
+import { onMounted, onUnmounted, ref, watch, computed, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  ArrowLeft, Printer, Paperclip, Loader2, FileText,
+  MoreHorizontal, ChevronUp, Calendar, Hash, Tag,
+  Notebook
+} from 'lucide-vue-next';
+import { useApi } from '@/composables/useApi';
+
+const breadcrumbs = [
+  { label: "Beranda", to: "/beranda" },
+  { label: "Terkirim", to: "/korespondensi/terkirim" },
+  { label: "Detail Surat", to: "#" },
+];
+
+const route = useRoute();
+const router = useRouter();
+const { get } = useApi();
+
+const detail = ref<any>(null);
+const isLoading = ref(false);
+const showPdfModal = ref(false);
+
+const fetchDetail = async (id: string, jenis: string = "ND") => {
+  isLoading.value = true;
+  detail.value = null;
+
+  try {
+    const endpoint = `/persuratan/naskah/${id}`;
+    const response = await get(endpoint);
+
+    if (response.success && response.data && response.data.length > 0) {
+      const rawData = response.data[0];
+      detail.value = {
+        ...rawData,
+        ...(rawData.detail || {}),
+        penerima: rawData.penerima || [],
+        tembusan: rawData.tembusan || [],
+        lampiran_files: rawData.lampiran_files || [],
+        jenis: rawData.jenis
+      };
+    }
+  } catch (error) {
+    console.error(`Gagal mengambil detail [${jenis}]:`, error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const idNaskah = route.params.id as string;
+
+const currentJenis = computed(() => {
+  const raw = (route.query.jenis as string)?.toUpperCase() || 'ND';
+  return (raw === 'KAJIAN' || raw === 'KA') ? 'KA' : raw;
+});
+
+const LIMIT_DISPLAY = 2;
+const MAX_CONTENT_HEIGHT = 300;
+
+const iframe = ref<HTMLIFrameElement | null>(null);
+const showAllRecipients = ref(false);
+const showAllCC = ref(false);
+const isContentExpanded = ref(false);
+const showReadMoreButton = ref(false);
+const activePdfUrl = ref<string | null>(null);
+const isLocalPdfLoading = ref(false);
+const previewTitle = ref('Preview Dokumen');
+
+const categoryLabel = computed(() => {
+  const j = detail.value?.jenis || currentJenis.value;
+  const labels: Record<string, string> = {
+    'ND': 'Nota Dinas',
+    'INTERNAL': 'Surat Dinas Internal',
+    'SDI': 'Surat Dinas Internal',
+    'EXTERNAL': 'Surat Dinas Eksternal',
+    'SDE': 'Surat Dinas Eksternal',
+    'DI': 'Disposisi',
+    'DISPOSISI': 'Disposisi',
+    'KA': 'Konsep',
+    'KAJIAN': 'Kajian'
+  };
+  return labels[j] || j;
+});
+
+const getCategoryStyle = (cat: string) => {
+  const c = (cat || '').toUpperCase();
+  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
+  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
+  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
+  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
+};
+
+const totalRecipientCount = computed(() => {
+  if (!detail.value) return 0;
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    return detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
+  }
+  return detail.value.penerima?.length || 0;
+});
+
+const totalCCCount = computed(() => {
+  return detail.value?.tembusan?.length || 0;
+});
+
+// LOGIC UTAMA PERBAIKAN:
+// remainingCCCount sekarang hanya menghitung potensi sisa (static),
+// TIDAK peduli apakah sedang showAllCC atau tidak.
+// Ini agar v-if="remainingCCCount > 0" tetap TRUE saat expanded, sehingga tombol "Sembunyikan" muncul.
+const remainingCCCount = computed(() => {
+  return Math.max(0, (detail.value?.tembusan?.length || 0) - LIMIT_DISPLAY);
+});
+
+const visibleTembusan = computed(() => {
+  if (!detail.value?.tembusan) return [];
+  return showAllCC.value
+    ? detail.value.tembusan
+    : detail.value.tembusan.slice(0, LIMIT_DISPLAY);
+});
+
+const visiblePenerima = computed(() => {
+  if (!detail.value) return [];
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
+
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    const list = detail.value.kepada_yth.split(';').map((nama: string) => ({
+      nama: nama.trim(),
+      positionText: ''
+    })).filter((i: any) => i.nama);
+    return showAllRecipients.value ? list : list.slice(0, LIMIT_DISPLAY);
+  }
+
+  if (!detail.value.penerima) return [];
+  return showAllRecipients.value
+    ? detail.value.penerima
+    : detail.value.penerima.slice(0, LIMIT_DISPLAY);
+});
+
+const remainingCount = computed(() => {
+  if (!detail.value) return 0;
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
+  if (['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(type) && detail.value.kepada_yth) {
+    const total = detail.value.kepada_yth.split(';').filter((s: string) => s.trim()).length;
+    return Math.max(0, total - LIMIT_DISPLAY);
+  }
+  return Math.max(0, (detail.value?.penerima?.length || 0) - LIMIT_DISPLAY);
+});
+
+const goBack = () => router.back();
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+};
+
+const getInitials = (name: string) => {
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+};
+
+const toggleContent = () => {
+  isContentExpanded.value = !isContentExpanded.value;
+};
+
+const openDocumentPreview = async (url: string, title: string, filename?: string) => {
+  if (!url) {
+    alert("URL dokumen tidak valid.");
+    return;
+  }
+  previewTitle.value = title;
+  showPdfModal.value = true;
+  isLocalPdfLoading.value = true;
+  activePdfUrl.value = null;
+
+  try {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+
+    let mime = 'application/pdf';
+    const nameSource = (filename || url || '').toString();
+    const ext = nameSource.split('?')[0].split('/').pop()?.split('.').pop()?.toLowerCase() || '';
+    if (ext === 'pdf') mime = 'application/pdf';
+    else if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+    else if (ext === 'png') mime = 'image/png';
+    else if (ext === 'txt') mime = 'text/plain';
+
+    const blob = new Blob([buffer], { type: mime });
+    activePdfUrl.value = URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Gagal memuat dokumen blob:", error);
+    activePdfUrl.value = url;
+  } finally {
+    isLocalPdfLoading.value = false;
+  }
+};
+
+const openPdfPreview = () => {
+  if (detail.value?.final_pdf_url) {
+    const filename = detail.value.final_pdf_name
+      || detail.value.final_pdf_filename
+      || (detail.value.final_pdf_url.split('?')[0].split('/').pop() || 'document.pdf');
+    openDocumentPreview(detail.value.final_pdf_url, 'Pratinjau', filename);
+  } else {
+    alert('Dokumen PDF belum tersedia');
+  }
+};
+
+const resizeIframe = () => {
+  if (!iframe.value) return;
+
+  const adjust = () => {
+    const iWindow = iframe.value?.contentWindow;
+    if (!iWindow) return;
+
+    const doc = iWindow.document;
+    iframe.value!.style.height = 'auto';
+    const contentHeight = Math.max(
+      doc.body.scrollHeight, doc.documentElement.scrollHeight,
+      doc.body.offsetHeight, doc.documentElement.offsetHeight
+    );
+    iframe.value!.style.height = (contentHeight + 20) + 'px';
+
+    if (contentHeight > MAX_CONTENT_HEIGHT) {
+      showReadMoreButton.value = true;
+    } else {
+      showReadMoreButton.value = false;
+      isContentExpanded.value = true;
+    }
+  };
+
+  iframe.value.onload = adjust;
+  setTimeout(adjust, 100);
+  setTimeout(adjust, 500);
+};
+
+const contentToDisplay = computed(() => {
+  if (!detail.value) return '';
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
+
+  if (type === 'DI' || type === 'DISPOSISI') {
+    return detail.value.catatan || '';
+  }
+  return detail.value.konten || '';
+});
+
+const dispositionData = computed(() => {
+  if (!detail.value) return null;
+  const type = (detail.value.jenis || currentJenis.value).toUpperCase();
+
+  if (type === 'DI' || type === 'DISPOSISI') {
+    if (detail.value.disposisi) {
+      return { instruksi: detail.value.disposisi };
+    }
+    if (detail.value.detail_disposisi) {
+      return { instruksi: detail.value.detail_disposisi.disposisi };
+    }
+  }
+  return null;
+});
+
+watch(contentToDisplay, async () => {
+  await nextTick();
+  setTimeout(resizeIframe, 100);
+});
+
+onUnmounted(() => {
+  if (activePdfUrl.value && activePdfUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(activePdfUrl.value);
+  }
+});
+
+onMounted(async () => {
+  if (idNaskah) {
+    await fetchDetail(idNaskah, currentJenis.value);
+  }
+});
+</script>

@@ -10,7 +10,7 @@ import {
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
-// Asumsi: useInbox sudah di-import secara global atau auto-import oleh Nuxt/Vue
+// Pastikan useInbox sudah diupdate untuk menembak endpoint: /persuratan/naskah/:id
 const { fetchInboxDetail } = useInbox(null);
 
 const id = route.params.id as string;
@@ -44,40 +44,56 @@ const activePdfUrl = ref<string | null>(null);
 const isPdfLoading = ref(false);
 
 /* ===============================
-   MANUAL FETCH DATA
+   MANUAL FETCH DATA (UPDATED)
 ================================ */
 const loadData = async () => {
-  if (!jenis) return;
+  // Kita tetap butuh ID, tapi jenis mungkin opsional tergantung endpoint baru
+  if (!id) return;
   isLoading.value = true;
 
   try {
     const result = await fetchInboxDetail(id, jenis);
 
-    if (result && result.raw && result.raw.flow && Array.isArray(result.raw.flow) && result.raw.flow.length > 0) {
-      const flowItem = result.raw.flow[0];
+    // ADAPTASI RESPONSE BARU:
+    // API baru mengembalikan: { success: true, data: [ObjectNaskah] }
+    // Kita ambil index ke-0 dari array 'data'
 
+    // Cek apakah result memiliki property 'data' yang berupa array
+    const rawData = (result && result.data && Array.isArray(result.data))
+      ? result.data[0]
+      : result; // Fallback jika struktur masih lama
+
+    if (rawData) {
       selected.value = {
-        id: flowItem.id,
-        nomor: flowItem.nomor || '-',
-        tanggal: flowItem.tanggal,
-        perihal: flowItem.perihal,
-        jenis: flowItem.jenis,
-        jenis_label: flowItem.jenis === 'DI' ? 'DISPOSISI' : (flowItem.jenis || 'SURAT'),
-        sifat: flowItem.sifat,
-        status: flowItem.status,
-        disposisi: flowItem.disposisi,
-        catatan: flowItem.catatan,
-        kepada_yth: flowItem.kepada_yth,
-        pengirim: flowItem.pengirim,
-        kepada: flowItem.penerima || [],
-        tembusan: flowItem.tembusan || [],
-        konten: flowItem.konten || result.konten,
-        lampiran_files: flowItem.lampiran_files || [],
-        final_pdf_url: flowItem.final_pdf_url || flowItem.final_pdf
-      };
+        id: rawData.id,
+        nomor: rawData.nomor || '-',
+        tanggal: rawData.tanggal,
+        // Jika perihal null (biasa di disposisi), biarkan null atau string kosong, UI akan handle
+        perihal: rawData.perihal,
+        jenis: rawData.jenis,
+        jenis_label: rawData.jenis_label, // "Disposisi", "Nota Dinas", dll
+        sifat: rawData.sifat,
+        status: rawData.status,
 
-    } else {
-      selected.value = result;
+        // --- MAPPING DETAIL ---
+        // JSON baru menyatukan detail (disposisi, catatan) dalam object 'detail'
+        // Kita gunakan optional chaining (?.) untuk handle jika key tidak ada
+        disposisi: rawData.detail?.disposisi || rawData.disposisi,
+        catatan: rawData.detail?.catatan || rawData.catatan,
+        kepada_yth: rawData.detail?.kepada_yth || rawData.kepada_yth,
+
+        // --- MAPPING PENGIRIM & PENERIMA ---
+        pengirim: rawData.pengirim,
+        // Di JSON baru key-nya 'penerima', di UI kita pakai 'kepada'
+        kepada: rawData.penerima || rawData.kepada || [],
+        tembusan: rawData.tembusan || [],
+
+        // --- KONTEN & FILE ---
+        // Untuk disposisi, konten berisi teks instruksi
+        konten: rawData.konten,
+        lampiran_files: rawData.lampiran_files || [],
+        final_pdf_url: rawData.final_pdf_url || rawData.final_pdf
+      };
     }
 
   } catch (e) {
@@ -103,11 +119,10 @@ const formatDate = (value?: string) => {
   } catch (e) { return value; }
 };
 
-// Helper baru untuk format disposisi (ganti enter jadi koma)
+// Helper untuk format disposisi (ganti enter jadi koma)
 const formatDisposisiInline = (val: any) => {
   if (!val) return '';
   if (Array.isArray(val)) return val.join(', ');
-  // Ganti semua jenis newline (\n, \r, \r\n) dengan koma dan spasi
   return String(val).replace(/(\r\n|\n|\r)/gm, ", ");
 };
 
@@ -218,7 +233,6 @@ const openMainPdfPreview = async () => {
 // --- KONSEP MODAL LOGIC ---
 const isOpenKonsepModal = ref(false);
 
-// UPDATED: Path disesuaikan dengan kebutuhan route konsep (/konsep/...)
 const konsepOptions = [
   {
     type: 'ND',
@@ -389,7 +403,7 @@ const selectKonsep = (option: any) => {
                       <div class="break-words">
                         <span class="font-medium">{{ k.nama }}</span>
                         <span v-if="k.position_text" class="text-gray-500 font-normal ml-1 text-xs">({{ k.position_text
-                        }})</span>
+                          }})</span>
                       </div>
                     </div>
                     <button v-if="hiddenKepadaCount > 0" @click="showAllKepada = !showAllKepada"
