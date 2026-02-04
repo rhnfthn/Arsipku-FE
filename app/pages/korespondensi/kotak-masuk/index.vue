@@ -175,17 +175,36 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   isLabelProcessing.value = true;
 
   try {
+    // Array.from untuk konversi Set ke Array
     const promises = Array.from(selectedIds.value).map(selectedId => {
-      const mailItem = items.value.find(e => e.id === selectedId);
-      const realNaskahId = mailItem?.naskahId || selectedId;
+      // 1. Cari item di list items yang cocok dengan ID yang dipilih
+      // Kita cek kedua kemungkinan ID (id utama atau naskahId)
+      const mailItem = items.value.find(e => e.id === selectedId || e.naskahId === selectedId);
+
+      // 2. Pastikan kita mengambil 'naskahId' yang valid
+      // Jika mailItem ditemukan, ambil naskahId-nya.
+      // Jika tidak ditemukan (kasus jarang), kita asumsikan selectedId itu sendiri adalah ID yang valid (fallback)
+      const realNaskahId = mailItem?.naskahId;
+
+      if (!realNaskahId) {
+        console.warn(`Naskah ID tidak ditemukan untuk item dengan ID: ${selectedId}`);
+        return null; // Skip item ini agar tidak error
+      }
+
       return addNaskahToLabel(realNaskahId, labelId, 'inbox');
-    });
+    }).filter(p => p !== null); // Filter promise yang null
 
     await Promise.all(promises);
-    toast.add({ title: 'Berhasil', description: `Label "${labelName}" ditambahkan.`, color: 'success' });
+
+    toast.add({
+      title: 'Berhasil',
+      description: `Label "${labelName}" berhasil ditambahkan ke ${promises.length} item.`,
+      color: 'success'
+    });
+
     showLabelAssignModal.value = false;
     selectedIds.value.clear();
-    refreshData();
+    refreshData(); // Refresh list agar label muncul
   } catch (error) {
     console.error("Gagal assign label:", error);
     toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
@@ -261,6 +280,47 @@ const confirmAction = (action: string) => {
   if (selectedIds.value.size === 0) return;
   currentBulkAction.value = action;
   showDeleteModal.value = true;
+};
+
+const handleToggleFlag = async (mail: any, type: 'favorit' | 'arsip' | 'note') => {
+  try {
+    // 1. Panggil fungsi dari composable
+    await toggleFlag(mail, type);
+
+    // 2. Tentukan pesan berdasarkan tipe dan status akhir (mail sudah berubah secara optimistic)
+    let title = 'Berhasil';
+    let description = '';
+
+    if (type === 'favorit') {
+      description = mail.isStarred
+        ? 'Pesan ditambahkan ke Favorit'
+        : 'Pesan dihapus dari Favorit';
+    } else if (type === 'arsip') {
+      description = mail.isArsip
+        ? 'Pesan berhasil diarsipkan'
+        : 'Pesan dikembalikan dari arsip';
+    } else if (type === 'note') {
+      description = mail.isNote
+        ? 'Note ditandai'
+        : 'Tanda note dihapus';
+    }
+
+    // 3. Tampilkan Toast Sukses
+    toast.add({
+      title: title,
+      description: description,
+      color: 'success',
+      timeout: 2000 // Hilang dalam 2 detik
+    });
+
+  } catch (error) {
+    // 4. Tampilkan Toast Error jika API gagal (Composable sudah handle revert state)
+    toast.add({
+      title: 'Gagal',
+      description: 'Gagal memperbarui status.',
+      color: 'error'
+    });
+  }
 };
 
 const handleBulkExecute = async () => {
@@ -637,10 +697,9 @@ onMounted(async () => {
                     @click="toggleSelection(mail.id)">
                     <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
-                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-neutral-300'
-                    " @click.stop="toggleFlag(mail, 'favorit')" />
+                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
+                    :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300'"
+                    @click.stop="handleToggleFlag(mail, 'favorit')" />
                   <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300" :class="mail.isTinjut
                     ? 'text-primary-300 fill-primary-300'
                     : 'text-neutral-300'
@@ -704,18 +763,18 @@ onMounted(async () => {
                 <div
                   class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                   <div class="flex items-center gap-2 p-1">
-                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400" :class="mail.isNote
-                      ? 'text-orange-400 fill-orange-400'
-                      : 'text-neutral-300'
-                      " @click.stop="toggleFlag(mail, 'note')" />
-                    <Lock class="w-4 h-4 transition-colors" :class="mail.isLocked
-                      ? 'text-red-500'
-                      : 'text-neutral-300'
-                      " />
-                    <Archive class="w-4 h-4 transition-colors hover:text-purple-600" :class="mail.isArsip
-                      ? 'text-purple-500 fill-purple-500'
-                      : 'text-neutral-300'
-                      " @click.stop="toggleFlag(mail, 'arsip')" />
+
+                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400 cursor-pointer"
+                      :class="mail.isNote ? 'text-orange-400 fill-orange-400' : 'text-neutral-300'"
+                      @click.stop="handleToggleFlag(mail, 'note')" />
+
+                    <Lock class="w-4 h-4 transition-colors"
+                      :class="mail.isLocked ? 'text-red-500' : 'text-neutral-300'" />
+
+                    <Archive class="w-4 h-4 transition-colors hover:text-purple-600 cursor-pointer"
+                      :class="mail.isArsip ? 'text-purple-500 fill-purple-500' : 'text-neutral-300'"
+                      @click.stop="handleToggleFlag(mail, 'arsip')" />
+
                   </div>
                 </div>
 

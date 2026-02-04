@@ -1,15 +1,12 @@
 <template>
   <div class="relative">
-
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
-
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
           </div>
         </div>
-
         <div class="relative flex flex-col items-center gap-6 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <div
@@ -22,7 +19,6 @@
               </div>
             </div>
           </div>
-
           <div class="flex flex-col items-center gap-2">
             <span class="text-gray-900 font-semibold text-lg">
               {{ loadingMessage || 'Memproses Data' }}
@@ -45,7 +41,6 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-
         <div class="py-4 space-y-3 border-t border-gray-100 dark:border-gray-800 mt-2">
           <USkeleton class="h-5 w-40 mb-2" />
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -55,7 +50,6 @@
             </div>
           </div>
         </div>
-
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800 mt-4">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -72,23 +66,18 @@
             <USkeleton class="h-3 w-full" />
           </div>
         </div>
-
         <USkeleton class="h-30 w-full rounded-md" />
-
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
           <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
 
-
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-
         <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
-
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Nomor Surat
@@ -102,7 +91,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Perihal
@@ -120,11 +109,10 @@
 
         <div class="flex flex-col py-3 gap-3 mb-6">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Instruksi / Disposisi</span>
-
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start group">
               <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
-                class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer" />
+                class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
               <label :for="opt"
                 class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none leading-tight break-words">
                 {{ opt }}
@@ -136,9 +124,7 @@
         <ClientOnly>
           <div
             class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-
             <div class="bg-white p-10 border-b border-gray-100 select-none text-black">
-
               <div class="border-2 border-black mb-0">
                 <div class="flex border-b-2 border-black">
                   <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
@@ -184,6 +170,12 @@
                   <div class="w-[30%] p-2 text-xs">
                     <div class="font-bold underline mb-2">KLASIFIKASI</div>
                     <div class="space-y-1">
+                      <!-- <div class="flex items-center gap-2 mb-2">
+                        <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px] font-bold">
+                          {{ isPriority ? "✓" : "" }}
+                        </div>
+                        <span class="font-bold text-red-600">PRIORITAS</span>
+                      </div> -->
                       <div v-for="s in sifatOptions" :key="s.value" class="flex items-center gap-2">
                         <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px]">
                           {{ selectedSifat?.value === s.value ? "✓" : "" }}
@@ -221,11 +213,9 @@
 
                 <div class="p-0 min-h-[300px] relative group">
                   <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
-
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
-
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
@@ -233,29 +223,32 @@
                     </div>
                   </div>
                 </div>
-
                 <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
                   Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
                   ini.
                 </div>
               </div>
-
             </div>
           </div>
         </ClientOnly>
 
-        <div>
-
-        </div>
-
         <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
+        <div class="flex flex-col sm:flex-row sm:items-center py-4 border-b border-gray-200 dark:border-gray-600">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="isPriority" v-model="isPriority"
+              class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
+            <label for="isPriority" class="text-sm cursor-pointer select-none">
+              Tandai sebagai Prioritas
+            </label>
+          </div>
+        </div>
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
-
       </div>
     </UCard>
 
@@ -279,7 +272,6 @@
         </div>
       </template>
     </USlideover>
-
   </div>
 </template>
 
@@ -289,14 +281,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-
-// Components
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
-import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
-
-// Types & Logic
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 
 const editorContainerRef = ref<HTMLElement | null>(null);
@@ -312,7 +296,6 @@ const breadcrumbs = [
   { label: "Tulis Disposisi", to: "#" },
 ];
 
-// --- STATE ---
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
@@ -322,14 +305,13 @@ const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
 
 const selectedSifat = ref<any>(null);
+const isPriority = ref(false);
 const refNumber = ref("-");
 const refPerihal = ref("-");
 
 const recipientList = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
 const existingFiles = ref<any[]>([]);
-
-// Menggunakan Array string untuk checkbox
 const selectedChecklist = ref<string[]>([]);
 
 const editorContent = ref("");
@@ -338,23 +320,11 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 
-// --- CONSTANTS ---
 const checklistOptions = [
-  "Untuk Diketahui",
-  "Proses Lanjut",
-  "Koordinasikan",
-  "Cek",
-  "Monitor",
-  "Evaluasi",
-  "Dikaji Kemungkinannya",
-  "Laporkan",
-  "Untuk Menjadi Perhatian",
-  "Untuk Dijadikan Acuan/Dipergunakan",
-  "Harap Mewakili",
-  "Harap Mendampingi",
-  "Tunjuk Perwakilan",
-  "Siapkan Bahan/Materi",
-  "Lainnya",
+  "Untuk Diketahui", "Proses Lanjut", "Koordinasikan", "Cek", "Monitor", "Evaluasi",
+  "Dikaji Kemungkinannya", "Laporkan", "Untuk Menjadi Perhatian",
+  "Untuk Dijadikan Acuan/Dipergunakan", "Harap Mewakili", "Harap Mendampingi",
+  "Tunjuk Perwakilan", "Siapkan Bahan/Materi", "Lainnya",
 ];
 
 const sifatOptions = [
@@ -380,41 +350,44 @@ const tinyMceInit = {
   }
 };
 
-// --- COMPUTED ---
 const formattedDate = computed(() => {
   if (!date.value) return "-";
   const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-// LOGIC BARU: Editor hanya muncul jika "Lainnya" dipilih
 const showEditor = computed(() => {
   return selectedChecklist.value.includes("Lainnya");
 });
 
 watch(showEditor, async (isShown) => {
   if (isShown) {
-    // Tunggu sampai Vue selesai merender elemen v-if="showEditor" ke DOM
     await nextTick();
-
-    // Lakukan scroll ke elemen tersebut
     if (editorContainerRef.value) {
-      editorContainerRef.value.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center' // Posisikan di tengah layar agar nyaman dilihat
-      });
-
-      // Opsional: Fokus ke editor jika instance sudah siap (sedikit delay agar TinyMCE load)
+      editorContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {
-        if (tinymceEditor.value) {
-          tinymceEditor.value.focus();
-        }
+        if (tinymceEditor.value) tinymceEditor.value.focus();
       }, 500);
     }
   }
 });
 
-// --- METHODS ---
+watch(isPriority, async (newVal, oldVal) => {
+  if (newVal && !oldVal) {
+    const isConfirmed = await Alert.confirm(
+      'Tandai sebagai Prioritas?',
+      'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?',
+      'Ya, Prioritas',
+      'Batal',
+      false
+    );
+    if (!isConfirmed) {
+      isPriority.value = false;
+    }
+    Alert.close();
+  }
+});
+
 const getPayload = (): DisposisiPayload => {
   const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
   const tglUi = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
@@ -423,20 +396,15 @@ const getPayload = (): DisposisiPayload => {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
     tertuju: selectedTertuju.value.map(i => i.value),
-
     tanggal_disposisi: tglDb,
-    tanggal_ui: tglUi, // Helper
-
+    tanggal_ui: tglUi,
     sifat: selectedSifat.value?.label || "Biasa",
-
     ref_nomor: refNumber.value || "-",
     ref_perihal: refPerihal.value || "-",
-
-    // Jika editor tidak aktif, kosongkan catatan (atau biarkan sesuai kebutuhan)
     catatan: showEditor.value ? editorContent.value : "",
     htmlContent: showEditor.value ? editorContent.value : "",
-
     disposisi: selectedChecklist.value,
+    is_priority: isPriority.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean)
   };
 };
@@ -445,8 +413,7 @@ const createFormData = (payload: DisposisiPayload, includePdf: boolean = false) 
   const formData = new FormData();
   Object.keys(payload).forEach((key) => {
     const k = key as keyof DisposisiPayload;
-    if (k === 'tanggal_ui') return; // Skip helper UI
-
+    if (k === 'tanggal_ui') return;
     const value = payload[k];
     if (Array.isArray(value)) {
       formData.append(k, JSON.stringify(value));
@@ -472,8 +439,6 @@ const validateAndToast = (payload: DisposisiPayload) => {
   return true;
 };
 
-// --- ACTIONS ---
-
 const handlePreview = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
@@ -488,7 +453,6 @@ const handlePreview = async () => {
     pdfUrl.value = URL.createObjectURL(pdfBlob.value);
     isOpenPreview.value = true;
   } catch (err) {
-    console.error(err);
     toast.add({ title: 'Gagal Preview', color: 'error' });
   } finally {
     isLoadingData.value = false;
@@ -502,14 +466,12 @@ const confirmKirimDokumen = async () => {
   loadingMessage.value = "Mengirim Disposisi...";
 
   try {
-    // Regenerate PDF
     const fdPreview = createFormData(payload, false);
     const blob = await generatePdf(fdPreview);
     pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
 
     const fdFinal = createFormData(payload, true);
     let res;
-
     if (editDraftId.value) {
       res = await sendDraft(fdFinal, editDraftId.value);
     } else {
@@ -548,96 +510,66 @@ const confirmSaveDraft = async () => {
   }
 };
 
-// --- LIFECYCLE ---
 onMounted(async () => {
-  // 1. SET PESAN LOADING AWAL AGAR SKELETON MUNCUL
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
 
   try {
-    // Get Recipient List
     const res = await getRecipients(user.value?.position);
     recipientList.value = res.recipients;
 
-    // Load Draft if exists
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
-      // loadingMessage sudah di-set di atas, jadi aman
       const resDraft = await getDraftDetail(draftId);
 
       if (resDraft.data) {
         const d = resDraft.data;
-
-        // 1. Ref Nomor & Perihal (Handle null)
         refNumber.value = d.ref_nomor || "-";
         refPerihal.value = d.ref_perihal || "-";
+        isPriority.value = !!d.is_priority;
 
-        // 2. Tanggal (Parse YYYY-MM-DD)
         if (d.tanggal) {
           const [y, m, day] = d.tanggal.split('-').map(Number);
           date.value = new CalendarDate(y, m, day);
         }
 
-        // 3. Catatan Editor
         editorContent.value = d.catatan || d.htmlContent || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(editorContent.value);
 
-        // 4. Disposisi Checkbox (Split string by \n karena data API berupa string enter-separated)
         if (d.disposisi && typeof d.disposisi === 'string') {
           selectedChecklist.value = d.disposisi.split('\n');
         } else if (Array.isArray(d.disposisi)) {
           selectedChecklist.value = d.disposisi;
-        } else {
-          selectedChecklist.value = [];
         }
 
-        // 5. Map Sifat
-        // Mencari berdasarkan value (misal: 'biasa')
         const foundSifat = sifatOptions.find(s => s.value.toLowerCase() === (d.sifat || '').toLowerCase());
         selectedSifat.value = foundSifat || sifatOptions[3];
 
-        // 6. Map Tertuju / Penerima
-        // API mengembalikan key 'penerima', bukan 'tertuju'
-        const rawPenerima = d.penerima || []; // Menggunakan d.penerima sesuai JSON
-
+        const rawPenerima = d.penerima || [];
         selectedTertuju.value = rawPenerima.map((item: any) => {
-          // Ambil ID dari position_id (API structure) atau value
           const val = String(item.position_id || item.value || item.id);
-
-          // Cari data lengkap di recipientList agar labelnya sesuai format dropdown
           const found = recipientList.value.find(r => r.value === val);
-
-          if (found) return found;
-
-          // Fallback manual jika tidak ada di list master
-          return {
+          return found || {
             value: val,
             label: item.nama || item.positionText || item.label,
             labelJob: item.positionText || item.labelJob
           };
         });
 
-        // 7. Map Files Lampiran
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
-            // API mengembalikan 'fileName' (camelCase), bukan 'file_name'
             fileName: f.fileName,
-
-            // Gunakan 'fileUrl' (link http lengkap) dan masukkan ke property 'filePath'
-            // agar komponen anak mendeteksi "startsWith('http')" dan tidak menambahkan "/storage/"
             filePath: f.fileUrl || f.filePath,
-
             fileSize: 0
           }));
         }
       }
     }
   } catch (e) {
-    console.error(e);
     toast.add({ title: 'Gagal memuat data', color: 'error' });
   } finally {
     isLoadingData.value = false;

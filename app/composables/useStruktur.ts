@@ -104,35 +104,28 @@ const updatePosition = (
   return apiPut(`/position/${id}`, payload);
 };
 
-const createPerson = (payload: {
+const assignPersonToPosition = (payload: {
   persnum: number;
-  name: string;
-  gender: string;
   company: number;
   position: number;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
 }) => {
-  return apiPost("/person", payload);
-}
-
-const deletePerson = (id: string) => {
-  return apiDelete(`/person/${id}`);
+  return apiPost("/person/assign-position", payload);
 };
 
-const updatePerson = (
-  id: string,
+const deletePerson = (idRelationSp: string) =>
+  apiDelete(`/person/assign-position/${idRelationSp}`);
+
+
+const updateAssignPerson = (
+  idRelation: string,
   payload: {
-    persnum: number;
-    name: string;
-    gender: string;
-    company: number;
-    position: number;
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
   },
 ) => {
-  return apiPut(`/person/${id}`, payload);
+  return apiPut(`/person/assign-position/${idRelation}`, payload);
 };
 
   return {
@@ -148,8 +141,8 @@ const updatePerson = (
     updatePosition,
 
     getPersonsByPosition,
-    createPerson,
+    assignPersonToPosition,
     deletePerson,
-    updatePerson,
+    updateAssignPerson,
   };
 };
