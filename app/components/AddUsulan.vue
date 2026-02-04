@@ -1,17 +1,18 @@
 <template>
-  <!-- MODAL FORM -->
+  <!-- MODAL FORM - z-index 8000 to be below toast (9000+) -->
   <transition name="fade-scale">
     <Modal
       v-if="modelValue"
       :model-value="modelValue"
       :hide-default-footer="true"
       size="xl"
+      class="z-[9999]"
       @update:model-value="handleClose"
     >
       <template #title>
         <Heading
           variant="heading9b"
-          class="font-semibold text-sm mb-3 mt-5 ml-5"
+          class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-gray-100"
         >
           Tambah Usulan Penomoran
         </Heading>
@@ -21,20 +22,26 @@
       <div class="px-5 flex flex-col gap-4 pb-4">
         <!-- Tanggal Surat -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium">
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium dark:text-gray-200"
+          >
             Tanggal Surat <span class="text-red-500">*</span>
           </Heading>
           <input
             type="date"
             v-model="tanggalString"
             :max="todayString"
-            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
           />
         </div>
 
         <!-- Klasifikasi -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium">
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium dark:text-gray-200"
+          >
             Klasifikasi <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="klasifikasiRef">
@@ -43,24 +50,25 @@
               @click="toggleKlasifikasi"
               @input="openKlasifikasi = true"
               :placeholder="form.klasifikasiDisplay || 'Cari klasifikasi...'"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              :disabled="isLoadingKlasifikasi"
+              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-wait"
             />
             <div
               v-if="openKlasifikasi && filteredKlasifikasi.length > 0"
-              class="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
+              class="absolute z-[8100] mt-1 w-full max-h-52 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
             >
               <button
                 v-for="item in filteredKlasifikasi"
                 :key="item.code"
                 @click="selectKlasifikasi(item)"
-                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100"
+                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
               >
                 {{ item.display }}
               </button>
             </div>
             <p
               v-if="openKlasifikasi && filteredKlasifikasi.length === 0"
-              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
             >
               {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
             </p>
@@ -69,13 +77,16 @@
 
         <!-- Jenis Naskah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium">
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium dark:text-gray-200"
+          >
             Jenis Naskah <span class="text-red-500">*</span>
           </Heading>
           <select
             v-model="form.jenis"
             @change="updateJenisDisplay"
-            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
+            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs dark:bg-gray-700 dark:text-gray-200"
           >
             <option disabled value="">Pilih jenis naskah</option>
             <option
@@ -90,7 +101,10 @@
 
         <!-- Penandatangan -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium">
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium dark:text-gray-200"
+          >
             Penandatangan <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="penandatanganRef">
@@ -102,24 +116,24 @@
                 form.penandatanganJabatan || 'Cari penandatangan...'
               "
               :disabled="isLoadingPositions"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait"
             />
             <div
               v-if="openPenandatangan && filteredPenandatangan.length > 0"
-              class="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
+              class="absolute z-[8100] mt-1 w-full max-h-60 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
             >
               <button
                 v-for="item in filteredPenandatangan"
                 :key="item.position"
                 @click="selectPenandatangan(item)"
-                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100"
+                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
               >
                 {{ item.displayText }}
               </button>
             </div>
             <p
               v-if="openPenandatangan && filteredPenandatangan.length === 0"
-              class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
+              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
             >
               {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
             </p>
@@ -128,7 +142,7 @@
 
         <!-- Perihal -->
         <div>
-          <Heading variant="heading11m" class="text-xs">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             Perihal <span class="text-red-500">*</span>
           </Heading>
           <input
@@ -136,13 +150,13 @@
             placeholder="Masukkan perihal"
             maxlength="100"
             @input="validatePerihal"
-            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           />
           <div class="flex justify-between mt-1 mb-0">
             <p v-if="perihalError" class="text-xs text-red-500">
               {{ perihalError }}
             </p>
-            <p class="text-xs text-gray-500 ml-auto">
+            <p class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
               {{ form.perihal.length }}/100 karakter
             </p>
           </div>
@@ -150,7 +164,10 @@
 
         <!-- Jumlah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium">
+          <Heading
+            variant="heading11m"
+            class="text-xs font-medium dark:text-gray-200"
+          >
             Jumlah <span class="text-red-500">*</span>
           </Heading>
           <input
@@ -161,7 +178,7 @@
             max="10"
             @keydown="blockInvalidNumber"
             @input="validateJumlah"
-            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
           />
           <p v-if="jumlahError" class="text-xs text-red-500 mt-1">
             {{ jumlahError }}
@@ -172,11 +189,11 @@
       <!-- FOOTER -->
       <template #footer>
         <div
-          class="flex justify-between w-full gap-3 border-t border-gray-200 px-5 py-4 w-full"
+          class="flex justify-between w-full gap-3 border-t border-gray-200 dark:border-gray-700 px-5 py-4 w-full"
         >
           <button
             @click="openPreviewModal"
-            class="flex-1 px-5 py-2 text-sm border border-primary-500 hover:bg-primary-50 text-primary rounded-md"
+            class="flex-1 px-5 py-2 text-sm border border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary dark:text-primary-400 rounded-md"
           >
             Pratinjau
           </button>
@@ -215,55 +232,74 @@
     </Modal>
   </transition>
 
-  <!-- MODAL PRATINJAU -->
+  <!-- MODAL PRATINJAU - z-index 8200 to be below toast but above main modal -->
   <transition name="fade-scale">
     <Modal
       v-if="previewModal"
       :model-value="previewModal"
       :hide-default-footer="true"
       size="lg"
+      class="z-[8200]"
       @update:model-value="closePreview"
     >
       <template #title>
         <div class="flex justify-between items-center px-6 pt-4 pb-2">
-          <h2 class="text-lg font-semibold">Pratinjau</h2>
+          <h2 class="text-lg font-semibold dark:text-gray-100">Pratinjau</h2>
         </div>
       </template>
 
       <div class="w-full px-5 py-2 text-sm">
-        <p class="text-center text-xs text-gray-500 mb-1">
+        <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-1">
           {{ formatDateTime(new Date()) }}
         </p>
-        <h3 class="text-center font-bold text-base mb-5">
+        <h3 class="text-center font-bold text-base mb-5 dark:text-gray-100">
           FORMULIR USULAN NOMOR
         </h3>
 
         <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
-          <Heading variant="10sb">Nama</Heading>
-          <Heading variant="11sb">{{ penandatanganNama || "-" }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Nama</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            penandatanganNama || "-"
+          }}</Heading>
 
-          <Heading variant="10sb">Jabatan</Heading>
-          <Heading variant="11sb">{{ form.penandatanganJabatan }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Jabatan</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            form.penandatanganJabatan
+          }}</Heading>
 
-          <Heading variant="10sb">Jenis</Heading>
-          <Heading variant="11sb">{{ form.jenisDisplay }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Jenis</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            form.jenisDisplay
+          }}</Heading>
 
-          <Heading variant="10sb">Klasifikasi</Heading>
-          <Heading variant="11sb">{{ form.klasifikasiDisplay }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200"
+            >Klasifikasi</Heading
+          >
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            form.klasifikasiDisplay
+          }}</Heading>
 
-          <Heading variant="10sb">Tanggal</Heading>
-          <Heading variant="11sb">{{ formatDate(tanggalString) }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Tanggal</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            formatDate(tanggalString)
+          }}</Heading>
 
-          <Heading variant="10sb">Perihal</Heading>
-          <Heading variant="11sb">{{ form.perihal }}</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Perihal</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200">{{
+            form.perihal
+          }}</Heading>
 
-          <Heading variant="10sb">Jumlah</Heading>
-          <Heading variant="11sb">{{ form.jumlah }} Nomor</Heading>
+          <Heading variant="10sb" class="dark:text-gray-200">Jumlah</Heading>
+          <Heading variant="11sb" class="dark:text-gray-200"
+            >{{ form.jumlah }} Nomor</Heading
+          >
 
-          <Heading variant="10sb">Nomor</Heading>
-          <div class="text-gray-800 text-xs font-mono space-y-1">
+          <Heading variant="10sb" class="dark:text-gray-200">Nomor</Heading>
+          <div
+            class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1"
+          >
             <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
-              <span class="text-gray-400">
+              <span class="text-gray-400 dark:text-gray-500">
                 {{ String(n).padStart(2, "0") }}.
               </span>
               <span class="tracking-widest">
@@ -276,25 +312,33 @@
         </div>
       </div>
 
-      <hr class="my-0" />
+      <hr class="my-0 dark:border-gray-700" />
 
       <div class="flex justify-between items-start px-5 pb-2">
         <div>
-          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+          <Heading
+            variant="10m"
+            class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
             >Pengusul</Heading
           >
-          <p class="font-semibold text-xs">{{ user?.nama || "-" }}</p>
+          <p class="font-semibold text-xs dark:text-gray-200">
+            {{ user?.nama || "-" }}
+          </p>
         </div>
         <div class="text-right">
-          <Heading variant="10m" class="text-gray-500 uppercase text-xs mb-1"
+          <Heading
+            variant="10m"
+            class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
             >Diusulkan</Heading
           >
-          <p class="font-semibold text-xs">{{ formatDateTime(new Date()) }}</p>
+          <p class="font-semibold text-xs dark:text-gray-200">
+            {{ formatDateTime(new Date()) }}
+          </p>
         </div>
       </div>
 
       <div
-        class="bg-gray-50 border border-gray-200 text-xs p-3 rounded-md mt-1 mx-8 mb-4"
+        class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs p-3 rounded-md mt-1 mx-8 mb-4 dark:text-gray-300"
       >
         Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
         kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
@@ -364,6 +408,9 @@ const isLoadingPositions = ref(false);
 const isSubmitting = ref(false);
 const jumlahError = ref("");
 const perihalError = ref("");
+const hasLoadedPositions = ref(false);
+// ✅ NEW: Track if klasifikasi already loaded
+const hasLoadedKlasifikasi = ref(false);
 
 const today = new Date();
 const todayString = today.toISOString().split("T")[0];
@@ -400,13 +447,27 @@ const handleClickOutside = (e) => {
   }
 };
 
-const toggleKlasifikasi = () => {
+// ✅ LAZY LOAD KLASIFIKASI: Only fetch when dropdown is first opened
+const toggleKlasifikasi = async () => {
+  if (!hasLoadedKlasifikasi.value) {
+    console.log("🔄 Loading klasifikasi for the first time...");
+    await fetchKlasifikasi();
+    hasLoadedKlasifikasi.value = true;
+  }
+
   if (klasifikasiOptions.value.length > 0) {
     openKlasifikasi.value = !openKlasifikasi.value;
   }
 };
 
-const togglePenandatangan = () => {
+// ✅ LAZY LOAD: Only fetch positions when dropdown is first opened
+const togglePenandatangan = async () => {
+  if (!hasLoadedPositions.value) {
+    console.log("🔄 Loading positions for the first time...");
+    await fetchPositions();
+    hasLoadedPositions.value = true;
+  }
+
   if (penandatanganOptions.value.length > 0) {
     openPenandatangan.value = !openPenandatangan.value;
   }
@@ -547,6 +608,7 @@ function validateJumlah() {
 const fetchPositions = async () => {
   isLoadingPositions.value = true;
   try {
+    console.log("📤 Lazy loading positions...");
     const response = await get("/person/with-position/all");
     console.log("📥 Raw response from API:", response);
 
@@ -584,9 +646,11 @@ const fetchPositions = async () => {
   }
 };
 
+// ✅ LAZY LOAD: Klasifikasi hanya dipanggil saat dropdown dibuka
 const fetchKlasifikasi = async () => {
   isLoadingKlasifikasi.value = true;
   try {
+    console.log("📤 Fetching klasifikasi...");
     const response = await getKlasifikasi();
     klasifikasiOptions.value = response;
     console.log("✅ Klasifikasi loaded:", klasifikasiOptions.value.length);
@@ -622,6 +686,8 @@ const resetForm = () => {
   perihalError.value = "";
   openKlasifikasi.value = false;
   openPenandatangan.value = false;
+  hasLoadedPositions.value = false;
+  hasLoadedKlasifikasi.value = false; // ✅ Reset lazy load flag
   console.log("🔄 Form reset");
 };
 
@@ -660,8 +726,9 @@ function submitAndClose() {
 
 onMounted(async () => {
   if (!user.value) await getProfile();
-  await fetchKlasifikasi();
-  await fetchPositions();
+  // ✅ REMOVED: No longer auto-fetch klasifikasi on mount
+  // ✅ REMOVED: No longer auto-fetch positions on mount
+  console.log("✅ AddUsulan mounted - klasifikasi & positions will lazy load");
 });
 
 function formatDate(dateStr) {

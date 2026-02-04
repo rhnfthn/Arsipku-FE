@@ -5,14 +5,16 @@
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md"> Template </Heading>
+        <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
+          Template
+        </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
 
       <button
         @click="openAdd"
         :disabled="isLoadingCreate"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         <Plus class="w-4 h-4" />
         {{ isLoadingCreate ? "Menyimpan..." : "Tambah Template" }}
@@ -20,16 +22,16 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm w-full">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 p-3"
       >
         <div class="flex items-center gap-2">
-          <span class="text-xs">Tampilkan</span>
+          <span class="text-xs dark:text-gray-300">Tampilkan</span>
           <select
             v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -39,24 +41,54 @@
 
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             placeholder="Cari template..."
-            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
           />
         </div>
       </div>
 
-      <!-- LOADING STATE -->
-      <div v-if="isLoadingList" class="p-8">
+      <!-- LOADING STATE WITH SKELETON -->
+      <div v-if="isLoadingList" class="p-4">
         <div class="space-y-3">
-          <div
-            v-for="i in 5"
-            :key="i"
-            class="h-12 bg-gray-200 animate-pulse rounded"
-          ></div>
+          <!-- Header skeleton -->
+          <div class="grid grid-cols-3 gap-4 mb-2">
+            <div
+              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
+            ></div>
+            <div
+              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
+            ></div>
+            <div
+              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
+            ></div>
+          </div>
+
+          <!-- Rows skeleton -->
+          <div v-for="i in 5" :key="i" class="grid grid-cols-3 gap-4">
+            <div
+              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded"
+            ></div>
+            <div
+              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded"
+            ></div>
+            <div
+              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded flex items-center justify-center gap-2 px-4"
+            >
+              <div
+                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
+              ></div>
+              <div
+                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
+              ></div>
+              <div
+                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -64,25 +96,43 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
           <thead>
-            <tr class="bg-primary-400 text-white dark:bg-gray-800">
+            <tr class="bg-primary-400 dark:bg-primary-800 text-white">
               <th
-                class="text-left text-[14px] p-4 border-b border-gray-300 cursor-pointer"
+                class="text-left text-[14px] p-4 border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-500 dark:hover:bg-primary-900 transition"
                 @click="sort('nama_template')"
               >
-                Nama Template
-                <ArrowUpDown class="inline w-3 h-3 ml-2" />
+                <div class="flex items-center gap-2">
+                  Nama Template
+                  <ArrowUpDown
+                    :class="[
+                      'w-3 h-3 transition-all',
+                      sortBy === 'nama_template'
+                        ? 'opacity-100 text-yellow-300'
+                        : 'opacity-50',
+                    ]"
+                  />
+                </div>
               </th>
 
               <th
-                class="text-left p-3 text-[14px] border-b border-gray-300 cursor-pointer"
+                class="text-left p-3 text-[14px] border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-500 dark:hover:bg-primary-900 transition"
                 @click="toggleSort('file')"
               >
-                Dokumen File
-                <ArrowUpDown class="inline w-3 h-3 ml-2" />
+                <div class="flex items-center gap-2">
+                  Dokumen File
+                  <ArrowUpDown
+                    :class="[
+                      'w-3 h-3 transition-all',
+                      sortBy === 'file'
+                        ? 'opacity-100 text-yellow-300'
+                        : 'opacity-50',
+                    ]"
+                  />
+                </div>
               </th>
 
               <th
-                class="text-left p-3 text-[14px] border-b border-gray-300 w-28"
+                class="text-left p-3 text-[14px] border-b border-gray-300 dark:border-gray-700 w-28"
               >
                 Aksi
               </th>
@@ -93,24 +143,26 @@
             <tr
               v-for="template in paginatedTemplates"
               :key="template.id"
-              class="border-b bg-white border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              class="border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
-              <td class="p-4 text-sm">{{ template.nama_template }}</td>
-              <td class="p-4 text-primary-400 text-sm">
+              <td class="p-4 text-sm dark:text-gray-200">
+                {{ template.nama_template }}
+              </td>
+              <td class="p-4 text-primary-400 dark:text-primary-300 text-sm">
                 {{ getFileName(template.file) }}
               </td>
 
               <td class="p-4 flex items-center gap-4 mr-2">
                 <button
                   @click="downloadTemplate(template)"
-                  class="text-sky-600 hover:text-sky-800"
+                  class="text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 transition"
                   title="Download"
                 >
                   <Download class="w-4 h-4" />
                 </button>
 
                 <button
-                  class="text-yellow-500 hover:text-yellow-700"
+                  class="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 transition"
                   @click="openEdit(template)"
                   title="Edit"
                   :disabled="isLoadingUpdate"
@@ -120,7 +172,7 @@
 
                 <button
                   @click="openDelete(template)"
-                  class="text-red-500 hover:text-red-700"
+                  class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
                   title="Hapus"
                   :disabled="isLoadingDelete"
                 >
@@ -130,7 +182,10 @@
             </tr>
 
             <tr v-if="paginatedTemplates.length === 0">
-              <td colspan="3" class="text-center py-10 text-gray-400">
+              <td
+                colspan="3"
+                class="text-center py-10 text-gray-400 dark:text-gray-500"
+              >
                 <Inbox class="w-10 h-10 mx-auto mb-2 opacity-20" />
                 Tidak ada data ditemukan
               </td>
@@ -142,9 +197,9 @@
       <!-- PAGINATION -->
       <div
         v-if="filteredTemplates.length > 0"
-        class="flex items-center justify-between px-4 py-4"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedTemplates.length }} dari {{ totalItems }} data
         </div>
 
@@ -156,8 +211,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             <svg
@@ -182,7 +237,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
             >
               1
             </button>
@@ -190,7 +245,7 @@
             <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -203,8 +258,8 @@
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ? 'bg-primary dark:bg-primary-700 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -215,7 +270,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -224,7 +279,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
             >
               {{ totalPages }}
             </button>
@@ -237,8 +292,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             Next
@@ -268,7 +323,7 @@
         <template #title>
           <Heading
             variant="heading8b"
-            class="font-semibold text-xl mb-5 mt-5 ml-7"
+            class="font-semibold text-xl mb-5 mt-5 ml-7 dark:text-gray-100"
           >
             Tambah Template
           </Heading>
@@ -277,29 +332,29 @@
         <div class="px-2 py-3 flex flex-col gap-6">
           <!-- Nama Template -->
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="mb-2">
+            <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
               Nama Template <span class="text-red-500">*</span>
             </Heading>
 
             <input
               v-model="addData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
               placeholder="Masukkan nama template"
             />
           </div>
 
           <!-- Upload File -->
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="mb-2">
+            <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
               File Dokumen <span class="text-red-500">*</span>
             </Heading>
 
             <label
-              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
             >
-              <FileCheck class="w-6 h-6 text-gray-500" />
-              <span class="font-medium">Pilih File</span>
-              <span class="ml-2 text-gray-500">
+              <FileCheck class="w-6 h-6 text-gray-500 dark:text-gray-400" />
+              <span class="font-medium dark:text-gray-200">Pilih File</span>
+              <span class="ml-2 text-gray-500 dark:text-gray-400">
                 {{ addData.fileName || "Belum ada file dipilih" }}
               </span>
 
@@ -314,20 +369,24 @@
             <!-- Preview file -->
             <div
               v-if="addData.file"
-              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 flex items-center justify-between"
             >
               <div class="flex items-center gap-3">
-                <FileCheck class="w-6 h-6 text-primary-500" />
+                <FileCheck
+                  class="w-6 h-6 text-primary-500 dark:text-primary-400"
+                />
                 <div>
-                  <p class="text-xs font-medium">{{ addData.fileName }}</p>
-                  <p class="text-xs text-gray-500">
+                  <p class="text-xs font-medium dark:text-gray-200">
+                    {{ addData.fileName }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
                     {{ formatFileSize(addData.file.size) }}
                   </p>
                 </div>
               </div>
               <button
                 @click="clearAddFile"
-                class="text-red-500 hover:text-red-700"
+                class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
                 title="Hapus file"
               >
                 <Trash2 class="w-4 h-4" />
@@ -337,6 +396,7 @@
         </div>
       </Modal>
     </Teleport>
+
     <!-- ========================= -->
     <!-- MODAL EDIT TEMPLATE -->
     <!-- ========================= -->
@@ -345,7 +405,7 @@
         <template #title>
           <Heading
             variant="heading9b"
-            class="font-semibold text-xl mb-2 mt-5 ml-7"
+            class="font-semibold text-xl mb-2 mt-5 ml-7 dark:text-gray-100"
           >
             Edit Template
           </Heading>
@@ -354,29 +414,40 @@
         <div class="px-2 py-3 flex flex-col gap-6">
           <!-- Nama Template -->
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="font-semibold mb-2">
+            <Heading
+              variant="heading10sb"
+              class="font-semibold mb-2 dark:text-gray-200"
+            >
               Nama Template <span class="text-red-500">*</span>
             </Heading>
 
             <input
               v-model="editData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 bg-gray-50"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
               placeholder="Masukkan nama template"
             />
           </div>
 
           <!-- Upload File -->
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="font-semibold mb-2">
-              File Dokumen <span class="text-xs text-gray-500">(Opsional)</span>
+            <Heading
+              variant="heading10sb"
+              class="font-semibold mb-2 dark:text-gray-200"
+            >
+              File Dokumen
+              <span class="text-xs text-gray-500 dark:text-gray-400"
+                >(Opsional)</span
+              >
             </Heading>
 
             <label
-              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 bg-white cursor-pointer flex items-center gap-3"
+              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
             >
-              <FileCheck class="w-6 h-6 text-gray-500" />
-              <span class="font-medium">Pilih File Baru</span>
-              <span class="ml-2 text-gray-500">
+              <FileCheck class="w-6 h-6 text-gray-500 dark:text-gray-400" />
+              <span class="font-medium dark:text-gray-200"
+                >Pilih File Baru</span
+              >
+              <span class="ml-2 text-gray-500 dark:text-gray-400">
                 {{ editData.newFileName || "Tidak ada file baru" }}
               </span>
 
@@ -386,12 +457,14 @@
             <!-- Current file info -->
             <div
               v-if="!editData.newFileName && editData.file"
-              class="mt-3 px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 flex items-center gap-3"
+              class="mt-3 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 flex items-center gap-3"
             >
-              <FileCheck class="w-6 h-6 text-gray-400" />
+              <FileCheck class="w-6 h-6 text-gray-400 dark:text-gray-500" />
               <div>
-                <p class="text-xs text-gray-500">File saat ini:</p>
-                <p class="text-sm font-medium">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  File saat ini:
+                </p>
+                <p class="text-sm font-medium dark:text-gray-200">
                   {{ getFileName(editData.file) }}
                 </p>
               </div>
@@ -400,14 +473,20 @@
             <!-- Preview new file -->
             <div
               v-if="editData.newFileName"
-              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 flex items-center justify-between"
+              class="mt-3 px-4 py-2 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 flex items-center justify-between"
             >
               <div class="flex items-center gap-3">
-                <FileCheck class="w-6 h-6 text-primary-500" />
+                <FileCheck
+                  class="w-6 h-6 text-primary-500 dark:text-primary-400"
+                />
                 <div>
-                  <p class="text-xs text-primary-600">File baru:</p>
-                  <p class="text-sm font-medium">{{ editData.newFileName }}</p>
-                  <p class="text-xs text-gray-500">
+                  <p class="text-xs text-primary-600 dark:text-primary-400">
+                    File baru:
+                  </p>
+                  <p class="text-sm font-medium dark:text-gray-200">
+                    {{ editData.newFileName }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
                     {{
                       editData.newFile
                         ? formatFileSize(editData.newFile.size)
@@ -418,7 +497,7 @@
               </div>
               <button
                 @click="clearEditFile"
-                class="text-red-500 hover:text-red-700"
+                class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
                 title="Hapus file baru"
               >
                 <Trash2 class="w-4 h-4" />
@@ -428,6 +507,7 @@
         </div>
       </Modal>
     </Teleport>
+
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->
@@ -778,3 +858,15 @@ onMounted(async () => {
   await fetchData();
 });
 </script>
+
+<style scoped>
+/* Custom skeleton animation */
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+</style>

@@ -130,6 +130,7 @@ import {
   ChevronDown,
   ChevronRight,
   User,
+  UserStar,
   UserPlus,
   Plus,
   Pencil,
@@ -172,7 +173,14 @@ defineEmits([
 ]);
 
 const hasChildren = computed(() => {
-  if (props.node.type === "position") return true;
+  if (props.node.type === "unit" || props.node.type === "direktorat") {
+    return true;
+  }
+
+  if (props.node.type === "position") {
+    return true;
+  }
+
   return !!props.node.children?.length;
 });
 
@@ -186,24 +194,31 @@ const getNodeConfig = () => {
         iconColor: "text-primary-700",
         icon: Building2,
         canAddPosition: true,
-        canAddUnit: false,
+        canAddUnit: true,
         canAddMember: false,
         hideEdit: false,
         hideDelete: false,
       };
     case "position":
+      const isChief = !!props.node.bodTag;
       return {
-        bgColor: "bg-orange-50 hover:bg-orange-100",
-        borderColor: "border-l-4 border-orange-600",
-        textColor: "text-orange-900 font-semibold",
-        iconColor: "text-orange-700",
-        icon: User,
+        bgColor: isChief
+          ? "bg-red-50 hover:bg-red-100"
+          : "bg-orange-50 hover:bg-orange-100",
+        borderColor: isChief
+          ? "border-l-4 border-red-600"
+          : "border-l-4 border-orange-600",
+        textColor:
+          "font-semibold " + (isChief ? "text-red-900" : "text-orange-900"),
+        iconColor: isChief ? "text-red-700" : "text-orange-700",
+        icon: isChief ? UserStar : User,
         canAddPosition: false,
-        canAddUnit: true,
+        canAddUnit: false,
         canAddMember: true,
         hideEdit: false,
         hideDelete: false,
       };
+
     case "unit":
       return {
         bgColor: "bg-primary-50 hover:bg-primary-100",
@@ -212,7 +227,7 @@ const getNodeConfig = () => {
         iconColor: "text-primary-700",
         icon: Building,
         canAddPosition: true,
-        canAddUnit: false,
+        canAddUnit: true,
         canAddMember: false,
         hideEdit: false,
         hideDelete: false,

@@ -44,7 +44,7 @@
         class="bg-white shadow-lg border mt-5 border-gray-100 rounded-xl overflow-hidden"
       >
         <!-- Company Header -->
-        <div class="bg-primary text-white px-6 py-4 " v-if="company">
+        <div class="bg-primary text-white px-6 py-4" v-if="company">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <button
@@ -168,22 +168,43 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs">
-                ID Area <span class="text-red-500">*</span>
+                ID Sub Area <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="formUnit.idArea"
-                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-                placeholder="Masukkan ID Area"
-              />
+
+              <select
+                v-model="formUnit.idsubArea"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Pilih ID Sub Area</option>
+
+                <option
+                  v-for="sub in subAreaOptions"
+                  :key="sub.sub_area"
+                  :value="sub.sub_area"
+                >
+                  {{ sub.sub_area }}
+                </option>
+              </select>
             </div>
+
             <div>
               <Heading variant="heading11m" class="text-xs">
-                Area <span class="text-red-500">*</span>
+                Sub Area <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="formUnit.area"
-                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-              />
+              <select
+                v-model="formUnit.idsubArea"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Pilih Sub Area</option>
+
+                <option
+                  v-for="sub in subAreaOptions"
+                  :key="sub.id"
+                  :value="sub.sub_area"
+                >
+                  {{ sub.shortText || sub.longText }}
+                </option>
+              </select>
             </div>
           </div>
           <div>
@@ -300,6 +321,27 @@
               <span class="text-sm font-medium">Chief</span>
             </label>
           </div>
+
+          <div v-if="formPosition.chief">
+            <Heading variant="heading11m" class="text-xs">
+              Level Chief <span class="text-red-500">*</span>
+            </Heading>
+
+            <select
+              v-model="formPosition.chiefLevel"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            >
+              <option value="">Pilih Level</option>
+              <option
+                v-for="opt in chiefOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
           <div>
             <Heading variant="heading11m" class="text-xs">
               Deskripsi Lengkap <span class="text-red-500">*</span>
@@ -381,20 +423,69 @@
           </h3>
         </template>
 
-        <div class="space-y-5">
+        <!-- EDIT UNIT -->
+        <div v-if="editType === 'Unit'" class="space-y-5">
           <div>
             <Heading variant="heading11m" class="text-xs">
-              Nama <span class="text-red-500">*</span>
+              Nama Unit <span class="text-red-500">*</span>
             </Heading>
             <input
+              v-model="formUnit.namaUnit"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Kode Unit <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formUnit.idUnit"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+            />
+          </div>
+        </div>
+
+        <!-- EDIT POSISI -->
+        <div v-if="editType === 'Posisi'" class="space-y-5">
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Nama Posisi <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formPosition.namaPos"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
             <Heading variant="heading11m" class="text-xs">
-              Kode ID <span class="text-red-500">*</span>
+              Kode Posisi <span class="text-red-500">*</span>
             </Heading>
             <input
+              v-model="formPosition.idPos"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <!-- EDIT ANGGOTA -->
+        <div v-if="editType === 'Anggota'" class="space-y-5">
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Nama Anggota <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formMember.nama"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              Personal Number <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formMember.pn"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
@@ -434,9 +525,29 @@ import {
 
 import { useStruktur } from "~/composables/useStruktur";
 import { useCompany } from "~/composables/useCompany";
+import { useArea } from "~/composables/useArea";
+import { useToast } from "#imports";
 
-const { getCompanyTree, getPositionsByOrganization, getPersonsByPosition } = useStruktur();
+const {
+  getCompanyTree,
+  getOrganizationChildren,
+  createOrganization,
+  deleteOrganization,
+  updateOrganization,
+
+  getPositionsByOrganization,
+  createPosition,
+  deletePosition,
+  updatePosition,
+
+  getPersonsByPosition,
+  createPerson,
+  deletePerson,
+  updatePerson,
+} = useStruktur();
+
 const { getCompanyByCode } = useCompany();
+const { getSubAreasByCompany } = useArea();
 
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref(null);
@@ -446,6 +557,19 @@ const companyExpanded = ref(true);
 const expandedNodes = ref<Record<string, boolean>>({});
 
 const hoveredNode = ref<string | null>(null);
+const editingNode = ref<any>(null);
+const searchQuery = ref("");
+
+const toast = useToast();
+
+const showSuccessToast = (message: string) => {
+  toast.add({
+    title: "Berhasil",
+    description: message,
+    color: "success",
+    icon: "i-lucide-check-circle",
+  });
+};
 
 // Modals
 const showAddUnitModal = ref(false);
@@ -459,8 +583,8 @@ const formUnit = ref({
   namaUnit: "",
   idUnit: "",
   titelatur: "",
-  idArea: "",
-  area: "",
+  idsubArea: "",
+  subarea: "",
   deskripsi: "",
   mulai: "",
   berakhir: "",
@@ -469,11 +593,9 @@ const formUnit = ref({
 const formPosition = ref({
   namaPos: "",
   idPos: "",
-  titelatur: "",
-  idArea: "",
-  area: "",
+  kodePosisi: "",
   chief: false,
-  deskripsi: "",
+  chiefLevel: "",
   mulai: "",
   berakhir: "",
 });
@@ -486,7 +608,6 @@ const formMember = ref({
 // Data
 const company = ref<any>(null);
 
-
 // get organisasi
 // const fetchStructure = async () => {
 //   const res = await getCompanyTree(route.params.kode as string);
@@ -495,9 +616,7 @@ const company = ref<any>(null);
 
 const fetchData = async (kode: string | number) => {
   try {
-    // 🔥 AMBIL COMPANY DETAIL (SELALU ADA)
     const companyRes = await getCompanyByCode(String(kode));
-
     if (!companyRes) {
       console.error("Company tidak ditemukan");
       return;
@@ -511,71 +630,80 @@ const fetchData = async (kode: string | number) => {
       tanggalBerakhir: companyRes.endDate,
     };
 
-    // 🔥 AMBIL STRUKTUR (BOLEH KOSONG)
-    const res = await getCompanyTree(kode);
-    const root = res.data?.tree?.[0];
+    const rootOrgId = companyRes.company;
 
-    organizationTree.value = root?.children
-      ? mapTree(root.children)
-      : [];
+    const res = await getOrganizationChildren(rootOrgId);
+
+    organizationTree.value = mapTree(res.data, 0);
   } catch (err) {
     console.error("❌ fetchData error:", err);
   }
 };
 
 const mapTree = (nodes: any[], level = 0): any[] => {
-  return nodes.map((node) => {
-    let type = "unit";
+  return nodes.map((node) => ({
+    id: node.id,
+    organizationCode: node.organization,
+    level,
 
-    if (level === 0) type = "direktorat";
+    type: level === 0 ? "direktorat" : "unit",
 
-    return {
-      id: node.id,                     // UUID (buat Vue key)
-      organizationCode: node.organization, // 🔥 INI PENTING
-      type,
-      name: node.shortText || node.longText,
-      children: node.children?.length
-        ? mapTree(node.children, level + 1)
-        : [],
-    };
-  });
+    shortText: node.shortText,
+    longText: node.longText,
+    name: node.longText || node.shortText,
+
+    startDate: node.startDate,
+    endDate: node.endDate,
+
+    children: [],
+    _childrenLoaded: false,
+  }));
 };
 
 const mapPositionToNode = (pos: any) => ({
-  id: pos.id,                 // id posisi (UUID)
-  positionCode: pos.position, // opsional kalau kepakai
-  type: "position",           // 🔥 penting
-  name: pos.shortText || pos.longText,
-  label: pos.abbreviation,    // O / P / S (kalau mau)
-  startDate: pos.startDate,
-  endDate: pos.endDate,
-  children: [],               // nanti member
+  id: pos.id,
+  positionCode: pos.position,
+  organizationCode: pos.organization,
+
+  type: "position",
+
+  longText: pos.long_text,
+  shortText: pos.short_text,
+  bodTag: pos.bod_tag,
+
+  name: pos.long_text || pos.short_text || "-",
+
+  startDate: pos.start_date,
+  endDate: pos.end_date,
+
+  children: [],
 });
 
 const loadPositions = async (node: any) => {
   if (node._positionsLoaded) return;
-  if (!node.organizationCode) return;
 
-  try {
-    const res = await getPositionsByOrganization(
-      String(node.organizationCode)
-    );
+  const res = await getPositionsByOrganization(String(node.organizationCode));
+  const positions = res.data.map(mapPositionToNode);
 
-    const positions = res.data.map(mapPositionToNode);
+  const sortedPositions = sortPositionsByBod(positions);
 
-    node.children = [...positions, ...(node.children || [])];
-    node._positionsLoaded = true;
-  } catch (err) {
-    console.error("❌ gagal load posisi:", err);
-  }
+  node.children = [
+    ...sortedPositions,
+    ...(node.children || []).filter((c: any) => c.type !== "position"),
+  ];
+
+  node._positionsLoaded = true;
 };
 
-const mapPersonToNode = (person: any) => ({
-  id: person.id,              // UUID
-  type: "member",             // 🔥 penting buat UI
-  name: person.name,          // SETIO ANGGORO
-  persnum: person.persnum,    // optional
+const mapPersonToNode = (person: any, positionCode: number) => ({
+  id: person.id,
+  type: "member",
+  name: person.name,
+  persnum: person.persnum,
   gender: person.gender,
+
+  positionCode,
+
   startDate: person.start_date,
   endDate: person.end_date,
   children: [],
@@ -588,7 +716,9 @@ const loadPersons = async (node: any) => {
   try {
     const res = await getPersonsByPosition(node.positionCode);
 
-    const persons = res.data.map(mapPersonToNode);
+    const persons = res.data.map((p: any) =>
+      mapPersonToNode(p, node.positionCode),
+    );
 
     node.children = persons;
     node._personsLoaded = true;
@@ -603,9 +733,31 @@ watch(
     if (!kode) return;
     fetchData(kode);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
+watch(
+  () => formUnit.value.idsubArea,
+  (id) => {
+    if (!id) {
+      formUnit.value.subarea = "";
+      return;
+    }
+
+    const selected = subAreaOptions.value.find((s) => s.sub_area === id);
+
+    formUnit.value.subarea = selected?.shortText || selected?.longText || "";
+  },
+);
+
+watch(
+  () => formPosition.value.chief,
+  (val) => {
+    if (!val) {
+      formPosition.value.chiefLevel = "";
+    }
+  },
+);
 
 const organizationTree = ref<any[]>([]);
 
@@ -614,49 +766,141 @@ const toggleNode = async (node: any) => {
   const isExpanded = expandedNodes.value[node.id] ?? false;
   expandedNodes.value[node.id] = !isExpanded;
 
-  // UNIT → LOAD POSISI
-  if (
-    !isExpanded &&
-    node.type === "unit" &&
-    !node._positionsLoaded
-  ) {
+  if (isExpanded) return;
+
+  if (node.type === "unit" && !node._positionsLoaded) {
     await loadPositions(node);
   }
 
-  // POSISI → LOAD PERSON
-  if (
-    !isExpanded &&
-    node.type === "position" &&
-    !node._personsLoaded
-  ) {
+  if (node.type !== "position" && !node._childrenLoaded) {
+    const res = await getOrganizationChildren(node.organizationCode);
+
+    const orgChildren = mapTree(res.data, node.level + 1);
+
+    node.children = [
+      ...(node.children || []).filter((c: any) => c.type === "position"),
+      ...orgChildren,
+    ];
+
+    node._childrenLoaded = true;
+  }
+
+  // member tetap terakhir
+  if (node.type === "position") {
     await loadPersons(node);
   }
 };
-
 
 const setHoveredNode = (id: string | null) => {
   hoveredNode.value = id;
 };
 
-const openEditModal = (item: any, type: string) => {
-  editType.value = type;
+const openEditModal = (item: any) => {
+  editingNode.value = item;
+
+  if (item.type === "unit" || item.type === "direktorat") {
+    editType.value = "Unit";
+
+    formUnit.value = {
+      namaUnit: item.longText || item.shortText,
+      idUnit: item.organizationCode,
+      titelatur: item.shortText,
+      idsubArea: item.subArea,
+      subarea: item.subAreaText,
+      deskripsi: "",
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    };
+  }
+
+  if (item.type === "position") {
+    editType.value = "Posisi";
+
+    formPosition.value = {
+      namaPos: item.longText,
+      idPos: item.positionCode,
+      kodePosisi: item.shortText,
+
+      chief: !!item.bodTag,
+      chiefLevel: item.bodTag ?? "",
+
+      mulai: item.startDate,
+      berakhir: item.endDate,
+    };
+  }
+
+  if (item.type === "member") {
+    editType.value = "Anggota";
+
+    formMember.value = {
+      nama: item.name,
+      pn: item.persnum,
+    };
+  }
+
   showEditModal.value = true;
 };
 
+const hasChildren = (node: any) => {
+  return Array.isArray(node.children) && node.children.length > 0;
+};
+
 const openDelete = (item: any) => {
+  if (hasChildren(item)) {
+    alert(
+      "Unit ini masih memiliki sub unit / posisi. Hapus atau pindahkan child terlebih dahulu.",
+    );
+    return;
+  }
+
   itemToDelete.value = item;
   confirmDeleteOpen.value = true;
+};
+
+const removeNodeById = (nodes: any[], id: string): boolean => {
+  const index = nodes.findIndex((n) => n.id === id);
+  if (index !== -1) {
+    nodes.splice(index, 1);
+    return true;
+  }
+
+  for (const node of nodes) {
+    if (node.children?.length) {
+      const removed = removeNodeById(node.children, id);
+      if (removed) return true;
+    }
+  }
+
+  return false;
 };
 
 const deleteNow = async () => {
   if (!itemToDelete.value) return;
 
   try {
-    console.log("🗑️ Deleting item:", itemToDelete.value);
-    // Uncomment when API is ready
-    // await deleteItem(itemToDelete.value.id);
+    const item = itemToDelete.value;
+
+    if (hasChildren(item)) {
+      alert("Tidak bisa menghapus data yang masih memiliki child.");
+      return;
+    }
+
+    if (item.type === "member") {
+      await deletePerson(item.id);
+
+      removeNodeById(organizationTree.value, item.id);
+      showSuccessToast("Berhasil menghapus anggota");
+    } else if (item.type === "position") {
+      await deletePosition(item.id);
+      removeNodeById(organizationTree.value, item.id);
+      showSuccessToast("Berhasil menghapus posisi");
+    } else {
+      await deleteOrganization(item.id);
+      await fetchData(route.params.kode as string);
+      showSuccessToast("Berhasil menghapus unit");
+    }
+
     confirmDeleteOpen.value = false;
-    // await fetchData();
   } catch (error) {
     console.error("❌ Error deleting item:", error);
   } finally {
@@ -664,57 +908,240 @@ const deleteNow = async () => {
   }
 };
 
-const openAddUnitModal = (parent: any, type: string) => {
+const subAreaOptions = ref<any[]>([]);
+const loadingSubArea = ref(false);
+const openAddUnitModal = async (parent: any, type: string) => {
+  selectedParentNode.value = parent;
   showAddUnitModal.value = true;
+
+  if (!company.value?.kode) return;
+
+  const res = await getSubAreasByCompany(String(company.value.kode));
+  subAreaOptions.value = res.data || [];
 };
 
 const openAddPositionModal = (parent: any) => {
+  selectedParentNode.value = parent;
   showAddPositionModal.value = true;
 };
 
 const openAddMemberModal = (parent: any) => {
+  selectedParentNode.value = parent;
   showAddMemberModal.value = true;
 };
 
-const handleSaveUnit = () => {
-  console.log("SAVE UNIT:", formUnit.value);
-  showAddUnitModal.value = false;
-  formUnit.value = {
-    namaUnit: "",
-    idUnit: "",
-    titelatur: "",
-    idArea: "",
-    area: "",
-    deskripsi: "",
-    mulai: "",
-    berakhir: "",
-  };
+const selectedParentNode = ref<any>(null);
+const handleSaveUnit = async () => {
+  try {
+    if (!company.value?.kode) return;
+
+    const payload = {
+      company: Number(company.value.kode),
+      organization: Number(formUnit.value.idUnit),
+      shortText: formUnit.value.titelatur,
+      longText: formUnit.value.namaUnit,
+      abbreviation: formUnit.value.namaUnit,
+      subArea: Number(formUnit.value.idsubArea),
+      subAreaText: formUnit.value.subarea,
+      parentOrganization: selectedParentNode.value?.organizationCode ?? null,
+      startDate: formUnit.value.mulai,
+      endDate: formUnit.value.berakhir,
+    };
+
+    await createOrganization(payload);
+    await fetchData(route.params.kode as string);
+    showSuccessToast("Berhasil menambahkan unit");
+
+    showAddUnitModal.value = false;
+
+    // reset form
+    formUnit.value = {
+      namaUnit: "",
+      idUnit: "",
+      titelatur: "",
+      idsubArea: "",
+      subarea: "",
+      deskripsi: "",
+      mulai: "",
+      berakhir: "",
+    };
+  } catch (err) {
+    console.error("❌ gagal create organization:", err);
+  }
 };
 
-const handleSavePosition = () => {
-  console.log("SAVE POSITION:", formPosition.value);
-  showAddPositionModal.value = false;
-  formPosition.value = {
-    namaPos: "",
-    idPos: "",
-    titelatur: "",
-    idArea: "",
-    area: "",
-    chief: false,
-    deskripsi: "",
-    mulai: "",
-    berakhir: "",
-  };
+const chiefOptions = [
+  { label: "BOD", value: "BOD" },
+  { label: "BOD-1", value: "BOD-1" },
+  { label: "BOD-2", value: "BOD-2" },
+  { label: "BOD-3", value: "BOD-3" },
+];
+
+const handleSavePosition = async () => {
+  try {
+    if (!company.value?.kode || !selectedParentNode.value) return;
+
+    const payload = {
+      company: Number(company.value.kode),
+      position: Number(formPosition.value.idPos),
+      shortText: formPosition.value.titelatur,
+      longText: formPosition.value.namaPos,
+      abbreviation: formPosition.value.namaPos,
+      organization: Number(selectedParentNode.value.organizationCode),
+
+      bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
+
+      startDate: formPosition.value.mulai,
+      endDate: formPosition.value.berakhir,
+    };
+
+    await createPosition(payload);
+    selectedParentNode.value._positionsLoaded = false;
+    await loadPositions(selectedParentNode.value);
+
+    showSuccessToast("Berhasil menambahkan posisi");
+
+    showAddPositionModal.value = false;
+
+    // reset form
+    formPosition.value = {
+      namaPos: "",
+      idPos: "",
+      titelatur: "",
+      idArea: "",
+      area: "",
+      chief: false,
+      chiefLevel: "",
+      deskripsi: "",
+      mulai: "",
+      berakhir: "",
+    };
+  } catch (err) {
+    console.error("❌ gagal create position:", err);
+  }
 };
 
-const handleSaveMember = () => {
-  console.log("SAVE MEMBER:", formMember.value);
-  showAddMemberModal.value = false;
-  formMember.value = { nama: "", pn: "" };
+const handleSaveMember = async () => {
+  try {
+    if (!company.value?.kode || !selectedParentNode.value) return;
+
+    const payload = {
+      persnum: Number(formMember.value.pn),
+      name: formMember.value.nama,
+      gender: "L",
+      company: Number(company.value.kode),
+      position: Number(selectedParentNode.value.positionCode),
+      startDate: "2025-01-01",
+      endDate: "9999-12-31",
+    };
+
+    await createPerson(payload);
+    selectedParentNode.value._personsLoaded = false;
+    await loadPersons(selectedParentNode.value);
+
+    showSuccessToast("Berhasil menambahkan anggota");
+
+    showAddMemberModal.value = false;
+
+    // reset form
+    formMember.value = {
+      nama: "",
+      pn: "",
+    };
+  } catch (err) {
+    console.error("❌ gagal create person:", err);
+  }
 };
 
-const handleSaveEdit = () => {
-  console.log("SAVE EDIT");
-  showEditModal.value = false;
+const toDateOnly = (val?: string) => {
+  if (!val) return null;
+  return val.split("T")[0];
+};
+
+const handleSaveEdit = async () => {
+  if (!editingNode.value) return;
+
+  try {
+    if (editType.value === "Unit") {
+      const payload = {
+        shortText: formUnit.value.titelatur,
+        longText: formUnit.value.namaUnit,
+        abbreviation: formUnit.value.namaUnit,
+        subArea: Number(formUnit.value.idsubArea),
+        subAreaText: formUnit.value.subarea,
+        startDate: formUnit.value.mulai,
+        endDate: formUnit.value.berakhir,
+      };
+
+      await updateOrganization(editingNode.value.id, payload);
+      showSuccessToast("Berhasil mengubah unit");
+    }
+
+    if (editType.value === "Posisi") {
+      const payload = {
+        longText: formPosition.value.namaPos,
+        abbreviation: formPosition.value.namaPos,
+
+        bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
+
+        startDate: toDateOnly(formPosition.value.mulai),
+        endDate: toDateOnly(formPosition.value.berakhir),
+      };
+
+      await updatePosition(editingNode.value.id, payload);
+      showSuccessToast("Berhasil mengubah posisi");
+
+      editingNode.value.longText = formPosition.value.namaPos;
+      editingNode.value.name = formPosition.value.namaPos;
+      editingNode.value.bodTag = formPosition.value.chief
+        ? formPosition.value.chiefLevel
+        : null;
+      editingNode.value.startDate = formPosition.value.mulai;
+      editingNode.value.endDate = formPosition.value.berakhir;
+    }
+
+    if (editType.value === "Anggota") {
+      const payload = {
+        persnum: Number(formMember.value.pn),
+        name: formMember.value.nama,
+        gender: editingNode.value.gender ?? "L",
+        company: Number(company.value.kode),
+
+        position: Number(editingNode.value.positionCode),
+
+        startDate: toDateOnly(editingNode.value.startDate),
+        endDate: toDateOnly(editingNode.value.endDate),
+      };
+
+      await updatePerson(editingNode.value.id, payload);
+      showSuccessToast("Berhasil mengubah anggota");
+
+      editingNode.value.name = formMember.value.nama;
+      editingNode.value.persnum = formMember.value.pn;
+    }
+
+    showEditModal.value = false;
+    editingNode.value = null;
+
+    await fetchData(route.params.kode as string);
+  } catch (err) {
+    console.error("❌ gagal update:", err);
+  }
+};
+
+const bodOrder: Record<string, number> = {
+  BOD: 1,
+  "BOD-1": 2,
+  "BOD-2": 3,
+  "BOD-3": 4,
+};
+
+const sortPositionsByBod = (positions: any[]) => {
+  return [...positions].sort((a, b) => {
+    const aOrder = bodOrder[a.bodTag ?? ""] ?? 99;
+    const bOrder = bodOrder[b.bodTag ?? ""] ?? 99;
+
+    return aOrder - bOrder;
+  });
 };
 </script>
