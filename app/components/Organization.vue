@@ -19,12 +19,16 @@
 
       <!-- Node content -->
       <div
+        :data-node-id="node.id"
         :class="[
           'flex items-center gap-3 p-3 rounded-lg transition-all relative',
           getNodeConfig().bgColor,
           getNodeConfig().borderColor,
           isSearchHighlighted
             ? 'ring-2 ring-yellow-400 shadow-lg scale-[1.02]'
+            : '',
+          highlightNodeId === node.id
+            ? 'ring-4 ring-blue-500 shadow-2xl animate-pulse'
             : '',
         ]"
       >
@@ -130,6 +134,7 @@
         :hovered-node="hoveredNode"
         :search-query="searchQuery"
         :search-results="searchResults"
+        :highlight-node-id="highlightNodeId"
         @toggle-node="$emit('toggleNode', $event)"
         @set-hovered="$emit('setHovered', $event)"
         @open-add-unit="$emit('openAddUnit', $event)"
@@ -185,6 +190,10 @@ const props = defineProps({
   searchResults: {
     type: Object,
     default: () => ({}),
+  },
+  highlightNodeId: {
+    type: [String, null],
+    default: null,
   },
 });
 

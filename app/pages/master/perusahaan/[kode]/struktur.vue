@@ -50,7 +50,10 @@
         </div>
 
         <!-- Search Results Info -->
-        <div v-if="searchQuery && !loadingSearch" class="mt-4 space-y-2">
+        <div
+          v-if="searchQuery && !loadingSearch && !loadingExpand"
+          class="mt-4 space-y-2"
+        >
           <!-- Summary -->
           <div class="flex flex-wrap items-center gap-4">
             <div
@@ -188,7 +191,7 @@
         </div>
 
         <!-- Organization Tree -->
-        <div v-if="companyExpanded" class="p-8">
+        <div v-if="companyExpanded" class="p-8" ref="treeContainer">
           <div v-if="displayTree.length === 0" class="text-center py-12">
             <Building class="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p class="text-gray-500 text-lg">Belum ada struktur organisasi</p>
@@ -211,6 +214,7 @@
             :hovered-node="hoveredNode"
             :search-query="searchQuery"
             :search-results="searchResultsMap"
+            :highlight-node-id="highlightNodeId"
             @toggle-node="toggleNode"
             @set-hovered="setHoveredNode"
             @open-edit="openEditModal"
@@ -223,7 +227,6 @@
       </div>
     </div>
 
-    <!-- Modals (same as before) -->
     <!-- Add Unit Modal -->
     <Teleport to="body">
       <Modal v-model="showAddUnitModal" size="xl" @save="handleSaveUnit">
@@ -265,23 +268,76 @@
             />
           </div>
 
-          <div>
+          <div class="sub-area-dropdown-container">
             <Heading variant="heading11m" class="text-xs">
               Sub Area <span class="text-red-500">*</span>
             </Heading>
-            <select
-              v-model="formUnit.idsubArea"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-            >
-              <option value="">Pilih Sub Area</option>
-              <option
-                v-for="sub in subAreaOptions"
-                :key="sub.sub_area"
-                :value="sub.sub_area"
+
+            <!-- Dropdown Toggle -->
+            <div class="relative mt-1">
+              <button
+                type="button"
+                @click="showSubAreaDropdown = !showSubAreaDropdown"
+                class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                {{ sub.sub_area }} - {{ sub.shortText || sub.longText }}
-              </option>
-            </select>
+                <span
+                  :class="
+                    formUnit.idsubArea ? 'text-gray-900' : 'text-gray-400'
+                  "
+                >
+                  {{ getSelectedSubAreaText() || "Pilih Sub Area" }}
+                </span>
+                <ChevronDown class="w-4 h-4 text-gray-400" />
+              </button>
+
+              <!-- Dropdown Panel -->
+              <div
+                v-if="showSubAreaDropdown"
+                class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
+                @click.stop
+              >
+                <!-- Search Inside Dropdown -->
+                <div class="p-2 border-b border-gray-200">
+                  <div class="relative">
+                    <Search
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="subAreaSearchQuery"
+                      @input="filterSubAreas"
+                      placeholder="Cari sub area..."
+                      class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+
+                <!-- Options List -->
+                <div class="max-h-64 overflow-y-auto">
+                  <div
+                    v-for="sub in filteredSubAreas"
+                    :key="sub.sub_area"
+                    @click="selectSubArea(sub)"
+                    :class="[
+                      'px-3 py-2 cursor-pointer hover:bg-primary-50 transition-colors',
+                      formUnit.idsubArea === sub.sub_area
+                        ? 'bg-primary-100 font-medium'
+                        : '',
+                    ]"
+                  >
+                    <p class="text-sm">
+                      {{ sub.sub_area }} - {{ sub.shortText || sub.longText }}
+                    </p>
+                  </div>
+
+                  <div
+                    v-if="filteredSubAreas.length === 0"
+                    class="px-3 py-4 text-center text-gray-500 text-sm"
+                  >
+                    Tidak ada sub area ditemukan
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -428,25 +484,87 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <div>
+          <div class="person-dropdown-container mt-4">
             <Heading variant="heading11m" class="text-xs">
               Nama Anggota <span class="text-red-500">*</span>
             </Heading>
-            <select
-              v-model="formMember.personId"
-              @focus="loadPersonsIfNeeded"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="">
-                {{ loadingPersons ? "Memuat data..." : "Pilih Anggota" }}
-              </option>
-              <option v-for="p in personOptions" :key="p.id" :value="p.id">
-                {{ p.persnum }} - {{ p.name }}
-              </option>
-            </select>
+
+            <!-- Dropdown Toggle -->
+            <div class="relative mt-1">
+              <button
+                type="button"
+                @click="togglePersonDropdown"
+                class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <span
+                  :class="
+                    formMember.personId ? 'text-gray-900' : 'text-gray-400'
+                  "
+                >
+                  {{ getSelectedPersonText() || "Pilih Anggota" }}
+                </span>
+                <ChevronDown class="w-4 h-4 text-gray-400" />
+              </button>
+
+              <!-- Dropdown Panel -->
+              <div
+                v-if="showPersonDropdown"
+                class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
+                @click.stop
+              >
+                <!-- Search Inside Dropdown -->
+                <div class="p-2 border-b border-gray-200">
+                  <div class="relative">
+                    <Search
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="personSearchQuery"
+                      @input="filterPersons"
+                      placeholder="Cari anggota..."
+                      class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="loadingPersons" class="p-4 text-center">
+                  <div
+                    class="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto"
+                  ></div>
+                  <p class="text-sm text-gray-500 mt-2">Memuat data...</p>
+                </div>
+
+                <!-- Options List -->
+                <div v-else class="max-h-64 overflow-y-auto">
+                  <div
+                    v-for="p in filteredPersons"
+                    :key="p.id"
+                    @click="selectPerson(p)"
+                    :class="[
+                      'px-3 py-2 cursor-pointer hover:bg-primary-50 transition-colors',
+                      formMember.personId === p.id
+                        ? 'bg-primary-100 font-medium'
+                        : '',
+                    ]"
+                  >
+                    <p class="text-sm font-medium">{{ p.name }}</p>
+                    <p class="text-xs text-gray-500">PN: {{ p.persnum }}</p>
+                  </div>
+
+                  <div
+                    v-if="filteredPersons.length === 0"
+                    class="px-3 py-4 text-center text-gray-500 text-sm"
+                  >
+                    Tidak ada anggota ditemukan
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-4 mt-7 mb-8">
             <div>
               <Heading variant="heading11m" class="text-xs">
                 Tanggal Mulai <span class="text-red-500">*</span>
@@ -594,7 +712,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, nextTick, onMounted, onUnmounted } from "vue";
 import {
   ChevronDown,
   ChevronRight,
@@ -661,6 +779,16 @@ const searchResults = ref<{
 });
 const loadingSearch = ref(false);
 const loadingExpand = ref(false);
+const highlightNodeId = ref<string | null>(null);
+const treeContainer = ref<HTMLElement | null>(null);
+
+// Modal search states
+const subAreaSearchQuery = ref("");
+const personSearchQuery = ref("");
+const filteredSubAreas = ref<any[]>([]);
+const filteredPersons = ref<any[]>([]);
+const showSubAreaDropdown = ref(false);
+const showPersonDropdown = ref(false);
 
 const toast = useToast();
 
@@ -672,6 +800,35 @@ const showSuccessToast = (message: string) => {
     icon: "i-lucide-check-circle",
   });
 };
+
+// Handle click outside dropdowns
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  // Close sub area dropdown if click outside
+  if (showSubAreaDropdown.value) {
+    const isClickInside = target.closest(".sub-area-dropdown-container");
+    if (!isClickInside) {
+      showSubAreaDropdown.value = false;
+    }
+  }
+
+  // Close person dropdown if click outside
+  if (showPersonDropdown.value) {
+    const isClickInside = target.closest(".person-dropdown-container");
+    if (!isClickInside) {
+      showPersonDropdown.value = false;
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 
 // Computed total results
 const totalResults = computed(() => {
@@ -706,6 +863,8 @@ let searchTimeout: any = null;
 
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) {
+    // Reset ke state awal
+    resetTreeState();
     searchResults.value = {
       organizations: [],
       positions: [],
@@ -720,10 +879,19 @@ const handleSearch = async () => {
   }, 300);
 };
 
+const resetTreeState = () => {
+  // Collapse semua nodes
+  expandedNodes.value = {};
+  highlightNodeId.value = null;
+};
+
 const performSearch = async () => {
   if (!company.value?.kode || !searchQuery.value.trim()) return;
 
   try {
+    // Reset state sebelum search baru
+    resetTreeState();
+
     loadingSearch.value = true;
 
     // Parallel search all endpoints
@@ -746,6 +914,11 @@ const performSearch = async () => {
       loadingExpand.value = true;
       await autoExpandSearchResults();
       loadingExpand.value = false;
+
+      // Jika hanya 1 hasil, scroll ke item tersebut
+      if (totalResults.value === 1) {
+        await scrollToSingleResult();
+      }
     }
   } catch (err) {
     console.error("❌ Search error:", err);
@@ -760,8 +933,54 @@ const performSearch = async () => {
   }
 };
 
+const scrollToSingleResult = async () => {
+  // Wait for DOM to be fully updated
+  await nextTick();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // Get the single result ID
+  let singleResultId: string | null = null;
+
+  if (searchResults.value.organizations.length === 1) {
+    singleResultId = searchResults.value.organizations[0].id;
+  } else if (searchResults.value.positions.length === 1) {
+    singleResultId = searchResults.value.positions[0].id;
+  } else if (searchResults.value.persons.length === 1) {
+    singleResultId = searchResults.value.persons[0].id;
+  }
+
+  console.log("🔍 Scrolling to single result:", singleResultId);
+
+  if (singleResultId) {
+    highlightNodeId.value = singleResultId;
+
+    // Wait again for highlight to render
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Find element with attribute selector
+    const element = document.querySelector(
+      `[data-node-id="${singleResultId}"]`,
+    );
+
+    console.log("📍 Element found:", element);
+
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+
+      console.log("✅ Scrolled to element");
+    } else {
+      console.warn("⚠️ Element not found in DOM");
+    }
+  }
+};
+
 const autoExpandSearchResults = async () => {
-  // Step 1: Expand organizations dan load positions
+  // Step 1: Expand Organizations
   for (const org of searchResults.value.organizations) {
     const orgNode = findNodeInTree(
       organizationTree.value,
@@ -771,7 +990,6 @@ const autoExpandSearchResults = async () => {
     if (orgNode) {
       expandedNodes.value[orgNode.id] = true;
 
-      // Load positions for this org if not loaded
       if (!orgNode._positionsLoaded) {
         await loadPositions(orgNode);
       }
@@ -780,9 +998,8 @@ const autoExpandSearchResults = async () => {
     }
   }
 
-  // Step 2: Expand positions (dan parent organization-nya)
+  // Step 2: Expand Positions
   for (const pos of searchResults.value.positions) {
-    // Pertama, cari dan expand organization parent-nya
     const orgNode = findNodeInTree(
       organizationTree.value,
       (n) =>
@@ -793,12 +1010,10 @@ const autoExpandSearchResults = async () => {
     if (orgNode) {
       expandedNodes.value[orgNode.id] = true;
 
-      // Load positions if not loaded
       if (!orgNode._positionsLoaded) {
         await loadPositions(orgNode);
       }
 
-      // Setelah load, cari position node
       const posNode = findNodeInTree(
         orgNode.children,
         (n) => n.type === "position" && n.positionCode === pos.position,
@@ -807,7 +1022,6 @@ const autoExpandSearchResults = async () => {
       if (posNode) {
         expandedNodes.value[posNode.id] = true;
 
-        // Load persons for this position if not loaded
         if (!posNode._personsLoaded) {
           await loadPersons(posNode);
         }
@@ -817,38 +1031,27 @@ const autoExpandSearchResults = async () => {
     }
   }
 
-  // Step 3: Expand persons (dan parent position & organization-nya)
+  // Step 3: Expand Persons
   for (const person of searchResults.value.persons) {
-    // Strategy: Load all positions in tree first, then find the person
-    // This is more efficient than loading all positions for all organizations
-
-    let found = false;
-
-    // Recursive function to search and expand
     const searchAndExpandForPerson = async (nodes: any[]): Promise<boolean> => {
       for (const node of nodes) {
         if (node.type === "unit" || node.type === "direktorat") {
-          // Load positions if not loaded
           if (!node._positionsLoaded) {
             await loadPositions(node);
           }
 
-          // Check each position
           for (const posNode of node.children.filter(
             (c: any) => c.type === "position",
           )) {
-            // Load persons if not loaded
             if (!posNode._personsLoaded) {
               await loadPersons(posNode);
             }
 
-            // Check if person exists
             const personNode = posNode.children.find(
               (p: any) => p.type === "member" && p.persnum === person.persnum,
             );
 
             if (personNode) {
-              // Found! Expand all
               expandedNodes.value[node.id] = true;
               expandedNodes.value[posNode.id] = true;
               expandedNodes.value[personNode.id] = true;
@@ -858,18 +1061,15 @@ const autoExpandSearchResults = async () => {
             }
           }
 
-          // Search in children units
-          if (node.children?.length) {
-            const childUnits = node.children.filter(
-              (c: any) => c.type === "unit" || c.type === "direktorat",
-            );
+          const childUnits = node.children.filter(
+            (c: any) => c.type === "unit" || c.type === "direktorat",
+          );
 
-            if (childUnits.length > 0) {
-              const foundInChild = await searchAndExpandForPerson(childUnits);
-              if (foundInChild) {
-                expandedNodes.value[node.id] = true;
-                return true;
-              }
+          if (childUnits.length > 0) {
+            const foundInChild = await searchAndExpandForPerson(childUnits);
+            if (foundInChild) {
+              expandedNodes.value[node.id] = true;
+              return true;
             }
           }
         }
@@ -877,13 +1077,7 @@ const autoExpandSearchResults = async () => {
       return false;
     };
 
-    found = await searchAndExpandForPerson(organizationTree.value);
-
-    if (!found) {
-      console.warn(
-        `Person ${person.name} (${person.persnum}) not found in tree`,
-      );
-    }
+    await searchAndExpandForPerson(organizationTree.value);
   }
 };
 
@@ -915,7 +1109,6 @@ const expandParentNodes = async (nodeId: string) => {
       if (node.id === targetId) {
         expandedNodes.value[node.id] = true;
 
-        // Load positions if needed
         if (
           (node.type === "unit" || node.type === "direktorat") &&
           !node._positionsLoaded
@@ -923,7 +1116,6 @@ const expandParentNodes = async (nodeId: string) => {
           await loadPositions(node);
         }
 
-        // Load persons if needed
         if (node.type === "position" && !node._personsLoaded) {
           await loadPersons(node);
         }
@@ -936,7 +1128,6 @@ const expandParentNodes = async (nodeId: string) => {
         if (found) {
           expandedNodes.value[node.id] = true;
 
-          // Load positions if this is organization node
           if (
             (node.type === "unit" || node.type === "direktorat") &&
             !node._positionsLoaded
@@ -944,7 +1135,6 @@ const expandParentNodes = async (nodeId: string) => {
             await loadPositions(node);
           }
 
-          // Load persons if this is position node
           if (node.type === "position" && !node._personsLoaded) {
             await loadPersons(node);
           }
@@ -961,11 +1151,96 @@ const expandParentNodes = async (nodeId: string) => {
 
 const clearSearch = () => {
   searchQuery.value = "";
+  resetTreeState();
   searchResults.value = {
     organizations: [],
     positions: [],
     persons: [],
   };
+};
+
+// Modal search functions
+const getSelectedSubAreaText = () => {
+  if (!formUnit.value.idsubArea) return "";
+
+  const selected = subAreaOptions.value.find(
+    (sub) => sub.sub_area === formUnit.value.idsubArea,
+  );
+
+  if (!selected) return "";
+
+  return `${selected.sub_area} - ${selected.shortText || selected.longText}`;
+};
+
+const getSelectedPersonText = () => {
+  if (!formMember.value.personId) return "";
+
+  const selected = personOptions.value.find(
+    (p) => p.id === formMember.value.personId,
+  );
+
+  if (!selected) return "";
+
+  return `${selected.name} (PN: ${selected.persnum})`;
+};
+
+const togglePersonDropdown = async () => {
+  showPersonDropdown.value = !showPersonDropdown.value;
+
+  if (showPersonDropdown.value) {
+    await loadPersonsIfNeeded();
+  }
+};
+
+const filterSubAreas = () => {
+  const query = subAreaSearchQuery.value.toLowerCase().trim();
+
+  if (!query) {
+    filteredSubAreas.value = subAreaOptions.value;
+    return;
+  }
+
+  filteredSubAreas.value = subAreaOptions.value.filter((sub) => {
+    const subArea = String(sub.sub_area).toLowerCase();
+    const shortText = (sub.shortText || "").toLowerCase();
+    const longText = (sub.longText || "").toLowerCase();
+
+    return (
+      subArea.includes(query) ||
+      shortText.includes(query) ||
+      longText.includes(query)
+    );
+  });
+};
+
+const selectSubArea = (sub: any) => {
+  formUnit.value.idsubArea = sub.sub_area;
+  formUnit.value.subarea = sub.shortText || sub.longText || "";
+  showSubAreaDropdown.value = false;
+  subAreaSearchQuery.value = "";
+};
+
+const filterPersons = () => {
+  const query = personSearchQuery.value.toLowerCase().trim();
+
+  if (!query) {
+    filteredPersons.value = personOptions.value;
+    return;
+  }
+
+  filteredPersons.value = personOptions.value.filter((person) => {
+    const name = (person.name || "").toLowerCase();
+    const persnum = String(person.persnum || "").toLowerCase();
+
+    return name.includes(query) || persnum.includes(query);
+  });
+};
+
+const selectPerson = (person: any) => {
+  formMember.value.personId = person.id;
+  formMember.value.nama = person.name;
+  showPersonDropdown.value = false;
+  personSearchQuery.value = "";
 };
 
 // Computed property untuk display tree
@@ -994,6 +1269,7 @@ const resetUnitForm = () => {
     mulai: "",
     berakhir: "",
   };
+  subAreaSearchQuery.value = "";
 };
 
 const resetPositionForm = () => {
@@ -1015,6 +1291,7 @@ const resetMemberForm = () => {
     mulai: "",
     berakhir: "",
   };
+  personSearchQuery.value = "";
 };
 
 const personOptions = ref<any[]>([]);
@@ -1028,6 +1305,7 @@ const loadPersonsIfNeeded = async () => {
     loadingPersons.value = true;
     const res = await getPersons();
     personOptions.value = res.data || [];
+    filteredPersons.value = res.data || [];
     personsLoaded.value = true;
   } catch (err) {
     console.error("❌ gagal load person:", err);
@@ -1349,6 +1627,7 @@ const openAddUnitModal = async (parent: any, type: string) => {
 
   const res = await getSubAreasByCompany(String(company.value.kode));
   subAreaOptions.value = res.data || [];
+  filteredSubAreas.value = res.data || [];
 };
 
 const openAddPositionModal = async (parent: any) => {

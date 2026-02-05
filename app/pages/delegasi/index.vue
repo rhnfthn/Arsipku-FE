@@ -603,7 +603,7 @@ const exportData = () => {
 </script>
 
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
