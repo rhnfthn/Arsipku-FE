@@ -13,29 +13,64 @@ export const useStruktur = () => {
     }>(`/organization/company/${companyId}/tree`);
   };
 
+  const searchOrganization = (
+    companyId: string | number,
+    searchQuery: string,
+  ) => {
+    return apiGet<{
+      success: boolean;
+      data: any[];
+    }>(`/organization/company/${companyId}`, {
+      params: {
+        search: searchQuery,
+      },
+    });
+  };
+
+  const searchPosition = (companyId: string | number, searchQuery: string) => {
+    return apiGet<{
+      success: boolean;
+      data: any[];
+    }>(`/position/company/${companyId}`, {
+      params: {
+        search: searchQuery,
+      },
+    });
+  };
+
+  const searchPerson = (companyId: string | number, searchQuery: string) => {
+    return apiGet<{
+      success: boolean;
+      data: any[];
+    }>(`/person/company/${companyId}`, {
+      params: {
+        search: searchQuery,
+      },
+    });
+  };
+
   const getOrganizationChildren = (parentOrgId: string | number) => {
-  return apiGet<{
-    success: boolean;
-    data: any[];
-  }>(`/organization/${parentOrgId}/children`);
-};
+    return apiGet<{
+      success: boolean;
+      data: any[];
+    }>(`/organization/${parentOrgId}/children`);
+  };
 
-
-    const getPositionsByOrganization = (organizationId: string | number) => {
+  const getPositionsByOrganization = (organizationId: string | number) => {
     return apiGet<{
       success: boolean;
       data: any[];
     }>(`/position/organization/${organizationId}`);
   };
 
-    const getPersonsByPosition = (positionId: string | number) => {
+  const getPersonsByPosition = (positionId: string | number) => {
     return apiGet<{
       success: boolean;
       data: any[];
     }>(`/person/position/${positionId}`);
   };
 
-    const createOrganization = (payload: {
+  const createOrganization = (payload: {
     company: number;
     organization: number;
     shortText: string;
@@ -51,85 +86,87 @@ export const useStruktur = () => {
   };
 
   const deleteOrganization = (id: string) => {
-  return apiDelete(`/organization/${id}`);
-};
+    return apiDelete(`/organization/${id}`);
+  };
 
-const updateOrganization = (
-  id: string,
-  payload: {
+  const updateOrganization = (
+    id: string,
+    payload: {
+      shortText: string;
+      longText: string;
+      abbreviation: string;
+      subArea: number;
+      subAreaText: string;
+      startDate: string;
+      endDate: string;
+    },
+  ) => {
+    return apiPut(`/organization/${id}`, payload);
+  };
+
+  const createPosition = (payload: {
+    company: number;
+    position: number;
     shortText: string;
     longText: string;
     abbreviation: string;
-    subArea: number;
-    subAreaText: string;
-    startDate: string;
-    endDate: string;
-  },
-) => {
-  return apiPut(`/organization/${id}`, payload);
-};
-
-const createPosition = (payload: {
-  company: number;
-  position: number;
-  shortText: string;
-  longText: string;
-  abbreviation: string;
-  organization: number;
-  bodTag?: string | null;
-  startDate: string;
-  endDate: string;
-}) => {
-  return apiPost("/position", payload);
-};
-
-const deletePosition = (id: string) => {
-  return apiDelete(`/position/${id}`);
-};
-
-const updatePosition = (
-  id: string,
-  payload: {
-    company?: number;
-    position?: number;
-    shortText: string;
-    longText: string;
-    abbreviation?: string;
-    organization?: number;
+    organization: number;
     bodTag?: string | null;
     startDate: string;
     endDate: string;
-  },
-) => {
-  return apiPut(`/position/${id}`, payload);
-};
+  }) => {
+    return apiPost("/position", payload);
+  };
 
-const assignPersonToPosition = (payload: {
-  persnum: number;
-  company: number;
-  position: number;
-  startDate?: string;
-  endDate?: string;
-}) => {
-  return apiPost("/person/assign-position", payload);
-};
+  const deletePosition = (id: string) => {
+    return apiDelete(`/position/${id}`);
+  };
 
-const deletePerson = (idRelationSp: string) =>
-  apiDelete(`/person/assign-position/${idRelationSp}`);
+  const updatePosition = (
+    id: string,
+    payload: {
+      company?: number;
+      position?: number;
+      shortText?: string;
+      longText: string;
+      abbreviation?: string;
+      organization?: number;
+      bodTag?: string | null;
+      startDate: string;
+      endDate: string;
+    },
+  ) => {
+    return apiPut(`/position/${id}`, payload);
+  };
 
-
-const updateAssignPerson = (
-  idRelation: string,
-  payload: {
+  const assignPersonToPosition = (payload: {
+    persnum: number;
+    company: number;
+    position: number;
     startDate?: string;
     endDate?: string;
-  },
-) => {
-  return apiPut(`/person/assign-position/${idRelation}`, payload);
-};
+  }) => {
+    return apiPost("/person/assign-position", payload);
+  };
+
+  const deletePerson = (idRelationSp: string) =>
+    apiDelete(`/person/assign-position/${idRelationSp}`);
+
+  const updateAssignPerson = (
+    idRelation: string,
+    payload: {
+      startDate?: string;
+      endDate?: string;
+    },
+  ) => {
+    return apiPut(`/person/assign-position/${idRelation}`, payload);
+  };
 
   return {
     getCompanyTree,
+    searchOrganization,
+    searchPosition,
+    searchPerson,
     getOrganizationChildren,
     createOrganization,
     deleteOrganization,

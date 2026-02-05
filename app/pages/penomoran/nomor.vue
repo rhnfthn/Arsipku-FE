@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pb-10">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
           Daftar Penomoran Dokumen
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -12,7 +12,7 @@
       <!-- ADD BUTTON -->
       <button
         @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
+        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -20,7 +20,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -28,9 +28,9 @@
         <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
           <select
-            v-model="rowsPerPage"
+            v-model="limit"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -41,13 +41,13 @@
         <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
-            v-model="search"
+            v-model="searchQuery"
             @input="handleSearchInput"
             placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
           />
         </div>
       </div>
@@ -64,35 +64,45 @@
       <!-- EMPTY -->
       <div
         v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500"
+        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto relative">
-        <table class="w-full bg-white text-sm">
-          <thead class="bg-primary text-white text-[15px] sticky top-0 z-10">
+        <table class="w-full bg-white dark:bg-gray-800 text-sm">
+          <thead
+            class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-0 z-10"
+          >
             <tr>
               <th
                 v-for="col in headers"
                 :key="col.key"
                 @click="col.sortable && handleSort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap bg-primary dark:bg-primary-800',
                   col.sortable
-                    ? 'cursor-pointer select-none hover:bg-primary-600'
+                    ? 'cursor-pointer select-none hover:bg-primary-700 dark:hover:bg-primary-900'
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
                   <span>{{ col.label }}</span>
-                  <UIcon
-                    v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
-                  />
+                  <span class="w-3 h-3 inline-flex items-center justify-center">
+                    <ArrowUpDown
+                      v-if="col.sortable"
+                      :class="[
+                        'w-3 h-3 transition-all',
+                        sortBy === col.key
+                          ? 'opacity-100 text-yellow-300'
+                          : 'opacity-50',
+                        sortBy === col.key && sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0',
+                      ]"
+                    />
+                  </span>
                 </div>
               </th>
             </tr>
@@ -101,9 +111,9 @@
           <tbody>
             <tr
               v-for="row in rows"
-              :key="row.id"
-              class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
-              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
+              :key="row.id_request"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition dark:text-gray-200"
+              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail ')"
               @mouseleave="onRowMouseLeave"
               @click="openRowModal(row)"
             >
@@ -116,8 +126,30 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">{{ row.nomor }}</td>
+
+              <!-- ✅ Tampilkan tanggal sekali dan semua nomor di bawahnya -->
+              <td class="px-5 py-4">
+                <div class="flex flex-col gap-0.5">
+                  <div class="text-sm font-medium">{{ row.tanggal }}</div>
+                  <div
+                    class="text-xs text-gray-600 dark:text-gray-200 font-mono"
+                  >
+                    <div
+                      v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
+                      :key="idx"
+                    >
+                      {{ nomor }}
+                    </div>
+                    <div
+                      v-if="row.nomor_list.length > 3"
+                      class="text-primary font-medium dark:hover:bg-gray-700"
+                    >
+                      +{{ row.nomor_list.length - 3 }} nomor lainnya
+                    </div>
+                  </div>
+                </div>
+              </td>
+
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
                   <p class="whitespace-normal break-words line-clamp-3">
@@ -125,7 +157,7 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.waktu }}</td>
+              <td class="px-5 py-4 dark:hover:bg-gray-700">{{ row.waktu }}</td>
             </tr>
           </tbody>
         </table>
@@ -133,23 +165,24 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="rows.length > 0 && pagination"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        v-if="pagination && pagination.total > 0 && rows.length > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
-          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
+        <div class="text-xs text-gray-600 dark:text-gray-400">
+          Menampilkan {{ paginationStart }} - {{ paginationEnd }} dari
+          {{ pagination.total }} data
         </div>
 
         <div class="flex items-center gap-2">
           <!-- Back Button -->
           <button
-            @click="handlePageChange(currentPage - 1)"
-            :disabled="currentPage === 1"
+            @click="goToPage((pagination.current_page || pagination.page) - 1)"
+            :disabled="(pagination.current_page || pagination.page) === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+              (pagination.current_page || pagination.page) === 1
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             <svg
@@ -170,62 +203,77 @@
 
           <!-- Page Numbers -->
           <div class="flex items-center gap-1">
+            <!-- First page -->
             <button
-              v-if="paginationPages[0] > 1"
-              @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+              v-if="paginationPages.length > 0 && paginationPages[0] > 1"
+              @click="goToPage(1)"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
             >
               1
             </button>
 
+            <!-- Left ellipsis -->
             <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              v-if="paginationPages.length > 0 && paginationPages[0] > 2"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
 
+            <!-- Visible pages -->
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="handlePageChange(page)"
+              @click="goToPage(page)"
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                (pagination.current_page || pagination.page) === page
+                  ? 'bg-primary dark:bg-primary-700 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
             </button>
 
+            <!-- Right ellipsis -->
             <span
               v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
+                paginationPages.length > 0 &&
+                paginationPages[paginationPages.length - 1] <
+                  (pagination.total_pages || pagination.totalPages) - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
 
+            <!-- Last page -->
             <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="handlePageChange(totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              v-if="
+                paginationPages.length > 0 &&
+                paginationPages[paginationPages.length - 1] <
+                  (pagination.total_pages || pagination.totalPages)
+              "
+              @click="goToPage(pagination.total_pages || pagination.totalPages)"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
             >
-              {{ totalPages }}
+              {{ pagination.total_pages || pagination.totalPages }}
             </button>
           </div>
 
           <!-- Next Button -->
           <button
-            @click="handlePageChange(currentPage + 1)"
-            :disabled="currentPage === totalPages"
+            @click="goToPage((pagination.current_page || pagination.page) + 1)"
+            :disabled="
+              (pagination.current_page || pagination.page) ===
+              (pagination.total_pages || pagination.totalPages)
+            "
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+              (pagination.current_page || pagination.page) ===
+              (pagination.total_pages || pagination.totalPages)
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             Next
@@ -253,10 +301,7 @@
       title="Pratinjau Dokumen"
       side="bottom"
       :dismissible="true"
-      :ui="{
-        content: 'h-screen max-h-screen',
-        body: 'p-0 h-full',
-      }"
+      :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
       class="z-[9999]"
     >
       <template #body>
@@ -272,49 +317,56 @@
       </template>
     </USlideover>
 
-    <!-- COMPONENT ADD USULAN -->
+    <!-- ADD USULAN -->
     <Teleport to="body">
       <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
     </Teleport>
   </div>
 
-  <!-- MODAL DETAIL -->
+  <!-- MODAL DETAIL - z-index 8000 to be below toast (9000+) -->
   <Teleport to="body">
     <Modal
       v-model="openPreview"
       :hideDefaultFooter="true"
       size="xl"
-      class="z-[9000]"
+      class="z-[8000]"
     >
       <template #title>
         <div class="flex items-center justify-between w-full">
-          <h2 class="p-3 ml-1 text-xl font-bold text-gray-900">
+          <h2
+            class="p-3 ml-1 text-xl font-bold text-gray-900 dark:text-gray-100"
+          >
             Detail Penomoran
           </h2>
         </div>
       </template>
 
       <div class="px-3 pb-6">
-        <!-- Loading state -->
         <div v-if="loadingDetail" class="space-y-3">
-          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
-          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
-          <div class="w-full h-8 bg-gray-200 animate-pulse rounded-md"></div>
+          <div
+            class="w-full h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
+          ></div>
+          <div
+            class="w-full h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
+          ></div>
+          <div
+            class="w-full h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
+          ></div>
         </div>
 
         <template v-else-if="detailData">
-          <!-- INFO GRID -->
           <div class="gap-4 mb-2 space-y-6 overflow-y-auto text-sm">
-            <!-- Judul (Full Width) -->
             <div class="md:col-span-2">
               <template v-if="!isEditingTitle">
                 <div class="flex items-start justify-between gap-4 mb-2">
-                  <p class="text-lg font-semibold text-gray-900 flex-1">
+                  <p
+                    class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex-1"
+                  >
                     {{ detailData.perihal }}
                   </p>
                   <button
                     @click="startEditTitle"
-                    class="text-primary text-sm flex items-center gap-1 hover:underline flex-shrink-0"
+                    class="text-primary dark:text-primary-400 text-sm flex items-center gap-1 hover:underline flex-shrink-0"
                   >
                     <svg
                       class="w-4 h-4"
@@ -337,17 +389,17 @@
                 <div class="flex gap-2">
                   <input
                     v-model="editedTitle"
-                    class="flex-1 border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 text-sm"
+                    class="flex-1 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
                   />
                   <button
                     @click="saveTitle"
-                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-800 transition text-sm"
                   >
                     Simpan
                   </button>
                   <button
                     @click="cancelEditTitle"
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
                   >
                     Batal
                   </button>
@@ -355,34 +407,36 @@
               </template>
             </div>
 
-            <!-- Tanggal -->
-            <div class="pb-2 border-b border-gray-200">
-              <p class="text-gray-500 text-xs">Tanggal</p>
-              <p class="font-medium mt-1">
+            <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+              <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+              <p class="font-medium mt-1 dark:text-gray-200">
                 {{ formatTanggalWIB(detailData.tanggal) }}
               </p>
             </div>
 
-            <!-- Penandatangan -->
-            <div class="pb-2 border-b border-gray-200">
-              <p class="text-gray-500 text-xs">Penandatangan</p>
-              <p class="font-medium mt-1">
+            <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+              <p class="text-gray-500 dark:text-gray-400 text-xs">
+                Penandatangan
+              </p>
+              <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.jabatan }}
               </p>
             </div>
 
-            <!-- Klasifikasi -->
-            <div class="pb-2 border-b border-gray-200">
-              <p class="text-gray-500 text-xs">Klasifikasi</p>
-              <p class="font-medium mt-1">
+            <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+              <p class="text-gray-500 dark:text-gray-400 text-xs">
+                Klasifikasi
+              </p>
+              <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.klasifikasiDisplay || detailData.klasifikasi }}
               </p>
             </div>
 
-            <!-- Jenis Naskah -->
-            <div class="pb-2 border-b border-gray-200">
-              <p class="text-gray-500 text-xs">Jenis Naskah</p>
-              <p class="font-medium mt-1">
+            <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+              <p class="text-gray-500 dark:text-gray-400 text-xs">
+                Jenis Naskah
+              </p>
+              <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.jenis }}
               </p>
             </div>
@@ -391,9 +445,11 @@
           <!-- NOMOR SURAT SECTION -->
           <div class="pt-6">
             <div class="flex items-center justify-between mb-4">
-              <h4 class="text-l font-semibold text-gray-900">
+              <h4 class="text-l font-semibold text-gray-900 dark:text-gray-100">
                 Nomor Surat
-                <span class="text-sm font-normal text-gray-500">
+                <span
+                  class="text-sm font-normal text-gray-500 dark:text-gray-400"
+                >
                   ({{ detailData.nomor_list?.length || 0 }} nomor)
                 </span>
               </h4>
@@ -406,19 +462,16 @@
               <div
                 v-for="(item, idx) in detailData.nomor_list"
                 :key="item.id || `nomor-${idx}`"
-                class="border border-gray-300 bg-gray-50 rounded-lg p-4 hover:shadow-md transition"
+                class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 hover:shadow-md transition"
               >
-                <!-- HEADER -->
                 <div class="flex items-center gap-3 mb-3">
                   <div
-                    class="flex-1 bg-white border border-gray-200 rounded-md px-4 py-2"
+                    class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-4 py-2"
                   >
                     <div class="flex justify-between items-center">
-                      <span class="font-mono text-sm">
-                        {{ idx + 1 }}. {{ item.nomor }}
-                      </span>
-
-                      <!-- STATUS -->
+                      <span class="font-mono text-sm dark:text-gray-200"
+                        >{{ idx + 1 }}. {{ item.nomor }}</span
+                      >
                       <span
                         :class="[
                           'px-3 py-1 rounded-full text-xs font-medium',
@@ -429,51 +482,50 @@
                       </span>
                     </div>
                   </div>
-
-                  <!-- COPY -->
                   <button
                     @click="handleCopy(item.nomor)"
-                    class="p-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50"
+                    class="p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <Copy class="w-4 h-4" />
+                    <Copy class="w-4 h-4 dark:text-gray-300" />
                   </button>
                 </div>
 
-                <!-- FILE AREA -->
                 <div>
-                  <!-- FILE PREVIEW (jika ada file dan tidak sedang replace) -->
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
-                    class="bg-green-50 border border-green-200 rounded-md p-3 cursor-pointer hover:bg-green-100 transition"
+                    class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition"
                     @click="previewFile(item)"
                   >
-                    <p class="text-sm font-medium text-green-700 underline">
+                    <p
+                      class="text-sm font-medium text-green-700 dark:text-green-400 underline"
+                    >
                       📄 {{ item.file_name }}
                     </p>
-                    <p class="text-xs text-gray-600">Klik untuk preview</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                      Klik untuk preview
+                    </p>
                   </div>
 
-                  <!-- FILE INPUT (saat upload atau replace) -->
                   <div v-if="fileStates[item.id]?.isReplacing" class="mt-3">
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx"
                       @change="handleFileSelect(item.id, $event)"
-                      class="block w-full text-sm border rounded-lg p-2"
+                      class="block w-full text-sm border dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 dark:text-gray-200"
                     />
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Max 10MB - PDF, DOC, DOCX
                     </p>
                   </div>
                 </div>
 
-                <!-- ACTION BUTTONS -->
                 <div class="flex gap-2 mt-3">
-                  <!-- UPLOAD (jika belum ada file dan status bukan hangus) -->
+                  <!-- Upload button - tampil jika tidak ada file dan status terpakai/booking -->
                   <button
                     v-if="
                       !item.file_name &&
-                      item.status !== 'hangus' &&
+                      (item.status === 'terpakai' ||
+                        item.status === 'booking') &&
                       !fileStates[item.id]?.isReplacing
                     "
                     @click="startUploadFile(item.id)"
@@ -482,7 +534,7 @@
                     Upload File
                   </button>
 
-                  <!-- GANTI FILE (jika sudah ada file, status terpakai atau terpakai_final) -->
+                  <!-- Ganti File button - tampil jika sudah ada file dan status terpakai/terpakai_final -->
                   <button
                     v-if="
                       item.file_name &&
@@ -496,7 +548,6 @@
                     Ganti File
                   </button>
 
-                  <!-- SAVE / CANCEL (saat sedang upload/replace) -->
                   <template v-if="fileStates[item.id]?.isReplacing">
                     <button
                       @click="saveFile(item.id)"
@@ -527,10 +578,10 @@
                     </button>
                   </template>
 
-                  <!-- HANGUS (selalu ada kecuali status sudah hangus atau sedang upload) -->
                   <button
                     v-if="
-                      item.status !== 'hangus' &&
+                      (item.status === 'terpakai' ||
+                        item.status === 'terpakai_final') &&
                       !fileStates[item.id]?.isReplacing
                     "
                     @click.stop="confirmHangusNomor(item.id)"
@@ -547,7 +598,7 @@
     </Modal>
   </Teleport>
 
-  <!-- CONFIRM HANGUS POPUP -->
+  <!-- CONFIRM HANGUS - z-index 8500 to be below toast but above modal -->
   <ConfirmPopup
     v-model="openConfirmHangus"
     type="danger"
@@ -557,6 +608,7 @@
     cancel-text="Batal"
     :is-loading="isHangusing"
     @confirm="executeHangusNomor"
+    class="z-[8500]"
   />
 
   <!-- TOOLTIP -->
@@ -564,10 +616,7 @@
     <div
       v-if="tooltip.show"
       class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md shadow-lg"
-      :style="{
-        left: tooltip.x + 'px',
-        top: tooltip.y + 'px',
-      }"
+      :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
     >
       {{ tooltip.text }}
     </div>
@@ -575,8 +624,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, Plus, Copy } from "lucide-vue-next";
+import { ref, computed, watch, onMounted } from "vue";
+import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
@@ -588,20 +637,14 @@ import { usePenomoran } from "~/composables/usePenomoran";
 const toast = useToast();
 const config = useRuntimeConfig();
 
-// Composable
 const {
   createPenomoranFinal,
-  getPersonWithPosition,
-  getKlasifikasi,
-  getListNomor,
   getDetailNomor,
   uploadDetailFile,
   hangusDetailNomor,
+  getListNomor,
+  refreshTrigger, // ✅ Get refresh trigger
 } = usePenomoran();
-
-// State
-const klasifikasiMap = ref(new Map());
-const personMap = ref(new Map());
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
@@ -611,28 +654,20 @@ const isHangusing = ref(false);
 const selectedRow = ref(null);
 const detailData = ref(null);
 const rows = ref<any[]>([]);
-const pagination = ref(null);
+const pagination = ref<any>(null);
 const selectedDetailId = ref<string | null>(null);
-
-// File states per detail ID
 const fileStates = ref<Record<string, any>>({});
-
-// Edit title
 const isEditingTitle = ref(false);
 const editedTitle = ref("");
 
-// Table config
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [5, 10, 20, 50];
-const search = ref<string>("");
+// Pagination & Search params - aligned with API documentation
+const searchQuery = ref<string>("");
+const limit = ref<number>(10);
 const currentPage = ref<number>(1);
-
-// Sorting State
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
 
-// Debounce timeout
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+const rowsChoices = [5, 10, 20, 50];
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -643,13 +678,42 @@ const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Penandatangan", key: "jabatan", sortable: false },
   { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Tanggal", key: "tanggal", sortable: true },
-  { label: "Nomor", key: "nomor", sortable: false },
+  { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Waktu", key: "waktu", sortable: true },
 ];
 
-// ==================== STATUS LOGIC ====================
+// ✅ Watch refresh trigger untuk auto refetch
+watch(refreshTrigger, () => {
+  console.log("🔄 Auto refetch triggered by upload/hangus");
+  fetchData();
+
+  // ✅ Jika modal detail terbuka, refetch detail juga
+  if (openPreview.value && selectedRow.value) {
+    openRowModal(selectedRow.value);
+  }
+});
+
+// ✅ Computed for pagination display: "Menampilkan X - Y dari Z data"
+const paginationStart = computed(() => {
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
+    return 0;
+  const currentPage =
+    pagination.value.current_page || pagination.value.page || 1;
+  const itemsPerPage = pagination.value.limit || limit.value || 10;
+  return (currentPage - 1) * itemsPerPage + 1;
+});
+
+const paginationEnd = computed(() => {
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
+    return 0;
+  const currentPage =
+    pagination.value.current_page || pagination.value.page || 1;
+  const itemsPerPage = pagination.value.limit || limit.value || 10;
+  const end = currentPage * itemsPerPage;
+  return Math.min(end, pagination.value.total);
+});
+
 const getStatusLabel = (item: any): string => {
   if (item.status === "hangus") return "Hangus";
   if (item.status === "terpakai_final") return "Final";
@@ -666,68 +730,34 @@ const getStatusClass = (item: any): string => {
   return "bg-yellow-100 text-yellow-800";
 };
 
-// ==================== DATE FUNCTIONS ====================
+const WIB_OFFSET = 7 * 60 * 60 * 1000;
+
+function toWIB(dateStr: string) {
+  const utcDate = new Date(dateStr);
+  return new Date(utcDate.getTime() + WIB_OFFSET);
+}
+
 function formatTanggalWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const year = date.getUTCFullYear();
+  const wib = toWIB(dateStr);
+  const day = String(wib.getDate()).padStart(2, "0");
+  const month = String(wib.getMonth() + 1).padStart(2, "0");
+  const year = wib.getFullYear();
   return `${day}/${month}/${year}`;
 }
 
 function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const wibTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-  const day = String(wibTime.getDate()).padStart(2, "0");
-  const month = String(wibTime.getMonth() + 1).padStart(2, "0");
-  const year = String(wibTime.getFullYear()).slice(-2);
-  const hours = String(wibTime.getHours()).padStart(2, "0");
-  const minutes = String(wibTime.getMinutes()).padStart(2, "0");
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  const wib = toWIB(dateStr);
+  const hours = String(wib.getHours()).padStart(2, "0");
+  const minutes = String(wib.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
-
-// ==================== FETCH MASTER DATA ====================
-const fetchKlasifikasiMap = async () => {
-  try {
-    const response = await getKlasifikasi();
-    if (Array.isArray(response)) {
-      response.forEach((item) => {
-        klasifikasiMap.value.set(item.code, item.display);
-      });
-    }
-    console.log(
-      "✅ Klasifikasi map loaded:",
-      klasifikasiMap.value.size,
-      "items",
-    );
-  } catch (error) {
-    console.error("❌ Error fetch klasifikasi map:", error);
-  }
-};
-
-const fetchPersonMap = async () => {
-  try {
-    const response = await getPersonWithPosition();
-    const list = Array.isArray(response) ? response : (response.data ?? []);
-    list.forEach((item) => {
-      personMap.value.set(item.persnum, {
-        nama: item.nama,
-        position_text: item.position_text,
-      });
-    });
-    console.log("✅ Person map loaded:", personMap.value.size, "items");
-  } catch (error) {
-    console.error("❌ Error fetch person map:", error);
-  }
-};
 
 const getFileUrl = (filePath: string) => {
   return `${config.public.apiBaseUrl}/${filePath}`;
 };
 
-// ===== PREVIEW STATE =====
 const isOpenPreviewFile = ref(false);
 const previewPdfUrl = ref<string | null>(null);
 
@@ -826,18 +856,13 @@ const saveFile = async (detailId: string) => {
       target.file_name = result?.file_name || state.file.name;
       target.file_text = result?.file_text || null;
       target.file_url = result?.file_url || null;
+      // ✅ Status changes to terpakai_final ONLY after file upload
       target.status = result?.status || "terpakai_final";
     }
 
     delete fileStates.value[detailId];
 
-    toast.add({
-      title: "Berhasil",
-      description: "File berhasil diupload, status menjadi Final",
-      color: "green",
-    });
-
-    await fetchData();
+    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
   } catch (error) {
     console.error("❌ Error upload file:", error);
   } finally {
@@ -849,7 +874,6 @@ const cancelReplacing = (detailId: string) => {
   delete fileStates.value[detailId];
 };
 
-// ==================== HANGUS FUNCTIONS ====================
 const confirmHangusNomor = (detailId: string) => {
   selectedDetailId.value = detailId;
   openConfirmHangus.value = true;
@@ -874,13 +898,7 @@ const executeHangusNomor = async () => {
     openConfirmHangus.value = false;
     selectedDetailId.value = null;
 
-    toast.add({
-      title: "Berhasil",
-      description: "Nomor berhasil dihanguskan",
-      color: "green",
-    });
-
-    await fetchData();
+    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
   } catch (error: any) {
     console.error("❌ Error hangus nomor:", error);
   } finally {
@@ -888,7 +906,6 @@ const executeHangusNomor = async () => {
   }
 };
 
-// ==================== EDIT TITLE ====================
 function startEditTitle() {
   if (!detailData.value) return;
   editedTitle.value = detailData.value.perihal;
@@ -911,7 +928,6 @@ function saveTitle() {
   });
 }
 
-// ==================== COPY FUNCTION ====================
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   toast.add({
@@ -921,57 +937,128 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ✅ FETCH DATA dengan backend pagination, search & sorting
+const handleSort = (col: string) => {
+  // ✅ Map frontend column names to backend field names per API documentation
+  const columnMapping: Record<string, string> = {
+    jenis: "jenis",
+    tanggal: "tanggal",
+    waktu: "waktu", // Maps to created_at in backend
+  };
+
+  const backendColumn = columnMapping[col] || col;
+
+  if (sortBy.value === backendColumn) {
+    // Toggle sort order if clicking same column
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    // New column, set to asc
+    sortBy.value = backendColumn;
+    sortOrder.value = "asc";
+  }
+
+  console.log(`🔄 Sort changed: ${sortBy.value} ${sortOrder.value}`);
+
+  currentPage.value = 1; // Reset to first page when sorting changes
+  fetchData();
+};
+
+const handleLimitChange = () => {
+  currentPage.value = 1;
+  fetchData();
+};
+
+let searchTimeout: any = null;
+const handleSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchData();
+  }, 500);
+};
+
+const goToPage = (page: number) => {
+  if (!pagination.value) return;
+
+  const totalPages =
+    pagination.value.total_pages || pagination.value.totalPages || 1;
+
+  if (page < 1 || page > totalPages) return;
+
+  currentPage.value = page;
+  fetchData();
+};
+
+function groupDuplicateRows(dataArray) {
+  const grouped = new Map();
+
+  dataArray.forEach((item) => {
+    const key = item.id_request;
+
+    if (grouped.has(key)) {
+      const existing = grouped.get(key);
+      existing.nomor_list.push(item.nomor);
+    } else {
+      grouped.set(key, {
+        id_request: item.id_request,
+        jenis: item.jenis,
+        jabatan: item.jabatan || "-",
+        perihal: item.perihal || "-",
+        pengusul: item.nama_pengirim || "-",
+        klasifikasi: item.klasifikasi || "-",
+        klasifikasiDisplay: item.klasifikasi || "-", // ✅ Langsung dari API
+        nomor_list: [item.nomor],
+        tanggal: formatTanggalWIB(item.tanggal),
+        waktu: formatWaktuWIB(item.waktu),
+      });
+    }
+  });
+
+  return Array.from(grouped.values());
+}
+
 const fetchData = async () => {
   loading.value = true;
 
   try {
-    // Build params object sesuai dokumentasi API
-    const params = {
-      search: search.value || undefined,
+    // ✅ Build params according to API documentation for GET /nomor
+    const params: any = {
       page: currentPage.value,
-      limit: rowsPerPage.value,
-      sort_by: sortBy.value || undefined,
-      sort_order: sortOrder.value || undefined,
+      limit: limit.value,
     };
 
-    console.log("📤 Fetching penomoran data with params:", params);
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+
+    if (sortBy.value) {
+      params.sort_by = sortBy.value;
+      params.sort_order = sortOrder.value;
+    }
+
+    console.log("📤 Fetching with params:", params);
 
     const response = await getListNomor(params);
 
-    console.log("📥 Backend response:", response);
+    console.log("📥 Response received:", response);
 
-    const data = response.data || [];
-    pagination.value = response.pagination || null;
+    if (response?.data && Array.isArray(response.data)) {
+      console.log("📦 Raw data count from API:", response.data.length);
 
-    if (!Array.isArray(data)) {
+      rows.value = groupDuplicateRows(response.data);
+      pagination.value = response.pagination || null;
+
+      console.log("✅ Rows processed (after grouping):", rows.value.length);
+      console.log("✅ Pagination set:", pagination.value);
+      console.log("📊 Limit setting:", limit.value);
+      console.log("📄 Expected rows per page:", limit.value);
+    } else {
+      console.warn("⚠️ No data in response");
       rows.value = [];
-      return;
+      pagination.value = null;
     }
-
-    rows.value = data.map((item) => {
-      const pengusulInfo = personMap.value.get(item.persnum);
-      const klasifikasiDisplay =
-        klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
-
-      return {
-        id: item.id,
-        jenis: item.jenis,
-        jabatan: item.jabatan || "-",
-        perihal: item.perihal || "-",
-        tanggal: formatTanggalWIB(item.tanggal),
-        nomor: item.nomor,
-        pengusul: pengusulInfo?.nama || item.nama_pengirim || "-",
-        waktu: formatWaktuWIB(item.waktu),
-        klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay,
-      };
-    });
-
-    console.log("✅ Data loaded:", rows.value.length, "rows");
-    console.log("📊 Pagination:", pagination.value);
   } catch (error) {
-    console.error("❌ Error fetch data nomor:", error);
+    console.error("❌ Error fetch data:", error);
     toast.add({
       title: "Gagal memuat data",
       description: "Tidak dapat mengambil data penomoran",
@@ -984,82 +1071,6 @@ const fetchData = async () => {
   }
 };
 
-// Handle search input with debounce
-const handleSearchInput = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
-};
-
-// Handle sorting
-const handleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = column;
-    sortOrder.value = "desc";
-  }
-
-  currentPage.value = 1;
-  fetchData();
-};
-
-// Get sort icon for column
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down";
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
-};
-
-// Handle page change
-const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return;
-  currentPage.value = page;
-  fetchData();
-};
-
-// Handle limit change
-const handleLimitChange = () => {
-  currentPage.value = 1;
-  fetchData();
-};
-
-// Computed total pages from backend pagination
-const totalPages = computed(() => {
-  return pagination.value?.totalPages || 1;
-});
-
-// Computed pagination pages for display
-const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
-  } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
-  }
-
-  return pages;
-});
-
 const openRowModal = async (row) => {
   selectedRow.value = row;
   openPreview.value = true;
@@ -1068,21 +1079,17 @@ const openRowModal = async (row) => {
   fileStates.value = {};
 
   try {
-    const detail = await getDetailNomor(row.id);
+    const detail = await getDetailNomor(row.id_request);
 
     if (!detail) {
       throw new Error("Detail tidak ditemukan");
     }
 
-    const klasifikasiDisplay =
-      klasifikasiMap.value.get(detail?.klasifikasi || row.klasifikasi) ||
-      detail?.klasifikasi ||
-      row.klasifikasi;
-
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
-      id: item.id || `${row.id}-${idx}`,
+      id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
-      status: item.status || "booking",
+      // ✅ Status dari backend: terpakai (setelah create), terpakai_final (setelah upload file)
+      status: item.status || "terpakai",
       file_name: item.file_name || null,
       file_text: item.file_text || null,
       file_url: item.file_url || null,
@@ -1090,7 +1097,7 @@ const openRowModal = async (row) => {
 
     detailData.value = {
       ...(detail || row),
-      klasifikasiDisplay,
+      klasifikasiDisplay: detail?.klasifikasi || row.klasifikasi, // ✅ Langsung dari API
       nomor_list: nomorList,
     };
 
@@ -1100,64 +1107,107 @@ const openRowModal = async (row) => {
 
     detailData.value = {
       ...row,
-      klasifikasiDisplay:
-        klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi,
-      nomor_list: [
-        {
-          id: row.id,
-          nomor: row.nomor,
-          status: "booking",
-          file_name: null,
-          file_text: null,
-          file_url: null,
-        },
-      ],
+      klasifikasiDisplay: row.klasifikasi, // ✅ Langsung dari row
+      nomor_list: row.nomor_list.map((nomor, idx) => ({
+        id: `${row.id_request}-${idx}`,
+        nomor: typeof nomor === "string" ? nomor : nomor.nomor,
+        status: "terpakai",
+        file_name: null,
+        file_text: null,
+        file_url: null,
+      })),
     };
   } finally {
     loadingDetail.value = false;
   }
 };
 
-// ==================== HANDLE SUBMIT ====================
 const handleSubmitFromModal = async (payload) => {
   try {
-    await createPenomoranFinal(payload);
-    await fetchData();
+    const response = await createPenomoranFinal(payload);
+
+    console.log("✅ Data berhasil ditambahkan:", response);
+
+    // ✅ Reset pagination and sorting to show newest data first
     currentPage.value = 1;
+    sortBy.value = "waktu"; // Sort by created_at/waktu
+    sortOrder.value = "desc"; // Newest first
+
+    // ✅ Clear search to show all data
+    searchQuery.value = "";
+
+    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
+    // Tapi tetap panggil fetchData untuk memastikan UI update
+    await fetchData();
+
     toast.add({
       title: "Berhasil",
-      description: "Data penomoran berhasil ditambahkan",
+      description: `Berhasil menambahkan ${response?.data?.nomor_list?.length || payload.jumlah} nomor baru`,
       color: "green",
     });
   } catch (error) {
     console.error("❌ Error di handleSubmitFromModal:", error);
     toast.add({
       title: "Gagal",
-      description: "Terjadi kesalahan saat menyimpan data",
+      description:
+        error?.response?.data?.message ||
+        "Terjadi kesalahan saat menyimpan data",
       color: "red",
     });
   }
 };
 
-// ======== MOUNTED ============
+// ✅ Improved pagination pages calculation
+const paginationPages = computed(() => {
+  if (!pagination.value) return [];
+
+  // Handle both camelCase (totalPages) and snake_case (total_pages)
+  const total =
+    pagination.value.total_pages || pagination.value.totalPages || 0;
+  const current = pagination.value.current_page || pagination.value.page || 1;
+
+  if (total === 0) return [];
+
+  const pages: number[] = [];
+
+  if (total <= 9) {
+    // ✅ Show all pages if 9 or fewer (increased from 7)
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    // ✅ Show current page with 3 pages on each side (increased from 2)
+    let start = Math.max(2, current - 3);
+    let end = Math.min(total - 1, current + 3);
+
+    // Adjust if we're near the start
+    if (current <= 4) {
+      end = 7; // Show pages 2-7
+    }
+
+    // Adjust if we're near the end
+    if (current >= total - 3) {
+      start = total - 6; // Show last 7 pages (excluding first and last)
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  }
+
+  return pages;
+});
+
 onMounted(async () => {
   loading.value = true;
-  await fetchKlasifikasiMap();
-  await fetchPersonMap();
+
+  // Set default sort to show newest data first
+  sortBy.value = "waktu";
+  sortOrder.value = "desc";
+
+  // Fetch initial data
   await fetchData();
+  loading.value = false;
 });
 
-onBeforeUnmount(() => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  if (previewPdfUrl.value) {
-    URL.revokeObjectURL(previewPdfUrl.value);
-  }
-});
-
-// ========= TOOLTIP ===========
 const tooltip = ref({
   show: false,
   text: "",
@@ -1214,7 +1264,6 @@ tbody tr:hover td:last-child {
   background-color: rgb(249 250 251);
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

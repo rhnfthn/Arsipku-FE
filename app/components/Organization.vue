@@ -20,9 +20,12 @@
       <!-- Node content -->
       <div
         :class="[
-          'flex items-center gap-3 p-3 rounded-lg transition-colors relative',
+          'flex items-center gap-3 p-3 rounded-lg transition-all relative',
           getNodeConfig().bgColor,
           getNodeConfig().borderColor,
+          isSearchHighlighted
+            ? 'ring-2 ring-yellow-400 shadow-lg scale-[1.02]'
+            : '',
         ]"
       >
         <!-- Expand/Collapse button -->
@@ -42,14 +45,27 @@
           :class="['w-4 h-4 flex-shrink-0', getNodeConfig().iconColor]"
         />
 
-        <!-- Content -->
+        <!-- Content with search highlight -->
         <div class="flex-1 min-w-0">
-          <span :class="['text-sm', getNodeConfig().textColor]">{{
-            node.name
-          }}</span>
-          <p v-if="node.pn" :class="['text-xs', getNodeConfig().iconColor]">
-            {{ node.pn }}
+          <span
+            :class="['text-sm', getNodeConfig().textColor]"
+            v-html="highlightText(node.name)"
+          ></span>
+          <p
+            v-if="node.persnum"
+            :class="['text-xs mt-0.5', getNodeConfig().iconColor]"
+          >
+            PN: {{ node.persnum }}
           </p>
+          <div
+            v-if="isSearchHighlighted"
+            class="flex items-center gap-1 mt-1.5"
+          >
+            <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+            <span class="text-xs text-yellow-700 font-medium">
+              {{ getSearchResultLabel() }}
+            </span>
+          </div>
         </div>
 
         <!-- Action buttons on hover -->
@@ -112,6 +128,8 @@
         :is-last="idx === node.children.length - 1"
         :expanded-nodes="expandedNodes"
         :hovered-node="hoveredNode"
+        :search-query="searchQuery"
+        :search-results="searchResults"
         @toggle-node="$emit('toggleNode', $event)"
         @set-hovered="$emit('setHovered', $event)"
         @open-add-unit="$emit('openAddUnit', $event)"
@@ -160,6 +178,14 @@ const props = defineProps({
     type: [String, null],
     default: null,
   },
+  searchQuery: {
+    type: String,
+    default: "",
+  },
+  searchResults: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 defineEmits([
@@ -183,6 +209,62 @@ const hasChildren = computed(() => {
 
   return !!props.node.children?.length;
 });
+
+const isSearchHighlighted = computed(() => {
+  if (!props.searchQuery) return false;
+
+  // Check if this node is in search results
+  if (props.searchResults && props.searchResults[props.node.id]) {
+    return true;
+  }
+
+  // Fallback: text matching
+  const query = props.searchQuery.toLowerCase();
+  const nodeName = (props.node.name || "").toLowerCase();
+  const nodeShortText = (props.node.shortText || "").toLowerCase();
+  const nodeLongText = (props.node.longText || "").toLowerCase();
+
+  return (
+    nodeName.includes(query) ||
+    nodeShortText.includes(query) ||
+    nodeLongText.includes(query)
+  );
+});
+
+const getSearchResultLabel = () => {
+  if (!props.searchResults || !props.searchResults[props.node.id]) {
+    return "Hasil pencarian";
+  }
+
+  const resultType = props.searchResults[props.node.id];
+
+  switch (resultType) {
+    case "organization":
+      return "📁 Unit ditemukan";
+    case "position":
+      return "👤 Posisi ditemukan";
+    case "person":
+      return "👥 Anggota ditemukan";
+    default:
+      return "Hasil pencarian";
+  }
+};
+
+const highlightText = (text: string) => {
+  if (!props.searchQuery || !text) return text;
+
+  const query = props.searchQuery;
+  const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 px-1 rounded font-semibold">$1</mark>',
+  );
+};
+
+const escapeRegExp = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
 
 const getNodeConfig = () => {
   switch (props.node.type) {
@@ -237,7 +319,7 @@ const getNodeConfig = () => {
         bgColor: "bg-gray-50 hover:bg-gray-100",
         borderColor: "border-l-4 border-gray-500",
         textColor: "text-black font-medium",
-        // iconColor: "text-green-700",
+        iconColor: "text-gray-600",
         icon: User,
         canAddPosition: false,
         canAddUnit: false,

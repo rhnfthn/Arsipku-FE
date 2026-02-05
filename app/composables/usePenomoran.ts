@@ -12,6 +12,15 @@ export const usePenomoran = () => {
   const isLoadingList = ref(false);
   const isLoadingSubmitted = ref(false);
 
+  // ✅ Reactive trigger untuk refetch
+  const refreshTrigger = ref(0);
+
+  // ✅ Method untuk trigger refetch
+  const triggerRefresh = () => {
+    refreshTrigger.value++;
+    console.log("🔄 Refresh triggered:", refreshTrigger.value);
+  };
+
   /* ===========================
    * STATE - PISAHKAN ADMIN & USER
    * =========================== */
@@ -192,6 +201,9 @@ export const usePenomoran = () => {
         description: response?.message || "Penomoran final berhasil dibuat.",
         color: "green",
       });
+
+      // ✅ Trigger refetch setelah create berhasil
+      triggerRefresh();
 
       return response;
     } catch (error: any) {
@@ -981,10 +993,14 @@ export const usePenomoran = () => {
 
   /** ===========================
    * UPLOAD DETAIL FILE (ADMIN)
+   * ✅ UPDATED: Support uploading/replacing files regardless of status + trigger refetch
    * Endpoint: POST /admin/nomor-request-detail/:detail_id/file
    * =========================== */
   const uploadDetailFile = async (detailId: string, file: File) => {
     try {
+      console.log("📤 Uploading file for detail ID:", detailId);
+      console.log("📄 File:", file.name, file.size, "bytes");
+
       const formData = new FormData();
       formData.append("file", file);
 
@@ -998,6 +1014,8 @@ export const usePenomoran = () => {
         },
       );
 
+      console.log("✅ Upload response:", response.data);
+
       if (response.data?.success) {
         toast.add({
           title: "Berhasil",
@@ -1007,13 +1025,22 @@ export const usePenomoran = () => {
           color: "green",
         });
 
+        // ✅ Trigger refetch setelah upload berhasil
+        triggerRefresh();
+
         return response.data.data;
       }
 
       throw new Error(response.data?.message || "Gagal upload file");
     } catch (error: any) {
+      console.error("❌ Upload file error:", error);
+      console.error("❌ Error response:", error.response?.data);
+
       const errorMsg =
-        error.response?.data?.message || error.message || "Gagal upload file";
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal upload file";
 
       toast.add({
         title: "Gagal",
@@ -1027,6 +1054,7 @@ export const usePenomoran = () => {
 
   /** ===========================
    * HANGUS DETAIL NOMOR (ADMIN)
+   * ✅ UPDATED: Add trigger refetch after success
    * Endpoint: POST /admin/nomor-request-detail/:detail_id/hangus
    * =========================== */
   const hangusDetailNomor = async (detailId: string) => {
@@ -1047,6 +1075,9 @@ export const usePenomoran = () => {
             response?.message || "Status berhasil diubah menjadi hangus",
           color: "green",
         });
+
+        // ✅ Trigger refetch setelah hangus berhasil
+        triggerRefresh();
 
         return response.data;
       } else {
@@ -1076,6 +1107,10 @@ export const usePenomoran = () => {
     adminCounts,
     userCounts,
     nomorCounts,
+
+    // ✅ REFETCH TRIGGER
+    refreshTrigger,
+    triggerRefresh,
 
     // COUNT
     getNomorRequestCountAdmin,

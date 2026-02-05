@@ -222,11 +222,11 @@ const deleteNow = async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Titelatur Inggris
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -234,44 +234,38 @@ const deleteNow = async () => {
 
       <button
         @click="openAdd()"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Titelatur
       </button>
     </div>
-    <!-- LOADING STATE -->
-    <div v-if="loading" class="text-center py-8">
-      <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"
-      ></div>
-      <p class="mt-2 text-gray-600">Memuat data...</p>
-    </div>
 
     <!-- ERROR STATE -->
     <div
       v-if="error"
-      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4"
+      class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4"
     >
       {{ error }}
     </div>
 
     <!-- CARD -->
     <div
-      v-if="!loading"
-      class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col"
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col"
     >
       <!-- TOP BAR -->
       <div
-        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3 cursor-pointer"
+        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
         <div class="flex items-center gap-4">
           <!-- tampilkan -->
           <div class="flex items-center gap-2">
-            <span class="text-xs">Tampilkan</span>
+            <span class="text-xs text-gray-600 dark:text-gray-400"
+              >Tampilkan</span
+            >
             <select
               v-model="rowsPerPage"
-              class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+              class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-2 py-1 focus:ring-2 focus:ring-primary"
             >
               <option v-for="n in rowsChoices" :key="n" :value="n">
                 {{ n }}
@@ -283,7 +277,7 @@ const deleteNow = async () => {
           <div class="flex items-center gap-2">
             <button
               @click="toggleSort"
-              class="flex items-center gap-1 text-gray-500 text-xs px-1 py-1 rounded-md bg-white hover:bg-gray-100"
+              class="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs px-1 py-1 rounded-md bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
             >
               <ArrowUpDown class="w-3.5 h-3.5" />
             </button>
@@ -293,67 +287,109 @@ const deleteNow = async () => {
         <!-- Search -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             placeholder="Cari Titelatur..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </div>
 
       <!-- TABLE -->
-      <table class="min-w-full text-left text-sm">
-        <thead class="bg-primary-400 text-primary-50">
-          <tr>
-            <th class="px-4 py-3 font-bold">Titelatur Indonesia</th>
-            <th class="px-4 py-3 font-bold">Titelatur Inggris</th>
-            <th class="px-4 py-3 font-bold text-center">Aksi</th>
-          </tr>
-        </thead>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-primary dark:bg-primary-700 text-white">
+            <tr>
+              <th class="px-4 py-3 font-bold">Titelatur Indonesia</th>
+              <th class="px-4 py-3 font-bold">Titelatur Inggris</th>
+              <th class="px-4 py-3 font-bold text-center">Aksi</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <tr
-            v-for="it in paginatedItems"
-            :key="it.id"
-            class="border-b border-gray-200 hover:bg-primary-50"
-          >
-            <td class="px-5 py-3">{{ it.long_text || "-" }}</td>
-            <td class="px-5 py-3">{{ it.long_text_en || "-" }}</td>
-
-            <td class="px-4 py-3 text-center flex justify-center gap-5">
-              <button
-                @click="openEdit(it)"
-                class="text-yellow-500 hover:text-yellow-600"
+          <tbody>
+            <!-- LOADING SKELETON -->
+            <template v-if="loading">
+              <tr
+                v-for="i in rowsPerPage"
+                :key="'skeleton-' + i"
+                class="border-b border-gray-200 dark:border-gray-700 animate-pulse"
               >
-                <Pencil class="w-4 h-4" />
-              </button>
+                <td class="px-5 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
+                  ></div>
+                </td>
+                <td class="px-5 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-center gap-5">
+                    <div
+                      class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"
+                    ></div>
+                    <div
+                      class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+            </template>
 
-              <button
-                @click="openDelete(it)"
-                class="text-red-500 hover:text-red-600"
+            <!-- DATA ROWS -->
+            <template v-else>
+              <tr
+                v-for="it in paginatedItems"
+                :key="it.id"
+                class="border-b border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
               >
-                <Trash2 class="w-4 h-4" />
-              </button>
-            </td>
-          </tr>
+                <td class="px-5 py-3 text-gray-900 dark:text-white">
+                  {{ it.long_text || "-" }}
+                </td>
+                <td class="px-5 py-3 text-gray-900 dark:text-white">
+                  {{ it.long_text_en || "-" }}
+                </td>
 
-          <!-- Empty State -->
-          <tr v-if="paginatedItems.length === 0">
-            <td colspan="3" class="px-5 py-8 text-center text-gray-500">
-              Tidak ada data titelatur
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <td class="px-4 py-3 text-center flex justify-center gap-5">
+                  <button
+                    @click="openEdit(it)"
+                    class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition"
+                  >
+                    <Pencil class="w-4 h-4" />
+                  </button>
+
+                  <button
+                    @click="openDelete(it)"
+                    class="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Empty State -->
+              <tr v-if="paginatedItems.length === 0">
+                <td
+                  colspan="3"
+                  class="px-5 py-8 text-center text-gray-500 dark:text-gray-400"
+                >
+                  Tidak ada data titelatur
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
 
       <!-- PAGINATION -->
       <div
         v-if="filteredItems.length > 0"
-        class="flex items-center justify-between px-4 py-4"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedItems.length }} dari {{ totalItems }} data
         </div>
 
@@ -365,8 +401,8 @@ const deleteNow = async () => {
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             <svg
@@ -391,7 +427,7 @@ const deleteNow = async () => {
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               1
             </button>
@@ -399,7 +435,7 @@ const deleteNow = async () => {
             <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -412,8 +448,8 @@ const deleteNow = async () => {
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -424,7 +460,7 @@ const deleteNow = async () => {
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -433,7 +469,7 @@ const deleteNow = async () => {
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               {{ totalPages }}
             </button>
@@ -446,8 +482,8 @@ const deleteNow = async () => {
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             Next
@@ -476,31 +512,37 @@ const deleteNow = async () => {
       <Modal v-model="showEditModal" @save="saveEdit" size="xl">
         <template #title>
           <div class="mt-5 ml-5 mb-5">
-            <Heading variant="heading9b" class="font-semibold text-sm">
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm dark:text-white"
+            >
               Edit Titelatur
             </Heading>
 
-            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+            <Heading
+              variant="body2"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+            >
               Isi form di bawah ini untuk mengedit titelatur
             </Heading>
           </div>
         </template>
 
         <div class="flex flex-col gap-2 mt-1">
-          <Heading variant="body2m"
+          <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="editForm.long_text"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
 
-          <Heading variant="body2m"
+          <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Inggris <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="editForm.long_text_en"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </Modal>
@@ -512,33 +554,39 @@ const deleteNow = async () => {
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
           <div class="mt-5 ml-5 mb-5">
-            <Heading variant="heading9b" class="font-semibold text-sm">
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm dark:text-white"
+            >
               Tambah Titelatur
             </Heading>
 
-            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
+            <Heading
+              variant="body2"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+            >
               Masukkan titelatur baru
             </Heading>
           </div>
         </template>
 
         <div class="flex flex-col gap-2 mt-1">
-          <Heading variant="body2m"
+          <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="addForm.long_text"
             placeholder="Masukkan Titelatur Indonesia"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
 
-          <Heading variant="body2m"
+          <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Inggris <span class="text-red-500">*</span></Heading
           >
           <input
             v-model="addForm.long_text_en"
             placeholder="Masukkan Titelatur Inggris"
-            class="border border-gray-300 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </Modal>
