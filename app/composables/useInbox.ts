@@ -1,5 +1,4 @@
-// ~/composables/useInbox.ts
-import { ref, watch, isRef } from "vue";
+import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
 
 const formatDateTime = (value: string | null | undefined) => {
@@ -16,6 +15,7 @@ const formatDateTime = (value: string | null | undefined) => {
     hour12: false,
   }).format(date);
 };
+
 export interface InboxParams {
   page?: number;
   limit?: number;
@@ -46,6 +46,14 @@ export function useInbox() {
     total_belum_dibaca: 0,
     total_per_jenis: {},
   });
+
+  const unsetPriority = async (mail: any) => {
+    const idNaskah = mail.naskahId;
+    if (!idNaskah) throw new Error("ID Naskah tidak ditemukan");
+
+    // Menggunakan prefix /DI/ sesuai kode yang kamu lampirkan
+    return await apiPatch(`/DI/${idNaskah}/unset-priority`);
+  };
 
   const fetchInbox = async (params: InboxParams = {}) => {
     pending.value = true;
@@ -100,15 +108,16 @@ export function useInbox() {
             : "Tanpa Penerima";
 
         return {
+          id: it.id_sirkulasi || it.id,
           sirkulasiId: it.id_sirkulasi,
           naskahId: it.id_naskah,
-
           jenis: it.jenis,
           category: it.jenis,
           category_label: it.jenis_label,
           nomor: it.nomor,
           date: formatDateTime(it.created_at),
           subject: (it.perihal || "").toString().trim(),
+          is_priority: it.is_priority,
           fullRecipients: fullRecipientList,
           from: pengirimPos,
           fromPosition: pengirimPos,
@@ -169,12 +178,10 @@ export function useInbox() {
     }
   };
 
-  // --- PERBAIKAN TOGGLE FLAG ---
   const toggleFlag = async (
     mail: any,
-    flagType: "favorit" | "arsip" | "note",
+    flagType: "favorit" | "arsip" | "note" | "tindak_lanjut" | "lock",
   ) => {
-    // 1. Simpan state lama (Optimistic UI)
     const oldVal =
       flagType === "favorit"
         ? mail.isStarred
@@ -182,28 +189,20 @@ export function useInbox() {
           ? mail.isArsip
           : mail.isNote;
 
-    // 2. Update UI duluan
     if (flagType === "favorit") mail.isStarred = !oldVal;
     if (flagType === "arsip") mail.isArsip = !oldVal;
     if (flagType === "note") mail.isNote = !oldVal;
 
     try {
-      // 3. Gunakan 'sirkulasiId' yang sudah di-mapping di fetchInbox
-      // BUKAN mail.id_sirkulasi (karena id_sirkulasi ada di mail.raw, tapi di root object kita map ke sirkulasiId)
       const idToSend = mail.sirkulasiId || mail.raw?.id_sirkulasi;
 
       if (!idToSend) throw new Error("ID Sirkulasi tidak ditemukan");
 
-      const res: any = await apiPatch("/naskah_sirkulasi/toggle-flag", {
+      await apiPatch("/naskah_sirkulasi/toggle-flag", {
         id_sirkulasi: idToSend,
         flag_type: flagType,
-        // action: !oldVal ? "add" : "delete", // Sesuaikan action add/delete
       });
-
-      // Jika backend mengembalikan nilai baru, pastikan sinkron (opsional)
-      // const newValue = res?.data?.new_value;
     } catch (err) {
-      // 4. Revert jika error
       console.error("Gagal toggle flag:", flagType, err);
       if (flagType === "favorit") mail.isStarred = oldVal;
       if (flagType === "arsip") mail.isArsip = oldVal;
@@ -211,7 +210,6 @@ export function useInbox() {
     }
   };
 
-  // ... (fetchInboxDetail tetap sama) ...
   const JENIS_LABEL_MAP: Record<string, string> = {
     ND: "Nota Dinas",
     DI: "Disposisi",
@@ -220,7 +218,6 @@ export function useInbox() {
   };
 
   const fetchInboxDetail = async (idNaskah: string, jenis?: string) => {
-    // ... (kode fetchInboxDetail Anda tetap sama)
     pending.value = true;
     error.value = null;
     try {
@@ -258,6 +255,72 @@ export function useInbox() {
     }
   };
 
+  const fetchKonsepDetail = async (idKonsep: string) => {
+    pending.value = true;
+    error.value = null;
+    try {
+      const res = await apiGet(`/konsep/${idKonsep}`);
+
+      // Validasi dasar
+      if (!res || !res.data) return null;
+
+      // Ambil object data utama dari response
+      // Struktur: { success: true, message: "...", data: { konsep:..., naskah:..., flow:..., dll } }
+      const d = res.data;
+
+      // Logic untuk mengambil PDF Snapshot terakhir dari Flow
+      const flows = d.flow || [];
+      const lastFlow = flows.length > 0 ? flows[flows.length - 1] : null;
+      const pdfSnapshot = lastFlow?.pdf_snapshot || null;
+
+      return {
+        // --- Data Utama ---
+        konsep: d.konsep,
+        naskah: d.naskah,
+
+        // --- Flattening untuk UI ---
+        id: d.konsep?.id,
+        nomor: d.naskah?.nomor || "-",
+        // Prioritas tanggal: Naskah -> Konsep -> Hari ini
+        tanggal: d.naskah?.tanggal || d.konsep?.created_at,
+        perihal: d.naskah?.perihal || d.konsep?.perihal,
+        jenis: "K", // Hardcode K karena endpoint ini khusus konsep
+        jenis_label: "KONSEP NOTA DINAS", // Label untuk badge UI
+        sifat: d.naskah?.sifat || "biasa",
+        status: d.konsep?.status,
+
+        // --- Pelaku (Pengirim & Penerima) ---
+        // DI SINI PERBAIKANNYA: Ambil langsung dari d.pengirim, bukan current_workflow
+        pengirim: d.pengirim || { position_text: "-", nama: "-" },
+        kepada: d.penerima || [],
+        tembusan: d.tembusan || [],
+
+        // --- Konten ---
+        // Ambil dari naskah.konten atau naskah.content.konten
+        konten: d.naskah?.konten || d.naskah?.content?.konten || "",
+
+        // --- Lampiran ---
+        lampiran_files: d.lampiran || [],
+
+        // --- PDF Preview ---
+        // Ambil dari snapshot flow terakhir
+        final_pdf_url: pdfSnapshot,
+
+        // --- Flow untuk Logic Button (Finalize/Reject) ---
+        flow: flows,
+
+        // Simpan raw data jika butuh debug
+        raw: d,
+      };
+    } catch (err: any) {
+      console.error("fetchKonsepDetail error:", err);
+      error.value = err;
+      return null;
+    } finally {
+      pending.value = false;
+    }
+  };
+
   return {
     items,
     pagination,
@@ -268,5 +331,7 @@ export function useInbox() {
     markAsRead,
     toggleFlag,
     fetchInboxDetail,
+    unsetPriority,
+    fetchKonsepDetail,
   };
 }

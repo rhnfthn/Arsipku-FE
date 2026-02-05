@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import {
-  Inbox, FileText, Send, Building, Building2, FilePen, Archive, Trash2, ChevronLeft, ChevronRight, Star, Check, MoreVertical, History, ArrowUpDown, Layers, StickyNote, RotateCw, Download, Lock, Tag, Loader2, AlertTriangle, BookOpen, Calendar as CalendarIcon
+  Inbox, FileText, Send, Building, Building2, FilePen, Archive, Trash2, ChevronLeft, ChevronRight, Star, Check, MoreVertical, History, ArrowUpDown, Layers, StickyNote, RotateCw, Download, Lock, Tag, Loader2, AlertTriangle, BookOpen, Calendar as CalendarIcon,
+  LockOpen
 } from "lucide-vue-next";
 import * as XLSX from "xlsx";
 import { useInbox } from "~/composables/useInbox";
@@ -18,7 +19,8 @@ const {
   pending,
   fetchInbox,
   markAsRead,
-  toggleFlag
+  toggleFlag,
+  unsetPriority
 } = useInbox();
 
 const { labels, fetchLabels, createLabel, addNaskahToLabel: _addNaskahToLabel } = useLabel();
@@ -39,7 +41,7 @@ const showPageMenu = ref(false);
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
-// Date Filter State (New UI Support)
+// Date Filter State
 const showDateMenu = ref(false);
 const activeDateLabel = ref("30 Hari");
 const startDate = ref(new Date());
@@ -89,24 +91,29 @@ const breadcrumbs = [
 // --- HELPERS ---
 const formatShortDate = (dateString: string | null) => {
   if (!dateString) return "-";
+
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "-";
 
-  const now = new Date();
-  const isToday = date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
-  const isThisYear = date.getFullYear() === now.getFullYear();
-
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
   const time = `${hours}.${minutes}`;
-  const day = date.getDate();
-  const month = new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date);
+  const day = date.getUTCDate();
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const month = monthNames[date.getUTCMonth()];
+  const year = date.getUTCFullYear();
+
+  const now = new Date();
+  const isToday = day === now.getDate() &&
+    date.getUTCMonth() === now.getMonth() &&
+    year === now.getFullYear();
+
+  const isThisYear = year === now.getFullYear();
 
   if (isToday) return time;
   if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getFullYear()} ${time}`;
+  return `${day} ${month} ${year} ${time}`;
 };
 
 const getTabCount = (tabValue: string) => {
@@ -175,24 +182,17 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   isLabelProcessing.value = true;
 
   try {
-    // Array.from untuk konversi Set ke Array
     const promises = Array.from(selectedIds.value).map(selectedId => {
-      // 1. Cari item di list items yang cocok dengan ID yang dipilih
-      // Kita cek kedua kemungkinan ID (id utama atau naskahId)
       const mailItem = items.value.find(e => e.id === selectedId || e.naskahId === selectedId);
-
-      // 2. Pastikan kita mengambil 'naskahId' yang valid
-      // Jika mailItem ditemukan, ambil naskahId-nya.
-      // Jika tidak ditemukan (kasus jarang), kita asumsikan selectedId itu sendiri adalah ID yang valid (fallback)
       const realNaskahId = mailItem?.naskahId;
 
       if (!realNaskahId) {
         console.warn(`Naskah ID tidak ditemukan untuk item dengan ID: ${selectedId}`);
-        return null; // Skip item ini agar tidak error
+        return null;
       }
 
       return addNaskahToLabel(realNaskahId, labelId, 'inbox');
-    }).filter(p => p !== null); // Filter promise yang null
+    }).filter(p => p !== null);
 
     await Promise.all(promises);
 
@@ -204,7 +204,7 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
 
     showLabelAssignModal.value = false;
     selectedIds.value.clear();
-    refreshData(); // Refresh list agar label muncul
+    refreshData();
   } catch (error) {
     console.error("Gagal assign label:", error);
     toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
@@ -259,6 +259,7 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedIds.value.clear();
   } else {
+    // Ambil .id yang sudah dipastikan sirkulasiId di composable
     items.value.forEach((mail) => selectedIds.value.add(mail.id));
   }
 };
@@ -271,7 +272,13 @@ const toggleSelection = (id: string) => {
 const selectMail = (mail: any) => {
   selected.value = mail;
   const posId = user.value?.position;
+
   if (posId) markAsRead(mail, posId);
+
+  if (mail.is_priority) {
+    handleUnsetPriority(mail);
+  }
+
   navigateTo(`/korespondensi/kotak-masuk/${mail.naskahId}?jenis=${mail.category}`);
 };
 
@@ -282,44 +289,65 @@ const confirmAction = (action: string) => {
   showDeleteModal.value = true;
 };
 
-const handleToggleFlag = async (mail: any, type: 'favorit' | 'arsip' | 'note') => {
+const handleUnsetPriority = async (mail: any) => {
+  if (!mail.is_priority) return;
+
+  const previousState = mail.is_priority;
+  mail.is_priority = false; // Optimistic update di UI
+
   try {
-    // 1. Panggil fungsi dari composable
+    await unsetPriority(mail);
+    // Kita hilangkan toast sukses agar tidak mengganggu flow membaca pesan
+    // kecuali jika kamu memang ingin tetap memunculkannya.
+  } catch (error) {
+    mail.is_priority = previousState; // Rollback jika gagal
+    console.error("Gagal auto-unset priority:", error);
+  }
+};
+
+const handleToggleFlag = async (mail: any, type: 'favorit' | 'arsip' | 'note' | 'tindak_lanjut' | 'lock') => {
+  try {
+    const oldState = { ...mail };
+
+    if (type === 'favorit') mail.isStarred = !mail.isStarred;
+    if (type === 'tindak_lanjut') mail.isTinjut = !mail.isTinjut;
+    if (type === 'note') mail.isNote = !mail.isNote;
+    if (type === 'lock') mail.isLocked = !mail.isLocked;
+
+    if (type === 'arsip') {
+      const newStateArsip = !mail.isArsip;
+      mail.isArsip = newStateArsip;
+      const currentFilterIsArsip = activeFilterType.value === 'Arsip';
+
+      if (!currentFilterIsArsip && newStateArsip === true) {
+        items.value = items.value.filter(item => item.id !== mail.id);
+      }
+      if (currentFilterIsArsip && newStateArsip === false) {
+        items.value = items.value.filter(item => item.id !== mail.id);
+      }
+    }
+
     await toggleFlag(mail, type);
 
-    // 2. Tentukan pesan berdasarkan tipe dan status akhir (mail sudah berubah secara optimistic)
     let title = 'Berhasil';
     let description = '';
 
-    if (type === 'favorit') {
-      description = mail.isStarred
-        ? 'Pesan ditambahkan ke Favorit'
-        : 'Pesan dihapus dari Favorit';
-    } else if (type === 'arsip') {
-      description = mail.isArsip
-        ? 'Pesan berhasil diarsipkan'
-        : 'Pesan dikembalikan dari arsip';
-    } else if (type === 'note') {
-      description = mail.isNote
-        ? 'Note ditandai'
-        : 'Tanda note dihapus';
-    }
+    if (type === 'favorit') description = mail.isStarred ? 'Ditambahkan ke Favorit' : 'Dihapus dari Favorit';
+    else if (type === 'arsip') description = mail.isArsip ? 'Pesan diarsipkan' : 'Pesan dikembalikan dari arsip';
+    else if (type === 'note') description = mail.isNote ? 'Note ditandai' : 'Tanda note dihapus';
+    else if (type === 'lock') description = mail.isLocked ? 'Pesan dikunci' : 'Kunci pesan dibuka';
+    else if (type === 'tindak_lanjut') description = mail.isTinjut ? 'Ditandai tindak lanjut' : 'Tindak lanjut selesai';
 
-    // 3. Tampilkan Toast Sukses
-    toast.add({
-      title: title,
-      description: description,
-      color: 'success',
-      timeout: 2000 // Hilang dalam 2 detik
-    });
+    toast.add({ title, description, color: 'success', timeout: 2000 });
 
   } catch (error) {
-    // 4. Tampilkan Toast Error jika API gagal (Composable sudah handle revert state)
+    console.error(error);
     toast.add({
       title: 'Gagal',
       description: 'Gagal memperbarui status.',
       color: 'error'
     });
+    refreshData();
   }
 };
 
@@ -688,7 +716,12 @@ onMounted(async () => {
 
             <div v-else class="w-full">
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
-                class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50">
+                class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 cursor-pointer transition-colors relative w-full min-h-[50px]"
+                :class="[
+                  mail.is_priority
+                    ? 'bg-red-50/60 hover:bg-red-100/60 border-l-4 border-l-red-500 pl-3'
+                    : 'bg-white hover:bg-gray-50 border-l-4 border-l-transparent pl-4'
+                ]">
 
                 <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
                   <div
@@ -697,13 +730,14 @@ onMounted(async () => {
                     @click="toggleSelection(mail.id)">
                     <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
+
                   <Star class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
                     :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300'"
                     @click.stop="handleToggleFlag(mail, 'favorit')" />
-                  <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300" :class="mail.isTinjut
-                    ? 'text-primary-300 fill-primary-300'
-                    : 'text-neutral-300'
-                    " />
+
+                  <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
+                    :class="mail.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-neutral-300'"
+                    @click.stop="handleToggleFlag(mail, 'tindak_lanjut')" />
 
                   <span
                     class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
@@ -717,6 +751,7 @@ onMounted(async () => {
                     <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
                       title="Belum Dibaca">
                     </div>
+
                     <div class="flex flex-col min-w-0">
                       <UTooltip :text="mail.fullRecipients"
                         :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-pre-line text-left' }"
@@ -726,8 +761,17 @@ onMounted(async () => {
                           {{ mail.from }}
                         </span>
                       </UTooltip>
-                      <div class="text-[11px] text-neutral-400">
-                        {{ mail.nomor }}
+
+                      <div class="text-[11px] text-neutral-400 flex items-center gap-2 mt-0.5">
+
+                        <span class="truncate">{{ mail.nomor }}</span>
+
+                        <span v-if="mail.is_priority" @click.stop="handleUnsetPriority(mail)"
+                          class="flex items-center gap-0.5 bg-red-100 text-red-600 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 cursor-pointer hover:bg-red-200 transition-colors">
+                          <AlertTriangle class="w-3 h-3" />
+                          PRIORITAS
+                        </span>
+
                       </div>
                     </div>
                   </div>
@@ -764,15 +808,20 @@ onMounted(async () => {
                   class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white shadow-md border border-gray-100 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                   <div class="flex items-center gap-2 p-1">
 
-                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-400 cursor-pointer"
-                      :class="mail.isNote ? 'text-orange-400 fill-orange-400' : 'text-neutral-300'"
+                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-500 cursor-pointer"
+                      :class="mail.isNote ? 'text-orange-600 fill-orange-100' : 'text-neutral-300'"
                       @click.stop="handleToggleFlag(mail, 'note')" />
 
-                    <Lock class="w-4 h-4 transition-colors"
-                      :class="mail.isLocked ? 'text-red-500' : 'text-neutral-300'" />
+                    <Lock v-if="mail.isLocked"
+                      class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 cursor-pointer"
+                      @click.stop="handleToggleFlag(mail, 'lock')" />
 
-                    <Archive class="w-4 h-4 transition-colors hover:text-purple-600 cursor-pointer"
-                      :class="mail.isArsip ? 'text-purple-500 fill-purple-500' : 'text-neutral-300'"
+                    <LockOpen v-else
+                      class="w-4 h-4 transition-colors text-neutral-300 hover:text-red-500 cursor-pointer"
+                      @click.stop="handleToggleFlag(mail, 'lock')" />
+
+                    <Archive class="w-4 h-4 transition-colors hover:text-green-600 cursor-pointer"
+                      :class="mail.isArsip ? 'text-green-700 fill-green-100' : 'text-neutral-300'"
                       @click.stop="handleToggleFlag(mail, 'arsip')" />
 
                   </div>

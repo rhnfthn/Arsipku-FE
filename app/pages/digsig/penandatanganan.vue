@@ -1,30 +1,20 @@
 <template>
   <div class="space-y-6">
     <!-- HEADER -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-    >
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md"
-          >Penandatanganan Dokumen</Heading
-        >
+        <Heading variant="heading6b" class="text-mobile-md">Penandatanganan Dokumen</Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
     </div>
 
     <!-- TABLE CONTAINER -->
-    <div
-      class="bg-white dark:bg-gray-800 dark:border-gray-600 rounded-xl shadow-sm border border-gray-200"
-    >
+    <div class="bg-white dark:bg-gray-800 dark:border-gray-600 rounded-xl shadow-sm border border-gray-200">
       <!-- TOP BAR -->
-      <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-gray-200"
-      >
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-gray-200">
         <div class="flex items-center gap-2">
-          <select
-            v-model="rowsPerPage"
-            class="border border-gray-300 bg-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
+          <select v-model="rowsPerPage"
+            class="border border-gray-300 bg-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
             </option>
@@ -32,45 +22,30 @@
         </div>
 
         <div class="relative">
-          <button
-            data-custom-dropdown
+          <button data-custom-dropdown
             class="flex items-center justify-between gap-2 bg-gray-100 hover:bg-gray-200 text-sm px-4 py-2 rounded-lg min-w-[140px] transition"
-            @click.stop="openFilterStatus = !openFilterStatus"
-          >
+            @click.stop="openFilterStatus = !openFilterStatus">
             <span>{{ filterStatusLabel }}</span>
-            <ChevronDown
-              :class="[
-                'w-4 h-4 transition-transform duration-200',
-                openFilterStatus ? 'rotate-180' : '',
-              ]"
-            />
+            <ChevronDown :class="[
+              'w-4 h-4 transition-transform duration-200',
+              openFilterStatus ? 'rotate-180' : '',
+            ]" />
           </button>
 
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item.value"
+          <div v-if="openFilterStatus" data-custom-dropdown
+            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+            <button v-for="item in filterOptions" :key="item.value"
               class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition"
-              @click.prevent="selectFilterStatus(item)"
-            >
+              @click.prevent="selectFilterStatus(item)">
               {{ item.label }}
             </button>
           </div>
         </div>
 
         <div class="relative w-full justify-between">
-          <Search
-            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            v-model="search"
-            placeholder="Cari nomor dokumen atau perihal..."
-            class="w-full bg-gray-50 border border-gray-200 text-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition"
-          />
+          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input v-model="search" placeholder="Cari nomor dokumen atau perihal..."
+            class="w-full bg-gray-50 border border-gray-200 text-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition" />
         </div>
       </div>
 
@@ -82,16 +57,12 @@
               <th @click="handleSort('tanggalDibuat')" class="cursor-pointer">
                 <div class="flex items-center gap-2 ml-5">
                   <span>Tanggal Dibuat</span>
-                  <ArrowUpDown
-                    class="w-4 h-4 origin-center transition-transform duration-200"
-                    :class="
-                      sortKey === 'tanggalDibuat'
-                        ? sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : 'rotate-0'
-                        : 'opacity-50'
-                    "
-                  />
+                  <ArrowUpDown class="w-4 h-4 origin-center transition-transform duration-200" :class="sortKey === 'tanggalDibuat'
+                      ? sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0'
+                      : 'opacity-50'
+                    " />
                 </div>
               </th>
               <th class="px-4 py-3 font-semibold text-sm">No Dokumen</th>
@@ -105,16 +76,12 @@
               <th @click="handleSort('status')" class="cursor-pointer">
                 <div class="flex items-center gap-2 ml-5">
                   <span>Status</span>
-                  <ArrowUpDown
-                    class="w-4 h-4 origin-center transition-transform duration-200"
-                    :class="
-                      sortKey === 'status'
-                        ? sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : 'rotate-0'
-                        : 'opacity-50'
-                    "
-                  />
+                  <ArrowUpDown class="w-4 h-4 origin-center transition-transform duration-200" :class="sortKey === 'status'
+                      ? sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0'
+                      : 'opacity-50'
+                    " />
                 </div>
               </th>
               <th class="px-4 py-3 font-semibold text-sm text-center">Aksi</th>
@@ -126,11 +93,7 @@
             <tr v-if="loading">
               <td colspan="7" class="p-4">
                 <div class="space-y-3">
-                  <div
-                    v-for="i in 5"
-                    :key="i"
-                    class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
-                  ></div>
+                  <div v-for="i in 5" :key="i" class="w-full h-10 bg-gray-200 animate-pulse rounded-md"></div>
                 </div>
               </td>
             </tr>
@@ -147,12 +110,8 @@
               </td>
             </tr>
 
-            <tr
-              v-else
-              v-for="row in paginatedRows"
-              :key="row.id"
-              class="border-b border-gray-100 hover:bg-primary-50 transition"
-            >
+            <tr v-else v-for="row in paginatedRows" :key="row.id"
+              class="border-b border-gray-100 hover:bg-primary-50 transition">
               <td class="px-4 py-3 text-sm text-gray-700">
                 {{ formatDate(row.tanggalDibuat) }}
               </td>
@@ -164,89 +123,63 @@
                 {{ row.totalPenandatangan }}
               </td>
               <td class="px-4 py-3 text-center">
-                <button
-                  @click="viewDocument(row)"
-                  :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition"
-                  :class="
-                    row.filePreviewUrl || row.signedFilePreviewUrl
+                <button @click="viewDocument(row)" :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition" :class="row.filePreviewUrl || row.signedFilePreviewUrl
                       ? 'bg-blue-50 text-primary hover:bg-blue-100'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  "
-                >
+                    ">
                   <FileCheck class="w-4 h-4" />
                   Lihat
                 </button>
               </td>
               <td class="px-4 py-3">
-                <span
-                  v-if="row.mySignerStatus === 'waiting'"
-                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700"
-                >
+                <span v-if="row.mySignerStatus === 'waiting'"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
                   <Clock class="w-3.5 h-3.5" />
                   Menunggu
                 </span>
-                <span
-                  v-else-if="row.mySignerStatus === 'signed'"
-                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700"
-                >
+                <span v-else-if="row.mySignerStatus === 'signed'"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
                   <CheckCircle2 class="w-3.5 h-3.5" />
                   Sudah TTD
                 </span>
-                <span
-                  v-else-if="row.mySignerStatus === 'rejected'"
-                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700"
-                >
+                <span v-else-if="row.mySignerStatus === 'rejected'"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
                   <XCircle class="w-3.5 h-3.5" />
                   Ditolak
                 </span>
-                <span
-                  v-else
-                  class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700"
-                >
+                <span v-else
+                  class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                   {{ row.mySignerStatus }}
                 </span>
               </td>
 
               <td class="px-4 py-3">
                 <div class="flex items-center justify-center gap-2">
-                  <button
-                    @click="handleViewDetail(row)"
+                  <button @click="handleViewDetail(row)"
                     class="p-2 text-gray-600 hover:text-primary hover:bg-blue-50 rounded-lg transition"
-                    title="Lihat Detail"
-                  >
+                    title="Lihat Detail">
                     <Eye class="w-5 h-5" />
                   </button>
 
-                  <button
-                    @click="row.canSign ? handleOpenSign(row) : null"
-                    :disabled="!row.canSign"
-                    :class="[
-                      'p-2 rounded-lg transition',
-                      row.canSign
-                        ? 'text-primary hover:bg-blue-50 cursor-pointer'
-                        : 'text-gray-300 cursor-not-allowed',
-                    ]"
-                    :title="
-                      row.canSign
+                  <button @click="row.canSign ? handleOpenSign(row) : null" :disabled="!row.canSign" :class="[
+                    'p-2 rounded-lg transition',
+                    row.canSign
+                      ? 'text-primary hover:bg-blue-50 cursor-pointer'
+                      : 'text-gray-300 cursor-not-allowed',
+                  ]" :title="row.canSign
                         ? 'Tanda Tangan'
                         : 'Tidak dapat ditandatangani'
-                    "
-                  >
+                      ">
                     <Signature class="w-5 h-5" />
                   </button>
 
-                  <button
-                    @click="row.canReject ? handleReject(row) : null"
-                    :disabled="!row.canReject"
-                    :class="[
-                      'p-2 rounded-lg transition',
-                      row.canReject
-                        ? 'text-red-600 hover:bg-red-50 cursor-pointer'
-                        : 'text-gray-300 cursor-not-allowed',
-                    ]"
-                    :title="row.canReject ? 'Tolak' : 'Tidak dapat ditolak'"
-                  >
+                  <button @click="row.canReject ? handleReject(row) : null" :disabled="!row.canReject" :class="[
+                    'p-2 rounded-lg transition',
+                    row.canReject
+                      ? 'text-red-600 hover:bg-red-50 cursor-pointer'
+                      : 'text-gray-300 cursor-not-allowed',
+                  ]" :title="row.canReject ? 'Tolak' : 'Tidak dapat ditolak'">
                     <X class="w-5 h-5" />
                   </button>
                 </div>
@@ -257,108 +190,60 @@
       </div>
 
       <!-- PAGINATION -->
-      <div
-        class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-4"
-      >
+      <div class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-4">
         <div class="text-xs text-gray-600">
           Menampilkan {{ startRow }} - {{ endRow }} dari {{ totalRows }} data
         </div>
         <div class="flex gap-2">
-          <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="[
-              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
-            ]"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
+          <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1" :class="[
+            'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+            currentPage === 1
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-primary border border-primary hover:bg-primary-50',
+          ]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
 
           <div class="flex items-center gap-1">
-            <button
-              v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
-            >
+            <button v-if="paginationPages[0] > 1" @click="currentPage = 1"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all">
               1
             </button>
 
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
-              >...</span
-            >
+            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 text-sm">...</span>
 
-            <button
-              v-for="page in paginationPages"
-              :key="page"
-              @click="currentPage = page"
-              :class="[
-                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
-              ]"
-            >
+            <button v-for="page in paginationPages" :key="page" @click="currentPage = page" :class="[
+              'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+              currentPage === page
+                ? 'bg-primary text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+            ]">
               {{ page }}
             </button>
 
-            <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
-              class="px-2 text-gray-400 text-sm"
-              >...</span
-            >
+            <span v-if="
+              paginationPages[paginationPages.length - 1] < totalPages - 1
+            " class="px-2 text-gray-400 text-sm">...</span>
 
-            <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
-            >
+            <button v-if="paginationPages[paginationPages.length - 1] < totalPages" @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all">
               {{ totalPages }}
             </button>
           </div>
 
-          <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            :disabled="currentPage === totalPages"
+          <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-white text-primary border border-primary hover:bg-primary-50',
-            ]"
-          >
+            ]">
             Next
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
@@ -374,17 +259,12 @@
 
         <div v-if="loadingDetail" class="p-12 text-center">
           <div class="flex flex-col items-center gap-3">
-            <div
-              class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-            ></div>
+            <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p class="text-gray-500 text-sm">Memuat detail...</p>
           </div>
         </div>
 
-        <div
-          v-else-if="penandatanganDetail"
-          class="px-6 pb-6 space-y-6 max-h-[calc(100vh-150px)] overflow-y-auto"
-        >
+        <div v-else-if="penandatanganDetail" class="px-6 pb-6 space-y-6 max-h-[calc(100vh-150px)] overflow-y-auto">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div>
               <p class="text-gray-600 mb-1">No. Dokumen</p>
@@ -424,10 +304,8 @@
             </div>
             <div>
               <p class="text-gray-600 mb-1">Status Dokumen</p>
-              <span
-                class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
-                :class="getDocStatusClass(penandatanganDetail.documentStatus)"
-              >
+              <span class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
+                :class="getDocStatusClass(penandatanganDetail.documentStatus)">
                 {{ getDocStatusLabel(penandatanganDetail.documentStatus) }}
               </span>
             </div>
@@ -474,11 +352,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="signer in penandatanganDetail.signers"
-                  :key="signer.id"
-                  class="border-b border-gray-100"
-                >
+                <tr v-for="signer in penandatanganDetail.signers" :key="signer.id" class="border-b border-gray-100">
                   <td class="p-3">{{ signer.urutan }}</td>
                   <td class="p-3 font-mono">{{ signer.persnum }}</td>
                   <td class="p-3">
@@ -490,10 +364,8 @@
                     </div>
                   </td>
                   <td class="p-3 text-center">
-                    <span
-                      class="px-3 py-1 rounded-full text-xs font-semibold inline-block"
-                      :class="getSignerStatusClass(signer.status)"
-                    >
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold inline-block"
+                      :class="getSignerStatusClass(signer.status)">
                       {{ getSignerStatusLabel(signer.status) }}
                     </span>
                   </td>
@@ -503,22 +375,14 @@
                       <p class="font-medium">
                         {{ formatDate(signer.signedAt) }}
                       </p>
-                      <p
-                        v-if="signer.keterangan"
-                        class="text-xs text-gray-600 mt-1"
-                      >
+                      <p v-if="signer.keterangan" class="text-xs text-gray-600 mt-1">
                         {{ signer.keterangan }}
                       </p>
                     </div>
-                    <div
-                      v-else-if="
-                        signer.status === 'rejected' && signer.rejectedAt
-                      "
-                    >
-                      <p
-                        v-if="signer.keterangan"
-                        class="text-xs mt-1 text-center"
-                      >
+                    <div v-else-if="
+                      signer.status === 'rejected' && signer.rejectedAt
+                    ">
+                      <p v-if="signer.keterangan" class="text-xs mt-1 text-center">
                         {{ signer.keterangan }}
                       </p>
                     </div>
@@ -544,13 +408,8 @@
         </template>
 
         <div class="px-6 pb-6 space-y-5">
-          <div
-            v-if="selectedDoc"
-            class="border rounded-xl p-4 flex gap-4 items-start bg-blue-50 border-blue-200"
-          >
-            <div
-              class="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
-            >
+          <div v-if="selectedDoc" class="border rounded-xl p-4 flex gap-4 items-start bg-blue-50 border-blue-200">
+            <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
               <User class="w-6 h-6 text-white" />
             </div>
             <div>
@@ -570,12 +429,9 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Passphrase <span class="text-red-500">*</span>
             </label>
-            <input
-              v-model="passphrase"
-              type="password"
+            <input v-model="passphrase" type="password"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Masukkan passphrase sertifikat digital"
-            />
+              placeholder="Masukkan passphrase sertifikat digital" />
             <p class="text-xs text-gray-500 mt-1">
               Passphrase yang digunakan untuk sertifikat digital Anda
             </p>
@@ -585,34 +441,22 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Keterangan <span class="text-gray-400 text-xs">(Opsional)</span>
             </label>
-            <textarea
-              v-model="keterangan"
-              rows="3"
+            <textarea v-model="keterangan" rows="3"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Contoh: Disetujui, sudah sesuai"
-            ></textarea>
+              placeholder="Contoh: Disetujui, sudah sesuai"></textarea>
             <p class="text-xs text-gray-500 mt-1">
               Tambahkan catatan atau komentar untuk tanda tangan ini
             </p>
           </div>
 
-          <button
-            @click="handleSign"
-            :disabled="!passphrase || loadingSign"
-            :class="[
-              'w-full rounded-lg py-3 font-semibold text-sm transition',
-              passphrase && !loadingSign
-                ? 'bg-primary hover:bg-primary-700 text-white'
-                : 'bg-gray-300 text-gray-600 cursor-not-allowed',
-            ]"
-          >
-            <span
-              v-if="loadingSign"
-              class="flex items-center justify-center gap-2"
-            >
-              <div
-                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-              ></div>
+          <button @click="handleSign" :disabled="!passphrase || loadingSign" :class="[
+            'w-full rounded-lg py-3 font-semibold text-sm transition',
+            passphrase && !loadingSign
+              ? 'bg-primary hover:bg-primary-700 text-white'
+              : 'bg-gray-300 text-gray-600 cursor-not-allowed',
+          ]">
+            <span v-if="loadingSign" class="flex items-center justify-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Memproses...
             </span>
             <span v-else>Proses Tanda Tangan</span>
@@ -631,9 +475,7 @@
         </template>
 
         <div class="px-6 pb-6 space-y-4">
-          <div
-            class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg"
-          >
+          <div class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
             <AlertTriangle class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <p class="text-sm font-medium text-red-800">Peringatan</p>
@@ -648,26 +490,18 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Alasan Penolakan <span class="text-red-500">*</span>
             </label>
-            <textarea
-              v-model="rejectReason"
-              rows="3"
+            <textarea v-model="rejectReason" rows="3"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Masukkan alasan penolakan..."
-            ></textarea>
+              placeholder="Masukkan alasan penolakan..."></textarea>
           </div>
 
           <div class="flex gap-3 pt-4 border-t border-gray-200">
-            <button
-              @click="confirmRejectOpen = false"
-              class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 hover:bg-gray-100 rounded-lg transition"
-            >
+            <button @click="confirmRejectOpen = false"
+              class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 hover:bg-gray-100 rounded-lg transition">
               Batal
             </button>
-            <button
-              @click="rejectNow"
-              :disabled="!rejectReason || loadingReject"
-              class="flex-1 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button @click="rejectNow" :disabled="!rejectReason || loadingReject"
+              class="flex-1 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
               <span v-if="loadingReject">Memproses...</span>
               <span v-else>Tolak Dokumen</span>
             </button>
@@ -675,34 +509,17 @@
         </div>
       </Modal>
     </Teleport>
-    <USlideover
-      v-model:open="isOpenPreview"
-      title="Pratinjau Dokumen"
-      side="bottom"
-      :dismissible="true"
-      :ui="{
-        content: 'h-screen max-h-screen',
-        body: 'p-0',
-        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-      }"
-    >
+    <USlideover v-model:open="isOpenPreview" title="Pratinjau Dokumen" side="bottom" :dismissible="true" :ui="{
+      content: 'h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }">
       <template #body>
-        <div
-          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-        >
-          <iframe
-            v-if="pdfUrl"
-            :key="pdfUrl"
-            :src="pdfUrl"
-            class="w-full h-full border-0"
-            allowfullscreen
-          />
+        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <iframe v-if="pdfUrl" :key="pdfUrl" :src="pdfUrl" class="w-full h-full border-0" allowfullscreen />
 
           <div v-else class="flex flex-col items-center gap-2">
-            <UIcon
-              name="i-lucide-loader-2"
-              class="animate-spin w-8 h-8 text-primary-500"
-            />
+            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
             <span class="text-gray-500">Memuat Pratinjau...</span>
           </div>
         </div>

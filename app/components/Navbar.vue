@@ -541,7 +541,7 @@ const jenisOptions = [
   { label: 'Surat Dinas Eksternal (SDE)', value: 'SDE' },
   { label: 'Disposisi (DI)', value: 'DI' },
   { label: 'Kajian (KA)', value: 'KA' },
-  { label: 'Keputusan (K)', value: 'K' }
+  { label: 'Konsep (K)', value: 'K' }
 ];
 
 const sifatOptions = [
