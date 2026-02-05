@@ -1,0 +1,65 @@
+// composables/useSwitch.ts
+import { ref } from "vue";
+import { useApi } from "@/composables/useApi";
+
+export interface SwitchCompany {
+  relationSpId: string;
+  company: number;
+  companyText: string;
+  startDate: string;
+  endDate: string;
+  isCurrentCompany: boolean;
+}
+
+export const useSwitch = () => {
+  const { apiGet, apiPost } = useApi();
+
+  const loading = ref(false);
+  const switchingId = ref<string | null>(null);
+  const companies = ref<SwitchCompany[]>([]);
+
+  const getAvailableCompanies = async () => {
+    loading.value = true;
+    try {
+      const res = await apiGet<{
+        success: boolean;
+        companies: SwitchCompany[];
+      }>("/company-switch/available-companies");
+
+      companies.value = res.companies;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+const switchCompany = async (relationSpId: string) => {
+  switchingId.value = relationSpId;
+  try {
+    const res = await apiPost<{
+      data: {
+        accessToken: string;
+      };
+    }>("/company-switch/switch", {
+      relationSpId,
+    });
+
+    // 🔑 WAJIB: simpan token baru
+    if (res?.data?.accessToken) {
+      localStorage.setItem("token", res.data.accessToken);
+    }
+
+    // refresh company list
+    await getAvailableCompanies();
+  } finally {
+    switchingId.value = null;
+  }
+};
+
+  return {
+    loading,
+    switchingId,
+    companies,
+    getAvailableCompanies,
+    switchCompany,
+  };
+};
