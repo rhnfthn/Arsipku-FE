@@ -312,6 +312,7 @@ const subject = ref("");
 const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
+const isEnglish = ref(false);
 
 // Date
 const today = new Date();
@@ -376,7 +377,7 @@ const getPayload = (): SDEPayload => {
 
     // UPDATE: Kirim Array of IDs dari Selected Tertuju
     penerima: selectedTertuju.value.map(item => item.value),
-
+    english: isEnglish.value || false,
     tembusan: selectedTembusan.value.map(i => i.value),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",

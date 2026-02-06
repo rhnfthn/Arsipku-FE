@@ -85,7 +85,7 @@
               <div class="flex-1 min-w-0 space-y-4">
                 <div>
                   <span class="text-sm font-semibold text-gray-900 dark:text-white block">{{ refData.pengirim_jabatan
-                    }}</span>
+                  }}</span>
                   <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{{ refData.pengirim_nama }}</span>
                 </div>
                 <div class="grid grid-cols-1 gap-4 text-xs">
@@ -262,7 +262,7 @@
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
-                          }}</td>
+                        }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
@@ -326,8 +326,6 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" @click="confirmSaveDraft" />
           <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="confirmKirimDokumen" />
         </div>
@@ -362,7 +360,7 @@
                   <div class="flex flex-col">
                     <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
                     <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role
-                      }}</span>
+                    }}</span>
                     <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
                   </div>
                 </div>
@@ -652,6 +650,8 @@ const prepareKonsepFormData = () => {
   const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
 
   formData.append('jenis', 'ND');
+  // MODIFIED: Mengambil ID dari data referensi
+  formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
   formData.append('to_position_id', signerInfo.value || '');
   formData.append('pengirim_position_id', signerInfo.value || '');
@@ -704,26 +704,7 @@ const handlePreview = async () => {
   }
 };
 
-const handleSaveDraft = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
-  try {
-    loadingMessage.value = "Menyimpan Draft...";
-    isLoadingData.value = true;
-    const formData = new FormData();
-    Object.keys(payload).forEach(key => {
-      const val = (payload as any)[key];
-      formData.append(key, Array.isArray(val) ? JSON.stringify(val) : String(val));
-    });
-    await saveND(formData, editDraftId.value);
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
-  } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e.response?.data?.message || 'Gagal memperbarui draft', color: 'error' });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
+/* --- FUNGSI SAVE DRAFT & CONFIRM SAVE DRAFT DIHAPUS --- */
 
 const handleKirimDokumen = async () => {
   const payloadDraft = getBasePayload();
@@ -762,11 +743,6 @@ const handlePassphraseSubmit = async () => {
   const confirmMessage = selectedSendType.value === 'digsig' ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?' : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
   const isConfirmed = await Alert.confirm('Konfirmasi Akhir', confirmMessage, 'Ya, Kirim Sekarang', 'Periksa Lagi', 'false');
   if (isConfirmed) await handleKirimDokumen();
-};
-
-const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm('Simpan sebagai Draft?', 'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.', 'Ya, Simpan', 'Batal', 'false');
-  if (isConfirmed) await handleSaveDraft();
 };
 
 const confirmKirimDokumen = async () => {
