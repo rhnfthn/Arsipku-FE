@@ -25,31 +25,31 @@ import { saveAs } from "file-saver";
 // ==============================
 // DARK MODE
 // ==============================
-const isDark = ref(false);
+// const isDark = ref(false);
 
-const initDarkMode = () => {
-  const stored = localStorage.getItem("darkMode");
-  if (stored !== null) {
-    isDark.value = stored === "true";
-  } else {
-    isDark.value = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-  applyDarkMode();
-};
+// const initDarkMode = () => {
+//   const stored = localStorage.getItem("darkMode");
+//   if (stored !== null) {
+//     isDark.value = stored === "true";
+//   } else {
+//     isDark.value = window.matchMedia("(prefers-color-scheme: dark)").matches;
+//   }
+//   applyDarkMode();
+// };
 
-const applyDarkMode = () => {
-  if (isDark.value) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-};
+// const applyDarkMode = () => {
+//   if (isDark.value) {
+//     document.documentElement.classList.add("dark");
+//   } else {
+//     document.documentElement.classList.remove("dark");
+//   }
+// };
 
-const toggleDarkMode = () => {
-  isDark.value = !isDark.value;
-  localStorage.setItem("darkMode", String(isDark.value));
-  applyDarkMode();
-};
+// const toggleDarkMode = () => {
+//   isDark.value = !isDark.value;
+//   localStorage.setItem("darkMode", String(isDark.value));
+//   applyDarkMode();
+// };
 
 // ==============================
 // STATE (existing)
@@ -71,7 +71,7 @@ const items = [
     to: "/beranda",
   },
   {
-    label: "Naskah Dinas",
+    label: "Naskah Masuk",
     to: "/admin/naskah-dinas",
   },
 ] satisfies BreadcrumbItem[];
@@ -98,7 +98,7 @@ const {
 } = useTertujuEksternal();
 
 onMounted(() => {
-  initDarkMode(); // Initialize dark mode
+  // initDarkMode();
   fetchNaskahDinas();
   fetchTertujuEksternal();
   fetchRecipients();
@@ -596,52 +596,265 @@ function exportExcel() {
 </script>
 
 <template>
-  <div class="flex items-center justify-between w-full mb-5">
+  <div class="flex items-center justify-between w-full pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
         Daftar Naskah Masuk
       </Heading>
       <PageHeader :items="items" />
     </div>
-  </div>
-  <div class="w-full min-w-0 min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div
-      class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    <!-- ADD BUTTON -->
+    <button
+      @click="showAddModal = true"
+      class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
     >
-      <div class="border-b border-gray-200 dark:border-gray-700">
-        <!-- FILTER BAR -->
-        <div class="flex gap-4 p-3 items-center flex-wrap">
-          <button
-            @click="toggleSort"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400"
-          >
-            <ArrowUpDown class="w-4 h-4" />
-          </button>
+      <Plus class="w-4 h-4" />
+      Tambah
+    </button>
+  </div>
 
-          <button
-            @click="refreshData"
-            :disabled="pending"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 disabled:opacity-50"
-          >
-            <RotateCcw class="w-4 h-4" :class="pending ? 'animate-spin' : ''" />
-          </button>
+  <div
+    class="mt-5 flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+  >
+    <div class="dark:border-gray-700">
+      <!-- FILTER BAR -->
+      <div class="flex gap-4 p-3 items-center flex-wrap">
+        <button
+          @click="toggleSort"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400"
+        >
+          <ArrowUpDown class="w-4 h-4" />
+        </button>
 
-          <!-- CUSTOM FILTER DROPDOWN -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              class="flex items-center justify-between gap-2 text-xs px-2 py-0.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-              @click.stop="openFilterStatus = !openFilterStatus"
+        <button
+          @click="refreshData"
+          :disabled="pending"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 disabled:opacity-50"
+        >
+          <RotateCcw class="w-4 h-4" :class="pending ? 'animate-spin' : ''" />
+        </button>
+
+        <!-- CUSTOM FILTER DROPDOWN -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            class="flex items-center justify-between gap-2 text-xs px-2 py-0.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            @click.stop="openFilterStatus = !openFilterStatus"
+          >
+            <span class="text-sm">
+              {{ perPage === "all" ? "Semua" : ` ${perPage}` }}
+            </span>
+
+            <!-- Icon V -->
+            <svg
+              :class="[
+                'w-4 h-4 transition-transform duration-200',
+                openFilterStatus ? 'rotate-180' : 'rotate-0',
+              ]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <span class="text-sm">
-                {{ perPage === "all" ? "Semua" : ` ${perPage}` }}
-              </span>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
 
-              <!-- Icon V -->
+          <div
+            v-if="openFilterStatus"
+            class="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
+          >
+            <button
+              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+              @click.prevent="setPerPage('all')"
+            >
+              Semua
+            </button>
+
+            <button
+              v-for="n in [5, 10, 20, 50]"
+              :key="n"
+              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+              @click.prevent="setPerPage(n)"
+            >
+              {{ n }}
+            </button>
+          </div>
+        </div>
+
+        <div class="relative flex-1 w-full md:w-56">
+          <Search
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
+          <input
+            v-model="search"
+            placeholder="Cari..."
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
+          />
+        </div>
+        <button
+          @click="exportExcel"
+          class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
+        >
+          <FileDown class="w-4 h-4" />
+          Export
+        </button>
+      </div>
+      <!-- LIST TABLE -->
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
+                Asal Naskah
+              </th>
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
+                Tertuju
+              </th>
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
+                Perihal
+              </th>
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
+                Pembuat
+              </th>
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
+                Jam Dibuat
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <!-- ================= -->
+            <!-- SKELETON BLOCK -->
+            <!-- ================= -->
+            <tr v-if="pending">
+              <td colspan="5" class="px-4 py-6">
+                <div class="space-y-4 animate-pulse">
+                  <div
+                    v-for="n in skeletonRows"
+                    :key="'skeleton-' + n"
+                    class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
+                  />
+                </div>
+              </td>
+            </tr>
+            <!-- ================= -->
+            <!-- DATA ASLI -->
+            <!-- ================= -->
+            <tr
+              v-else
+              v-for="item in paginatedData"
+              :key="item.id"
+              class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700"
+            >
+              <td
+                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
+              >
+                <div class="font-medium">
+                  {{ item.pengirim?.nama || "-" }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ item.nomor || "-" }}
+                </div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">
+                  {{
+                    formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
+                  }}
+                </div>
+              </td>
+
+              <td class="px-4 py-3 text-black dark:text-gray-200">
+                <div class="font-medium">
+                  {{
+                    item.penerima?.map((p) => p.position_text).join(", ") || "-"
+                  }}
+                </div>
+              </td>
+
+              <td
+                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
+              >
+                <div class="flex flex-col gap-1">
+                  <div class="font-medium">
+                    {{ item.perihal }}
+                  </div>
+
+                  <button
+                    v-if="item.final_pdf_url"
+                    @click="openFinalPdf(item.final_pdf_url)"
+                    class="inline-flex max-w-[220px] items-center gap-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-xs hover:bg-emerald-200 dark:hover:bg-emerald-800 transition cursor-pointer"
+                    :title="getFileNameFromUrl(item.final_pdf_url)"
+                  >
+                    <FileText class="w-3 h-3 shrink-0" />
+                    <span class="truncate">
+                      {{
+                        truncateFileName(
+                          getFileNameFromUrl(item.final_pdf_url),
+                          28,
+                        )
+                      }}
+                    </span>
+                  </button>
+                </div>
+              </td>
+              <td
+                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
+              >
+                <div class="font-medium">
+                  {{ item.pembuat?.position_text || "-" }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ item.pembuat?.nama || "-" }}
+                </div>
+              </td>
+              <td class="px-4 py-3 text-black dark:text-gray-200">
+                {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- PAGINATION -->
+        <div
+          class="flex items-center justify-between px-4 py-3 dark:border-gray-700"
+        >
+          <!-- INFO -->
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Menampilkan
+            {{ paginatedData.length }}
+            dari
+            {{ totalItems }}
+            data
+          </div>
+
+          <!-- CONTROLS -->
+          <div class="flex items-center gap-1">
+            <!-- BACK -->
+            <button
+              :disabled="currentPage === 1"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+              ]"
+              @click="goToPage(currentPage - 1)"
+            >
               <svg
-                :class="[
-                  'w-4 h-4 transition-transform duration-200',
-                  openFilterStatus ? 'rotate-180' : 'rotate-0',
-                ]"
+                class="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -650,609 +863,453 @@ function exportExcel() {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M19 9l-7 7-7-7"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
+            </button>
+
+            <!-- PAGE NUMBERS -->
+            <button
+              v-for="(page, i) in paginationPages"
+              :key="i"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+
+                page === currentPage
+                  ? 'bg-primary-500 text-white'
+                  : page === '...'
+                    ? 'text-gray-400 dark:text-gray-500 cursor-default'
+                    : 'border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200',
+              ]"
+              :disabled="page === '...'"
+              @click="typeof page === 'number' && goToPage(page)"
+            >
+              {{ page }}
+            </button>
+
+            <!-- NEXT -->
+            <button
+              :disabled="currentPage === totalPages"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+              ]"
+            >
+              Next
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
             </button>
-
-            <div
-              v-if="openFilterStatus"
-              class="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
-            >
-              <button
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                @click.prevent="setPerPage('all')"
-              >
-                Semua
-              </button>
-
-              <button
-                v-for="n in [5, 10, 20, 50]"
-                :key="n"
-                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                @click.prevent="setPerPage(n)"
-              >
-                {{ n }}
-              </button>
-            </div>
-          </div>
-
-          <div class="relative flex-1 w-full md:w-56">
-            <Search
-              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <input
-              v-model="search"
-              placeholder="Cari..."
-              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
-            />
-          </div>
-          <button
-            @click="exportExcel"
-            class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
-          >
-            <FileDown class="w-4 h-4" />
-            Export
-          </button>
-        </div>
-        <!-- LIST TABLE -->
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
-                <th
-                  class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-                >
-                  Asal Naskah
-                </th>
-                <th
-                  class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-                >
-                  Tertuju
-                </th>
-                <th
-                  class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-                >
-                  Perihal
-                </th>
-                <th
-                  class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-                >
-                  Pembuat
-                </th>
-                <th
-                  class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-                >
-                  Jam Dibuat
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <!-- ================= -->
-              <!-- SKELETON BLOCK -->
-              <!-- ================= -->
-              <tr v-if="pending">
-                <td colspan="5" class="px-4 py-6">
-                  <div class="space-y-4 animate-pulse">
-                    <div
-                      v-for="n in skeletonRows"
-                      :key="'skeleton-' + n"
-                      class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
-                    />
-                  </div>
-                </td>
-              </tr>
-              <!-- ================= -->
-              <!-- DATA ASLI -->
-              <!-- ================= -->
-              <tr
-                v-else
-                v-for="item in paginatedData"
-                :key="item.id"
-                class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700"
-              >
-                <td
-                  class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-                >
-                  <div class="font-medium">
-                    {{ item.pengirim?.nama || "-" }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ item.nomor || "-" }}
-                  </div>
-                  <div class="text-xs text-gray-400 dark:text-gray-500">
-                    {{
-                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
-                    }}
-                  </div>
-                </td>
-
-                <td class="px-4 py-3 text-black dark:text-gray-200">
-                  <div class="font-medium">
-                    {{
-                      item.penerima?.map((p) => p.position_text).join(", ") ||
-                      "-"
-                    }}
-                  </div>
-                </td>
-
-                <td
-                  class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-                >
-                  <div class="flex flex-col gap-1">
-                    <div class="font-medium">
-                      {{ item.perihal }}
-                    </div>
-
-                    <button
-                      v-if="item.final_pdf_url"
-                      @click="openFinalPdf(item.final_pdf_url)"
-                      class="inline-flex max-w-[220px] items-center gap-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-xs hover:bg-emerald-200 dark:hover:bg-emerald-800 transition cursor-pointer"
-                      :title="getFileNameFromUrl(item.final_pdf_url)"
-                    >
-                      <FileText class="w-3 h-3 shrink-0" />
-                      <span class="truncate">
-                        {{
-                          truncateFileName(
-                            getFileNameFromUrl(item.final_pdf_url),
-                            28,
-                          )
-                        }}
-                      </span>
-                    </button>
-                  </div>
-                </td>
-                <td
-                  class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-                >
-                  <div class="font-medium">
-                    {{ item.pembuat?.position_text || "-" }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ item.pembuat?.nama || "-" }}
-                  </div>
-                </td>
-                <td class="px-4 py-3 text-black dark:text-gray-200">
-                  {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- PAGINATION -->
-          <div
-            class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700"
-          >
-            <!-- INFO -->
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              Menampilkan
-              {{ paginatedData.length }}
-              dari
-              {{ totalItems }}
-              data
-            </div>
-
-            <!-- CONTROLS -->
-            <div class="flex items-center gap-1">
-              <!-- BACK -->
-              <button
-                class="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm"
-                :class="
-                  currentPage === 1
-                    ? 'text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                    : 'text-primary-500 border-primary-300 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
-                "
-                :disabled="currentPage === 1"
-                @click="goToPage(currentPage - 1)"
-              >
-                ‹ Back
-              </button>
-
-              <!-- PAGE NUMBERS -->
-              <button
-                v-for="(page, i) in paginationPages"
-                :key="i"
-                class="px-3 py-1.5 rounded-lg text-sm"
-                :class="[
-                  page === currentPage
-                    ? 'bg-primary-500 text-white'
-                    : page === '...'
-                      ? 'text-gray-400 dark:text-gray-500 cursor-default'
-                      : 'border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200',
-                ]"
-                :disabled="page === '...'"
-                @click="typeof page === 'number' && goToPage(page)"
-              >
-                {{ page }}
-              </button>
-
-              <!-- NEXT -->
-              <button
-                class="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm"
-                :class="
-                  currentPage === totalPages
-                    ? 'text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                    : 'text-primary-500 border-primary-300 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
-                "
-                :disabled="currentPage === totalPages"
-                @click="goToPage(currentPage + 1)"
-              >
-                Next ›
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </div>
-    <!-- ======= -->
-    <!-- MODAL TAMBAH -->
-    <!-- ======= -->
-    <Teleport to="body">
-      <Modal
-        v-model="showAddModal"
-        @save="saveDelegasi"
-        @close="resetNewDelegasi"
-        size="xl"
-      >
-        <template #title>
-          <Heading
-            variant="heading9b"
-            class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white"
-            >Tambah Naskah Masuk</Heading
-          >
-        </template>
+  </div>
+  <!-- ======= -->
+  <!-- MODAL TAMBAH -->
+  <!-- ======= -->
+  <Teleport to="body">
+    <Modal
+      v-model="showAddModal"
+      @save="saveDelegasi"
+      @close="resetNewDelegasi"
+      size="xl"
+    >
+      <template #title>
+        <Heading
+          variant="heading9b"
+          class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white"
+          >Tambah Naskah Masuk</Heading
+        >
+      </template>
 
-        <div class="modal-form flex flex-col">
-          <div class="flex flex-col gap-4 mt-3 ml-1 mr-1">
-            <div>
-              <label class="text-xs font-semibold dark:text-gray-200"
-                >Jenis Naskah <span class="text-red-500">*</span></label
+      <div class="flex flex-col">
+        <div class="flex flex-col gap-4 p-1 pb-4">
+          <div>
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Jenis Naskah <span class="text-red-500">*</span>
+            </Heading>
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+                @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
               >
-              <div class="relative" data-custom-dropdown>
+                <span
+                  class="text-sm"
+                  :class="
+                    newDelegasi.jenisnaskah
+                      ? 'text-gray-700 dark:text-gray-200'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ newDelegasi.jenisnaskah || "Pilih Jenis Naskah" }}
+                </span>
+              </button>
+
+              <div
+                v-if="openNewJenisNaskah"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-56 overflow-auto"
+              >
                 <button
-                  class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 mt-1 flex items-center justify-between"
-                  @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
+                  v-for="p in jenisnaskahList"
+                  :key="p.id"
+                  class="w-full text-left px-3 py-2 mt-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+                  @click.prevent="selectNewJenisNaskah(p.value)"
                 >
-                  <span
-                    class="text-xs"
-                    :class="
-                      newDelegasi.jenisnaskah
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500'
-                    "
-                  >
-                    {{ newDelegasi.jenisnaskah || "Pilih Jenis Naskah" }}
-                  </span>
+                  {{ p.label }}
                 </button>
-
-                <div
-                  v-if="openNewJenisNaskah"
-                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-56 overflow-auto"
-                >
-                  <button
-                    v-for="p in jenisnaskahList"
-                    :key="p.id"
-                    class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                    @click.prevent="selectNewJenisNaskah(p.value)"
-                  >
-                    {{ p.label }}
-                  </button>
-                </div>
               </div>
             </div>
+          </div>
 
-            <div class="flex flex-wrap flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200"
-                >Tanggal Surat <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="newDelegasi.tanggal_surat"
-                type="date"
-                class="mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 text-xs"
-              />
-            </div>
+          <div class="flex flex-wrap flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Tanggal Surat <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="newDelegasi.tanggal_surat"
+              type="date"
+              class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+            />
+          </div>
 
-            <div>
-              <label class="text-xs font-semibold dark:text-gray-200"
-                >Sifat Naskah <span class="text-red-500">*</span></label
+          <div>
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Sifat Naskah <span class="text-red-500">*</span>
+            </Heading>
+            <div class="relative" data-custom-dropdown>
+              <button
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+                @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
               >
-              <div class="relative" data-custom-dropdown>
+                <span
+                  class="text-sm"
+                  :class="
+                    newDelegasi.sifat_naskah
+                      ? 'text-gray-700 dark:text-gray-200'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ newDelegasi.sifat_naskah || "Pilih sifat naskah" }}
+                </span>
+              </button>
+
+              <div
+                v-if="openNewSifatNaskah"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+              >
                 <button
-                  class="w-full text-left mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 flex items-center justify-between"
-                  @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
+                  v-for="s in sifatnaskahList"
+                  :key="s.id"
+                  class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+                  @click.prevent="selectNewSifatNaskah(s.value)"
                 >
-                  <span
-                    class="text-xs"
-                    :class="
-                      newDelegasi.sifat_naskah
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500'
-                    "
-                  >
-                    {{ newDelegasi.sifat_naskah || "Pilih sifat naskah" }}
-                  </span>
+                  {{ s.label }}
                 </button>
-
-                <div
-                  v-if="openNewSifatNaskah"
-                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-                >
-                  <button
-                    v-for="s in sifatnaskahList"
-                    :key="s.id"
-                    class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                    @click.prevent="selectNewSifatNaskah(s.value)"
-                  >
-                    {{ s.label }}
-                  </button>
-                </div>
               </div>
             </div>
+          </div>
 
-            <div class="flex flex-wrap flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200"
-                >Nomor Asal Naskah <span class="text-red-500">*</span></label
+          <div class="flex flex-wrap flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Nomor Asal Naskah <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="newDelegasi.nomor_asal"
+              type="text"
+              class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+              placeholder="Masukan nomor"
+            />
+          </div>
+
+          <div class="flex flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Asal Naskah <span class="text-red-500">*</span>
+            </Heading>
+
+            <div class="relative mt-1 dropdown-input" data-custom-dropdown>
+              <!-- INPUT BOX -->
+              <div
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+                @click.stop="openNewAsalNaskah = true"
               >
-              <input
-                v-model="newDelegasi.nomor_asal"
-                type="text"
-                class="mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 text-xs"
-                placeholder="Masukan nomor"
-              />
-            </div>
-
-            <div class="flex flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200">
-                Asal Naskah <span class="text-red-500">*</span>
-              </label>
-
-              <div class="relative mt-1 dropdown-input" data-custom-dropdown>
-                <!-- INPUT BOX -->
-                <div
-                  class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 flex items-center cursor-text dropdown-field"
-                  @click.stop="openNewAsalNaskah = true"
-                >
-                  <input
-                    :value="newDelegasi.asal_naskah_label || searchAsalNaskah"
-                    @input="searchAsalNaskah = $event.target.value"
-                    @focus="openNewAsalNaskah = true"
-                    placeholder="Cari asal naskah"
-                    class="flex-1 outline-none text-xs dark:bg-gray-700 dark:text-gray-200"
-                    :class="
-                      newDelegasi.asal_naskah_label
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500'
-                    "
-                  />
-
-                  <!-- CLEAR -->
-                  <button
-                    v-if="newDelegasi.asal_naskah_label"
-                    type="button"
-                    class="text-red-400 text-xs ml-2"
-                    @click.stop="
-                      newDelegasi.asal_naskah = null;
-                      newDelegasi.asal_naskah_label = '';
-                      searchAsalNaskah = '';
-                    "
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <!-- DROPDOWN -->
-                <div
-                  v-if="openNewAsalNaskah"
-                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-60 overflow-auto"
-                >
-                  <div
-                    v-if="loadingAsalNaskah"
-                    class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    Memuat data...
-                  </div>
-
-                  <button
-                    v-for="item in filteredAsalNaskahList"
-                    :key="item.id"
-                    class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs dark:text-gray-200"
-                    @click.prevent="selectNewAsalNaskah(item)"
-                  >
-                    {{ item.nama }}
-                  </button>
-
-                  <div
-                    v-if="
-                      !loadingAsalNaskah && filteredAsalNaskahList.length === 0
-                    "
-                    class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    Data tidak ditemukan
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200"
-                >Perihal <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="newDelegasi.perihal"
-                type="text"
-                class="mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 text-xs"
-                placeholder="Masukan perihal"
-              />
-            </div>
-
-            <div class="flex flex-wrap flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200">
-                Lampiran <span class="text-red-500">*</span>
-              </label>
-              <input
-                :value="lampiranText"
-                type="text"
-                readonly
-                class="mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
-                placeholder="0 Lampiran"
-              />
-            </div>
-
-            <div class="flex flex-wrap flex-col">
-              <label class="text-xs font-semibold dark:text-gray-200">
-                Tertuju <span class="text-red-500">*</span>
-              </label>
-
-              <div class="relative mt-1 dropdown-input" data-custom-dropdown>
-                <div
-                  class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 flex items-center cursor-text dropdown-field"
-                  @click.stop="openNewTertuju = true"
-                >
-                  <!-- CHIP -->
-                  <span
-                    v-for="t in newDelegasi.tertuju"
-                    :key="t.position"
-                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
-                  >
-                    <span
-                      class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
-                    >
-                      {{ t.position_text }}
-                    </span>
-                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ t.persnum_person_text }}
-                    </span>
-                    <span class="text-[9px] text-gray-400 dark:text-gray-500">
-                      {{ t.organization_parent_text }}
-                    </span>
-
-                    <button
-                      type="button"
-                      class="text-red-500 text-[10px] self-end"
-                      @click.stop="removeTertuju(t.position)"
-                    >
-                      ✕
-                    </button>
-                  </span>
-
-                  <!-- INPUT SEARCH (INI INTINYA) -->
-                  <input
-                    v-model="searchTertuju"
-                    @focus="openNewTertuju = true"
-                    :placeholder="
-                      newDelegasi.tertuju.length === 0 ? 'Cari tertuju' : ''
-                    "
-                    class="flex-1 min-w-[180px] outline-none text-xs dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
-                  />
-                </div>
-
-                <div
-                  v-if="openNewTertuju"
-                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-auto"
-                >
-                  <div
-                    v-if="loadingTertuju"
-                    class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    Memuat data...
-                  </div>
-
-                  <div
-                    v-if="!loadingTertuju && filteredTertujuList.length === 0"
-                    class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    Data tidak ditemukan
-                  </div>
-
-                  <button
-                    v-for="item in filteredTertujuList"
-                    :key="item.position"
-                    class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
-                    @click.prevent="selectNewTertuju(item)"
-                  >
-                    <div
-                      class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
-                    >
-                      {{ item.position_text }}
-                    </div>
-
-                    <div class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ item.persnum_person_text }}
-                    </div>
-
-                    <div class="text-[9px] text-gray-400 dark:text-gray-500">
-                      {{ item.organization_parent_text }}
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-semibold dark:text-gray-200">
-                File <span class="text-red-500">*</span>
-              </label>
-
-              <!-- Upload Box -->
-              <label
-                class="group cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-              >
-                <Upload
-                  class="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-primary-400"
-                />
-
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  Klik untuk upload atau
-                  <span class="text-primary-500 font-medium">pilih file</span>
-                </p>
-
                 <input
-                  type="file"
-                  class="hidden"
-                  @change="handleFileChange"
-                  accept=".pdf,application/pdf"
+                  :value="newDelegasi.asal_naskah_label || searchAsalNaskah"
+                  @input="searchAsalNaskah = $event.target.value"
+                  @focus="openNewAsalNaskah = true"
+                  placeholder="Cari asal naskah"
+                  class="flex-1 outline-none text-sm dark:bg-gray-700 dark:text-gray-200"
+                  :class="
+                    newDelegasi.asal_naskah_label
+                      ? 'text-gray-700 dark:text-gray-200'
+                      : 'text-gray-700 dark:text-gray-500'
+                  "
                 />
-              </label>
 
-              <!-- File List -->
-              <div v-if="filesRef.length" class="mt-2 space-y-2">
-                <div
-                  v-for="(file, index) in filesRef"
-                  :key="index"
-                  class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
+                <!-- CLEAR -->
+                <button
+                  v-if="newDelegasi.asal_naskah_label"
+                  type="button"
+                  class="text-red-400 text-xs ml-2"
+                  @click.stop="
+                    newDelegasi.asal_naskah = null;
+                    newDelegasi.asal_naskah_label = '';
+                    searchAsalNaskah = '';
+                  "
                 >
-                  <div class="flex items-center gap-2">
-                    <FileText class="w-4 h-4 text-primary-400" />
-                    <div class="flex flex-col">
-                      <span
-                        class="text-xs font-medium truncate max-w-[220px] dark:text-gray-200"
-                      >
-                        {{ file.name }}
-                      </span>
-                      <span
-                        class="text-[10px] text-gray-400 dark:text-gray-500"
-                      >
-                        {{ (file.size / 1024).toFixed(1) }} KB
-                      </span>
-                    </div>
-                  </div>
+                  ✕
+                </button>
+              </div>
 
-                  <button
-                    type="button"
-                    class="text-red-400 hover:text-red-600"
-                    @click="filesRef.splice(index, 1)"
-                  >
-                    <X class="w-4 h-4" />
-                  </button>
+              <!-- DROPDOWN -->
+              <div
+                v-if="openNewAsalNaskah"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-60 overflow-auto"
+              >
+                <div
+                  v-if="loadingAsalNaskah"
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  Memuat data...
+                </div>
+
+                <button
+                  v-for="item in filteredAsalNaskahList"
+                  :key="item.id"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs dark:text-gray-200"
+                  @click.prevent="selectNewAsalNaskah(item)"
+                >
+                  {{ item.nama }}
+                </button>
+
+                <div
+                  v-if="
+                    !loadingAsalNaskah && filteredAsalNaskahList.length === 0
+                  "
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  Data tidak ditemukan
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="flex flex-wrap flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Perihal <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="newDelegasi.perihal"
+              type="text"
+              class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+              placeholder="Masukan perihal"
+            />
+          </div>
+
+          <div class="flex flex-wrap flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Lampiran <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              :value="lampiranText"
+              type="text"
+              readonly
+              class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+              placeholder="0 Lampiran"
+            />
+          </div>
+
+          <div class="flex flex-wrap flex-col">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              Tertuju <span class="text-red-500">*</span>
+            </Heading>
+
+            <div class="relative mt-1 dropdown-input" data-custom-dropdown>
+              <div
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+                @click.stop="openNewTertuju = true"
+              >
+                <!-- CHIP -->
+                <span
+                  v-for="t in newDelegasi.tertuju"
+                  :key="t.position"
+                  class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                >
+                  <span
+                    class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
+                  >
+                    {{ t.position_text }}
+                  </span>
+                  <span class="text-[10px] text-gray-800 dark:text-gray-300">
+                    {{ t.persnum_person_text }}
+                  </span>
+                  <span class="text-[9px] text-gray-400 dark:text-gray-500">
+                    {{ t.organization_parent_text }}
+                  </span>
+
+                  <button
+                    type="button"
+                    class="text-red-500 text-[10px] self-end"
+                    @click.stop="removeTertuju(t.position)"
+                  >
+                    ✕
+                  </button>
+                </span>
+
+                <!-- INPUT SEARCH (INI INTINYA) -->
+                <input
+                  v-model="searchTertuju"
+                  @focus="openNewTertuju = true"
+                  :placeholder="
+                    newDelegasi.tertuju.length === 0 ? 'Cari tertuju' : ''
+                  "
+                  class="flex-1 min-w-[180px] outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                />
+              </div>
+
+              <div
+                v-if="openNewTertuju"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-auto"
+              >
+                <div
+                  v-if="loadingTertuju"
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  Memuat data...
+                </div>
+
+                <div
+                  v-if="!loadingTertuju && filteredTertujuList.length === 0"
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  Data tidak ditemukan
+                </div>
+
+                <button
+                  v-for="item in filteredTertujuList"
+                  :key="item.position"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
+                  @click.prevent="selectNewTertuju(item)"
+                >
+                  <div
+                    class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
+                  >
+                    {{ item.position_text }}
+                  </div>
+
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
+                    {{ item.persnum_person_text }}
+                  </div>
+
+                  <div class="text-[9px] text-gray-400 dark:text-gray-500">
+                    {{ item.organization_parent_text }}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
+            >
+              File <span class="text-red-500">*</span>
+            </Heading>
+
+            <!-- Upload Box -->
+            <label
+              class="group cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+            >
+              <Upload
+                class="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-primary-400"
+              />
+
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                Klik untuk upload atau
+                <span class="text-primary-500 font-medium">pilih file</span>
+              </p>
+
+              <input
+                type="file"
+                class="hidden"
+                @change="handleFileChange"
+                accept=".pdf,application/pdf"
+              />
+            </label>
+
+            <!-- File List -->
+            <div v-if="filesRef.length" class="mt-2 space-y-2">
+              <div
+                v-for="(file, index) in filesRef"
+                :key="index"
+                class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
+              >
+                <div class="flex items-center gap-2">
+                  <FileText class="w-4 h-4 text-primary-400" />
+                  <div class="flex flex-col">
+                    <span
+                      class="text-xs font-medium truncate max-w-[220px] dark:text-gray-200"
+                    >
+                      {{ file.name }}
+                    </span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500">
+                      {{ (file.size / 1024).toFixed(1) }} KB
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="text-red-400 hover:text-red-600"
+                  @click="filesRef.splice(index, 1)"
+                >
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </Modal>
-    </Teleport>
-  </div>
+      </div>
+    </Modal>
+  </Teleport>
 </template>
 
 <style scoped>

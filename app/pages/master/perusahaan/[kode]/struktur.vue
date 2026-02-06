@@ -1,20 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto px-4 py-6">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Struktur Organisasi</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+            Struktur Organisasi
+          </h1>
           <!-- Breadcrumb -->
-          <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
+          <nav
+            class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400"
+          >
             <NuxtLink
               to="/master/perusahaan"
-              class="text-gray-500 font-medium hover:text-primary transition-colors text-xs"
+              class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
             >
               Master Perusahaan
             </NuxtLink>
-            <span class="mx-1.5 text-gray-400 text-xs">/</span>
-            <span class="text-primary-400 font-semibold text-xs">
+            <span class="mx-1.5 text-gray-400 dark:text-gray-500 text-xs"
+              >/</span
+            >
+            <span
+              class="text-primary-400 dark:text-primary-300 font-semibold text-xs"
+            >
               Struktur Organisasi
             </span>
           </nav>
@@ -32,20 +40,20 @@
       <div class="mb-6">
         <div class="relative max-w-6xl">
           <Search
-            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="searchQuery"
             @input="handleSearch"
             placeholder="Cari unit, posisi, atau anggota..."
-            class="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-200 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+            class="w-full pl-12 pr-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
           />
           <button
             v-if="searchQuery"
             @click="clearSearch"
-            class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+            class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
           >
-            <X class="w-4 h-4 text-gray-400" />
+            <X class="w-4 h-4 text-gray-400 dark:text-gray-500" />
           </button>
         </div>
 
@@ -58,48 +66,61 @@
           <div class="flex flex-wrap items-center gap-4">
             <div
               v-if="searchResults.organizations.length > 0"
-              class="flex items-center gap-2 px-3 py-1.5 bg-primary-50 border border-primary-200 rounded-lg"
+              class="flex items-center gap-2 px-3 py-1.5 bg-primary-50 dark:bg-primary border border-primary-200 dark:border-primary-800 rounded-lg"
             >
-              <Building class="w-4 h-4 text-primary-600" />
+              <Building
+                class="w-4 h-4 text-primary-600 dark:text-primary-400"
+              />
               <span class="text-sm">
-                <span class="font-semibold text-primary-700">{{
-                  searchResults.organizations.length
-                }}</span>
-                <span class="text-primary-600"> Unit</span>
+                <span
+                  class="font-semibold text-primary-700 dark:text-primary-300"
+                  >{{ searchResults.organizations.length }}</span
+                >
+                <span class="text-primary-600 dark:text-primary-400">
+                  Unit</span
+                >
               </span>
             </div>
 
             <div
               v-if="searchResults.positions.length > 0"
-              class="flex items-center gap-2 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-lg"
+              class="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg"
             >
-              <User class="w-4 h-4 text-orange-600" />
+              <User class="w-4 h-4 text-orange-600 dark:text-orange-400" />
               <span class="text-sm">
-                <span class="font-semibold text-orange-700">{{
-                  searchResults.positions.length
-                }}</span>
-                <span class="text-orange-600"> Posisi</span>
+                <span
+                  class="font-semibold text-orange-700 dark:text-orange-300"
+                  >{{ searchResults.positions.length }}</span
+                >
+                <span class="text-orange-600 dark:text-orange-400">
+                  Posisi</span
+                >
               </span>
             </div>
 
             <div
               v-if="searchResults.persons.length > 0"
-              class="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg"
+              class="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
             >
-              <Users class="w-4 h-4 text-green-600" />
+              <Users class="w-4 h-4 text-green-600 dark:text-green-400" />
               <span class="text-sm">
-                <span class="font-semibold text-green-700">{{
-                  searchResults.persons.length
-                }}</span>
-                <span class="text-green-600"> Anggota</span>
+                <span
+                  class="font-semibold text-green-700 dark:text-green-300"
+                  >{{ searchResults.persons.length }}</span
+                >
+                <span class="text-green-600 dark:text-green-400"> Anggota</span>
               </span>
             </div>
 
-            <p v-if="totalResults > 0" class="text-sm text-gray-600 ml-auto">
+            <p
+              v-if="totalResults > 0"
+              class="text-sm text-gray-600 dark:text-gray-400 ml-auto"
+            >
               Total
-              <span class="font-semibold text-primary-600">{{
-                totalResults
-              }}</span>
+              <span
+                class="font-semibold text-primary-600 dark:text-primary-400"
+                >{{ totalResults }}</span
+              >
               hasil untuk "
               <span class="font-medium">{{ searchQuery }}</span
               >"
@@ -109,10 +130,10 @@
           <!-- No Results -->
           <div
             v-if="totalResults === 0"
-            class="flex items-center gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"
+            class="flex items-center gap-2 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
           >
-            <AlertCircle class="w-5 h-5 text-gray-400" />
-            <p class="text-sm text-gray-600">
+            <AlertCircle class="w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               Tidak ada hasil untuk "{{ searchQuery }}"
             </p>
           </div>
@@ -123,9 +144,9 @@
           class="mt-3 flex items-center gap-2"
         >
           <div
-            class="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"
+            class="w-4 h-4 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin"
           ></div>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
             {{ loadingSearch ? "Mencari..." : "Membuka struktur..." }}
           </p>
         </div>
@@ -133,11 +154,11 @@
 
       <!-- Organization Tree Card -->
       <div
-        class="bg-white shadow-xl border border-gray-200 rounded-2xl overflow-hidden"
+        class="bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden"
       >
         <!-- Company Header -->
         <div
-          class="bg-gradient-to-r from-primary to-primary-600 text-white px-6 py-5"
+          class="bg-gradient-to-r from-primary to-primary-600 dark:from-primary-700 dark:to-primary-800 text-white px-6 py-5"
           v-if="company"
         >
           <div class="flex items-center justify-between">
@@ -193,8 +214,12 @@
         <!-- Organization Tree -->
         <div v-if="companyExpanded" class="p-8" ref="treeContainer">
           <div v-if="displayTree.length === 0" class="text-center py-12">
-            <Building class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p class="text-gray-500 text-lg">Belum ada struktur organisasi</p>
+            <Building
+              class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+            />
+            <p class="text-gray-500 dark:text-gray-400 text-lg">
+              Belum ada struktur organisasi
+            </p>
             <button
               @click="openAddUnitModal(null, 'company')"
               class="mt-4 flex items-center gap-2 mx-auto px-6 py-3 bg-primary hover:bg-primary-700 text-white rounded-lg transition-colors"
@@ -764,6 +789,7 @@ const route = useRoute();
 
 const companyExpanded = ref(true);
 const expandedNodes = ref<Record<string, boolean>>({});
+const previousExpandedState = ref<Record<string, boolean>>({});
 
 const hoveredNode = ref<string | null>(null);
 const editingNode = ref<any>(null);
@@ -863,13 +889,8 @@ let searchTimeout: any = null;
 
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) {
-    // Reset ke state awal
-    resetTreeState();
-    searchResults.value = {
-      organizations: [],
-      positions: [],
-      persons: [],
-    };
+    // Reset ke state sebelum search
+    clearSearch();
     return;
   }
 
@@ -880,17 +901,39 @@ const handleSearch = async () => {
 };
 
 const resetTreeState = () => {
-  // Collapse semua nodes
+  // Simpan state expanded saat ini sebelum collapse
+  previousExpandedState.value = { ...expandedNodes.value };
+
+  // Collapse SEMUA nodes
   expandedNodes.value = {};
   highlightNodeId.value = null;
+
+  // Tutup company tree juga
+  companyExpanded.value = false;
+};
+
+const restoreTreeState = () => {
+  // Kembalikan ke state sebelum search
+  expandedNodes.value = { ...previousExpandedState.value };
+  highlightNodeId.value = null;
+
+  // Buka kembali company tree
+  companyExpanded.value = true;
 };
 
 const performSearch = async () => {
   if (!company.value?.kode || !searchQuery.value.trim()) return;
 
   try {
+    // Simpan state hanya sekali di awal search pertama
+    if (Object.keys(previousExpandedState.value).length === 0) {
+      previousExpandedState.value = { ...expandedNodes.value };
+    }
+
     // Reset state sebelum search baru
-    resetTreeState();
+    expandedNodes.value = {};
+    highlightNodeId.value = null;
+    companyExpanded.value = false;
 
     loadingSearch.value = true;
 
@@ -911,14 +954,26 @@ const performSearch = async () => {
 
     // Auto-expand nodes yang ditemukan
     if (totalResults.value > 0) {
+      // Buka company tree dulu
+      companyExpanded.value = true;
+
+      // Wait untuk company tree terbuka
+      await nextTick();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       loadingExpand.value = true;
       await autoExpandSearchResults();
       loadingExpand.value = false;
 
-      // Jika hanya 1 hasil, scroll ke item tersebut
-      if (totalResults.value === 1) {
-        await scrollToSingleResult();
-      }
+      // Wait untuk semua tree ter-expand
+      await nextTick();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Scroll ke hasil pertama yang ditemukan
+      await scrollToFirstResult();
+    } else {
+      // Jika tidak ada hasil, tutup tree
+      companyExpanded.value = false;
     }
   } catch (err) {
     console.error("❌ Search error:", err);
@@ -933,48 +988,85 @@ const performSearch = async () => {
   }
 };
 
-const scrollToSingleResult = async () => {
-  // Wait for DOM to be fully updated
+const scrollToFirstResult = async () => {
+  // Wait for DOM to be fully updated dengan delay lebih lama
   await nextTick();
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // Get the single result ID
-  let singleResultId: string | null = null;
+  // Get the first result ID (prioritas: person -> position -> organization)
+  // Karena person ada di paling dalam tree, jadi scroll ke person dulu
+  let firstResultId: string | null = null;
 
-  if (searchResults.value.organizations.length === 1) {
-    singleResultId = searchResults.value.organizations[0].id;
-  } else if (searchResults.value.positions.length === 1) {
-    singleResultId = searchResults.value.positions[0].id;
-  } else if (searchResults.value.persons.length === 1) {
-    singleResultId = searchResults.value.persons[0].id;
+  if (searchResults.value.persons.length > 0) {
+    firstResultId = searchResults.value.persons[0].id;
+    console.log("🔍 Scrolling to person:", firstResultId);
+  } else if (searchResults.value.positions.length > 0) {
+    firstResultId = searchResults.value.positions[0].id;
+    console.log("🔍 Scrolling to position:", firstResultId);
+  } else if (searchResults.value.organizations.length > 0) {
+    firstResultId = searchResults.value.organizations[0].id;
+    console.log("🔍 Scrolling to organization:", firstResultId);
   }
 
-  console.log("🔍 Scrolling to single result:", singleResultId);
+  if (firstResultId) {
+    highlightNodeId.value = firstResultId;
 
-  if (singleResultId) {
-    highlightNodeId.value = singleResultId;
-
-    // Wait again for highlight to render
+    // Wait again for highlight to render dengan delay lebih lama
     await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Find element with attribute selector
-    const element = document.querySelector(
-      `[data-node-id="${singleResultId}"]`,
-    );
+    const element = document.querySelector(`[data-node-id="${firstResultId}"]`);
 
     console.log("📍 Element found:", element);
 
     if (element) {
-      element.scrollIntoView({
+      // Scroll dengan offset dari top
+      const offset = 200; // Offset dari top untuk visibility yang baik
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      console.log("📍 Current scroll:", window.pageYOffset);
+      console.log("📍 Element position:", elementPosition);
+      console.log("📍 Scrolling to position:", offsetPosition);
+
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
         behavior: "smooth",
-        block: "center",
-        inline: "nearest",
       });
 
       console.log("✅ Scrolled to element");
+
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        highlightNodeId.value = null;
+      }, 3000);
     } else {
-      console.warn("⚠️ Element not found in DOM");
+      console.warn("⚠️ Element not found in DOM after 800ms delay");
+
+      // Try one more time after longer delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const retryElement = document.querySelector(
+        `[data-node-id="${firstResultId}"]`,
+      );
+
+      if (retryElement) {
+        console.log("✅ Found element on retry");
+        const offset = 200;
+        const elementPosition = retryElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: "smooth",
+        });
+
+        setTimeout(() => {
+          highlightNodeId.value = null;
+        }, 3000);
+      } else {
+        console.error("❌ Element still not found after retry");
+      }
     }
   }
 };
@@ -1150,8 +1242,27 @@ const expandParentNodes = async (nodeId: string) => {
 };
 
 const clearSearch = () => {
+  console.log("🧹 Clearing search...");
+
   searchQuery.value = "";
-  resetTreeState();
+
+  // Restore tree state ke kondisi sebelum search
+  if (Object.keys(previousExpandedState.value).length > 0) {
+    expandedNodes.value = { ...previousExpandedState.value };
+    companyExpanded.value = true;
+    console.log("✅ Restored previous tree state");
+  } else {
+    // Jika tidak ada state sebelumnya, tutup semua
+    expandedNodes.value = {};
+    companyExpanded.value = true;
+    console.log("✅ Reset to default state (company open, all nodes closed)");
+  }
+
+  // Reset previous state untuk search berikutnya
+  previousExpandedState.value = {};
+
+  highlightNodeId.value = null;
+
   searchResults.value = {
     organizations: [],
     positions: [],

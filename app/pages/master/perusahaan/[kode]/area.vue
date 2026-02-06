@@ -1,16 +1,20 @@
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen pt-5 bg-gray-50 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Kelola Area</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            Kelola Area
+          </h1>
 
           <div class="mb-5">
-            <nav class="flex items-center gap-2 mt-2 text-sm text-gray-600">
+            <nav
+              class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400"
+            >
               <NuxtLink
                 to="/master/perusahaan"
-                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
+                class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >
                 Master Perusahaan
               </NuxtLink>
@@ -18,24 +22,25 @@
                 >/</span
               >
               <NuxtLink
-                to="/master/perusahaan/${route.params.kode}/struktur"
-                class="text-gray-500 font-medium hover:text-primary transition-colors text-xs transition-colors"
+                :to="`/master/perusahaan/${route.params.kode}/struktur`"
+                class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >
                 Struktur Organisasi
               </NuxtLink>
               <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
                 >/</span
               >
-              <span class="text-primary-400 font-semibold text-xs"
+              <span
+                class="text-primary-400 dark:text-primary-300 font-semibold text-xs"
                 >Kelola Area</span
               >
             </nav>
           </div>
           <div
-            class="flex gap-3 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+            class="flex gap-3 mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl"
           >
-            <Building2 class="w-4 h-4 text-blue-900" />
-            <p class="text-sm text-blue-900">
+            <Building2 class="w-4 h-4 text-blue-900 dark:text-blue-300" />
+            <p class="text-sm text-blue-900 dark:text-blue-100">
               Perusahaan:
               <span class="font-bold">{{ company?.namaPanjang }}</span>
             </p>
@@ -43,7 +48,7 @@
         </div>
         <button
           @click="openAddAreaModal"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-700 hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
           Tambah {{ activeTab === "area" ? "Area" : "Sub Area" }}
@@ -52,22 +57,24 @@
 
       <!-- Card -->
       <div
-        class="bg-white rounded-2xl mt-5 shadow-lg border border-gray-100 overflow-hidden"
+        class="bg-white dark:bg-gray-800 rounded-2xl mt-5 shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden"
       >
         <!-- Tab & Actions -->
         <div
-          class="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white"
+          class="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800"
         >
           <div class="flex items-center justify-between gap-4">
             <!-- Tabs -->
-            <div class="flex bg-gray-100 rounded-xl p-1.5 gap-2">
+            <div
+              class="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1.5 gap-2"
+            >
               <button
                 @click="activeTab = 'area'"
                 :class="[
                   'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
                   activeTab === 'area'
                     ? 'bg-primary text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-900',
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
                 ]"
               >
                 <MapPin class="w-4 h-4" />
@@ -79,7 +86,7 @@
                   'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
                   activeTab === 'subArea'
                     ? 'bg-primary text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-900',
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
                 ]"
               >
                 <Map class="w-4 h-4" />
@@ -92,7 +99,7 @@
               <!-- Rows dropdown -->
               <select
                 v-model="rowsPerPage"
-                class="border text-sm border-gray-200 bg-white rounded-md px-3 py-2"
+                class="border text-sm border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2"
               >
                 <option v-for="n in rowsChoices" :key="n" :value="n">
                   {{ n }}
@@ -102,12 +109,12 @@
               <!-- Search -->
               <div class="relative flex-1 w-full md:w-160">
                 <Search
-                  class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                 />
                 <input
                   v-model="searchQuery"
                   placeholder="Cari..."
-                  class="w-full pl-10 pr-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -118,7 +125,7 @@
         <div v-if="activeTab === 'area'" class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="bg-primary text-white">
+              <tr class="bg-primary dark:bg-primary-700 text-white">
                 <th class="px-6 py-4 text-left text-sm font-semibold w-12"></th>
                 <th class="px-0 py-4 text-left text-sm font-semibold">Kode</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Nama</th>
@@ -143,46 +150,57 @@
               <template v-for="(area, idx) in paginatedAreas" :key="area.kode">
                 <tr
                   :class="[
-                    'border-b border-gray-100 hover:bg-blue-50 transition-colors',
-                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                    'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors',
+                    idx % 2 === 0
+                      ? 'bg-white dark:bg-gray-800'
+                      : 'bg-white dark:bg-gray-800',
                   ]"
                 >
                   <td class="px-2 py-4">
                     <button
                       @click="toggleAreaExpand(area.kode)"
-                      class="p-1 hover:bg-blue-100 rounded-lg transition-colors"
+                      class="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-lg transition-colors"
                     >
                       <ChevronDown
                         v-if="expandedAreas[area.kode]"
-                        class="w-5 h-5 text-blue-600"
+                        class="w-5 h-5 text-blue-600 dark:text-blue-400"
                       />
-                      <ChevronRight v-else class="w-5 h-5 text-gray-400" />
+                      <ChevronRight
+                        v-else
+                        class="w-5 h-5 text-gray-400 dark:text-gray-500"
+                      />
                     </button>
                   </td>
                   <td class="px-1 py-3">
                     <span
-                      class="flex text-nowrap items-center text-sm font-semibold"
+                      class="flex text-nowrap items-center text-sm font-semibold text-gray-900 dark:text-white"
                     >
                       {{ area.kode }}
                     </span>
                   </td>
                   <td
-                    class="px-6 py-4 text-nowrap text-sm font-medium text-gray-900"
+                    class="px-6 py-4 text-nowrap text-sm font-medium text-gray-900 dark:text-white"
                   >
                     {{ area.nama }}
                   </td>
-                  <td class="px-6 py-4 text-nowrap text-sm text-gray-700">
+                  <td
+                    class="px-6 py-4 text-nowrap text-sm text-gray-700 dark:text-gray-300"
+                  >
                     {{ area.alamat }}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-700">
+                  <td
+                    class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                  >
                     {{ area.mulai }}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-700">
+                  <td
+                    class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                  >
                     {{ area.berakhir }}
                   </td>
                   <td class="px-6 py-4">
                     <span
-                      class="flex text-nowrap items-center text-xs font-medium"
+                      class="flex text-nowrap items-center text-xs font-medium text-gray-700 dark:text-gray-300"
                     >
                       {{ area.subCount }} sub areas
                     </span>
@@ -191,18 +209,18 @@
                     <div class="flex items-center justify-center gap-2">
                       <button
                         @click="openEditModal(area)"
-                        class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
+                        class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
                       >
                         <Pencil
-                          class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
+                          class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-300"
                         />
                       </button>
                       <button
                         @click="openDeleteConfirm(area)"
-                        class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
+                        class="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
                       >
                         <Trash2
-                          class="w-4 h-4 text-red-600 group-hover:text-red-600"
+                          class="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300"
                         />
                       </button>
                     </div>
@@ -211,11 +229,16 @@
 
                 <!-- Expanded Sub Areas -->
                 <tr v-if="expandedAreas[area.kode]">
-                  <td colspan="8" class="px-6 py-4 bg-gray-100">
+                  <td
+                    colspan="8"
+                    class="px-6 py-4 bg-gray-100 dark:bg-gray-900/50"
+                  >
                     <div class="ml-12">
                       <div class="flex items-center gap-2 mb-3">
-                        <Map class="w-4 h-4 text-blue-600" />
-                        <h4 class="text-sm font-bold text-gray-900">
+                        <Map class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <h4
+                          class="text-sm font-bold text-gray-900 dark:text-white"
+                        >
                           Sub Areas ({{ getSubAreasForArea(area.kode).length }})
                         </h4>
                       </div>
@@ -223,51 +246,59 @@
                         <div
                           v-for="sub in getSubAreasForArea(area.kode)"
                           :key="sub.kode"
-                          class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                          class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
                         >
                           <div class="grid grid-cols-5 gap-4 items-center">
                             <div class="ml-7">
-                              <span class="text-xs text-gray-500 block mb-1"
+                              <span
+                                class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
                                 >Kode</span
                               >
                               <span
-                                class="inline-flex items-center px-5 py-2 rounded-md bg-indigo-100 text-indigo-700 text-xs font-semibold"
+                                class="inline-flex items-center px-5 py-2 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold"
                               >
                                 {{ sub.kode }}
                               </span>
                             </div>
                             <div>
-                              <span class="text-xs text-gray-500 block mb-1"
+                              <span
+                                class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
                                 >Nama</span
                               >
                               <span
-                                class="text-sm font-semibold text-gray-900"
+                                class="text-sm font-semibold text-gray-900 dark:text-white"
                                 >{{ sub.nama }}</span
                               >
                             </div>
                             <div>
-                              <span class="text-xs text-gray-500 block mb-1"
+                              <span
+                                class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
                                 >Alamat</span
                               >
-                              <span class="text-sm text-gray-700">{{
-                                sub.alamat
-                              }}</span>
+                              <span
+                                class="text-sm text-gray-700 dark:text-gray-300"
+                                >{{ sub.alamat }}</span
+                              >
                             </div>
                             <div>
-                              <span class="text-xs text-gray-500 block mb-1"
+                              <span
+                                class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
                                 >Tanggal Mulai</span
                               >
-                              <span class="text-sm text-gray-700">{{
-                                sub.mulai
-                              }}</span>
+                              <span
+                                class="text-sm text-gray-700 dark:text-gray-300"
+                                >{{ sub.mulai }}</span
+                              >
                             </div>
                             <div>
-                              <span class="text-xs text-gray-500 block mb-1"
+                              <span
+                                class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
                                 >Tanggal Berakhir</span
                               >
-                              <span class="text-sm text-gray-700">{{
-                                sub.berakhir
-                              }}</span>
+                              <span
+                                class="text-sm text-gray-700 dark:text-gray-300"
+                                >{{ sub.berakhir }}</span
+                              >
                             </div>
                           </div>
                         </div>
@@ -282,9 +313,9 @@
           <!-- PAGINATION AREA -->
           <div
             v-if="filteredAreas.length > 0"
-            class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+            class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
           >
-            <div class="text-xs text-gray-600">
+            <div class="text-xs text-gray-600 dark:text-gray-400">
               Menampilkan {{ paginatedAreas.length }} dari
               {{ filteredAreas.length }} data
             </div>
@@ -297,8 +328,8 @@
                 :class="[
                   'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                   currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
                 <svg
@@ -322,14 +353,14 @@
                 <button
                   v-if="paginationPages[0] > 1"
                   @click="currentPage = 1"
-                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
                 >
                   1
                 </button>
 
                 <span
                   v-if="paginationPages[0] > 2"
-                  class="px-2 text-gray-400 text-sm"
+                  class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >
                   ...
                 </span>
@@ -342,7 +373,7 @@
                     'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                     currentPage === page
                       ? 'bg-primary text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
                   ]"
                 >
                   {{ page }}
@@ -352,7 +383,7 @@
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages - 1
                   "
-                  class="px-2 text-gray-400 text-sm"
+                  class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >
                   ...
                 </span>
@@ -362,7 +393,7 @@
                     paginationPages[paginationPages.length - 1] < totalPages
                   "
                   @click="currentPage = totalPages"
-                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
                 >
                   {{ totalPages }}
                 </button>
@@ -375,8 +406,8 @@
                 :class="[
                   'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                   currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
                 Next
@@ -402,7 +433,7 @@
         <div v-if="activeTab === 'subArea'" class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="bg-primary text-white">
+              <tr class="bg-primary dark:bg-primary-700 text-white">
                 <th class="px-6 py-4 text-left text-sm font-semibold">Kode</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Nama</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Area</th>
@@ -429,51 +460,57 @@
                 v-for="(sub, idx) in paginatedSubAreas"
                 :key="sub.kode"
                 :class="[
-                  'border-b border-gray-100 hover:bg-blue-50 transition-colors',
-                  idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                  'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors',
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800'
+                    : 'bg-white dark:bg-gray-800',
                 ]"
               >
                 <td class="px-6 py-4">
                   <span
-                    class="inline-flex items-center text-sm font-semibold"
+                    class="inline-flex items-center text-sm font-semibold text-gray-900 dark:text-white"
                     >{{ sub.kode }}</span
                   >
                 </td>
-                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                <td
+                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white"
+                >
                   {{ sub.nama }}
                 </td>
                 <td class="px-6 py-4">
                   <span
-                    class="flex text-nowrap items-center text-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold"
+                    class="flex text-nowrap items-center text-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold"
                   >
                     {{ sub.areaName }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ sub.alamat }}
                 </td>
-                <td class="text-nowrap flex px-6 py-4 text-sm text-gray-700">
+                <td
+                  class="text-nowrap flex px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                >
                   {{ sub.mulai }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ sub.berakhir }}
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
                     <button
                       @click="openEditModal(sub)"
-                      class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
                     >
                       <Pencil
-                        class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
+                        class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-300"
                       />
                     </button>
                     <button
                       @click="openDeleteConfirm(sub)"
-                      class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
                     >
                       <Trash2
-                        class="w-4 h-4 text-red-600 group-hover:text-red-600"
+                        class="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300"
                       />
                     </button>
                   </div>
@@ -485,9 +522,9 @@
           <!-- PAGINATION SUB AREA -->
           <div
             v-if="filteredSubAreas.length > 0"
-            class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+            class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
           >
-            <div class="text-xs text-gray-600">
+            <div class="text-xs text-gray-600 dark:text-gray-400">
               Menampilkan {{ paginatedSubAreas.length }} dari
               {{ filteredSubAreas.length }} data
             </div>
@@ -500,8 +537,8 @@
                 :class="[
                   'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                   currentPageSub === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
                 <svg
@@ -525,14 +562,14 @@
                 <button
                   v-if="paginationPagesSub[0] > 1"
                   @click="currentPageSub = 1"
-                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
                 >
                   1
                 </button>
 
                 <span
                   v-if="paginationPagesSub[0] > 2"
-                  class="px-2 text-gray-400 text-sm"
+                  class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >
                   ...
                 </span>
@@ -545,7 +582,7 @@
                     'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                     currentPageSub === page
                       ? 'bg-primary text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
                   ]"
                 >
                   {{ page }}
@@ -556,7 +593,7 @@
                     paginationPagesSub[paginationPagesSub.length - 1] <
                     totalPagesSub - 1
                   "
-                  class="px-2 text-gray-400 text-sm"
+                  class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >
                   ...
                 </span>
@@ -567,7 +604,7 @@
                     totalPagesSub
                   "
                   @click="currentPageSub = totalPagesSub"
-                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+                  class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
                 >
                   {{ totalPagesSub }}
                 </button>
@@ -582,8 +619,8 @@
                 :class="[
                   'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                   currentPageSub === totalPagesSub
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
                 Next
@@ -612,7 +649,7 @@
       <Modal v-model="openAddArea" size="xl" @save="submitArea">
         <template #title>
           <div class="p-3 ml-2">
-            <h3 class="text-xl font-bold">
+            <h3 class="text-xl font-bold dark:text-white">
               {{ isEditing ? "Edit" : "Tambah" }}
               {{ activeTab === "area" ? "Area" : "Sub Area" }}
             </h3>
@@ -621,7 +658,7 @@
 
         <div class="space-y-4 p-1">
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
               Nama {{ activeTab === "area" ? "Area" : "Sub Area" }}
               <span class="text-red-500">*</span>
             </Heading>
@@ -629,12 +666,12 @@
               v-model="formArea.nama"
               type="text"
               placeholder="Contoh: KANTOR PUSAT"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
               Kode {{ activeTab === "area" ? "Area" : "Sub Area" }}
               <span class="text-red-500">*</span>
             </Heading>
@@ -642,56 +679,121 @@
               v-model="formArea.kode"
               type="text"
               placeholder="Contoh: AREA-001"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
-          <div v-if="activeTab === 'subArea'">
-            <Heading variant="heading11m" class="text-xs">
+          <div v-if="activeTab === 'subArea'" class="area-dropdown-container">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
               Area <span class="text-red-500">*</span>
             </Heading>
-            <select
-              v-model="formArea.area"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Area</option>
-              <option v-for="area in areas" :key="area.kode" :value="area.kode">
-                {{ area.nama }}
-              </option>
-            </select>
+
+            <!-- Dropdown Toggle -->
+            <div class="relative mt-1">
+              <button
+                type="button"
+                @click="showAreaDropdown = !showAreaDropdown"
+                class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <span
+                  :class="
+                    formArea.area
+                      ? 'text-gray-900 dark:text-white'
+                      : 'text-gray-400 dark:text-gray-500'
+                  "
+                >
+                  {{ getSelectedAreaText() || "Pilih Area" }}
+                </span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500" />
+              </button>
+
+              <!-- Dropdown Panel -->
+              <div
+                v-if="showAreaDropdown"
+                class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
+                @click.stop
+              >
+                <!-- Search Inside Dropdown -->
+                <div class="p-2 border-b border-gray-200 dark:border-gray-600">
+                  <div class="relative">
+                    <Search
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                    />
+                    <input
+                      v-model="areaSearchQuery"
+                      @input="filterAreas"
+                      placeholder="Cari area..."
+                      class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+
+                <!-- Options List -->
+                <div class="max-h-64 overflow-y-auto">
+                  <div
+                    v-for="area in filteredAreasDropdown"
+                    :key="area.kode"
+                    @click="selectArea(area)"
+                    :class="[
+                      'px-3 py-2 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors',
+                      formArea.area === area.kode
+                        ? 'bg-primary-100 dark:bg-primary-900/30 font-medium'
+                        : '',
+                    ]"
+                  >
+                    <p
+                      class="text-sm text-gray-900 dark:text-white font-medium"
+                    >
+                      {{ area.nama }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Kode: {{ area.kode }}
+                    </p>
+                  </div>
+
+                  <div
+                    v-if="filteredAreasDropdown.length === 0"
+                    class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                  >
+                    Tidak ada area ditemukan
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
               Alamat Lengkap <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="formArea.alamat"
               rows="3"
               placeholder="Masukkan alamat lengkap..."
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-300">
                 Tanggal Mulai <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formArea.mulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-300">
                 Tanggal Berakhir <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formArea.berakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>
@@ -715,7 +817,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   ChevronLeft,
   Building2,
@@ -759,6 +861,11 @@ const selectedItem = ref<any>(null);
 const isDeleting = ref(false);
 const isEditing = ref(false);
 
+// Area dropdown states
+const showAreaDropdown = ref(false);
+const areaSearchQuery = ref("");
+const filteredAreasDropdown = ref<any[]>([]);
+
 // Pagination
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -782,6 +889,28 @@ const company = ref<{
 const areas = ref<any[]>([]);
 const subAreas = ref<any[]>([]);
 
+// Handle click outside dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  if (showAreaDropdown.value) {
+    const isClickInside = target.closest(".area-dropdown-container");
+    if (!isClickInside) {
+      showAreaDropdown.value = false;
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+  fetchCompany();
+  fetchAreas();
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+
 const fetchAreas = async () => {
   try {
     const res = await getAreasByCompany(companyId.value);
@@ -795,6 +924,9 @@ const fetchAreas = async () => {
       berakhir: item.endDate,
       subCount: item.subAreasCount ?? 0,
     }));
+
+    // Initialize filtered areas for dropdown
+    filteredAreasDropdown.value = areas.value;
   } catch (error) {
     console.error("Gagal mengambil area", error);
   }
@@ -858,6 +990,36 @@ const fetchCompany = async () => {
   }
 };
 
+// Area dropdown functions
+const getSelectedAreaText = () => {
+  if (!formArea.value.area) return "";
+
+  const selected = areas.value.find((a) => a.kode === formArea.value.area);
+  return selected ? `${selected.nama} (${selected.kode})` : "";
+};
+
+const filterAreas = () => {
+  const query = areaSearchQuery.value.toLowerCase().trim();
+
+  if (!query) {
+    filteredAreasDropdown.value = areas.value;
+    return;
+  }
+
+  filteredAreasDropdown.value = areas.value.filter((area) => {
+    const kode = String(area.kode).toLowerCase();
+    const nama = (area.nama || "").toLowerCase();
+
+    return kode.includes(query) || nama.includes(query);
+  });
+};
+
+const selectArea = (area: any) => {
+  formArea.value.area = area.kode;
+  showAreaDropdown.value = false;
+  areaSearchQuery.value = "";
+};
+
 watch(activeTab, async (tab) => {
   if (tab === "subArea") {
     subAreas.value = [];
@@ -866,11 +1028,6 @@ watch(activeTab, async (tab) => {
   // Reset pagination when switching tabs
   currentPage.value = 1;
   currentPageSub.value = 1;
-});
-
-onMounted(() => {
-  fetchCompany();
-  fetchAreas();
 });
 
 const filteredAreas = computed(() => {
@@ -984,6 +1141,7 @@ const openAddAreaModal = () => {
     mulai: "",
     berakhir: "",
   };
+  areaSearchQuery.value = "";
   openAddArea.value = true;
 };
 
@@ -1000,6 +1158,7 @@ const openEditModal = (item: any) => {
     berakhir: item.berakhir,
   };
 
+  areaSearchQuery.value = "";
   openAddArea.value = true;
 };
 

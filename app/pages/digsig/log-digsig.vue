@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- GLOBAL ALERT (STICKY) -->
     <div
       v-if="showGlobalAlert"
@@ -28,7 +28,7 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="w-full p-6">
+    <div class="w-full">
       <!-- HEADER -->
       <div class="mb-6">
         <div

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+  <div class="space-y-4 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">

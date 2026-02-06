@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>

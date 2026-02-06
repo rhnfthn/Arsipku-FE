@@ -1,25 +1,25 @@
 <template>
-  <!-- MODAL FORM - z-index 8000 to be below toast (9000+) -->
+  <!-- MODAL FORM - z-index 8000, hidden when preview is open -->
   <transition name="fade-scale">
     <Modal
-      v-if="modelValue"
+      v-if="modelValue && !previewModal"
       :model-value="modelValue"
       :hide-default-footer="true"
       size="xl"
-      class="z-[9999]"
+      class="z-[8000]"
       @update:model-value="handleClose"
     >
       <template #title>
         <Heading
           variant="heading9b"
-          class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-gray-100"
+          class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100"
         >
           Tambah Usulan Penomoran
         </Heading>
       </template>
 
       <!-- FORM -->
-      <div class="px-5 flex flex-col gap-4 pb-4">
+      <div class="p-1 flex flex-col gap-4 pb-5">
         <!-- Tanggal Surat -->
         <div>
           <Heading
@@ -36,7 +36,7 @@
           />
         </div>
 
-        <!-- Klasifikasi -->
+        <!-- Klasifikasi - Show dropdown with data, then search inside -->
         <div>
           <Heading
             variant="heading11m"
@@ -45,37 +45,58 @@
             Klasifikasi <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="klasifikasiRef">
-            <input
-              v-model="klasifikasiSearch"
+            <!-- Selected value display -->
+            <button
               @click="toggleKlasifikasi"
-              @input="openKlasifikasi = true"
-              :placeholder="form.klasifikasiDisplay || 'Cari klasifikasi...'"
               :disabled="isLoadingKlasifikasi"
-              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-wait"
-            />
+              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              :class="{
+                'text-gray-400': !form.klasifikasiDisplay,
+                'text-gray-900 dark:text-gray-200': form.klasifikasiDisplay,
+              }"
+            >
+              {{ form.klasifikasiDisplay || "Pilih klasifikasi..." }}
+            </button>
+
+            <!-- Dropdown with search and data -->
             <div
-              v-if="openKlasifikasi && filteredKlasifikasi.length > 0"
-              class="absolute z-[8100] mt-1 w-full max-h-52 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
+              v-if="openKlasifikasi"
+              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
             >
-              <button
-                v-for="item in filteredKlasifikasi"
-                :key="item.code"
-                @click="selectKlasifikasi(item)"
-                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
-              >
-                {{ item.display }}
-              </button>
+              <!-- Search inside dropdown -->
+              <div class="p-2 border-b border-gray-200 dark:border-gray-700">
+                <input
+                  v-model="klasifikasiSearch"
+                  ref="klasifikasiInput"
+                  placeholder="Cari klasifikasi..."
+                  :disabled="isLoadingKlasifikasi"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+
+              <!-- Data list -->
+              <div class="max-h-52 overflow-y-auto">
+                <button
+                  v-for="item in filteredKlasifikasi"
+                  :key="item.code"
+                  @click="selectKlasifikasi(item)"
+                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
+                >
+                  {{ item.display }}
+                </button>
+
+                <p
+                  v-if="filteredKlasifikasi.length === 0"
+                  class="px-3 py-2 text-xs text-center text-gray-400"
+                >
+                  {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
+                </p>
+              </div>
             </div>
-            <p
-              v-if="openKlasifikasi && filteredKlasifikasi.length === 0"
-              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
-            >
-              {{ isLoadingKlasifikasi ? "Memuat..." : "Tidak ada hasil" }}
-            </p>
           </div>
         </div>
 
-        <!-- Jenis Naskah -->
+        <!-- Jenis Naskah - Show dropdown with data, then search inside -->
         <div>
           <Heading
             variant="heading11m"
@@ -83,23 +104,57 @@
           >
             Jenis Naskah <span class="text-red-500">*</span>
           </Heading>
-          <select
-            v-model="form.jenis"
-            @change="updateJenisDisplay"
-            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs dark:bg-gray-700 dark:text-gray-200"
-          >
-            <option disabled value="">Pilih jenis naskah</option>
-            <option
-              v-for="item in jenisOptions"
-              :key="item.code"
-              :value="item.code"
+          <div class="relative" ref="jenisRef">
+            <!-- Selected value display -->
+            <button
+              @click="toggleJenis"
+              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:text-gray-200"
+              :class="{
+                'text-gray-400': !form.jenisDisplay,
+                'text-gray-900 dark:text-gray-200': form.jenisDisplay,
+              }"
             >
-              {{ item.display }}
-            </option>
-          </select>
+              {{ form.jenisDisplay || "Pilih jenis naskah..." }}
+            </button>
+
+            <!-- Dropdown with search and data -->
+            <div
+              v-if="openJenis"
+              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
+            >
+              <!-- Search inside dropdown -->
+              <div class="p-2 border-b border-gray-200 dark:border-gray-700">
+                <input
+                  v-model="jenisSearch"
+                  ref="jenisInput"
+                  placeholder="Cari jenis naskah..."
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+
+              <!-- Data list -->
+              <div class="max-h-60 overflow-y-auto">
+                <button
+                  v-for="item in filteredJenis"
+                  :key="item.code"
+                  @click="selectJenis(item)"
+                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
+                >
+                  {{ item.display }}
+                </button>
+
+                <p
+                  v-if="filteredJenis.length === 0"
+                  class="px-3 py-2 text-xs text-center text-gray-400"
+                >
+                  Tidak ada hasil
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Penandatangan -->
+        <!-- Penandatangan - Show dropdown with data, then search inside -->
         <div>
           <Heading
             variant="heading11m"
@@ -108,35 +163,54 @@
             Penandatangan <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="penandatanganRef">
-            <input
-              v-model="penandatanganSearch"
+            <!-- Selected value display -->
+            <button
               @click="togglePenandatangan"
-              @input="openPenandatangan = true"
-              :placeholder="
-                form.penandatanganJabatan || 'Cari penandatangan...'
-              "
               :disabled="isLoadingPositions"
-              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait"
-            />
+              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              :class="{
+                'text-gray-400': !form.penandatanganJabatan,
+                'text-gray-900 dark:text-gray-200': form.penandatanganJabatan,
+              }"
+            >
+              {{ form.penandatanganJabatan || "Pilih penandatangan..." }}
+            </button>
+
+            <!-- Dropdown with search and data -->
             <div
-              v-if="openPenandatangan && filteredPenandatangan.length > 0"
-              class="absolute z-[8100] mt-1 w-full max-h-60 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
+              v-if="openPenandatangan"
+              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
             >
-              <button
-                v-for="item in filteredPenandatangan"
-                :key="item.position"
-                @click="selectPenandatangan(item)"
-                class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
-              >
-                {{ item.displayText }}
-              </button>
+              <!-- Search inside dropdown -->
+              <div class="p-2 border-b border-gray-200 dark:border-gray-700">
+                <input
+                  v-model="penandatanganSearch"
+                  ref="penandatanganInput"
+                  placeholder="Cari penandatangan..."
+                  :disabled="isLoadingPositions"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+
+              <!-- Data list -->
+              <div class="max-h-60 overflow-y-auto">
+                <button
+                  v-for="item in filteredPenandatangan"
+                  :key="item.position"
+                  @click="selectPenandatangan(item)"
+                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
+                >
+                  {{ item.displayText }}
+                </button>
+
+                <p
+                  v-if="filteredPenandatangan.length === 0"
+                  class="px-3 py-2 text-xs text-center text-gray-400"
+                >
+                  {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
+                </p>
+              </div>
             </div>
-            <p
-              v-if="openPenandatangan && filteredPenandatangan.length === 0"
-              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg px-3 py-2 text-xs text-center text-gray-400"
-            >
-              {{ isLoadingPositions ? "Memuat..." : "Tidak ada hasil" }}
-            </p>
           </div>
         </div>
 
@@ -202,7 +276,7 @@
             :disabled="
               isSubmitting || isLoadingKlasifikasi || isLoadingPositions
             "
-            class="flex-1 px-5 py-2 bg-primary text-white hover:bg-primary-800 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2"
+            class="flex-1 px-5 py-2 bg-primary text-white hover:bg-primary-800 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <svg
               v-if="isSubmitting"
@@ -232,7 +306,7 @@
     </Modal>
   </transition>
 
-  <!-- MODAL PRATINJAU - z-index 8200 to be below toast but above main modal -->
+  <!-- MODAL PRATINJAU - z-index 8200, only shown when preview is active -->
   <transition name="fade-scale">
     <Modal
       v-if="previewModal"
@@ -244,7 +318,9 @@
     >
       <template #title>
         <div class="flex justify-between items-center px-6 pt-4 pb-2">
-          <h2 class="text-lg font-semibold dark:text-gray-100">Pratinjau</h2>
+          <h2 class="text-lg font-semibold dark:text-gray-100">
+            Pratinjau Usulan
+          </h2>
         </div>
       </template>
 
@@ -259,39 +335,39 @@
         <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
           <Heading variant="10sb" class="dark:text-gray-200">Nama</Heading>
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            penandatanganNama || "-"
+            penandatanganNama || user?.nama || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200">Jabatan</Heading>
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.penandatanganJabatan
+            form.penandatanganJabatan || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200">Jenis</Heading>
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.jenisDisplay
+            form.jenisDisplay || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200"
             >Klasifikasi</Heading
           >
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.klasifikasiDisplay
+            form.klasifikasiDisplay || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200">Tanggal</Heading>
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            formatDate(tanggalString)
+            formatDate(tanggalString) || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200">Perihal</Heading>
           <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.perihal
+            form.perihal || "-"
           }}</Heading>
 
           <Heading variant="10sb" class="dark:text-gray-200">Jumlah</Heading>
           <Heading variant="11sb" class="dark:text-gray-200"
-            >{{ form.jumlah }} Nomor</Heading
+            >{{ form.jumlah || 0 }} Nomor</Heading
           >
 
           <Heading variant="10sb" class="dark:text-gray-200">Nomor</Heading>
@@ -303,8 +379,8 @@
                 {{ String(n).padStart(2, "0") }}.
               </span>
               <span class="tracking-widest">
-                {{ form.jenis }}....../O/00/LPPNPI/{{
-                  form.klasifikasi
+                {{ form.jenis || "..." }}....../O/00/LPPNPI/{{
+                  form.klasifikasi || "..."
                 }}/XII/2025
               </span>
             </div>
@@ -344,12 +420,32 @@
         kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
         arsip
       </div>
+
+      <template #footer>
+        <div
+          class="flex justify-end w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        >
+          <button
+            @click="closePreview"
+            class="px-5 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md"
+          >
+            Tutup
+          </button>
+        </div>
+      </template>
     </Modal>
   </transition>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
+import {
+  ref,
+  onMounted,
+  computed,
+  watch,
+  onBeforeUnmount,
+  nextTick,
+} from "vue";
 import Heading from "~/components/Heading.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
@@ -358,7 +454,7 @@ const props = defineProps({
   modelValue: Boolean,
 });
 
-const emit = defineEmits(["submit", "update:modelValue", "preview"]);
+const emit = defineEmits(["submit", "update:modelValue"]);
 const toast = useToast();
 
 const jenisOptions = [
@@ -366,7 +462,7 @@ const jenisOptions = [
   { code: "KEP", display: "KEP - Keputusan Direksi" },
   { code: "INS", display: "INS - Instruksi" },
   { code: "SPR", display: "SPR - Surat Perintah" },
-  { code: "SOP", display: "S0P - Standar Operasional Prosedur" },
+  { code: "SOP", display: "SOP - Standar Operasional Prosedur" },
   { code: "EDR", display: "EDR - Surat Edaran" },
   { code: "ND", display: "ND - Nota Dinas" },
   { code: "SDI", display: "SDI - Surat Dinas Internal" },
@@ -399,9 +495,15 @@ const jenisOptions = [
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref("");
 const klasifikasiRef = ref(null);
+const klasifikasiInput = ref(null);
+const openJenis = ref(false);
+const jenisSearch = ref("");
+const jenisRef = ref(null);
+const jenisInput = ref(null);
 const openPenandatangan = ref(false);
 const penandatanganSearch = ref("");
 const penandatanganRef = ref(null);
+const penandatanganInput = ref(null);
 const penandatanganOptions = ref([]);
 const penandatanganNama = ref("");
 const isLoadingPositions = ref(false);
@@ -409,8 +511,8 @@ const isSubmitting = ref(false);
 const jumlahError = ref("");
 const perihalError = ref("");
 const hasLoadedPositions = ref(false);
-// ✅ NEW: Track if klasifikasi already loaded
 const hasLoadedKlasifikasi = ref(false);
+const previewModal = ref(false);
 
 const today = new Date();
 const todayString = today.toISOString().split("T")[0];
@@ -442,34 +544,53 @@ const handleClickOutside = (e) => {
   if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target)) {
     openKlasifikasi.value = false;
   }
+  if (jenisRef.value && !jenisRef.value.contains(e.target)) {
+    openJenis.value = false;
+  }
   if (penandatanganRef.value && !penandatanganRef.value.contains(e.target)) {
     openPenandatangan.value = false;
   }
 };
 
-// ✅ LAZY LOAD KLASIFIKASI: Only fetch when dropdown is first opened
+// ✅ LAZY LOAD KLASIFIKASI
 const toggleKlasifikasi = async () => {
-  if (!hasLoadedKlasifikasi.value) {
-    console.log("🔄 Loading klasifikasi for the first time...");
+  if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
+    console.log("🔄 Loading klasifikasi...");
     await fetchKlasifikasi();
     hasLoadedKlasifikasi.value = true;
   }
 
-  if (klasifikasiOptions.value.length > 0) {
-    openKlasifikasi.value = !openKlasifikasi.value;
+  openKlasifikasi.value = !openKlasifikasi.value;
+
+  if (openKlasifikasi.value) {
+    await nextTick();
+    klasifikasiInput.value?.focus();
   }
 };
 
-// ✅ LAZY LOAD: Only fetch positions when dropdown is first opened
+// ✅ TOGGLE JENIS - Show dropdown with data
+const toggleJenis = async () => {
+  openJenis.value = !openJenis.value;
+
+  if (openJenis.value) {
+    await nextTick();
+    jenisInput.value?.focus();
+  }
+};
+
+// ✅ LAZY LOAD POSITIONS
 const togglePenandatangan = async () => {
-  if (!hasLoadedPositions.value) {
-    console.log("🔄 Loading positions for the first time...");
+  if (!openPenandatangan.value && !hasLoadedPositions.value) {
+    console.log("🔄 Loading positions...");
     await fetchPositions();
     hasLoadedPositions.value = true;
   }
 
-  if (penandatanganOptions.value.length > 0) {
-    openPenandatangan.value = !openPenandatangan.value;
+  openPenandatangan.value = !openPenandatangan.value;
+
+  if (openPenandatangan.value) {
+    await nextTick();
+    penandatanganInput.value?.focus();
   }
 };
 
@@ -480,8 +601,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
 });
-
-const previewModal = ref(false);
 
 function openPreviewModal() {
   if (
@@ -503,6 +622,7 @@ function openPreviewModal() {
     });
     return;
   }
+
   previewModal.value = true;
 }
 
@@ -520,6 +640,13 @@ const filteredKlasifikasi = computed(() => {
   );
 });
 
+const filteredJenis = computed(() => {
+  if (!jenisSearch.value) return jenisOptions;
+  return jenisOptions.filter((item) =>
+    item.display.toLowerCase().includes(jenisSearch.value.toLowerCase()),
+  );
+});
+
 const filteredPenandatangan = computed(() => {
   if (!penandatanganSearch.value) return penandatanganOptions.value;
   return penandatanganOptions.value.filter((item) =>
@@ -532,32 +659,26 @@ const filteredPenandatangan = computed(() => {
 function selectKlasifikasi(item) {
   form.value.klasifikasi = item.code;
   form.value.klasifikasiDisplay = item.display;
-  klasifikasiSearch.value = item.display;
+  klasifikasiSearch.value = "";
   openKlasifikasi.value = false;
-  console.log("✅ Klasifikasi selected:", {
-    code: item.code,
-    display: item.display,
-  });
+  console.log("✅ Selected:", item.code, item.display);
+}
+
+function selectJenis(item) {
+  form.value.jenis = item.code;
+  form.value.jenisDisplay = item.display;
+  jenisSearch.value = "";
+  openJenis.value = false;
+  console.log("✅ Selected:", item.code, item.display);
 }
 
 function selectPenandatangan(item) {
   form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
   penandatanganNama.value = item.nama;
-  penandatanganSearch.value = item.displayText;
+  penandatanganSearch.value = "";
   openPenandatangan.value = false;
-  console.log("✅ Penandatangan selected:", {
-    display_text: item.displayText,
-    position_id: item.position,
-    nama: item.nama,
-  });
-}
-
-function updateJenisDisplay() {
-  const selected = jenisOptions.find((item) => item.code === form.value.jenis);
-  if (selected) {
-    form.value.jenisDisplay = selected.display;
-  }
+  console.log("✅ Selected:", item.displayText, item.nama);
 }
 
 function validatePerihal() {
@@ -608,19 +729,13 @@ function validateJumlah() {
 const fetchPositions = async () => {
   isLoadingPositions.value = true;
   try {
-    console.log("📤 Lazy loading positions...");
     const response = await get("/person/with-position/all");
-    console.log("📥 Raw response from API:", response);
-
     const raw = response?.data ?? response;
     const list = Array.isArray(raw) ? raw : [];
-
-    console.log("📋 List to process:", list);
 
     penandatanganOptions.value = list.map((item) => {
       const positionText = item.position_text || "";
       const subAreaText = item.sub_area_text || "";
-
       const displayText = subAreaText
         ? `${positionText} - ${subAreaText}`
         : positionText;
@@ -633,7 +748,6 @@ const fetchPositions = async () => {
     });
 
     console.log("✅ Positions loaded:", penandatanganOptions.value.length);
-    console.log("📋 Sample data:", penandatanganOptions.value.slice(0, 3));
   } catch (err) {
     console.error("❌ Error fetch positions:", err);
     toast.add({
@@ -646,11 +760,9 @@ const fetchPositions = async () => {
   }
 };
 
-// ✅ LAZY LOAD: Klasifikasi hanya dipanggil saat dropdown dibuka
 const fetchKlasifikasi = async () => {
   isLoadingKlasifikasi.value = true;
   try {
-    console.log("📤 Fetching klasifikasi...");
     const response = await getKlasifikasi();
     klasifikasiOptions.value = response;
     console.log("✅ Klasifikasi loaded:", klasifikasiOptions.value.length);
@@ -680,15 +792,17 @@ const resetForm = () => {
     jumlah: 1,
   };
   klasifikasiSearch.value = "";
+  jenisSearch.value = "";
   penandatanganSearch.value = "";
   penandatanganNama.value = "";
   jumlahError.value = "";
   perihalError.value = "";
   openKlasifikasi.value = false;
+  openJenis.value = false;
   openPenandatangan.value = false;
   hasLoadedPositions.value = false;
-  hasLoadedKlasifikasi.value = false; // ✅ Reset lazy load flag
-  console.log("🔄 Form reset");
+  hasLoadedKlasifikasi.value = false;
+  previewModal.value = false;
 };
 
 const handleClose = (value) => {
@@ -698,13 +812,7 @@ const handleClose = (value) => {
   emit("update:modelValue", value);
 };
 
-const handleCancel = () => {
-  resetForm();
-  emit("update:modelValue", false);
-};
-
 function submitAndClose() {
-  // ✅ Use the selected date from tanggalString (user's input)
   const formattedTanggal = tanggalString.value;
 
   const payload = {
@@ -726,9 +834,7 @@ function submitAndClose() {
 
 onMounted(async () => {
   if (!user.value) await getProfile();
-  // ✅ REMOVED: No longer auto-fetch klasifikasi on mount
-  // ✅ REMOVED: No longer auto-fetch positions on mount
-  console.log("✅ AddUsulan mounted - klasifikasi & positions will lazy load");
+  console.log("✅ AddUsulan mounted");
 });
 
 function formatDate(dateStr) {

@@ -603,7 +603,7 @@ const exportData = () => {
 </script>
 
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -628,13 +628,9 @@ const exportData = () => {
         class="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex-wrap"
       >
         <div class="flex items-center gap-3 flex-wrap">
-          <span class="text-sm text-gray-600 dark:text-gray-400 font-medium"
-            >Tampilkan</span
-          >
-
           <select
             v-model="rowsPerPage"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in [5, 10, 15]" :key="n" :value="n">
               {{ n }}
@@ -664,7 +660,7 @@ const exportData = () => {
 
           <select
             v-model="filterStatus"
-            class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="Semua">Semua Status</option>
             <option value="Aktif">Aktif</option>
@@ -674,7 +670,7 @@ const exportData = () => {
 
           <select
             v-model="filterLokasi"
-            class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="Semua">Semua Lokasi</option>
             <option value="Cabang Surabaya">Cabang Surabaya</option>
@@ -683,7 +679,7 @@ const exportData = () => {
 
           <select
             v-model="filterJabatan"
-            class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="Semua">Semua Jabatan</option>
             <option value="Supervisor Operasional">

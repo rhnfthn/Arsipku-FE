@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -125,7 +125,7 @@
                 :key="col.key"
                 @click="col.sortable && handleSort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap hover:bg-primary-600',
                   col.sortable
                     ? 'cursor-pointer select-none '
                     : 'cursor-default',
@@ -1023,27 +1023,6 @@ const fetchPersonMap = async () => {
   }
 };
 
-// Fetch klasifikasi map untuk display
-const fetchKlasifikasiMap = async () => {
-  try {
-    const response = await getKlasifikasi();
-
-    if (Array.isArray(response)) {
-      response.forEach((item) => {
-        klasifikasiMap.value.set(item.code, item.display);
-      });
-    }
-
-    console.log(
-      "✅ Klasifikasi map loaded:",
-      klasifikasiMap.value.size,
-      "items",
-    );
-  } catch (error) {
-    console.error("❌ Error fetch klasifikasi map:", error);
-  }
-};
-
 // ✅ FETCH DATA - Menggunakan endpoint dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
   loading.value = true;
@@ -1105,13 +1084,14 @@ const fetchData = async () => {
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
 
       const createdDate = new Date(item.created_at);
+      // Convert to WIB (UTC+7)
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
 
-      const day = String(wibTime.getDate()).padStart(2, "0");
-      const month = String(wibTime.getMonth() + 1).padStart(2, "0");
-      const year = String(wibTime.getFullYear()).slice(-2);
-      const hours = String(wibTime.getHours()).padStart(2, "0");
-      const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+      const day = String(wibTime.getUTCDate()).padStart(2, "0");
+      const month = String(wibTime.getUTCMonth() + 1).padStart(2, "0");
+      const year = String(wibTime.getUTCFullYear()).slice(-2);
+      const hours = String(wibTime.getUTCHours()).padStart(2, "0");
+      const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
 
       return {
         id: item.id,
@@ -1692,9 +1672,6 @@ onMounted(async () => {
     await getProfile();
   }
 
-  await fetchKlasifikasiMap();
-  // ✅ REMOVED: fetchPersonMap - not needed for initial table display
-  // Person data already included in API response
   await fetchData();
 
   document.addEventListener("click", handleDocumentClick);

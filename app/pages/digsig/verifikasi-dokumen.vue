@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -440,26 +440,86 @@
               <Heading variant="body2m" class="dark:text-gray-200">
                 Klasifikasi <span class="text-red-500">*</span>
               </Heading>
-              <div class="relative mt-2">
-                <select
-                  v-model="addForm.klasifikasi"
-                  @change="onKlasifikasiChange"
-                  :disabled="loadingKlasifikasi"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              <div class="relative mt-2" ref="klasifikasiDropdownRef">
+                <div
+                  @click="toggleKlasifikasiDropdown"
+                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  <option value="">
+                  <span
+                    v-if="addForm.klasifikasi"
+                    class="text-gray-900 dark:text-white"
+                  >
+                    {{ getSelectedKlasifikasiLabel() }}
+                  </span>
+                  <span v-else class="text-gray-500 dark:text-gray-400">
                     {{
                       loadingKlasifikasi ? "Loading..." : "Pilih Klasifikasi"
                     }}
-                  </option>
-                  <option
-                    v-for="k in klasifikasiList"
-                    :key="k.id"
-                    :value="k.klasifikasi"
+                  </span>
+                  <svg
+                    class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': showKlasifikasiDropdown }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
-                  </option>
-                </select>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showKlasifikasiDropdown"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-hidden"
+                >
+                  <!-- Search Input -->
+                  <div
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                  >
+                    <div class="relative">
+                      <Search
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                      />
+                      <input
+                        v-model="klasifikasiSearchQuery"
+                        type="text"
+                        placeholder="Cari klasifikasi..."
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @click.stop
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options List -->
+                  <div class="overflow-y-auto max-h-64">
+                    <div
+                      v-for="k in filteredKlasifikasiList"
+                      :key="k.id"
+                      @click="selectKlasifikasi(k)"
+                      class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      :class="{
+                        'bg-blue-50 dark:bg-gray-700':
+                          addForm.klasifikasi === k.klasifikasi,
+                      }"
+                    >
+                      <p class="font-medium">
+                        {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-if="filteredKlasifikasiList.length === 0"
+                      class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                    >
+                      Tidak ada data ditemukan
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -467,22 +527,87 @@
               <Heading variant="body2m" class="dark:text-gray-200">
                 Jenis Naskah <span class="text-red-500">*</span>
               </Heading>
-              <select
-                v-model="addForm.jenisNaskah"
-                :disabled="loadingJenisNaskah"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-              >
-                <option value="">
-                  {{ loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah" }}
-                </option>
-                <option
-                  v-for="j in jenisNaskahList"
-                  :key="j.id"
-                  :value="j.jenis"
+              <div class="relative mt-2" ref="jenisNaskahDropdownRef">
+                <div
+                  @click="toggleJenisNaskahDropdown"
+                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  {{ j.jenis }} - {{ j.jenis_text }}
-                </option>
-              </select>
+                  <span
+                    v-if="addForm.jenisNaskah"
+                    class="text-gray-900 dark:text-white"
+                  >
+                    {{ getSelectedJenisNaskahLabel() }}
+                  </span>
+                  <span v-else class="text-gray-500 dark:text-gray-400">
+                    {{
+                      loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah"
+                    }}
+                  </span>
+                  <svg
+                    class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': showJenisNaskahDropdown }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showJenisNaskahDropdown"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-hidden"
+                >
+                  <!-- Search Input -->
+                  <div
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                  >
+                    <div class="relative">
+                      <Search
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                      />
+                      <input
+                        v-model="jenisNaskahSearchQuery"
+                        type="text"
+                        placeholder="Cari jenis naskah..."
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @click.stop
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options List -->
+                  <div class="overflow-y-auto max-h-64">
+                    <div
+                      v-for="j in filteredJenisNaskahList"
+                      :key="j.id"
+                      @click="selectJenisNaskah(j)"
+                      class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      :class="{
+                        'bg-blue-50 dark:bg-gray-700':
+                          addForm.jenisNaskah === j.jenis,
+                      }"
+                    >
+                      <p class="font-medium">
+                        {{ j.jenis }} - {{ j.jenis_text }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-if="filteredJenisNaskahList.length === 0"
+                      class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                    >
+                      Tidak ada data ditemukan
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -992,14 +1117,29 @@ const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(null);
 
+// Track which modal to return to after closing preview
+const returnToModal = ref<"detail" | "form" | null>(null);
+
 const openDetail = ref(false);
 const openAdd = ref(false);
 const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
+const klasifikasiDropdownRef = ref<HTMLElement | null>(null);
+const jenisNaskahDropdownRef = ref<HTMLElement | null>(null);
 
 const selectedKlasifikasiDetail = ref<any>(null);
+
+// Dropdown states
+const showSignerDropdown = ref(false);
+const showKlasifikasiDropdown = ref(false);
+const showJenisNaskahDropdown = ref(false);
+
+// Search queries
+const signerSearchQuery = ref("");
+const klasifikasiSearchQuery = ref("");
+const jenisNaskahSearchQuery = ref("");
 
 // Filter + Search
 const statusFilter = ref("");
@@ -1033,9 +1173,6 @@ const addForm = ref({
   signers: [] as { urutan: number; persnum: number }[],
   selectedSigners: [] as Verifikator[],
 });
-
-const showSignerDropdown = ref(false);
-const signerSearchQuery = ref("");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -1131,15 +1268,19 @@ onMounted(() => {
   fetchVerifikator();
   document.addEventListener("click", handleClickOutside);
   document.addEventListener("click", handleDropdownClickOutside);
+  document.addEventListener("click", handleKlasifikasiDropdownClickOutside);
+  document.addEventListener("click", handleJenisNaskahDropdownClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
   document.removeEventListener("click", handleDropdownClickOutside);
+  document.removeEventListener("click", handleKlasifikasiDropdownClickOutside);
+  document.removeEventListener("click", handleJenisNaskahDropdownClickOutside);
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value);
   }
-  if (pdfUrl.value) {
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
     URL.revokeObjectURL(pdfUrl.value);
   }
 });
@@ -1154,6 +1295,30 @@ const filteredVerifikatorList = computed(() => {
       v.jabatan?.toLowerCase().includes(q) ||
       v.nama?.toLowerCase().includes(q) ||
       v.lokasi?.toLowerCase().includes(q),
+  );
+});
+
+const filteredKlasifikasiList = computed(() => {
+  if (!klasifikasiSearchQuery.value) return klasifikasiList.value;
+
+  const q = klasifikasiSearchQuery.value.toLowerCase();
+
+  return klasifikasiList.value.filter(
+    (k) =>
+      k.klasifikasi?.toLowerCase().includes(q) ||
+      k.klasifikasi_text?.toLowerCase().includes(q),
+  );
+});
+
+const filteredJenisNaskahList = computed(() => {
+  if (!jenisNaskahSearchQuery.value) return jenisNaskahList.value;
+
+  const q = jenisNaskahSearchQuery.value.toLowerCase();
+
+  return jenisNaskahList.value.filter(
+    (j) =>
+      j.jenis?.toLowerCase().includes(q) ||
+      j.jenis_text?.toLowerCase().includes(q),
   );
 });
 
@@ -1200,6 +1365,24 @@ const handleClickOutside = (e: MouseEvent) => {
 const handleDropdownClickOutside = (e: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
     showSignerDropdown.value = false;
+  }
+};
+
+const handleKlasifikasiDropdownClickOutside = (e: MouseEvent) => {
+  if (
+    klasifikasiDropdownRef.value &&
+    !klasifikasiDropdownRef.value.contains(e.target as Node)
+  ) {
+    showKlasifikasiDropdown.value = false;
+  }
+};
+
+const handleJenisNaskahDropdownClickOutside = (e: MouseEvent) => {
+  if (
+    jenisNaskahDropdownRef.value &&
+    !jenisNaskahDropdownRef.value.contains(e.target as Node)
+  ) {
+    showJenisNaskahDropdown.value = false;
   }
 };
 
@@ -1285,6 +1468,68 @@ const getKlasifikasiText = (kode: string, text: string | null) => {
   }
 
   return kode || "-";
+};
+
+const getSelectedKlasifikasiLabel = () => {
+  if (!addForm.value.klasifikasi) return "";
+
+  const selected = klasifikasiList.value.find(
+    (k) => k.klasifikasi === addForm.value.klasifikasi,
+  );
+
+  return selected
+    ? `${selected.klasifikasi} - ${selected.klasifikasi_text}`
+    : addForm.value.klasifikasi;
+};
+
+const getSelectedJenisNaskahLabel = () => {
+  if (!addForm.value.jenisNaskah) return "";
+
+  const selected = jenisNaskahList.value.find(
+    (j) => j.jenis === addForm.value.jenisNaskah,
+  );
+
+  return selected
+    ? `${selected.jenis} - ${selected.jenis_text}`
+    : addForm.value.jenisNaskah;
+};
+
+const toggleKlasifikasiDropdown = () => {
+  showKlasifikasiDropdown.value = !showKlasifikasiDropdown.value;
+  if (showKlasifikasiDropdown.value) {
+    klasifikasiSearchQuery.value = "";
+  }
+};
+
+const toggleJenisNaskahDropdown = () => {
+  showJenisNaskahDropdown.value = !showJenisNaskahDropdown.value;
+  if (showJenisNaskahDropdown.value) {
+    jenisNaskahSearchQuery.value = "";
+  }
+};
+
+const selectKlasifikasi = async (klasifikasi: any) => {
+  addForm.value.klasifikasi = klasifikasi.klasifikasi;
+  showKlasifikasiDropdown.value = false;
+  klasifikasiSearchQuery.value = "";
+
+  // Trigger klasifikasi change handler
+  try {
+    const detail = await fetchKlasifikasiDetail(klasifikasi.id);
+    selectedKlasifikasiDetail.value = detail;
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err.message || "Gagal memuat detail klasifikasi",
+      color: "red",
+    });
+  }
+};
+
+const selectJenisNaskah = (jenisNaskah: any) => {
+  addForm.value.jenisNaskah = jenisNaskah.jenis;
+  showJenisNaskahDropdown.value = false;
+  jenisNaskahSearchQuery.value = "";
 };
 
 const onKlasifikasiChange = async () => {
@@ -1496,12 +1741,12 @@ const openDetailModal = async (id: string) => {
   }
 };
 
+// FIXED: View document from detail modal - closes modal and opens slideover
 const viewDocumentFromDetail = async () => {
   if (!documentDetail.value) return;
 
-  const url =
-    documentDetail.value.signedFilePreviewUrl ||
-    documentDetail.value.filePreviewUrl;
+  // Use fileUrl from API response (this is the correct field name)
+  const url = documentDetail.value.fileUrl;
 
   if (!url) {
     toast.add({
@@ -1512,22 +1757,22 @@ const viewDocumentFromDetail = async () => {
     return;
   }
 
+  // Set return modal
+  returnToModal.value = "detail";
+
+  // IMPORTANT: Close modal detail first
+  openDetail.value = false;
+
+  // Reset preview state
   isOpenPreview.value = false;
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
   pdfUrl.value = null;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
     toast.add({
@@ -1558,7 +1803,11 @@ const resetForm = () => {
   };
   selectedKlasifikasiDetail.value = null;
   showSignerDropdown.value = false;
+  showKlasifikasiDropdown.value = false;
+  showJenisNaskahDropdown.value = false;
   signerSearchQuery.value = "";
+  klasifikasiSearchQuery.value = "";
+  jenisNaskahSearchQuery.value = "";
   if (fileInput.value) {
     fileInput.value.value = "";
   }
@@ -1568,8 +1817,10 @@ const resetForm = () => {
   }
 };
 
+// FIXED: View document from table - opens slideover directly
 const viewDocument = async (doc: any) => {
-  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
+  // Use filePreviewUrl from document in table
+  const url = doc.filePreviewUrl;
 
   if (!url) {
     toast.add({
@@ -1580,22 +1831,19 @@ const viewDocument = async (doc: any) => {
     return;
   }
 
+  // No return modal (opened from table, not from modal)
+  returnToModal.value = null;
+
+  // Reset preview state
   isOpenPreview.value = false;
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
   pdfUrl.value = null;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
     toast.add({
@@ -1606,12 +1854,25 @@ const viewDocument = async (doc: any) => {
   }
 };
 
+// FIXED: Preview file from form modal - closes modal and opens slideover
 const previewFileInModal = async () => {
+  // Set return modal
+  returnToModal.value = "form";
+
+  // IMPORTANT: Close modal first
+  openAdd.value = false;
+
   if (previewUrl.value) {
+    // For newly uploaded file
     pdfUrl.value = previewUrl.value;
     isOpenPreview.value = true;
   } else if (isEditMode.value && documentDetail.value) {
-    await viewDocumentFromDetail();
+    // For existing file in edit mode - use fileUrl
+    const url = documentDetail.value.fileUrl;
+    if (url) {
+      pdfUrl.value = url;
+      isOpenPreview.value = true;
+    }
   }
 };
 
@@ -1749,9 +2010,21 @@ const saveDokumen = async () => {
 };
 
 watch(isOpenPreview, (open) => {
-  if (!open && pdfUrl.value) {
-    URL.revokeObjectURL(pdfUrl.value);
+  if (!open) {
+    // When slideover closes
+    if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+      URL.revokeObjectURL(pdfUrl.value);
+    }
     pdfUrl.value = null;
+
+    // Reopen the modal that was previously open
+    if (returnToModal.value === "detail") {
+      openDetail.value = true;
+      returnToModal.value = null;
+    } else if (returnToModal.value === "form") {
+      openAdd.value = true;
+      returnToModal.value = null;
+    }
   }
 });
 </script>

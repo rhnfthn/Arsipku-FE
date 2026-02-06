@@ -222,7 +222,7 @@ const deleteNow = async () => {
 </script>
 
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="space-y-6 pt-5 min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>

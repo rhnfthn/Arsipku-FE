@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
           Daftar Usulan Penomoran
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -15,22 +15,20 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Usulan
+        Tambah
       </button>
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
       >
-        <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4 py-2">
-          <span class="text-xs text-gray-600">Tampilkan</span>
           <select
             v-model="rowsPerPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -38,20 +36,18 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown -->
         <div class="relative inline-block">
           <button
             data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <span class="text-sm">
-              {{ filterStatus || "Semua" }}
-            </span>
-
+            <span class="text-sm dark:text-gray-200">{{
+              filterStatus || "Semua"
+            }}</span>
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200',
+                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -67,16 +63,15 @@
             </svg>
           </button>
 
-          <!-- Dropdown -->
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
+            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
           >
             <button
               v-for="item in filterOptions"
               :key="item"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               @click.prevent="selectFilterStatus(item)"
             >
               {{ item }}
@@ -84,39 +79,38 @@
           </div>
         </div>
 
-        <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
 
-      <!-- LOADING (SHIMMER) -->
+      <!-- LOADING -->
       <div v-if="loading" class="space-y-3 p-4">
         <div
           v-for="i in 5"
           :key="i"
-          class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
+          class="w-full h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
         ></div>
       </div>
 
       <!-- EMPTY -->
       <div
         v-else-if="filteredRows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500"
+        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="min-w-max bg-white text-sm">
+        <table class="min-w-max bg-white dark:bg-gray-800 text-sm">
           <thead class="bg-primary text-white">
             <tr>
               <th
@@ -154,52 +148,51 @@
             <tr
               v-for="row in paginatedRows"
               :key="row.id"
-              class="hover:bg-gray-50 cursor-pointer border-b border-gray-200 transition"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition"
               @click="openRowModal(row)"
             >
-              <td class="px-5 py-4 text-xs">{{ row.id_usulan }}</td>
-              <td class="px-5 py-4">{{ row.jenis }}</td>
-              <td class="px-5 py-4">{{ row.tanggal }}</td>
+              <td class="px-5 py-4 text-xs dark:text-gray-300">
+                {{ row.id_usulan }}
+              </td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
                   <p
-                    class="whitespace-normal break-words line-clamp-3 cursor-help"
+                    class="whitespace-normal break-words line-clamp-3 cursor-help dark:text-gray-300"
                   >
                     {{ row.perihal }}
                   </p>
-
-                  <!-- Tooltip -->
-                  <div
-                    class="absolute z-50 hidden group-hover:block bg-gray-900 text-white text-xs rounded-md px-3 py-2 mt-2 w-max max-w-xs shadow-lg"
-                  >
-                    {{ row.perihal }}
-                  </div>
                 </div>
               </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                  >
                     {{ row.penandatangan }}
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.jumlah }}</td>
-              <td class="px-5 py-4">{{ row.pengusul }}</td>
-              <td class="px-5 py-4">{{ row.tglUsulan }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
 
               <td
                 @click.stop
-                class="sticky right-0 z-20 bg-white px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+                class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
               >
                 <span
                   class="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                   :class="{
-                    'bg-gray-200 text-gray-700':
+                    'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                       row.status === 'Belum Diajukan',
-                    'bg-yellow-100 text-yellow-700':
+                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                       row.status === 'Menunggu Verifikasi',
-                    'bg-green-100 text-green-700': row.status === 'Disetujui',
-                    'bg-red-100 text-red-700': row.status === 'Ditolak',
+                    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                      row.status === 'Disetujui',
+                    'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
+                      row.status === 'Ditolak',
                   }"
                 >
                   {{ row.status }}
@@ -213,23 +206,22 @@
       <!-- PAGINATION -->
       <div
         v-if="filteredRows.length > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedRows.length }} dari
           {{ filteredRows.length }} data
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Back Button -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             <svg
@@ -248,26 +240,20 @@
             Back
           </button>
 
-          <!-- Page Numbers -->
           <div class="flex items-center gap-1">
-            <!-- First page -->
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               1
             </button>
-
-            <!-- Left ellipsis -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
 
-            <!-- Visible pages -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -276,41 +262,36 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
             </button>
 
-            <!-- Right ellipsis -->
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- Last page -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               {{ totalPages }}
             </button>
           </div>
 
-          <!-- Next Button -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             Next
@@ -344,54 +325,63 @@
 
   <!-- MODAL ROW DETAIL -->
   <Teleport to="body">
-    <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
-      <!-- TITLE -->
+    <Modal
+      v-if="!isOpenPreview"
+      v-model="openDetail"
+      :hideDefaultFooter="true"
+      size="xl"
+    >
       <template #title>
         <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
-          <h2 class="text-lg font-semibold uppercase">
+          <h2 class="text-lg font-semibold uppercase dark:text-gray-100">
             {{ selectedRow?.jenis_naskah || "Detail" }}
           </h2>
         </div>
       </template>
 
-      <!-- BODY -->
-      <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3">
-        <!-- Judul Besar -->
-        <p class="text-gray-900 font-semibold leading-relaxed text-base">
+      <div
+        v-if="selectedRow"
+        class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
+      >
+        <p
+          class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base"
+        >
           {{ selectedRow.perihal }}
         </p>
 
-        <!-- Tanggal -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Tanggal</p>
-          <p class="font-medium mt-1">
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
             {{ formatDateTime(selectedRow.tanggal) }}
           </p>
         </div>
 
-        <!-- Penandatangan -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Penandatangan</p>
-          <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Penandatangan</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
+            {{ selectedRow.penandatangan }}
+          </p>
         </div>
 
-        <!-- Klasifikasi -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Klasifikasi</p>
-          <p class="font-medium mt-1">
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
             {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi }}
           </p>
         </div>
 
-        <!-- Jenis Naskah -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Jenis Naskah</p>
-          <p class="font-medium mt-1">{{ selectedRow.jenis_naskah }}</p>
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
+            {{ selectedRow.jenis_naskah }}
+          </p>
         </div>
 
         <!-- Nomor Surat & File Upload Section -->
         <div class="mt-4">
-          <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
+          >
             Nomor Surat ({{ selectedRow.jumlah }} nomor)
           </label>
 
@@ -405,30 +395,32 @@
             <div
               v-for="(detail, idx) in selectedRow.details"
               :key="detail.id || idx"
-              class="border border-gray-300 rounded-lg p-4 bg-gray-50"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
             >
               <!-- Nomor surat dengan status badge -->
               <div class="flex items-center gap-2 mb-3">
                 <div
-                  class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+                  class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                 >
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-mono text-gray-700">
+                    <span
+                      class="text-sm font-mono text-gray-700 dark:text-gray-300"
+                    >
                       {{ idx + 1 }}.
                       {{ detail.nomor || selectedRow.template_nomor || "-" }}
                     </span>
 
-                    <!-- Status Badge -->
                     <span
                       v-if="detail.status"
                       :class="[
                         'px-2 py-1 rounded-lg text-xs font-medium',
                         {
-                          'bg-yellow-100 text-yellow-700':
+                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 text-green-700':
-                            detail.status === 'terpakai',
-                          'bg-red-100 text-red-700':
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                            detail.status === 'terpakai' ||
+                            detail.status === 'terpakai_final',
+                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
                         },
                       ]"
@@ -438,71 +430,89 @@
                   </div>
                 </div>
 
-                <!-- Copy button if nomor exists -->
                 <button
                   v-if="detail.nomor"
                   @click="handleCopy(detail.nomor)"
-                  class="p-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center border border-gray-300 bg-white"
-                  title="Copy nomor surat"
+                  class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
                 >
-                  <Copy class="w-4 h-4 text-gray-600" />
+                  <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
 
-              <!-- Show existing file if available -->
+              <!-- ✅ FILE SECTION - GREEN CLICKABLE AREA (NO EYE ICON) -->
               <div
-                v-if="detail.file_name || files[idx]"
-                class="mt-2 flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+                v-if="detail.file_name || filesByIndex[idx]"
+                @click="openPreview(detail, idx)"
+                class="mt-2 cursor-pointer bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg px-4 py-3 transition-all"
               >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-4 h-4 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                <div class="flex items-start gap-3">
+                  <!-- FILE ICON -->
+                  <div class="flex-shrink-0 mt-0.5">
+                    <svg
+                      class="w-5 h-5 text-green-600 dark:text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
 
-                  <span class="text-xs text-gray-700">
-                    {{ files[idx]?.name || detail.file_name }}
-                  </span>
-                </div>
+                  <!-- FILE INFO -->
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-sm font-medium text-green-700 dark:text-green-400 truncate"
+                    >
+                      {{ detail.file_name || filesByIndex[idx]?.name }}
+                    </p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      Klik untuk preview
+                    </p>
+                  </div>
 
-                <div class="flex items-center gap-2">
+                  <!-- Remove button for local files only -->
                   <button
-                    type="button"
-                    @click="previewFile(detail, idx)"
-                    class="px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-700"
+                    v-if="
+                      filesByIndex[idx] &&
+                      !detail.file_name &&
+                      selectedRow?.status === 'Belum Diajukan'
+                    "
+                    @click.stop="removeFile(idx)"
+                    class="flex-shrink-0 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    title="Hapus file"
                   >
-                    Lihat
-                  </button>
-
-                  <button
-                    v-if="selectedRow?.status === 'Belum Diajukan'"
-                    @click.prevent="removeFile(idx)"
-                    class="text-red-500 hover:text-red-700 text-xs"
-                  >
-                    Hapus
+                    <svg
+                      class="w-4 h-4 text-red-600 dark:text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
 
-              <!-- Upload area if status is "Belum Diajukan" and no file -->
+              <!-- Upload area if no file and status is "Belum Diajukan" -->
               <div
                 v-else-if="selectedRow?.status === 'Belum Diajukan'"
-                class="relative"
+                class="space-y-2"
               >
                 <label
-                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
                 >
                   <svg
-                    class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                    class="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -516,12 +526,13 @@
                   </svg>
 
                   <div class="flex-1">
-                    <span class="text-gray-700 font-medium block">
-                      Pilih file untuk diupload
-                    </span>
-                    <span class="text-xs text-gray-500 block">
-                      PDF, DOC, DOCX (Max 5MB)
-                    </span>
+                    <span
+                      class="text-gray-700 dark:text-gray-300 font-medium block"
+                      >Pilih file (Opsional)</span
+                    >
+                    <span class="text-xs text-gray-500 dark:text-gray-400 block"
+                      >PDF, DOC, DOCX (Max 5MB)</span
+                    >
                   </div>
 
                   <input
@@ -536,11 +547,11 @@
               <!-- No file uploaded -->
               <div
                 v-else
-                class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
+                class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
               >
                 <div class="flex items-center gap-2">
                   <svg
-                    class="w-3 h-3 text-yellow-600"
+                    class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -552,9 +563,9 @@
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span class="text-xs text-yellow-800">
-                    Belum ada file diupload
-                  </span>
+                  <span class="text-xs text-yellow-800 dark:text-yellow-400"
+                    >Belum ada file diupload</span
+                  >
                 </div>
               </div>
             </div>
@@ -564,10 +575,10 @@
         <!-- File upload warning -->
         <div
           v-if="selectedRow?.status === 'Belum Diajukan'"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2"
         >
           <svg
-            class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+            class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -579,81 +590,77 @@
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <div class="text-xs text-blue-800">
+          <div class="text-xs text-blue-800 dark:text-blue-300">
             <p class="font-medium">Upload file (opsional)</p>
-            <p class="mt-1 text-blue-700">
-              File dapat diupload sekarang atau nanti. Usulan tetap dapat
+            <p class="mt-1 text-blue-700 dark:text-blue-400">
+              File harus dalam format PDF, DOC, atau DOCX. Usulan tetap dapat
               dikirim tanpa file.
             </p>
           </div>
         </div>
+
+        <!-- Upload Progress Indicator -->
+        <div
+          v-if="isUploadingFiles"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"
+            ></div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-blue-900 dark:text-blue-200">
+                Mengirim usulan...
+              </p>
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                File sedang diupload ke server
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- FOOTER -->
       <template #footer>
         <div
-          class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200"
+          class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <button
             v-if="selectedRow?.status === 'Belum Diajukan'"
-            @click="submitUsulan"
-            :disabled="isLoadingBooking || isDeletingUsulan"
-            class="flex-1 px-5 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            @click="openConfirmSubmit = true"
+            :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
+            class="flex-1 px-5 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            <span v-if="isLoadingBooking" class="flex items-center gap-2">
-              <svg
-                class="animate-spin h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Mengirim...
-            </span>
+            <span v-if="isUploadingFiles">Mengirim...</span>
             <span v-else>Kirim Usulan</span>
           </button>
 
-          <!-- <div v-else class="flex items-center gap-2">
-            <span
-              :class="[
-                'px-3 py-1 rounded-full text-xs font-medium',
-                {
-                  'bg-yellow-100 text-yellow-700':
-                    selectedRow?.status === 'Menunggu Verifikasi',
-                  'bg-green-100 text-green-700':
-                    selectedRow?.status === 'Disetujui',
-                  'bg-red-100 text-red-700': selectedRow?.status === 'Ditolak',
-                },
-              ]"
-            >
-              {{ selectedRow?.status }}
-            </span>
-          </div> -->
-
+          <!-- ✅ HIDE DELETE BUTTON if status is Disetujui (terpakai/terpakai_final) -->
           <button
-            @click="hapusUsulan"
-            :disabled="isLoadingBooking || isDeletingUsulan"
-            class="flex-1 px-5 py-2 text-xs border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            v-if="!isApprovedStatus(selectedRow)"
+            @click="openConfirmDelete = true"
+            :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
+            class="flex-1 px-5 py-2 text-sm border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {{ isDeletingUsulan ? "Menghapus..." : "Hapus Usulan" }}
+            Hapus Usulan
           </button>
         </div>
       </template>
     </Modal>
   </Teleport>
+
+  <!-- CONFIRM SUBMIT POPUP -->
+  <ConfirmPopup
+    v-model="openConfirmSubmit"
+    type="question"
+    title="Kirim Usulan?"
+    :message="getConfirmMessage()"
+    confirm-text="Ya, Kirim"
+    cancel-text="Batal"
+    :is-loading="isLoadingBooking"
+    @confirm="confirmSubmitUsulan"
+    @cancel="openConfirmSubmit = false"
+  />
+
   <!-- CONFIRM DELETE POPUP -->
   <ConfirmPopup
     v-model="openConfirmDelete"
@@ -664,11 +671,257 @@
     cancel-text="Batal"
     :is-loading="isDeletingUsulan"
     @confirm="confirmDeleteUsulan"
+    @cancel="openConfirmDelete = false"
   />
+
+  <!-- ✅ PREVIEW SLIDEOVER (FULL PAGE) -->
+  <Teleport to="body">
+    <USlideover
+      v-model="isOpenPreview"
+      side="bottom"
+      :ui="{
+        width: 'w-screen max-w-full',
+        overlay: { background: 'bg-gray-900/90 dark:bg-gray-900/95' },
+        base: 'h-screen max-h-screen',
+        body: 'p-0 flex-1 overflow-hidden',
+        header:
+          'border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
+        footer:
+          'border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
+      }"
+    >
+      <template #header>
+        <div class="flex items-center justify-between w-full px-6 py-4">
+          <div class="flex items-center gap-3">
+            <svg
+              class="w-5 h-5 text-primary dark:text-primary-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <h3 class="text-lg font-semibold dark:text-gray-100">
+              Preview Dokumen
+            </h3>
+          </div>
+          <button
+            @click="closePreview"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title="Tutup preview"
+          >
+            <svg
+              class="w-5 h-5 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <template #body>
+        <div
+          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+        >
+          <!-- Loading State -->
+          <div v-if="!previewUrl" class="flex flex-col items-center gap-3">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary-400"
+            ></div>
+            <span class="text-gray-500 dark:text-gray-400"
+              >Memuat Preview...</span
+            >
+          </div>
+
+          <!-- Error State -->
+          <div
+            v-else-if="previewError"
+            class="flex flex-col items-center gap-3 p-6"
+          >
+            <svg
+              class="w-16 h-16 text-red-500 dark:text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div class="text-center">
+              <p class="text-gray-700 dark:text-gray-300 font-medium">
+                Gagal memuat preview
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ previewError }}
+              </p>
+            </div>
+            <button
+              @click="closePreview"
+              class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+
+          <!-- PDF/Document Preview -->
+          <div v-else class="w-full h-full">
+            <!-- Iframe Preview for PDF -->
+            <iframe
+              v-if="previewFileName.toLowerCase().endsWith('.pdf')"
+              :key="previewUrl"
+              :src="previewUrl"
+              class="w-full h-full border-none"
+              @error="handlePreviewError"
+              allowfullscreen
+            />
+
+            <!-- Google Docs Viewer for DOC/DOCX -->
+            <iframe
+              v-else-if="previewFileName.toLowerCase().match(/\.(doc|docx)$/)"
+              :key="previewUrl"
+              :src="`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`"
+              class="w-full h-full border-none"
+              @error="handlePreviewError"
+              allowfullscreen
+            />
+
+            <!-- Fallback: Download prompt for other file types -->
+            <div
+              v-else
+              class="flex flex-col items-center justify-center h-full gap-4 p-6"
+            >
+              <svg
+                class="w-20 h-20 text-gray-400 dark:text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <div class="text-center">
+                <p
+                  class="text-lg font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  {{ previewFileName }}
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  Preview tidak tersedia untuk tipe file ini
+                </p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Silakan download file untuk melihat isinya
+                </p>
+              </div>
+              <button
+                @click="downloadFile"
+                class="mt-4 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                Download File
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex items-center justify-between px-6 py-4">
+          <div
+            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span class="truncate max-w-md">{{
+              previewFileName || "Dokumen"
+            }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="previewUrl && !previewError"
+              @click="downloadFile"
+              class="px-4 py-2 text-sm bg-primary text-white hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
+              title="Download file"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download
+            </button>
+            <button
+              @click="closePreview"
+              class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </template>
+    </USlideover>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
@@ -681,7 +934,6 @@ import ConfirmPopup from "~/components/ConfirmPopup.vue";
 const { user, getProfile } = useAuth();
 const {
   createUsulanDraft,
-  isLoadingPenomoran,
   deleteUsulanUser,
   getListUsulanByPosition,
   getPersonWithPosition,
@@ -689,50 +941,60 @@ const {
   isLoadingBooking,
   getKlasifikasi,
 } = usePenomoran();
+
 const toast = useToast();
+const config = useRuntimeConfig();
+const apiBaseUrl = config.public.apiBase;
 
 const openDetail = ref(false);
 const isDeletingUsulan = ref(false);
+const isUploadingFiles = ref(false);
 const selectedRow = ref(null);
 const rows = ref([]);
 const loading = ref<boolean>(true);
-const files = ref([]);
+
+// File mapping dengan INDEX
+const filesByIndex = ref<Record<number, File>>({});
+
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
-const idToDelete = ref<string | null>(null);
+const openConfirmSubmit = ref(false);
+
+// Preview state
+const isOpenPreview = ref(false);
+const previewUrl = ref("");
+const previewFileName = ref("");
+const previewError = ref("");
+const currentPreviewDetail = ref(null);
+const currentPreviewIndex = ref(null);
 
 // Person mapping
 const personMap = ref(new Map());
 // Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
 
-// Format file size
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-};
+// Search and Pagination State
+const search = ref<string>("");
+const currentPage = ref<number>(1);
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
 
-const previewFile = (detail: any, idx: number) => {
-  // File dari backend
-  if (detail?.file_url) {
-    window.open(detail.file_url, "_blank");
-    return;
-  }
+// Sorting State
+const sortBy = ref<string>("tglUsulan");
+const sortDir = ref<"asc" | "desc">("desc");
 
-  // File baru (belum submit)
-  if (files.value?.[idx]) {
-    const url = URL.createObjectURL(files.value[idx]);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-};
+// Filter Status State
+const filterStatus = ref<string>("Semua");
+const openFilterStatus = ref<boolean>(false);
 
-// Remove file
-const removeFile = (index: number) => {
-  files.value[index] = null;
+// ✅ HELPER: Check if status is approved (terpakai or terpakai_final)
+const isApprovedStatus = (row: any) => {
+  if (!row || !Array.isArray(row.details)) return false;
+
+  // Check if ANY detail has status "terpakai" or "terpakai_final"
+  return row.details.some(
+    (d: any) => d.status === "terpakai" || d.status === "terpakai_final",
+  );
 };
 
 const fetchPersonMap = async () => {
@@ -741,9 +1003,15 @@ const fetchPersonMap = async () => {
     const list = Array.isArray(response) ? response : (response.data ?? []);
 
     list.forEach((item) => {
+      const positionText = item.position_text || "";
+      const subAreaText = item.sub_area_text || "";
+      const displayText = subAreaText
+        ? `${positionText} - ${subAreaText}`
+        : positionText;
+
       personMap.value.set(item.persnum, {
         nama: item.nama,
-        position_text: item.position_text,
+        position_text: displayText,
       });
     });
 
@@ -785,7 +1053,6 @@ const fetchData = async () => {
       return;
     }
 
-    // ✅ AMBIL DATA DARI COMPOSABLE
     const data = await getListUsulanByPosition(String(user.value.position));
 
     if (!Array.isArray(data)) {
@@ -801,7 +1068,11 @@ const fetchData = async () => {
       let mappedStatus = "Belum Diajukan";
 
       if (item.details?.length) {
-        if (item.details.some((d) => d.status === "terpakai")) {
+        if (
+          item.details.some(
+            (d) => d.status === "terpakai" || d.status === "terpakai_final",
+          )
+        ) {
           mappedStatus = "Disetujui";
         } else if (item.details.some((d) => d.status === "booking")) {
           mappedStatus = "Menunggu Verifikasi";
@@ -810,20 +1081,31 @@ const fetchData = async () => {
         }
       }
 
+      const tanggalDate = new Date(item.tanggal);
+      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
+
+      const createdDate = new Date(item.created_at);
+      const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
+
+      const day = String(wibTime.getUTCDate()).padStart(2, "0");
+      const month = String(wibTime.getUTCMonth() + 1).padStart(2, "0");
+      const year = String(wibTime.getUTCFullYear()).slice(-2);
+      const hours = String(wibTime.getUTCHours()).padStart(2, "0");
+      const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
+
       return {
         id: item.id,
         id_usulan: item.id,
         jenis: item.jenis,
-        tanggal: formatDateTime(item.tanggal).split(" ")[0], // DD/MM/YY
-        tglUsulan: formatDateTime(item.created_at),
-        tglUsulanSort: toWIB(item.created_at).getTime(),
+        tanggal: formattedTanggal,
+        tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
+        tglUsulanSort: wibTime.getTime(),
         perihal: item.perihal,
         jumlah: item.jumlah,
         penandatangan: item.penandatangan || "-",
         klasifikasi: item.klasifikasi || "-",
         klasifikasiDisplay,
         pengusul: pengusulInfo.nama || user.value?.nama || "-",
-
         status: mappedStatus,
         details: item.details || [],
         template_nomor: item.template_nomor || "",
@@ -839,19 +1121,18 @@ const fetchData = async () => {
   }
 };
 
-// OPEN ROW MODAL - Fixed untuk menampilkan template_nomor
+// OPEN ROW MODAL
 const openRowModal = async (row) => {
   try {
     console.log("🔍 Opening row modal for:", row.id);
 
-    // ✅ AMBIL TEMPLATE_NOMOR DARI ROW
     const klasifikasiDisplay =
       klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi;
 
     const normalizedDetails = normalizeDetails(
       row.details || [],
       row.jumlah,
-      row.template_nomor || "", // ✅ PASS TEMPLATE_NOMOR KE FUNCTION
+      row.template_nomor || "",
     );
 
     selectedRow.value = {
@@ -865,15 +1146,15 @@ const openRowModal = async (row) => {
       klasifikasi: row.klasifikasi || "-",
       klasifikasiDisplay,
       status: row.status,
-      template_nomor: row.template_nomor || "", // ✅ SET TEMPLATE_NOMOR
+      template_nomor: row.template_nomor || "",
       details: normalizedDetails,
     };
 
-    files.value = Array(normalizedDetails.length).fill(null);
+    // Reset file mapping
+    filesByIndex.value = {};
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
-    console.log("✅ Template nomor:", selectedRow.value.template_nomor);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
     toast.add({
@@ -884,65 +1165,206 @@ const openRowModal = async (row) => {
   }
 };
 
-// HANDLE FILE UPLOAD
-const handleFile = (index: number, e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const selectedFile = target.files?.[0];
+// GET FILE URL - Helper function untuk construct URL yang benar
+const getFileUrl = (detail, idx) => {
+  console.log("🔍 getFileUrl called with:", {
+    detail_has_file: !!detail?.file_name,
+    local_file: !!filesByIndex.value[idx],
+    detail,
+    idx,
+  });
 
-  if (!selectedFile) return;
+  // Priority 1: Local file yang baru diupload (belum submit)
+  if (filesByIndex.value[idx] && filesByIndex.value[idx] instanceof File) {
+    const blobUrl = URL.createObjectURL(filesByIndex.value[idx]);
+    console.log("🔗 Using local blob URL:", blobUrl);
+    return blobUrl;
+  }
 
-  // Validate file size (5MB max)
-  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-  if (selectedFile.size > maxSize) {
+  // Priority 2: file_url dari backend (presigned URL S3)
+  if (detail?.file_url) {
+    console.log("🔗 Using backend file_url:", detail.file_url);
+    return detail.file_url;
+  }
+
+  // Priority 3: file_text path (fallback, construct full URL)
+  if (detail?.file_text) {
+    const fullUrl = detail.file_text.startsWith("http")
+      ? detail.file_text
+      : `${apiBaseUrl}/${detail.file_text}`;
+    console.log("🔗 Using file_text path:", fullUrl);
+    return fullUrl;
+  }
+
+  console.warn("⚠️ No valid file URL found for detail:", detail);
+  return null;
+};
+
+// ✅ OPEN PREVIEW - Buka slideover full page, tutup modal
+const openPreview = (detail, idx) => {
+  console.log("📄 openPreview called with:", { detail, idx });
+  console.log("📁 filesByIndex:", filesByIndex.value);
+
+  // Check if this is a local file (not yet uploaded)
+  const localFile = filesByIndex.value[idx];
+
+  let url = null;
+  let fileName = "Dokumen";
+
+  if (localFile && localFile instanceof File) {
+    // ✅ LOCAL FILE - Create blob URL for preview
+    console.log("📎 Local file detected:", localFile.name);
+    url = URL.createObjectURL(localFile);
+    fileName = localFile.name;
+    console.log("🔗 Created blob URL:", url);
+  } else {
+    // ✅ BACKEND FILE - Use URL from backend
+    url = getFileUrl(detail, idx);
+    fileName = detail.file_name || "Dokumen";
+    console.log("☁️ Backend file URL:", url);
+  }
+
+  if (!url) {
+    console.warn("⚠️ No valid URL found");
+    toast.add({
+      title: "File tidak tersedia",
+      description: "Tidak ada file untuk ditampilkan",
+      color: "yellow",
+    });
+    return;
+  }
+
+  // Reset error state
+  previewError.value = "";
+
+  // Set preview data
+  previewUrl.value = url;
+  previewFileName.value = fileName;
+  currentPreviewDetail.value = detail;
+  currentPreviewIndex.value = idx;
+
+  // Tutup modal detail
+  openDetail.value = false;
+
+  // Buka slideover preview full page
+  isOpenPreview.value = true;
+
+  console.log("✅ Preview opened for:", fileName);
+  console.log("🔗 Preview URL:", url);
+};
+
+// ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
+const closePreview = () => {
+  // Tutup slideover
+  isOpenPreview.value = false;
+
+  // Buka kembali modal detail setelah slideover tertutup
+  setTimeout(() => {
+    openDetail.value = true;
+  }, 150);
+
+  // Clean up URL object jika ada
+  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+
+  // Reset state
+  previewUrl.value = "";
+  previewFileName.value = "";
+  previewError.value = "";
+  currentPreviewDetail.value = null;
+  currentPreviewIndex.value = null;
+};
+
+// Handle preview error
+const handlePreviewError = () => {
+  previewError.value =
+    "Gagal memuat dokumen. File mungkin rusak atau format tidak didukung.";
+  console.error("❌ Preview error for:", previewFileName.value);
+};
+
+// Download file
+const downloadFile = () => {
+  if (!previewUrl.value || previewError.value) return;
+
+  const link = document.createElement("a");
+  link.href = previewUrl.value;
+  link.download = previewFileName.value || "dokumen";
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  toast.add({
+    title: "Download dimulai",
+    description: `File "${previewFileName.value}" sedang didownload`,
+    color: "green",
+  });
+};
+
+// HANDLE FILE UPLOAD berdasarkan INDEX
+const handleFile = (index: number, event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  // Validasi ukuran file
+  if (file.size > 5 * 1024 * 1024) {
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
       color: "red",
     });
+    input.value = "";
     return;
   }
 
-  // Validate file type
-  const allowedTypes = [
+  // Validasi tipe file
+  const validTypes = [
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
-
-  if (!allowedTypes.includes(selectedFile.type)) {
+  if (!validTypes.includes(file.type)) {
     toast.add({
       title: "Tipe file tidak valid",
-      description: "Hanya file PDF, DOC, dan DOCX yang diperbolehkan",
+      description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
       color: "red",
     });
+    input.value = "";
     return;
   }
 
-  files.value[index] = selectedFile;
+  // Simpan file berdasarkan INDEX
+  filesByIndex.value[index] = file;
 
-  console.log(
-    "✅ File uploaded at index",
-    index,
-    ":",
-    selectedFile.name,
-    formatFileSize(selectedFile.size),
-  );
+  console.log("📎 File disimpan untuk index:", index, "=>", file.name);
 
   toast.add({
-    title: "File berhasil dipilih",
-    description: `${selectedFile.name} (${formatFileSize(selectedFile.size)})`,
+    title: "File dipilih",
+    description: `File "${file.name}" siap diupload`,
     color: "green",
   });
 };
 
-// JUMLAH SURAT - Fixed untuk include template_nomor
+// Remove file berdasarkan index
+const removeFile = (index: number) => {
+  delete filesByIndex.value[index];
+  toast.add({
+    title: "File dihapus",
+    description: "File berhasil dihapus dari daftar upload",
+    color: "green",
+  });
+};
+
+// JUMLAH SURAT
 const normalizeDetails = (details: any[], jumlah: number, template: string) => {
   const result = [...(details || [])];
 
-  // ✅ FILL MISSING DETAILS WITH TEMPLATE_NOMOR
   while (result.length < jumlah) {
     result.push({
-      id: `temp-${result.length}`,
+      id: `temp-${result.length + 1}`,
       nomor: null,
       status: "booking",
       file_name: null,
@@ -973,68 +1395,89 @@ function handlePreview(data: any) {
   openAdd.value = false;
   openDetail.value = true;
 
-  const length = Array.isArray(data.nomor_surat) ? data.nomor_surat.length : 1;
-
-  files.value = Array(length).fill(null);
+  // Reset file mapping
+  filesByIndex.value = {};
 }
 
-// SUBMIT USULAN - Updates status to "Menunggu Verifikasi"
-const submitUsulan = async () => {
+// GET CONFIRM MESSAGE - Dynamic message based on files
+const getConfirmMessage = () => {
+  const fileCount = Object.keys(filesByIndex.value).length;
+
+  if (fileCount === 0) {
+    return "Apakah Anda yakin ingin mengirim usulan ini tanpa file? Usulan akan dikirim untuk diverifikasi.";
+  }
+
+  return `Apakah Anda yakin ingin mengirim usulan ini dengan ${fileCount} file? Usulan akan dikirim untuk diverifikasi.`;
+};
+
+// SUBMIT USULAN sesuai format backend
+const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
+
+  isUploadingFiles.value = true;
 
   try {
     const formData = new FormData();
+    let fileCount = 0;
 
-    // Filter files yang valid
-    const uploadedFiles = files.value.filter((f) => f instanceof File);
+    // Loop berdasarkan INDEX untuk match dengan backend
+    Object.keys(filesByIndex.value).forEach((indexStr) => {
+      const index = parseInt(indexStr);
+      const file = filesByIndex.value[index];
 
-    console.log("📤 Submitting usulan with", uploadedFiles.length, "files");
+      if (file instanceof File) {
+        fileCount++;
 
-    // Append files ke FormData (key: "file")
-    if (uploadedFiles.length > 0) {
-      uploadedFiles.forEach((file) => {
+        // SESUAI FORMAT BACKEND
         formData.append("file", file);
-        console.log("📎 Appending file:", file.name);
-      });
-    }
+        formData.append("file_name", file.name);
+        formData.append("file_text", file.name);
 
-    // Call submitBooking dengan formData
-    const response = await submitBooking(selectedRow.value.id_usulan, formData);
+        console.log(`📎 Appending file at index ${index}:`, file.name);
+      }
+    });
 
-    console.log("✅ Booking response:", response);
+    console.log("📦 Total files to upload:", fileCount);
 
+    await submitBooking(selectedRow.value.id_usulan, formData);
+
+    openConfirmSubmit.value = false;
     openDetail.value = false;
-    await fetchData();
 
     toast.add({
       title: "Berhasil",
       description:
-        uploadedFiles.length > 0
-          ? `Usulan berhasil dikirim dengan ${uploadedFiles.length} file`
-          : "Usulan berhasil dikirim tanpa file",
+        fileCount > 0
+          ? `Usulan dikirim dengan ${fileCount} file`
+          : "Usulan dikirim tanpa file",
       color: "green",
     });
+
+    filesByIndex.value = {};
+    await fetchData();
   } catch (e) {
-    console.error("❌ Submit gagal:", e);
+    console.error("❌ Submit error:", e);
+    openConfirmSubmit.value = false;
+
+    toast.add({
+      title: "Gagal",
+      description: e?.response?.data?.message || "Gagal mengirim usulan",
+      color: "red",
+    });
+  } finally {
+    isUploadingFiles.value = false;
   }
 };
 
-// HAPUS USULAN
-const hapusUsulan = () => {
+// CONFIRM DELETE USULAN
+const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan) return;
 
-  idToDelete.value = selectedRow.value.id_usulan;
-  openConfirmDelete.value = true;
-};
-
-const confirmDeleteUsulan = async () => {
-  if (!idToDelete.value) return;
-
+  const idToDelete = selectedRow.value.id_usulan;
   isDeletingUsulan.value = true;
 
   try {
-    // Use user-specific delete function
-    await deleteUsulanUser(idToDelete.value);
+    await deleteUsulanUser(idToDelete);
 
     toast.add({
       title: "Berhasil",
@@ -1044,9 +1487,15 @@ const confirmDeleteUsulan = async () => {
 
     openConfirmDelete.value = false;
     openDetail.value = false;
-    idToDelete.value = null;
 
     await fetchData();
+  } catch (error) {
+    console.error("❌ Delete gagal:", error);
+    toast.add({
+      title: "Gagal",
+      description: "Gagal menghapus usulan. Silakan coba lagi.",
+      color: "red",
+    });
   } finally {
     isDeletingUsulan.value = false;
   }
@@ -1094,9 +1543,6 @@ const handleSubmitFromModal = async (payload: any) => {
 
     await createUsulanDraft(formattedPayload);
 
-    await fetchData();
-    currentPage.value = 1;
-
     toast.add({
       title: "Berhasil",
       description: "Usulan berhasil ditambahkan",
@@ -1104,6 +1550,10 @@ const handleSubmitFromModal = async (payload: any) => {
     });
 
     openAdd.value = false;
+
+    // Reset pagination and fetch
+    currentPage.value = 1;
+    await fetchData();
   } catch (err) {
     console.error("❌ Error submit modal:", err);
 
@@ -1128,6 +1578,25 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+const formatDateTime = (dateStr: string) => {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+// Close dropdown when click outside
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
+  for (const el of Array.from(dropdownEls)) {
+    if (el.contains(target)) return;
+  }
+  openFilterStatus.value = false;
+}
+
 // INIT
 onMounted(async () => {
   loading.value = true;
@@ -1139,6 +1608,17 @@ onMounted(async () => {
   await fetchKlasifikasiMap();
   await fetchPersonMap();
   await fetchData();
+
+  document.addEventListener("click", handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleDocumentClick);
+
+  // Clean up any blob URLs
+  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
 });
 
 /* Breadcrumb */
@@ -1158,15 +1638,16 @@ const headers = [
   { label: "Pengusul", key: "pengusul", sortable: false },
   { label: "Tgl Usulan", key: "tglUsulan", sortable: true },
 ];
-const WIB_OFFSET = 7 * 60 * 60 * 1000;
 
-const toWIB = (dateStr: string | Date) => {
-  const d = new Date(dateStr);
-  return new Date(d.getTime() + WIB_OFFSET);
-};
+const filterOptions = [
+  "Semua",
+  "Belum Diajukan",
+  "Menunggu Verifikasi",
+  "Disetujui",
+  "Ditolak",
+];
 
 /* SORT STATUS */
-const isSortingStatus = ref(false);
 const sortStatus = () => {
   if (sortBy.value === "status") {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -1183,23 +1664,6 @@ const statusOrder = {
   Ditolak: 4,
 };
 
-const filterOptions = [
-  "Semua",
-  "Belum Diajukan",
-  "Menunggu Verifikasi",
-  "Disetujui",
-  "Ditolak",
-];
-
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [5, 10, 20, 50];
-const search = ref<string>("");
-const currentPage = ref<number>(1);
-
-/* SORT STATE */
-const sortBy = ref<string>("tglUsulan");
-const sortDir = ref<"asc" | "desc">("desc");
-
 const sort = (col: string) => {
   if (sortBy.value === col) {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -1210,8 +1674,6 @@ const sort = (col: string) => {
 };
 
 /* STATUS FILTER */
-const filterStatus = ref<string>("Semua");
-const openFilterStatus = ref<boolean>(false);
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
@@ -1239,21 +1701,18 @@ const filteredRows = computed(() => {
 /* SORT */
 const sortedRows = computed(() => {
   return [...filteredRows.value].sort((a, b) => {
-    // ✅ STATUS
     if (sortBy.value === "status") {
       const A = statusOrder[a.status] ?? 99;
       const B = statusOrder[b.status] ?? 99;
       return sortDir.value === "asc" ? A - B : B - A;
     }
 
-    // ✅ TANGGAL USULAN (REAL DATE SORT)
     if (sortBy.value === "tglUsulan") {
       const A = a.tglUsulanSort ?? 0;
       const B = b.tglUsulanSort ?? 0;
       return sortDir.value === "asc" ? A - B : B - A;
     }
 
-    // 🔁 DEFAULT STRING SORT
     const A = String(a[sortBy.value] ?? "").toLowerCase();
     const B = String(b[sortBy.value] ?? "").toLowerCase();
 
@@ -1262,53 +1721,6 @@ const sortedRows = computed(() => {
     return 0;
   });
 });
-
-// SHOW PREVIEW
-const showPreview = async (row: any) => {
-  try {
-    console.log("🔍 Opening preview for:", row.id);
-
-    const detailData = await getDetailVerifikasiRequest(row.id);
-
-    if (!detailData) {
-      return;
-    }
-
-    selectedRow.value = {
-      ...row,
-      ...detailData,
-      tanggal: formatDateTime(detailData.tanggal || row.tanggal),
-      tglUsulan: formatDateTime(detailData.created_at || row.tglUsulan),
-    };
-
-    files.value = Array(detailData.jumlah || 0).fill(null);
-
-    openDetail.value = true;
-    console.log("✅ Modal opened with status:", selectedRow.value.status);
-    console.log("✅ Details loaded:", detailData.details);
-  } catch (err) {
-    console.error("❌ Gagal load detail:", err);
-    toast.add({
-      title: "Gagal memuat detail",
-      description: "Silakan coba lagi",
-      color: "red",
-    });
-  }
-};
-//   FORMAT: DD/MM/YY HH:mm WIB
-const formatDateTime = (dateStr: string | Date) => {
-  if (!dateStr) return "-";
-
-  const wib = toWIB(dateStr);
-
-  const dd = String(wib.getDate()).padStart(2, "0");
-  const mm = String(wib.getMonth() + 1).padStart(2, "0");
-  const yy = String(wib.getFullYear()).slice(-2);
-  const hh = String(wib.getHours()).padStart(2, "0");
-  const min = String(wib.getMinutes()).padStart(2, "0");
-
-  return `${dd}/${mm}/${yy} ${hh}:${min}`;
-};
 
 /* PAGINATION */
 const paginatedRows = computed(() => {
@@ -1319,6 +1731,7 @@ const paginatedRows = computed(() => {
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
 );
+
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
@@ -1358,5 +1771,29 @@ watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
 }
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* Dark mode scrollbar */
+:deep(.dark) {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:deep(.dark)::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 </style>

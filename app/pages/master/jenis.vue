@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen pt-5">
     <!-- Header -->
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"

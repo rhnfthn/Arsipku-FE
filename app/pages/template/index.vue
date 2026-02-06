@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full min-h-screen flex flex-col text-gray-800 dark:text-gray-100"
+    class="w-full pt-5 min-h-screen flex flex-col text-gray-800 dark:text-gray-100"
   >
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
