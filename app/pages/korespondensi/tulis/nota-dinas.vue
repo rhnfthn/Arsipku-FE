@@ -401,32 +401,21 @@
 </template>
 
 <script setup lang="ts">
-/* -------------------------------------------------------------------------- */
-/* 1. IMPORTS                                                                 */
-/* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
-// Components
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
 import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
 import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
 import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
-// Types & Validation
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
-// Composables
-import { useDigSign } from "@/composables/useDigSign"; // Pastikan path ini benar
-
-/* -------------------------------------------------------------------------- */
-/* 2. LOCAL TYPES                                                             */
-/* -------------------------------------------------------------------------- */
 interface RecipientItem {
   label: string;
   labelJob: string;
@@ -446,9 +435,6 @@ interface UploadedFile {
   fileSize: number;
 }
 
-/* -------------------------------------------------------------------------- */
-/* 3. COMPOSABLES & CONFIG                                                    */
-/* -------------------------------------------------------------------------- */
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -458,7 +444,7 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useRecipients();
 const { isLoadingDraft, getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign(); // Init composable getKtp
+const { getKtp } = useDigSign();
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -490,16 +476,13 @@ const tinyMceInit = {
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 4. STATE & REFS                                                            */
-/* -------------------------------------------------------------------------- */
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
 
 const isPassphraseModalOpen = ref(false)
-const selectedSendType = ref('')
+const selectedSendType = ref('qr_only')
 const passphrase = ref('')
 
 const signerInfo = computed(() => ({
@@ -508,36 +491,28 @@ const signerInfo = computed(() => ({
   label: 'Ditandatangani secara digital oleh'
 }))
 
-// Form Data State
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
 const editorContent = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
-// Date State
 const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
 
-// Classification & Files
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
 
-// Selection/Recipients
 const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
 const selectedTertuju = ref<RecipientItem[]>([]);
 const selectedTembusan = ref<RecipientItem[]>([]);
 
-// PDF Generation
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 
-/* -------------------------------------------------------------------------- */
-/* 5. COMPUTED PROPERTIES                                                     */
-/* -------------------------------------------------------------------------- */
 const selectedKlasifikasi = computed(() =>
   klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
 );
@@ -548,9 +523,6 @@ const formattedDate = computed(() => {
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-/* -------------------------------------------------------------------------- */
-/* 6. METHODS                                                                 */
-/* -------------------------------------------------------------------------- */
 const validateAndToast = (payload: DraftPayload) => {
   const validationResult = validateDraftPayload(payload);
   if (!validationResult.isValid) {
@@ -626,7 +598,6 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   return formData;
 };
 
-// --- Event Handlers ---
 const handleApplyTemplate = (htmlContent: string) => {
   if (tinymceEditor.value) {
     const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
@@ -681,7 +652,7 @@ const confirmKirimDokumen = async () => {
   if (!validateAndToast(payload)) return;
 
   passphrase.value = "";
-  selectedSendType.value = "digsig";
+  selectedSendType.value = "qr_only";
   isPassphraseModalOpen.value = true;
 };
 
@@ -715,7 +686,6 @@ const handlePassphraseSubmit = async () => {
   }
 };
 
-// --- CORE FUNCTION YANG DIPERBAIKI SESUAI GAMBAR ---
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
@@ -723,52 +693,37 @@ const handleKirimDokumen = async () => {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. [BARU] Fetch KTP jika metode TTE dipilih
-    // Menggunakan variable 'noktp' sesuai respon API di gambar
-    let noktpValue = '';
+
+    let nikValue = '';
 
     if (selectedSendType.value === 'digsig') {
-      try {
-        const ktpResponse = await getKtp();
-
-        // Debugging untuk melihat respon di console browser
-        console.log("Respon API KTP:", ktpResponse);
-
-        // Ambil value dari path: response.data.noktp
-        if (ktpResponse?.data?.noktp) {
-          noktpValue = ktpResponse.data.noktp;
-        } else {
-          console.warn("Field 'noktp' tidak ditemukan dalam respon");
-        }
-
-      } catch (err) {
-        console.error("Gagal mengambil data KTP:", err);
-        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
+      if (!user.value?.nik) {
+        throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
       }
+      nikValue = user.value.nik;
     }
 
-    // 2. Generate PDF Final
+
     const formDataPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(formDataPreview);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
-    // 3. Buat FormData Utama
+
     const formData = createFormData(payload, true);
 
     console.log("Mengirim Sign Option:", selectedSendType.value);
     console.log("Mengirim Passphrase (RAW):", passphrase.value);
 
-    // 4. Append Data Tambahan
+
     formData.append('passphrase', passphrase.value);
     formData.append('sign_option', selectedSendType.value);
 
-    // [BARU] Masukkan NOKTP ke Body dengan key 'nik' (atau 'noktp' tergantung backend kirim surat)
-    // Biasanya backend TTE standar menggunakan key 'nik'
-    if (noktpValue) {
-      formData.append('nik', noktpValue);
+
+    if (nikValue) {
+      formData.append('nik', nikValue);
     }
 
-    // 5. Panggil API Kirim
+
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
@@ -825,9 +780,6 @@ const handleSaveDraft = async () => {
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 7. LIFECYCLE HOOKS                                                         */
-/* -------------------------------------------------------------------------- */
 onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
@@ -932,7 +884,6 @@ onMounted(async () => {
   height: 100vh !important;
 }
 
-/* Opsional: Fix untuk Shadow DOM atau popup dialog TinyMCE agar juga di atas */
 .tox-dialog-wrap,
 .tox-dropzone,
 .tox-promotions {

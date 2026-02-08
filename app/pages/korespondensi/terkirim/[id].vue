@@ -44,7 +44,7 @@
             </div>
 
             <div class="flex items-center gap-1 shrink-0 pl-2">
-              <UTooltip text="Pratinjau PDF">
+              <UTooltip text="Pratinjau Dokumen">
                 <button v-if="detail.final_pdf_url" @click="openPdfPreview(detail)"
                   class="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 rounded-lg transition-colors">
                   <Printer class="w-4 h-4" />
@@ -229,8 +229,9 @@
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 items-stretch">
             <button v-for="file in detail.lampiran_files" :key="file.id"
-              @click="openDocumentPreview(file.fileUrl, file.fileName)"
+              @click="openDocumentPreview(file.file_url, file.file_name)"
               class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 transition-all text-center flex flex-col h-full overflow-hidden group">
+
               <div class="p-2 w-full">
                 <div
                   class="h-24 rounded-lg bg-gray-100 dark:bg-gray-700/40 flex flex-col items-center justify-center gap-1 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/10 transition-colors">
@@ -238,9 +239,10 @@
                   <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">PDF</span>
                 </div>
               </div>
+
               <div class="px-3 pb-3 flex-1 flex items-center justify-center">
                 <p class="text-xs font-medium text-gray-700 dark:text-gray-200 leading-snug line-clamp-2 break-all">
-                  {{ file.fileName }}
+                  {{ file.file_name }}
                 </p>
               </div>
             </button>

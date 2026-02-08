@@ -1,6 +1,5 @@
 <template>
   <div class="relative">
-
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
@@ -12,8 +11,7 @@
           <div class="relative flex items-center justify-center w-24 h-24">
             <div
               class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
-              style="animation-duration: 1.5s;">
-            </div>
+              style="animation-duration: 1.5s;"></div>
             <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
               <div class="plane-float">
                 <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
@@ -21,12 +19,8 @@
             </div>
           </div>
           <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">
-              {{ loadingMessage || 'Memproses Data' }}
-            </span>
-            <span class="text-sm text-gray-600">
-              Mohon tunggu sebentar
-            </span>
+            <span class="text-gray-900 font-semibold text-lg">{{ loadingMessage || 'Memproses Data' }}</span>
+            <span class="text-sm text-gray-600">Mohon tunggu sebentar</span>
           </div>
         </div>
       </div>
@@ -35,174 +29,62 @@
     <PageHeader title="Tulis Lanjut Nota Dinas" :items="breadcrumbs" />
 
     <div v-if="refData" class="mb-4 mt-6">
-      <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm">
+      <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
-          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
+          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
           <div class="flex items-center py-2 gap-3">
             <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
             </div>
             <div>
               <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Klik untuk melihat/menyembunyikan detail
-                surat referensi</p>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                {{ refData.nomor || '-' }} • {{ formatDateRef(refData.tanggal) }}
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <NuxtLink :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank"
-              @click.stop
-              class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
-              Buka Tab Baru
-              <UIcon name="i-lucide-external-link" class="w-3 h-3" />
-            </NuxtLink>
             <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': isRefExpanded }" />
           </div>
         </div>
 
-        <div v-show="isRefExpanded">
-          <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <div class="flex items-center gap-1 shrink-0">
-                <Hash class="w-3.5 h-3.5" />
-                <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">{{ refData.nomor || '-' }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div class="flex items-center gap-1 shrink-0">
-                <Calendar class="w-3.5 h-3.5" />
-                <span>{{ formatDateRef(refData.tanggal) }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div
-                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
-                :class="getCategoryStyle(refData.jenis_label)">
-                <Tag class="w-3 h-3" />
-                {{ refData.jenis_label }}
-              </div>
-            </div>
+        <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
+          <div v-if="refPdfUrl" class="w-full">
+             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[500px] border-none"
+              title="Preview Surat Referensi"></iframe>
           </div>
-
-          <div class="p-5 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-700">
-            <div class="flex items-start gap-4">
-              <UAvatar size="md"
-                class="group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center shrink-0">
-                {{ refSenderInitials }}
-              </UAvatar>
-              <div class="flex-1 min-w-0 space-y-4">
-                <div>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white block">{{ refData.pengirim_jabatan
-                    }}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{{ refData.pengirim_nama }}</span>
-                </div>
-                <div class="grid grid-cols-1 gap-4 text-xs">
-                  <div class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
-                      Kepada</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(k, idx) in refData.kepada" :key="idx"
-                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <div class="break-words">
-                          <span class="font-medium text-gray-900 dark:text-white">{{ k.position_text }}</span>
-                          <span v-if="k.nama" class="text-gray-500 dark:text-gray-400 font-normal ml-1">({{ k.nama
-                            }})</span>
-                        </div>
-                      </div>
-                      <span v-if="!refData.kepada || !refData.kepada.length" class="text-gray-400 italic">-</span>
-                    </div>
-                  </div>
-                  <div v-if="refData.tembusan && refData.tembusan.length > 0"
-                    class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
-                      Tembusan</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(t, idx) in refData.tembusan" :key="idx"
-                        class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ t.nama }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="refData.disposisi" class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">
-                      Disposisi</div>
-                    <div class="text-gray-800 dark:text-gray-200 font-medium">{{
-                      formatDisposisiInline(refData.disposisi) }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="refData.catatan"
-            class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 rounded-b-lg">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm pb-4"
-              v-html="refData.catatan"></div>
+          <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
+            <UIcon name="i-lucide-file-x" class="w-12 h-12 opacity-30" />
+            <span class="text-sm font-medium">Dokumen PDF tidak tersedia untuk ditampilkan.</span>
           </div>
         </div>
       </div>
     </div>
 
-    <UCard variant="soft" :ui="{
-      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
-    }">
+    <UCard variant="soft" :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-        <div class="pt-2">
-          <div class="flex justify-between items-center gap-4">
-            <div class="flex gap-3 sm:gap-4">
-              <USkeleton class="h-8 w-36 rounded" />
-              <USkeleton class="h-8 w-36 rounded" />
-            </div>
-            <USkeleton class="h-8 w-36 rounded" />
-          </div>
-        </div>
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
-          <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
-            <USkeleton class="h-12 w-12 rounded-full" />
-            <div class="flex-1 space-y-2 pt-1">
-              <USkeleton class="h-3 w-1/2" />
-              <USkeleton class="h-3 w-1/3" />
-            </div>
-          </div>
-          <div class="space-y-3 px-4">
-            <USkeleton class="h-3 w-full" />
-            <USkeleton class="h-3 w-full" />
-            <USkeleton class="h-3 w-11/12" />
-            <USkeleton class="h-3 w-full" />
-          </div>
-        </div>
-        <USkeleton class="h-30 w-full rounded-md" />
-        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
-          <USkeleton class="h-10 w-32 rounded-lg" />
-        </div>
+        <USkeleton class="h-30 w-full rounded-md mt-4" />
       </div>
-
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
-
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
-          :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -221,18 +103,14 @@
           <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div
-              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-
+            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <div class="flex items-center pb-2 mb-6">
                     <div class="flex items-end gap-4">
                       <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
                       <div class="flex flex-col mb-1">
-                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">
-                          AirNav Indonesia
-                        </span>
+                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">AirNav Indonesia</span>
                       </div>
                     </div>
                     <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
@@ -241,14 +119,10 @@
                       <div v-html="user?.alamatInfo?.alamat"></div>
                     </div>
                   </div>
-
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
-                      NOTA DINAS
-                    </h1>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
-
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
@@ -256,12 +130,7 @@
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else v-html="selectedTertuju.length
-                            ? selectedTertuju.map((s: any, i: number) => selectedTertuju.length === 1
-                              ? `<div>${s.labelJob || s.label}</div>`
-                              : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
-                            ).join('')
-                            : '................................................'"></span>
+                          <span v-else v-html="selectedTertuju.length ? selectedTertuju.map((s: any, i: number) => selectedTertuju.length === 1 ? `<div>${s.labelJob || s.label}</div>` : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`).join('') : '................................................'"></span>
                         </td>
                       </tr>
                       <tr>
@@ -272,8 +141,7 @@
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject ||
-                          "................................................" }}</td>
+                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -294,33 +162,11 @@
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
-                      selectedTembusan[0]?.label }}</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
-                  </div>
-                </div>
-
-                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
-                  <div class="flex justify-end mb-10 text-[14px]">
-                    <div class="text-left min-w-[300px]">
-                      <table class="w-full">
-                        <tr>
-                          <td class="align-top pr-2">Lampiran Surat</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Nomor Surat :</td>
-                          <td>.....................................</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Tanggal Surat :</td>
-                          <td>{{ formattedDate }}</td>
-                        </tr>
-                      </table>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -330,19 +176,13 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div
-          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
-            @click="handlePreview" />
+        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
         </div>
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0',
-      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-    }">
+    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{ content: 'h-screen max-h-screen', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
       <template #body>
         <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
@@ -354,11 +194,8 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" @click="confirmSaveDraft" />
-
-          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
-            @click="confirmKirimDokumen" />
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8" @click="confirmSaveDraft" />
+          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold" @click="confirmKirimDokumen" />
         </div>
       </template>
     </USlideover>
@@ -370,70 +207,35 @@
         </div>
       </template>
       <template #body>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
-        </p>
-
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.</p>
         <div class="space-y-4">
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
             <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
-
             <div class="flex flex-col flex-1">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Tanda Tangan Digital (BSrE)
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen ditandatangani secara elektronik resmi (TTE).
-              </span>
-
-              <div v-if="selectedSendType === 'digsig'"
-                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <span class="font-medium text-gray-900 dark:text-white">Tanda Tangan Digital (BSrE)</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">Dokumen ditandatangani secara elektronik resmi (TTE).</span>
+              <div v-if="selectedSendType === 'digsig'" class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div class="flex items-start gap-4 p-4">
                   <div class="flex-shrink-0">
-                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
-                    </div>
+                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white"><UIcon name="i-heroicons-user" class="w-6 h-6" /></div>
                   </div>
-
                   <div class="flex flex-col">
-                    <span class="text-xs text-gray-500 mb-0.5">
-                      {{ signerInfo.label }}
-                    </span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                      {{ signerInfo.role }}
-                    </span>
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">
-                      {{ signerInfo.name }}
-                    </span>
+                    <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role }}</span>
+                    <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
                   </div>
                 </div>
-
                 <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div @click.stop>
-                    <UFormGroup label="Passphrase" required>
-                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
-                        class="w-full" autofocus />
-                    </UFormGroup>
-                  </div>
+                  <div @click.stop><UFormGroup label="Passphrase" required><UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda" class="w-full" autofocus /></UFormGroup></div>
                 </div>
               </div>
             </div>
           </label>
-
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
             <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
-
             <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Kirim Tanpa Tanda Tangan
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen dikirim tanpa proses tanda tangan digital.
-              </span>
+              <span class="font-medium text-gray-900 dark:text-white">Kirim Tanpa Tanda Tangan</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">Dokumen dikirim tanpa proses tanda tangan digital.</span>
             </div>
           </label>
         </div>
@@ -441,8 +243,7 @@
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            :loading="isLoadingData" @click="handlePassphraseSubmit" />
+          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane" :loading="isLoadingData" @click="handlePassphraseSubmit" />
         </div>
       </template>
     </UModal>
@@ -470,33 +271,13 @@ import { Alert } from "@/composables/useAlert";
 
 // Composables
 import { useDigSign } from "@/composables/useDigSign";
-import { useInbox } from "@/composables/useInbox"; // REQUIRED FOR REF DATA FETCH
+import { useInbox } from "@/composables/useInbox";
 
-/* -------------------------------------------------------------------------- */
-/* TYPES                                                                      */
-/* -------------------------------------------------------------------------- */
-interface RecipientItem {
-  label: string;
-  labelJob: string;
-  value: string;
-  raw: any;
-}
+// Interfaces
+interface RecipientItem { label: string; labelJob: string; value: string; raw: any; }
+interface SifatOption { label: string; value: string; }
+interface UploadedFile { id: string; fileName: string; filePath: string; fileSize: number; }
 
-interface SifatOption {
-  label: string;
-  value: string;
-}
-
-interface UploadedFile {
-  id: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-}
-
-/* -------------------------------------------------------------------------- */
-/* COMPOSABLES                                                                */
-/* -------------------------------------------------------------------------- */
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -507,23 +288,17 @@ const { getRecipients } = useRecipients();
 const { isLoadingDraft, getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
 const { getKtp } = useDigSign();
-const { fetchInboxDetail } = useInbox(null); // REQUIRED
+
+// PENTING: Destructure composable
+const { fetchInboxDetail } = useInbox();
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Detail", to: "#" },
-  { label: "Tulis Lanjut Nota Dinas", to: "#" }, // Updated Title
+  { label: "Tulis Lanjut Nota Dinas", to: "#" },
 ];
 
 const maxPerihal = 200;
-
-const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" }
-];
-
 const tinyMceInit = {
   base_url: '/tinymce',
   suffix: '.min',
@@ -535,66 +310,52 @@ const tinyMceInit = {
   plugins: 'lists advlist link image code table fullscreen',
   toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
-  setup(editor: TinyMCEEditor) {
-    tinymceEditor.value = editor;
-  }
+  setup(editor: TinyMCEEditor) { tinymceEditor.value = editor; }
 };
 
-/* -------------------------------------------------------------------------- */
-/* STATE                                                                      */
-/* -------------------------------------------------------------------------- */
+const sifatOptions: SifatOption[] = [
+  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Rahasia", value: "rahasia" },
+  { label: "Terbatas", value: "terbatas" },
+  { label: "Biasa / Terbuka", value: "biasa" }
+];
+
+// STATE
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
-
-const isPassphraseModalOpen = ref(false)
-const selectedSendType = ref('')
-const passphrase = ref('')
-
-// REF DATA STATE
+const isPassphraseModalOpen = ref(false);
+const selectedSendType = ref('');
+const passphrase = ref('');
 const refData = ref<any>(null);
 const isRefExpanded = ref(true);
-
-const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
-}))
-
-// Form
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
 const editorContent = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
-
-// Date
 const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
-
-// Classification & Files
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
-
-// Selection
 const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
 const selectedTertuju = ref<RecipientItem[]>([]);
 const selectedTembusan = ref<RecipientItem[]>([]);
-
-// PDF
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 
-/* -------------------------------------------------------------------------- */
-/* COMPUTED                                                                   */
-/* -------------------------------------------------------------------------- */
-const selectedKlasifikasi = computed(() =>
-  klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
-);
+// COMPUTED PROPERTIES
+const signerInfo = computed(() => ({
+  name: user.value?.nama || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh'
+}));
+
+const selectedKlasifikasi = computed(() => klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value));
 
 const formattedDate = computed(() => {
   if (!date.value) return "-";
@@ -602,69 +363,42 @@ const formattedDate = computed(() => {
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-// REF DATA HELPERS
-const refSenderInitials = computed(() => {
-  const n = refData.value?.pengirim_nama || "";
-  return n ? n.trim().split(" ").slice(0, 2).map((x: string) => x[0].toUpperCase()).join("") : "?";
-});
-
 const formatDateRef = (dateString: string) => {
   if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  try { return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return dateString; }
 };
 
-const getCategoryStyle = (label: string) => {
-  const l = (label || '').toLowerCase();
-  if (l.includes('nota') || l === 'nd') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-  if (l.includes('disposisi') || l === 'di') return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
-};
+// LOGIKA PDF URL
+const refPdfUrl = computed(() => {
+  if (!refData.value) return '';
+  if (refData.value.final_pdf_url) return refData.value.final_pdf_url;
+  if (refData.value.lampiran_files && refData.value.lampiran_files.length > 0) {
+    const file = refData.value.lampiran_files[0];
+    return file.file_url || file.file_path || file.url || '';
+  }
+  return '';
+});
 
-const formatDisposisiInline = (val: any) => {
-  if (Array.isArray(val)) return val.join(', ');
-  return String(val || '').replace(/(\r\n|\n|\r)/gm, ", ");
-};
-
-/* -------------------------------------------------------------------------- */
-/* METHODS                                                                    */
-/* -------------------------------------------------------------------------- */
+// METHODS
 const validateAndToast = (payload: DraftPayload) => {
   const validationResult = validateDraftPayload(payload);
   if (!validationResult.isValid) {
     const errorKeys = Object.keys(validationResult.errors || {});
     const firstKey = errorKeys.length > 0 ? errorKeys[0] : null;
-    const firstMessage = firstKey && validationResult.errors
-      ? validationResult.errors[firstKey]
-      : "Terjadi kesalahan input";
-
-    toast.add({
-      title: 'Validasi Gagal',
-      description: firstMessage,
-      icon: 'i-heroicons-x-circle-20-solid',
-      color: 'error'
-    });
+    toast.add({ title: 'Validasi Gagal', description: firstKey ? validationResult.errors![firstKey] : "Terjadi kesalahan input", icon: 'i-heroicons-x-circle-20-solid', color: 'error' });
     return false;
   }
   return true;
 };
 
-const getBasePayload = (): DraftPayload & { id_referensi_naskah?: string | null } => {
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
-
-  const tglPreview = date.value
-    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-    : "";
-
-  const lampiranIds = existingFiles.value
-    .map((f) => f.id)
-    .filter((id): id is string => !!id);
+const getBasePayload = () => {
+  const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
+  const tglPreview = date.value ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}` : "";
+  const lampiranIds = existingFiles.value.map((f) => f.id).filter((id): id is string => !!id);
 
   return {
     id_naskah: editDraftId.value || null,
-    id_referensi_naskah: (route.query.ref_id as string) || null, // MODIFIKASI: Menambahkan id_referensi_naskah
-
+    id_referensi_naskah: (route.query.ref_id as string) || null,
     pengirim: user.value?.position || "",
     penerima: selectedTertuju.value.map(i => i.value),
     tembusan: selectedTembusan.value.map(i => i.value),
@@ -687,28 +421,21 @@ const getBasePayload = (): DraftPayload & { id_referensi_naskah?: string | null 
 
 const createFormData = (payload: any, includePdf: boolean = false) => {
   const formData = new FormData();
-
   Object.keys(payload).forEach((key) => {
     const value = payload[key];
-    if (Array.isArray(value)) {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
-    }
+    if (Array.isArray(value)) formData.append(key, JSON.stringify(value));
+    else if (value !== null && value !== undefined) formData.append(key, String(value));
   });
-
   if (includePdf && pdfBlob.value) {
     const safeDate = payload.tanggal ? payload.tanggal.replace(/\//g, '-') : 'draft';
     formData.append("final_pdf", pdfBlob.value, `nota_dinas_${safeDate}.pdf`);
   }
-
   return formData;
 };
 
 const handleApplyTemplate = (htmlContent: string) => {
   if (tinymceEditor.value) {
-    const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
-    tinymceEditor.value.setContent(cleanContent);
+    tinymceEditor.value.setContent(htmlContent.trim().replace(/>\s+</g, '><'));
     editorContent.value = tinymceEditor.value.getContent();
   }
 };
@@ -716,10 +443,8 @@ const handleApplyTemplate = (htmlContent: string) => {
 const handlePreview = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
-
   loadingMessage.value = "Memproses Pratinjau...";
   isLoadingData.value = true;
-
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
     const formData = createFormData(payload, false);
@@ -729,66 +454,12 @@ const handlePreview = async () => {
     isOpenPreview.value = true;
   } catch (err) {
     toast.add({ title: 'Gagal Preview', color: 'error' });
-  } finally {
-    isLoadingData.value = false;
-  }
+  } finally { isLoadingData.value = false; }
 };
 
 const confirmSaveDraft = async () => {
   const isConfirmed = await Alert.confirm('Simpan sebagai Draft?', 'Dokumen akan disimpan ke folder draft.', 'Ya, Simpan', 'Batal', false);
-  if (!isConfirmed) return;
-  try { await handleSaveDraft(); Alert.close(); } catch (error) { console.error(error); Alert.close(); }
-};
-
-const confirmKirimDokumen = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
-  passphrase.value = "";
-  selectedSendType.value = "digsig";
-  isPassphraseModalOpen.value = true;
-};
-
-const handlePassphraseSubmit = async () => {
-  if (!selectedSendType.value) { toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' }); return; }
-  if (selectedSendType.value === 'digsig' && !passphrase.value) { toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' }); return; }
-  isPassphraseModalOpen.value = false;
-  const isConfirmed = await Alert.confirm('Konfirmasi Akhir', 'Kirim dokumen sekarang?', 'Ya, Kirim', 'Periksa Lagi', false);
-  if (isConfirmed) await handleKirimDokumen();
-};
-
-const handleKirimDokumen = async () => {
-  const payload = getBasePayload();
-  try {
-    loadingMessage.value = "Mengirim Nota Dinas...";
-    isLoadingData.value = true;
-    let noktpValue = '';
-    if (selectedSendType.value === 'digsig') {
-      try {
-        const ktpResponse = await getKtp();
-        if (ktpResponse?.data?.noktp) noktpValue = ktpResponse.data.noktp;
-      } catch (err) { console.error(err); throw new Error("Gagal mengambil data KTP"); }
-    }
-    const formDataPreview = createFormData(payload, false);
-    const blobResponse = await generatePdf(formDataPreview);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-    const formData = createFormData(payload, true);
-    formData.append('passphrase', passphrase.value);
-    formData.append('sign_option', selectedSendType.value);
-    if (noktpValue) formData.append('nik', noktpValue);
-    const result = await sendNotaDinas(formData);
-    if (result.data.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      Alert.close();
-      router.push("/korespondensi/terkirim");
-    } else { throw new Error(result.data.message || 'Pengiriman gagal'); }
-  } catch (e: any) {
-    isLoadingData.value = false;
-    Alert.close();
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-    if (errMsg.toLowerCase().includes('passphrase')) isPassphraseModalOpen.value = true;
-    toast.add({ title: 'Gagal Mengirim', description: errMsg, color: 'error' });
-  } finally { isLoadingData.value = false; }
+  if (isConfirmed) try { await handleSaveDraft(); Alert.close(); } catch (error) { console.error(error); Alert.close(); }
 };
 
 const handleSaveDraft = async () => {
@@ -806,75 +477,104 @@ const handleSaveDraft = async () => {
   } finally { isLoadingData.value = false; }
 };
 
-/* -------------------------------------------------------------------------- */
-/* LIFECYCLE HOOKS                                                            */
-/* -------------------------------------------------------------------------- */
+const confirmKirimDokumen = async () => {
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
+  passphrase.value = "";
+  selectedSendType.value = "digsig";
+  isPassphraseModalOpen.value = true;
+};
+
+const handlePassphraseSubmit = async () => {
+  if (!selectedSendType.value) { toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' }); return; }
+  if (selectedSendType.value === 'digsig' && !passphrase.value) { toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' }); return; }
+  isPassphraseModalOpen.value = false;
+  if (await Alert.confirm('Konfirmasi Akhir', 'Kirim dokumen sekarang?', 'Ya, Kirim', 'Periksa Lagi', false)) await handleKirimDokumen();
+};
+
+const handleKirimDokumen = async () => {
+  const payload = getBasePayload();
+  try {
+    loadingMessage.value = "Mengirim Nota Dinas...";
+    isLoadingData.value = true;
+    let noktpValue = '';
+    if (selectedSendType.value === 'digsig') {
+      try {
+        const ktpResponse = await getKtp();
+        if (ktpResponse?.data?.noktp) noktpValue = ktpResponse.data.noktp;
+      } catch (err) { console.error(err); throw new Error("Gagal mengambil data KTP"); }
+    }
+    const blobResponse = await generatePdf(createFormData(payload, false));
+    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
+    const formData = createFormData(payload, true);
+    formData.append('passphrase', passphrase.value);
+    formData.append('sign_option', selectedSendType.value);
+    if (noktpValue) formData.append('nik', noktpValue);
+    const result = await sendNotaDinas(formData);
+    if (result.data.success) {
+      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
+      Alert.close();
+      router.push("/korespondensi/terkirim");
+    } else { throw new Error(result.data.message || 'Pengiriman gagal'); }
+  } catch (e: any) {
+    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+    if (errMsg.toLowerCase().includes('passphrase')) isPassphraseModalOpen.value = true;
+    toast.add({ title: 'Gagal Mengirim', description: errMsg, color: 'error' });
+  } finally { isLoadingData.value = false; Alert.close(); }
+};
+
+// LIFECYCLE ONMOUNTED
 onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
 
-  // 1. FETCH DATA REFERENSI (Jika ada ref_id di URL)
+  // --- LOGIC FETCH REFERENSI ---
   const refId = route.query.ref_id as string;
+  const refJenis = route.query.ref_jenis as string;
+
+  // Debug Log: Cek apakah ID terbaca dari URL
+  console.log("OnMounted - Params dari URL:", { refId, refJenis });
+
   if (refId) {
     try {
-      const res = await fetchInboxDetail(refId);
+      // Pastikan useInbox sudah diimport dan fetchInboxDetail dipanggil
+      console.log("Memanggil fetchInboxDetail...");
 
-      // FIX: Menangani struktur JSON { data: [...] } dengan lebih presisi
-      // Ambil body respons (tergantung apakah axios me-return full response atau data saja)
-      const resBody = res?.data || res;
+      const result = await fetchInboxDetail(refId, refJenis);
 
-      // Ambil item pertama dari array 'data'
-      const d = (resBody?.data && Array.isArray(resBody.data)) ? resBody.data[0] : resBody;
+      // Debug Log: Cek hasil API
+      console.log("Hasil fetchInboxDetail:", result);
 
-      if (d && d.id) {
-        refData.value = {
-          id: d.id,
-          jenis: d.jenis,
-          jenis_label: d.jenis_label || d.jenis,
-          nomor: d.nomor,
-          tanggal: d.tanggal,
-          // Mapping Pengirim
-          pengirim_nama: d.pengirim?.nama || '-',
-          pengirim_jabatan: d.pengirim?.position_text || '-',
-          // Mapping Penerima (Kepada) - Langsung pass array karena struktur itemnya sudah cocok
-          kepada: d.penerima || [],
-          // Mapping Tembusan
-          tembusan: d.tembusan || [],
-          // Mapping Detail (Disposisi & Catatan ada di dalam object 'detail' di JSON)
-          disposisi: d.detail?.disposisi || d.disposisi,
-          catatan: d.detail?.catatan || d.catatan
-        };
+      if (result) {
+        refData.value = result;
       } else {
-        console.warn("Data referensi tidak ditemukan dalam respon:", resBody);
+        console.warn("API mengembalikan null/undefined");
+        toast.add({ title: 'Info', description: 'Data referensi tidak ditemukan', color: 'gray' });
       }
     } catch (error) {
-      console.error("Gagal memuat surat referensi:", error);
-      toast.add({ title: 'Info', description: 'Gagal memuat data surat referensi', color: 'gray' });
+      console.error("Error Fetch Inbox Detail:", error);
+      toast.add({ title: 'Error', description: 'Gagal memuat data referensi', color: 'error' });
     }
   }
 
-  // 2. Load Options (Klasifikasi & Recipients)
+  // --- INIT DATA LAINNYA ---
   try {
     klasifikasiStatus.value = "loading";
     klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
-
     const resRec = await getRecipients();
     const rawData = resRec.recipients || resRec.data || [];
-
-    items.value = rawData.map((r: any): RecipientItem => ({
+    items.value = rawData.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
-  } catch {
-    klasifikasiStatus.value = "error";
-  }
+  } catch { klasifikasiStatus.value = "error"; }
 
-  // 3. Load Draft (Mode Edit) - Logika tetap sama seperti sebelumnya
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
@@ -889,43 +589,21 @@ onMounted(async () => {
           const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
-
-        // Helper untuk mapping draft recipients ke UI format
-        const mapApiToUI = (list: any[]): RecipientItem[] => {
-          return list?.map(item => {
-            const posId = String(item.position_id || item.position || item.value);
-            const master = items.value.find(m => m.value === posId);
-            if (master) return master;
-            return {
-              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-              labelJob: item.positionText || item.labelJob || '',
-              value: posId,
-              raw: item
-            };
-          }) || [];
-        };
-
+        const mapApiToUI = (list: any[]) => list?.map(item => {
+          const posId = String(item.position_id || item.position || item.value);
+          const master = items.value.find(m => m.value === posId);
+          return master || { label: `${item.persnum} - ${item.positionText}`, labelJob: item.positionText, value: posId, raw: item };
+        }) || [];
         selectedTertuju.value = mapApiToUI(d.penerima);
         selectedTembusan.value = mapApiToUI(d.tembusan);
-
-        if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
-          existingFiles.value = d.lampiran_files.map((f: any): UploadedFile => ({
-            id: f.id, fileName: f.fileName || f.file_name, filePath: f.fileUrl || f.file_path, fileSize: f.fileSize || 0
-          }));
-        }
-
-        const draftSifat = String(d.sifat || 'biasa').toLowerCase();
-        selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
-
+        if (d.lampiran_files) existingFiles.value = d.lampiran_files.map((f: any) => ({ id: f.id, fileName: f.fileName || f.file_name, filePath: f.fileUrl || f.file_path, fileSize: f.fileSize || 0 }));
+        selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat).toLowerCase()) || sifatOptions[3];
         if (d.tanggal) {
-          const dateParts = d.tanggal.split('-');
-          if (dateParts.length === 3) date.value = new CalendarDate(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
+          const p = d.tanggal.split('-');
+          if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
         }
       }
-    } catch (error) {
-      console.error("Error loading draft detail:", error);
-      toast.add({ title: 'Gagal memuat data draft', color: 'error' });
-    }
+    } catch (e) { console.error(e); }
   }
 
   isLoadingData.value = false;

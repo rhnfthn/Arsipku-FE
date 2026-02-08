@@ -21,7 +21,7 @@
       </main>
 
       <footer class="p-4 text-center text-xs text-gray-400 dark:text-gray-600">
-        &copy; 2025 ArsipKu
+        &copy; 2026 Developed by <span class="font-bold text-primary-400">Team Dev Maganghub</span>
       </footer>
     </div>
     <Alert />

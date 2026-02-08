@@ -34,11 +34,13 @@ const isLoading = ref(true);
 const isKonsepData = ref(false);
 const showFinalizeActions = ref(false);
 const showEditAction = ref(false); // STATE BARU: Untuk tombol edit
+const showFinalizeOptionsModal = ref(false); // NEW: State for showing finalize options
 
 // State Reject
 const showRejectModal = ref(false);
 const rejectNote = ref("");
 const isRejecting = ref(false);
+const showRejectOptionsModal = ref(false); // NEW: State for showing reject options
 
 // State UI Logic
 const showAllKepada = ref(false);
@@ -56,7 +58,34 @@ const isOpenKonsepModal = ref(false);
 /* ===============================
    ACTIONS
 ================================ */
-const handleFinalize = () => console.log("Finalize", selected.value.id);
+const handleFinalize = () => {
+  showFinalizeOptionsModal.value = true;
+};
+
+const handleFinalizeAndRedirect = () => {
+  showFinalizeOptionsModal.value = false; // Close the options modal
+  if (selected.value?.id) {
+    // Determine the appropriate path based on selected.value.jenis
+    // For now, assuming it's always 'nota-dinas' as per request.
+    let finalizationPath = '/korespondensi/tulis/finalisasi/nota-dinas';
+
+    // Additional logic might be needed here to handle different 'jenis'
+    // For example:
+    // if (selected.value.jenis === 'SDI') {
+    //   finalizationPath = '/korespondensi/tulis/finalisasi/surat-dinas-internal';
+    // } else if (selected.value.jenis === 'SDE') {
+    //   finalizationPath = '/korespondensi/tulis/finalisasi/surat-dinas-eksternal';
+    // }
+
+    router.push({
+      path: finalizationPath,
+      query: {
+        ref_id: selected.value.id, // ID konsep untuk finalisasi
+        action: 'finalize' // Penanda mode finalisasi
+      }
+    });
+  }
+};
 
 const handleReject = () => {
   rejectNote.value = "";
@@ -182,7 +211,8 @@ const loadData = async () => {
               ...commonProps,
               to: d.kepada || d.penerima || [],
               cc: d.tembusan || [],
-              rich_content: d.konten,
+              // rich_content: d.konten,
+              rich_content: d.naskah?.konten || d.naskah?.content?.konten || "",
               attachments: d.lampiran_files || [],
               subject: d.perihal,
               nomor: d.nomor
@@ -469,7 +499,7 @@ const openMainPdfPreview = () => {
                 class="bg-gray-50 dark:bg-gray-950/50 rounded-lg p-5 border border-gray-100 dark:border-gray-800 relative">
                 <template v-if="flow.rich_content">
                   <div
-                    class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-full mb-3 border-b border-gray-200 pb-2">
+                    class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-full">
                     Isi Naskah</div>
                   <div class="relative overflow-hidden w-full">
                     <iframe :srcdoc="'<style>body{margin:0;padding:0;}</style>' + flow.rich_content"
@@ -478,18 +508,37 @@ const openMainPdfPreview = () => {
                     </iframe>
                   </div>
                 </template>
-                <template v-else-if="flow.type === 'disposisi'">
-                  <div v-if="flow.disposisi_content?.catatan">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Catatan
-                      Disposisi</span>
-                    <div class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
-                      v-html="flow.disposisi_content.catatan"></div>
+             <template v-else-if="flow.type === 'disposisi'">
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                      Catatan Disposisi
+                    </span>
+
+                    <div v-if="flow.disposisi_content?.catatan && flow.disposisi_content.catatan !== '-'"
+                         class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
+                         v-html="flow.disposisi_content.catatan">
+                    </div>
+
+                    <p v-else class="text-sm text-gray-400 italic">
+                      - Tidak ada catatan disposisi -
+                    </p>
                   </div>
                 </template>
+
                 <template v-else>
-                  <div v-if="flow.catatan"><span
-                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Catatan</span>
-                    <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ flow.catatan }}</p>
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                      Catatan
+                    </span>
+
+                    <p v-if="flow.catatan && flow.catatan !== '-'"
+                       class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                       {{ flow.catatan }}
+                    </p>
+
+                    <p v-else class="text-sm text-gray-400 italic">
+                      - Tidak ada catatan -
+                    </p>
                   </div>
                 </template>
               </div>
@@ -784,6 +833,33 @@ const openMainPdfPreview = () => {
             </div>
             <ChevronRight class="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors" />
           </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="showFinalizeOptionsModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header>
+        <div class="w-full flex justify-between items-start">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Finalisasi Konsep</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apakah Anda yakin ingin memfinalisasi konsep ini?</p>
+          </div>
+          <button @click="showFinalizeOptionsModal = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors -mt-1 -mr-1 p-1">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </template>
+      <template #body>
+        <div class="flex justify-end gap-3">
+          <button @click="showFinalizeOptionsModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700">
+            Batal
+          </button>
+          <button @click="handleFinalizeAndRedirect"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            <CheckCircle class="w-4 h-4" /> Ya, Finalisasi
+          </button>
         </div>
       </template>
     </UModal>
