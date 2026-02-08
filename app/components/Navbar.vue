@@ -246,6 +246,18 @@
                 {{ user?.positionText }}
               </span>
             </UTooltip>
+
+            <UTooltip
+              v-if="user?.companyText"
+              :text="user?.companyText"
+              :popper="{ placement: 'bottom-end' }"
+            >
+              <span
+                class="hidden md:block text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[200px]"
+              >
+                {{ user?.companyText }}
+              </span>
+            </UTooltip>
           </div>
           <UAvatar size="md"
             class="ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center">
@@ -267,6 +279,13 @@
               </div>
               <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left">
                 {{ item.uiPosition }}
+              </span>
+
+              <span
+                v-if="item.uiCompany"
+                class="text-[11px] text-gray-400 dark:text-gray-500 truncate w-full text-left"
+              >
+                {{ item.uiCompany }}
               </span>
             </div>
             <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
@@ -750,6 +769,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     uiName: user.value?.nama || "User",
     uiBadge: user.value?.role,
     uiPosition: originalRoleLabel.value,
+    uiCompany: user.value?.companyText,
     label: originalRoleLabel.value,
     slot: "delegation-item",
     isActive: isMainAccountActive,

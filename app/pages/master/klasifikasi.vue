@@ -1,16 +1,18 @@
 <template>
+<<<<<<< Updated upstream
   <div class="space-y-6 pt-5">
     <!-- HEADER -->
+=======
+  <div class="min-h-screen">
+>>>>>>> Stashed changes
     <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
-      <div>
-        <PageHeader title="Klasifikasi" :items="items" />
-      </div>
-
+      <!-- Left Section - Title & Breadcrumb -->
+      <PageHeader title="Klasifikasi" :items="items" />
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 bg-primary text-white space-y-6 h-8 px-6 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah

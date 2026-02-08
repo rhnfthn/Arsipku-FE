@@ -1,4 +1,3 @@
-// composables/useSwitch.ts
 import { ref } from "vue";
 import { useApi } from "@/composables/useApi";
 
@@ -38,20 +37,39 @@ const switchCompany = async (relationSpId: string) => {
     const res = await apiPost<{
       data: {
         accessToken: string;
+        activeCompany: {
+          company: number;
+          companyText: string;
+        };
       };
     }>("/company-switch/switch", {
       relationSpId,
     });
 
-    // 🔑 WAJIB: simpan token baru
     if (res?.data?.accessToken) {
       localStorage.setItem("token", res.data.accessToken);
     }
 
-    // refresh company list
-    await getAvailableCompanies();
+    // ❌ JANGAN panggil API apa pun setelah token diganti
+
+    return res;
   } finally {
     switchingId.value = null;
+  }
+};
+
+const resetCompany = async () => {
+  loading.value = true;
+  try {
+    const res = await apiPost("/company-switch/reset");
+
+    if (res?.data?.accessToken) {
+      localStorage.setItem("token", res.data.accessToken);
+    }
+
+    return res;
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -61,5 +79,6 @@ const switchCompany = async (relationSpId: string) => {
     companies,
     getAvailableCompanies,
     switchCompany,
+    resetCompany,
   };
 };

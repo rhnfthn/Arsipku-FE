@@ -1,6 +1,21 @@
 <template>
-  <div class="space-y-6">
-    <PageHeader title="Pindah Perusahaan" :items="items" />
+  <div class="min-h-screen">
+    <!-- Header -->
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
+    >
+      <div>
+        <PageHeader title="Pindah Perusahaan" :items="items" />
+      </div>
+
+      <button
+        class="px-4 py-2 rounded-lg text-sm text-white bg-gray-600 hover:bg-gray-700 transition disabled:opacity-50"
+        :disabled="loading"
+        @click="onResetCompany"
+      >
+        Kembali ke Perusahaan Default
+      </button>
+    </div>
 
     <!-- Card -->
     <div class="bg-white rounded-xl shadow border border-gray-200">
@@ -78,7 +93,10 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { useSwitch } from "@/composables/useSwitch";
+import { useToast } from "#imports";
+import { useRouter } from "vue-router";
 
+const toast = useToast();
 const items = [
   { label: "Beranda", to: "/" },
   { label: "Pindah Perusahaan", to: "/switch" },
@@ -90,6 +108,7 @@ const {
   switchingId,
   getAvailableCompanies,
   switchCompany,
+  resetCompany,
 } = useSwitch();
 
 onMounted(() => {
@@ -97,15 +116,45 @@ onMounted(() => {
 });
 
 const formatDate = (date: string) => {
-  if (date === "9999-12-31") return "Selamanya";
   return new Date(date).toLocaleDateString("id-ID");
 };
+
+const router = useRouter();
 
 const onSwitch = async (item: any) => {
   if (item.isCurrentCompany) return;
 
-  await switchCompany(item.relationSpId);
+  const res = await switchCompany(item.relationSpId);
 
-  window.location.href = "/beranda";
+  toast.add({
+    title: "Berhasil",
+    description: `Berhasil pindah perusahaan ${res.data.activeCompany.companyText}`,
+    color: "success",
+    icon: "i-lucide-check-circle",
+  });
+
+  setTimeout(() => {
+    window.location.href = "/beranda";
+  }, 800);
+};
+
+const onResetCompany = async () => {
+  const res = await resetCompany();
+
+  const companyText =
+    res?.data?.activeCompany?.companyText ??
+    res?.data?.user?.companyText ??
+    "Perusahaan Default";
+
+  toast.add({
+    title: "Berhasil",
+    description: `Berhasil kembali ke perusahaan default (${companyText})`,
+    color: "success",
+    icon: "i-lucide-check-circle",
+  });
+
+  setTimeout(() => {
+    window.location.reload(); // 🔥 INI KUNCI
+  }, 800);
 };
 </script>
