@@ -1,10 +1,5 @@
 <template>
-<<<<<<< Updated upstream
-  <div class="space-y-6 pt-5">
-    <!-- HEADER -->
-=======
   <div class="min-h-screen">
->>>>>>> Stashed changes
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
