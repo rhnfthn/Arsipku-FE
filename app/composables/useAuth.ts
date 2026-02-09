@@ -48,15 +48,19 @@ export const useAuth = () => {
     }
   };
 
+
+  // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      const res: any = await apiGet("/auth/sso-redirect-local");
-      return (res?.url as string) ?? null;
+      // const res = await apiGet("/auth/sso-redirect-local")
+      const res = await apiGet("/auth/sso-redirect")
+      return res?.url ?? null
     } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error);
-      return null;
+      console.error("[AUTH] getSSORedirectUrl error:", error)
+      return null
     }
-  };
+  }
+
 
   const verifyToken = async (token: string) => {
     try {
@@ -95,7 +99,8 @@ export const useAuth = () => {
 
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
-      const redirectTarget = "http://localhost:3000/autharsipku";
+      // const redirectTarget = "http://localhost:3000/autharsipku";
+      const redirectTarget = "http://172.20.16.116:3012/autharsipku";
       const encodedRedirect = btoa(redirectTarget);
 
       window.location.href = `https://auth.airnavindonesia.co.id/user/logout?redirect_uri=${encodedRedirect}`;
