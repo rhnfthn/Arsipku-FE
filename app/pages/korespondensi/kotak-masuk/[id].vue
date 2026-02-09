@@ -9,6 +9,8 @@ import {
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
+const { user } = useAuth();
+const positionId = computed(() => user.value?.position);
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
 const { rejectKonsep } = useKonsep();
 
@@ -177,7 +179,8 @@ const loadData = async () => {
 
         // LOGIC TOMBOL EDIT vs SETUJUI
         if (lastFlow) {
-          if (lastFlow.aksi === 'reject') {
+          // alert("Last flow action: " + lastFlow.from?.position_id + " vs " + positionId.value);
+          if (lastFlow.aksi === 'reject' && lastFlow.from?.position_id != positionId.value) {
             // Jika status terakhir REJECT, tampilkan tombol Edit
             showEditAction.value = true;
           } else if (d.pengirim) {
@@ -425,7 +428,7 @@ const openMainPdfPreview = () => {
                 </div>
               </div>
 
-              <div v-if="flow.aksi === 'create'" class="mb-4 flex flex-col md:flex-row gap-2">
+              <div v-if="flow.aksi === 'create' || flow.aksi === 'forward'" class="mb-4 flex flex-col md:flex-row gap-2">
                 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[80px] mt-0.5">Pengirim
                 </div>
                 <div class="flex flex-col gap-1 w-full min-w-0">
@@ -495,11 +498,21 @@ const openMainPdfPreview = () => {
                 </div>
               </div>
 
+              <div v-if="flow.aksi === 'reject' || flow.aksi === 'create' || flow.aksi === 'forward'"
+                class="mb-4 flex flex-col md:flex-row gap-2">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[80px] mt-0.5">Pesan
+                </div>
+                <div class="flex flex-col gap-1 w-full min-w-0">
+                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+                    {{ flow.catatan || '-' }}
+                  </div>
+                </div>
+              </div>
+
               <div
                 class="bg-gray-50 dark:bg-gray-950/50 rounded-lg p-5 border border-gray-100 dark:border-gray-800 relative">
                 <template v-if="flow.rich_content">
-                  <div
-                    class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-full">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-full">
                     Isi Naskah</div>
                   <div class="relative overflow-hidden w-full">
                     <iframe :srcdoc="'<style>body{margin:0;padding:0;}</style>' + flow.rich_content"
@@ -508,15 +521,15 @@ const openMainPdfPreview = () => {
                     </iframe>
                   </div>
                 </template>
-             <template v-else-if="flow.type === 'disposisi'">
+                <template v-else-if="flow.type === 'disposisi'">
                   <div>
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                       Catatan Disposisi
                     </span>
 
                     <div v-if="flow.disposisi_content?.catatan && flow.disposisi_content.catatan !== '-'"
-                         class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
-                         v-html="flow.disposisi_content.catatan">
+                      class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
+                      v-html="flow.disposisi_content.catatan">
                     </div>
 
                     <p v-else class="text-sm text-gray-400 italic">
@@ -532,8 +545,8 @@ const openMainPdfPreview = () => {
                     </span>
 
                     <p v-if="flow.catatan && flow.catatan !== '-'"
-                       class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                       {{ flow.catatan }}
+                      class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                      {{ flow.catatan }}
                     </p>
 
                     <p v-else class="text-sm text-gray-400 italic">
@@ -842,7 +855,8 @@ const openMainPdfPreview = () => {
         <div class="w-full flex justify-between items-start">
           <div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Finalisasi Konsep</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apakah Anda yakin ingin memfinalisasi konsep ini?</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apakah Anda yakin ingin memfinalisasi konsep ini?
+            </p>
           </div>
           <button @click="showFinalizeOptionsModal = false"
             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors -mt-1 -mr-1 p-1">

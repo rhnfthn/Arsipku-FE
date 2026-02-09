@@ -51,14 +51,14 @@
         </div>
         <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
 
-          <div v-if="detail && detail.catatan_reject"
+          <div v-if="detail && (detail.catatan_reject || detail.data?.catatan_reject)"
             class="bg-white dark:bg-gray-800 px-5 py-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex flex-col gap-1">
               <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">
                 Catatan Penolakan
               </span>
               <p class="text-sm text-gray-900 dark:text-white leading-relaxed">
-                {{ detail.catatan_reject }}
+                {{ detail.catatan_reject || detail.data?.catatan_reject }}
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
-                          }}</td>
+                        }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
@@ -241,13 +241,12 @@
           <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
           <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
-            @click="confirmKirimDokumen" />
+            @click="handleKirimDokumen" />
         </div>
       </template>
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -256,14 +255,12 @@
         </div>
       </template>
 
-      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
         </p>
 
         <div class="space-y-4">
-          <!-- Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -277,7 +274,6 @@
                 Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
-              <!-- Signer Info -->
               <div v-if="selectedSendType === 'digsig'"
                 class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div class="flex items-start gap-4 p-4">
@@ -300,7 +296,6 @@
                   </div>
                 </div>
 
-                <!-- Passphrase -->
                 <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div @click.stop>
                     <UFormGroup label="Passphrase" required>
@@ -313,7 +308,6 @@
             </div>
           </label>
 
-          <!-- Without Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -331,7 +325,6 @@
         </div>
       </template>
 
-      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -376,13 +369,11 @@ interface UploadedFile {
 }
 
 // --- Composables ---
-const { createKonsep, getSendersById, previewPdf, getRecipientsBySender } = useKonsep();
+const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep } = useKonsep();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getDraftDetail } = useDraft();
 const { saveDraft: saveND } = useNotaDinas();
-
-// PENTING: Import fetchKonsepDetail dari useInbox
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
 
 const route = useRoute();
@@ -466,6 +457,11 @@ const refPdfUrl = computed(() => {
   return '';
 });
 
+// LOGIC UTAMA: Deteksi Mode Edit dari URL
+const isEditMode = computed(() => {
+  return route.query.action === 'edit' && !!route.query.ref_id;
+});
+
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
@@ -520,8 +516,7 @@ const tinyMceInit = {
   }
 };
 
-// ... (Method fetchRecipientsBySender, fetchSenderList, validateAndToast, getBasePayload, prepareKonsepFormData, dll TETAP SAMA) ...
-// Saya skip agar tidak terlalu panjang, karena logic-nya tidak berubah.
+// ... (Method fetchRecipientsBySender, fetchSenderList, validateAndToast, getBasePayload) ...
 const fetchRecipientsBySender = async (senderPositionId: string) => {
   try {
     const res = await getRecipientsBySender(senderPositionId);
@@ -602,13 +597,12 @@ const getBasePayload = (): DraftPayload => {
     tgl: tglDb,
     tanggal: formattedDate.value,
     lampiran_temp_ids: lampiranIds,
+    catatan: message.value || '',
   };
 };
 
-// New createFormData function for DraftPayload (from nota-dinas.vue)
 const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   const formData = new FormData();
-
   (Object.keys(payload) as Array<keyof DraftPayload>).forEach((key) => {
     const value = payload[key];
     if (Array.isArray(value)) {
@@ -652,6 +646,7 @@ const prepareKonsepFormData = () => {
   formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
+  formData.append('catatan', message.value || '-');
   return formData;
 };
 
@@ -688,11 +683,16 @@ const handlePreview = async () => {
   }
 };
 
+// --- FUNGSI HANDLE KIRIM PERBAIKAN ---
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
   try {
-    loadingMessage.value = "Membuat Konsep Nota Dinas...";
+    // FORCE CHECK: Prioritaskan pengecekan URL 'action=edit'
+    // Jika URL mengandung ?action=edit, maka ini adalah revisi/forward
+    const isRevision = route.query.action === 'edit';
+
+    loadingMessage.value = isRevision ? "Mengirim Perbaikan..." : "Membuat Konsep Nota Dinas...";
     isLoadingData.value = true;
 
     // --- 1. Ambil NIK (jika Digital Signature) ---
@@ -712,49 +712,85 @@ const handleKirimDokumen = async () => {
     }
 
     // --- 2. Siapkan Form Data ---
-    const formData = prepareKonsepFormData();
-    formData.append('passphrase', passphrase.value);
-    formData.append('sign_option', selectedSendType.value);
-    if (nikValue) {
-      formData.append('nik', nikValue);
+    let result;
+
+    if (isRevision) {
+      // === LOGIKA FORWARD KONSEP (KARENA EDIT MODE) ===
+      const formData = new FormData();
+      const currentSender = selectedSender.value || {};
+      const signerRaw = currentSender.raw || {};
+      const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
+      const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+
+      // Mapping sesuai body Forward
+      formData.append('jenis', 'ND');
+      formData.append('from_position_id', user.value?.position || '');
+      formData.append('to_position_id', currentSender.value || '');
+      formData.append('pengirim_position_id', currentSender.value || '');
+      formData.append('penerima_position_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
+      formData.append('tembusan_position_ids', JSON.stringify(selectedTembusan.value.map(i => i.value)));
+      formData.append('tgl', tglDb);
+      formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
+      formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
+      formData.append('sifat', selectedSifat.value?.value || 'biasa');
+      formData.append('perihal', subject.value);
+      formData.append('konten', editorContent.value);
+      formData.append('english', String(english.value));
+      formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
+      formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
+      formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+      formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
+      formData.append('catatan', message.value || '-');
+      formData.append('lampiran', existingFiles.value.length > 0 ? '1' : '0');
+
+      formData.append('passphrase', passphrase.value);
+      formData.append('sign_option', selectedSendType.value);
+      if (nikValue) formData.append('nik', nikValue);
+
+      // Ambil ID Konsep dari state detail
+      // Gunakan Optional Chaining untuk handling struktur wrapper
+      const dataWrapper = detail.value?.data || detail.value;
+      const konsepId = dataWrapper?.konsep?.id;
+
+      if (!konsepId) {
+        throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
+      }
+
+      result = await forwardKonsep(konsepId, formData);
+
+    } else {
+      // === LOGIKA CREATE BARU ===
+      const formData = prepareKonsepFormData();
+      formData.append('passphrase', passphrase.value);
+      formData.append('sign_option', selectedSendType.value);
+      if (nikValue) {
+        formData.append('nik', nikValue);
+      }
+      result = await createKonsep(formData);
     }
 
-    // --- 3. Kirim ke API ---
-    const result = await createKonsep(formData);
-
+    // --- 3. Handle Result ---
     if (result.success) {
-      // --- SUCCESS HANDLING ---
-      toast.add({ title: 'Berhasil', description: 'Konsep Nota Dinas berhasil dibuat', color: 'success' });
-
+      toast.add({ title: 'Berhasil', description: isRevision ? 'Perbaikan berhasil dikirim' : 'Konsep Nota Dinas berhasil dibuat', color: 'success' });
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-
-      // ✅ PERBAIKAN: Tutup modal secara eksplisit
       isPassphraseModalOpen.value = false;
-
-      // ✅ Pastikan loading mati sebelum pindah halaman (opsional tapi baik UX-nya)
       isLoadingData.value = false;
-
       router.push("/korespondensi/terkirim");
     } else {
-      throw new Error(result.message || 'Gagal membuat konsep');
+      throw new Error(result.message || 'Gagal memproses dokumen');
     }
 
   } catch (e: any) {
-    // --- ERROR HANDLING ---
     console.error("Error Kirim:", e);
     const errMsg = e.response?.data?.message || e.message || 'Terjadi kesalahan saat mengirim';
 
-    // Jika error passphrase, biarkan modal terbuka (atau buka lagi)
     if (errMsg.toLowerCase().includes('passphrase')) {
       isPassphraseModalOpen.value = true;
     } else {
-      // Jika error lain, tutup modal agar user bisa perbaiki data di form utama
       isPassphraseModalOpen.value = false;
     }
-
     toast.add({ title: 'Gagal', description: errMsg, color: 'error' });
   } finally {
-    // --- FINAL CLEANUP ---
     isLoadingData.value = false;
     Alert.close();
   }
@@ -876,43 +912,52 @@ onMounted(async () => {
     isLoadingData.value = true;
 
     try {
-      // Panggil fungsi yg sudah ada di useInbox
       const result = await fetchKonsepDetail(refId);
 
       if (result) {
-        detail.value = result;
+        // Unwrap data agar detail berisi object yang tepat
+        const unwrappedData = result.data || result;
+        detail.value = unwrappedData;
+
         // 1. Set ID
-        editDraftId.value = result.id;
+        editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
 
         // 2. Set Basic Info (Perihal, Sifat, Tanggal)
-        subject.value = result.perihal || "";
+        subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";
 
-        if (result.tanggal) {
-          const tglParts = new Date(result.tanggal);
+        // TAMBAHAN: Load Pesan dari history flow 'create'
+        if (unwrappedData.flow && Array.isArray(unwrappedData.flow)) {
+          const createFlow = unwrappedData.flow.find((f: any) => f.aksi === 'create');
+          if (createFlow && createFlow.catatan) {
+            message.value = createFlow.catatan;
+          }
+        }
+
+        const tglStr = unwrappedData.tanggal || unwrappedData.naskah?.tanggal;
+        if (tglStr) {
+          const tglParts = new Date(tglStr);
           date.value = new CalendarDate(tglParts.getFullYear(), tglParts.getMonth() + 1, tglParts.getDate());
         }
 
-        if (result.sifat) {
-          selectedSifat.value = sifatOptions.find(opt => opt.value === result.sifat.toLowerCase()) || sifatOptions[3];
+        const sifatStr = unwrappedData.sifat || unwrappedData.naskah?.sifat;
+        if (sifatStr) {
+          selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
         }
 
         // 3. Set Klasifikasi (Mengambil dari raw naskah karena wrapper mungkin mem-flatten)
-        const klasCode = result.naskah?.klasifikasi;
+        const klasCode = unwrappedData.naskah?.klasifikasi;
         if (klasCode) {
           const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === klasCode);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
         // 4. Set Content
-        const contentStr = result.konten || result.naskah?.konten || "";
-
-        console.log("Konten ditemukan:", contentStr.substring(0, 50) + "..."); // Debugging
-
+        const contentStr = unwrappedData.konten || unwrappedData.naskah?.konten || "";
         editorContent.value = contentStr;
 
         // 5. Set Pengirim & Load Recipients
-        if (result.pengirim) {
-          const senderObj = mapPersonToUI(result.pengirim);
+        if (unwrappedData.pengirim) {
+          const senderObj = mapPersonToUI(unwrappedData.pengirim);
           selectedSender.value = senderObj;
 
           // Load dropdown data agar valid
@@ -921,18 +966,17 @@ onMounted(async () => {
         }
 
         // 6. Set Penerima (field 'kepada' dari wrapper) & Tembusan
-        // Wrapper fetchKonsepDetail mengembalikan 'kepada' sebagai array penerima
-        if (result.kepada && Array.isArray(result.kepada)) {
-          selectedTertuju.value = result.kepada.map((p: any) => mapPersonToUI(p));
+        if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
+          selectedTertuju.value = unwrappedData.kepada.map((p: any) => mapPersonToUI(p));
         }
 
-        if (result.tembusan && Array.isArray(result.tembusan)) {
-          selectedTembusan.value = result.tembusan.map((t: any) => mapPersonToUI(t));
+        if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
+          selectedTembusan.value = unwrappedData.tembusan.map((t: any) => mapPersonToUI(t));
         }
 
         // 7. Set Lampiran
-        if (result.lampiran_files && Array.isArray(result.lampiran_files)) {
-          existingFiles.value = result.lampiran_files.map((f: any) => ({
+        if (unwrappedData.lampiran_files && Array.isArray(unwrappedData.lampiran_files)) {
+          existingFiles.value = unwrappedData.lampiran_files.map((f: any) => ({
             id: f.id,
             fileName: f.filename || f.file_name || 'File',
             filePath: f.url || f.file_path || '',
@@ -941,8 +985,7 @@ onMounted(async () => {
         }
 
         // 8. Set Referensi (History Flow)
-        // Ambil dari flow pertama (urutan 1 / disposisi awal)
-        const flows = result.flow || [];
+        const flows = unwrappedData.flow || [];
         if (flows.length > 0) {
           const originFlow = flows[0];
           // Pastikan refData terbentuk agar accordion muncul
@@ -953,7 +996,6 @@ onMounted(async () => {
               tanggal: originFlow.naskah?.tanggal || originFlow.tanggal,
               final_pdf_url: originFlow.naskah?.final_pdf || originFlow.pdf_snapshot,
               jenis: originFlow.naskah?.jenis || 'Naskah',
-              // Catatan di originFlow biasanya kosong/disposisi, catatan reject ada di `detail.catatan_reject`
               catatan: originFlow.catatan || '',
             };
           }
@@ -977,7 +1019,9 @@ onMounted(async () => {
     try {
       const result = await fetchInboxDetail(refId, refJenis);
       if (result) {
-        const rawFlow = (result.raw?.flow?.length > 0) ? result.raw.flow[0] : result;
+        // Unwrap data jika ada
+        const rawData = result.data || result;
+        const rawFlow = (rawData.raw?.flow?.length > 0) ? rawData.raw.flow[0] : rawData;
         refData.value = {
           id: rawFlow.id,
           nomor: rawFlow.nomor || '-',
@@ -1007,6 +1051,7 @@ onMounted(async () => {
         const d = resDraft.data;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
+        message.value = d.catatan || "";
         english.value = Boolean(d.english);
         if (d.klasifikasi) {
           const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
