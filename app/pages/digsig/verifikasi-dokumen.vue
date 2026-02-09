@@ -1,9 +1,9 @@
 <template>
-  <div class="space-y-6 min-h-screen dark:bg-gray-900">
+  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Verifikasi Dokumen Digsig
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -11,14 +11,16 @@
 
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah
       </button>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm w-full">
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
+    >
       <!-- TOP ACTION BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
@@ -27,7 +29,7 @@
         <div class="relative">
           <button
             data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 text-sm px-4 py-2 rounded-lg transition"
+            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm px-4 py-2 rounded-lg transition"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span>{{ filterStatusLabel }}</span>
@@ -42,12 +44,12 @@
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-700 dark:hover:text-gray-700 border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
           >
             <button
               v-for="item in filterOptions"
               :key="item.value"
-              class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition"
+              class="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               @click.prevent="selectFilterStatus(item)"
             >
               {{ item.label }}
@@ -58,30 +60,86 @@
         <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             @input="handleSearch"
             placeholder="Cari Dokumen"
-            class="w-full bg-gray-50 border dark:bg-gray-700 border-gray-200 dark:border-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
 
-      <!-- LOADING (SHIMMER) -->
-      <div v-if="loading" class="space-y-3 p-4">
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
-        ></div>
+      <!-- LOADING (SKELETON) -->
+      <div v-if="loading" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-primary dark:bg-primary-700 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left">Tanggal Dibuat</th>
+              <th class="px-4 py-3 text-left">No Dokumen</th>
+              <th class="px-4 py-3 text-left">Perihal</th>
+              <th class="px-4 py-3 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Dokumen</th>
+              <th class="px-4 py-3 text-center">Status</th>
+              <th class="px-4 py-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="i in 5"
+              :key="i"
+              class="border-b border-gray-100 dark:border-gray-700"
+            >
+              <td class="p-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"
+                ></div>
+              </td>
+              <td class="p-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"
+                ></div>
+              </td>
+              <td class="p-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48"
+                ></div>
+              </td>
+              <td class="p-4 text-center">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-8 mx-auto"
+                ></div>
+              </td>
+              <td class="p-4 text-center">
+                <div
+                  class="h-7 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-16 mx-auto"
+                ></div>
+              </td>
+              <td class="p-4 text-center">
+                <div
+                  class="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-24 mx-auto"
+                ></div>
+              </td>
+              <td class="p-4">
+                <div class="flex items-center justify-center gap-4">
+                  <div
+                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  ></div>
+                  <div
+                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  ></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- EMPTY -->
       <div
         v-else-if="documents.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500"
+        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
@@ -89,10 +147,13 @@
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
         <table class="w-full bg-white dark:bg-gray-800 text-sm">
-          <thead class="bg-primary dark:bg-primary text-white text-sm">
+          <thead class="bg-primary dark:bg-primary-700 text-white text-sm">
             <tr>
-              <th @click="handleSort('tanggalDokumen')" class="cursor-pointer">
-                <div class="flex items-center gap-2 ml-5">
+              <th
+                @click="handleSort('tanggalDokumen')"
+                class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+              >
+                <div class="flex items-center gap-2 ml-5 px-4 py-3">
                   <span>Tanggal Dibuat</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -107,8 +168,11 @@
                 </div>
               </th>
 
-              <th @click="handleSort('nomorDokumen')" class="cursor-pointer">
-                <div class="flex items-center gap-2">
+              <th
+                @click="handleSort('nomorDokumen')"
+                class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+              >
+                <div class="flex items-center gap-2 px-4 py-3">
                   <span>No Dokumen</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -123,8 +187,11 @@
                 </div>
               </th>
 
-              <th @click="handleSort('perihal')" class="cursor-pointer">
-                <div class="flex items-center gap-2 dark:text-white">
+              <th
+                @click="handleSort('perihal')"
+                class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+              >
+                <div class="flex items-center gap-2 px-4 py-3">
                   <span>Perihal</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -140,8 +207,11 @@
               </th>
               <th class="px-4 py-3 text-center">Penandatangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
-              <th @click="handleSort('status')" class="cursor-pointer">
-                <div class="flex items-center gap-2">
+              <th
+                @click="handleSort('status')"
+                class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+              >
+                <div class="flex items-center gap-2 px-4 py-3">
                   <span>Status</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -164,24 +234,28 @@
             <tr
               v-for="doc in paginatedRows"
               :key="doc.id"
-              class="border-b border-gray-100 dark:border-gray-400 hover:bg-primary-50 dark:hover:bg-gray-700"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
             >
-              <td class="p-4">{{ formatDate(doc.tanggalDokumen) }}</td>
-              <td class="p-4">
-                <div class="font-medium">{{ doc.nomorDokumen }}</div>
+              <td class="p-4 text-gray-900 dark:text-white">
+                {{ formatDate(doc.tanggalDokumen) }}
               </td>
               <td class="p-4">
-                <div
-                  class="text-gray-700 dark:text-white text-sm dark:hover:text-gray-700"
-                >
+                <div class="font-medium text-gray-900 dark:text-white">
+                  {{ doc.nomorDokumen }}
+                </div>
+              </td>
+              <td class="p-4">
+                <div class="text-gray-700 dark:text-gray-300 text-sm">
                   {{ doc.perihal }}
                 </div>
               </td>
-              <td class="p-4 text-center">{{ doc.totalSigners }}</td>
+              <td class="p-4 text-center text-gray-900 dark:text-white">
+                {{ doc.totalSigners }}
+              </td>
               <td class="p-4 text-center">
                 <button
                   @click="viewDocument(doc)"
-                  class="flex items-center gap-2 mx-auto bg-blue-200 text-primary-600 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-200"
+                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition"
                 >
                   <FileCheck class="w-4 h-4" />
                   Lihat
@@ -198,11 +272,11 @@
               <td class="p-4">
                 <div class="flex items-center justify-center gap-4">
                   <Eye
-                    class="w-4 h-4 text-gray-600 cursor-pointer hover:text-primary dark:text-white"
+                    class="w-4 h-4 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-primary dark:hover:text-primary-400 transition"
                     @click="openDetailModal(doc.id)"
                   />
                   <Pencil
-                    class="w-4 h-4 text-yellow-500 cursor-pointer hover:text-yellow-700"
+                    class="w-4 h-4 text-yellow-500 dark:text-yellow-400 cursor-pointer hover:text-yellow-700 dark:hover:text-yellow-300 transition"
                     @click="openEditModal(doc.id)"
                   />
                 </div>
@@ -215,9 +289,9 @@
       <!-- PAGINATION -->
       <div
         v-if="filteredRows.length > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600 dark:text-white">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedRows.length }} dari
           {{ filteredRows.length }} data
         </div>
@@ -230,8 +304,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             <svg
@@ -256,7 +330,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               1
             </button>
@@ -264,7 +338,7 @@
             <!-- Left ellipsis -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -277,8 +351,8 @@
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -289,7 +363,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -298,7 +372,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               {{ totalPages }}
             </button>
@@ -311,8 +385,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             Next
@@ -339,7 +413,10 @@
       <Modal v-model="openAdd" :hideDefaultFooter="true" size="xl">
         <template #title>
           <div class="mt-5 ml-5 mb-3">
-            <Heading variant="heading9b" class="font-semibold text-sm">
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm dark:text-white"
+            >
               {{ isEditMode ? "Edit Dokumen" : "Tambah Dokumen" }}
             </Heading>
           </div>
@@ -349,96 +426,221 @@
           <!-- FORM FIELDS -->
           <div class="space-y-4">
             <div>
-              <Heading variant="body2m">
+              <Heading variant="body2m" class="dark:text-gray-200">
                 Tanggal Dokumen <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="addForm.tanggal"
                 type="date"
-                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
             <div>
-              <Heading variant="body2m">
+              <Heading variant="body2m" class="dark:text-gray-200">
                 Klasifikasi <span class="text-red-500">*</span>
               </Heading>
-              <div class="relative mt-2">
-                <select
-                  v-model="addForm.klasifikasi"
-                  @change="onKlasifikasiChange"
-                  :disabled="loadingKlasifikasi"
-                  class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              <div class="relative mt-2" ref="klasifikasiDropdownRef">
+                <div
+                  @click="toggleKlasifikasiDropdown"
+                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  <option value="">
+                  <span
+                    v-if="addForm.klasifikasi"
+                    class="text-gray-900 dark:text-white"
+                  >
+                    {{ getSelectedKlasifikasiLabel() }}
+                  </span>
+                  <span v-else class="text-gray-500 dark:text-gray-400">
                     {{
                       loadingKlasifikasi ? "Loading..." : "Pilih Klasifikasi"
                     }}
-                  </option>
-                  <option
-                    v-for="k in klasifikasiList"
-                    :key="k.id"
-                    :value="k.klasifikasi"
+                  </span>
+                  <svg
+                    class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': showKlasifikasiDropdown }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
-                  </option>
-                </select>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showKlasifikasiDropdown"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-hidden"
+                >
+                  <!-- Search Input -->
+                  <div
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                  >
+                    <div class="relative">
+                      <Search
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                      />
+                      <input
+                        v-model="klasifikasiSearchQuery"
+                        type="text"
+                        placeholder="Cari klasifikasi..."
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @click.stop
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options List -->
+                  <div class="overflow-y-auto max-h-64">
+                    <div
+                      v-for="k in filteredKlasifikasiList"
+                      :key="k.id"
+                      @click="selectKlasifikasi(k)"
+                      class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      :class="{
+                        'bg-blue-50 dark:bg-gray-700':
+                          addForm.klasifikasi === k.klasifikasi,
+                      }"
+                    >
+                      <p class="font-medium">
+                        {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-if="filteredKlasifikasiList.length === 0"
+                      class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                    >
+                      Tidak ada data ditemukan
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div>
-              <Heading variant="body2m">
+              <Heading variant="body2m" class="dark:text-gray-200">
                 Jenis Naskah <span class="text-red-500">*</span>
               </Heading>
-              <select
-                v-model="addForm.jenisNaskah"
-                :disabled="loadingJenisNaskah"
-                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
-              >
-                <option value="">
-                  {{ loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah" }}
-                </option>
-                <option
-                  v-for="j in jenisNaskahList"
-                  :key="j.id"
-                  :value="j.jenis"
+              <div class="relative mt-2" ref="jenisNaskahDropdownRef">
+                <div
+                  @click="toggleJenisNaskahDropdown"
+                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  {{ j.jenis }} - {{ j.jenis_text }}
-                </option>
-              </select>
+                  <span
+                    v-if="addForm.jenisNaskah"
+                    class="text-gray-900 dark:text-white"
+                  >
+                    {{ getSelectedJenisNaskahLabel() }}
+                  </span>
+                  <span v-else class="text-gray-500 dark:text-gray-400">
+                    {{
+                      loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah"
+                    }}
+                  </span>
+                  <svg
+                    class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': showJenisNaskahDropdown }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showJenisNaskahDropdown"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-hidden"
+                >
+                  <!-- Search Input -->
+                  <div
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                  >
+                    <div class="relative">
+                      <Search
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                      />
+                      <input
+                        v-model="jenisNaskahSearchQuery"
+                        type="text"
+                        placeholder="Cari jenis naskah..."
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @click.stop
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options List -->
+                  <div class="overflow-y-auto max-h-64">
+                    <div
+                      v-for="j in filteredJenisNaskahList"
+                      :key="j.id"
+                      @click="selectJenisNaskah(j)"
+                      class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      :class="{
+                        'bg-blue-50 dark:bg-gray-700':
+                          addForm.jenisNaskah === j.jenis,
+                      }"
+                    >
+                      <p class="font-medium">
+                        {{ j.jenis }} - {{ j.jenis_text }}
+                      </p>
+                    </div>
+
+                    <div
+                      v-if="filteredJenisNaskahList.length === 0"
+                      class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                    >
+                      Tidak ada data ditemukan
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
-              <Heading variant="body2m">
+              <Heading variant="body2m" class="dark:text-gray-200">
                 Nomor Dokumen <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="addForm.nomorDokumen"
                 placeholder="Masukkan Nomor Dokumen"
-                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
             <div>
-              <Heading variant="body2m">
+              <Heading variant="body2m" class="dark:text-gray-200">
                 Perihal <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="addForm.perihal"
                 placeholder="Masukkan Perihal Dokumen"
-                class="w-full border border-gray-300 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
               />
             </div>
 
             <!-- File Attachment - Compact -->
             <div>
-              <Heading variant="body2m" class="mb-2">
+              <Heading variant="body2m" class="mb-2 dark:text-gray-200">
                 File Attachment <span class="text-red-500">*</span>
               </Heading>
               <div class="flex items-center gap-3">
                 <button
                   @click="triggerFileUpload"
-                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-300 dark:bg-gray-900 dark:border-gray-500 dark:text-white rounded-md text-sm font-medium transition flex items-center gap-2"
+                  class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 dark:text-white rounded-md text-sm font-medium transition flex items-center gap-2"
                 >
                   <svg
                     class="w-4 h-4"
@@ -465,18 +667,18 @@
                 <div class="flex items-center gap-2 flex-1">
                   <p
                     v-if="addForm.fileName"
-                    class="text-sm text-blue-600 flex items-center gap-2"
+                    class="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2"
                   >
                     <FileCheck class="w-4 h-4" />
                     {{ addForm.fileName }}
                   </p>
-                  <p v-else class="text-xs text-gray-400">
+                  <p v-else class="text-xs text-gray-400 dark:text-gray-500">
                     PDF, DOC, DOCX (Max. 10MB)
                   </p>
                   <button
                     v-if="previewUrl || (isEditMode && !addForm.file)"
                     @click="previewFileInModal"
-                    class="ml-auto px-3 py-1 bg-blue-50 text-primary text-xs font-medium rounded-md hover:bg-blue-100 transition flex items-center gap-1"
+                    class="ml-auto px-3 py-1 bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 text-xs font-medium rounded-md hover:bg-blue-100 dark:hover:bg-blue-800 transition flex items-center gap-1"
                   >
                     <Eye class="w-3 h-3" />
                     Preview
@@ -488,7 +690,9 @@
             <!-- Visible Sign -->
             <div class="flex items-center justify-between mt-1 mb-2">
               <div>
-                <Heading variant="body2m">Visible Sign</Heading>
+                <Heading variant="body2m" class="dark:text-gray-200"
+                  >Visible Sign</Heading
+                >
                 <p class="text-xs text-red-500 mt-1">
                   *Visible Sign hanya berlaku pada penanda tangan terakhir
                 </p>
@@ -500,7 +704,7 @@
                   class="sr-only peer"
                 />
                 <div
-                  class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+                  class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
                 ></div>
               </label>
             </div>
@@ -508,7 +712,7 @@
             <!-- Penanda Tangan -->
             <div>
               <div class="flex items-center justify-between mb-2">
-                <Heading variant="body2m">
+                <Heading variant="body2m" class="dark:text-gray-200">
                   Penanda Tangan <span class="text-red-500">*</span>
                 </Heading>
               </div>
@@ -521,10 +725,12 @@
                 <div
                   v-for="(signer, index) in addForm.selectedSigners"
                   :key="index"
-                  class="flex items-center justify-between dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 bg-gray-50 border border-gray-200 dark:text-gray-700 rounded-lg p-3"
+                  class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3"
                 >
                   <div class="flex-1">
-                    <p class="font-medium text-sm dark:text-white">
+                    <p
+                      class="font-medium text-sm text-gray-900 dark:text-white"
+                    >
                       {{ index + 1 }}. {{ signer.jabatan }} -
                       {{ signer.lokasi }} -
                       {{ signer.nama }}
@@ -533,7 +739,7 @@
                   <button
                     type="button"
                     @click="removeSelectedSigner(index)"
-                    class="text-red-600 hover:text-red-800 ml-2"
+                    class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 ml-2"
                   >
                     <svg
                       class="w-5 h-5"
@@ -556,11 +762,13 @@
               <div class="relative" ref="dropdownRef">
                 <div
                   @click="toggleSignerDropdown"
-                  class="w-full border border-gray-300 dark:border-gray-500 dark:bg-gray-900 dark:border-gray-500 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
+                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  <span class="text-gray-500">Pilih Jabatan</span>
+                  <span class="text-gray-500 dark:text-gray-400"
+                    >Pilih Jabatan</span
+                  >
                   <svg
-                    class="w-4 h-4 text-gray-400 transition-transform"
+                    class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
                     :class="{ 'rotate-180': showSignerDropdown }"
                     fill="none"
                     stroke="currentColor"
@@ -578,21 +786,21 @@
                 <!-- Dropdown Menu -->
                 <div
                   v-if="showSignerDropdown"
-                  class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-hidden"
                 >
                   <!-- Search Input -->
                   <div
-                    class="p-2 border-b border-gray-200 dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 sticky top-0 bg-white"
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
                   >
                     <div class="relative">
                       <Search
-                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                       />
                       <input
                         v-model="signerSearchQuery"
                         type="text"
                         placeholder="Cari jabatan, nama, atau lokasi..."
-                        class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         @click.stop
                       />
                     </div>
@@ -604,9 +812,9 @@
                       v-for="v in filteredVerifikatorList"
                       :key="v.persnum"
                       @click="selectSigner(v)"
-                      class="px-3 py-3 hover:bg-blue-50 dark:border-gray-500 dark:bg-gray-800 dark:hover:bg-gray-600 dark:text-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       :class="{
-                        'bg-blue-50 ':
+                        'bg-blue-50 dark:bg-gray-700':
                           addForm.selectedSigners.findIndex(
                             (s) => s.persnum === v.persnum,
                           ) !== -1,
@@ -619,7 +827,7 @@
 
                     <div
                       v-if="filteredVerifikatorList.length === 0"
-                      class="px-3 py-4 text-center text-gray-500 text-sm"
+                      class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
                     >
                       Tidak ada data ditemukan
                     </div>
@@ -632,18 +840,18 @@
 
         <!-- Footer Buttons -->
         <div
-          class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200"
+          class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <button
             @click="closeModal"
-            class="flex-1 px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition"
+            class="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
             Batal
           </button>
           <button
             @click="saveDokumen"
             :disabled="loading"
-            class="flex-1 px-6 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-700 transition disabled:opacity-50"
+            class="flex-1 px-6 py-2 bg-primary dark:bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 dark:hover:bg-primary-700 transition disabled:opacity-50"
           >
             {{ loading ? "Menyimpan..." : "Simpan Perubahan" }}
           </button>
@@ -657,7 +865,7 @@
         <template #title>
           <Heading
             variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5"
+            class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
           >
             Detail Dokumen
           </Heading>
@@ -665,7 +873,7 @@
 
         <div class="px-3 max-h-[calc(100vh-150px)] overflow-y-auto">
           <div v-if="loadingDetail" class="text-center py-8">
-            <p class="text-gray-500">Loading...</p>
+            <p class="text-gray-500 dark:text-gray-400">Loading...</p>
           </div>
 
           <div
@@ -673,25 +881,29 @@
             class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-2"
           >
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">No Dokumen</p>
-              <p class="font-medium">{{ documentDetail.nomorDokumen }}</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">No Dokumen</p>
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ documentDetail.nomorDokumen }}
+              </p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">Tanggal</p>
-              <p class="font-medium">
+              <p class="text-gray-600 dark:text-gray-400 mb-1">Tanggal</p>
+              <p class="font-medium text-gray-900 dark:text-white">
                 {{ formatDate(documentDetail.tanggalDokumen) }}
               </p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">Jenis Naskah</p>
-              <p class="font-medium">{{ documentDetail.jenisNaskah }}</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">Jenis Naskah</p>
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ documentDetail.jenisNaskah }}
+              </p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">Klasifikasi</p>
-              <p class="font-medium">
+              <p class="text-gray-600 dark:text-gray-400 mb-1">Klasifikasi</p>
+              <p class="font-medium text-gray-900 dark:text-white">
                 {{
                   documentDetail.klasifikasiText ||
                   (documentDetail.klasifikasi
@@ -702,12 +914,14 @@
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">Perihal</p>
-              <p class="font-medium">{{ documentDetail.perihal }}</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">Perihal</p>
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ documentDetail.perihal }}
+              </p>
             </div>
 
             <div>
-              <p class="text-gray-600 mb-1 dark:text-white">Status</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">Status</p>
               <span
                 class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
                 :class="getStatusClass(documentDetail.status)"
@@ -717,10 +931,10 @@
             </div>
 
             <div class="md:col-span-2">
-              <p class="text-gray-600 mb-2 dark:text-white">Dokumen</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-2">Dokumen</p>
               <button
                 @click="viewDocumentFromDetail"
-                class="flex items-center gap-2 bg-blue-50 text-primary px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 transition"
+                class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition"
               >
                 <FileCheck class="w-4 h-4" />
                 Lihat Preview Dokumen
@@ -735,12 +949,12 @@
               documentDetail.signers &&
               documentDetail.signers.length > 0
             "
-            class="mt-6 mb-5 border border-gray-200 dark:border-gray-400 dark:text-white rounded-xl overflow-hidden"
+            class="mt-6 mb-5 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
           >
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead
-                  class="bg-primary border-b border-gray-200 dark:border-gray-400"
+                  class="bg-primary dark:bg-primary-700 border-b border-gray-200 dark:border-gray-700"
                 >
                   <tr>
                     <th class="p-3 text-left text-white font-semibold">NO</th>
@@ -762,23 +976,25 @@
                   <tr
                     v-for="(s, i) in documentDetail.signers"
                     :key="i"
-                    class="border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <td class="p-3">
                       <span
-                        class="inline-flex items-center justify-center text-xs font-semibold dark:text-white"
+                        class="inline-flex items-center justify-center text-xs font-semibold text-gray-900 dark:text-white"
                       >
                         {{ s.urutan }}
                       </span>
                     </td>
-                    <td class="p-3 font-mono text-gray-700 dark:text-white">
+                    <td class="p-3 font-mono text-gray-700 dark:text-gray-300">
                       {{ s.persnum || "-" }}
                     </td>
                     <td class="p-3">
                       <div class="font-semibold text-gray-900 dark:text-white">
                         {{ s.nama || "-" }}
                       </div>
-                      <div class="text-xs text-gray-500 mt-1 dark:text-white">
+                      <div
+                        class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+                      >
                         {{ s.jabatan || "-" }}
                       </div>
                     </td>
@@ -790,7 +1006,9 @@
                         {{ getSignerStatusLabel(s.status) }}
                       </span>
                     </td>
-                    <td class="p-3 font-mono text-center text-gray-700">
+                    <td
+                      class="p-3 font-mono text-center text-gray-700 dark:text-gray-300"
+                    >
                       {{ s.keterangan || "-" }}
                     </td>
                   </tr>
@@ -805,9 +1023,9 @@
               documentDetail &&
               (!documentDetail.signers || documentDetail.signers.length === 0)
             "
-            class="mt-6 mb-5 border border-gray-200 rounded-xl p-8 text-center"
+            class="mt-6 mb-5 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center"
           >
-            <p class="text-gray-500 text-sm">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">
               Belum ada penandatangan yang ditambahkan
             </p>
           </div>
@@ -836,7 +1054,7 @@
             :key="pdfUrl"
             :src="pdfUrl"
             allowfullscreen
-            class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+            class="w-full h-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
           />
 
           <div v-else class="flex flex-col items-center gap-2">
@@ -844,7 +1062,9 @@
               name="i-lucide-loader-2"
               class="animate-spin w-8 h-8 text-primary-500"
             />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
+            <span class="text-gray-500 dark:text-gray-400"
+              >Memuat Pratinjau...</span
+            >
           </div>
         </div>
       </template>
@@ -897,14 +1117,29 @@ const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(null);
 
+// Track which modal to return to after closing preview
+const returnToModal = ref<"detail" | "form" | null>(null);
+
 const openDetail = ref(false);
 const openAdd = ref(false);
 const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
+const klasifikasiDropdownRef = ref<HTMLElement | null>(null);
+const jenisNaskahDropdownRef = ref<HTMLElement | null>(null);
 
 const selectedKlasifikasiDetail = ref<any>(null);
+
+// Dropdown states
+const showSignerDropdown = ref(false);
+const showKlasifikasiDropdown = ref(false);
+const showJenisNaskahDropdown = ref(false);
+
+// Search queries
+const signerSearchQuery = ref("");
+const klasifikasiSearchQuery = ref("");
+const jenisNaskahSearchQuery = ref("");
 
 // Filter + Search
 const statusFilter = ref("");
@@ -938,9 +1173,6 @@ const addForm = ref({
   signers: [] as { urutan: number; persnum: number }[],
   selectedSigners: [] as Verifikator[],
 });
-
-const showSignerDropdown = ref(false);
-const signerSearchQuery = ref("");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -1036,15 +1268,19 @@ onMounted(() => {
   fetchVerifikator();
   document.addEventListener("click", handleClickOutside);
   document.addEventListener("click", handleDropdownClickOutside);
+  document.addEventListener("click", handleKlasifikasiDropdownClickOutside);
+  document.addEventListener("click", handleJenisNaskahDropdownClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
   document.removeEventListener("click", handleDropdownClickOutside);
+  document.removeEventListener("click", handleKlasifikasiDropdownClickOutside);
+  document.removeEventListener("click", handleJenisNaskahDropdownClickOutside);
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value);
   }
-  if (pdfUrl.value) {
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
     URL.revokeObjectURL(pdfUrl.value);
   }
 });
@@ -1059,6 +1295,30 @@ const filteredVerifikatorList = computed(() => {
       v.jabatan?.toLowerCase().includes(q) ||
       v.nama?.toLowerCase().includes(q) ||
       v.lokasi?.toLowerCase().includes(q),
+  );
+});
+
+const filteredKlasifikasiList = computed(() => {
+  if (!klasifikasiSearchQuery.value) return klasifikasiList.value;
+
+  const q = klasifikasiSearchQuery.value.toLowerCase();
+
+  return klasifikasiList.value.filter(
+    (k) =>
+      k.klasifikasi?.toLowerCase().includes(q) ||
+      k.klasifikasi_text?.toLowerCase().includes(q),
+  );
+});
+
+const filteredJenisNaskahList = computed(() => {
+  if (!jenisNaskahSearchQuery.value) return jenisNaskahList.value;
+
+  const q = jenisNaskahSearchQuery.value.toLowerCase();
+
+  return jenisNaskahList.value.filter(
+    (j) =>
+      j.jenis?.toLowerCase().includes(q) ||
+      j.jenis_text?.toLowerCase().includes(q),
   );
 });
 
@@ -1108,6 +1368,24 @@ const handleDropdownClickOutside = (e: MouseEvent) => {
   }
 };
 
+const handleKlasifikasiDropdownClickOutside = (e: MouseEvent) => {
+  if (
+    klasifikasiDropdownRef.value &&
+    !klasifikasiDropdownRef.value.contains(e.target as Node)
+  ) {
+    showKlasifikasiDropdown.value = false;
+  }
+};
+
+const handleJenisNaskahDropdownClickOutside = (e: MouseEvent) => {
+  if (
+    jenisNaskahDropdownRef.value &&
+    !jenisNaskahDropdownRef.value.contains(e.target as Node)
+  ) {
+    showJenisNaskahDropdown.value = false;
+  }
+};
+
 const sortBy = (key: string) => {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -1134,12 +1412,17 @@ const formatDate = (dateString: string) => {
 
 const getStatusClass = (status: string) => {
   const statusMap = {
-    draft: "bg-gray-100 text-gray-600",
-    on_progress: "bg-blue-100 text-blue-600",
-    completed: "bg-green-100 text-green-600",
-    rejected: "bg-red-100 text-red-600",
+    draft: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
+    on_progress:
+      "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
+    completed:
+      "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
+    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
-  return statusMap[status] || "bg-gray-100 text-gray-600";
+  return (
+    statusMap[status] ||
+    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+  );
 };
 
 const getStatusLabel = (status: string) => {
@@ -1154,12 +1437,16 @@ const getStatusLabel = (status: string) => {
 
 const getSignerStatusClass = (status: string) => {
   const statusMap = {
-    waiting: "bg-yellow-100 text-yellow-600",
-    pending: "bg-blue-100 text-blue-600",
-    signed: "bg-green-100 text-green-600",
-    rejected: "bg-red-100 text-red-600",
+    waiting:
+      "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
+    pending: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
+    signed: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
+    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
-  return statusMap[status] || "bg-gray-100 text-gray-600";
+  return (
+    statusMap[status] ||
+    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+  );
 };
 
 const getSignerStatusLabel = (status: string) => {
@@ -1181,6 +1468,68 @@ const getKlasifikasiText = (kode: string, text: string | null) => {
   }
 
   return kode || "-";
+};
+
+const getSelectedKlasifikasiLabel = () => {
+  if (!addForm.value.klasifikasi) return "";
+
+  const selected = klasifikasiList.value.find(
+    (k) => k.klasifikasi === addForm.value.klasifikasi,
+  );
+
+  return selected
+    ? `${selected.klasifikasi} - ${selected.klasifikasi_text}`
+    : addForm.value.klasifikasi;
+};
+
+const getSelectedJenisNaskahLabel = () => {
+  if (!addForm.value.jenisNaskah) return "";
+
+  const selected = jenisNaskahList.value.find(
+    (j) => j.jenis === addForm.value.jenisNaskah,
+  );
+
+  return selected
+    ? `${selected.jenis} - ${selected.jenis_text}`
+    : addForm.value.jenisNaskah;
+};
+
+const toggleKlasifikasiDropdown = () => {
+  showKlasifikasiDropdown.value = !showKlasifikasiDropdown.value;
+  if (showKlasifikasiDropdown.value) {
+    klasifikasiSearchQuery.value = "";
+  }
+};
+
+const toggleJenisNaskahDropdown = () => {
+  showJenisNaskahDropdown.value = !showJenisNaskahDropdown.value;
+  if (showJenisNaskahDropdown.value) {
+    jenisNaskahSearchQuery.value = "";
+  }
+};
+
+const selectKlasifikasi = async (klasifikasi: any) => {
+  addForm.value.klasifikasi = klasifikasi.klasifikasi;
+  showKlasifikasiDropdown.value = false;
+  klasifikasiSearchQuery.value = "";
+
+  // Trigger klasifikasi change handler
+  try {
+    const detail = await fetchKlasifikasiDetail(klasifikasi.id);
+    selectedKlasifikasiDetail.value = detail;
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err.message || "Gagal memuat detail klasifikasi",
+      color: "red",
+    });
+  }
+};
+
+const selectJenisNaskah = (jenisNaskah: any) => {
+  addForm.value.jenisNaskah = jenisNaskah.jenis;
+  showJenisNaskahDropdown.value = false;
+  jenisNaskahSearchQuery.value = "";
 };
 
 const onKlasifikasiChange = async () => {
@@ -1392,12 +1741,12 @@ const openDetailModal = async (id: string) => {
   }
 };
 
+// FIXED: View document from detail modal - closes modal and opens slideover
 const viewDocumentFromDetail = async () => {
   if (!documentDetail.value) return;
 
-  const url =
-    documentDetail.value.signedFilePreviewUrl ||
-    documentDetail.value.filePreviewUrl;
+  // Use fileUrl from API response (this is the correct field name)
+  const url = documentDetail.value.fileUrl;
 
   if (!url) {
     toast.add({
@@ -1408,22 +1757,22 @@ const viewDocumentFromDetail = async () => {
     return;
   }
 
+  // Set return modal
+  returnToModal.value = "detail";
+
+  // IMPORTANT: Close modal detail first
+  openDetail.value = false;
+
+  // Reset preview state
   isOpenPreview.value = false;
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
   pdfUrl.value = null;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
     toast.add({
@@ -1454,7 +1803,11 @@ const resetForm = () => {
   };
   selectedKlasifikasiDetail.value = null;
   showSignerDropdown.value = false;
+  showKlasifikasiDropdown.value = false;
+  showJenisNaskahDropdown.value = false;
   signerSearchQuery.value = "";
+  klasifikasiSearchQuery.value = "";
+  jenisNaskahSearchQuery.value = "";
   if (fileInput.value) {
     fileInput.value.value = "";
   }
@@ -1464,8 +1817,10 @@ const resetForm = () => {
   }
 };
 
+// FIXED: View document from table - opens slideover directly
 const viewDocument = async (doc: any) => {
-  const url = doc.signedFilePreviewUrl || doc.filePreviewUrl;
+  // Use filePreviewUrl from document in table
+  const url = doc.filePreviewUrl;
 
   if (!url) {
     toast.add({
@@ -1476,22 +1831,19 @@ const viewDocument = async (doc: any) => {
     return;
   }
 
+  // No return modal (opened from table, not from modal)
+  returnToModal.value = null;
+
+  // Reset preview state
   isOpenPreview.value = false;
+  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
   pdfUrl.value = null;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
     toast.add({
@@ -1502,12 +1854,25 @@ const viewDocument = async (doc: any) => {
   }
 };
 
+// FIXED: Preview file from form modal - closes modal and opens slideover
 const previewFileInModal = async () => {
+  // Set return modal
+  returnToModal.value = "form";
+
+  // IMPORTANT: Close modal first
+  openAdd.value = false;
+
   if (previewUrl.value) {
+    // For newly uploaded file
     pdfUrl.value = previewUrl.value;
     isOpenPreview.value = true;
   } else if (isEditMode.value && documentDetail.value) {
-    await viewDocumentFromDetail();
+    // For existing file in edit mode - use fileUrl
+    const url = documentDetail.value.fileUrl;
+    if (url) {
+      pdfUrl.value = url;
+      isOpenPreview.value = true;
+    }
   }
 };
 
@@ -1645,9 +2010,21 @@ const saveDokumen = async () => {
 };
 
 watch(isOpenPreview, (open) => {
-  if (!open && pdfUrl.value) {
-    URL.revokeObjectURL(pdfUrl.value);
+  if (!open) {
+    // When slideover closes
+    if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+      URL.revokeObjectURL(pdfUrl.value);
+    }
     pdfUrl.value = null;
+
+    // Reopen the modal that was previously open
+    if (returnToModal.value === "detail") {
+      openDetail.value = true;
+      returnToModal.value = null;
+    } else if (returnToModal.value === "form") {
+      openAdd.value = true;
+      returnToModal.value = null;
+    }
   }
 });
 </script>

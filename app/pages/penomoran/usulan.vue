@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -30,7 +30,7 @@
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -42,16 +42,16 @@
         <div class="relative inline-block">
           <button
             data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <span class="text-sm">
+            <span class="text-sm dark:text-gray-200">
               {{ filterStatus || "Semua" }}
             </span>
 
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200',
+                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -71,12 +71,12 @@
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
+            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
           >
             <button
               v-for="item in filterOptions"
               :key="item"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               @click.prevent="selectFilterStatus(item)"
             >
               {{ item }}
@@ -87,13 +87,13 @@
         <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             @input="handleSearchInput"
             placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -103,21 +103,21 @@
         <div
           v-for="i in 5"
           :key="i"
-          class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
+          class="w-full h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
         ></div>
       </div>
 
       <!-- EMPTY -->
       <div
         v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500"
+        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="min-w-max bg-white text-sm w-full">
+        <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
           <thead class="bg-primary text-white">
             <tr>
               <th
@@ -125,7 +125,7 @@
                 :key="col.key"
                 @click="col.sortable && handleSort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap hover:bg-primary-600',
                   col.sortable
                     ? 'cursor-pointer select-none '
                     : 'cursor-default',
@@ -161,45 +161,49 @@
             <tr
               v-for="row in rows"
               :key="row.id"
-              class="group hover:bg-primary-50 cursor-pointer border-b border-gray-200 transition"
+              class="group hover:bg-primary-50 dark:hover:bg-primary-900/20 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition"
               @mousemove="onMouseMove($event, 'Klik untuk lihat detail')"
               @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
             >
-              <td class="px-5 py-4">{{ row.jenis }}</td>
-              <td class="px-5 py-4">{{ row.tanggal }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                  >
                     {{ row.perihal }}
                   </p>
                 </div>
               </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                  >
                     {{ row.penandatangan }}
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.jumlah }}</td>
-              <td class="px-5 py-4">{{ row.pengusul }}</td>
-              <td class="px-5 py-4">{{ row.tglUsulan }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
 
               <td
                 @click.stop
-                class="sticky right-0 z-20 bg-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+                class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <span
                   class="flex item-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                   :class="{
-                    'bg-gray-200 text-gray-700 text-center':
+                    'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-center':
                       row.status === 'Belum Diajukan',
-                    'bg-yellow-100 text-yellow-700':
+                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                       row.status === 'Menunggu Verifikasi',
-                    'bg-green-100 text-green-700 text-center':
+                    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-center':
                       row.status === 'Disetujui',
-                    'bg-red-100 text-red-700 text-center':
+                    'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-center':
                       row.status === 'Ditolak',
                   }"
                 >
@@ -214,9 +218,9 @@
       <!-- PAGINATION -->
       <div
         v-if="rows.length > 0 && pagination"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
 
@@ -228,8 +232,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             <svg
@@ -254,7 +258,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               1
             </button>
@@ -262,7 +266,7 @@
             <!-- Left ellipsis -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -276,7 +280,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -287,7 +291,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -296,7 +300,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="handlePageChange(totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               {{ totalPages }}
             </button>
@@ -309,8 +313,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             Next
@@ -348,7 +352,7 @@
       <!-- TITLE -->
       <template #title>
         <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
-          <h2 class="text-lg font-semibold uppercase">
+          <h2 class="text-lg font-semibold uppercase dark:text-gray-100">
             {{ selectedRow?.jenis_naskah || "Detail" }}
           </h2>
         </div>
@@ -360,39 +364,49 @@
         class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
       >
         <!-- Judul Besar -->
-        <p class="text-gray-900 font-semibold leading-relaxed text-base">
+        <p
+          class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base"
+        >
           {{ selectedRow.perihal }}
         </p>
 
         <!-- Tanggal -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Tanggal</p>
-          <p class="font-medium mt-1">{{ formatDate(selectedRow.tanggal) }}</p>
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
+            {{ formatDate(selectedRow.tanggal) }}
+          </p>
         </div>
 
         <!-- Penandatangan -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Penandatangan</p>
-          <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Penandatangan</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
+            {{ selectedRow.penandatangan }}
+          </p>
         </div>
 
         <!-- Klasifikasi -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Klasifikasi</p>
-          <p class="font-medium mt-1">
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
             {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi }}
           </p>
         </div>
 
         <!-- Jenis Naskah -->
-        <div class="pb-2 border-b border-gray-200">
-          <p class="text-gray-500 text-xs">Jenis Naskah</p>
-          <p class="font-medium mt-1">{{ selectedRow.jenis_naskah }}</p>
+        <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
+          <p class="font-medium mt-1 dark:text-gray-200">
+            {{ selectedRow.jenis_naskah }}
+          </p>
         </div>
 
         <!-- Nomor Surat & File Upload Section -->
         <div class="mt-4">
-          <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
+          >
             Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
           </label>
 
@@ -406,15 +420,17 @@
             <div
               v-for="(detail, idx) in selectedRow.details"
               :key="detail.id || idx"
-              class="border border-gray-300 rounded-lg p-4 bg-gray-50"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
             >
               <!-- Nomor surat dengan status badge -->
               <div class="flex items-center gap-2 mb-3">
                 <div
-                  class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2"
+                  class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                 >
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-mono text-gray-700">
+                    <span
+                      class="text-sm font-mono text-gray-700 dark:text-gray-300"
+                    >
                       {{ idx + 1 }}.
                       {{ detail.nomor || selectedRow.template_nomor || "-" }}
                     </span>
@@ -425,11 +441,11 @@
                       :class="[
                         'px-2 py-1 rounded-lg text-xs font-medium',
                         {
-                          'bg-yellow-100 text-yellow-700':
+                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 text-green-700':
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
                             detail.status === 'terpakai',
-                          'bg-red-100 text-red-700':
+                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
                         },
                       ]"
@@ -443,9 +459,9 @@
                 <button
                   v-if="detail.nomor"
                   @click="handleCopy(detail.nomor)"
-                  class="p-2 rounded-lg hover:bg-gray-200 transition border border-gray-300 bg-white"
+                  class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
                 >
-                  <Copy class="w-4 h-4 text-gray-600" />
+                  <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
 
@@ -454,19 +470,64 @@
                 <!-- ADA FILE (backend / lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
-                  class="flex items-center justify-between bg-white border border-green-200 hover:bg-green-50 rounded-md px-3 py-2"
+                  class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md px-3 py-2 transition-colors"
                 >
                   <button
                     @click="openPreview(detail, idx)"
-                    class="flex items-start gap-3 flex-1 text-left transition rounded-md"
+                    class="flex items-start gap-3 flex-1 text-left transition rounded-md group"
                   >
+                    <!-- FILE ICON -->
+                    <div class="flex-shrink-0 mt-0.5">
+                      <svg
+                        class="w-5 h-5 text-green-600 dark:text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+
                     <!-- FILE INFO -->
-                    <div class="flex-1">
-                      <p class="text-sm font-medium text-green-700 underline">
-                        📄
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-green-700 dark:text-green-400 underline decoration-green-600/30 group-hover:decoration-green-600 dark:decoration-green-400/30 dark:group-hover:decoration-green-400 transition-colors truncate"
+                      >
                         {{ detail.file_name || filesByIndex[idx]?.name }}
                       </p>
-                      <p class="text-xs text-gray-600">Klik untuk preview</p>
+                      <p
+                        class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                      >
+                        Klik untuk preview
+                      </p>
+                    </div>
+
+                    <!-- PREVIEW ICON -->
+                    <div class="flex-shrink-0 ml-2">
+                      <svg
+                        class="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
                     </div>
                   </button>
 
@@ -474,10 +535,11 @@
                   <button
                     v-if="filesByIndex[idx] && !detail.file_name"
                     @click="removeFile(idx)"
-                    class="ml-2 p-2 rounded-lg hover:bg-red-100 transition"
+                    class="ml-2 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
+                    title="Hapus file"
                   >
                     <svg
-                      class="w-4 h-4 text-red-600"
+                      class="w-4 h-4 text-red-600 dark:text-red-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -498,10 +560,10 @@
                   class="space-y-2"
                 >
                   <label
-                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all"
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
                   >
                     <svg
-                      class="w-5 h-5 text-gray-400"
+                      class="w-5 h-5 text-gray-400 dark:text-gray-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -515,10 +577,14 @@
                     </svg>
 
                     <div class="flex-1">
-                      <span class="text-gray-700 font-medium block">
+                      <span
+                        class="text-gray-700 dark:text-gray-300 font-medium block"
+                      >
                         Pilih file (Opsional)
                       </span>
-                      <span class="text-xs text-gray-500 block">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 block"
+                      >
                         PDF, DOC, DOCX (Max 5MB)
                       </span>
                     </div>
@@ -535,11 +601,11 @@
                 <!-- BELUM ADA FILE & TIDAK BISA UPLOAD -->
                 <div
                   v-else
-                  class="bg-yellow-50 border border-yellow-200 rounded-md p-2"
+                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
                 >
                   <div class="flex items-center gap-2">
                     <svg
-                      class="w-3 h-3 text-yellow-600"
+                      class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -552,7 +618,7 @@
                       />
                     </svg>
 
-                    <span class="text-xs text-yellow-800">
+                    <span class="text-xs text-yellow-800 dark:text-yellow-400">
                       Belum ada file diupload
                     </span>
                   </div>
@@ -565,10 +631,10 @@
         <!-- File upload warning -->
         <div
           v-if="selectedRow?.status === 'Belum Diajukan'"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2"
         >
           <svg
-            class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+            class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -580,9 +646,9 @@
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <div class="text-xs text-blue-800">
+          <div class="text-xs text-blue-800 dark:text-blue-300">
             <p class="font-medium">Upload file (opsional)</p>
-            <p class="mt-1 text-blue-700">
+            <p class="mt-1 text-blue-700 dark:text-blue-400">
               File harus dalam format PDF, DOC, atau DOCX. Usulan tetap dapat
               dikirim tanpa file.
             </p>
@@ -592,17 +658,17 @@
         <!-- Upload Progress Indicator -->
         <div
           v-if="isUploadingFiles"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
         >
           <div class="flex items-center gap-3">
             <div
-              class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"
+              class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"
             ></div>
             <div class="flex-1">
-              <p class="text-sm font-medium text-blue-900">
+              <p class="text-sm font-medium text-blue-900 dark:text-blue-200">
                 Mengirim usulan...
               </p>
-              <p class="text-xs text-blue-700">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
                 File sedang diupload ke server
               </p>
             </div>
@@ -613,7 +679,7 @@
       <!-- FOOTER -->
       <template #footer>
         <div
-          class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200"
+          class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <!-- Show Kirim button only if status is "Belum Diajukan" -->
           <button
@@ -629,7 +695,7 @@
           <button
             @click="openConfirmDelete = true"
             :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
-            class="flex-1 px-5 py-2 text-sm border border-red-400 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            class="flex-1 px-5 py-2 text-sm border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Hapus Usulan
           </button>
@@ -668,7 +734,7 @@
   <Teleport to="body">
     <div
       v-if="tooltip.show"
-      class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1 rounded-md shadow-lg transition-opacity"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1 rounded-md shadow-lg transition-opacity"
       :style="{
         left: tooltip.x + 'px',
         top: tooltip.y + 'px',
@@ -686,21 +752,21 @@
       :ui="{
         width: 'w-screen max-w-full',
         overlay: {
-          background: 'bg-gray-900/90 dark:bg-gray-900/90',
+          background: 'bg-gray-900/90 dark:bg-gray-900/95',
         },
         base: 'h-screen max-h-screen',
-        body: 'p-0 flex-1',
+        body: 'p-0 flex-1 overflow-hidden',
         header:
-          'border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900',
+          'border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
         footer:
-          'border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900',
+          'border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
       }"
     >
       <template #header>
         <div class="flex items-center justify-between w-full px-6 py-4">
           <div class="flex items-center gap-3">
             <svg
-              class="w-5 h-5 text-primary"
+              class="w-5 h-5 text-primary dark:text-primary-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -718,14 +784,17 @@
                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
               />
             </svg>
-            <h3 class="text-lg font-semibold">Preview Dokumen</h3>
+            <h3 class="text-lg font-semibold dark:text-gray-100">
+              Preview Dokumen
+            </h3>
           </div>
           <button
             @click="closePreview"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title="Tutup preview"
           >
             <svg
-              class="w-5 h-5"
+              class="w-5 h-5 text-gray-600 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -745,22 +814,59 @@
         <div
           class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
         >
+          <!-- Loading State -->
+          <div v-if="!previewUrl" class="flex flex-col items-center gap-3">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary-400"
+            ></div>
+            <span class="text-gray-500 dark:text-gray-400"
+              >Memuat Preview...</span
+            >
+          </div>
+
+          <!-- Error State -->
+          <div
+            v-else-if="previewError"
+            class="flex flex-col items-center gap-3 p-6"
+          >
+            <svg
+              class="w-16 h-16 text-red-500 dark:text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div class="text-center">
+              <p class="text-gray-700 dark:text-gray-300 font-medium">
+                Gagal memuat preview
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ previewError }}
+              </p>
+            </div>
+            <button
+              @click="closePreview"
+              class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+
+          <!-- Iframe Preview -->
           <iframe
-            v-if="previewUrl"
+            v-else
             :key="previewUrl"
             :src="previewUrl"
             class="w-full h-full border-none"
+            @error="handlePreviewError"
             allowfullscreen
           />
-
-          <div v-else class="flex flex-col items-center gap-3">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-            ></div>
-            <span class="text-gray-500 dark:text-gray-400"
-              >Memuat Pratinjau...</span
-            >
-          </div>
         </div>
       </template>
 
@@ -782,14 +888,39 @@
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <span>{{ previewFileName || "Dokumen" }}</span>
+            <span class="truncate max-w-md">{{
+              previewFileName || "Dokumen"
+            }}</span>
           </div>
-          <button
-            @click="closePreview"
-            class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition"
-          >
-            Tutup
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="previewUrl && !previewError"
+              @click="downloadFile"
+              class="px-4 py-2 text-sm bg-primary text-white hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
+              title="Download file"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download
+            </button>
+            <button
+              @click="closePreview"
+              class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
       </template>
     </USlideover>
@@ -842,6 +973,9 @@ const openConfirmSubmit = ref(false);
 const isOpenPreview = ref(false);
 const previewUrl = ref("");
 const previewFileName = ref("");
+const previewError = ref("");
+const currentPreviewDetail = ref(null);
+const currentPreviewIndex = ref(null);
 
 // Person mapping
 const personMap = ref(new Map());
@@ -886,27 +1020,6 @@ const fetchPersonMap = async () => {
     console.log("✅ Person map loaded:", personMap.value.size, "items");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
-  }
-};
-
-// Fetch klasifikasi map untuk display
-const fetchKlasifikasiMap = async () => {
-  try {
-    const response = await getKlasifikasi();
-
-    if (Array.isArray(response)) {
-      response.forEach((item) => {
-        klasifikasiMap.value.set(item.code, item.display);
-      });
-    }
-
-    console.log(
-      "✅ Klasifikasi map loaded:",
-      klasifikasiMap.value.size,
-      "items",
-    );
-  } catch (error) {
-    console.error("❌ Error fetch klasifikasi map:", error);
   }
 };
 
@@ -971,13 +1084,14 @@ const fetchData = async () => {
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
 
       const createdDate = new Date(item.created_at);
+      // Convert to WIB (UTC+7)
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
 
-      const day = String(wibTime.getDate()).padStart(2, "0");
-      const month = String(wibTime.getMonth() + 1).padStart(2, "0");
-      const year = String(wibTime.getFullYear()).slice(-2);
-      const hours = String(wibTime.getHours()).padStart(2, "0");
-      const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+      const day = String(wibTime.getUTCDate()).padStart(2, "0");
+      const month = String(wibTime.getUTCMonth() + 1).padStart(2, "0");
+      const year = String(wibTime.getUTCFullYear()).slice(-2);
+      const hours = String(wibTime.getUTCHours()).padStart(2, "0");
+      const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
 
       return {
         id: item.id,
@@ -1155,28 +1269,39 @@ const openRowModal = async (row) => {
 
 // GET FILE URL - Helper function untuk construct URL yang benar
 const getFileUrl = (detail, idx) => {
+  // Priority 1: Local file yang baru diupload
   if (filesByIndex.value[idx]) {
-    return URL.createObjectURL(filesByIndex.value[idx]);
+    const blobUrl = URL.createObjectURL(filesByIndex.value[idx]);
+    console.log("🔗 Using local blob URL:", blobUrl);
+    return blobUrl;
   }
 
+  // Priority 2: file_url dari backend (presigned URL)
   if (detail.file_url) {
+    console.log("🔗 Using backend file_url:", detail.file_url);
     return detail.file_url;
   }
 
+  // Priority 3: file_text path (fallback, construct full URL)
   if (detail.file_text) {
-    return `${apiBaseUrl}/${detail.file_text}`;
+    const fullUrl = detail.file_text.startsWith("http")
+      ? detail.file_text
+      : `${apiBaseUrl}/${detail.file_text}`;
+    console.log("🔗 Using file_text path:", fullUrl);
+    return fullUrl;
   }
 
-  return "#";
+  console.warn("⚠️ No valid file URL found for detail:", detail);
+  return null;
 };
 
-// ✅ OPEN PREVIEW - Buka slideover dan tutup modal
+// ✅ OPEN PREVIEW - Buka slideover full page
 const openPreview = (detail, idx) => {
   const url = getFileUrl(detail, idx);
   const fileName =
     detail.file_name || filesByIndex.value[idx]?.name || "Dokumen";
 
-  if (url === "#") {
+  if (!url) {
     toast.add({
       title: "File tidak tersedia",
       description: "Tidak ada file untuk ditampilkan",
@@ -1185,34 +1310,72 @@ const openPreview = (detail, idx) => {
     return;
   }
 
+  // Reset error state
+  previewError.value = "";
+
+  // Set preview data
   previewUrl.value = url;
   previewFileName.value = fileName;
+  currentPreviewDetail.value = detail;
+  currentPreviewIndex.value = idx;
 
   // Tutup modal detail
   openDetail.value = false;
 
-  // Buka slideover preview
+  // Buka slideover preview full page
   isOpenPreview.value = true;
 
-  console.log("📄 Opening preview for:", fileName);
+  console.log("📄 Opening full page preview for:", fileName);
+  console.log("🔗 Preview URL:", url);
 };
 
 // ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
 const closePreview = () => {
+  // Tutup slideover
   isOpenPreview.value = false;
 
   // Buka kembali modal detail setelah slideover tertutup
   setTimeout(() => {
     openDetail.value = true;
-  }, 100);
+  }, 150);
 
   // Clean up URL object jika ada
   if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(previewUrl.value);
   }
 
+  // Reset state
   previewUrl.value = "";
   previewFileName.value = "";
+  previewError.value = "";
+  currentPreviewDetail.value = null;
+  currentPreviewIndex.value = null;
+};
+
+// Handle preview error
+const handlePreviewError = () => {
+  previewError.value =
+    "Gagal memuat dokumen. File mungkin rusak atau format tidak didukung.";
+  console.error("❌ Preview error for:", previewFileName.value);
+};
+
+// Download file
+const downloadFile = () => {
+  if (!previewUrl.value || previewError.value) return;
+
+  const link = document.createElement("a");
+  link.href = previewUrl.value;
+  link.download = previewFileName.value || "dokumen";
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  toast.add({
+    title: "Download dimulai",
+    description: `File "${previewFileName.value}" sedang didownload`,
+    color: "green",
+  });
 };
 
 // HANDLE FILE UPLOAD berdasarkan INDEX
@@ -1509,8 +1672,6 @@ onMounted(async () => {
     await getProfile();
   }
 
-  await fetchKlasifikasiMap();
-  await fetchPersonMap();
   await fetchData();
 
   document.addEventListener("click", handleDocumentClick);
@@ -1588,5 +1749,29 @@ const onMouseLeave = () => {
 }
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* Dark mode scrollbar */
+:deep(.dark) {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:deep(.dark)::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 </style>

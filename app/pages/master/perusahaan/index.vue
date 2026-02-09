@@ -1,32 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="min-h-screen dark:bg-gray-900 transition-colors pt-5">
     <div class="max-w-7xl mx-auto">
-      <!-- Header -->
-      <!-- <div class="flex items-center justify-between mb-8">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-900">Master Perusahaan</h2>
-        </div>
-        <PageHeader :items="breadcrumbs" />
-        <button
-          @click="openAddCompany = true"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all shadow-lg"
-        >
-          <Plus class="w-4 h-4" />
-          Tambah Perusahaan
-        </button>
-      </div> -->
       <div
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3"
       >
         <div>
-          <Heading variant="heading6b" class="text-mobile-md"
+          <Heading variant="heading6b" class="text-mobile-md dark:text-white"
             >Master Perusahaan</Heading
           >
           <PageHeader :items="breadcrumbs" />
         </div>
         <button
           @click="openAddCompany = true"
-          class="flex items-center gap-2 bg-primary hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
           Tambah
@@ -34,18 +20,18 @@
       </div>
       <!-- Card -->
       <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors"
       >
         <!-- Search -->
-        <div class="p-5 border-b w-full border-gray-100">
+        <div class="p-5 border-b w-full border-gray-100 dark:border-gray-700">
           <div class="relative flex-1 w-full md:w-255">
             <Search
-              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             />
             <input
               v-model="search"
               placeholder="Cari perusahaan..."
-              class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-12 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -54,7 +40,7 @@
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="bg-primary text-white">
+              <tr class="bg-primary dark:bg-primary-700 text-white">
                 <th class="px-6 py-4 text-left text-sm font-semibold">
                   Tanggal Mulai
                 </th>
@@ -78,20 +64,22 @@
                 v-for="(row, idx) in filteredRows"
                 :key="row.kode"
                 :class="[
-                  'border-b border-gray-100 hover:bg-blue-50 transition-colors',
-                  idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                  'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800'
+                    : 'bg-gray-50/50 dark:bg-gray-800',
                 ]"
               >
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ row.tanggalMulai }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ row.tanggalBerakhir }}
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
                     :to="`/master/perusahaan/${row.kode}/struktur`"
-                    class="flex px-3 py-1 rounded-lg bg-blue-100 hover:bg-primary hover:text-white text-blue-700 transition-colors w-fit"
+                    class="flex px-3 py-1 rounded-lg bg-blue-100 dark:bg-primary hover:dark:bg-primary-600 hover:bg-primary-700 hover:text-white text-blue-700 dark:text-white transition-colors w-fit"
                   >
                     <div class="flex p-2 rounded-lg transition-colors">
                       <Building2 class="w-5 h-5" />
@@ -103,36 +91,38 @@
                     </div>
                   </NuxtLink>
                 </td>
-                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                <td
+                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white"
+                >
                   {{ row.namaPendek }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ row.namaPanjang }}
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
                     <button
                       @click="openEditModal(row)"
-                      class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
                     >
                       <Pencil
-                        class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
+                        class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
                       />
                     </button>
                     <button
                       @click="openDeleteConfirm(row)"
-                      class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                     >
                       <Trash2
-                        class="w-4 h-4 text-red-600 group-hover:text-red-600"
+                        class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600"
                       />
                     </button>
                     <NuxtLink
                       :to="`/master/perusahaan/${row.kode}/area`"
-                      class="p-2 hover:bg-green-100 rounded-lg transition-colors group"
+                      class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors group"
                     >
                       <MapPin
-                        class="w-4 h-4 text-green-600 group-hover:text-green-600"
+                        class="w-4 h-4 text-green-600 dark:text-green-500 group-hover:text-green-600"
                       />
                     </NuxtLink>
                   </div>
@@ -149,68 +139,68 @@
       <Modal v-model="openAddCompany" size="xl" @save="handleSaveCompany">
         <template #title>
           <div class="p-3 ml-2">
-            <h3 class="text-xl font-bold">Tambah Perusahaan</h3>
+            <h3 class="text-xl font-bold dark:text-white">Tambah Perusahaan</h3>
           </div>
         </template>
 
         <div class="space-y-4 p-1">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
                 Tanggal Mulai <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formCompany.tanggalMulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
                 Tanggal Berakhir <span class="text-red-500">*</span>
               </Heading>
 
               <input
                 v-model="formCompany.tanggalBerakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Kode Perusahaan <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.kode"
               type="text"
               placeholder="Contoh: 10000"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Nama Pendek <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.namaPendek"
               type="text"
               placeholder="Contoh: TELKOM"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Nama Panjang <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="formCompany.namaPanjang"
               rows="3"
               placeholder="Contoh: PT Telekomunikasi Indonesia (Persero) Tbk"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             ></textarea>
           </div>
         </div>
@@ -222,62 +212,64 @@
       <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
         <template #title>
           <div>
-            <h3 class="text-lg font-bold p-3">Edit Perusahaan</h3>
+            <h3 class="text-lg font-bold p-3 dark:text-white">
+              Edit Perusahaan
+            </h3>
           </div>
         </template>
 
         <div class="space-y-4 p-1">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
                 Tanggal Mulai <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalMulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
             <div>
-              <Heading variant="heading11m" class="text-xs">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
                 Tanggal Berakhir <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalBerakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Kode <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.kode"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Nama Pendek <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.namaPendek"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           <div>
-            <Heading variant="heading11m" class="text-xs">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Nama Panjang <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="editForm.namaPanjang"
               rows="3"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
         </div>
@@ -502,3 +494,12 @@ const handleDelete = async () => {
   }
 };
 </script>
+
+<style scoped>
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+</style>

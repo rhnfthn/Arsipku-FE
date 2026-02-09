@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-between mb-5">
+  <div class="flex items-center justify-between pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md">
         Rekap Naskah Dinas

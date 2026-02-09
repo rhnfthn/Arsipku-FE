@@ -1,5 +1,4 @@
-// ~/composables/useInbox.ts
-import { ref, watch, isRef } from "vue";
+import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
 
 const formatDateTime = (value: string | null | undefined) => {
@@ -17,19 +16,15 @@ const formatDateTime = (value: string | null | undefined) => {
   }).format(date);
 };
 
-const DETAIL_ENDPOINT_BY_JENIS: Record<string, string> = {
-  ND: "/ND",
-  DI: "/DI",
-  SDI: "/SDI",
-  SDE: "/SDE",
-};
-
 export interface InboxParams {
   page?: number;
   limit?: number;
-  jenis?: string; // ND, DI, SDI, SDE
-  status_baca?: string; // terbaca, belum_terbaca
+  jenis?: string;
+  status_baca?: string;
   search?: string;
+  start_date?: string;
+  end_date?: string;
+  preset?: string;
 }
 
 export function useInbox() {
@@ -39,7 +34,6 @@ export function useInbox() {
   const pending = ref(false);
   const error = ref<any>(null);
 
-  // New State for Server-side Pagination & Summary
   const pagination = ref({
     total: 0,
     page: 1,
@@ -52,6 +46,14 @@ export function useInbox() {
     total_belum_dibaca: 0,
     total_per_jenis: {},
   });
+
+  const unsetPriority = async (mail: any) => {
+    const idNaskah = mail.naskahId;
+    if (!idNaskah) throw new Error("ID Naskah tidak ditemukan");
+
+    // Menggunakan prefix /DI/ sesuai kode yang kamu lampirkan
+    return await apiPatch(`/DI/${idNaskah}/unset-priority`);
+  };
 
   const fetchInbox = async (params: InboxParams = {}) => {
     pending.value = true;
@@ -70,10 +72,18 @@ export function useInbox() {
       if (params.search) {
         query.append("search", params.search);
       }
+      if (params.preset) {
+        query.append("preset", params.preset);
+      }
+      if (params.start_date) {
+        query.append("start_date", params.start_date);
+      }
+      if (params.end_date) {
+        query.append("end_date", params.end_date);
+      }
 
       const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`);
 
-      // Normalisasi response
       const responseBody = res?.data?.pagination ? res.data : res;
       const rawItems = Array.isArray(responseBody?.data)
         ? responseBody.data
@@ -82,9 +92,6 @@ export function useInbox() {
       items.value = rawItems.map((it: any) => {
         const pengirimName = it.pengirim?.nama || "-";
         const pengirimPos = it.pengirim?.position_text || "-";
-
-        // --- LOGIKA FULL RECIPIENTS ---
-        // Inbox biasanya menggunakan field 'kepada' untuk daftar penerima
         const listKepada = it.kepada || [];
         const isSDE = ["SDE", "EXTERNAL", "EKSTERNAL"].includes(
           (it.jenis || "").toUpperCase(),
@@ -101,24 +108,17 @@ export function useInbox() {
             : "Tanpa Penerima";
 
         return {
-          // Mapping ID
-          id: it.id_naskah,
+          id: it.id_sirkulasi || it.id,
+          sirkulasiId: it.id_sirkulasi,
           naskahId: it.id_naskah,
-
-          // Kategori
           jenis: it.jenis,
           category: it.jenis,
           category_label: it.jenis_label,
-
-          // Konten Utama
           nomor: it.nomor,
           date: formatDateTime(it.created_at),
           subject: (it.perihal || "").toString().trim(),
-
-          // Penerima (Baru ditambahkan)
+          is_priority: it.is_priority,
           fullRecipients: fullRecipientList,
-
-          // Pengirim
           from: pengirimPos,
           fromPosition: pengirimPos,
           fromName: pengirimName,
@@ -133,27 +133,20 @@ export function useInbox() {
                   .toUpperCase()
               : "?",
 
-          // Status & Flags
           isRead: it.status_baca === "terbaca",
           isStarred: it.is_favorit,
           isArsip: it.is_arsip,
           isNote: it.is_note,
           isTinjut: it.is_tindak_lanjut,
           isLocked: it.is_locked,
-
-          // Labels
           labels: it.labels || [],
-
-          // Original Objects
           pengirim: it.pengirim,
           kepada: listKepada,
           penerimaAktif: it.penerima || null,
-
           raw: it,
         };
       });
 
-      // Update Pagination & Summary
       if (responseBody?.pagination) pagination.value = responseBody.pagination;
       if (responseBody?.summary) summary.value = responseBody.summary;
     } catch (err: any) {
@@ -167,20 +160,16 @@ export function useInbox() {
 
   const markAsRead = async (mail: any, positionId: string) => {
     if (mail.isRead) return;
-
     try {
       await apiPut("/naskah_sirkulasi/update-read-status", {
         id_naskah: mail.naskahId,
         position_id: positionId,
       });
-
       mail.isRead = true;
       if (mail.raw) {
         mail.raw.status_baca = "terbaca";
         mail.raw.read_time = new Date().toISOString();
       }
-
-      // Optional: Update summary count locally
       if (summary.value.total_belum_dibaca > 0) {
         summary.value.total_belum_dibaca--;
       }
@@ -191,67 +180,146 @@ export function useInbox() {
 
   const toggleFlag = async (
     mail: any,
-    flagType: "favorit" | "arsip" | "note",
+    flagType: "favorit" | "arsip" | "note" | "tindak_lanjut" | "lock",
   ) => {
+    const oldVal =
+      flagType === "favorit"
+        ? mail.isStarred
+        : flagType === "arsip"
+          ? mail.isArsip
+          : mail.isNote;
+
+    if (flagType === "favorit") mail.isStarred = !oldVal;
+    if (flagType === "arsip") mail.isArsip = !oldVal;
+    if (flagType === "note") mail.isNote = !oldVal;
+
     try {
-      const res: any = await apiPatch("/naskah_sirkulasi/toggle-flag", {
-        id_sirkulasi: mail.id, // Ensure this uses id_sirkulasi
+      const idToSend = mail.sirkulasiId || mail.raw?.id_sirkulasi;
+
+      if (!idToSend) throw new Error("ID Sirkulasi tidak ditemukan");
+
+      await apiPatch("/naskah_sirkulasi/toggle-flag", {
+        id_sirkulasi: idToSend,
         flag_type: flagType,
       });
-
-      const newValue = res?.data?.new_value;
-
-      // Update state local
-      if (flagType === "favorit") mail.isStarred = newValue;
-      if (flagType === "arsip") mail.isArsip = newValue;
-      if (flagType === "note") mail.isNote = newValue;
     } catch (err) {
       console.error("Gagal toggle flag:", flagType, err);
+      if (flagType === "favorit") mail.isStarred = oldVal;
+      if (flagType === "arsip") mail.isArsip = oldVal;
+      if (flagType === "note") mail.isNote = oldVal;
     }
   };
 
-  const fetchInboxDetail = async (idNaskah: string, jenis: string) => {
-    const JENIS_LABEL_MAP: Record<string, string> = {
-      ND: "Nota Dinas",
-      DI: "Disposisi",
-      SDI: "Surat Dinas Internal",
-      SDE: "Surat Dinas Eksternal",
-    };
+  const JENIS_LABEL_MAP: Record<string, string> = {
+    ND: "Nota Dinas",
+    DI: "Disposisi",
+    SDI: "Surat Dinas Internal",
+    SDE: "Surat Dinas Eksternal",
+  };
 
+  const fetchInboxDetail = async (idNaskah: string, jenis?: string) => {
     pending.value = true;
     error.value = null;
-
     try {
-      const basePath = DETAIL_ENDPOINT_BY_JENIS[jenis];
-      if (!basePath) throw new Error(`Jenis naskah tidak dikenali: ${jenis}`);
-
-      const res = await apiGet(`${basePath}/${encodeURIComponent(idNaskah)}`);
-      const d = res?.data;
-
+      const res = await apiGet(
+        `/persuratan/naskah/${encodeURIComponent(idNaskah)}`,
+      );
+      const d = res?.data && Array.isArray(res.data) ? res.data[0] : res?.data;
       if (!d) return null;
-
       return {
         id: d.id,
         jenis: d.jenis,
-        jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || "-",
-        sifat: d.sifat,
-        status: d.status,
-        kepada_yth: d.kepada_yth,
-        disposisi: d.disposisi,
-        catatan: d.catatan,
-        final_pdf_url: d.final_pdf_url,
+        jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
         nomor: d.nomor,
         tanggal: d.tanggal,
         perihal: d.perihal,
+        sifat: d.sifat,
+        status: d.status,
+        pengirim: d.pengirim,
+        kepada: Array.isArray(d.penerima) ? d.penerima : d.kepada || [],
+        tembusan: d.tembusan || [],
+        kepada_yth: d.detail?.kepada_yth || d.kepada_yth,
+        disposisi: d.detail?.disposisi || d.disposisi,
+        catatan: d.detail?.catatan || d.catatan,
         konten: d.konten,
         lampiran_files: d.lampiran_files || [],
-        pengirim: d.pengirim,
-        kepada: Array.isArray(d.penerima) ? d.penerima : [],
-        tembusan: d.tembusan || [],
+        final_pdf_url: d.final_pdf_url || d.final_pdf,
         raw: d,
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error("fetchInboxDetail error:", err);
+      error.value = err;
+      return null;
+    } finally {
+      pending.value = false;
+    }
+  };
+
+  const fetchKonsepDetail = async (idKonsep: string) => {
+    pending.value = true;
+    error.value = null;
+    try {
+      const res = await apiGet(`/konsep/${idKonsep}`);
+
+      if (!res || !res.data) return null;
+
+      const d = res.data;
+      const flows = d.flow || [];
+
+      // --- LOGIKA BARU ---
+
+      // 1. Ambil Flow Terakhir untuk cek Status & Catatan
+      // (Ini yang memuat aksi "reject" dan catatan "TOLAK DEH")
+      const lastFlow = flows.length > 0 ? flows[flows.length - 1] : null;
+
+      // 2. Ambil Catatan Reject (Hanya jika aksi terakhir adalah reject)
+      const catatanReject =
+        lastFlow?.aksi === "reject" ? lastFlow.catatan : null;
+
+      // 3. Cari PDF Snapshot Terakhir yang TIDAK NULL
+      // Flow reject punya pdf_snapshot: null, jadi kita harus mundur ke flow sebelumnya (create)
+      // Kita copy array flow, reverse, lalu cari yang punya pdf
+      const lastFlowWithPdf = [...flows].reverse().find((f) => f.pdf_snapshot);
+      const finalPdf = lastFlowWithPdf ? lastFlowWithPdf.pdf_snapshot : null;
+
+      // 4. Data Referensi (Naskah Asal / Flow[0])
+      // Tetap ambil ini jika butuh info surat asal, tapi BUKAN untuk catatan reject
+      const originFlow = flows.length > 0 ? flows[0] : null;
+      const refData =
+        originFlow && (originFlow.naskah || originFlow.pdf_snapshot)
+          ? {
+              id: originFlow.naskah?.id,
+              nomor: originFlow.naskah?.nomor,
+              // ... data referensi lainnya
+            }
+          : null;
+
+      return {
+        // --- Data Konsep ---
+        konsep: d.konsep,
+        naskah: d.naskah,
+        id: d.konsep?.id,
+
+        // --- Data Penting untuk UI ---
+        // Gunakan hasil logika di atas
+        final_pdf_url: finalPdf, // PDF dari step 'create'
+        catatan_reject: catatanReject, // Catatan dari step 'reject'
+
+        // Info Status
+        status: d.konsep?.status,
+        last_action: lastFlow?.aksi,
+
+        // --- Sisa data mapping kamu ---
+        nomor: d.naskah?.nomor || "-",
+        perihal: d.naskah?.perihal || d.konsep?.perihal,
+        pengirim: d.pengirim,
+        kepada: d.penerima || [],
+        tembusan: d.tembusan || [],
+        flow: flows,
+        ref_data: refData, // Jika perlu ditampilkan di UI terpisah
+      };
+    } catch (err: any) {
+      console.error("fetchKonsepDetail error:", err);
       error.value = err;
       return null;
     } finally {
@@ -261,13 +329,15 @@ export function useInbox() {
 
   return {
     items,
-    pagination, // Export pagination
-    summary, // Export summary
+    pagination,
+    summary,
     pending,
     error,
-    fetchInbox, // Updated signature
+    fetchInbox,
     markAsRead,
     toggleFlag,
     fetchInboxDetail,
+    unsetPriority,
+    fetchKonsepDetail,
   };
 }

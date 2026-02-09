@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 pb-10">
+  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white shadow-lg rounded-xl w-full">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -21,7 +21,7 @@
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -33,16 +33,16 @@
         <div class="relative inline-block">
           <button
             data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
-            <span class="text-sm">
+            <span class="text-sm dark:text-gray-200">
               {{ filterStatus || "Semua" }}
             </span>
 
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200',
+                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -62,12 +62,12 @@
           <div
             v-if="openFilterStatus"
             data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
+            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
           >
             <button
               v-for="item in filterOptions"
               :key="item"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               @click.prevent="selectFilterStatus(item)"
             >
               {{ item }}
@@ -78,13 +78,13 @@
         <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             @input="handleSearchInput"
             placeholder="Cari..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -94,21 +94,21 @@
         <div
           v-for="i in 5"
           :key="i"
-          class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
+          class="w-full h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
         ></div>
       </div>
 
       <!-- EMPTY -->
       <div
         v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500"
+        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
       >
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
 
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
-        <table class="min-w-max bg-white text-sm w-full">
+        <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
           <thead class="bg-primary text-white text-[15px]">
             <tr>
               <th
@@ -153,42 +153,48 @@
             <tr
               v-for="row in rows"
               :key="row.id"
-              class="hover:bg-gray-50 border-b border-gray-200 cursor-pointer transition"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 cursor-pointer transition"
               @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
               @mouseleave="onRowMouseLeave"
               @click="showPreview(row)"
             >
-              <td class="px-5 py-4">{{ row.jenis }}</td>
-              <td class="px-5 py-4">{{ row.tanggal }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                  >
                     {{ row.perihal }}
                   </p>
                 </div>
               </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                  >
                     {{ row.penandatangan }}
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4">{{ row.jumlah }}</td>
-              <td class="px-5 py-4">{{ row.pengusul }}</td>
-              <td class="px-5 py-4">{{ row.tglUsulan }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
+              <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
 
               <td
-                class="sticky right-0 z-20 bg-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+                class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
                 <span
                   :class="[
                     'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap',
                     {
-                      'bg-yellow-100 text-yellow-700':
+                      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                         row.status === 'Menunggu Verifikasi',
-                      'bg-green-100 text-green-700': row.status === 'Disetujui',
-                      'bg-red-100 text-red-700': row.status === 'Ditolak',
+                      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                        row.status === 'Disetujui',
+                      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
+                        row.status === 'Ditolak',
                     },
                   ]"
                 >
@@ -203,9 +209,9 @@
       <!-- PAGINATION -->
       <div
         v-if="rows.length > 0 && pagination"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
 
@@ -217,8 +223,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             <svg
@@ -243,7 +249,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               1
             </button>
@@ -251,7 +257,7 @@
             <!-- Left ellipsis -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -265,7 +271,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -276,7 +282,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -285,7 +291,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="handlePageChange(totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
             >
               {{ totalPages }}
             </button>
@@ -298,8 +304,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
             Next
@@ -328,15 +334,17 @@
       <!-- HEADER -->
       <template #title>
         <div class="flex items-center justify-between w-full px-6 pt-4 pb-4">
-          <h2 class="text-xl font-bold text-gray-900 leading-tight pt-2">
+          <h2
+            class="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight pt-2"
+          >
             {{ selectedRow?.perihal }}
           </h2>
           <button
             @click="openPreview = false"
-            class="text-gray-600 hover:text-gray-800"
+            class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           ></button>
 
-          <span class="text-sm text-gray-500">
+          <span class="text-sm text-gray-500 dark:text-gray-400">
             {{ formatDateTime(new Date()) }}
           </span>
         </div>
@@ -350,31 +358,35 @@
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <!-- Tanggal -->
-          <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-500 text-xs">Tanggal</p>
-            <p class="font-medium mt-1">
+          <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+            <p class="font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.tanggal }}
             </p>
           </div>
 
           <!-- Pengirim -->
-          <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-500 text-xs">Penandatangan</p>
-            <p class="font-medium mt-1">{{ selectedRow.penandatangan }}</p>
+          <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-xs">
+              Penandatangan
+            </p>
+            <p class="font-medium mt-1 dark:text-gray-200">
+              {{ selectedRow.penandatangan }}
+            </p>
           </div>
 
           <!-- Klasifikasi -->
-          <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-500 text-xs">Klasifikasi</p>
-            <p class="font-medium mt-1">
+          <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
+            <p class="font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
 
           <!-- Jenis Naskah -->
-          <div class="pb-2 border-b border-gray-200">
-            <p class="text-gray-500 text-xs">Jenis Naskah</p>
-            <p class="font-medium mt-1">
+          <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
+            <p class="font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.jenis }}
             </p>
           </div>
@@ -382,14 +394,15 @@
 
         <!-- File Lampiran Utama (dari request) -->
         <div v-if="selectedRow.file_path" class="pt-2">
-          <label class="block text-base font-medium text-gray-900 mb-2"
+          <label
+            class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
             >File Lampiran Pengusul</label
           >
           <div
-            class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-300 rounded-lg"
+            class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg"
           >
             <svg
-              class="w-8 h-8 text-gray-600"
+              class="w-8 h-8 text-gray-600 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -402,27 +415,31 @@
               />
             </svg>
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {{ getFileName(selectedRow.file_path) }}
               </p>
-              <p class="text-xs text-gray-500">Dokumen lampiran</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Dokumen lampiran
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Nomor Surat Section dengan Upload File -->
         <div class="mt-4">
-          <label class="text-xs font-medium text-gray-700 mb-2 break-words">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
+          >
             Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)</label
           >
 
           <!-- Warning jika ada nomor tanpa ID -->
           <div
             v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
-            class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2"
+            class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
           >
             <svg
-              class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
+              class="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -435,8 +452,12 @@
               />
             </svg>
             <div class="flex-1">
-              <p class="text-sm font-medium text-yellow-800">Peringatan</p>
-              <p class="text-xs text-yellow-700 mt-1">
+              <p
+                class="text-sm font-medium text-yellow-800 dark:text-yellow-400"
+              >
+                Peringatan
+              </p>
+              <p class="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
                 Beberapa nomor belum memiliki ID (status pending). Nomor
                 tersebut tidak dapat diproses sampai memiliki ID yang valid.
               </p>
@@ -449,7 +470,9 @@
               :key="detail.id || idx"
               class="space-y-2"
             >
-              <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+              <div
+                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
+              >
                 <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
                   <!-- Checkbox -->
@@ -462,28 +485,29 @@
                       detail.status === 'hangus' ||
                       isProcessing
                     "
-                    class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
+                    class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                   />
 
                   <!-- Nomor Container -->
                   <div class="relative flex flex-1 items-center gap-2">
-                    <span class="text-sm text-gray-600 font-medium">{{
-                      idx + 1
-                    }}</span>
+                    <span
+                      class="text-sm text-gray-600 dark:text-gray-400 font-medium"
+                      >{{ idx + 1 }}</span
+                    >
 
                     <input
                       type="text"
                       :value="displayNomor(detail)"
-                      class="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-sm font-mono"
+                      class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-mono dark:text-gray-200"
                       readonly
                     />
                     <!-- Copy Button -->
                     <button
                       v-if="detail.nomor && detail.status === 'terpakai'"
                       @click="handleCopy(detail.nomor)"
-                      class="p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center flex-shrink-0"
+                      class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition flex items-center justify-center flex-shrink-0"
                     >
-                      <Copy class="w-4 h-4 text-gray-600" />
+                      <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
 
                     <div v-else class="w-[44px]"></div>
@@ -493,16 +517,16 @@
                       :class="[
                         'px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0',
                         {
-                          'bg-yellow-100 text-yellow-700':
+                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'pending' ||
                             detail.status === 'menunggu',
-                          'bg-blue-100 text-blue-700':
+                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400':
                             detail.status === 'booking',
-                          'bg-green-100 text-green-700':
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
                             detail.status === 'terpakai',
-                          'bg-red-100 text-red-700':
+                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
-                          'bg-gray-100 text-gray-700':
+                          'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                             detail.status === 'hangus',
                         },
                       ]"
@@ -517,17 +541,17 @@
                   <!-- Show existing file if available -->
                   <div v-if="detail.file_name && !fileStates[idx]?.isReplacing">
                     <div
-                      class="border border-green-200 bg-green-50 hover:bg-green-100 rounded-lg p-3 cursor-pointer"
+                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg p-3 cursor-pointer"
                       @click="previewFile(detail)"
                     >
                       <div class="flex items-start gap-3">
                         <div class="flex-1">
                           <p
-                            class="text-sm font-medium text-green-700 underline"
+                            class="text-sm font-medium text-green-700 dark:text-green-400 underline"
                           >
                             📄 {{ detail.file_name }}
                           </p>
-                          <p class="text-xs text-gray-600">
+                          <p class="text-xs text-gray-600 dark:text-gray-400">
                             Klik untuk preview
                           </p>
                         </div>
@@ -538,10 +562,10 @@
                   <!-- Upload/Replace form -->
                   <div v-else class="space-y-2">
                     <label
-                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 rounded-md px-4 py-3 text-sm hover:bg-white hover:border-primary transition-all group"
+                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
                     >
                       <svg
-                        class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors"
+                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -555,14 +579,18 @@
                       </svg>
 
                       <div class="flex-1">
-                        <span class="text-gray-700 font-medium block">
+                        <span
+                          class="text-gray-700 dark:text-gray-300 font-medium block"
+                        >
                           {{
                             fileStates[idx]?.file?.name ||
                             files[idx]?.name ||
                             "Pilih file untuk diupload (Opsional)"
                           }}
                         </span>
-                        <span class="text-xs text-gray-500 mt-0.5 block">
+                        <span
+                          class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 block"
+                        >
                           PDF, DOC, DOCX (Max 5MB)
                         </span>
                       </div>
@@ -579,11 +607,11 @@
                     <!-- File info if selected -->
                     <div
                       v-if="fileStates[idx]?.file || files[idx]"
-                      class="flex items-center justify-between bg-white border border-green-200 rounded-md px-3 py-2"
+                      class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-md px-3 py-2"
                     >
                       <div class="flex items-center gap-2">
                         <svg
-                          class="w-4 h-4 text-green-600"
+                          class="w-4 h-4 text-green-600 dark:text-green-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -595,7 +623,7 @@
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span class="text-xs text-gray-700">
+                        <span class="text-xs text-gray-700 dark:text-gray-300">
                           {{
                             fileStates[idx]?.file?.name ||
                             files[idx]?.name ||
@@ -634,7 +662,7 @@
                               : removeFile(idx)
                           "
                           :disabled="fileStates[idx]?.isUploading"
-                          class="text-red-500 hover:text-red-700 text-xs disabled:opacity-50"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs disabled:opacity-50"
                         >
                           {{ fileStates[idx]?.isReplacing ? "Batal" : "Hapus" }}
                         </button>
@@ -649,13 +677,14 @@
 
         <!-- Keterangan Jika Ada yang Tidak Di-check (Ditolak) -->
         <div v-if="hasUnchecked" class="pt-2">
-          <label class="block text-base font-medium text-gray-900 mb-2"
+          <label
+            class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
             >Keterangan Penolakan <span class="text-red-500">*</span></label
           >
 
           <textarea
             v-model="keterangan_ditolak"
-            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
             placeholder="Masukkan keterangan mengapa nomor ditolak..."
           ></textarea>
         </div>
@@ -663,7 +692,9 @@
 
       <!-- FOOTER -->
       <template #footer>
-        <div class="flex gap-3 px-5 py-4 border-t border-gray-200">
+        <div
+          class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        >
           <!-- Tombol Disetujui -->
           <button
             @click="confirmApproval"
@@ -698,7 +729,7 @@
           <button
             @click="confirmRejection"
             :disabled="isProcessing || !hasUnchecked"
-            class="flex-1 px-5 py-2 text-sm font-medium bg-white border border-red-400 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             Nomor Ditolak
           </button>
@@ -706,7 +737,6 @@
       </template>
     </Modal>
   </Teleport>
-
   <!-- PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
@@ -767,7 +797,7 @@
   <Teleport to="body">
     <div
       v-if="tooltip.show"
-      class="fixed z-[9999] pointer-events-none bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md shadow-lg transition-opacity"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-md shadow-lg transition-opacity"
       :style="{
         left: tooltip.x + 'px',
         top: tooltip.y + 'px',
@@ -795,7 +825,6 @@ const apiBaseUrl = config.public.apiBaseUrl;
 
 // Composable
 const {
-  getPersonWithPosition,
   approveBulkNomor,
   rejectNomorRequest,
   getListSubmitted,
@@ -850,9 +879,6 @@ const rows = ref<any[]>([]);
 const pagination = ref(null);
 const loading = ref(false);
 
-// Person Map
-const personMap = ref(new Map());
-
 // Files state
 const files = ref<any[]>([]);
 
@@ -868,25 +894,6 @@ const fileStates = ref<Record<number, FileState>>({});
 
 // Debounce timeout
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-// Fetch person map
-const fetchPersonMap = async () => {
-  try {
-    const response = await getPersonWithPosition();
-    const list = Array.isArray(response) ? response : (response.data ?? []);
-
-    list.forEach((item) => {
-      personMap.value.set(item.persnum, {
-        nama: item.nama,
-        position_text: item.position_text,
-      });
-    });
-
-    console.log("✅ Person map loaded:", personMap.value.size, "items");
-  } catch (error) {
-    console.error("❌ Error fetch person map:", error);
-  }
-};
 
 // ✅ FETCH DATA dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
@@ -918,7 +925,8 @@ const fetchData = async () => {
     }
 
     rows.value = data.map((item: any) => {
-      const person = personMap.value.get(item.persnum);
+      // ✅ Data pengusul dan penandatangan sudah ada di response API
+      // Tidak perlu lookup ke personMap lagi
 
       // Format tanggal: DD/MM/YYYY (UTC)
       const tanggalDate = new Date(item.tanggal);
@@ -939,9 +947,9 @@ const fetchData = async () => {
         jenis: item.jenis,
         tanggal: formattedTanggal,
         perihal: item.perihal,
-        penandatangan: item.penandatangan || person?.position_text || "-",
+        penandatangan: item.penandatangan || "-",
         jumlah: item.jumlah,
-        pengusul: person?.nama || item.nama || "-",
+        pengusul: item.nama || "-", // Nama pengusul dari API
         tglUsulan: formattedTglUsulan,
         status: item.status,
         klasifikasi: item.klasifikasi,
@@ -1431,7 +1439,8 @@ function handleDocumentClick(e: MouseEvent) {
 
 /* Load data on mount */
 onMounted(async () => {
-  await fetchPersonMap();
+  // ✅ REMOVED: fetchPersonMap - Person data (nama, penandatangan) already included in API response
+  // The getListSubmitted endpoint returns all necessary user/person data
   await fetchData();
   document.addEventListener("click", handleDocumentClick);
 });
@@ -1503,5 +1512,29 @@ watch(isOpenPreview, (open) => {
 }
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* Dark mode scrollbar */
+:deep(.dark) {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:deep(.dark)::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+:deep(.dark)::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 </style>

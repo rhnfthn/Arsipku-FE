@@ -1,7 +1,6 @@
 <template>
   <nav
     class="bg-[#F6F8FC] dark:bg-gray-900 dark:border-gray-800 h-20 flex items-center transition-colors duration-300 gap-3 md:gap-5 justify-between sticky top-0 z-[50] relative">
-
     <div class="flex items-center gap-3 flex-1">
       <button
         class="md:hidden me-2 mt-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -14,22 +13,20 @@
       </h1>
 
       <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl relative z-[60]">
-
         <!-- <Teleport to="body"> -->
-          <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false"
-            class="fixed inset-0 z-[1] bg-black/50 backdrop-blur-sm transition-all duration-300">
-          </div>
+        <div v-if="isAdvancedOpen" @click="isAdvancedOpen = false"
+          class="fixed inset-0 z-[1] bg-black/50 backdrop-blur-sm transition-all duration-300"></div>
         <!-- </Teleport> -->
-
 
         <UInput v-model="search" :placeholder="searchConfig.placeholder" variant="none" size="xl"
           class="w-full rounded-full relative bg-transparent [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400 z-[90]"
           @keyup.enter="handleSearch" :ui="{
             base: 'py-3 px-5 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-md dark:focus:bg-gray-700 transition-all',
-            icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } },
-            trailing: { padding: { xl: 'pr-2' } }
+            icon: {
+              trailing: { pointer: 'pointer-events-auto cursor-pointer' },
+            },
+            trailing: { padding: { xl: 'pr-2' } },
           }">
-
           <template #leading>
             <UIcon name="i-heroicons-magnifying-glass" class="text-gray-400 dark:text-gray-500 w-5 h-5" />
           </template>
@@ -42,7 +39,9 @@
               <UButton variant="ghost" color="gray" icon="i-heroicons-adjustments-horizontal" :padded="false"
                 @click="isAdvancedOpen = !isAdvancedOpen"
                 class="hover:bg-gray-200 dark:hover:bg-gray-700 text-primary-600 rounded-full w-10 h-10 transition-colors items-center justify-center"
-                :class="{ 'bg-gray-200 dark:bg-gray-700 text-primary': isAdvancedOpen }" title="Pencarian Lanjutan" />
+                :class="{
+                  'bg-gray-200 dark:bg-gray-700 text-primary': isAdvancedOpen,
+                }" title="Pencarian Lanjutan" />
             </div>
           </template>
         </UInput>
@@ -108,13 +107,15 @@
             <div>
               <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Jenis Surat</label>
               <div class="flex flex-wrap gap-2">
-                <button v-for="opt in jenisOptions" :key="opt.value"
-                  @click="advancedFilters.jenis = advancedFilters.jenis === opt.value ? '' : opt.value" :class="[
+                <button v-for="opt in jenisOptions" :key="opt.value" @click="
+                  advancedFilters.jenis =
+                  advancedFilters.jenis === opt.value ? '' : opt.value
+                  " :class="[
                     'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
                     getCategoryStyle(opt.value),
                     advancedFilters.jenis === opt.value
                       ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
-                      : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0'
+                      : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
                   ]">
                   {{ opt.label }}
                 </button>
@@ -128,7 +129,9 @@
                   <select v-model="advancedFilters.sifat"
                     class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
                     <option value="" disabled selected>Pilih Sifat</option>
-                    <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                    <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
                     <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
@@ -141,7 +144,9 @@
                   <select v-model="advancedFilters.status"
                     class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
                     <option value="" disabled selected>Pilih Status</option>
-                    <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                    <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
                     <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
@@ -154,7 +159,8 @@
                   <select v-model="advancedFilters.hasAttachment"
                     class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
                     <option value="" disabled selected>Semua</option>
-                    <option v-for="opt in attachmentOptions" :key="opt.value" :value="opt.value">{{ opt.label }}
+                    <option v-for="opt in attachmentOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
                     </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
@@ -214,14 +220,11 @@
               </button>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
 
     <div class="flex items-center gap-2 md:gap-5">
-
       <button @click="toggleMobileSearch"
         class="md:hidden p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-full transition-colors">
         <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
@@ -241,6 +244,18 @@
               <span
                 class="hidden md:block text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-tight truncate max-w-[150px] lg:max-w-[200px]">
                 {{ user?.positionText }}
+              </span>
+            </UTooltip>
+
+            <UTooltip
+              v-if="user?.companyText"
+              :text="user?.companyText"
+              :popper="{ placement: 'bottom-end' }"
+            >
+              <span
+                class="hidden md:block text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[200px]"
+              >
+                {{ user?.companyText }}
               </span>
             </UTooltip>
           </div>
@@ -265,6 +280,13 @@
               <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left">
                 {{ item.uiPosition }}
               </span>
+
+              <span
+                v-if="item.uiCompany"
+                class="text-[11px] text-gray-400 dark:text-gray-500 truncate w-full text-left"
+              >
+                {{ item.uiCompany }}
+              </span>
             </div>
             <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
               class="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -276,11 +298,17 @@
             <div
               class="flex items-center p-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <button @click="isDark = false" class="p-1 rounded-full transition-all flex items-center justify-center"
-                :class="!isDark ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'">
+                :class="!isDark
+                    ? 'bg-white text-orange-500 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600'
+                  ">
                 <UIcon name="i-heroicons-sun" class="w-4 h-4" />
               </button>
               <button @click="isDark = true" class="p-1 rounded-full transition-all flex items-center justify-center"
-                :class="isDark ? 'bg-gray-700 text-yellow-300 shadow-sm' : 'text-gray-400 hover:text-gray-600'">
+                :class="isDark
+                    ? 'bg-gray-700 text-yellow-300 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600'
+                  ">
                 <UIcon name="i-heroicons-moon" class="w-4 h-4" />
               </button>
             </div>
@@ -302,10 +330,10 @@
 
     <div v-if="isMobileSearchOpen"
       class="absolute top-20 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40 md:hidden shadow-lg animate-in slide-in-from-top-2 max-h-[calc(100vh-5rem)] overflow-y-auto">
-
       <UInput v-model="search" :placeholder="searchConfig.placeholder" variant="outline" size="lg" class="w-full mb-2"
-        @keyup.enter="handleSearch" :ui="{ icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } } }">
-
+        @keyup.enter="handleSearch" :ui="{
+          icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } },
+        }">
         <template #leading>
           <UIcon name="i-heroicons-magnifying-glass" class="text-gray-400 dark:text-gray-500 w-5 h-5" />
         </template>
@@ -324,9 +352,12 @@
 
       <div v-if="isAdvancedOpen" class="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4 pb-4">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-sm text-gray-900 dark:text-gray-100">Filter Lanjutan</h3>
-          <button @click="resetAdvancedFilters"
-            class="text-xs text-primary-600 hover:text-primary-700 font-medium">Reset</button>
+          <h3 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+            Filter Lanjutan
+          </h3>
+          <button @click="resetAdvancedFilters" class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+            Reset
+          </button>
         </div>
 
         <div class="space-y-4">
@@ -346,13 +377,15 @@
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Jenis Surat</label>
             <div class="flex flex-wrap gap-2">
-              <button v-for="opt in jenisOptions" :key="opt.value"
-                @click="advancedFilters.jenis = advancedFilters.jenis === opt.value ? '' : opt.value" :class="[
+              <button v-for="opt in jenisOptions" :key="opt.value" @click="
+                advancedFilters.jenis =
+                advancedFilters.jenis === opt.value ? '' : opt.value
+                " :class="[
                   'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
                   getCategoryStyle(opt.value),
                   advancedFilters.jenis === opt.value
                     ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
-                    : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0'
+                    : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
                 ]">
                 {{ opt.label }}
               </button>
@@ -378,7 +411,9 @@
               <select v-model="advancedFilters.sifat"
                 class="appearance-none w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
                 <option value="" disabled selected>Pilih Sifat</option>
-                <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
               </select>
             </div>
             <div>
@@ -386,7 +421,9 @@
               <select v-model="advancedFilters.status"
                 class="appearance-none w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
                 <option value="" disabled selected>Pilih Status</option>
-                <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
               </select>
             </div>
           </div>
@@ -403,14 +440,17 @@
 
           <div class="flex gap-2 pt-2">
             <button @click="isAdvancedOpen = false"
-              class="flex-1 py-2 text-sm text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-lg">Batal</button>
+              class="flex-1 py-2 text-sm text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-lg">
+              Batal
+            </button>
             <button @click="handleAdvancedSearch"
-              class="flex-1 py-2 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-bold">Cari</button>
+              class="flex-1 py-2 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-bold">
+              Cari
+            </button>
           </div>
         </div>
       </div>
     </div>
-
   </nav>
 
   <ConfirmPopup v-model="showLogoutPopup" type="warning" title="Keluar dari akun?"
@@ -453,8 +493,8 @@ const handleSearch = () => {
   isAdvancedOpen.value = false;
   isMobileSearchOpen.value = false; // Close mobile wrapper too
   navigateTo({
-    path: '/search',
-    query: { keyword: search.value, page: 1 }
+    path: "/search",
+    query: { keyword: search.value, page: 1 },
   });
 };
 
@@ -464,8 +504,8 @@ const handleAdvancedSearch = () => {
   const queryParams: any = {
     page: 1,
     limit: 20,
-    sortBy: 'tanggal',
-    sortOrder: 'DESC'
+    sortBy: "tanggal",
+    sortOrder: "DESC",
   };
 
   // 2. Mapping Keyword Global
@@ -475,7 +515,8 @@ const handleAdvancedSearch = () => {
 
   // 3. Mapping Advanced Filters ke API Params
   // Format UI (advancedFilters) -> Format API (queryParams)
-  if (advancedFilters.nomorSurat) queryParams.nomor = advancedFilters.nomorSurat;
+  if (advancedFilters.nomorSurat)
+    queryParams.nomor = advancedFilters.nomorSurat;
   if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal;
   if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis;
   if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat;
@@ -490,10 +531,14 @@ const handleAdvancedSearch = () => {
   if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom;
   if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo;
   if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords;
-  if (advancedFilters.doesntHave) queryParams.doesntHave = advancedFilters.doesntHave;
+  if (advancedFilters.doesntHave)
+    queryParams.doesntHave = advancedFilters.doesntHave;
 
   // 4. Handle Logic Lampiran (Convert "Semua" -> remove, "true"/"false" boolean/string)
-  if (advancedFilters.hasAttachment !== "Semua" && advancedFilters.hasAttachment !== null) {
+  if (
+    advancedFilters.hasAttachment !== "Semua" &&
+    advancedFilters.hasAttachment !== null
+  ) {
     queryParams.hasAttachment = advancedFilters.hasAttachment;
   }
 
@@ -505,8 +550,8 @@ const handleAdvancedSearch = () => {
 
   // 6. Navigasi ke Halaman Search
   navigateTo({
-    path: '/search',
-    query: queryParams
+    path: "/search",
+    query: queryParams,
   });
 };
 
@@ -531,64 +576,74 @@ const advancedFilters = reactive({
   jenis: null,
   sifat: null,
   status: null,
-  hasAttachment: "Semua"
+  hasAttachment: "Semua",
 });
 
 const jenisOptions = [
-  { label: 'Semua', value: null },
-  { label: 'Nota Dinas (ND)', value: 'ND' },
-  { label: 'Surat Dinas Internal (SDI)', value: 'SDI' },
-  { label: 'Surat Dinas Eksternal (SDE)', value: 'SDE' },
-  { label: 'Disposisi (DI)', value: 'DI' },
-  { label: 'Kajian (KA)', value: 'KA' },
-  { label: 'Keputusan (K)', value: 'K' }
+  { label: "Semua", value: null },
+  { label: "Nota Dinas (ND)", value: "ND" },
+  { label: "Surat Dinas Internal (SDI)", value: "SDI" },
+  { label: "Surat Dinas Eksternal (SDE)", value: "SDE" },
+  { label: "Disposisi (DI)", value: "DI" },
+  { label: "Kajian (KA)", value: "KA" },
+  { label: "Konsep (K)", value: "K" },
 ];
 
 const sifatOptions = [
-  { label: 'Semua', value: null },
-  { label: 'Biasa', value: 'biasa' },
-  { label: 'Terbatas', value: 'terbatas' },
-  { label: 'Rahasia', value: 'rahasia' },
-  { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
-  { label: 'Terbuka', value: 'terbuka' }
+  { label: "Semua", value: null },
+  { label: "Biasa", value: "biasa" },
+  { label: "Terbatas", value: "terbatas" },
+  { label: "Rahasia", value: "rahasia" },
+  { label: "Sangat Rahasia", value: "sangat_rahasia" },
+  { label: "Terbuka", value: "terbuka" },
 ];
 
 const statusOptions = [
-  { label: 'Semua', value: null },
-  { label: 'Draf', value: 'draf' },
-  { label: 'Final', value: 'final' },
-  { label: 'Final TTE', value: 'final_tte' }
+  { label: "Semua", value: null },
+  { label: "Draf", value: "draf" },
+  { label: "Final", value: "final" },
+  { label: "Final TTE", value: "final_tte" },
 ];
 
 const attachmentOptions = [
-  { label: 'Semua', value: "Semua" },
-  { label: 'Ya', value: true },
-  { label: 'Tidak', value: false }
+  { label: "Semua", value: "Semua" },
+  { label: "Ya", value: true },
+  { label: "Tidak", value: false },
 ];
 
-const getStoredOriginalRole = () => process.client ? localStorage.getItem('arsipku_original_position') : null;
+const getStoredOriginalRole = () =>
+  process.client ? localStorage.getItem("arsipku_original_position") : null;
 const originalRoleLabel = ref(getStoredOriginalRole() || "Posisi Utama");
 const activeDelegationId = ref<string | null>(null);
 
 const initActiveState = () => {
   if (process.client) {
-    activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
+    activeDelegationId.value = localStorage.getItem(
+      "arsipku_active_delegation_id",
+    );
   }
 };
 
-watch(user, (newUser) => {
-  if (newUser) {
-    fetchDelegationRoles();
-    if (!activeDelegationId.value) {
-      originalRoleLabel.value = newUser.positionText;
-      if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
+watch(
+  user,
+  (newUser) => {
+    if (newUser) {
+      fetchDelegationRoles();
+      if (!activeDelegationId.value) {
+        originalRoleLabel.value = newUser.positionText;
+        if (process.client)
+          localStorage.setItem(
+            "arsipku_original_position",
+            newUser.positionText,
+          );
+      } else if (process.client) {
+        const stored = localStorage.getItem("arsipku_original_position");
+        if (stored) originalRoleLabel.value = stored;
+      }
     }
-    else if (process.client) {
-      const stored = localStorage.getItem('arsipku_original_position');
-      if (stored) originalRoleLabel.value = stored;
-    }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 const fetchDelegationRoles = async () => {
   if (!user.value) return;
@@ -602,9 +657,12 @@ const fetchDelegationRoles = async () => {
 
 const isSwitching = ref(false);
 
-const handleSwitchRole = async (target: { type: 'delegasi' | 'reset', id?: string }) => {
+const handleSwitchRole = async (target: {
+  type: "delegasi" | "reset";
+  id?: string;
+}) => {
   if (isSwitching.value) return;
-  if (target.type === 'delegasi') {
+  if (target.type === "delegasi") {
     switchingMessage.value = "Mengalihkan ke Akun Delegasi...";
   } else {
     switchingMessage.value = "Kembali ke Akun Utama...";
@@ -612,39 +670,49 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset', id?: strin
   isSwitching.value = true;
   try {
     let payload = {};
-    if (target.type === 'delegasi' && target.id) {
+    if (target.type === "delegasi" && target.id) {
       payload = { delegasiId: target.id };
     } else {
       payload = { resetToOriginal: true };
     }
     const res = await switchRole(payload);
     if (res?.success) {
-      if (target.type === 'delegasi' && target.id) {
-        localStorage.setItem('arsipku_active_delegation_id', target.id);
+      if (target.type === "delegasi" && target.id) {
+        localStorage.setItem("arsipku_active_delegation_id", target.id);
         if (res.data?.user?.role) {
-          localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
+          localStorage.setItem(
+            "arsipku_active_delegation_role",
+            res.data.user.role,
+          );
         }
       } else {
-        localStorage.removeItem('arsipku_active_delegation_id');
-        localStorage.removeItem('arsipku_active_delegation_role');
+        localStorage.removeItem("arsipku_active_delegation_id");
+        localStorage.removeItem("arsipku_active_delegation_role");
       }
-      localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
+      localStorage.setItem(
+        "switch_role_message",
+        res.message || "Berhasil mengganti role.",
+      );
       window.location.reload();
     } else {
       isSwitching.value = false;
     }
   } catch (error) {
     console.error("Gagal ganti role:", error);
-    toast.add({ title: 'Gagal', description: 'Gagal mengganti role.', color: 'red' });
+    toast.add({
+      title: "Gagal",
+      description: "Gagal mengganti role.",
+      color: "red",
+    });
     isSwitching.value = false;
   }
 };
 
 const confirmLogout = async () => {
   if (process.client) {
-    localStorage.removeItem('arsipku_original_position');
-    localStorage.removeItem('arsipku_active_delegation_id');
-    localStorage.removeItem('arsipku_active_delegation_role');
+    localStorage.removeItem("arsipku_original_position");
+    localStorage.removeItem("arsipku_active_delegation_id");
+    localStorage.removeItem("arsipku_active_delegation_role");
   }
   isLoggingOut.value = true;
   await logout();
@@ -653,7 +721,11 @@ const confirmLogout = async () => {
   navigateTo("/");
 };
 
-const searchConfig = computed(() => ({ show: true, placeholder: "Cari surat...", key: "" }));
+const searchConfig = computed(() => ({
+  show: true,
+  placeholder: "Cari surat...",
+  key: "",
+}));
 
 // [MODIFIED] Reset semua property reactive advancedFilters
 const resetAdvancedFilters = () => {
@@ -679,7 +751,10 @@ const handleReset = () => {
 
 const isDark = useDark();
 const currentLocale = ref("id");
-const locales = [{ code: "id", name: "ID" }, { code: "en", name: "EN" }];
+const locales = [
+  { code: "id", name: "ID" },
+  { code: "en", name: "EN" },
+];
 const setLocale = (code: string) => (currentLocale.value = code);
 
 const itemClass = "text-sm truncate transition-colors cursor-pointer";
@@ -687,30 +762,36 @@ const itemClass = "text-sm truncate transition-colors cursor-pointer";
 const menuItems = computed<DropdownMenuItem[][]>(() => {
   const currentId = activeDelegationId.value;
   const isMainAccountActive = !currentId;
-  const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0;
+  const hasDelegationData =
+    delegationRoles.value && delegationRoles.value.length > 0;
 
   const mainAccountItem = {
-    uiName: user.value?.nama || 'User',
+    uiName: user.value?.nama || "User",
     uiBadge: user.value?.role,
     uiPosition: originalRoleLabel.value,
+    uiCompany: user.value?.companyText,
     label: originalRoleLabel.value,
-    slot: 'delegation-item',
+    slot: "delegation-item",
     isActive: isMainAccountActive,
     disabled: !hasDelegationData,
-    click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
-    onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
+    click: hasDelegationData
+      ? () => handleSwitchRole({ type: "reset" })
+      : undefined,
+    onSelect: hasDelegationData
+      ? () => handleSwitchRole({ type: "reset" })
+      : undefined,
   };
 
-  const delegasiItems = delegationRoles.value.map(role => {
+  const delegasiItems = delegationRoles.value.map((role) => {
     return {
-      uiName: role.delegator_name || 'Empty Name',
+      uiName: role.delegator_name || "Empty Name",
       uiBadge: role.position_status_label,
       uiPosition: role.position_text,
       label: role.position_text,
-      slot: 'delegation-item',
+      slot: "delegation-item",
       isActive: currentId === role.id,
-      click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
-      onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
+      click: () => handleSwitchRole({ type: "delegasi", id: role.id }),
+      onSelect: () => handleSwitchRole({ type: "delegasi", id: role.id }),
     };
   });
 
@@ -719,46 +800,73 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   return [
     roleGroup,
     [
+      {
+        label: "Pindah Perusahaan",
+        class: itemClass,
+        onSelect: () => {
+          navigateTo("/switch");
+        },
+      },
       { label: "Setting Notif Email", class: itemClass },
       { label: "Visualisasi Digsig (Visible)", class: itemClass },
       { label: "Setting Temporary File", class: itemClass },
     ],
     [{ slot: "theme-label", type: "label" }],
     [{ slot: "lang-label", type: "label" }],
-    [{ label: "Keluar", class: "text-sm text-error", onSelect: () => openLogoutPopup() }],
+    [
+      {
+        label: "Keluar",
+        class: "text-sm text-error",
+        onSelect: () => openLogoutPopup(),
+      },
+    ],
   ];
 });
 
 onMounted(() => {
   if (process.client) {
     initActiveState();
-    const successMsg = localStorage.getItem('switch_role_message');
+    const successMsg = localStorage.getItem("switch_role_message");
     if (successMsg) {
-      toast.add({ title: 'Berhasil', description: successMsg, icon: 'i-heroicons-check-circle', color: 'green' });
-      localStorage.removeItem('switch_role_message');
+      toast.add({
+        title: "Berhasil",
+        description: successMsg,
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+      localStorage.removeItem("switch_role_message");
     }
   }
   if (!user.value) getProfile();
 });
 
-const openLogoutPopup = () => { showLogoutPopup.value = true; };
+const openLogoutPopup = () => {
+  showLogoutPopup.value = true;
+};
 
 const getInitials = (name: string) => {
   if (!name) return "";
   const parts = name.trim().split(" ");
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+  return (
+    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
+  ).toUpperCase();
 };
 
 defineEmits(["open-mobile-sidebar"]);
 
 const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
-  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
-  if (['KAJIAN', 'KA'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
-  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
+  const c = (cat || "").toUpperCase();
+  if (["ND", "NOTA DINAS"].includes(c))
+    return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
+  if (["DI", "DISPOSISI"].includes(c))
+    return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
+  if (["SDI", "INTERNAL", "SURAT DINAS INTERNAL"].includes(c))
+    return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
+  if (["SDE", "SURAT DINAS EKSTERNAL"].includes(c))
+    return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
+  if (["KAJIAN", "KA"].includes(c))
+    return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
+  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
 };
 </script>
 

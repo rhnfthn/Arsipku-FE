@@ -19,54 +19,48 @@ export const useTerkirimDetail = () => {
     detail.value = null;
 
     try {
-      let endpoint = "";
       const type = jenis.toUpperCase();
+      let endpoint = "";
 
-      switch (type) {
-        case "ND":
-          endpoint = `/ND/${id}`;
-          break;
-        case "INTERNAL":
-        case "SDI":
-          endpoint = `/SDI/${id}`;
-          break;
-        case "EXTERNAL":
-        case "SDE":
-          endpoint = `/SDE/${id}`;
-          break;
-        case "DI":
-        case "DISPOSISI":
-          endpoint = `/DI/${id}`;
-          break;
-        case "KA":
-          endpoint = `/KA/${id}`;
-          break;
-        default:
-          endpoint = `/ND/${id}`;
-      }
+      // Konsep tetap menggunakan endpoint khusus karena struktur JSON yang unik
+      // if (["KA", "KAJIAN", "K"].includes(type)) {
+      //   endpoint = `/konsep/${id}`;
+      // } else {
+        // ND, DI, SDI, SDE sekarang menggunakan satu endpoint utama
+        endpoint = `/persuratan/naskah/${id}`;
+      // }
 
       const response = await get(endpoint);
 
       if (response.success) {
-        let rawData = response.data;
-
-        // [FIX] Khusus DI, datanya ada di dalam array 'flow'
-        if (
-          (type === "DI" || type === "DISPOSISI") &&
-          rawData.flow &&
-          rawData.flow.length > 0
-        ) {
-          rawData = rawData.flow[0];
+        if (["KA", "KAJIAN", "K"].includes(type)) {
+          // Mapping khusus Konsep (sesuai logika lama Anda)
+          const resData = response.data;
+          detail.value = {
+            ...resData.naskah,
+            pengirim: resData.current_workflow?.pengirim,
+            penerima: resData.penerima || [],
+            tembusan: resData.tembusan || [],
+            final_pdf_url:
+              resData.riwayat?.[resData.riwayat.length - 1]?.pdf_snapshot ||
+              null,
+            jenis: "KA",
+            lampiran_files:
+              resData.lampiran?.map((file: any) => ({
+                id: file.id,
+                fileName: file.name,
+                fileUrl: file.url,
+              })) || [],
+          };
+        } else {
+          // Mapping untuk endpoint baru (Data berupa Array sesuai contoh respon Anda)
+          // Kita ambil index [0]
+          const rawData = response.data[0];
+          detail.value = {
+            ...rawData,
+            jenis: rawData.jenis || type,
+          };
         }
-        // Normalisasi untuk endpoint lain jika ada wrapper 'detail'
-        else if (rawData.detail) {
-          rawData = rawData.detail;
-        }
-
-        detail.value = {
-          ...rawData,
-          jenis: type,
-        };
       }
     } catch (error) {
       console.error(`Gagal mengambil detail [${jenis}]:`, error);

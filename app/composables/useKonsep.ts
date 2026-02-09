@@ -8,6 +8,18 @@ import type {
 export const useKonsep = () => {
   const { apiGet, apiPost } = useApi();
 
+  interface KonsepDetail {
+    konsep: any;
+    disposisi_referensi: any;
+    current_workflow: any;
+    naskah: any;
+    penerima: any[];
+    tembusan: any[];
+    riwayat: any[];
+    lampiran: any[];
+    [key: string]: any;
+  }
+
   // Fetch Detail Konsep
   const getKonsepDetail = async (id: string) => {
     return await apiGet<{ success: boolean; data: KonsepDetail }>(
@@ -48,6 +60,12 @@ export const useKonsep = () => {
     return await apiPost(`/KONSEP/reject/${id}`, payload);
   };
 
+  const getRecipientsBySender = async (senderPositionId: string | number) => {
+    return await apiGet<{ success: boolean; data: any[] }>(
+      `/ND/get-recipient?pengirim=${senderPositionId}`,
+    );
+  };
+
   return {
     getKonsepDetail,
     previewPdf,
@@ -56,5 +74,6 @@ export const useKonsep = () => {
     rejectKonsep,
     createKonsep,
     getSendersById,
+    getRecipientsBySender,
   };
 };

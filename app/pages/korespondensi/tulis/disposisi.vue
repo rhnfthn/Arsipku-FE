@@ -1,15 +1,12 @@
 <template>
   <div class="relative">
-
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
-
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
           </div>
         </div>
-
         <div class="relative flex flex-col items-center gap-6 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <div
@@ -22,7 +19,6 @@
               </div>
             </div>
           </div>
-
           <div class="flex flex-col items-center gap-2">
             <span class="text-gray-900 font-semibold text-lg">
               {{ loadingMessage || 'Memproses Data' }}
@@ -45,7 +41,6 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-
         <div class="py-4 space-y-3 border-t border-gray-100 dark:border-gray-800 mt-2">
           <USkeleton class="h-5 w-40 mb-2" />
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -55,7 +50,6 @@
             </div>
           </div>
         </div>
-
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800 mt-4">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -72,23 +66,18 @@
             <USkeleton class="h-3 w-full" />
           </div>
         </div>
-
         <USkeleton class="h-30 w-full rounded-md" />
-
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
           <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
 
-
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-
         <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
-
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Nomor Surat
@@ -102,7 +91,7 @@
         </div>
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2  border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
               Ref. Perihal
@@ -120,11 +109,10 @@
 
         <div class="flex flex-col py-3 gap-3 mb-6">
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Instruksi / Disposisi</span>
-
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start group">
               <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
-                class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer" />
+                class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
               <label :for="opt"
                 class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none leading-tight break-words">
                 {{ opt }}
@@ -136,9 +124,7 @@
         <ClientOnly>
           <div
             class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-
             <div class="bg-white p-10 border-b border-gray-100 select-none text-black">
-
               <div class="border-2 border-black mb-0">
                 <div class="flex border-b-2 border-black">
                   <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
@@ -184,6 +170,12 @@
                   <div class="w-[30%] p-2 text-xs">
                     <div class="font-bold underline mb-2">KLASIFIKASI</div>
                     <div class="space-y-1">
+                      <!-- <div class="flex items-center gap-2 mb-2">
+                        <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px] font-bold">
+                          {{ isPriority ? "✓" : "" }}
+                        </div>
+                        <span class="font-bold text-red-600">PRIORITAS</span>
+                      </div> -->
                       <div v-for="s in sifatOptions" :key="s.value" class="flex items-center gap-2">
                         <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px]">
                           {{ selectedSifat?.value === s.value ? "✓" : "" }}
@@ -221,11 +213,9 @@
 
                 <div class="p-0 min-h-[300px] relative group">
                   <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
-
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
-
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
@@ -233,52 +223,153 @@
                     </div>
                   </div>
                 </div>
-
                 <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
                   Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
                   ini.
                 </div>
               </div>
-
             </div>
           </div>
         </ClientOnly>
 
-        <div>
-
-        </div>
-
         <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
+        <div class="flex flex-col sm:flex-row sm:items-center py-4 border-b border-gray-200 dark:border-gray-600">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="isPriority" :checked="isPriority" @click="handlePriorityClick"
+              class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
+            <label for="isPriority" class="text-sm cursor-pointer select-none">
+              Tandai sebagai Prioritas
+            </label>
+          </div>
+        </div>
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
-
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau Disposisi" side="bottom"
-      :ui="{ content: 'h-screen max-h-screen', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
+    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{
+      content: 'h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }">
       <template #body>
         <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat PDF...</span>
+            <span class="text-gray-500">Memuat Pratinjau...</span>
           </div>
         </div>
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton label="Simpan Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" :loading="isLoadingData" @click="confirmSaveDraft" />
-          <UButton label="Kirim Disposisi" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            class="px-8 font-bold" :loading="isLoadingData" @click="confirmKirimDokumen" />
+          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+            :loading="isLoadingData" @click="confirmKirimDokumen" />
         </div>
       </template>
     </USlideover>
+
+    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Header -->
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Pilih Metode Tanda Tangan
+          </h3>
+        </div>
+      </template>
+
+      <!-- Body -->
+      <template #body>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
+        </p>
+
+        <div class="space-y-4">
+          <!-- Digital Signature -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col flex-1">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Tanda Tangan Digital (BSrE)
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen ditandatangani secara elektronik resmi (TTE).
+              </span>
+
+              <!-- Signer Info -->
+              <div v-if="selectedSendType === 'digsig'"
+                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div class="flex items-start gap-4 p-4">
+                  <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="text-xs text-gray-500 mb-0.5">
+                      {{ signerInfo.label }}
+                    </span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                      {{ signerInfo.role }}
+                    </span>
+                    <span class="text-base font-semibold text-gray-900 dark:text-white">
+                      {{ signerInfo.name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Passphrase -->
+                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div @click.stop>
+                    <UFormGroup label="Passphrase" required>
+                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
+                        class="w-full" autofocus />
+                    </UFormGroup>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </label>
+
+          <!-- Without Signature -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Kirim Tanpa Tanda Tangan
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen dikirim tanpa proses tanda tangan digital.
+              </span>
+            </div>
+          </label>
+        </div>
+      </template>
+
+      <!-- Footer -->
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            :loading="isLoadingData" @click="handlePassphraseSubmit" />
+        </div>
+      </template>
+    </UModal>
 
   </div>
 </template>
@@ -289,15 +380,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-
-// Components
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
-import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
-
-// Types & Logic
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
+import { Alert } from "@/composables/useAlert";
+import { useDigSign } from "@/composables/useDigSign";
+
 
 const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
@@ -312,7 +398,7 @@ const breadcrumbs = [
   { label: "Tulis Disposisi", to: "#" },
 ];
 
-// --- STATE ---
+const isSettingInitialData = ref(false);
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
@@ -322,14 +408,13 @@ const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
 
 const selectedSifat = ref<any>(null);
+const isPriority = ref(false);
 const refNumber = ref("-");
 const refPerihal = ref("-");
 
 const recipientList = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
 const existingFiles = ref<any[]>([]);
-
-// Menggunakan Array string untuk checkbox
 const selectedChecklist = ref<string[]>([]);
 
 const editorContent = ref("");
@@ -337,24 +422,23 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
+const alertState = useAlertState();
 
-// --- CONSTANTS ---
+const isPassphraseModalOpen = ref(false)
+const selectedSendType = ref('qr_only')
+const passphrase = ref('')
+
+const signerInfo = computed(() => ({
+  name: user.value?.nama || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh'
+}))
+
 const checklistOptions = [
-  "Untuk Diketahui",
-  "Proses Lanjut",
-  "Koordinasikan",
-  "Cek",
-  "Monitor",
-  "Evaluasi",
-  "Dikaji Kemungkinannya",
-  "Laporkan",
-  "Untuk Menjadi Perhatian",
-  "Untuk Dijadikan Acuan/Dipergunakan",
-  "Harap Mewakili",
-  "Harap Mendampingi",
-  "Tunjuk Perwakilan",
-  "Siapkan Bahan/Materi",
-  "Lainnya",
+  "Untuk Diketahui", "Proses Lanjut", "Koordinasikan", "Cek", "Monitor", "Evaluasi",
+  "Dikaji Kemungkinannya", "Laporkan", "Untuk Menjadi Perhatian",
+  "Untuk Dijadikan Acuan/Dipergunakan", "Harap Mewakili", "Harap Mendampingi",
+  "Tunjuk Perwakilan", "Siapkan Bahan/Materi", "Lainnya",
 ];
 
 const sifatOptions = [
@@ -380,41 +464,57 @@ const tinyMceInit = {
   }
 };
 
-// --- COMPUTED ---
 const formattedDate = computed(() => {
   if (!date.value) return "-";
   const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-// LOGIC BARU: Editor hanya muncul jika "Lainnya" dipilih
 const showEditor = computed(() => {
   return selectedChecklist.value.includes("Lainnya");
 });
 
 watch(showEditor, async (isShown) => {
   if (isShown) {
-    // Tunggu sampai Vue selesai merender elemen v-if="showEditor" ke DOM
     await nextTick();
-
-    // Lakukan scroll ke elemen tersebut
     if (editorContainerRef.value) {
-      editorContainerRef.value.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center' // Posisikan di tengah layar agar nyaman dilihat
-      });
-
-      // Opsional: Fokus ke editor jika instance sudah siap (sedikit delay agar TinyMCE load)
+      editorContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {
-        if (tinymceEditor.value) {
-          tinymceEditor.value.focus();
-        }
+        if (tinymceEditor.value) tinymceEditor.value.focus();
       }, 500);
     }
   }
 });
+const handlePriorityClick = async (e: Event) => {
+  // Cegah browser mengubah centang secara otomatis
+  e.preventDefault();
 
-// --- METHODS ---
+  // KONDISI 1: User mau UNCHECK (Membatalkan Prioritas)
+  // Logic: Jika nilai sekarang true, langsung ubah jadi false tanpa tanya.
+  if (isPriority.value) {
+    isPriority.value = false;
+    return;
+  }
+
+  // KONDISI 2: User mau CHECK (Mengaktifkan Prioritas)
+  // Logic: Jika nilai sekarang false, tanya dulu.
+  const isConfirmed = await Alert.confirm(
+    'Tandai sebagai Prioritas?',
+    'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?',
+    'Ya, Prioritas',
+    'Batal',
+    false
+  );
+
+  if (isConfirmed) {
+    // Jika User klik YA -> Ubah jadi true
+    isPriority.value = true;
+  }
+
+  // Pastikan alert ditutup paksa agar tidak nyangkut
+  Alert.close();
+};
+
 const getPayload = (): DisposisiPayload => {
   const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
   const tglUi = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
@@ -423,33 +523,46 @@ const getPayload = (): DisposisiPayload => {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
     tertuju: selectedTertuju.value.map(i => i.value),
-
     tanggal_disposisi: tglDb,
-    tanggal_ui: tglUi, // Helper
-
+    tanggal_ui: tglUi,
     sifat: selectedSifat.value?.label || "Biasa",
-
     ref_nomor: refNumber.value || "-",
     ref_perihal: refPerihal.value || "-",
-
-    // Jika editor tidak aktif, kosongkan catatan (atau biarkan sesuai kebutuhan)
     catatan: showEditor.value ? editorContent.value : "",
     htmlContent: showEditor.value ? editorContent.value : "",
-
     disposisi: selectedChecklist.value,
+    is_priority: isPriority.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean)
   };
 };
 
 const createFormData = (payload: DisposisiPayload, includePdf: boolean = false) => {
   const formData = new FormData();
+
   Object.keys(payload).forEach((key) => {
     const k = key as keyof DisposisiPayload;
-    if (k === 'tanggal_ui') return; // Skip helper UI
+    if (k === 'tanggal_ui') return; // Skip field UI
 
     const value = payload[k];
+
+    if (k === 'is_priority') {
+      const boolValue = Boolean(value);
+
+      // UBAH DARI:
+      // formData.append(k, boolValue ? '1' : '0');
+
+      // MENJADI:
+      formData.append(k, boolValue ? 'true' : 'false');
+
+      console.log(`[DEBUG] is_priority dikirim sebagai: ${boolValue ? 'true' : 'false'} (Aslinya: ${value})`);
+      return;
+    }
+
     if (Array.isArray(value)) {
       formData.append(k, JSON.stringify(value));
+    } else if (typeof value === 'boolean') {
+      // Ini untuk boolean umum lainnya (jika ada)
+      formData.append(k, value ? 'true' : 'false');
     } else if (value !== null && value !== undefined) {
       formData.append(k, String(value));
     }
@@ -472,14 +585,12 @@ const validateAndToast = (payload: DisposisiPayload) => {
   return true;
 };
 
-// --- ACTIONS ---
-
 const handlePreview = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
-  loadingMessage.value = "Memproses Pratinjau......";
+  loadingMessage.value = "Memproses Pratinjau...";
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
     const fd = createFormData(payload, false);
@@ -488,7 +599,6 @@ const handlePreview = async () => {
     pdfUrl.value = URL.createObjectURL(pdfBlob.value);
     isOpenPreview.value = true;
   } catch (err) {
-    console.error(err);
     toast.add({ title: 'Gagal Preview', color: 'error' });
   } finally {
     isLoadingData.value = false;
@@ -496,20 +606,82 @@ const handlePreview = async () => {
 };
 
 const confirmKirimDokumen = async () => {
-  if (!confirm("Kirim Disposisi ini?")) return;
   const payload = getPayload();
-  isLoadingData.value = true;
-  loadingMessage.value = "Mengirim Disposisi...";
+  if (!validateAndToast(payload)) return;
+
+  passphrase.value = "";
+  selectedSendType.value = "qr_only";
+  isPassphraseModalOpen.value = true;
+};
+
+const handlePassphraseSubmit = async () => {
+  if (!selectedSendType.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
+    return;
+  }
+
+  if (selectedSendType.value === 'digsig' && !passphrase.value) {
+    toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
+    return;
+  }
+
+  isPassphraseModalOpen.value = false;
+
+  const confirmMessage = selectedSendType.value === 'digsig'
+    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
+    : 'Dokumen akan dikirim tanpa tanda tangan. Lanjutkan?';
+
+  const isConfirmed = await Alert.confirm(
+    'Konfirmasi Akhir',
+    confirmMessage,
+    'Ya, Kirim Sekarang',
+    'Periksa Lagi',
+    false
+  );
+
+  if (isConfirmed) {
+    await handleKirimDokumen();
+  }
+};
+
+const handleKirimDokumen = async () => {
+  const payload = getPayload();
 
   try {
-    // Regenerate PDF
+    loadingMessage.value = "Mengirim Disposisi...";
+    isLoadingData.value = true;
+
+    let nikValue = '';
+
+    if (selectedSendType.value === 'digsig') {
+      const { getKtp } = useDigSign();
+      try {
+        const ktpResponse = await getKtp();
+        if (ktpResponse?.data?.noktp) {
+          nikValue = ktpResponse.data.noktp;
+        } else {
+          throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+        }
+      } catch (err) {
+        console.error("Gagal mengambil data KTP:", err);
+        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
+      }
+    }
+
     const fdPreview = createFormData(payload, false);
-    const blob = await generatePdf(fdPreview);
-    pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
+    const blobResponse = await generatePdf(fdPreview);
+    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
     const fdFinal = createFormData(payload, true);
-    let res;
 
+    fdFinal.append('passphrase', passphrase.value);
+    fdFinal.append('sign_option', selectedSendType.value);
+
+    if (nikValue) {
+      fdFinal.append('nik', nikValue);
+    }
+
+    let res;
     if (editDraftId.value) {
       res = await sendDraft(fdFinal, editDraftId.value);
     } else {
@@ -517,123 +689,153 @@ const confirmKirimDokumen = async () => {
     }
 
     if (res?.success || res?.data?.success) {
-      toast.add({ title: 'Berhasil', description: 'Disposisi Terkirim', color: 'success' });
+      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
+      toast.add({ title: 'Berhasil', description: 'Disposisi berhasil dikirim', color: 'success' });
+      Alert.close();
       router.push("/korespondensi/terkirim");
+    } else {
+      throw new Error(res?.data?.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e.response?.data?.message, color: 'error' });
+    isLoadingData.value = false;
+    Alert.close();
+
+    console.error("Gagal mengirim:", e);
+    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+
+    if (errMsg.toLowerCase().includes('passphrase')) {
+      isPassphraseModalOpen.value = true;
+    }
+
+    toast.add({
+      title: 'Gagal Mengirim',
+      description: errMsg,
+      color: 'error'
+    });
   } finally {
     isLoadingData.value = false;
   }
 };
 
-const confirmSaveDraft = async () => {
+const handleSaveDraft = async () => {
   const payload = getPayload();
-  isLoadingData.value = true;
-  loadingMessage.value = "Menyimpan Draft...";
+  if (!validateAndToast(payload)) throw new Error("Validation failed");
 
   try {
+    loadingMessage.value = "Menyimpan Draft...";
+    isLoadingData.value = true;
+
     const fd = createFormData(payload, false);
     if (editDraftId.value) {
       await updateDraft(fd, editDraftId.value);
     } else {
       await saveDraft(fd);
     }
-    toast.add({ title: 'Draft Disimpan', color: 'success' });
+    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
   } catch (e: any) {
-    toast.add({ title: 'Gagal Simpan', description: e.response?.data?.message, color: 'error' });
+    console.error("Gagal simpan draft:", e);
+    throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
   } finally {
     isLoadingData.value = false;
   }
 };
 
-// --- LIFECYCLE ---
+const confirmSaveDraft = async () => {
+  const isConfirmed = await Alert.confirm(
+    'Simpan sebagai Draft?',
+    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
+    'Ya, Simpan',
+    'Batal',
+    'Batal',
+    false
+  );
+
+  if (!isConfirmed) return;
+
+  try {
+    await handleSaveDraft();
+    Alert.close();
+  } catch (error) {
+    console.error(error);
+    Alert.close();
+  }
+};
+
+// --- BAGIAN INI SUDAH DIPERBAIKI UNTUK MAPPING DATA YANG BENAR ---
 onMounted(async () => {
-  // 1. SET PESAN LOADING AWAL AGAR SKELETON MUNCUL
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
 
   try {
-    // Get Recipient List
     const res = await getRecipients(user.value?.position);
     recipientList.value = res.recipients;
 
-    // Load Draft if exists
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
-      // loadingMessage sudah di-set di atas, jadi aman
       const resDraft = await getDraftDetail(draftId);
 
-      if (resDraft.data) {
-        const d = resDraft.data;
+      if (resDraft.data && resDraft.data.flow && resDraft.data.flow.length > 0) {
+        // AKTIFKAN FLAG: Mulai set data, matikan watcher sementara
+        isSettingInitialData.value = true;
 
-        // 1. Ref Nomor & Perihal (Handle null)
-        refNumber.value = d.ref_nomor || "-";
-        refPerihal.value = d.ref_perihal || "-";
+        const d = resDraft.data.flow[0];
 
-        // 2. Tanggal (Parse YYYY-MM-DD)
+        // Mapping data (Pastikan priority diambil dari boolean atau number 1/0)
+        // Gunakan properti yang sesuai dari backend Anda
+        refNumber.value = d.ref_nomor || d.nomor || "-";
+        refPerihal.value = d.ref_perihal || d.perihal || "-";
+
+        // Pastikan konversi ke boolean benar
+        isPriority.value = d.is_priority === true || d.is_priority === 1 || String(d.is_priority) === "1";
+
         if (d.tanggal) {
           const [y, m, day] = d.tanggal.split('-').map(Number);
           date.value = new CalendarDate(y, m, day);
         }
 
-        // 3. Catatan Editor
         editorContent.value = d.catatan || d.htmlContent || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(editorContent.value);
 
-        // 4. Disposisi Checkbox (Split string by \n karena data API berupa string enter-separated)
-        if (d.disposisi && typeof d.disposisi === 'string') {
-          selectedChecklist.value = d.disposisi.split('\n');
-        } else if (Array.isArray(d.disposisi)) {
-          selectedChecklist.value = d.disposisi;
-        } else {
-          selectedChecklist.value = [];
+        if (d.disposisi) {
+          if (Array.isArray(d.disposisi)) {
+            selectedChecklist.value = d.disposisi;
+          } else if (typeof d.disposisi === 'string') {
+            selectedChecklist.value = d.disposisi.split('\n'); // Fallback jika string
+          }
         }
 
-        // 5. Map Sifat
-        // Mencari berdasarkan value (misal: 'biasa')
         const foundSifat = sifatOptions.find(s => s.value.toLowerCase() === (d.sifat || '').toLowerCase());
         selectedSifat.value = foundSifat || sifatOptions[3];
 
-        // 6. Map Tertuju / Penerima
-        // API mengembalikan key 'penerima', bukan 'tertuju'
-        const rawPenerima = d.penerima || []; // Menggunakan d.penerima sesuai JSON
-
+        const rawPenerima = d.penerima || [];
         selectedTertuju.value = rawPenerima.map((item: any) => {
-          // Ambil ID dari position_id (API structure) atau value
           const val = String(item.position_id || item.value || item.id);
-
-          // Cari data lengkap di recipientList agar labelnya sesuai format dropdown
           const found = recipientList.value.find(r => r.value === val);
-
-          if (found) return found;
-
-          // Fallback manual jika tidak ada di list master
-          return {
+          return found || {
             value: val,
-            label: item.nama || item.positionText || item.label,
-            labelJob: item.positionText || item.labelJob
+            label: item.nama || item.label,
+            labelJob: item.position_text || item.positionText || item.labelJob
           };
         });
 
-        // 7. Map Files Lampiran
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
-            // API mengembalikan 'fileName' (camelCase), bukan 'file_name'
-            fileName: f.fileName,
-
-            // Gunakan 'fileUrl' (link http lengkap) dan masukkan ke property 'filePath'
-            // agar komponen anak mendeteksi "startsWith('http')" dan tidak menambahkan "/storage/"
-            filePath: f.fileUrl || f.filePath,
-
+            fileName: f.file_name || f.fileName,
+            filePath: f.file_url || f.file_path || f.filePath,
             fileSize: 0
           }));
         }
+
+        // TUNGGU SEBENTAR agar Vue menyelesaikan update state
+        await nextTick();
+
+        // MATIKAN FLAG: Watcher aktif kembali untuk interaksi user
+        isSettingInitialData.value = false;
       }
     }
   } catch (e) {

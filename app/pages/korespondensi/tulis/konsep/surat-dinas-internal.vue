@@ -223,7 +223,7 @@
           </div>
         </div>
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Pengirim" placeholder="Pilih Pengirim" :items="items"
+        <TulisInputPengirim v-model="selectedTertuju" label="Pengirim" placeholder="Pilih Pengirim" :items="items"
           :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
@@ -232,7 +232,7 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
           :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
@@ -408,6 +408,7 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -416,12 +417,14 @@
         </div>
       </template>
 
+      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
         </p>
 
         <div class="space-y-4">
+          <!-- Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -435,6 +438,7 @@
                 Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
+              <!-- Signer Info -->
               <div v-if="selectedSendType === 'digsig'"
                 class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div class="flex items-start gap-4 p-4">
@@ -457,6 +461,7 @@
                   </div>
                 </div>
 
+                <!-- Passphrase -->
                 <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div @click.stop>
                     <UFormGroup label="Passphrase" required>
@@ -469,6 +474,7 @@
             </div>
           </label>
 
+          <!-- Without Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -486,6 +492,102 @@
         </div>
       </template>
 
+      <!-- Footer -->
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
+          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
+            :loading="isLoadingData" @click="handlePassphraseSubmit" />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Header -->
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Pilih Metode Tanda Tangan
+          </h3>
+        </div>
+      </template>
+
+      <!-- Body -->
+      <template #body>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
+        </p>
+
+        <div class="space-y-4">
+          <!-- Digital Signature -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col flex-1">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Tanda Tangan Digital (BSrE)
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen ditandatangani secara elektronik resmi (TTE).
+              </span>
+
+              <!-- Signer Info -->
+              <div v-if="selectedSendType === 'digsig'"
+                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div class="flex items-start gap-4 p-4">
+                  <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="text-xs text-gray-500 mb-0.5">
+                      {{ signerInfo.label }}
+                    </span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
+                      {{ signerInfo.role }}
+                    </span>
+                    <span class="text-base font-semibold text-gray-900 dark:text-white">
+                      {{ signerInfo.name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Passphrase -->
+                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div @click.stop>
+                    <UFormGroup label="Passphrase" required>
+                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
+                        class="w-full" autofocus />
+                    </UFormGroup>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </label>
+
+          <!-- Without Signature -->
+          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
+
+            <div class="flex flex-col">
+              <span class="font-medium text-gray-900 dark:text-white">
+                Kirim Tanpa Tanda Tangan
+              </span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                Dokumen dikirim tanpa proses tanda tangan digital.
+              </span>
+            </div>
+          </label>
+        </div>
+      </template>
+
+      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -560,9 +662,11 @@ const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients } = useRecipients();
 const { isLoadingDraft, getDraftDetail } = useDraft();
-const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
+const { generatePdf, sendSDI, saveDraft, sendDraft: sendExistingDraft, getSDIDetail } = useSdi();
 const { getKtp } = useDigSign();
 const { fetchInboxDetail } = useInbox(null);
+
+const Alert = useAlert();
 
 /* --- HELPER FUNCTIONS (Tambahkan ini untuk memperbaiki error template) --- */
 const getCategoryStyle = (cat: string) => {
@@ -654,6 +758,16 @@ const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
 
+// const isPassphraseModalOpen = ref(false)
+// const selectedSendType = ref('qr_only') // Default to 'qr_only' for SDI
+// const passphrase = ref('')
+
+// const signerInfo = computed(() => ({
+//   name: user.value?.nama || 'Nama Lengkap',
+//   role: user.value?.positionText || 'Jabatan',
+//   label: 'Ditandatangani secara digital oleh'
+// }))
+
 const isPassphraseModalOpen = ref(false)
 const selectedSendType = ref('')
 const passphrase = ref('')
@@ -668,6 +782,7 @@ const signerInfo = computed(() => ({
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
 const editorContent = ref("");
+const lampiranText = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -818,7 +933,7 @@ const confirmSaveDraft = async () => {
     'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
     'Ya, Simpan',
     'Batal',
-    'false'
+    false
   );
 
   if (!isConfirmed) return;
@@ -863,13 +978,53 @@ const handlePassphraseSubmit = async () => {
     confirmMessage,
     'Ya, Kirim Sekarang',
     'Periksa Lagi',
-    'false'
+    false
   );
 
   if (isConfirmed) {
     await handleKirimDokumen();
   }
 };
+
+// const confirmKirimDokumen = async () => {
+//   const payload = getBasePayload();
+//   if (!validateAndToast(payload)) return;
+
+//   passphrase.value = "";
+//   selectedSendType.value = "qr_only"; // Default for SDI
+//   isPassphraseModalOpen.value = true;
+// };
+
+// const handlePassphraseSubmit = async () => {
+//   if (!selectedSendType.value) {
+//     toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
+//     return;
+//   }
+
+//   // No passphrase validation for qr_only, only for digsig
+//   if (selectedSendType.value === 'digsig' && !passphrase.value) {
+//     toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
+//     return;
+//   }
+
+//   isPassphraseModalOpen.value = false;
+
+//   const confirmMessage = selectedSendType.value === 'digsig'
+//     ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
+//     : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
+
+//   const isConfirmed = await Alert.confirm(
+//     'Konfirmasi Akhir',
+//     confirmMessage,
+//     'Ya, Kirim Sekarang',
+//     'Periksa Lagi',
+//     false
+//   );
+
+//   if (isConfirmed) {
+//     await handleKirimDokumen();
+//   }
+// };
 
 // --- CORE FUNCTION ---
 const handleKirimDokumen = async () => {
@@ -913,7 +1068,7 @@ const handleKirimDokumen = async () => {
     }
 
     // 5. Panggil API Kirim
-    const result = await sendNotaDinas(formData);
+    const result = await sendSDI(formData);
 
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
@@ -953,7 +1108,7 @@ const handleSaveDraft = async () => {
     isLoadingData.value = true;
 
     const formData = createFormData(payload, false);
-    await saveND(formData, editDraftId.value);
+    await saveDraft(formData, editDraftId.value);
 
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
@@ -1020,18 +1175,16 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    klasifikasiList.value = await getKlasifikasi();
-    klasifikasiStatus.value = "success";
+    const [klasRes, recRes] = await Promise.all([
+      getKlasifikasi(),
+      getRecipients()
+    ]);
 
-    const resRec = await getRecipients(user.value?.position);
-    const rawData = resRec.recipients || resRec.data || [];
+    klasifikasiList.value = klasRes;
 
-    items.value = rawData.map((r: any): RecipientItem => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      value: String(r.position || r.position_id || r.id),
-      raw: r,
-    }));
+    const { sender, recipients } = recRes;
+    items.value = recipients;
+
   } catch {
     klasifikasiStatus.value = "error";
   }
@@ -1040,7 +1193,8 @@ onMounted(async () => {
   if (draftId) {
     try {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      loadingMessage.value = "Memuat draft...";
+      const resDraft = await getSDIDetail(draftId);
 
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
@@ -1097,6 +1251,16 @@ onMounted(async () => {
 
   isLoadingData.value = false;
 });
+
+// Watch Existing Files untuk update text lampiran otomatis
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  if (jumlah > 0) {
+    lampiranText.value = `${jumlah} Lampiran`;
+  } else {
+    lampiranText.value = "0 Lampiran";
+  }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

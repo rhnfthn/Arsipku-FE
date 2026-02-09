@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Detail Naskah Dinas
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -10,7 +10,7 @@
 
       <button
         @click="exportExcel"
-        class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
       >
         <FileDown class="w-4 h-4" />
         Export
@@ -19,13 +19,15 @@
 
     <!-- Table -->
     <div
-      class="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white"
+      class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
     >
-      <div class="flex flex-wrap justify-between gap-4 p-2 items-center">
+      <div
+        class="flex flex-wrap justify-between gap-4 p-2 items-center border-b border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-3">
           <button
             @click="refreshData"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 disabled:opacity-50"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 disabled:opacity-50"
             :disabled="isRefreshing"
           >
             <RotateCcw
@@ -38,7 +40,7 @@
           <div class="relative" ref="rowsRef">
             <div
               @click="showRowsDropdown = !showRowsDropdown"
-              class="h-7 px-2 text-xs bg-white border border-gray-300 rounded-md flex items-center gap-1 cursor-pointer focus-within:ring-1 focus-within:ring-primary-400"
+              class="h-7 px-2 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md flex items-center gap-1 cursor-pointer focus-within:ring-1 focus-within:ring-primary-400"
             >
               {{ rowsPerPage }}
               <ChevronDown
@@ -49,7 +51,7 @@
 
             <div
               v-if="showRowsDropdown"
-              class="absolute z-30 mt-1 w-full bg-white rounded-md shadow"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow"
             >
               <div
                 v-for="n in rowsChoices"
@@ -58,7 +60,7 @@
                   rowsPerPage = n;
                   showRowsDropdown = false;
                 "
-                class="px-2 py-1 text-xs hover:bg-primary-50 cursor-pointer"
+                class="px-2 py-1 text-xs text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
               >
                 {{ n }}
               </div>
@@ -71,20 +73,20 @@
               v-model="jenisKeyword"
               @click="showJenisDropdown = !showJenisDropdown"
               placeholder="Semua Jenis"
-              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 placeholder-black"
+              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400"
             />
 
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': showJenisDropdown }"
             />
 
             <div
               v-if="showJenisDropdown"
-              class="absolute z-20 mt-1 w-full bg-white rounded-lg shadow max-h-48 overflow-y-auto"
+              class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow max-h-48 overflow-y-auto"
             >
               <div
-                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.jenis = '';
                   jenisKeyword = 'Semua Jenis';
@@ -97,7 +99,7 @@
               <div
                 v-for="jenis in filteredJenisOptions"
                 :key="jenis.jenis"
-                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.jenis = jenis.jenis;
                   jenisKeyword = jenis.jenis_text;
@@ -109,7 +111,7 @@
 
               <div
                 v-if="filteredJenisOptions.length === 0"
-                class="px-3 py-2 text-sm text-gray-400 text-center"
+                class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 text-center"
               >
                 Data tidak ditemukan
               </div>
@@ -122,20 +124,20 @@
               v-model="lokasiKeyword"
               @click="showLokasiDropdown = !showLokasiDropdown"
               placeholder="Semua Lokasi"
-              class="bg-gray-100 rounded-lg px-3 py-2 text-sm w-48 placeholder:text-black focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
+              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
             />
 
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': showLokasiDropdown }"
             />
 
             <div
               v-if="showLokasiDropdown"
-              class="absolute z-20 mt-1 w-full bg-white rounded-lg shadow max-h-48 overflow-y-auto"
+              class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow max-h-48 overflow-y-auto"
             >
               <div
-                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.lokasi = '';
                   lokasiKeyword = 'Semua Lokasi';
@@ -148,7 +150,7 @@
               <div
                 v-for="area in filteredAreaOptions"
                 :key="area.kode"
-                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.lokasi = area.kode;
                   lokasiKeyword = area.nama;
@@ -159,7 +161,7 @@
               </div>
               <div
                 v-if="filteredAreaOptions.length === 0"
-                class="px-3 py-2 text-sm text-gray-400 text-center"
+                class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 text-center"
               >
                 Data tidak ditemukan
               </div>
@@ -172,10 +174,13 @@
             <div
               tabindex="0"
               @click="toggle('status')"
-              class="h-9 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary-400"
+              class="h-9 w-full px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md flex items-center gap-1 cursor-pointer overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary-400"
             >
               <!-- PLACEHOLDER -->
-              <span v-if="!selectedStatuses.length" class="text-black truncate">
+              <span
+                v-if="!selectedStatuses.length"
+                class="text-gray-900 dark:text-gray-300 truncate"
+              >
                 Semua Status
               </span>
 
@@ -187,12 +192,12 @@
                 <span
                   v-for="status in selectedStatuses"
                   :key="status"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary text-[10px] whitespace-nowrap"
+                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
                 >
                   {{ statusOptions.find((s) => s.value === status)?.label }}
                   <button
                     @click.stop="removeStatus(status)"
-                    class="hover:text-red-500"
+                    class="hover:text-red-500 dark:hover:text-red-400"
                   >
                     ✕
                   </button>
@@ -200,7 +205,7 @@
               </div>
 
               <ChevronDown
-                class="w-4 h-4 ml-auto shrink-0 text-gray-500 transition-transform duration-200"
+                class="w-4 h-4 ml-auto shrink-0 text-gray-500 dark:text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': openDropdown === 'status' }"
               />
             </div>
@@ -208,7 +213,7 @@
             <!-- DROPDOWN -->
             <div
               v-if="openDropdown === 'status'"
-              class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full p-2"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md w-full p-2"
             >
               <div class="flex flex-col gap-1">
                 <button
@@ -219,8 +224,8 @@
                   class="px-3 py-2 text-left text-sm rounded-md transition-colors"
                   :class="
                     selectedStatuses.includes(status.value)
-                      ? 'bg-primary text-white'
-                      : 'hover:bg-gray-100'
+                      ? 'bg-primary dark:bg-primary-600 text-white'
+                      : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                   "
                 >
                   {{ status.label }}
@@ -234,7 +239,7 @@
             <div
               tabindex="0"
               @click="showTahunDropdown = !showTahunDropdown"
-              class="bg-gray-100 rounded-lg px-3 py-2 text-sm flex items-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-400"
+              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm flex items-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-400"
             >
               {{ filters.tahun }}
               <ChevronDown
@@ -245,7 +250,7 @@
 
             <div
               v-if="showTahunDropdown"
-              class="absolute z-30 mt-1 w-full bg-white rounded-lg shadow"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow"
             >
               <div
                 v-for="tahun in tahunOptions"
@@ -254,7 +259,7 @@
                   filters.tahun = tahun;
                   showTahunDropdown = false;
                 "
-                class="px-3 py-2 text-sm hover:bg-primary-50 cursor-pointer"
+                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
               >
                 {{ tahun }}
               </div>
@@ -265,12 +270,12 @@
 
       <div class="relative overflow-x-auto">
         <table class="min-w-max border-collapse text-sm mt-3 w-full">
-          <thead class="text-left bg-primary-400 text-white">
+          <thead class="text-left bg-primary dark:bg-primary-700 text-white">
             <tr>
               <th class="px-4 py-3 font-semibold">Nomor</th>
               <th
                 @click="handleSort('tanggal')"
-                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
               >
                 <div class="flex items-center gap-2">
                   <span>Tanggal</span>
@@ -290,7 +295,7 @@
               <th class="px-4 py-3 font-semibold">Lokasi</th>
               <th
                 @click="handleSort('status')"
-                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors"
+                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
@@ -309,61 +314,107 @@
           </thead>
 
           <tbody>
-            <tr
-              v-for="item in paginatedNaskah"
-              :key="item.id"
-              class="hover:bg-blue-50 border-b border-gray-200 transition-colors"
-            >
-              <td class="px-4 py-3">{{ item.nomor }}</td>
-              <td class="px-4 py-3">{{ item.tanggal }}</td>
-              <td class="px-4 py-3">{{ item.perihal }}</td>
-              <td class="px-4 py-3">{{ item.jabatan }}</td>
-              <td class="px-4 py-3">{{ item.lokasi }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                  :class="{
-                    'bg-green-100 text-green-700': item.status === 'Terpakai',
-                    'bg-green-100 text-green-700':
-                      item.status === 'Terpakai_final',
-                    'bg-blue-100 text-blue-700': item.status === 'Booking',
-                    'bg-red-100 text-red-700': item.status === 'Hangus',
-                  }"
-                >
-                  {{ item.status }}
-                </span>
-              </td>
-            </tr>
-
-            <tr v-if="loading">
-              <td :colspan="tableColCount" class="px-4 py-6">
-                <div class="space-y-4 animate-pulse">
-                  <div
-                    v-for="n in skeletonRows"
-                    :key="'skeleton-' + n"
-                    class="h-12 w-full rounded-lg bg-gray-200"
-                  />
-                </div>
-              </td>
-            </tr>
-
-            <tr v-if="paginatedNaskah.length === 0">
-              <td
-                colspan="6"
-                class="px-4 py-6 text-center text-sm text-gray-400 italic"
+            <!-- SKELETON LOADING -->
+            <template v-if="loading">
+              <tr
+                v-for="n in skeletonRows"
+                :key="'skeleton-' + n"
+                class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition-colors animate-pulse"
               >
-                Tidak ada data
-              </td>
-            </tr>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"
+                  ></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div
+                    class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-20"
+                  ></div>
+                </td>
+              </tr>
+            </template>
+
+            <!-- DATA ROWS -->
+            <template v-else>
+              <tr
+                v-for="item in paginatedNaskah"
+                :key="item.id"
+                class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition-colors"
+              >
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  {{ item.nomor }}
+                </td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  {{ item.tanggal }}
+                </td>
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  {{ item.perihal }}
+                </td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  {{ item.jabatan }}
+                </td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  {{ item.lokasi }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                    :class="{
+                      'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
+                        item.status === 'Terpakai',
+                      'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
+                        item.status === 'Terpakai_final',
+                      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300':
+                        item.status === 'Booking',
+                      'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300':
+                        item.status === 'Hangus',
+                    }"
+                  >
+                    {{ item.status }}
+                  </span>
+                </td>
+              </tr>
+
+              <!-- EMPTY STATE -->
+              <tr v-if="paginatedNaskah.length === 0">
+                <td
+                  colspan="6"
+                  class="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500 italic"
+                >
+                  Tidak ada data
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
+
       <!-- PAGINATION -->
       <div
         v-if="totalItems > 0"
-        class="flex items-center justify-between px-4 py-4"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedNaskah.length }} dari {{ totalItems }} data
         </div>
 
@@ -375,8 +426,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             <svg
@@ -401,7 +452,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               1
             </button>
@@ -409,7 +460,7 @@
             <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -422,8 +473,8 @@
               :class="[
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
               ]"
             >
               {{ page }}
@@ -434,7 +485,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -443,7 +494,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
             >
               {{ totalPages }}
             </button>
@@ -456,8 +507,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
             Next
@@ -528,6 +579,7 @@ const showRowsDropdown = ref(false);
 const jenisRef = ref<HTMLElement | null>(null);
 const lokasiRef = ref<HTMLElement | null>(null);
 const statusRef = ref<HTMLElement | null>(null);
+const rowsRef = ref<HTMLElement | null>(null);
 
 //DATA STATE
 const rawData = ref<any[]>([]);
@@ -578,6 +630,10 @@ const handleClickOutside = (e: MouseEvent) => {
     !statusRef.value.contains(target)
   ) {
     openDropdown.value = null;
+  }
+
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
+    showRowsDropdown.value = false;
   }
 };
 
@@ -852,3 +908,18 @@ const breadcrumbs = [
   { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
 ];
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
