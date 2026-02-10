@@ -793,7 +793,10 @@ const fetchTable1 = async () => {
 const fetchTable2 = async () => {
   loadingTable2.value = true;
   try {
-    const params: any = {};
+    const params: any = {
+      page: 1,
+      limit: 10000,
+    };
 
     if (filters.value.tahun) {
       params.tahun = Number(filters.value.tahun);
@@ -804,7 +807,6 @@ const fetchTable2 = async () => {
     }
 
     if (filters.value.status) {
-      // API pakai lowercase
       params.status = filters.value.status.toLowerCase();
     }
 
@@ -812,7 +814,7 @@ const fetchTable2 = async () => {
 
     table2Data.value = res.data.map((item: any) => ({
       id: item.id,
-      jenis: item.naskah, // ND / ST
+      jenis: item.naskah,
       jenis_text: item.naskah_text,
       nomor: item.nomor,
       tanggal: formatTanggal(item.tanggal),
