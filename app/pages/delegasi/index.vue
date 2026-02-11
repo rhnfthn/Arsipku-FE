@@ -91,7 +91,7 @@ const fetchData = async () => {
 
     listDelegasi.value = dataArray.map((item: any) => ({
       id: item.id,
-      nama: item.as_name,
+      nama: item.nama,
       jabatan: item.as_position_text || item.as_position || "-",
       lokasi: item.as_area_text || item.company_text || "-",
       tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,

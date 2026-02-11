@@ -461,7 +461,7 @@ const toast = useToast();
 //CONST UTIL
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
+  { label: "Rekap Naskah", to: "/laporan/rekap-naskah" },
 ];
 
 const getStatusClass = (status: string) => {

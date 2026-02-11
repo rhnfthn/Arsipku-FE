@@ -572,6 +572,7 @@ const selectedStatuses = ref<string[]>([]);
 
 const currentYear = new Date().getFullYear();
 const showTahunDropdown = ref(false);
+const tahunMin = ref<number | null>(null);
 
 const showRowsDropdown = ref(false);
 
@@ -665,16 +666,14 @@ const filteredAreaOptions = computed(() => {
 });
 
 const tahunOptions = computed(() => {
-  const years = new Set<number>();
+  const start = tahunMin.value ?? currentYear;
+  const years = [];
 
-  rawData.value.forEach((d) => {
-    const y = Number(d.tanggal?.split("/")[2]);
-    if (!isNaN(y)) years.add(y);
-  });
+  for (let y = currentYear; y >= start; y--) {
+    years.push(y);
+  }
 
-  years.add(currentYear);
-
-  return Array.from(years).sort((a, b) => b - a);
+  return years;
 });
 
 //PAGINATION
@@ -718,9 +717,12 @@ const skeletonRows = computed(() => rowsPerPage.value);
 const fetchDetailNaskah = async () => {
   loading.value = true;
   try {
-    const params: any = {};
+    const params: any = {
+      tahun: Number(filters.value.tahun),
+      page: 1,
+      limit: 1000000,
+    };
 
-    if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
 
@@ -738,8 +740,6 @@ const fetchDetailNaskah = async () => {
       jenis: item.jenis,
       jenis_text: item.jenis_text,
     }));
-  } catch (err) {
-    console.error("Gagal ambil detail naskah", err);
   } finally {
     loading.value = false;
   }
@@ -763,6 +763,20 @@ const fetchJenis = async () => {
     jenisOptions.value = res.data;
   } catch (err) {
     console.error("Gagal ambil jenis", err);
+  }
+};
+
+const fetchTahunRange = async () => {
+  const res = await getRekapNaskahDetail({
+    page: 1,
+    limit: 1,
+  });
+
+  const tanggalTerlama = res.meta?.min_tanggal;
+  // atau dari response pertama
+
+  if (tanggalTerlama) {
+    tahunMin.value = new Date(tanggalTerlama).getFullYear();
   }
 };
 
@@ -904,8 +918,8 @@ const statusOptions = [
 ];
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/admin/dashboard" },
-  { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
+  { label: "Beranda", to: "/beranda" },
+  { label: "Detail Naskah", to: "/laporan/detail-naskah" },
 ];
 </script>
 

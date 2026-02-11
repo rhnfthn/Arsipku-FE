@@ -409,6 +409,7 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -417,12 +418,14 @@
         </div>
       </template>
 
+      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
         </p>
 
         <div class="space-y-4">
+          <!-- Digital Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -436,6 +439,7 @@
                 Dokumen ditandatangani secara elektronik resmi (TTE).
               </span>
 
+              <!-- Signer Info -->
               <div v-if="selectedSendType === 'digsig'"
                 class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div class="flex items-start gap-4 p-4">
@@ -458,6 +462,7 @@
                   </div>
                 </div>
 
+                <!-- Passphrase -->
                 <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div @click.stop>
                     <UFormGroup label="Passphrase" required>
@@ -470,6 +475,7 @@
             </div>
           </label>
 
+          <!-- Without Signature -->
           <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
             ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
@@ -487,6 +493,7 @@
         </div>
       </template>
 
+      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -495,6 +502,7 @@
         </div>
       </template>
     </UModal>
+
 
   </div>
 </template>
@@ -522,11 +530,8 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 // Types & Validation
 import type { Klasifikasi } from "~/types/klasifikasi";
-import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
+import { validateSDEPayload, type SDEPayload } from "~/types/sde";
 import { Alert } from "@/composables/useAlert";
-
-// Composables
-import { useDigSign } from "@/composables/useDigSign";
 
 /* -------------------------------------------------------------------------- */
 /* 2. LOCAL TYPES                                                             */
@@ -559,11 +564,14 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useRecipients();
-const { isLoadingDraft, getDraftDetail } = useDraft();
-const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
+// Use useSde for SDE-specific functions
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 const { getKtp } = useDigSign();
 const { fetchInboxDetail } = useInbox(null);
+
+const Alert = useAlert();
+
+
 
 /* --- HELPER FUNCTIONS (Tambahkan ini untuk memperbaiki error template) --- */
 const getCategoryStyle = (cat: string) => {
@@ -653,10 +661,10 @@ const tinyMceInit = {
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
-const alertState = useAlertState();
+const alertState = useAlertState(); // Initialize alertState
 
 const isPassphraseModalOpen = ref(false)
-const selectedSendType = ref('')
+const selectedSendType = ref('digsig') // Default to 'digsig' as per instructions
 const passphrase = ref('')
 
 const signerInfo = computed(() => ({
@@ -708,18 +716,15 @@ const formattedDate = computed(() => {
 /* -------------------------------------------------------------------------- */
 /* 6. METHODS                                                                 */
 /* -------------------------------------------------------------------------- */
-const validateAndToast = (payload: DraftPayload) => {
-  const validationResult = validateDraftPayload(payload);
-  if (!validationResult.isValid) {
-    const errorKeys = Object.keys(validationResult.errors || {});
-    const firstKey = errorKeys.length > 0 ? errorKeys[0] : null;
-    const firstMessage = firstKey && validationResult.errors
-      ? validationResult.errors[firstKey]
-      : "Terjadi kesalahan input";
+const validateAndToast = (payload: SDEPayload) => {
+  const validationResult = validateSDEPayload(payload);
+  if (!validationResult.success) { // Use 'success' for Zod validation result
+    const firstError = validationResult.error?.errors[0];
+    const message = firstError ? `${firstError.path.join('.')} ${firstError.message}` : "Terjadi kesalahan input";
 
     toast.add({
       title: 'Validasi Gagal',
-      description: firstMessage,
+      description: message,
       icon: 'i-heroicons-x-circle-20-solid',
       color: 'error'
     });
@@ -728,60 +733,61 @@ const validateAndToast = (payload: DraftPayload) => {
   return true;
 };
 
-const getBasePayload = (): DraftPayload => {
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
-
-  const tglPreview = date.value
-    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-    : "";
-
-  const lampiranIds = existingFiles.value
-    .map((f) => f.id)
-    .filter((id): id is string => !!id);
+const getBasePayload = (): SDEPayload => {
+  const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
+  const tglDisplay = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
 
   return {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),
+
+    // UPDATE: Kirim Array of IDs dari Selected Tertuju
+    penerima: selectedTertuju.value.map(item => item.value),
+    english: english.value || false, // Use 'english' from this component
     tembusan: selectedTembusan.value.map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-    sifat: selectedSifat.value?.value || 'biasa',
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
+    sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
-    konten: String(editorContent.value || ''),
-    htmlContent: String(editorContent.value || ''),
-    english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
+    lampiran: lampiranText.value, // Added lampiranText
+    konten: editorContent.value,
+    nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: user.value?.nama || "",
     tgl: tglDb,
-    tanggal: tglPreview,
-    lampiran_temp_ids: lampiranIds,
+    tanggal: tglDisplay,
+    lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)
   };
 };
 
-const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
+const createFormData = (payload: SDEPayload, includePdf: boolean = false) => {
   const formData = new FormData();
 
-  (Object.keys(payload) as Array<keyof DraftPayload>).forEach((key) => {
-    const value = payload[key];
-    if (Array.isArray(value)) {
-      formData.append(key, JSON.stringify(value));
+  Object.keys(payload).forEach((key) => {
+    const k = key as keyof SDEPayload;
+    if (k === 'tanggal') return; // Exclude 'tanggal'
+
+    const value = payload[k];
+
+    // Penerima dan Tembusan dikirim sebagai stringified array (standard multipart)
+    if (k === 'penerima' || k === 'tembusan' || k === 'lampiran_temp_ids') {
+      formData.append(k, JSON.stringify(value));
     } else if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      formData.append(k, String(value));
     }
   });
 
   if (includePdf && pdfBlob.value) {
-    const safeDate = payload.tanggal ? payload.tanggal.replace(/\//g, '-') : 'draft';
-    formData.append("final_pdf", pdfBlob.value, `nota_dinas_${safeDate}.pdf`);
+    const judul = payload.perihal || 'dokumen_sde';
+    const safeName = judul.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+    formData.append("final_pdf", pdfBlob.value, `SDE_${safeName}.pdf`);
   }
 
   return formData;
 };
+
+
+
 
 // --- Event Handlers ---
 const handleApplyTemplate = (htmlContent: string) => {
@@ -914,7 +920,7 @@ const handleKirimDokumen = async () => {
     }
 
     // 5. Panggil API Kirim
-    const result = await sendNotaDinas(formData);
+    const result = await sendSDE(formData);
 
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
@@ -947,24 +953,30 @@ const handleKirimDokumen = async () => {
 
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
+  if (!validateAndToast(payload)) throw new Error("Validation failed");
 
   try {
     loadingMessage.value = "Menyimpan Draft...";
     isLoadingData.value = true;
 
-    const formData = createFormData(payload, false);
-    await saveND(formData, editDraftId.value);
+    const fd = createFormData(payload, false);
+    let res;
 
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    if (editDraftId.value) {
+      res = await updateDraft(fd, editDraftId.value);
+    } else {
+      res = await saveDraft(fd);
+    }
+
+    if (res?.success) {
+      toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
+      if (res.data?.id) editDraftId.value = res.data.id;
+    } else {
+      throw new Error(res?.data?.message || 'Gagal menyimpan draft');
+    }
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
-    toast.add({
-      title: 'Gagal',
-      description: e.response?.data?.message || 'Gagal memperbarui draft',
-      color: 'error'
-    });
+    throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
   } finally {
     isLoadingData.value = false;
   }
@@ -1014,90 +1026,123 @@ onMounted(async () => {
     })();
   }
 
-  loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
-
   if (!user.value) await getProfile();
 
   try {
     klasifikasiStatus.value = "loading";
-    klasifikasiList.value = await getKlasifikasi();
-    klasifikasiStatus.value = "success";
+    const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
+      getKlasifikasi(),
+      getRecipientInfo(user.value?.position),
+      getExternalRecipients()
+    ]);
 
-    const resRec = await getRecipients(user.value?.position);
-    const rawData = resRec.recipients || resRec.data || [];
+    klasifikasiList.value = klasRes;
 
-    items.value = rawData.map((r: any): RecipientItem => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+    // --- MAPPING EXTERNAL (TERTUJU) ---
+    if (externalRecRes?.success && Array.isArray(externalRecRes.data)) {
+      externalItems.value = externalRecRes.data.map((item: any) => ({
+        label: item.nama,
+        value: item.id,
+        raw: item,
+      }));
+    }
+
+    // --- MAPPING INTERNAL (TEMBUSAN) ---
+    const rawRec = internalRecRes.rawRecipients || [];
+
+    const mapInternalItems = (list: any[]) => list.map((r: any) => ({
+      // Mapping sudah sesuai dengan JSON response API
+      label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
-      raw: r,
+      raw: r
     }));
-  } catch {
-    klasifikasiStatus.value = "error";
-  }
 
-  const draftId = route.query.draft_id as string;
-  if (draftId) {
-    try {
+    let flatRecipients: any[] = [];
+    if (Array.isArray(rawRec)) {
+      flatRecipients = rawRec;
+    } else {
+      Object.values(rawRec).forEach((arr: any) => flatRecipients.push(...arr));
+    }
+    internalItems.value = mapInternalItems(flatRecipients);
+
+    klasifikasiStatus.value = "success";
+
+    // --- LOAD DRAFT ---
+    const draftId = route.query.draft_id as string;
+    if (draftId) {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      loadingMessage.value = "Memuat draft...";
 
+      const resDraft = await getSDEDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
+
         subject.value = d.perihal || "";
+        // Original: editorContent.value = d.konten || ""; if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
+        // Correct for SDEPayload:
+        lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
-        english.value = Boolean(d.english);
+        if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
+
 
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+          const found = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
+          if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        const mapApiToUI = (list: any[]): RecipientItem[] => {
-          return list?.map(item => {
-            const posId = String(item.position_id || item.position || item.value);
-            const master = items.value.find(m => m.value === posId);
-            if (master) return master;
-            return {
-              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-              labelJob: item.positionText || item.labelJob || '',
-              value: posId,
-              raw: item
-            };
-          }) || [];
-        };
+        // --- POPULATE TERTUJU & TEMBUSAN ---
 
-        selectedTertuju.value = mapApiToUI(d.penerima);
-        selectedTembusan.value = mapApiToUI(d.tembusan);
+        // 1. Populate Tertuju (External)
+        if (d.penerima && Array.isArray(d.penerima)) {
+          selectedTertuju.value = d.penerima.map((item: any) => ({
+            label: item.nama,
+            value: item.id,
+            raw: item
+          }));
+        }
 
-        if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
-          existingFiles.value = d.lampiran_files.map((f: any): UploadedFile => ({
+        // 2. Populate Tembusan (Internal)
+        if (d.tembusan && Array.isArray(d.tembusan)) {
+          const tembusanIds = d.tembusan.map((t: any) =>
+            // PERBAIKAN: Tambahkan 't.position' di sini sesuai JSON response
+            typeof t === 'object' ? String(t.position || t.position_id || t.id || t.value) : String(t)
+          );
+
+          selectedTembusan.value = internalItems.value.filter(item =>
+            tembusanIds.includes(String(item.value))
+          );
+        }
+
+        if (d.lampiran_files) {
+          existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
             fileName: f.fileName || f.file_name,
             filePath: f.fileUrl || f.file_path,
             fileSize: f.fileSize || 0
           }));
         }
-
-        const draftSifat = String(d.sifat || 'biasa').toLowerCase();
-        selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
-
-        if (d.tanggal) {
-          const dateParts = d.tanggal.split('-');
-          if (dateParts.length === 3) {
-            date.value = new CalendarDate(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
-          }
-        }
       }
-    } catch (error) {
-      console.error("Error loading draft detail:", error);
-      toast.add({ title: 'Gagal memuat data draft', color: 'error' });
     }
-  }
 
-  isLoadingData.value = false;
+  } catch (e) {
+    console.error(e);
+    toast.add({ title: 'Gagal memuat data awal', color: 'error' });
+  } finally {
+    isLoadingData.value = false;
+  }
 });
+
+// Watch Existing Files untuk update text lampiran otomatis
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  if (jumlah > 0) {
+    lampiranText.value = `${jumlah} Lampiran`;
+  } else {
+    lampiranText.value = "0 Lampiran";
+  }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

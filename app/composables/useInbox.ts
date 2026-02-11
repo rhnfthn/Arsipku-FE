@@ -261,56 +261,62 @@ export function useInbox() {
     try {
       const res = await apiGet(`/konsep/${idKonsep}`);
 
-      // Validasi dasar
       if (!res || !res.data) return null;
 
-      // Ambil object data utama dari response
-      // Struktur: { success: true, message: "...", data: { konsep:..., naskah:..., flow:..., dll } }
       const d = res.data;
-
-      // Logic untuk mengambil PDF Snapshot terakhir dari Flow
       const flows = d.flow || [];
+
+      // --- LOGIKA BARU ---
+
+      // 1. Ambil Flow Terakhir untuk cek Status & Catatan
+      // (Ini yang memuat aksi "reject" dan catatan "TOLAK DEH")
       const lastFlow = flows.length > 0 ? flows[flows.length - 1] : null;
-      const pdfSnapshot = lastFlow?.pdf_snapshot || null;
+
+      // 2. Ambil Catatan Reject (Hanya jika aksi terakhir adalah reject)
+      const catatanReject =
+        lastFlow?.aksi === "reject" ? lastFlow.catatan : null;
+
+      // 3. Cari PDF Snapshot Terakhir yang TIDAK NULL
+      // Flow reject punya pdf_snapshot: null, jadi kita harus mundur ke flow sebelumnya (create)
+      // Kita copy array flow, reverse, lalu cari yang punya pdf
+      const lastFlowWithPdf = [...flows].reverse().find((f) => f.pdf_snapshot);
+      const finalPdf = lastFlowWithPdf ? lastFlowWithPdf.pdf_snapshot : null;
+
+      // 4. Data Referensi (Naskah Asal / Flow[0])
+      // Tetap ambil ini jika butuh info surat asal, tapi BUKAN untuk catatan reject
+      const originFlow = flows.length > 0 ? flows[0] : null;
+      const refData =
+        originFlow && (originFlow.naskah || originFlow.pdf_snapshot)
+          ? {
+              id: originFlow.naskah?.id,
+              nomor: originFlow.naskah?.nomor,
+              // ... data referensi lainnya
+            }
+          : null;
 
       return {
-        // --- Data Utama ---
+        // --- Data Konsep ---
         konsep: d.konsep,
         naskah: d.naskah,
-
-        // --- Flattening untuk UI ---
         id: d.konsep?.id,
-        nomor: d.naskah?.nomor || "-",
-        // Prioritas tanggal: Naskah -> Konsep -> Hari ini
-        tanggal: d.naskah?.tanggal || d.konsep?.created_at,
-        perihal: d.naskah?.perihal || d.konsep?.perihal,
-        jenis: "K", // Hardcode K karena endpoint ini khusus konsep
-        jenis_label: "KONSEP NOTA DINAS", // Label untuk badge UI
-        sifat: d.naskah?.sifat || "biasa",
-        status: d.konsep?.status,
 
-        // --- Pelaku (Pengirim & Penerima) ---
-        // DI SINI PERBAIKANNYA: Ambil langsung dari d.pengirim, bukan current_workflow
-        pengirim: d.pengirim || { position_text: "-", nama: "-" },
+        // --- Data Penting untuk UI ---
+        // Gunakan hasil logika di atas
+        final_pdf_url: finalPdf, // PDF dari step 'create'
+        catatan_reject: catatanReject, // Catatan dari step 'reject'
+
+        // Info Status
+        status: d.konsep?.status,
+        last_action: lastFlow?.aksi,
+
+        // --- Sisa data mapping kamu ---
+        nomor: d.naskah?.nomor || "-",
+        perihal: d.naskah?.perihal || d.konsep?.perihal,
+        pengirim: d.pengirim,
         kepada: d.penerima || [],
         tembusan: d.tembusan || [],
-
-        // --- Konten ---
-        // Ambil dari naskah.konten atau naskah.content.konten
-        konten: d.naskah?.konten || d.naskah?.content?.konten || "",
-
-        // --- Lampiran ---
-        lampiran_files: d.lampiran || [],
-
-        // --- PDF Preview ---
-        // Ambil dari snapshot flow terakhir
-        final_pdf_url: pdfSnapshot,
-
-        // --- Flow untuk Logic Button (Finalize/Reject) ---
         flow: flows,
-
-        // Simpan raw data jika butuh debug
-        raw: d,
+        ref_data: refData, // Jika perlu ditampilkan di UI terpisah
       };
     } catch (err: any) {
       console.error("fetchKonsepDetail error:", err);
