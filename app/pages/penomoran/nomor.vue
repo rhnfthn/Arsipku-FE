@@ -87,15 +87,15 @@
                     : 'cursor-default',
                 ]"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <span class="w-3 h-3 inline-flex items-center justify-center">
+                  <span class="w-4 h-4 inline-flex items-center justify-center">
                     <ArrowUpDown
                       v-if="col.sortable"
                       :class="[
-                        'w-3 h-3 transition-all',
+                        'w-4 h-4 transition-all',
                         sortBy === col.key
-                          ? 'opacity-100 text-yellow-300'
+                          ? 'opacity-100 text-gray-300'
                           : 'opacity-50',
                         sortBy === col.key && sortOrder === 'desc'
                           ? 'rotate-180'

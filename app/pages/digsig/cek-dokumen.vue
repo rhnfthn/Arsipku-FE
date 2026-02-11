@@ -24,7 +24,6 @@
             class="hidden"
             @change="handleFile"
             accept=".pdf"
-            :disabled="loadingCheck"
           />
 
           <div
@@ -57,13 +56,13 @@
 
         <!-- SUBMIT BUTTON -->
         <div v-if="selectedFile && !fileUploaded" class="flex justify-end mt-2">
-          <UButton
-            @click="showConfirmation"
+          <Button
+            @click="submitDocument"
             :disabled="loadingCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Periksa Dokumen
-          </UButton>
+          </Button>
         </div>
       </div>
 
@@ -284,38 +283,25 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-end items-center gap-3">
-          <UButton
+          <Button
             @click="resetCheck"
-            class="border border-primary hover:bg-primary-700 px-6 py-2.5 rounded-lg text-sm font-medium"
+            class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Periksa Dokumen Lain
-          </UButton>
+          </Button>
 
-          <UButton
+          <Button
             v-if="documentCheck.data.isValid"
             @click="downloadPdf"
-            class="bg-primary hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
+            class="border border-primary hover:bg-primary-700 hover:text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
             Unduh PDF
-          </UButton>
+          </Button>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- CONFIRMATION DIALOG -->
-  <ConfirmPopup
-    v-model="showConfirmDialog"
-    type="question"
-    title="Konfirmasi"
-    message="Yakin ingin melanjutkan pemeriksaan dokumen ini?"
-    confirmText="Periksa"
-    cancelText="Batal"
-    :isLoading="loadingCheck"
-    @confirm="submitDocument"
-    @cancel="cancelSubmit"
-  />
 </template>
 
 <script setup lang="ts">
@@ -333,7 +319,6 @@ import {
   Download,
 } from "lucide-vue-next";
 import { ref } from "vue";
-import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
@@ -440,7 +425,6 @@ const fileUploaded = ref(false);
 const selectedFile = ref<File | null>(null);
 const openSigners = ref(new Set<number>());
 const fileInput = ref<HTMLInputElement | null>(null);
-const showConfirmDialog = ref(false);
 
 /* Handle File Selection */
 function handleFile(e: any) {
@@ -461,17 +445,6 @@ function handleFile(e: any) {
   documentCheck.value = null;
 }
 
-/* Show Confirmation Dialog */
-function showConfirmation() {
-  if (!selectedFile.value) return;
-  showConfirmDialog.value = true;
-}
-
-/* Cancel Submit */
-function cancelSubmit() {
-  showConfirmDialog.value = false;
-}
-
 /* Submit Document untuk Cek Digital Signature */
 async function submitDocument() {
   if (!selectedFile.value) return;
@@ -480,15 +453,12 @@ async function submitDocument() {
     await checkDocument(selectedFile.value);
     fileUploaded.value = true;
 
-    // Buka accordion pertama jika ada signers
     if (documentCheck.value?.data.signers?.length) {
       openSigners.value.add(0);
     }
   } catch (err) {
     console.error("Error checking document:", err);
     fileUploaded.value = false;
-  } finally {
-    showConfirmDialog.value = false;
   }
 }
 

@@ -360,17 +360,16 @@
           <!-- Tanggal -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="mt-1 dark:text-gray-200 text-sm font-medium">
               {{ selectedRow.tanggal }}
             </p>
           </div>
-
           <!-- Pengirim -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               Penandatangan
             </p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.penandatangan }}
             </p>
           </div>
@@ -378,7 +377,7 @@
           <!-- Klasifikasi -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
@@ -386,7 +385,7 @@
           <!-- Jenis Naskah -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.jenis }}
             </p>
           </div>
@@ -471,7 +470,7 @@
               class="space-y-2"
             >
               <div
-                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
+                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50 mt-2"
               >
                 <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
@@ -536,10 +535,9 @@
                   </div>
                 </div>
 
-                <!-- File Upload/Replace Section -->
+                <!-- File Upload/Replace Section - KONSISTEN DENGAN GAMBAR 2 -->
                 <div class="relative">
-                  <!-- Show existing file if available (PRIORITAS UTAMA) -->
-                  <!-- Cek file_name ATAU file_text ATAU file_url -->
+                  <!-- Show existing file if available -->
                   <div
                     v-if="
                       hasExistingFile(detail) && !fileStates[idx]?.isReplacing
@@ -549,38 +547,133 @@
                       class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
                     >
                       <div class="flex items-center justify-between gap-3">
-                        <div
-                          class="flex-1 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 rounded p-2 -m-2 transition"
-                          @click="previewFile(detail)"
-                        >
-                          <p
-                            class="text-sm font-medium text-green-700 dark:text-green-400 underline"
+                        <div class="flex items-center gap-3 flex-1">
+                          <svg
+                            class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            📄 {{ getDisplayFileName(detail) }}
-                          </p>
-                          <p
-                            class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div
+                            class="flex-1 cursor-pointer hover:underline"
+                            @click="previewFile(detail)"
                           >
-                            Klik untuk preview
-                          </p>
+                            <p
+                              class="text-sm font-medium text-green-700 dark:text-green-400"
+                            >
+                              {{ getDisplayFileName(detail) }}
+                            </p>
+                            <p
+                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                            >
+                              Klik untuk preview
+                            </p>
+                          </div>
                         </div>
                         <button
-                          @click.stop="startReplacingFile(idx)"
-                          class="px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition flex-shrink-0"
+                          @click.prevent="startReplacingFile(idx)"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                         >
-                          Ganti File
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Upload/Replace form (hanya muncul jika TIDAK ada file atau sedang replace) -->
-                  <div v-else class="space-y-2">
+                  <!-- Show uploaded file (new file) -->
+                  <div
+                    v-else-if="
+                      (fileStates[idx]?.file || files[idx]) &&
+                      !fileStates[idx]?.isReplacing
+                    "
+                  >
+                    <div
+                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                    >
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 flex-1">
+                          <svg
+                            class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div class="flex-1">
+                            <p
+                              class="text-sm font-medium text-green-700 dark:text-green-400"
+                            >
+                              {{
+                                fileStates[idx]?.file?.name || files[idx]?.name
+                              }}
+                            </p>
+                            <p
+                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                            >
+                              {{
+                                formatFileSize(
+                                  fileStates[idx]?.file?.size ||
+                                    files[idx]?.size ||
+                                    0,
+                                )
+                              }}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          @click.prevent="removeFile(idx)"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Upload form (only show when no file or replacing) -->
+                  <div v-else>
                     <label
-                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
+                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
                     >
                       <svg
-                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors"
+                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -597,13 +690,7 @@
                         <span
                           class="text-gray-700 dark:text-gray-300 font-medium block"
                         >
-                          {{
-                            fileStates[idx]?.file?.name ||
-                            files[idx]?.name ||
-                            (fileStates[idx]?.isReplacing
-                              ? "Pilih file baru untuk mengganti"
-                              : "Pilih file untuk diupload (Opsional)")
-                          }}
+                          Pilih file (Opsional)
                         </span>
                         <span
                           class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 block"
@@ -621,70 +708,14 @@
                       />
                     </label>
 
-                    <!-- File info if selected -->
-                    <div
-                      v-if="fileStates[idx]?.file || files[idx]"
-                      class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-md px-3 py-2"
+                    <!-- Cancel button for replace mode -->
+                    <button
+                      v-if="fileStates[idx]?.isReplacing"
+                      @click.prevent="cancelReplace(idx, detail)"
+                      class="mt-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
                     >
-                      <div class="flex items-center gap-2">
-                        <svg
-                          class="w-4 h-4 text-green-600 dark:text-green-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span class="text-xs text-gray-700 dark:text-gray-300">
-                          {{
-                            fileStates[idx]?.file?.name ||
-                            files[idx]?.name ||
-                            "File baru"
-                          }}
-                          ({{
-                            formatFileSize(
-                              fileStates[idx]?.file?.size ||
-                                files[idx]?.size ||
-                                0,
-                            )
-                          }})
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <!-- Upload button (for replace) -->
-                        <button
-                          v-if="
-                            fileStates[idx]?.isReplacing &&
-                            fileStates[idx]?.file
-                          "
-                          @click.prevent="uploadReplaceFile(idx, detail)"
-                          :disabled="fileStates[idx]?.isUploading"
-                          class="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          {{
-                            fileStates[idx]?.isUploading
-                              ? "Uploading..."
-                              : "Upload"
-                          }}
-                        </button>
-                        <button
-                          @click.prevent="
-                            fileStates[idx]?.isReplacing
-                              ? cancelReplace(idx, detail)
-                              : removeFile(idx)
-                          "
-                          :disabled="fileStates[idx]?.isUploading"
-                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs disabled:opacity-50 transition"
-                        >
-                          {{ fileStates[idx]?.isReplacing ? "Batal" : "Hapus" }}
-                        </button>
-                      </div>
-                    </div>
+                      Batal mengganti file
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1527,8 +1558,6 @@ function handleDocumentClick(e: MouseEvent) {
 
 /* Load data on mount */
 onMounted(async () => {
-  // ✅ REMOVED: fetchPersonMap - Person data (nama, penandatangan) already included in API response
-  // The getListSubmitted endpoint returns all necessary user/person data
   await fetchData();
   document.addEventListener("click", handleDocumentClick);
 });

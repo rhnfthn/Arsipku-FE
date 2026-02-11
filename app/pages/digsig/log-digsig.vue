@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <!-- GLOBAL ALERT (STICKY) -->
+    <!-- GLOBAL ALERT (STICKY) - Tampil jika alert aktif -->
     <div
-      v-if="showGlobalAlert"
+      v-if="bsreAlert?.isActive && !alertDismissed"
       class="sticky top-0 left-0 right-0 bg-red-600 dark:bg-red-700 text-white px-6 py-3 shadow-lg flex items-center gap-4 mb-5 z-50"
     >
       <!-- ICON -->
@@ -12,14 +12,16 @@
       <div class="relative overflow-hidden flex-1">
         <div class="animate-marquee whitespace-nowrap text-sm font-medium">
           <strong class="mr-2">PERHATIAN!</strong>
-          Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi
-          Elektronik)
+          {{
+            bsreAlert.message ||
+            "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
+          }}
         </div>
       </div>
 
       <!-- CLOSE BUTTON -->
       <button
-        @click="showGlobalAlert = false"
+        @click="alertDismissed = true"
         class="flex-shrink-0 p-1 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition"
         aria-label="Tutup alert"
       >
@@ -78,7 +80,7 @@
                   v-model="searchQuery"
                   @input="debounceSearch"
                   type="text"
-                  placeholder="Cari berdasarkan user, IP, atau jenis naskah..."
+                  placeholder="Cari berdasarkan user, IP, atau jenis naskah"
                   class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
                 />
                 <Search
@@ -87,19 +89,28 @@
               </div>
             </div>
 
-            <!-- BSRE HEALTH BUTTON (ALWAYS RED) -->
+            <!-- BSRE ALERT BUTTON (Dynamic color based on alert status) -->
             <button
-              class="flex items-center gap-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all"
-              @click="showConfirmModal = true"
-              :disabled="loadingHealth"
+              :class="[
+                'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
+                bsreAlert?.isActive
+                  ? 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800'
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800',
+              ]"
+              @click="
+                bsreAlert?.isActive
+                  ? openDeactivateModal()
+                  : openActivateModal()
+              "
+              :disabled="loadingAlert"
             >
               <AlertTriangle class="w-4 h-4" />
               {{
-                loadingHealth
+                loadingAlert
                   ? "Memuat..."
-                  : bsreHealth?.isHealthy
-                    ? "BsrE Normal"
-                    : "Gangguan BsrE"
+                  : bsreAlert?.isActive
+                    ? "Nonaktifkan Alert"
+                    : "Aktifkan Alert Gangguan"
               }}
             </button>
           </div>
@@ -117,7 +128,7 @@
               <tr>
                 <th
                   @click="handleSort('tanggal')"
-                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
+                  class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
                     <span>Tanggal</span>
@@ -134,7 +145,7 @@
                 </th>
                 <th
                   @click="handleSort('ipAddress')"
-                  class="px-6 py-4 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
+                  class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
                     <span>IP Address</span>
@@ -151,7 +162,7 @@
                 </th>
                 <th
                   @click="handleSort('userName')"
-                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
+                  class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
                     <span>User</span>
@@ -166,14 +177,14 @@
                     />
                   </div>
                 </th>
-                <th class="px-6 py-4 text-left text-sm tracking-wider">
+                <th class="px-4 py-3 text-left text-sm tracking-wider">
                   <div class="flex items-center gap-2">
                     <span>API Endpoint</span>
                   </div>
                 </th>
                 <th
                   @click="handleSort('jenisNaskah')"
-                  class="px-6 py-4 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
+                  class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
                     <span>Jenis Naskah</span>
@@ -192,7 +203,7 @@
                 </th>
                 <th
                   @click="handleSort('status')"
-                  class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
+                  class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
                     <span>Status </span>
@@ -485,9 +496,9 @@
       </div>
     </div>
 
-    <!-- CONFIRMATION MODAL -->
+    <!-- MODAL ACTIVATE ALERT -->
     <Teleport to="body">
-      <Modal v-model="showConfirmModal" :hideDefaultFooter="true" size="xl">
+      <Modal v-model="showActivateModal" :hideDefaultFooter="true" size="xl">
         <!-- TITLE -->
         <template #title>
           <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
@@ -500,7 +511,7 @@
               variant="heading9b"
               class="text-sm font-semibold dark:text-white"
             >
-              Konfirmasi Alert Gangguan
+              Aktifkan Alert Gangguan BsrE
             </Heading>
           </div>
         </template>
@@ -508,9 +519,16 @@
         <!-- BODY -->
         <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
           <p>
-            Apakah Anda yakin ingin mengaktifkan alert gangguan BsrE? Alert ini
-            akan ditampilkan ke seluruh pengguna sistem.
+            Masukkan pesan gangguan yang akan ditampilkan ke seluruh pengguna
+            sistem:
           </p>
+
+          <textarea
+            v-model="alertMessage"
+            placeholder="Contoh: BSrE sedang dalam maintenance sampai pukul 15:00 WIB"
+            rows="3"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+          ></textarea>
 
           <div
             class="flex items-center gap-5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm"
@@ -529,7 +547,7 @@
             class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
           >
             <button
-              @click="showConfirmModal = false"
+              @click="showActivateModal = false"
               class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
             >
               Batal
@@ -537,9 +555,79 @@
 
             <button
               @click="activateAlert"
-              class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md font-medium transition"
+              :disabled="!alertMessage.trim() || loadingAlert"
+              class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Ya, Aktifkan Alert
+              {{ loadingAlert ? "Mengaktifkan..." : "Ya, Aktifkan Alert" }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
+
+    <!-- MODAL DEACTIVATE ALERT -->
+    <Teleport to="body">
+      <Modal v-model="showDeactivateModal" :hideDefaultFooter="true" size="xl">
+        <!-- TITLE -->
+        <template #title>
+          <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
+            <div
+              class="bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400 p-3 rounded-full"
+            >
+              <AlertTriangle class="w-5 h-5" />
+            </div>
+            <Heading
+              variant="heading9b"
+              class="text-sm font-semibold dark:text-white"
+            >
+              Nonaktifkan Alert Gangguan BsrE
+            </Heading>
+          </div>
+        </template>
+
+        <!-- BODY -->
+        <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
+          <p>
+            Apakah Anda yakin ingin menonaktifkan alert gangguan BsrE? Alert
+            akan dihapus dari tampilan seluruh pengguna.
+          </p>
+
+          <div
+            class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
+          >
+            <div class="flex items-start gap-3">
+              <AlertTriangle
+                class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"
+              />
+              <div class="text-sm text-yellow-800 dark:text-yellow-300">
+                <p class="font-medium">Pesan alert saat ini:</p>
+                <p class="mt-1 italic">"{{ bsreAlert?.message }}"</p>
+                <p class="mt-2 text-xs">
+                  Diaktifkan oleh: {{ bsreAlert?.activatedByName || "-" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <template #footer>
+          <div
+            class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
+          >
+            <button
+              @click="showDeactivateModal = false"
+              class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
+            >
+              Batal
+            </button>
+
+            <button
+              @click="deactivateAlert"
+              :disabled="loadingAlert"
+              class="flex-1 px-5 py-2 text-sm mt-5 bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ loadingAlert ? "Menonaktifkan..." : "Ya, Nonaktifkan Alert" }}
             </button>
           </div>
         </template>
@@ -553,6 +641,8 @@ import Modal from "~/components/Modal.vue";
 import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
 import type { DigsigLog } from "~/types/digsig";
 
+const toast = useToast();
+
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
@@ -562,19 +652,26 @@ const {
   logs,
   meta,
   bsreHealth,
+  bsreAlert,
   loading,
   loadingHealth,
+  loadingAlert,
   error,
   fetchLogs,
   fetchBsreHealth,
+  fetchBsreAlert,
+  activateBsreAlert,
+  deactivateBsreAlert,
 } = useDigsig();
 
 // State
 const searchQuery = ref("");
 const currentPage = ref(1);
 const limitPerPage = ref(10);
-const showConfirmModal = ref(false);
-const showGlobalAlert = ref(false);
+const showActivateModal = ref(false);
+const showDeactivateModal = ref(false);
+const alertMessage = ref("");
+const alertDismissed = ref(false);
 const sortKey = ref("tanggal");
 const sortOrder = ref<"asc" | "desc">("desc");
 
@@ -630,12 +727,11 @@ function handleSort(key: string) {
     sortKey.value = key;
     sortOrder.value = "asc";
   }
-  // No need to fetch from API, sorting is done client-side
 }
 
 // Handle limit change
 const handleLimitChange = () => {
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   loadLogs();
 };
 
@@ -651,6 +747,11 @@ const loadLogs = async () => {
 // Fetch BsrE health
 const loadBsreHealth = async () => {
   await fetchBsreHealth();
+};
+
+// Fetch BsrE alert status
+const loadBsreAlert = async () => {
+  await fetchBsreAlert();
 };
 
 // Pagination
@@ -690,16 +791,75 @@ let searchTimeout: NodeJS.Timeout;
 const debounceSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1; // Reset to first page on new search
+    currentPage.value = 1;
     loadLogs();
   }, 500);
 };
 
 // Modal actions
+const openActivateModal = () => {
+  alertMessage.value = "";
+  showActivateModal.value = true;
+};
+
+const openDeactivateModal = () => {
+  showDeactivateModal.value = true;
+};
+
 const activateAlert = async () => {
-  showConfirmModal.value = false;
-  showGlobalAlert.value = true;
-  // Optional: trigger action ke backend untuk aktivasi alert
+  if (!alertMessage.value.trim()) {
+    toast.add({
+      title: "Gagal",
+      description: "Pesan alert tidak boleh kosong",
+      color: "red",
+    });
+    return;
+  }
+
+  try {
+    await activateBsreAlert(alertMessage.value);
+
+    toast.add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil diaktifkan",
+      color: "green",
+    });
+
+    showActivateModal.value = false;
+    alertDismissed.value = false; // Reset dismissed state
+
+    // Refresh alert status
+    await loadBsreAlert();
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err?.message || "Gagal mengaktifkan alert",
+      color: "red",
+    });
+  }
+};
+
+const deactivateAlert = async () => {
+  try {
+    await deactivateBsreAlert();
+
+    toast.add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil dinonaktifkan",
+      color: "green",
+    });
+
+    showDeactivateModal.value = false;
+
+    // Refresh alert status
+    await loadBsreAlert();
+  } catch (err: any) {
+    toast.add({
+      title: "Gagal",
+      description: err?.message || "Gagal menonaktifkan alert",
+      color: "red",
+    });
+  }
 };
 
 // Utils
@@ -739,6 +899,7 @@ const statusClass = (status: string) => {
 onMounted(() => {
   loadLogs();
   loadBsreHealth();
+  loadBsreAlert(); // Load alert status on mount
 });
 </script>
 

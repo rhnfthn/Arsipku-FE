@@ -151,9 +151,9 @@
               class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition"
               @click="openRowModal(row)"
             >
-              <td class="px-5 py-4 text-xs dark:text-gray-300">
+              <!-- <td class="px-5 py-4 text-xs dark:text-gray-300">
                 {{ row.id_usulan }}
-              </td>
+              </td> -->
               <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
               <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
               <td class="px-5 py-4">
@@ -439,7 +439,7 @@
                 </button>
               </div>
 
-              <!-- ✅ FILE SECTION - GREEN CLICKABLE AREA (NO EYE ICON) -->
+              <!-- ✅ FILE SECTION - GREEN CLICKABLE AREA -->
               <div
                 v-if="detail.file_name || filesByIndex[idx]"
                 @click="openPreview(detail, idx)"
@@ -743,7 +743,7 @@
           class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
         >
           <!-- Loading State -->
-          <div v-if="!previewUrl" class="flex flex-col items-center gap-3">
+          <div v-if="isLoadingPreview" class="flex flex-col items-center gap-3">
             <div
               class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary-400"
             ></div>
@@ -787,13 +787,14 @@
           </div>
 
           <!-- PDF/Document Preview -->
-          <div v-else class="w-full h-full">
+          <div v-else-if="previewUrl" class="w-full h-full">
             <!-- Iframe Preview for PDF -->
             <iframe
               v-if="previewFileName.toLowerCase().endsWith('.pdf')"
               :key="previewUrl"
               :src="previewUrl"
               class="w-full h-full border-none"
+              @load="handlePreviewLoaded"
               @error="handlePreviewError"
               allowfullscreen
             />
@@ -804,6 +805,7 @@
               :key="previewUrl"
               :src="`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`"
               class="w-full h-full border-none"
+              @load="handlePreviewLoaded"
               @error="handlePreviewError"
               allowfullscreen
             />
@@ -962,6 +964,7 @@ const openConfirmSubmit = ref(false);
 
 // Preview state
 const isOpenPreview = ref(false);
+const isLoadingPreview = ref(false);
 const previewUrl = ref("");
 const previewFileName = ref("");
 const previewError = ref("");
@@ -1093,6 +1096,37 @@ const fetchData = async () => {
       const hours = String(wibTime.getUTCHours()).padStart(2, "0");
       const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
 
+      /** ===========================
+       * GET DETAIL FILE (GET FILE FROM DETAIL)
+       * Endpoint: GET /nomor-request-detail/:detail_id/file
+       * =========================== */
+      const getDetailFile = async (detailId: string) => {
+        try {
+          console.log("📤 Fetching file for detail ID:", detailId);
+
+          const response = await api.get(
+            `/nomor-request-detail/${detailId}/file`,
+            {
+              responseType: "blob", // Important for file download
+            },
+          );
+
+          console.log("✅ File response received");
+
+          return response.data;
+        } catch (error: any) {
+          console.error("❌ Error fetching file:", error);
+
+          toast.add({
+            title: "Gagal",
+            description: "Gagal mengambil file",
+            color: "red",
+          });
+
+          throw error;
+        }
+      };
+
       return {
         id: item.id,
         id_usulan: item.id,
@@ -1165,13 +1199,14 @@ const openRowModal = async (row) => {
   }
 };
 
-// GET FILE URL - Helper function untuk construct URL yang benar
+// ✅ FIXED: GET FILE URL - Use backend endpoint to get file
 const getFileUrl = (detail, idx) => {
   console.log("🔍 getFileUrl called with:", {
-    detail_has_file: !!detail?.file_name,
-    local_file: !!filesByIndex.value[idx],
     detail,
     idx,
+    detail_id: detail?.id,
+    has_file_name: !!detail?.file_name,
+    has_local_file: !!filesByIndex.value[idx],
   });
 
   // Priority 1: Local file yang baru diupload (belum submit)
@@ -1181,29 +1216,26 @@ const getFileUrl = (detail, idx) => {
     return blobUrl;
   }
 
-  // Priority 2: file_url dari backend (presigned URL S3)
-  if (detail?.file_url) {
-    console.log("🔗 Using backend file_url:", detail.file_url);
-    return detail.file_url;
-  }
-
-  // Priority 3: file_text path (fallback, construct full URL)
-  if (detail?.file_text) {
-    const fullUrl = detail.file_text.startsWith("http")
-      ? detail.file_text
-      : `${apiBaseUrl}/${detail.file_text}`;
-    console.log("🔗 Using file_text path:", fullUrl);
-    return fullUrl;
+  // Priority 2: Backend file - construct URL dengan detail ID
+  if (detail?.file_name && detail?.id) {
+    // Endpoint untuk get file: GET /nomor-request-detail/:id/file
+    const fileUrl = `${apiBaseUrl}/nomor-request-detail/${detail.id}/file`;
+    console.log("🔗 Using backend file endpoint:", fileUrl);
+    return fileUrl;
   }
 
   console.warn("⚠️ No valid file URL found for detail:", detail);
   return null;
 };
 
-// ✅ OPEN PREVIEW - Buka slideover full page, tutup modal
+// ✅ OPEN PREVIEW - Fixed untuk handle loading state
 const openPreview = (detail, idx) => {
   console.log("📄 openPreview called with:", { detail, idx });
   console.log("📁 filesByIndex:", filesByIndex.value);
+
+  // Reset state
+  previewError.value = "";
+  isLoadingPreview.value = true;
 
   // Check if this is a local file (not yet uploaded)
   const localFile = filesByIndex.value[idx];
@@ -1211,46 +1243,56 @@ const openPreview = (detail, idx) => {
   let url = null;
   let fileName = "Dokumen";
 
-  if (localFile && localFile instanceof File) {
-    // ✅ LOCAL FILE - Create blob URL for preview
-    console.log("📎 Local file detected:", localFile.name);
-    url = URL.createObjectURL(localFile);
-    fileName = localFile.name;
-    console.log("🔗 Created blob URL:", url);
-  } else {
-    // ✅ BACKEND FILE - Use URL from backend
-    url = getFileUrl(detail, idx);
-    fileName = detail.file_name || "Dokumen";
-    console.log("☁️ Backend file URL:", url);
+  try {
+    if (localFile && localFile instanceof File) {
+      // ✅ LOCAL FILE - Create blob URL for preview
+      console.log("📎 Local file detected:", localFile.name);
+      url = URL.createObjectURL(localFile);
+      fileName = localFile.name;
+      console.log("🔗 Created blob URL:", url);
+    } else {
+      // ✅ BACKEND FILE - Use URL from backend
+      url = getFileUrl(detail, idx);
+      fileName = detail.file_name || "Dokumen";
+      console.log("☁️ Backend file URL:", url);
+    }
+
+    if (!url) {
+      console.warn("⚠️ No valid URL found");
+      toast.add({
+        title: "File tidak tersedia",
+        description: "Tidak ada file untuk ditampilkan",
+        color: "yellow",
+      });
+      isLoadingPreview.value = false;
+      return;
+    }
+
+    // Set preview data
+    previewUrl.value = url;
+    previewFileName.value = fileName;
+    currentPreviewDetail.value = detail;
+    currentPreviewIndex.value = idx;
+
+    // Tutup modal detail
+    openDetail.value = false;
+
+    // Buka slideover preview full page
+    isOpenPreview.value = true;
+
+    console.log("✅ Preview opened for:", fileName);
+    console.log("🔗 Preview URL:", url);
+  } catch (error) {
+    console.error("❌ Error opening preview:", error);
+    previewError.value = "Gagal membuka preview file";
+    isLoadingPreview.value = false;
   }
+};
 
-  if (!url) {
-    console.warn("⚠️ No valid URL found");
-    toast.add({
-      title: "File tidak tersedia",
-      description: "Tidak ada file untuk ditampilkan",
-      color: "yellow",
-    });
-    return;
-  }
-
-  // Reset error state
-  previewError.value = "";
-
-  // Set preview data
-  previewUrl.value = url;
-  previewFileName.value = fileName;
-  currentPreviewDetail.value = detail;
-  currentPreviewIndex.value = idx;
-
-  // Tutup modal detail
-  openDetail.value = false;
-
-  // Buka slideover preview full page
-  isOpenPreview.value = true;
-
-  console.log("✅ Preview opened for:", fileName);
-  console.log("🔗 Preview URL:", url);
+// Handle preview loaded
+const handlePreviewLoaded = () => {
+  console.log("✅ Preview loaded successfully");
+  isLoadingPreview.value = false;
 };
 
 // ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
@@ -1272,34 +1314,78 @@ const closePreview = () => {
   previewUrl.value = "";
   previewFileName.value = "";
   previewError.value = "";
+  isLoadingPreview.value = false;
   currentPreviewDetail.value = null;
   currentPreviewIndex.value = null;
 };
 
 // Handle preview error
 const handlePreviewError = () => {
+  console.error("❌ Preview error for:", previewFileName.value);
   previewError.value =
     "Gagal memuat dokumen. File mungkin rusak atau format tidak didukung.";
-  console.error("❌ Preview error for:", previewFileName.value);
+  isLoadingPreview.value = false;
 };
 
 // Download file
-const downloadFile = () => {
-  if (!previewUrl.value || previewError.value) return;
+const downloadFile = async () => {
+  if (previewError.value) return;
 
-  const link = document.createElement("a");
-  link.href = previewUrl.value;
-  link.download = previewFileName.value || "dokumen";
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const detail = currentPreviewDetail.value;
+    const idx = currentPreviewIndex.value;
 
-  toast.add({
-    title: "Download dimulai",
-    description: `File "${previewFileName.value}" sedang didownload`,
-    color: "green",
-  });
+    // Check if local file
+    const localFile = filesByIndex.value[idx];
+    if (localFile && localFile instanceof File) {
+      // Download local file
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(localFile);
+      link.download = localFile.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } else if (detail?.id && detail?.file_name) {
+      // Download from backend
+      const downloadUrl = `${apiBaseUrl}/nomor-request-detail/${detail.id}/file`;
+
+      // Use fetch to download with proper headers
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // Adjust based on your auth method
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = detail.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
+
+    toast.add({
+      title: "Download dimulai",
+      description: `File "${previewFileName.value}" sedang didownload`,
+      color: "green",
+    });
+  } catch (error) {
+    console.error("❌ Download error:", error);
+    toast.add({
+      title: "Gagal download",
+      description: "Terjadi kesalahan saat mendownload file",
+      color: "red",
+    });
+  }
 };
 
 // HANDLE FILE UPLOAD berdasarkan INDEX
@@ -1624,12 +1710,12 @@ onBeforeUnmount(() => {
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Usulan", to: "/penomoran/usulan" },
+  { label: "Usulan", to: "/usulan-penomoran" },
 ];
 
 /* TABLE CONFIG */
 const headers = [
-  { label: "ID Usulan", key: "id_usulan", sortable: true },
+  // { label: "ID Usulan", key: "id_usulan", sortable: true },
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
   { label: "Perihal", key: "perihal", sortable: false },

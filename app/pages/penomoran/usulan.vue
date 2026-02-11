@@ -465,19 +465,17 @@
                 </button>
               </div>
 
-              <!-- FILE SECTION -->
-              <div class="mt-2 space-y-2">
-                <!-- ADA FILE (backend / lokal) -->
+              <!-- FILE SECTION - KONSISTEN DENGAN VERIFIKASI -->
+              <div class="mt-2">
+                <!-- File sudah ada (backend atau lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
-                  class="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-md px-3 py-2"
+                  class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
                 >
-                  <!-- File info section -->
-                  <div class="flex items-start gap-3 mb-2">
-                    <!-- FILE ICON -->
-                    <div class="flex-shrink-0 mt-0.5">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 flex-1">
                       <svg
-                        class="w-5 h-5 text-green-600 dark:text-green-400"
+                        class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -486,34 +484,35 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"
                           stroke-width="2"
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
+                      <div class="flex-1">
+                        <p
+                          class="text-sm font-medium text-green-700 dark:text-green-400"
+                        >
+                          {{ detail.file_name || filesByIndex[idx]?.name }}
+                        </p>
+                        <p
+                          class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                        >
+                          {{
+                            filesByIndex[idx]
+                              ? formatFileSize(filesByIndex[idx].size)
+                              : "File terlampir"
+                          }}
+                        </p>
+                      </div>
                     </div>
 
-                    <!-- FILE INFO -->
-                    <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-medium text-green-700 dark:text-green-400 truncate"
-                      >
-                        {{ detail.file_name || filesByIndex[idx]?.name }}
-                      </p>
-                      <p
-                        class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
-                      >
-                        File berhasil diupload
-                      </p>
-                    </div>
-
-                    <!-- Remove button for local files only -->
+                    <!-- Remove button hanya untuk file lokal -->
                     <button
                       v-if="filesByIndex[idx] && !detail.file_name"
                       @click="removeFile(idx)"
-                      class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
-                      title="Hapus file"
+                      class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                     >
                       <svg
-                        class="w-4 h-4 text-red-600 dark:text-red-400"
+                        class="w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -527,45 +526,18 @@
                       </svg>
                     </button>
                   </div>
-
-                  <!-- Preview button -->
-                  <button
-                    @click="openPreview(detail, idx)"
-                    class="w-full flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    Preview
-                  </button>
                 </div>
 
-                <!-- BELUM ADA FILE & MASIH BISA UPLOAD -->
+                <!-- Upload form (belum ada file & bisa upload) -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
                 >
                   <label
-                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
                   >
                     <svg
-                      class="w-5 h-5 text-gray-400 dark:text-gray-500"
+                      class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -585,7 +557,7 @@
                         Pilih file (Opsional)
                       </span>
                       <span
-                        class="text-xs text-gray-500 dark:text-gray-400 block"
+                        class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5"
                       >
                         PDF, DOC, DOCX (Max 5MB)
                       </span>
@@ -600,14 +572,14 @@
                   </label>
                 </div>
 
-                <!-- BELUM ADA FILE & TIDAK BISA UPLOAD -->
+                <!-- Belum ada file & tidak bisa upload -->
                 <div
                   v-else
-                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
+                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
                 >
                   <div class="flex items-center gap-2">
                     <svg
-                      class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
+                      class="w-4 h-4 text-yellow-600 dark:text-yellow-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -745,45 +717,6 @@
       {{ tooltip.text }}
     </div>
   </Teleport>
-
-  <!-- ✅ PREVIEW SLIDEOVER (FULL PAGE) - SAMA SEPERTI VERIFIKASI DOKUMEN -->
-  <Teleport to="body">
-    <USlideover
-      v-model="isOpenPreview"
-      title="Pratinjau Dokumen"
-      side="bottom"
-      :dismissible="true"
-      :ui="{
-        content: 'h-screen max-h-screen',
-        body: 'p-0',
-        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-      }"
-    >
-      <template #body>
-        <div
-          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-        >
-          <iframe
-            v-if="pdfUrl"
-            :key="pdfUrl"
-            :src="pdfUrl"
-            allowfullscreen
-            class="w-full h-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-          />
-
-          <div v-else class="flex flex-col items-center gap-2">
-            <UIcon
-              name="i-lucide-loader-2"
-              class="animate-spin w-8 h-8 text-primary-500"
-            />
-            <span class="text-gray-500 dark:text-gray-400"
-              >Memuat Pratinjau...</span
-            >
-          </div>
-        </div>
-      </template>
-    </USlideover>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -823,17 +756,10 @@ const pagination = ref(null);
 
 // File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
-// ✅ Preview URLs mapping per index - UNTUK LOCAL FILE
-const previewUrlsByIndex = ref<Record<number, string>>({});
 
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const openConfirmSubmit = ref(false);
-
-// ✅ Preview state - SAMA SEPERTI VERIFIKASI DOKUMEN
-const isOpenPreview = ref(false);
-const pdfUrl = ref<string | null>(null);
-const returnToModal = ref<"detail" | null>(null);
 
 // Person mapping
 const personMap = ref(new Map());
@@ -1095,9 +1021,6 @@ const openRowModal = async (row) => {
 
     // Reset file mapping
     filesByIndex.value = {};
-    // ✅ Reset preview URLs
-    cleanupPreviewUrls();
-    previewUrlsByIndex.value = {};
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
@@ -1112,82 +1035,9 @@ const openRowModal = async (row) => {
   }
 };
 
-// ✅ OPEN PREVIEW - SAMA SEPERTI VERIFIKASI DOKUMEN
-const openPreview = (detail, idx) => {
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🎬 OPEN PREVIEW START");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("📍 Index:", idx);
-  console.log("📄 Detail:", detail);
-  console.log("📁 filesByIndex:", filesByIndex.value);
-  console.log("🔗 previewUrlsByIndex:", previewUrlsByIndex.value);
-
-  let url = null;
-
-  // Priority 1: Local file preview URL (yang baru diupload)
-  if (previewUrlsByIndex.value[idx]) {
-    url = previewUrlsByIndex.value[idx];
-    console.log("✅ Using previewUrlsByIndex (local file):", url);
-  }
-  // Priority 2: Create blob from filesByIndex (fallback)
-  else if (filesByIndex.value[idx]) {
-    url = URL.createObjectURL(filesByIndex.value[idx]);
-    console.log("✅ Created blob from filesByIndex:", url);
-  }
-  // Priority 3: Backend URLs (untuk file yang sudah ada di backend)
-  else if (detail?.file_url) {
-    url = detail.file_url;
-    console.log("✅ Using backend file_url:", url);
-  }
-
-  // Validate URL
-  if (!url) {
-    console.error("❌ No URL available");
-    toast.add({
-      title: "File tidak tersedia",
-      description:
-        "Tidak ada file untuk ditampilkan. Pastikan file sudah diupload.",
-      color: "yellow",
-    });
-    return;
-  }
-
-  console.log("🎯 Final URL:", url);
-  console.log(
-    "🔗 URL type:",
-    url.startsWith("blob:") ? "LOCAL BLOB" : "BACKEND",
-  );
-
-  // Set return modal
-  returnToModal.value = "detail";
-
-  // Close modal detail
-  console.log("🚪 Closing modal detail...");
-  openDetail.value = false;
-
-  // Reset preview state
-  isOpenPreview.value = false;
-  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(pdfUrl.value);
-  }
-  pdfUrl.value = null;
-
-  // Set preview state
-  pdfUrl.value = url;
-  isOpenPreview.value = true;
-
-  console.log("✅ Preview opened");
-  console.log("📺 pdfUrl:", pdfUrl.value);
-  console.log("🎭 isOpenPreview:", isOpenPreview.value);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🎬 OPEN PREVIEW END");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-};
-
-// ✅ HANDLE FILE - CREATE PREVIEW URL UNTUK SETIAP FILE
+// Handle file upload
 const handleFile = (index: number, event: Event) => {
-  console.log("━━━ HANDLE FILE START ━━━");
-  console.log("📍 Index:", index);
+  console.log("📎 Handle file at index:", index);
 
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -1229,41 +1079,22 @@ const handleFile = (index: number, event: Event) => {
     return;
   }
 
-  // ✅ Save file to filesByIndex
+  // Save file to filesByIndex
   filesByIndex.value[index] = file;
 
-  // ✅ CRITICAL: Create preview URL untuk index ini
-  // Clean up old preview URL jika ada
-  if (previewUrlsByIndex.value[index]) {
-    URL.revokeObjectURL(previewUrlsByIndex.value[index]);
-  }
-  // Create new preview URL
-  previewUrlsByIndex.value[index] = URL.createObjectURL(file);
-
   console.log("✅ File saved to index:", index);
-  console.log("✅ Preview URL created:", previewUrlsByIndex.value[index]);
   console.log("📊 filesByIndex:", filesByIndex.value);
-  console.log("📊 previewUrlsByIndex:", previewUrlsByIndex.value);
 
   toast.add({
     title: "File dipilih",
     description: `File "${file.name}" siap diupload`,
     color: "green",
   });
-
-  console.log("━━━ HANDLE FILE END ━━━");
 };
 
-// ✅ REMOVE FILE - CLEANUP PREVIEW URL
+// Remove file
 const removeFile = (index: number) => {
   console.log("🗑️ Removing file at index:", index);
-
-  // Clean up preview URL if exists
-  if (previewUrlsByIndex.value[index]) {
-    URL.revokeObjectURL(previewUrlsByIndex.value[index]);
-    delete previewUrlsByIndex.value[index];
-    console.log("✅ Preview URL cleaned up for index:", index);
-  }
 
   delete filesByIndex.value[index];
 
@@ -1276,63 +1107,14 @@ const removeFile = (index: number) => {
   console.log("✅ File removed");
 };
 
-// ✅ CLEANUP ALL PREVIEW URLS
-const cleanupPreviewUrls = () => {
-  console.log("🧹 Cleaning up all preview URLs...");
-  Object.values(previewUrlsByIndex.value).forEach((url) => {
-    if (url) {
-      URL.revokeObjectURL(url);
-    }
-  });
-  previewUrlsByIndex.value = {};
-  console.log("✅ All preview URLs cleaned up");
+// Format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
-
-// ✅ WATCH PREVIEW STATE - SAMA SEPERTI VERIFIKASI DOKUMEN
-watch(isOpenPreview, (newValue, oldValue) => {
-  console.log("👁️ Preview state changed:", { from: oldValue, to: newValue });
-
-  if (oldValue === true && newValue === false) {
-    console.log("👁️ Preview closed, reopening modal...");
-
-    // Clean up blob URL
-    if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
-      URL.revokeObjectURL(pdfUrl.value);
-      pdfUrl.value = null;
-    }
-
-    // Reopen modal yang ditutup tadi
-    setTimeout(() => {
-      if (returnToModal.value === "detail") {
-        openDetail.value = true;
-        returnToModal.value = null;
-        console.log("✅ Modal detail reopened");
-      }
-    }, 200);
-  }
-});
-
-onBeforeUnmount(() => {
-  console.log("🧹 Cleaning up on unmount...");
-
-  document.removeEventListener("click", handleDocumentClick);
-
-  // Clean up all preview URLs
-  cleanupPreviewUrls();
-
-  // Clean up pdfUrl
-  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(pdfUrl.value);
-    pdfUrl.value = null;
-  }
-
-  // Clear search timeout
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  console.log("✅ Cleanup complete");
-});
 
 const normalizeDetails = (details: any[], jumlah: number, template: string) => {
   const result = [];
@@ -1391,8 +1173,6 @@ function handlePreview(data: any) {
 
   // Reset file mapping
   filesByIndex.value = {};
-  cleanupPreviewUrls();
-  previewUrlsByIndex.value = {};
 }
 
 const getConfirmMessage = () => {
@@ -1446,8 +1226,6 @@ const confirmSubmitUsulan = async () => {
     });
 
     filesByIndex.value = {};
-    cleanupPreviewUrls();
-    previewUrlsByIndex.value = {};
     await fetchData();
   } catch (e) {
     console.error("❌ Submit error:", e);
@@ -1591,11 +1369,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
-
-  // Clean up any blob URLs
-  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(pdfUrl.value);
-  }
 
   // Clear search timeout
   if (searchTimeout) {

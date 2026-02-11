@@ -271,14 +271,20 @@
               </td>
               <td class="p-4">
                 <div class="flex items-center justify-center gap-4">
-                  <Eye
-                    class="w-4 h-4 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-primary dark:hover:text-primary-400 transition"
+                  <button
                     @click="openDetailModal(doc.id)"
-                  />
-                  <Pencil
-                    class="w-4 h-4 text-yellow-500 dark:text-yellow-400 cursor-pointer hover:text-yellow-700 dark:hover:text-yellow-300 transition"
+                    class="p-1 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Lihat Detail"
+                  >
+                    <Eye class="w-5 h-5" />
+                  </button>
+                  <button
                     @click="openEditModal(doc.id)"
-                  />
+                    class="p-1 text-yellow-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Lihat Detail"
+                  >
+                    <Pencil class="w-5 h-5" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -764,9 +770,9 @@
                   @click="toggleSignerDropdown"
                   class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  <span class="text-gray-500 dark:text-gray-400"
-                    >Pilih Jabatan</span
-                  >
+                  <span class="text-gray-500 dark:text-gray-400">{{
+                    loadingVerifikator ? "Loading..." : "Pilih Jabatan"
+                  }}</span>
                   <svg
                     class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
                     :class="{ 'rotate-180': showSignerDropdown }"
@@ -840,7 +846,7 @@
 
         <!-- Footer Buttons -->
         <div
-          class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700"
+          class="flex justify-between gap-3 px-0 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <button
             @click="closeModal"
@@ -1147,6 +1153,13 @@ const openFilterStatus = ref(false);
 const sortKey = ref("");
 const sortOrder = ref("asc");
 
+// Track if dropdown data has been loaded
+const dropdownDataLoaded = ref({
+  klasifikasi: false,
+  jenisNaskah: false,
+  verifikator: false,
+});
+
 function handleSort(key) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -1261,11 +1274,43 @@ const paginationPages = computed(() => {
   return pages;
 });
 
+// ✅ LAZY LOAD: Fetch dropdown data hanya saat modal dibuka
+const ensureDropdownData = async () => {
+  const promises: Promise<void>[] = [];
+
+  if (!dropdownDataLoaded.value.klasifikasi) {
+    promises.push(
+      fetchKlasifikasi().then(() => {
+        dropdownDataLoaded.value.klasifikasi = true;
+      }),
+    );
+  }
+
+  if (!dropdownDataLoaded.value.jenisNaskah) {
+    promises.push(
+      fetchJenisNaskah().then(() => {
+        dropdownDataLoaded.value.jenisNaskah = true;
+      }),
+    );
+  }
+
+  if (!dropdownDataLoaded.value.verifikator) {
+    promises.push(
+      fetchVerifikator().then(() => {
+        dropdownDataLoaded.value.verifikator = true;
+      }),
+    );
+  }
+
+  if (promises.length > 0) {
+    await Promise.all(promises);
+    console.log("✅ Dropdown data loaded");
+  }
+};
+
 onMounted(() => {
+  // ✅ HANYA FETCH DOCUMENTS SAAT LOAD
   loadDocuments();
-  fetchKlasifikasi();
-  fetchJenisNaskah();
-  fetchVerifikator();
   document.addEventListener("click", handleClickOutside);
   document.addEventListener("click", handleDropdownClickOutside);
   document.addEventListener("click", handleKlasifikasiDropdownClickOutside);
@@ -1494,17 +1539,27 @@ const getSelectedJenisNaskahLabel = () => {
     : addForm.value.jenisNaskah;
 };
 
-const toggleKlasifikasiDropdown = () => {
+const toggleKlasifikasiDropdown = async () => {
   showKlasifikasiDropdown.value = !showKlasifikasiDropdown.value;
   if (showKlasifikasiDropdown.value) {
     klasifikasiSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch klasifikasi saat dropdown dibuka
+    if (!dropdownDataLoaded.value.klasifikasi) {
+      await fetchKlasifikasi();
+      dropdownDataLoaded.value.klasifikasi = true;
+    }
   }
 };
 
-const toggleJenisNaskahDropdown = () => {
+const toggleJenisNaskahDropdown = async () => {
   showJenisNaskahDropdown.value = !showJenisNaskahDropdown.value;
   if (showJenisNaskahDropdown.value) {
     jenisNaskahSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch jenis naskah saat dropdown dibuka
+    if (!dropdownDataLoaded.value.jenisNaskah) {
+      await fetchJenisNaskah();
+      dropdownDataLoaded.value.jenisNaskah = true;
+    }
   }
 };
 
@@ -1554,10 +1609,15 @@ const onKlasifikasiChange = async () => {
   }
 };
 
-const toggleSignerDropdown = () => {
+const toggleSignerDropdown = async () => {
   showSignerDropdown.value = !showSignerDropdown.value;
   if (showSignerDropdown.value) {
     signerSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch verifikator saat dropdown dibuka
+    if (!dropdownDataLoaded.value.verifikator) {
+      await fetchVerifikator();
+      dropdownDataLoaded.value.verifikator = true;
+    }
   }
 };
 
@@ -1624,16 +1684,25 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 
-const openAddModal = () => {
+// ✅ LAZY LOAD: Fetch dropdown data saat modal add dibuka
+const openAddModal = async () => {
   isEditMode.value = false;
   editingId.value = null;
   resetForm();
+
+  // Fetch dropdown data sebelum membuka modal
+  await ensureDropdownData();
+
   openAdd.value = true;
 };
 
+// ✅ LAZY LOAD: Fetch dropdown data saat modal edit dibuka
 const openEditModal = async (id: string) => {
   isEditMode.value = true;
   editingId.value = id;
+
+  // Fetch dropdown data terlebih dahulu
+  await ensureDropdownData();
 
   try {
     const doc = await fetchDocumentDetail(id);
@@ -1704,6 +1773,7 @@ const openDetailModal = async (id: string) => {
     // Ensure klasifikasi list is loaded
     if (klasifikasiList.value.length === 0) {
       await fetchKlasifikasi();
+      dropdownDataLoaded.value.klasifikasi = true;
     }
 
     const res = await fetchDocumentDetail(id);
