@@ -310,6 +310,9 @@ import {
 } from "lucide-vue-next";
 import Modal from "@/components/Modal.vue";
 import { useManajemenAkun } from "@/composables/useManajemenAkun";
+definePageMeta({
+  middleware: "auth",
+});
 
 const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
   useManajemenAkun();

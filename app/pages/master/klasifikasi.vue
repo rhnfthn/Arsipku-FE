@@ -532,6 +532,9 @@ import type { Klasifikasi } from "~/types/klasifikasi";
 import { useKlasifikasi } from "~/composables/useKlasifikasi";
 import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const items: BreadcrumbItem[] = [
   { label: "Beranda", to: "/beranda" },

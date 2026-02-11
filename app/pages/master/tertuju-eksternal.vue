@@ -405,6 +405,9 @@ import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 import { useAuth } from "~/composables/useAuth";
 import Modal from "@/components/Modal.vue";
 import ConfirmPopup from "@/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const auth = useAuth();
 const user = auth.user;
