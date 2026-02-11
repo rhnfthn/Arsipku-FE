@@ -46,7 +46,6 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-
         <div class="pt-2">
           <div class="flex justify-between items-center gap-4">
             <div class="flex gap-3 sm:gap-4">
@@ -56,7 +55,6 @@
             <USkeleton class="h-8 w-36 rounded" />
           </div>
         </div>
-
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -73,14 +71,11 @@
             <USkeleton class="h-3 w-full" />
           </div>
         </div>
-
         <USkeleton class="h-30 w-full rounded-md" />
-
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
           <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
-
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
@@ -90,10 +85,10 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+          :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+          :groups="recipientGroups" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -274,6 +269,7 @@
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
+
       </div>
     </UCard>
 
@@ -295,7 +291,6 @@
         <div class="flex gap-4 w-full">
           <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
-
           <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="confirmKirimDokumen" />
         </div>
@@ -407,11 +402,6 @@ import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
-import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TemplateManager from '@/components/Tulis/TemplateManager.vue';
-
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
@@ -441,10 +431,56 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useRecipients();
-const { isLoadingDraft, getDraftDetail } = useDraft();
+const { getRecipients, getRecipientGroups } = useRecipients();
+const recipientGroups = ref<any[]>([]);
+const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
 const { getKtp } = useDigSign();
+
+const isGroupSelected = (group: any, type: 'tertuju' | 'tembusan') => {
+  const targetList = type === 'tertuju' ? selectedTertuju.value : selectedTembusan.value;
+  const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
+
+  if (groupPositions.length === 0) return false;
+  const validGroupItems = items.value.filter(i => groupPositions.includes(i.value));
+
+  if (validGroupItems.length === 0) return false;
+  return validGroupItems.every(gItem =>
+    targetList.some(selected => selected.value === gItem.value)
+  );
+};
+
+const toggleGroup = (isChecked: boolean, group: any, type: 'tertuju' | 'tembusan') => {
+  const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
+
+  const itemsInGroup = items.value.filter(i => groupPositions.includes(i.value));
+
+  if (type === 'tertuju') {
+    if (isChecked) {
+      const toAdd = itemsInGroup.filter(item =>
+        !selectedTertuju.value.some(s => s.value === item.value) &&
+        !selectedTembusan.value.some(s => s.value === item.value)
+      );
+      selectedTertuju.value = [...selectedTertuju.value, ...toAdd];
+    } else {
+      selectedTertuju.value = selectedTertuju.value.filter(
+        s => !groupPositions.includes(s.value)
+      );
+    }
+  } else {
+    if (isChecked) {
+      const toAdd = itemsInGroup.filter(item =>
+        !selectedTembusan.value.some(s => s.value === item.value) &&
+        !selectedTertuju.value.some(s => s.value === item.value)
+      );
+      selectedTembusan.value = [...selectedTembusan.value, ...toAdd];
+    } else {
+      selectedTembusan.value = selectedTembusan.value.filter(
+        s => !groupPositions.includes(s.value)
+      );
+    }
+  }
+};
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -800,6 +836,9 @@ onMounted(async () => {
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
+    const groups = await getRecipientGroups();
+    // Hanya tampilkan grup yang aktif
+    recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch {
     klasifikasiStatus.value = "error";
   }
@@ -873,10 +912,7 @@ onMounted(async () => {
 }
 
 .tox-fullscreen {
-  /* Harus lebih besar dari z-index Sidebar (93) dan Navbar (92) */
   z-index: 9999 !important;
-
-  /* Memastikan posisinya menutupi seluruh layar */
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;

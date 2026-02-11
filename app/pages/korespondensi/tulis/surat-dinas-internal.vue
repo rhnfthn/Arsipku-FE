@@ -81,7 +81,6 @@
         </div>
       </div>
 
-
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
@@ -92,10 +91,11 @@
         <TulisInputSifat v-model="selectedSifat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+          :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
-          :items="tembusanItems" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+          :items="tembusanItems" :groups="recipientGroups" :exclude-items="selectedTertuju"
+          disabled-message="Sudah dipilih di Tertuju" />
 
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600  gap-1 sm:gap-0">
@@ -344,11 +344,14 @@ import { validateSDIPayload, type SDIPayload } from "~/types/sdi";
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const alertState = useAlertState(); // Asumsi ada global alert state
+const alertState = useAlertState();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getDraftDetail } = useDraft(); // Asumsi generic draft logic
+// Pastikan useRecipients diimport (biasanya auto-import di Nuxt)
+// Kita butuh getRecipientGroups dari sini
+const { getRecipientGroups } = useRecipients();
+const { getDraftDetail } = useDraft();
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 
 const breadcrumbs = [
@@ -384,9 +387,10 @@ const existingFiles = ref<any[]>([]);
 // Selection
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
+const recipientGroups = ref<any[]>([]); // <--- STATE BARU UNTUK GRUP
 const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
-const selectedSifat = ref<any>(null); // {label: 'Biasa', value: 'biasa'}
+const selectedSifat = ref<any>(null);
 
 // PDF
 const pdfBlob = ref<Blob | null>(null);
@@ -446,7 +450,7 @@ const getPayload = (): SDIPayload => {
     nama_lengkap: user.value?.nama || "",
 
     tgl: tglDb,
-    tanggal: tglDisplay, // UI Helper
+    tanggal: tglDisplay,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)
   };
 };
@@ -457,7 +461,6 @@ const createFormData = (payload: SDIPayload, includePdf: boolean = false) => {
   Object.keys(payload).forEach((key) => {
     const k = key as keyof SDIPayload;
 
-    // ✅ TAMBAHAN: Skip key 'tanggal' agar backend tidak error
     if (k === 'tanggal') return;
 
     const value = payload[k];
@@ -469,7 +472,6 @@ const createFormData = (payload: SDIPayload, includePdf: boolean = false) => {
   });
 
   if (includePdf && pdfBlob.value) {
-    // Tambahkan fallback jika perihal kosong agar tidak error di .replace
     const judul = payload.perihal || 'dokumen';
     const safeName = judul.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
     formData.append("final_pdf", pdfBlob.value, `SDI_${safeName}.pdf`);
@@ -519,7 +521,6 @@ const handlePreview = async () => {
 };
 
 const confirmKirimDokumen = async () => {
-  // Logic confirm dialog disini (bisa pakai window.confirm atau custom component)
   if (!confirm("Apakah Anda yakin ingin mengirim dokumen ini?")) return;
 
   const payload = getPayload();
@@ -527,20 +528,16 @@ const confirmKirimDokumen = async () => {
   loadingMessage.value = "Mengirim...";
 
   try {
-    // Regenerate PDF untuk memastikan konten terbaru
     const fdPreview = createFormData(payload, false);
     const blob = await generatePdf(fdPreview);
     pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
 
-    // Kirim Final
     const fdFinal = createFormData(payload, true);
     let res;
 
     if (editDraftId.value) {
-      // Jika dari draft, pake endpoint PUT send-draft
       res = await sendDraft(fdFinal, editDraftId.value);
     } else {
-      // Jika baru
       res = await sendSDI(fdFinal);
     }
 
@@ -561,7 +558,7 @@ const confirmSaveDraft = async () => {
   loadingMessage.value = "Menyimpan Draft...";
 
   try {
-    const fd = createFormData(payload, false); // Draft tidak wajib PDF binary
+    const fd = createFormData(payload, false);
     await saveDraft(fd, editDraftId.value);
     toast.add({ title: 'Draft Disimpan', color: 'success' });
     router.push("/korespondensi/draf");
@@ -582,51 +579,49 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, recRes] = await Promise.all([
+
+    // Fetch Data (Klasifikasi, Recipients, Groups)
+    // PERBAIKAN: Menambahkan getRecipientGroups() ke dalam Promise.all
+    const [klasRes, recRes, groupsRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(user.value?.position)
+      getRecipients(user.value?.position),
+      getRecipientGroups().catch(() => []) // Catch error jika endpoint belum siap
     ]);
 
     klasifikasiList.value = klasRes;
 
-    // recRes.recipients sudah berupa array flat dengan property 'group' (REKAN, TEMBUSAN, dll)
-    // hasil dari normalizeRecipients di useSDI
-    const rawRec = recRes.recipients || [];
+    // PERBAIKAN: Set Recipient Groups State
+    recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
-    // 1. Helper Mapping ke format UI Dropdown
+    const rawRec = recRes?.recipients || recRes?.data || [];
+
+    // Helper Mapping ke format UI Dropdown
     const mapToOption = (r: any) => ({
       label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),
-      group: r.group, // Penting untuk filtering
+      group: r.group,
       raw: r
     });
 
-    // 2. Map semua data dulu
     const allMapped = rawRec.map(mapToOption);
 
-    // 3. Filter untuk TERTUJU (Hanya REKAN)
-    // Sesuaikan string 'REKAN' dengan key JSON response Anda
+    // Filter untuk TERTUJU (Hanya REKAN)
     tertujuItems.value = allMapped.filter(i => i.group === 'REKAN');
 
-    // 4. Filter untuk TEMBUSAN (Merge REKAN + TEMBUSAN)
+    // Filter untuk TEMBUSAN (Merge REKAN + TEMBUSAN)
     tembusanItems.value = allMapped.filter(i => i.group === 'REKAN' || i.group === 'TEMBUSAN');
 
     klasifikasiStatus.value = "success";
 
-    // ... (Logika load draft biarkan sama, tapi perbaiki pencarian masternya)
-    // ...
-    // Saat mapping draft, cari di 'allMapped' agar ketemu semua kemungkinan
+    // Load Draft logic...
     const mapApiToUI = (list: any[]) => {
       if (!list || list.length === 0) return [];
       return list.map(item => {
         const posId = String(item.position_id || item.position || item.value || item.id);
-        // Cari di master list lengkap (allMapped)
         const master = allMapped.find(m => m.value === posId);
         if (master) return master;
-
-        // Fallback
         return {
           label: `${item.persnum || ''} - ${item.positionText || item.labelJob || ''}`,
           labelJob: item.positionText || item.labelJob || item.label || '',
@@ -635,56 +630,39 @@ onMounted(async () => {
         };
       });
     };
-    // ...
 
   } catch (e) {
     console.error(e);
-    // ...
   } finally {
     isLoadingData.value = false;
   }
 
-  // Load Draft if exists (Logic similar to ND)
+  // Load Draft if exists
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
       loadingMessage.value = "Memuat data draft...";
       editDraftId.value = draftId;
-
-      // Ambil detail draft
       const resDraft = await getSDIDetail(draftId);
 
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
-
-        // 1. Basic Fields (Perihal, Konten)
         subject.value = d.perihal || "";
         lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
-        // Update TinyMCE jika editor sudah siap
-        if (tinymceEditor.value) {
-          tinymceEditor.value.setContent(d.konten || "");
-        }
+        if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 
-        // 2. Klasifikasi
-        // Mencari ID klasifikasi berdasarkan kode yang tersimpan
         if (d.klasifikasi) {
           const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        // 3. Helper Mapping Recipient (API Object -> UI Dropdown Item)
-        // Fungsi ini menangani jika data user belum ada di list 'items' awal
         const mapApiToUI = (list: any[]) => {
           if (!list || list.length === 0) return [];
           return list.map(item => {
-            // Coba cari di master list 'items'
             const posId = String(item.position_id || item.position || item.value || item.id);
             const master = tertujuItems.value.find(m => m.value === posId) || tembusanItems.value.find(m => m.value === posId);
-
             if (master) return master;
-
-            // Jika tidak ada di master list (misal pejabat lama), construct manual
             return {
               label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
               labelJob: item.positionText || item.labelJob || item.label || '',
@@ -694,11 +672,9 @@ onMounted(async () => {
           });
         };
 
-        // 4. Set Tertuju & Tembusan
         selectedTertuju.value = mapApiToUI(d.tertuju);
         selectedTembusan.value = mapApiToUI(d.tembusan);
 
-        // 5. Lampiran Files
         if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
@@ -708,8 +684,6 @@ onMounted(async () => {
           }));
         }
 
-        // 6. Sifat Surat
-        // Kita definisikan opsi manual disini jika 'sifatOptions' tidak global
         const opsiSifat = [
           { label: "Sangat Rahasia", value: "sangat rahasia" },
           { label: "Rahasia", value: "rahasia" },
@@ -719,7 +693,6 @@ onMounted(async () => {
         const draftSifat = String(d.sifat || 'biasa').toLowerCase();
         selectedSifat.value = opsiSifat.find(opt => opt.value === draftSifat) || opsiSifat[3];
 
-        // 7. Tanggal (Format: YYYY-MM-DD -> CalendarDate)
         if (d.tgl) {
           const parts = d.tgl.split('-');
           if (parts.length === 3) {
@@ -731,13 +704,10 @@ onMounted(async () => {
       console.error("Error loading draft detail:", error);
       toast.add({ title: 'Gagal memuat data draft', color: 'error' });
     }
+    isLoadingData.value = false;
   }
-
-  // Matikan loading setelah semua selesai
-  isLoadingData.value = false;
 });
 
-// Watch Existing Files untuk update text lampiran
 watch(existingFiles, (newFiles) => {
   const jumlah = newFiles ? newFiles.length : 0;
   if (jumlah > 0) {

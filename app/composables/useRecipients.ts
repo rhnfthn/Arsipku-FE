@@ -53,5 +53,12 @@ export const useRecipients = () => {
     };
   };
 
-  return { getRecipients };
+  const getRecipientGroups = async () => {
+    const res = await apiGet<{ success: boolean; data: any[] }>(
+      "/persuratan/grup-penerima",
+    );
+    return res?.data || [];
+  };
+
+  return { getRecipients, getRecipientGroups };
 };
