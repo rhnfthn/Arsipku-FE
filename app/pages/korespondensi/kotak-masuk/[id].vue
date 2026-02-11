@@ -47,8 +47,9 @@ const showRejectOptionsModal = ref(false);
 // State UI Logic
 const showAllKepada = ref(false);
 const showAllTembusan = ref(false);
-const isContentExpanded = ref(false); // This is for main content (non-konsep)
-const showReadMoreButton = ref(false); // This is for main content (non-konsep)
+const isContentExpanded = ref(false);
+const showReadMoreButton = ref(false);
+const contentWrapperHeight = ref('auto')
 
 // Iframe Refs for flows (konsep data)
 const iframeRefs = ref<HTMLIFrameElement[]>([]);
@@ -264,11 +265,11 @@ const loadData = async () => {
         let contentTitle = 'Isi Surat';
 
         if (currentIsJenisDI) {
-            mainContent = rawData.detail?.catatan || rawData.catatan || '';
-            contentTitle = 'Catatan Disposisi';
+          mainContent = rawData.detail?.catatan || rawData.catatan || '';
+          contentTitle = 'Catatan Disposisi';
         } else {
-            mainContent = rawData.konten || '';
-            contentTitle = 'Isi Surat';
+          mainContent = rawData.konten || '';
+          contentTitle = 'Isi Surat';
         }
 
         selected.value = {
@@ -326,7 +327,6 @@ const isJenisDI = computed(() => {
 const displayedKepada = computed(() => showAllKepada.value ? (selected.value?.kepada || []) : (selected.value?.kepada || []).slice(0, LIMIT_DISPLAY));
 const hiddenKepadaCount = computed(() => Math.max((selected.value?.kepada || []).length - LIMIT_DISPLAY, 0));
 
-// --- IFRAME RESIZER ---
 const resizeMainIframe = () => {
   if (!mainIframe.value) return;
   const iWindow = mainIframe.value?.contentWindow;
@@ -334,20 +334,49 @@ const resizeMainIframe = () => {
   const doc = iWindow.document;
 
   const performResize = () => {
-    mainIframe.value!.style.height = 'auto'; // Reset height before calculating
+    // Reset tinggi iframe agar bisa menghitung scrollHeight sebenarnya (jika konten menyusut)
+    mainIframe.value!.style.height = 'auto';
+
+    // Hitung tinggi konten asli di dalam iframe
     const contentHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight);
-    mainIframe.value!.style.height = (contentHeight + 20) + 'px';
-    showReadMoreButton.value = contentHeight > MAX_CONTENT_HEIGHT;
-    if (!showReadMoreButton.value) isContentExpanded.value = true;
-    else isContentExpanded.value = false; // Reset expand state if new content requires read more
+
+    // Set tinggi iframe sesuai konten (+ buffer dikit biar aman)
+    const finalHeight = contentHeight + 20;
+    mainIframe.value!.style.height = finalHeight + 'px';
+
+    // Cek apakah konten melebihi batas yang ditentukan (MAX_CONTENT_HEIGHT)
+    // Jika melebihi, tampilkan tombol "Baca Selengkapnya"
+    showReadMoreButton.value = finalHeight > MAX_CONTENT_HEIGHT;
+
+    // Set tinggi wrapper awal
+    if (showReadMoreButton.value && !isContentExpanded.value) {
+      contentWrapperHeight.value = `${MAX_CONTENT_HEIGHT}px`; // Tinggi terpotong
+    } else {
+      contentWrapperHeight.value = `${finalHeight}px`; // Tinggi penuh
+      isContentExpanded.value = true; // Auto expand jika konten pendek
+    }
   };
 
-  // Perform resize after a short delay and again after a longer delay for content stability
   setTimeout(performResize, 100);
   setTimeout(performResize, 500);
 };
-const toggleMainContent = () => isContentExpanded.value = !isContentExpanded.value;
-watch(() => selected.value?.mainDisplayContentHtml, async () => { await nextTick(); resizeMainIframe(); }); // Watch mainDisplayContentHtml
+
+// Fungsi Toggle dengan Animasi Smooth
+const toggleMainContent = () => {
+  isContentExpanded.value = !isContentExpanded.value;
+
+  if (isContentExpanded.value) {
+    // Saat dibuka: Set tinggi ke tinggi iframe asli
+    if (mainIframe.value) {
+      contentWrapperHeight.value = mainIframe.value.style.height;
+    }
+  } else {
+    // Saat ditutup: Set kembali ke batas maksimum (MAX_CONTENT_HEIGHT)
+    contentWrapperHeight.value = `${MAX_CONTENT_HEIGHT}px`;
+  }
+};
+
+watch(() => selected.value?.mainDisplayContentHtml, async () => { await nextTick(); resizeMainIframe(); });
 
 // --- PREVIEW ---
 const goBack = () => router.back();
@@ -454,7 +483,8 @@ const openMainPdfPreview = () => {
                 </div>
               </div>
 
-              <div v-if="flow.aksi === 'create' || flow.aksi === 'forward'" class="mb-4 flex flex-col md:flex-row gap-2">
+              <div v-if="flow.aksi === 'create' || flow.aksi === 'forward'"
+                class="mb-4 flex flex-col md:flex-row gap-2">
                 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[80px] mt-0.5">Pengirim
                 </div>
                 <div class="flex flex-col gap-1 w-full min-w-0">
@@ -576,7 +606,7 @@ const openMainPdfPreview = () => {
                     </p>
 
                     <p v-else class="text-sm text-gray-400 italic">
-                    Tidak ada catatan
+                      Tidak ada catatan
                     </p>
                   </div>
                 </template>
@@ -641,7 +671,8 @@ const openMainPdfPreview = () => {
             class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative">
 
             <div class="border-y border-gray-100 dark:border-gray-800">
-              <div class="border-y border-gray-100 dark:border-gray-800 h-14 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-gray-900">
+              <div
+                class="border-y border-gray-100 dark:border-gray-800 h-14 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-gray-900">
                 <div class="flex items-center gap-2 min-w-0">
                   <button @click="goBack"
                     class="rounded-full text-gray-600 focus:outline-none hover:bg-gray-100 p-1 transition-colors">
@@ -752,23 +783,20 @@ const openMainPdfPreview = () => {
                 class="bg-gray-50 dark:bg-gray-950/50 rounded-lg p-5 border border-gray-100 dark:border-gray-800 relative">
 
                 <template v-if="selected.mainDisplayContentHtml">
-                  <div
-                    class="relative overflow-hidden w-full transition-all duration-500 ease-in-out"
-                    :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
-
-                    <span
+                  <div class="relative overflow-hidden w-full transition-all duration-500 ease-in-out"
+                    :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[150px]' : 'max-h-full pb-6']">
+                    <!-- <span
                       class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3 border-b border-gray-200 pb-2">
                       {{ selected.mainDisplayContentTitle }}
-                    </span>
+                    </span> -->
 
-                    <iframe :ref="mainIframe"
-                      :srcdoc="'<style>body{margin:0;padding:0;font-family:ui-sans-serif, system-ui, sans-serif; color:#374151;}</style>' + selected.mainDisplayContentHtml"
-                      class="w-full bg-transparent block" style="border: none;" scrolling="no"
-                      @load="resizeMainIframe">
+                    <iframe :ref="(el) => { mainIframe = el as HTMLIFrameElement }"
+                      :srcdoc="'<style>body{margin:0;padding:0;font-family:ui-sans-serif, system-ui, sans-serif; color:#374151; white-space: pre-wrap; word-break: break-word; line-height: 1.5;}</style>' + selected.mainDisplayContentHtml"
+                      class="w-full bg-transparent block" style="border: none;" scrolling="no" @load="resizeMainIframe">
                     </iframe>
 
                     <div v-show="showReadMoreButton && !isContentExpanded"
-                      class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 pointer-events-none">
+                      class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 pointer-events-none">
                     </div>
                   </div>
 
@@ -784,6 +812,7 @@ const openMainPdfPreview = () => {
                     </button>
                   </div>
                 </template>
+
                 <template v-else>
                   <p class="text-sm text-gray-400 italic">
                     Tidak ada konten untuk ditampilkan.
