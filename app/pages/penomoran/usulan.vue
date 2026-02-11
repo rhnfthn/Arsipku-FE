@@ -23,14 +23,14 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
         <!-- Rows dropdown -->
-        <div class="flex items-center gap-2 px-4 py-2">
+        <div class="flex items-center gap-2 px-4">
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -470,12 +470,10 @@
                 <!-- ADA FILE (backend / lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
-                  class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md px-3 py-2 transition-colors"
+                  class="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-md px-3 py-2"
                 >
-                  <button
-                    @click="openPreview(detail, idx)"
-                    class="flex items-start gap-3 flex-1 text-left transition rounded-md group"
-                  >
+                  <!-- File info section -->
+                  <div class="flex items-start gap-3 mb-2">
                     <!-- FILE ICON -->
                     <div class="flex-shrink-0 mt-0.5">
                       <svg
@@ -496,21 +494,26 @@
                     <!-- FILE INFO -->
                     <div class="flex-1 min-w-0">
                       <p
-                        class="text-sm font-medium text-green-700 dark:text-green-400 underline decoration-green-600/30 group-hover:decoration-green-600 dark:decoration-green-400/30 dark:group-hover:decoration-green-400 transition-colors truncate"
+                        class="text-sm font-medium text-green-700 dark:text-green-400 truncate"
                       >
                         {{ detail.file_name || filesByIndex[idx]?.name }}
                       </p>
                       <p
                         class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
                       >
-                        Klik untuk preview
+                        File berhasil diupload
                       </p>
                     </div>
 
-                    <!-- PREVIEW ICON -->
-                    <div class="flex-shrink-0 ml-2">
+                    <!-- Remove button for local files only -->
+                    <button
+                      v-if="filesByIndex[idx] && !detail.file_name"
+                      @click="removeFile(idx)"
+                      class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
+                      title="Hapus file"
+                    >
                       <svg
-                        class="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
+                        class="w-4 h-4 text-red-600 dark:text-red-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -519,27 +522,19 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"
                           stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
 
-                  <!-- Remove button for local files only -->
+                  <!-- Preview button -->
                   <button
-                    v-if="filesByIndex[idx] && !detail.file_name"
-                    @click="removeFile(idx)"
-                    class="ml-2 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
-                    title="Hapus file"
+                    @click="openPreview(detail, idx)"
+                    class="w-full flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     <svg
-                      class="w-4 h-4 text-red-600 dark:text-red-400"
+                      class="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -548,9 +543,16 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
+                    Preview
                   </button>
                 </div>
 
@@ -744,182 +746,39 @@
     </div>
   </Teleport>
 
-  <!-- PREVIEW SLIDEOVER (FULL PAGE) -->
+  <!-- ✅ PREVIEW SLIDEOVER (FULL PAGE) - SAMA SEPERTI VERIFIKASI DOKUMEN -->
   <Teleport to="body">
     <USlideover
       v-model="isOpenPreview"
+      title="Pratinjau Dokumen"
       side="bottom"
+      :dismissible="true"
       :ui="{
-        width: 'w-screen max-w-full',
-        overlay: {
-          background: 'bg-gray-900/90 dark:bg-gray-900/95',
-        },
-        base: 'h-screen max-h-screen',
-        body: 'p-0 flex-1 overflow-hidden',
-        header:
-          'border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
-        footer:
-          'border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
+        content: 'h-screen max-h-screen',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
       }"
     >
-      <template #header>
-        <div class="flex items-center justify-between w-full px-6 py-4">
-          <div class="flex items-center gap-3">
-            <svg
-              class="w-5 h-5 text-primary dark:text-primary-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            <h3 class="text-lg font-semibold dark:text-gray-100">
-              Preview Dokumen
-            </h3>
-          </div>
-          <button
-            @click="closePreview"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Tutup preview"
-          >
-            <svg
-              class="w-5 h-5 text-gray-600 dark:text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-      </template>
-
       <template #body>
         <div
           class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
         >
-          <!-- Loading State -->
-          <div v-if="!previewUrl" class="flex flex-col items-center gap-3">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary-400"
-            ></div>
-            <span class="text-gray-500 dark:text-gray-400"
-              >Memuat Preview...</span
-            >
-          </div>
-
-          <!-- Error State -->
-          <div
-            v-else-if="previewError"
-            class="flex flex-col items-center gap-3 p-6"
-          >
-            <svg
-              class="w-16 h-16 text-red-500 dark:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div class="text-center">
-              <p class="text-gray-700 dark:text-gray-300 font-medium">
-                Gagal memuat preview
-              </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ previewError }}
-              </p>
-            </div>
-            <button
-              @click="closePreview"
-              class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Tutup
-            </button>
-          </div>
-
-          <!-- Iframe Preview -->
           <iframe
-            v-else
-            :key="previewUrl"
-            :src="previewUrl"
-            class="w-full h-full border-none"
-            @error="handlePreviewError"
+            v-if="pdfUrl"
+            :key="pdfUrl"
+            :src="pdfUrl"
             allowfullscreen
+            class="w-full h-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
           />
-        </div>
-      </template>
 
-      <template #footer>
-        <div class="flex items-center justify-between px-6 py-4">
-          <div
-            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div v-else class="flex flex-col items-center gap-2">
+            <UIcon
+              name="i-lucide-loader-2"
+              class="animate-spin w-8 h-8 text-primary-500"
+            />
+            <span class="text-gray-500 dark:text-gray-400"
+              >Memuat Pratinjau...</span
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <span class="truncate max-w-md">{{
-              previewFileName || "Dokumen"
-            }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              v-if="previewUrl && !previewError"
-              @click="downloadFile"
-              class="px-4 py-2 text-sm bg-primary text-white hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
-              title="Download file"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              Download
-            </button>
-            <button
-              @click="closePreview"
-              class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-            >
-              Tutup
-            </button>
           </div>
         </div>
       </template>
@@ -964,18 +823,17 @@ const pagination = ref(null);
 
 // File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
+// ✅ Preview URLs mapping per index - UNTUK LOCAL FILE
+const previewUrlsByIndex = ref<Record<number, string>>({});
 
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const openConfirmSubmit = ref(false);
 
-// Preview state
+// ✅ Preview state - SAMA SEPERTI VERIFIKASI DOKUMEN
 const isOpenPreview = ref(false);
-const previewUrl = ref("");
-const previewFileName = ref("");
-const previewError = ref("");
-const currentPreviewDetail = ref(null);
-const currentPreviewIndex = ref(null);
+const pdfUrl = ref<string | null>(null);
+const returnToModal = ref<"detail" | null>(null);
 
 // Person mapping
 const personMap = ref(new Map());
@@ -1023,7 +881,6 @@ const fetchPersonMap = async () => {
   }
 };
 
-// ✅ FETCH DATA - Menggunakan endpoint dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
   loading.value = true;
 
@@ -1035,8 +892,6 @@ const fetchData = async () => {
       return;
     }
 
-    // Build params object sesuai dokumentasi API
-    // Parameter: sort_by dan sort_order (BUKAN sortBy)
     const params = {
       search: search.value || undefined,
       page: currentPage.value,
@@ -1048,7 +903,6 @@ const fetchData = async () => {
 
     console.log("📤 Fetching data with params:", params);
 
-    // ✅ HIT ENDPOINT
     const response = await getListUsulan(String(user.value.position), params);
 
     console.log("📥 Backend response:", response);
@@ -1066,10 +920,8 @@ const fetchData = async () => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
-      // Map status dari backend
       let mappedStatus = item.status || "Belum Diajukan";
 
-      // Normalize status text
       if (mappedStatus === "Menunggu Verifikasi") {
         mappedStatus = "Menunggu Verifikasi";
       } else if (mappedStatus === "Disetujui") {
@@ -1084,7 +936,6 @@ const fetchData = async () => {
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
 
       const createdDate = new Date(item.created_at);
-      // Convert to WIB (UTC+7)
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
 
       const day = String(wibTime.getUTCDate()).padStart(2, "0");
@@ -1122,70 +973,60 @@ const fetchData = async () => {
   }
 };
 
-// Handle search input with debounce
 const handleSearchInput = () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
 
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1; // Reset to first page on search
+    currentPage.value = 1;
     fetchData();
-  }, 500); // 500ms debounce
+  }, 500);
 };
 
-// Handle sorting
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    // Toggle sort order
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // New column, default to desc (sesuai dokumentasi)
     sortBy.value = column;
     sortOrder.value = "desc";
   }
 
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Get sort icon for column
 const getSortIcon = (column: string) => {
   if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down"; // Default unsorted icon
+    return "i-lucide-arrow-up-down";
   }
   return sortOrder.value === "asc"
     ? "i-lucide-arrow-up"
     : "i-lucide-arrow-down";
 };
 
-// Handle page change
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   fetchData();
 };
 
-// Handle limit change
 const handleLimitChange = () => {
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Select filter status
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Computed total pages from backend pagination
 const totalPages = computed(() => {
   return pagination.value?.totalPages || 1;
 });
 
-// Computed pagination pages for display
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
@@ -1208,12 +1049,10 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// ✅ OPEN ROW MODAL - HIT ENDPOINT DETAIL
 const openRowModal = async (row) => {
   try {
     console.log("🔍 Opening row modal for:", row.id);
 
-    // ✅ HIT ENDPOINT DETAIL: GET /admin/nomor-request/{id}
     const detailData = await getDetailUsulan(row.id);
 
     if (!detailData) {
@@ -1237,6 +1076,8 @@ const openRowModal = async (row) => {
       detailData.template_nomor || "",
     );
 
+    console.log("📋 Normalized details:", normalizedDetails);
+
     selectedRow.value = {
       id_usulan: detailData.id,
       jenis: detailData.jenis,
@@ -1254,9 +1095,13 @@ const openRowModal = async (row) => {
 
     // Reset file mapping
     filesByIndex.value = {};
+    // ✅ Reset preview URLs
+    cleanupPreviewUrls();
+    previewUrlsByIndex.value = {};
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
+    console.log("📊 Total details:", selectedRow.value.details.length);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
     toast.add({
@@ -1267,126 +1112,96 @@ const openRowModal = async (row) => {
   }
 };
 
-// GET FILE URL - Helper function untuk construct URL yang benar
-const getFileUrl = (detail, idx) => {
-  // Priority 1: Local file yang baru diupload
-  if (filesByIndex.value[idx]) {
-    const blobUrl = URL.createObjectURL(filesByIndex.value[idx]);
-    console.log("🔗 Using local blob URL:", blobUrl);
-    return blobUrl;
-  }
-
-  // Priority 2: file_url dari backend (presigned URL)
-  if (detail.file_url) {
-    console.log("🔗 Using backend file_url:", detail.file_url);
-    return detail.file_url;
-  }
-
-  // Priority 3: file_text path (fallback, construct full URL)
-  if (detail.file_text) {
-    const fullUrl = detail.file_text.startsWith("http")
-      ? detail.file_text
-      : `${apiBaseUrl}/${detail.file_text}`;
-    console.log("🔗 Using file_text path:", fullUrl);
-    return fullUrl;
-  }
-
-  console.warn("⚠️ No valid file URL found for detail:", detail);
-  return null;
-};
-
-// ✅ OPEN PREVIEW - Buka slideover full page
+// ✅ OPEN PREVIEW - SAMA SEPERTI VERIFIKASI DOKUMEN
 const openPreview = (detail, idx) => {
-  const url = getFileUrl(detail, idx);
-  const fileName =
-    detail.file_name || filesByIndex.value[idx]?.name || "Dokumen";
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("🎬 OPEN PREVIEW START");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("📍 Index:", idx);
+  console.log("📄 Detail:", detail);
+  console.log("📁 filesByIndex:", filesByIndex.value);
+  console.log("🔗 previewUrlsByIndex:", previewUrlsByIndex.value);
 
+  let url = null;
+
+  // Priority 1: Local file preview URL (yang baru diupload)
+  if (previewUrlsByIndex.value[idx]) {
+    url = previewUrlsByIndex.value[idx];
+    console.log("✅ Using previewUrlsByIndex (local file):", url);
+  }
+  // Priority 2: Create blob from filesByIndex (fallback)
+  else if (filesByIndex.value[idx]) {
+    url = URL.createObjectURL(filesByIndex.value[idx]);
+    console.log("✅ Created blob from filesByIndex:", url);
+  }
+  // Priority 3: Backend URLs (untuk file yang sudah ada di backend)
+  else if (detail?.file_url) {
+    url = detail.file_url;
+    console.log("✅ Using backend file_url:", url);
+  }
+
+  // Validate URL
   if (!url) {
+    console.error("❌ No URL available");
     toast.add({
       title: "File tidak tersedia",
-      description: "Tidak ada file untuk ditampilkan",
+      description:
+        "Tidak ada file untuk ditampilkan. Pastikan file sudah diupload.",
       color: "yellow",
     });
     return;
   }
 
-  // Reset error state
-  previewError.value = "";
+  console.log("🎯 Final URL:", url);
+  console.log(
+    "🔗 URL type:",
+    url.startsWith("blob:") ? "LOCAL BLOB" : "BACKEND",
+  );
 
-  // Set preview data
-  previewUrl.value = url;
-  previewFileName.value = fileName;
-  currentPreviewDetail.value = detail;
-  currentPreviewIndex.value = idx;
+  // Set return modal
+  returnToModal.value = "detail";
 
-  // Tutup modal detail
+  // Close modal detail
+  console.log("🚪 Closing modal detail...");
   openDetail.value = false;
 
-  // Buka slideover preview full page
+  // Reset preview state
+  isOpenPreview.value = false;
+  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
+  pdfUrl.value = null;
+
+  // Set preview state
+  pdfUrl.value = url;
   isOpenPreview.value = true;
 
-  console.log("📄 Opening full page preview for:", fileName);
-  console.log("🔗 Preview URL:", url);
+  console.log("✅ Preview opened");
+  console.log("📺 pdfUrl:", pdfUrl.value);
+  console.log("🎭 isOpenPreview:", isOpenPreview.value);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("🎬 OPEN PREVIEW END");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 };
 
-// ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
-const closePreview = () => {
-  // Tutup slideover
-  isOpenPreview.value = false;
-
-  // Buka kembali modal detail setelah slideover tertutup
-  setTimeout(() => {
-    openDetail.value = true;
-  }, 150);
-
-  // Clean up URL object jika ada
-  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(previewUrl.value);
-  }
-
-  // Reset state
-  previewUrl.value = "";
-  previewFileName.value = "";
-  previewError.value = "";
-  currentPreviewDetail.value = null;
-  currentPreviewIndex.value = null;
-};
-
-// Handle preview error
-const handlePreviewError = () => {
-  previewError.value =
-    "Gagal memuat dokumen. File mungkin rusak atau format tidak didukung.";
-  console.error("❌ Preview error for:", previewFileName.value);
-};
-
-// Download file
-const downloadFile = () => {
-  if (!previewUrl.value || previewError.value) return;
-
-  const link = document.createElement("a");
-  link.href = previewUrl.value;
-  link.download = previewFileName.value || "dokumen";
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  toast.add({
-    title: "Download dimulai",
-    description: `File "${previewFileName.value}" sedang didownload`,
-    color: "green",
-  });
-};
-
-// HANDLE FILE UPLOAD berdasarkan INDEX
+// ✅ HANDLE FILE - CREATE PREVIEW URL UNTUK SETIAP FILE
 const handleFile = (index: number, event: Event) => {
+  console.log("━━━ HANDLE FILE START ━━━");
+  console.log("📍 Index:", index);
+
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
 
-  if (!file) return;
+  if (!file) {
+    console.log("❌ No file selected");
+    return;
+  }
+
+  console.log("📄 File selected:", file.name, file.type, file.size);
 
   // Validasi ukuran file
   if (file.size > 5 * 1024 * 1024) {
+    console.error("❌ File too large:", file.size);
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
@@ -1402,7 +1217,9 @@ const handleFile = (index: number, event: Event) => {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
+
   if (!validTypes.includes(file.type)) {
+    console.error("❌ Invalid file type:", file.type);
     toast.add({
       title: "Tipe file tidak valid",
       description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
@@ -1412,46 +1229,148 @@ const handleFile = (index: number, event: Event) => {
     return;
   }
 
-  // Simpan file berdasarkan INDEX
+  // ✅ Save file to filesByIndex
   filesByIndex.value[index] = file;
 
-  console.log("📎 File disimpan untuk index:", index, "=>", file.name);
+  // ✅ CRITICAL: Create preview URL untuk index ini
+  // Clean up old preview URL jika ada
+  if (previewUrlsByIndex.value[index]) {
+    URL.revokeObjectURL(previewUrlsByIndex.value[index]);
+  }
+  // Create new preview URL
+  previewUrlsByIndex.value[index] = URL.createObjectURL(file);
+
+  console.log("✅ File saved to index:", index);
+  console.log("✅ Preview URL created:", previewUrlsByIndex.value[index]);
+  console.log("📊 filesByIndex:", filesByIndex.value);
+  console.log("📊 previewUrlsByIndex:", previewUrlsByIndex.value);
 
   toast.add({
     title: "File dipilih",
     description: `File "${file.name}" siap diupload`,
     color: "green",
   });
+
+  console.log("━━━ HANDLE FILE END ━━━");
 };
 
-// Remove file berdasarkan index
+// ✅ REMOVE FILE - CLEANUP PREVIEW URL
 const removeFile = (index: number) => {
+  console.log("🗑️ Removing file at index:", index);
+
+  // Clean up preview URL if exists
+  if (previewUrlsByIndex.value[index]) {
+    URL.revokeObjectURL(previewUrlsByIndex.value[index]);
+    delete previewUrlsByIndex.value[index];
+    console.log("✅ Preview URL cleaned up for index:", index);
+  }
+
   delete filesByIndex.value[index];
+
   toast.add({
     title: "File dihapus",
     description: "File berhasil dihapus dari daftar upload",
     color: "green",
   });
+
+  console.log("✅ File removed");
 };
 
-// JUMLAH SURAT
-const normalizeDetails = (details: any[], jumlah: number, template: string) => {
-  const result = [...(details || [])];
+// ✅ CLEANUP ALL PREVIEW URLS
+const cleanupPreviewUrls = () => {
+  console.log("🧹 Cleaning up all preview URLs...");
+  Object.values(previewUrlsByIndex.value).forEach((url) => {
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+  });
+  previewUrlsByIndex.value = {};
+  console.log("✅ All preview URLs cleaned up");
+};
 
-  while (result.length < jumlah) {
-    result.push({
-      id: `temp-${result.length + 1}`,
-      nomor: null,
-      status: "booking",
-      file_name: null,
-      file_url: null,
-    });
+// ✅ WATCH PREVIEW STATE - SAMA SEPERTI VERIFIKASI DOKUMEN
+watch(isOpenPreview, (newValue, oldValue) => {
+  console.log("👁️ Preview state changed:", { from: oldValue, to: newValue });
+
+  if (oldValue === true && newValue === false) {
+    console.log("👁️ Preview closed, reopening modal...");
+
+    // Clean up blob URL
+    if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
+      URL.revokeObjectURL(pdfUrl.value);
+      pdfUrl.value = null;
+    }
+
+    // Reopen modal yang ditutup tadi
+    setTimeout(() => {
+      if (returnToModal.value === "detail") {
+        openDetail.value = true;
+        returnToModal.value = null;
+        console.log("✅ Modal detail reopened");
+      }
+    }, 200);
+  }
+});
+
+onBeforeUnmount(() => {
+  console.log("🧹 Cleaning up on unmount...");
+
+  document.removeEventListener("click", handleDocumentClick);
+
+  // Clean up all preview URLs
+  cleanupPreviewUrls();
+
+  // Clean up pdfUrl
+  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
   }
 
-  return result.slice(0, jumlah);
+  // Clear search timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  console.log("✅ Cleanup complete");
+});
+
+const normalizeDetails = (details: any[], jumlah: number, template: string) => {
+  const result = [];
+
+  for (let i = 0; i < jumlah; i++) {
+    const backendDetail = details && details[i];
+
+    if (backendDetail) {
+      result.push({
+        id: backendDetail.id || `temp-${i + 1}`,
+        nomor: backendDetail.nomor || null,
+        status: backendDetail.status || "booking",
+        file_name: backendDetail.file_name || null,
+        file_url: backendDetail.file_url || null,
+        file_text: backendDetail.file_text || null,
+      });
+    } else {
+      result.push({
+        id: `temp-${i + 1}`,
+        nomor: null,
+        status: "booking",
+        file_name: null,
+        file_url: null,
+        file_text: null,
+      });
+    }
+  }
+
+  console.log("🔄 Normalized details:", {
+    input: details?.length || 0,
+    jumlah,
+    output: result.length,
+    details: result,
+  });
+
+  return result;
 };
 
-// HANDLE COPY
 const handleCopy = (value: string) => {
   if (!value) return;
 
@@ -1465,7 +1384,6 @@ const handleCopy = (value: string) => {
   });
 };
 
-// HANDLE PREVIEW
 function handlePreview(data: any) {
   selectedRow.value = data;
   openAdd.value = false;
@@ -1473,9 +1391,10 @@ function handlePreview(data: any) {
 
   // Reset file mapping
   filesByIndex.value = {};
+  cleanupPreviewUrls();
+  previewUrlsByIndex.value = {};
 }
 
-// GET CONFIRM MESSAGE - Dynamic message based on files
 const getConfirmMessage = () => {
   const fileCount = Object.keys(filesByIndex.value).length;
 
@@ -1486,7 +1405,6 @@ const getConfirmMessage = () => {
   return `Apakah Anda yakin ingin mengirim usulan ini dengan ${fileCount} file? Usulan akan dikirim untuk diverifikasi.`;
 };
 
-// SUBMIT USULAN sesuai format backend
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
@@ -1496,7 +1414,6 @@ const confirmSubmitUsulan = async () => {
     const formData = new FormData();
     let fileCount = 0;
 
-    // Loop berdasarkan INDEX untuk match dengan backend
     Object.keys(filesByIndex.value).forEach((indexStr) => {
       const index = parseInt(indexStr);
       const file = filesByIndex.value[index];
@@ -1504,7 +1421,6 @@ const confirmSubmitUsulan = async () => {
       if (file instanceof File) {
         fileCount++;
 
-        // SESUAI FORMAT BACKEND
         formData.append("file", file);
         formData.append("file_name", file.name);
         formData.append("file_text", file.name);
@@ -1530,6 +1446,8 @@ const confirmSubmitUsulan = async () => {
     });
 
     filesByIndex.value = {};
+    cleanupPreviewUrls();
+    previewUrlsByIndex.value = {};
     await fetchData();
   } catch (e) {
     console.error("❌ Submit error:", e);
@@ -1545,7 +1463,6 @@ const confirmSubmitUsulan = async () => {
   }
 };
 
-// CONFIRM DELETE USULAN
 const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan) return;
 
@@ -1577,7 +1494,6 @@ const confirmDeleteUsulan = async () => {
   }
 };
 
-// HANDLE SUBMIT FROM MODAL
 const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
@@ -1627,7 +1543,6 @@ const handleSubmitFromModal = async (payload: any) => {
 
     openAdd.value = false;
 
-    // Reset pagination and fetch
     currentPage.value = 1;
     await fetchData();
   } catch (err) {
@@ -1644,7 +1559,6 @@ const handleSubmitFromModal = async (payload: any) => {
   }
 };
 
-// FORMAT DATE
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -1654,7 +1568,6 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-// Close dropdown when click outside
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
@@ -1664,7 +1577,6 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-// INIT
 onMounted(async () => {
   loading.value = true;
 
@@ -1681,8 +1593,8 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 
   // Clean up any blob URLs
-  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(previewUrl.value);
+  if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(pdfUrl.value);
   }
 
   // Clear search timeout
@@ -1691,13 +1603,11 @@ onBeforeUnmount(() => {
   }
 });
 
-/* Breadcrumb */
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Usulan", to: "/penomoran/usulan" },
 ];
 
-/* TABLE CONFIG */
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },

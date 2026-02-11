@@ -14,7 +14,7 @@
           variant="heading9b"
           class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100"
         >
-          Tambah Usulan Penomoran
+          Tambah Penomoran
         </Heading>
       </template>
 
@@ -49,13 +49,16 @@
             <button
               @click="toggleKlasifikasi"
               :disabled="isLoadingKlasifikasi"
-              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :class="{
                 'text-gray-400': !form.klasifikasiDisplay,
                 'text-gray-900 dark:text-gray-200': form.klasifikasiDisplay,
               }"
             >
-              {{ form.klasifikasiDisplay || "Pilih klasifikasi..." }}
+              {{ form.klasifikasiDisplay || "Pilih klasifikasi" }}
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+              />
             </button>
 
             <!-- Dropdown with search and data -->
@@ -68,7 +71,7 @@
                 <input
                   v-model="klasifikasiSearch"
                   ref="klasifikasiInput"
-                  placeholder="Cari klasifikasi..."
+                  placeholder="Cari klasifikasi"
                   :disabled="isLoadingKlasifikasi"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
@@ -108,13 +111,16 @@
             <!-- Selected value display -->
             <button
               @click="toggleJenis"
-              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:text-gray-200"
+              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:text-gray-200"
               :class="{
                 'text-gray-400': !form.jenisDisplay,
                 'text-gray-900 dark:text-gray-200': form.jenisDisplay,
               }"
             >
-              {{ form.jenisDisplay || "Pilih jenis naskah..." }}
+              {{ form.jenisDisplay || "Pilih jenis naskah" }}
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+              />
             </button>
 
             <!-- Dropdown with search and data -->
@@ -127,7 +133,7 @@
                 <input
                   v-model="jenisSearch"
                   ref="jenisInput"
-                  placeholder="Cari jenis naskah..."
+                  placeholder="Cari jenis naskah"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -167,13 +173,16 @@
             <button
               @click="togglePenandatangan"
               :disabled="isLoadingPositions"
-              class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :class="{
                 'text-gray-400': !form.penandatanganJabatan,
                 'text-gray-900 dark:text-gray-200': form.penandatanganJabatan,
               }"
             >
-              {{ form.penandatanganJabatan || "Pilih penandatangan..." }}
+              {{ form.penandatanganJabatan || "Pilih penandatangan" }}
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+              />
             </button>
 
             <!-- Dropdown with search and data -->
@@ -186,7 +195,7 @@
                 <input
                   v-model="penandatanganSearch"
                   ref="penandatanganInput"
-                  placeholder="Cari penandatangan..."
+                  placeholder="Cari penandatangan"
                   :disabled="isLoadingPositions"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
@@ -446,6 +455,7 @@ import {
   onBeforeUnmount,
   nextTick,
 } from "vue";
+import { ChevronDown } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";

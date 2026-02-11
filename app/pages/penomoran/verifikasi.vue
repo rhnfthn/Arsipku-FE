@@ -14,14 +14,14 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
         <!-- Rows dropdown -->
-        <div class="flex items-center gap-2 px-4 py-2">
+        <div class="flex items-center gap-2 px-4">
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -538,28 +538,43 @@
 
                 <!-- File Upload/Replace Section -->
                 <div class="relative">
-                  <!-- Show existing file if available -->
-                  <div v-if="detail.file_name && !fileStates[idx]?.isReplacing">
+                  <!-- Show existing file if available (PRIORITAS UTAMA) -->
+                  <!-- Cek file_name ATAU file_text ATAU file_url -->
+                  <div
+                    v-if="
+                      hasExistingFile(detail) && !fileStates[idx]?.isReplacing
+                    "
+                  >
                     <div
-                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg p-3 cursor-pointer"
-                      @click="previewFile(detail)"
+                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
                     >
-                      <div class="flex items-start gap-3">
-                        <div class="flex-1">
+                      <div class="flex items-center justify-between gap-3">
+                        <div
+                          class="flex-1 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 rounded p-2 -m-2 transition"
+                          @click="previewFile(detail)"
+                        >
                           <p
                             class="text-sm font-medium text-green-700 dark:text-green-400 underline"
                           >
-                            📄 {{ detail.file_name }}
+                            📄 {{ getDisplayFileName(detail) }}
                           </p>
-                          <p class="text-xs text-gray-600 dark:text-gray-400">
+                          <p
+                            class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                          >
                             Klik untuk preview
                           </p>
                         </div>
+                        <button
+                          @click.stop="startReplacingFile(idx)"
+                          class="px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition flex-shrink-0"
+                        >
+                          Ganti File
+                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Upload/Replace form -->
+                  <!-- Upload/Replace form (hanya muncul jika TIDAK ada file atau sedang replace) -->
                   <div v-else class="space-y-2">
                     <label
                       class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
@@ -585,7 +600,9 @@
                           {{
                             fileStates[idx]?.file?.name ||
                             files[idx]?.name ||
-                            "Pilih file untuk diupload (Opsional)"
+                            (fileStates[idx]?.isReplacing
+                              ? "Pilih file baru untuk mengganti"
+                              : "Pilih file untuk diupload (Opsional)")
                           }}
                         </span>
                         <span
@@ -647,7 +664,7 @@
                           "
                           @click.prevent="uploadReplaceFile(idx, detail)"
                           :disabled="fileStates[idx]?.isUploading"
-                          class="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                          class="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           {{
                             fileStates[idx]?.isUploading
@@ -662,7 +679,7 @@
                               : removeFile(idx)
                           "
                           :disabled="fileStates[idx]?.isUploading"
-                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs disabled:opacity-50"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs disabled:opacity-50 transition"
                         >
                           {{ fileStates[idx]?.isReplacing ? "Batal" : "Hapus" }}
                         </button>
@@ -687,6 +704,27 @@
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
             placeholder="Masukkan keterangan mengapa nomor ditolak..."
           ></textarea>
+
+          <!-- Warning jika keterangan belum diisi -->
+          <p
+            v-if="!keterangan_ditolak.trim() && showKeteranganWarning"
+            class="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            Keterangan penolakan wajib diisi
+          </p>
         </div>
       </div>
 
@@ -859,6 +897,7 @@ const currentPage = ref<number>(1);
 const search = ref<string>("");
 const selectedRow = ref<any>(null);
 const keterangan_ditolak = ref("");
+const showKeteranganWarning = ref(false);
 const isProcessing = ref(false);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
@@ -1068,6 +1107,20 @@ const showPreview = async (row: any) => {
       return;
     }
 
+    // 🔍 DEBUG: Log detail data untuk cek struktur file
+    console.log("🔍 Detail Data Received:", detailData);
+    console.log("🔍 Details Array:", detailData.details);
+    detailData.details?.forEach((d: any, idx: number) => {
+      console.log(`🔍 Detail ${idx}:`, {
+        id: d.id,
+        nomor: d.nomor,
+        status: d.status,
+        file_name: d.file_name,
+        file_text: d.file_text,
+        file_url: d.file_url,
+      });
+    });
+
     selectedRow.value = {
       ...row,
       ...detailData,
@@ -1077,6 +1130,7 @@ const showPreview = async (row: any) => {
     fileStates.value = {};
 
     keterangan_ditolak.value = "";
+    showKeteranganWarning.value = false;
     openPreview.value = true;
 
     console.log("✅ Detail loaded:", detailData);
@@ -1244,6 +1298,26 @@ const getFileName = (path: string) => {
   return path.split("/").pop() || path;
 };
 
+/* Check if detail has existing file */
+const hasExistingFile = (detail: any) => {
+  const hasFile = !!(detail.file_name || detail.file_text || detail.file_url);
+  console.log(`🔍 hasExistingFile check:`, {
+    file_name: detail.file_name,
+    file_text: detail.file_text,
+    file_url: detail.file_url,
+    result: hasFile,
+  });
+  return hasFile;
+};
+
+/* Get display filename */
+const getDisplayFileName = (detail: any) => {
+  if (detail.file_name) return detail.file_name;
+  if (detail.file_text) return getFileName(detail.file_text);
+  if (detail.file_url) return getFileName(detail.file_url);
+  return "File Terlampir";
+};
+
 /* Format file size */
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return "0 Bytes";
@@ -1349,15 +1423,27 @@ const confirmRejection = () => {
     return;
   }
 
+  // ✅ VALIDASI KETAT: Keterangan WAJIB diisi
   if (!keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true;
     toast.add({
-      title: "Peringatan",
-      description: "Keterangan penolakan harus diisi!",
-      color: "yellow",
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: "Silakan isi keterangan penolakan terlebih dahulu!",
+      color: "red",
+      timeout: 3000,
     });
+
+    // Scroll ke textarea keterangan
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.focus();
+      textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
     return;
   }
 
+  showKeteranganWarning.value = false;
   showConfirmReject.value = true;
 };
 
@@ -1386,11 +1472,13 @@ const processRejection = async () => {
     return;
   }
 
+  // ✅ VALIDASI ULANG sebelum proses
   if (!keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true;
     toast.add({
-      title: "Peringatan",
-      description: "Keterangan penolakan harus diisi!",
-      color: "yellow",
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: "Silakan isi keterangan penolakan terlebih dahulu!",
+      color: "red",
     });
     return;
   }
@@ -1482,6 +1570,13 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
+
+// ✅ Watch untuk menghilangkan warning saat user mulai mengetik
+watch(keterangan_ditolak, (newValue) => {
+  if (newValue.trim()) {
+    showKeteranganWarning.value = false;
+  }
+});
 
 watch(isOpenPreview, (open) => {
   if (open) {

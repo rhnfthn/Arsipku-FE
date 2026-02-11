@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen pt-5">
+  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
@@ -10,7 +10,7 @@
 
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-xs transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -18,13 +18,15 @@
     </div>
 
     <!-- Card Table -->
-    <div class="rounded-lg border border-gray-200 shadow-sm bg-white">
+    <div
+      class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
+    >
       <!-- Toolbar -->
       <div class="flex flex-wrap gap-4 items-center p-3 justify-between">
         <div class="flex items-center gap-3">
           <button
             @click="fetchJenis()"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
             title="Refresh"
           >
             <RotateCcw class="w-4 h-4" />
@@ -33,7 +35,7 @@
           <!-- Rows per page -->
           <select
             v-model="perPage"
-            class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -43,19 +45,19 @@
           <!-- Search -->
           <div class="relative flex-1 w-full md:w-200">
             <Search
-              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             />
             <input
               v-model="search"
               type="text"
               placeholder="Cari kode / nama / format..."
-              class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
 
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
           @click="onExport"
         >
           <FileDown class="w-4 h-4" />
@@ -65,11 +67,13 @@
 
       <div class="overflow-x-auto">
         <table class="min-w-full border-collapse text-sm">
-          <thead class="text-left bg-primary-400 text-white">
+          <thead
+            class="text-left bg-primary-400 dark:bg-primary-700 text-white"
+          >
             <tr>
               <th
                 @click="sortBy('jenis')"
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary-500 transition-colors"
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary-500 dark:hover:bg-primary-600 transition-colors"
               >
                 <div class="flex items-center gap-2">
                   <span>Kode Jenis</span>
@@ -86,20 +90,26 @@
                   </span>
                 </div>
               </th>
-              <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
+              >
                 Nama Jenis
               </th>
-              <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
+              >
                 Perihal
               </th>
               <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold"
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               ></th>
-              <th class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold">
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
+              >
                 Format Penomoran
               </th>
               <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 font-semibold text-center"
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold text-center"
               >
                 Aksi
               </th>
@@ -109,14 +119,20 @@
           <tbody>
             <!-- Loading -->
             <tr v-if="loading">
-              <td colspan="6" class="px-4 py-6 text-center text-gray-500">
+              <td
+                colspan="6"
+                class="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+              >
                 Memuat data...
               </td>
             </tr>
 
             <!-- Empty -->
             <tr v-else-if="filteredJenis.length === 0">
-              <td colspan="6" class="px-4 py-10 text-center text-gray-500">
+              <td
+                colspan="6"
+                class="px-4 py-10 text-center text-gray-500 dark:text-gray-400"
+              >
                 Data tidak ditemukan
               </td>
             </tr>
@@ -127,14 +143,16 @@
               v-for="(row, idx) in paginatedJenis"
               :key="row.id"
               :class="[
-                'hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize',
-                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700 capitalize',
+                idx % 2 === 0
+                  ? 'bg-white dark:bg-gray-800'
+                  : 'bg-white dark:bg-gray-800',
               ]"
             >
               <!-- KODE -->
               <td class="px-4 py-3">
                 <span
-                  class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-xs whitespace-nowrap"
+                  class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-xs whitespace-nowrap"
                 >
                   {{ row.jenis }}
                 </span>
@@ -142,13 +160,15 @@
 
               <!-- NAMA -->
               <td
-                class="px-4 py-3 font-medium text-nowrap text-gray-900 normal-case"
+                class="px-4 py-3 font-medium text-nowrap text-gray-900 dark:text-white normal-case"
               >
                 {{ row.jenis_text }}
               </td>
 
               <!-- PERIHAL -->
-              <td class="px-4 py-3 text-gray-900 text-nowrap normal-case">
+              <td
+                class="px-4 py-3 text-gray-900 dark:text-gray-200 text-nowrap normal-case"
+              >
                 <span class="text-sm">
                   {{ row.jenis_text }}
                 </span>
@@ -159,17 +179,17 @@
                 <button
                   v-if="row.file_url"
                   @click="downloadFile(row.file_url)"
-                  class="text-green-600 hover:text-green-700 transition-colors"
+                  class="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
                   title="Download format"
                 >
                   <Download class="w-4 h-4" />
                 </button>
-                <span v-else class="text-gray-300">-</span>
+                <span v-else class="text-gray-300 dark:text-gray-600">-</span>
               </td>
 
               <!-- FORMAT -->
               <td
-                class="px-4 py-3 font-mono text-gray-700 normal-case whitespace-nowrap"
+                class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 normal-case whitespace-nowrap"
               >
                 {{ row.format_penomoran }}
               </td>
@@ -178,7 +198,7 @@
               <td class="px-4 py-3">
                 <div class="flex justify-center gap-2">
                   <button
-                    class="text-gray-600 hover:bg-gray-200 group-hover:text-gray-600 p-2 rounded-lg transition-colors group"
+                    class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
                     title="Detail"
                     @click="onView(row)"
                   >
@@ -186,7 +206,7 @@
                   </button>
 
                   <button
-                    class="text-yellow-500 hover:bg-yellow-100 group-hover:text-yellow-600 p-2 rounded-lg transition-colors group"
+                    class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                     title="Edit"
                     @click="onEdit(row)"
                   >
@@ -194,7 +214,7 @@
                   </button>
 
                   <button
-                    class="p-2 hover:bg-red-100 rounded-lg transition-colors group text-red-600 group-hover:text-red-600"
+                    class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                     title="Delete"
                     @click="onDelete(row)"
                   >
@@ -208,32 +228,26 @@
 
         <!-- MODAL DETAIL JENIS -->
         <Teleport to="body">
-          <AddUsulan
-            v-model="openAdd"
-            @submit="handleSubmitFromModal"
-            @preview="handlePreview"
-        /></Teleport>
-        <Teleport to="body">
           <div
             v-if="showDetailModal"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
           >
             <div
-              class="relative bg-white rounded-2xl p-1 w-[630px] max-w-[90vw] max-h-[690px]"
+              class="relative bg-white dark:bg-gray-800 rounded-2xl p-1 w-[630px] max-w-[90vw] max-h-[690px] transition-colors"
             >
               <!-- HEADER -->
               <div
-                class="flex justify-between items-start mb-4 border-b border-gray-300"
+                class="flex justify-between items-start mb-4 border-b border-gray-300 dark:border-gray-700"
               >
                 <div class="p-4">
-                  <Heading variant="heading9sb">
+                  <Heading variant="heading9sb" class="dark:text-white">
                     Detail Jenis <span class="text-red-500">*</span>
                   </Heading>
                 </div>
 
                 <button
                   @click="showDetailModal = false"
-                  class="mt-5 mr-5 text-gray-500 hover:text-gray-800"
+                  class="mt-5 mr-5 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                   aria-label="Close"
                 >
                   <X class="w-4 h-4" />
@@ -246,14 +260,14 @@
               >
                 <div
                   v-if="detailLoading"
-                  class="py-10 text-center text-gray-500 text-sm"
+                  class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
                   Memuat detail...
                 </div>
 
                 <div
                   v-else-if="!detailJenis"
-                  class="py-10 text-center text-gray-500 text-sm"
+                  class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
                   Detail tidak ditemukan
                 </div>
@@ -261,12 +275,16 @@
                 <div v-else class="space-y-6 pb-2">
                   <!-- KODE JENIS -->
                   <div class="flex gap-3 items-start">
-                    <Hash class="w-5 h-5 text-blue-600 mt-1" />
+                    <Hash
+                      class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">Kode Jenis</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Kode Jenis
+                      </p>
                       <div class="mt-2">
                         <span
-                          class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 text-blue-700 font-semibold text-sm"
+                          class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-sm"
                         >
                           {{ detailJenis.jenis }}
                         </span>
@@ -276,10 +294,16 @@
 
                   <!-- NAMA JENIS -->
                   <div class="flex gap-3 items-start">
-                    <FileText class="w-5 h-5 text-green-600 mt-1" />
+                    <FileText
+                      class="w-5 h-5 text-green-600 dark:text-green-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">Nama Jenis</p>
-                      <p class="mt-2 text-sm font-medium text-black">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Nama Jenis
+                      </p>
+                      <p
+                        class="mt-2 text-sm font-medium text-black dark:text-white"
+                      >
                         {{ detailJenis.jenis_text }}
                       </p>
                     </div>
@@ -287,11 +311,15 @@
 
                   <!-- PERIHAL -->
                   <div class="flex gap-3 items-start">
-                    <ChartNoAxesGantt class="w-5 h-5 text-orange-500 mt-1" />
+                    <ChartNoAxesGantt
+                      class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">Perihal</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Perihal
+                      </p>
                       <p
-                        class="mt-2 text-sm font-medium text-gray-900 uppercase"
+                        class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200 uppercase"
                       >
                         {{ detailJenis.file_text || detailJenis.jenis_text }}
                       </p>
@@ -300,11 +328,15 @@
 
                   <!-- FORMAT PENOMORAN -->
                   <div class="flex gap-3 items-start">
-                    <Hash class="w-5 h-5 text-purple-600 mt-1" />
+                    <Hash
+                      class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">Format Penomoran</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Format Penomoran
+                      </p>
                       <p
-                        class="mt-2 text-sm font-mono text-gray-900 whitespace-pre-line"
+                        class="mt-2 text-sm font-mono text-gray-900 dark:text-gray-200 whitespace-pre-line"
                       >
                         {{ detailJenis.format_penomoran }}
                       </p>
@@ -313,18 +345,24 @@
 
                   <!-- FILE TEMPLATE -->
                   <div class="flex gap-3 items-start">
-                    <FileText class="w-5 h-5 text-pink-500 mt-1" />
+                    <FileText
+                      class="w-5 h-5 text-pink-500 dark:text-pink-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">File Template</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        File Template
+                      </p>
 
                       <div
-                        class="mt-3 flex items-center justify-between gap-3 border border-gray-200 rounded-xl px-4 py-2 bg-gray-50"
+                        class="mt-3 flex items-center justify-between gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 bg-gray-50 dark:bg-gray-700"
                       >
                         <div class="flex items-center gap-3 min-w-0">
                           <FileText
-                            class="w-5 h-5 text-gray-500 flex-shrink-0"
+                            class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
                           />
-                          <p class="text-sm text-gray-800 truncate">
+                          <p
+                            class="text-sm text-gray-800 dark:text-gray-200 truncate"
+                          >
                             {{ getTemplateName(detailJenis) }}
                           </p>
                         </div>
@@ -338,7 +376,9 @@
                           Unduh
                         </button>
 
-                        <span v-else class="text-xs text-gray-400"
+                        <span
+                          v-else
+                          class="text-xs text-gray-400 dark:text-gray-500"
                           >Tidak ada file</span
                         >
                       </div>
@@ -347,10 +387,14 @@
 
                   <!-- TANGGAL DIBUAT -->
                   <div class="flex gap-3 items-start">
-                    <Calendar class="w-5 h-5 text-cyan-600 mt-1" />
+                    <Calendar
+                      class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1"
+                    />
                     <div class="flex-1">
-                      <p class="text-sm text-gray-600">Tanggal Dibuat</p>
-                      <p class="mt-2 text-sm text-gray-900">
+                      <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Tanggal Dibuat
+                      </p>
+                      <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">
                         {{
                           detailJenis.created_at ? detailJenis.created_at : "-"
                         }}
@@ -361,7 +405,9 @@
               </div>
 
               <!-- FOOTER (custom) -->
-              <div class="border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2">
+              <div
+                class="border-t border-gray-300 dark:border-gray-700 mt-7 mb-1 gap-3 px-5 py-2"
+              >
                 <button
                   @click="showDetailModal = false"
                   class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
@@ -379,7 +425,7 @@
             <template #title>
               <Heading
                 variant="heading9b"
-                class="font-semibold text-sm mb-3 mt-5 ml-5"
+                class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
                 Tambah Jenis
               </Heading>
@@ -388,14 +434,17 @@
             <div class="space-y-5 p-1">
               <!-- Kode Jenis -->
               <div class="flex flex-col gap-1">
-                <Heading variant="heading11m" class="text-xs">
+                <Heading
+                  variant="heading11m"
+                  class="text-xs dark:text-gray-200"
+                >
                   Kode Jenis <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis"
                   type="text"
                   placeholder="PER"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.jenis" class="text-xs text-red-500">
                   {{ addErrors.jenis }}
@@ -404,14 +453,17 @@
 
               <!-- Nama Jenis -->
               <div class="flex flex-col gap-1">
-                <Heading variant="heading11m" class="text-xs">
+                <Heading
+                  variant="heading11m"
+                  class="text-xs dark:text-gray-200"
+                >
                   Nama Jenis <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis_text"
                   type="text"
                   placeholder="Peraturan Direksi"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.jenis_text" class="text-xs text-red-500">
                   {{ addErrors.jenis_text }}
@@ -420,14 +472,17 @@
 
               <!-- Perihal -->
               <div class="flex flex-col gap-1">
-                <Heading variant="heading11m" class="text-xs">
+                <Heading
+                  variant="heading11m"
+                  class="text-xs dark:text-gray-200"
+                >
                   Perihal <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.file_text"
                   type="text"
                   placeholder="PERATURAN DIREKSI"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.file_text" class="text-xs text-red-500">
                   {{ addErrors.file_text }}
@@ -436,14 +491,17 @@
 
               <!-- Format Penomoran -->
               <div class="flex flex-col gap-1">
-                <Heading variant="heading11m" class="text-xs">
+                <Heading
+                  variant="heading11m"
+                  class="text-xs dark:text-gray-200"
+                >
                   Format Penomoran <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.format_penomoran"
                   type="text"
                   placeholder="{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p
                   v-if="addErrors.format_penomoran"
@@ -455,14 +513,17 @@
 
               <!-- Upload File Template -->
               <div class="flex flex-col gap-1">
-                <Heading variant="heading11m" class="text-xs">
+                <Heading
+                  variant="heading11m"
+                  class="text-xs dark:text-gray-200"
+                >
                   Upload File Template <span class="text-red-500">*</span>
                 </Heading>
 
                 <label
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
                 >
-                  <span class="text-gray-600 truncate">
+                  <span class="text-gray-600 dark:text-gray-300 truncate">
                     {{
                       addForm.file ? addForm.file.name : "Pilih file template"
                     }}
@@ -480,7 +541,9 @@
                   {{ addErrors.file }}
                 </p>
 
-                <p class="text-xs text-gray-500">Format: .doc, .docx, .pdf</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Format: .doc, .docx, .pdf
+                </p>
               </div>
             </div>
           </Modal>
@@ -491,7 +554,7 @@
             <template #title>
               <Heading
                 variant="heading9b"
-                class="font-semibold text-sm mb-3 mt-5 ml-5"
+                class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
                 Edit Jenis
               </Heading>
@@ -500,65 +563,65 @@
             <div class="space-y-5">
               <!-- Kode Jenis -->
               <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+                <label class="text-sm text-gray-700 dark:text-gray-300">
                   Kode Jenis <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis"
                   type="text"
                   placeholder="PER"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
 
               <!-- Nama Jenis -->
               <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+                <label class="text-sm text-gray-700 dark:text-gray-300">
                   Nama Jenis <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis_text"
                   type="text"
                   placeholder="Peraturan Direksi"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
 
               <!-- Perihal -->
               <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+                <label class="text-sm text-gray-700 dark:text-gray-300">
                   Perihal <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.file_text"
                   type="text"
                   placeholder="PERATURAN DIREKSI"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
 
               <!-- Format Penomoran -->
               <div class="flex flex-col gap-2">
-                <label class="text-sm text-gray-700">
+                <label class="text-sm text-gray-700 dark:text-gray-300">
                   Format Penomoran <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.format_penomoran"
                   type="text"
                   placeholder="{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 font-mono"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 font-mono dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
 
               <!-- Upload File Template -->
-              <label class="text-sm text-gray-700">
+              <label class="text-sm text-gray-700 dark:text-gray-300">
                 Upload File Template <span class="text-red-500">*</span>
               </label>
 
               <label
-                class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                class="flex items-center gap-3 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:bg-gray-700"
               >
-                <span class="text-gray-600 truncate">
+                <span class="text-gray-600 dark:text-gray-300 truncate">
                   {{
                     editForm.file
                       ? editForm.file.name
@@ -587,9 +650,9 @@
       <!-- PAGINATION -->
       <div
         v-if="totalItems > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedJenis.length }} dari {{ totalItems }} data
         </div>
 
@@ -601,8 +664,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             <svg
@@ -627,7 +690,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               1
             </button>
@@ -635,7 +698,7 @@
             <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -649,7 +712,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
               ]"
             >
               {{ page }}
@@ -660,7 +723,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -669,7 +732,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               {{ totalPages }}
             </button>
@@ -682,8 +745,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             Next
@@ -1219,6 +1282,13 @@ const onExport = () => {
 </script>
 
 <style scoped>
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -1226,16 +1296,13 @@ const onExport = () => {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 </style>

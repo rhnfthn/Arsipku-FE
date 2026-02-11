@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
-    <div class="mb-5">
+    <div class="mb-2">
       <Heading variant="heading6b" class="text-mobile-md">
         Cek Dokumen
       </Heading>
@@ -13,7 +13,7 @@
       <!-- UPLOAD SECTION -->
       <!-- ================== -->
       <div
-        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
+        class="bg-white p-6 mt-2 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
       >
         <Heading variant="heading10sb">Unggah Dokumen</Heading>
 
@@ -286,18 +286,18 @@
         <div class="flex justify-end items-center gap-3">
           <UButton
             @click="resetCheck"
-            class="bg-primary hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium"
+            class="border border-primary hover:bg-primary-700 px-6 py-2.5 rounded-lg text-sm font-medium"
           >
             Periksa Dokumen Lain
           </UButton>
 
           <UButton
             v-if="documentCheck.data.isValid"
-            @click="downloadReport"
-            class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
+            @click="downloadPdf"
+            class="bg-primary hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
-            Unduh Laporan
+            Unduh PDF
           </UButton>
         </div>
       </div>
@@ -334,6 +334,98 @@ import {
 } from "lucide-vue-next";
 import { ref } from "vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import jsPDF from "jspdf";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { saveAs } from "file-saver";
+
+function buildReportData() {
+  const data = documentCheck.value?.data;
+  if (!data) return null;
+
+  return {
+    namaDokumen: data.namaDokumen,
+    status: data.status,
+    valid: data.isValid ? "Valid" : "Tidak Valid",
+    jumlahSignature: data.jumlahSignature,
+    verifiedAt: formatDate(data.verifiedAt),
+    keterangan: data.keterangan,
+    signers: data.signers || [],
+  };
+}
+function downloadPdf() {
+  const report = buildReportData();
+  if (!report) return;
+
+  const pdf = new jsPDF();
+  let y = 10;
+
+  pdf.setFontSize(14);
+  pdf.text("LAPORAN VERIFIKASI DOKUMEN", 10, y);
+  y += 10;
+
+  pdf.setFontSize(11);
+  pdf.text(`Nama Dokumen: ${report.namaDokumen}`, 10, y);
+  y += 7;
+  pdf.text(`Status: ${report.status}`, 10, y);
+  y += 7;
+  pdf.text(`Status Valid: ${report.valid}`, 10, y);
+  y += 7;
+  pdf.text(`Jumlah Tanda Tangan: ${report.jumlahSignature}`, 10, y);
+  y += 7;
+  pdf.text(`Waktu Verifikasi: ${report.verifiedAt}`, 10, y);
+  y += 10;
+
+  pdf.text("Penanda Tangan:", 10, y);
+  y += 7;
+
+  report.signers.forEach((s: any, i: number) => {
+    pdf.text(`${i + 1}. ${s.name || "Tidak diketahui"}`, 12, y);
+    y += 6;
+  });
+
+  pdf.save(`laporan-${report.namaDokumen}.pdf`);
+}
+async function downloadWord() {
+  const report = buildReportData();
+  if (!report) return;
+
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "LAPORAN VERIFIKASI DOKUMEN",
+                bold: true,
+                size: 28,
+              }),
+            ],
+          }),
+
+          new Paragraph(`Nama Dokumen: ${report.namaDokumen}`),
+          new Paragraph(`Status: ${report.status}`),
+          new Paragraph(`Status Valid: ${report.valid}`),
+          new Paragraph(`Jumlah Tanda Tangan: ${report.jumlahSignature}`),
+          new Paragraph(`Waktu Verifikasi: ${report.verifiedAt}`),
+          new Paragraph(""),
+
+          new Paragraph({
+            children: [new TextRun({ text: "Penanda Tangan:", bold: true })],
+          }),
+
+          ...report.signers.map(
+            (s: any, i: number) =>
+              new Paragraph(`${i + 1}. ${s.name || "Tidak diketahui"}`),
+          ),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  saveAs(blob, `laporan-${report.namaDokumen}.docx`);
+}
 
 const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 

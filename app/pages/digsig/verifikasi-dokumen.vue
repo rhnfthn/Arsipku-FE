@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Verifikasi Dokumen Digsig
@@ -19,7 +19,7 @@
     </div>
 
     <div
-      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
+      class="bg-white mt-2 dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
     >
       <!-- TOP ACTION BAR -->
       <div
@@ -153,7 +153,7 @@
                 @click="handleSort('tanggalDokumen')"
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
-                <div class="flex items-center gap-2 ml-5 px-4 py-3">
+                <div class="flex items-center gap-2 px-4 py-3">
                   <span>Tanggal Dibuat</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -263,7 +263,7 @@
               </td>
               <td class="p-4 text-center">
                 <span
-                  class="px-3 py-1 rounded-lg text-center text-xs font-medium"
+                  class="px-3 py-1 rounded-full text-center text-xs font-medium"
                   :class="getStatusClass(doc.status)"
                 >
                   {{ getStatusLabel(doc.status) }}
@@ -415,14 +415,14 @@
           <div class="mt-5 ml-5 mb-3">
             <Heading
               variant="heading9b"
-              class="font-semibold text-sm dark:text-white"
+              class="font-bold text-sm dark:text-white"
             >
               {{ isEditMode ? "Edit Dokumen" : "Tambah Dokumen" }}
             </Heading>
           </div>
         </template>
 
-        <div class="px-6 mt-1 max-h-[calc(100vh-180px)] overflow-y-auto">
+        <div class="p-1 mt-1 max-h-[calc(100vh-180px)] overflow-y-auto">
           <!-- FORM FIELDS -->
           <div class="space-y-4">
             <div>

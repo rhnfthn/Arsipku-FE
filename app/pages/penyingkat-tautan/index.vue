@@ -335,9 +335,9 @@ const breadcrumbs = [
       </button>
     </div>
   </div> -->
-  <div class="space-y-6 pt-5">
+  <div class="pt-5">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
           Penyingkat Tautan

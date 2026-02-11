@@ -16,381 +16,33 @@
         ArsipKu
       </h1>
 
-      <div
-        v-if="searchConfig.show"
-        class="hidden md:block w-full max-w-3xl relative z-[60]"
-      >
-        <!-- <Teleport to="body"> -->
-        <div
-          v-if="isAdvancedOpen"
-          @click="isAdvancedOpen = false"
-          class="fixed inset-0 z-[1] bg-black/50 backdrop-blur-sm transition-all duration-300"
-        ></div>
-        <!-- </Teleport> -->
-
-        <UInput
-          v-model="search"
-          :placeholder="searchConfig.placeholder"
-          variant="none"
-          size="xl"
-          class="w-full rounded-full relative bg-transparent [&>input]:placeholder-gray-500 [&>input]:dark:placeholder-gray-400 z-[90]"
-          @keyup.enter="handleSearch"
-          :ui="{
-            base: 'py-3 px-5 bg-primary-50/80 dark:bg-gray-800 rounded-full focus:bg-white focus:shadow-md dark:focus:bg-gray-700 transition-all',
-            icon: {
-              trailing: { pointer: 'pointer-events-auto cursor-pointer' },
-            },
-            trailing: { padding: { xl: 'pr-2' } },
-          }"
+      <!-- SEARCH BUTTON (DESKTOP) -->
+      <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl">
+        <button
+          @click="openSearchModal"
+          class="w-full px-5 py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full hover:bg-white hover:shadow-md dark:hover:bg-gray-700 transition-all flex items-center gap-3 text-left"
         >
-          <template #leading>
+          <UIcon
+            name="i-heroicons-magnifying-glass"
+            class="text-gray-400 dark:text-gray-500 w-5 h-5"
+          />
+          <span class="text-gray-500 dark:text-gray-400 text-sm">
+            {{ searchConfig.placeholder }}
+          </span>
+          <div class="ml-auto flex items-center gap-2">
             <UIcon
-              name="i-heroicons-magnifying-glass"
-              class="text-gray-400 dark:text-gray-500 w-5 h-5"
+              name="i-heroicons-adjustments-horizontal"
+              class="text-primary-600 w-5 h-5"
             />
-          </template>
-
-          <template #trailing>
-            <div class="flex items-center">
-              <UButton
-                v-if="search"
-                variant="ghost"
-                color="gray"
-                icon="i-heroicons-x-mark"
-                :padded="false"
-                @click="handleReset"
-                class="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8"
-              />
-
-              <UButton
-                variant="ghost"
-                color="gray"
-                icon="i-heroicons-adjustments-horizontal"
-                :padded="false"
-                @click="isAdvancedOpen = !isAdvancedOpen"
-                class="hover:bg-gray-200 dark:hover:bg-gray-700 text-primary-600 rounded-full w-10 h-10 transition-colors items-center justify-center"
-                :class="{
-                  'bg-gray-200 dark:bg-gray-700 text-primary': isAdvancedOpen,
-                }"
-                title="Pencarian Lanjutan"
-              />
-            </div>
-          </template>
-        </UInput>
-
-        <div
-          v-if="isAdvancedOpen"
-          class="absolute top-full right-0 mt-2 w-full bg-white dark:bg-gray-900 shadow-xl rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-top-2 duration-200"
-        >
-          <div
-            class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl"
-          >
-            <h3
-              class="font-bold text-base text-gray-900 dark:text-gray-100 flex items-center gap-2"
-            >
-              <UIcon
-                name="i-heroicons-adjustments-horizontal"
-                class="w-5 h-5 text-primary-600"
-              />
-              Filter Pencarian Lanjutan
-            </h3>
-            <button
-              @click="isAdvancedOpen = false"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
-            </button>
           </div>
-
-          <div
-            class="px-6 py-6 overflow-y-auto custom-scrollbar flex-1 space-y-6"
-          >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Nomor Surat</label
-                >
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <UIcon
-                      name="i-heroicons-hashtag"
-                      class="w-4 h-4 text-gray-400"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    v-model="advancedFilters.nomorSurat"
-                    placeholder="001/ADM/..."
-                    class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Perihal</label
-                >
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <UIcon
-                      name="i-heroicons-document-text"
-                      class="w-4 h-4 text-gray-400"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    v-model="advancedFilters.perihal"
-                    placeholder="Isi perihal..."
-                    class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Pengirim</label
-                >
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <UIcon
-                      name="i-heroicons-user"
-                      class="w-4 h-4 text-gray-400"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    v-model="advancedFilters.pengirim"
-                    placeholder="Nama pengirim..."
-                    class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Penerima</label
-                >
-                <div class="relative">
-                  <div
-                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                  >
-                    <UIcon
-                      name="i-heroicons-user-group"
-                      class="w-4 h-4 text-gray-400"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    v-model="advancedFilters.penerima"
-                    placeholder="Nama penerima..."
-                    class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >Jenis Surat</label
-              >
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="opt in jenisOptions"
-                  :key="opt.value"
-                  @click="
-                    advancedFilters.jenis =
-                      advancedFilters.jenis === opt.value ? '' : opt.value
-                  "
-                  :class="[
-                    'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
-                    getCategoryStyle(opt.value),
-                    advancedFilters.jenis === opt.value
-                      ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
-                      : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
-                  ]"
-                >
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Sifat</label
-                >
-                <div class="relative">
-                  <select
-                    v-model="advancedFilters.sifat"
-                    class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
-                  >
-                    <option value="" disabled selected>Pilih Sifat</option>
-                    <option
-                      v-for="opt in sifatOptions"
-                      :key="opt.value"
-                      :value="opt.value"
-                    >
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                  <div
-                    class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
-                  >
-                    <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Status</label
-                >
-                <div class="relative">
-                  <select
-                    v-model="advancedFilters.status"
-                    class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
-                  >
-                    <option value="" disabled selected>Pilih Status</option>
-                    <option
-                      v-for="opt in statusOptions"
-                      :key="opt.value"
-                      :value="opt.value"
-                    >
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                  <div
-                    class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
-                  >
-                    <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Lampiran</label
-                >
-                <div class="relative">
-                  <select
-                    v-model="advancedFilters.hasAttachment"
-                    class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
-                  >
-                    <option value="" disabled selected>Semua</option>
-                    <option
-                      v-for="opt in attachmentOptions"
-                      :key="opt.value"
-                      :value="opt.value"
-                    >
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                  <div
-                    class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
-                  >
-                    <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Rentang Tanggal</label
-                >
-                <div class="grid gap-3">
-                  <div class="relative">
-                    <span
-                      class="absolute -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400"
-                      >Dari</span
-                    >
-                    <input
-                      type="date"
-                      v-model="advancedFilters.dateFrom"
-                      class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
-                  <div class="relative">
-                    <span
-                      class="absolute -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400"
-                      >Sampai</span
-                    >
-                    <input
-                      type="date"
-                      v-model="advancedFilters.dateTo"
-                      class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                  >Kata Kunci</label
-                >
-                <div class="space-y-3">
-                  <input
-                    type="text"
-                    v-model="advancedFilters.hasWords"
-                    placeholder="Berisi kata (include)..."
-                    class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                  />
-                  <input
-                    type="text"
-                    v-model="advancedFilters.doesntHave"
-                    placeholder="Tidak berisi kata (exclude)..."
-                    class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl"
-          >
-            <button
-              @click="resetAdvancedFilters"
-              class="flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
-              Reset Filter
-            </button>
-
-            <div class="flex gap-3">
-              <button
-                @click="isAdvancedOpen = false"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                @click="handleAdvancedSearch"
-                class="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm hover:shadow transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4" />
-                Terapkan
-              </button>
-            </div>
-          </div>
-        </div>
+        </button>
       </div>
     </div>
 
     <div class="flex items-center gap-2 md:gap-5">
+      <!-- SEARCH BUTTON (MOBILE) -->
       <button
-        @click="toggleMobileSearch"
+        @click="openSearchModal"
         class="md:hidden p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-full transition-colors"
       >
         <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
@@ -515,226 +167,398 @@
         </template>
       </UDropdownMenu>
     </div>
+  </nav>
 
-    <div
-      v-if="isMobileSearchOpen"
-      class="absolute top-20 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40 md:hidden shadow-lg animate-in slide-in-from-top-2 max-h-[calc(100vh-5rem)] overflow-y-auto"
+  <!-- SEARCH MODAL WITH BACKDROP BLUR -->
+  <teleport to="body">
+    <transition
+      enter-active-class="transition ease-out duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
-      <UInput
-        v-model="search"
-        :placeholder="searchConfig.placeholder"
-        variant="outline"
-        size="lg"
-        class="w-full mb-2"
-        @keyup.enter="handleSearch"
-        :ui="{
-          icon: { trailing: { pointer: 'pointer-events-auto cursor-pointer' } },
-        }"
-      >
-        <template #leading>
-          <UIcon
-            name="i-heroicons-magnifying-glass"
-            class="text-gray-400 dark:text-gray-500 w-5 h-5"
-          />
-        </template>
-
-        <template #trailing>
-          <div class="flex items-center gap-1">
-            <UButton
-              v-if="search"
-              variant="ghost"
-              color="gray"
-              icon="i-heroicons-x-mark"
-              :padded="false"
-              @click="handleReset"
-              class="hover:bg-gray-100 rounded-full w-7 h-7"
-            />
-            <UButton
-              variant="ghost"
-              color="gray"
-              icon="i-heroicons-adjustments-horizontal"
-              :padded="false"
-              @click="isAdvancedOpen = !isAdvancedOpen"
-              class="hover:bg-gray-100 text-primary-600 rounded-full w-8 h-8 transition-colors items-center justify-center"
-              :class="{ 'bg-gray-100 text-primary': isAdvancedOpen }"
-            />
-          </div>
-        </template>
-      </UInput>
-
       <div
-        v-if="isAdvancedOpen"
-        class="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4 pb-4"
+        v-if="isSearchModalOpen"
+        class="fixed inset-0 z-[9999] overflow-y-auto"
       >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-sm text-gray-900 dark:text-gray-100">
-            Filter Lanjutan
-          </h3>
-          <button
-            @click="resetAdvancedFilters"
-            class="text-xs text-primary-600 hover:text-primary-700 font-medium"
+        <!-- BACKDROP BLUR -->
+        <div
+          class="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md"
+          @click="isSearchModalOpen = false"
+        />
+
+        <!-- MODAL CONTAINER -->
+        <div class="flex min-h-full items-center justify-center p-4">
+          <transition
+            enter-active-class="transition ease-out duration-300"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-200"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
           >
-            Reset
-          </button>
-        </div>
-
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 gap-3">
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Nomor Surat</label
-              >
-              <input
-                type="text"
-                v-model="advancedFilters.nomorSurat"
-                placeholder="001/..."
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Perihal</label
-              >
-              <input
-                type="text"
-                v-model="advancedFilters.perihal"
-                placeholder="Perihal..."
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >Jenis Surat</label
+            <div
+              v-if="isSearchModalOpen"
+              class="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
+              @click.stop
             >
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="opt in jenisOptions"
-                :key="opt.value"
-                @click="
-                  advancedFilters.jenis =
-                    advancedFilters.jenis === opt.value ? '' : opt.value
-                "
-                :class="[
-                  'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
-                  getCategoryStyle(opt.value),
-                  advancedFilters.jenis === opt.value
-                    ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
-                    : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
-                ]"
+              <!-- MODAL HEADER -->
+              <div
+                class="flex items-center justify-between px-2 py-2 border-b border-gray-200 dark:border-gray-700"
               >
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Pengirim</label
-              >
-              <input
-                type="text"
-                v-model="advancedFilters.pengirim"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Penerima</label
-              >
-              <input
-                type="text"
-                v-model="advancedFilters.penerima"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Sifat</label
-              >
-              <select
-                v-model="advancedFilters.sifat"
-                class="appearance-none w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              >
-                <option value="" disabled selected>Pilih Sifat</option>
-                <option
-                  v-for="opt in sifatOptions"
-                  :key="opt.value"
-                  :value="opt.value"
+                <div class="flex items-center gap-4 ml-3">
+                  <div class="mt-1">
+                    <UIcon
+                      name="i-heroicons-magnifying-glass"
+                      class="w-4 h-4"
+                    />
+                  </div>
+                  <h3
+                    class="text-lg font-semibold text-gray-900 dark:text-white"
+                  >
+                    Pencarian Surat
+                  </h3>
+                </div>
+                <button
+                  @click="isSearchModalOpen = false"
+                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
                 >
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label
-                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Status</label
+                  <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+                </button>
+              </div>
+
+              <!-- MODAL CONTENT -->
+              <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+                <div class="space-y-5">
+                  <!-- ADVANCED FILTERS -->
+                  <div class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Nomor Surat
+                        </label>
+                        <div class="relative">
+                          <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                          >
+                            <UIcon
+                              name="i-heroicons-hashtag"
+                              class="w-4 h-4 text-gray-400"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            v-model="advancedFilters.nomorSurat"
+                            placeholder="001/ADM/..."
+                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Perihal
+                        </label>
+                        <div class="relative">
+                          <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                          >
+                            <UIcon
+                              name="i-heroicons-document-text"
+                              class="w-4 h-4 text-gray-400"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            v-model="advancedFilters.perihal"
+                            placeholder="Isi perihal..."
+                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Pengirim
+                        </label>
+                        <div class="relative">
+                          <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                          >
+                            <UIcon
+                              name="i-heroicons-user"
+                              class="w-4 h-4 text-gray-400"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            v-model="advancedFilters.pengirim"
+                            placeholder="Nama pengirim..."
+                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Penerima
+                        </label>
+                        <div class="relative">
+                          <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                          >
+                            <UIcon
+                              name="i-heroicons-user-group"
+                              class="w-4 h-4 text-gray-400"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            v-model="advancedFilters.penerima"
+                            placeholder="Nama penerima..."
+                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2"
+                      >
+                        Jenis Surat
+                      </label>
+                      <div class="flex flex-wrap gap-2">
+                        <button
+                          v-for="opt in jenisOptions"
+                          :key="opt.value"
+                          @click="
+                            advancedFilters.jenis =
+                              advancedFilters.jenis === opt.value
+                                ? ''
+                                : opt.value
+                          "
+                          :class="[
+                            'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
+                            getCategoryStyle(opt.value),
+                            advancedFilters.jenis === opt.value
+                              ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
+                              : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
+                          ]"
+                        >
+                          {{ opt.label }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Sifat
+                        </label>
+                        <div class="relative">
+                          <select
+                            v-model="advancedFilters.sifat"
+                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
+                          >
+                            <option value="" disabled selected>
+                              Pilih Sifat
+                            </option>
+                            <option
+                              v-for="opt in sifatOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
+                            </option>
+                          </select>
+                          <div
+                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
+                          >
+                            <UIcon
+                              name="i-heroicons-chevron-down"
+                              class="w-4 h-4"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Status
+                        </label>
+                        <div class="relative">
+                          <select
+                            v-model="advancedFilters.status"
+                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
+                          >
+                            <option value="" disabled selected>
+                              Pilih Status
+                            </option>
+                            <option
+                              v-for="opt in statusOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
+                            </option>
+                          </select>
+                          <div
+                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
+                          >
+                            <UIcon
+                              name="i-heroicons-chevron-down"
+                              class="w-4 h-4"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Lampiran
+                        </label>
+                        <div class="relative">
+                          <select
+                            v-model="advancedFilters.hasAttachment"
+                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer"
+                          >
+                            <option value="" disabled selected>Semua</option>
+                            <option
+                              v-for="opt in attachmentOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
+                            </option>
+                          </select>
+                          <div
+                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500"
+                          >
+                            <UIcon
+                              name="i-heroicons-chevron-down"
+                              class="w-4 h-4"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Rentang Tanggal
+                        </label>
+                        <div class="grid gap-3">
+                          <div class="relative">
+                            <span
+                              class="absolute -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400"
+                            >
+                              Dari
+                            </span>
+                            <input
+                              type="date"
+                              v-model="advancedFilters.dateFrom"
+                              class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                            />
+                          </div>
+                          <div class="relative">
+                            <span
+                              class="absolute -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400"
+                            >
+                              Sampai
+                            </span>
+                            <input
+                              type="date"
+                              v-model="advancedFilters.dateTo"
+                              class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                        >
+                          Kata Kunci
+                        </label>
+                        <div class="space-y-3">
+                          <input
+                            type="text"
+                            v-model="advancedFilters.hasWords"
+                            placeholder="Berisi kata (include)..."
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                          />
+                          <input
+                            type="text"
+                            v-model="advancedFilters.doesntHave"
+                            placeholder="Tidak berisi kata (exclude)..."
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- MODAL FOOTER -->
+              <div
+                class="flex justify-between items-center px-6 py-4 border-t rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
               >
-              <select
-                v-model="advancedFilters.status"
-                class="appearance-none w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              >
-                <option value="" disabled selected>Pilih Status</option>
-                <option
-                  v-for="opt in statusOptions"
-                  :key="opt.value"
-                  :value="opt.value"
+                <button
+                  @click="resetAdvancedFilters"
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
-          </div>
+                  <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
+                  Reset Filter
+                </button>
 
-          <div>
-            <label
-              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Rentang Tanggal</label
-            >
-            <div class="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                v-model="advancedFilters.dateFrom"
-                class="w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-              <input
-                type="date"
-                v-model="advancedFilters.dateTo"
-                class="w-full px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-              />
-            </div>
-          </div>
+                <div class="flex gap-3">
+                  <button
+                    @click="isSearchModalOpen = false"
+                    class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
+                  >
+                    Batal
+                  </button>
 
-          <div class="flex gap-2 pt-2">
-            <button
-              @click="isAdvancedOpen = false"
-              class="flex-1 py-2 text-sm text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-lg"
-            >
-              Batal
-            </button>
-            <button
-              @click="handleAdvancedSearch"
-              class="flex-1 py-2 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-bold"
-            >
-              Cari
-            </button>
-          </div>
+                  <button
+                    @click="handleAdvancedSearch"
+                    class="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm hover:shadow transition-all"
+                  >
+                    <UIcon
+                      name="i-heroicons-magnifying-glass"
+                      class="w-4 h-4"
+                    />
+                    Cari Sekarang
+                  </button>
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
-    </div>
-  </nav>
+    </transition>
+  </teleport>
 
   <ConfirmPopup
     v-model="showLogoutPopup"
@@ -764,97 +588,14 @@ const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
-// --- STATE BARU ---
-const isMobileSearchOpen = ref(false); // State untuk toggle tampilan search mobile
-
-// Toggle Mobile Search
-const toggleMobileSearch = () => {
-  isMobileSearchOpen.value = !isMobileSearchOpen.value;
-  // Jika menutup mobile search, tutup juga advanced panelnya agar rapi saat dibuka kembali
-  if (!isMobileSearchOpen.value) {
-    isAdvancedOpen.value = false;
-  }
-};
-
-// ... (LOGIC UTAMA) ...
-
-// [MODIFIED] Logic Basic Search
-const handleSearch = () => {
-  if (!search.value.trim()) return;
-  isAdvancedOpen.value = false;
-  isMobileSearchOpen.value = false; // Close mobile wrapper too
-  navigateTo({
-    path: "/search",
-    query: { keyword: search.value, page: 1 },
-  });
-};
-
-// [MODIFIED] Logic Advanced Search - Mapping ke Params API
-const handleAdvancedSearch = () => {
-  // 1. Definisikan Default Pagination & Sorting
-  const queryParams: any = {
-    page: 1,
-    limit: 20,
-    sortBy: "tanggal",
-    sortOrder: "DESC",
-  };
-
-  // 2. Mapping Keyword Global
-  if (search.value) {
-    queryParams.keyword = search.value;
-  }
-
-  // 3. Mapping Advanced Filters ke API Params
-  // Format UI (advancedFilters) -> Format API (queryParams)
-  if (advancedFilters.nomorSurat)
-    queryParams.nomor = advancedFilters.nomorSurat;
-  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal;
-  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis;
-  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat;
-  if (advancedFilters.status) queryParams.status = advancedFilters.status;
-
-  // Mapping 'pengirim' -> 'from'
-  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim;
-
-  // Mapping 'penerima' -> 'to'
-  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima;
-
-  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom;
-  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo;
-  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords;
-  if (advancedFilters.doesntHave)
-    queryParams.doesntHave = advancedFilters.doesntHave;
-
-  // 4. Handle Logic Lampiran (Convert "Semua" -> remove, "true"/"false" boolean/string)
-  if (
-    advancedFilters.hasAttachment !== "Semua" &&
-    advancedFilters.hasAttachment !== null
-  ) {
-    queryParams.hasAttachment = advancedFilters.hasAttachment;
-  }
-
-  // 5. Tutup Panel UI
-  isAdvancedOpen.value = false;
-  isMobileSearchOpen.value = false;
-
-  console.log("Navigating with params:", queryParams);
-
-  // 6. Navigasi ke Halaman Search
-  navigateTo({
-    path: "/search",
-    query: queryParams,
-  });
-};
-
+// --- STATE ---
+const isSearchModalOpen = ref(false);
 const showLogoutPopup = ref(false);
 const isLoggingOut = ref(false);
 const search = ref("");
 const delegationRoles = ref<any[]>([]);
 const switchingMessage = ref("");
-const isAdvancedOpen = ref(false);
 
-// [MODIFIED] Reactive object disesuaikan dengan v-model di template
-// (nama property harus sama persis dengan yang ada di v-model HTML)
 const advancedFilters = reactive({
   nomorSurat: "",
   perihal: "",
@@ -1018,7 +759,51 @@ const searchConfig = computed(() => ({
   key: "",
 }));
 
-// [MODIFIED] Reset semua property reactive advancedFilters
+// Open Search Modal
+const openSearchModal = () => {
+  isSearchModalOpen.value = true;
+};
+
+// Advanced Search
+const handleAdvancedSearch = () => {
+  const queryParams: any = {
+    page: 1,
+    limit: 20,
+    sortBy: "tanggal",
+    sortOrder: "DESC",
+  };
+
+  if (search.value) queryParams.keyword = search.value;
+  if (advancedFilters.nomorSurat)
+    queryParams.nomor = advancedFilters.nomorSurat;
+  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal;
+  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis;
+  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat;
+  if (advancedFilters.status) queryParams.status = advancedFilters.status;
+  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim;
+  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima;
+  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom;
+  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo;
+  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords;
+  if (advancedFilters.doesntHave)
+    queryParams.doesntHave = advancedFilters.doesntHave;
+
+  if (
+    advancedFilters.hasAttachment !== "Semua" &&
+    advancedFilters.hasAttachment !== null
+  ) {
+    queryParams.hasAttachment = advancedFilters.hasAttachment;
+  }
+
+  isSearchModalOpen.value = false;
+  console.log("Navigating with params:", queryParams);
+
+  navigateTo({
+    path: "/search",
+    query: queryParams,
+  });
+};
+
 const resetAdvancedFilters = () => {
   advancedFilters.nomorSurat = "";
   advancedFilters.perihal = "";
@@ -1159,23 +944,3 @@ const getCategoryStyle = (cat: string) => {
   return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
 };
 </script>
-
-<style scoped>
-/* Custom scrollbar untuk form advanced search */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #e5e7eb;
-  border-radius: 20px;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #374151;
-}
-</style>

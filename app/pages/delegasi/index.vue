@@ -625,7 +625,7 @@ const exportData = () => {
       class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
     >
       <div
-        class="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex-wrap"
+        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
         <div class="flex items-center gap-3 flex-wrap">
           <select
@@ -699,24 +699,24 @@ const exportData = () => {
         </button>
       </div>
 
-      <div class="overflow-x-auto relative min-h-[400px]">
+      <div class="overflow-x-auto relative">
         <table class="min-w-full text-sm">
           <thead class="bg-primary dark:bg-primary-700">
             <tr>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
                 Delegator
               </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
                 Jabatan
               </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3text-left text-sm font-semibold text-white">
                 Periode
               </th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
                 Status
               </th>
               <th
-                class="px-6 py-4 text-center text-sm font-semibold text-white"
+                class="px-4 py-3 text-center text-sm font-semibold text-white"
               >
                 Aksi
               </th>
@@ -982,18 +982,19 @@ const exportData = () => {
             Tambah Delegasi
           </Heading>
         </template>
-
+        <!------ PERSONIL ------->
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Personil <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewPersonil"
               >
                 <span
@@ -1048,17 +1049,18 @@ const exportData = () => {
               </div>
             </div>
           </div>
-
+          <!------ SEBAGAI ------->
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Sebagai <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewSebagai"
               >
                 <span
@@ -1111,17 +1113,18 @@ const exportData = () => {
               </div>
             </div>
           </div>
-
+          <!------ JABATAN ------->
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Jabatan <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewJabatan"
               >
                 <span
@@ -1177,30 +1180,33 @@ const exportData = () => {
             </div>
           </div>
 
+          <!------ TANGGAL ------->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              <Heading
+                variant="heading11m"
+                class="text-xs font-medium dark:text-gray-200"
               >
                 Mulai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="newDelegasi.mulai"
                 type="date"
-                class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
 
             <div>
-              <label
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              <Heading
+                variant="heading11m"
+                class="text-xs font-medium dark:text-gray-200"
               >
                 Sampai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="newDelegasi.sampai"
                 type="date"
-                class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
           </div>
@@ -1226,15 +1232,16 @@ const exportData = () => {
 
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Personil <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditPersonil"
               >
                 <span
@@ -1291,15 +1298,16 @@ const exportData = () => {
           </div>
 
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Sebagai <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditSebagai"
               >
                 <span
@@ -1354,15 +1362,16 @@ const exportData = () => {
           </div>
 
           <div>
-            <label
-              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            <Heading
+              variant="heading11m"
+              class="text-xs font-medium dark:text-gray-200"
             >
               Jabatan <span class="text-red-500">*</span>
-            </label>
+            </Heading>
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="w-full text-left border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditJabatan"
               >
                 <span
@@ -1420,28 +1429,30 @@ const exportData = () => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              <Heading
+                variant="heading11m"
+                class="text-xs font-medium dark:text-gray-200"
               >
                 Mulai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="editDelegasi.mulai"
                 type="date"
-                class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
 
             <div>
-              <label
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              <Heading
+                variant="heading11m"
+                class="text-xs font-medium dark:text-gray-200"
               >
                 Sampai <span class="text-red-500">*</span>
-              </label>
+              </Heading>
               <input
                 v-model="editDelegasi.sampai"
                 type="date"
-                class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
           </div>

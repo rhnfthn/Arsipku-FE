@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="space-y-6">
+    <div class="">
       <!-- HEADER -->
       <div
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
@@ -15,7 +15,7 @@
 
       <!-- TABLE CONTAINER -->
       <div
-        class="bg-white dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm border border-gray-200"
+        class="bg-white mt-2 dark:bg-gray-800 dark:border-gray-700 rounded-xl shadow-sm border border-gray-200"
       >
         <!-- TOP BAR -->
         <div
@@ -84,7 +84,7 @@
                   @click="handleSort('tanggalDibuat')"
                   class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
                 >
-                  <div class="flex items-center gap-2 ml-5 px-4 py-3">
+                  <div class="flex items-center gap-2 px-4 py-3">
                     <span>Tanggal Dibuat</span>
                     <ArrowUpDown
                       class="w-4 h-4 origin-center transition-transform duration-200"
@@ -203,7 +203,7 @@
                 :key="row.id"
                 class="border-b border-gray-100 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
               >
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-white">
                   {{ formatDate(row.tanggalDibuat) }}
                 </td>
                 <td
@@ -223,7 +223,7 @@
                   <button
                     @click="viewDocument(row)"
                     :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition"
+                    class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition"
                     :class="
                       row.filePreviewUrl || row.signedFilePreviewUrl
                         ? 'bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800'
@@ -234,26 +234,26 @@
                     Lihat
                   </button>
                 </td>
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 text-center">
                   <span
                     v-if="row.mySignerStatus === 'waiting'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
                   >
-                    <Clock class="w-3.5 h-3.5" />
+                    <!-- <Clock class="w-3.5 h-3.5" /> -->
                     Menunggu
                   </span>
                   <span
                     v-else-if="row.mySignerStatus === 'signed'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
                   >
-                    <CheckCircle2 class="w-3.5 h-3.5" />
+                    <!-- <CheckCircle2 class="w-3.5 h-3.5" /> -->
                     Sudah TTD
                   </span>
                   <span
                     v-else-if="row.mySignerStatus === 'rejected'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
                   >
-                    <XCircle class="w-3.5 h-3.5" />
+                    <!-- <XCircle class="w-3.5 h-3.5" /> -->
                     Ditolak
                   </span>
                   <span
@@ -564,7 +564,7 @@
                       >
                         <p
                           v-if="signer.keterangan"
-                          class="text-xs mt-1 text-center text-gray-900 dark:text-white"
+                          class="text-xs mt-1 text-center text-gray-900 dark:text-white font-mono"
                         >
                           {{ signer.keterangan }}
                         </p>
@@ -925,16 +925,14 @@ const formatDate = (dateString: string) => {
   // Convert to WIB (UTC+7)
   const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
 
-  return (
-    wibDate.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Asia/Jakarta",
-    }) + " WIB"
-  );
+  return wibDate.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 const getSignerStatusClass = (status: string) => {

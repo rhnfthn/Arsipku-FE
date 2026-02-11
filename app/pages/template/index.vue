@@ -3,7 +3,7 @@
     class="w-full pt-5 min-h-screen flex flex-col text-gray-800 dark:text-gray-100"
   >
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
           Template
@@ -107,7 +107,7 @@
                     :class="[
                       'w-3 h-3 transition-all',
                       sortBy === 'nama_template'
-                        ? 'opacity-100 text-yellow-300'
+                        ? 'opacity-100 text-primary-300'
                         : 'opacity-50',
                     ]"
                   />
@@ -124,7 +124,7 @@
                     :class="[
                       'w-3 h-3 transition-all',
                       sortBy === 'file'
-                        ? 'opacity-100 text-yellow-300'
+                        ? 'opacity-100 text-primary-300'
                         : 'opacity-50',
                     ]"
                   />
