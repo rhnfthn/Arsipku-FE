@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen pt-5">
+  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
@@ -7,7 +7,7 @@
       <PageHeader title="Tertuju Eksternal" :items="items" />
       <button
         @click="showModal = true"
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-xs transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -15,13 +15,13 @@
     </div>
 
     <div
-      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+      class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
       <div class="flex flex-wrap gap-4 items-center p-3">
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
@@ -29,7 +29,7 @@
         <!-- Rows per page -->
         <select
           v-model="rowsPerPage"
-          class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+          class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
         >
           <option v-for="n in rowsChoices" :key="n" :value="n">
             {{ n }}
@@ -38,18 +38,18 @@
 
         <div class="relative flex-1 w-full px-2">
           <Search
-            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
             type="text"
             placeholder="Cari nama / alamat / telepon..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -58,7 +58,7 @@
 
       <!-- Table -->
       <table class="min-w-full text-sm">
-        <thead class="text-left bg-primary-400 text-white">
+        <thead class="text-left bg-primary-400 dark:bg-primary-700 text-white">
           <tr>
             <th @click="handleSort('nama')" class="cursor-pointer">
               <div class="flex items-center gap-2 ml-5">
@@ -76,10 +76,14 @@
               </div>
             </th>
 
-            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
+            <th
+              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
+            >
               Alamat
             </th>
-            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
+            <th
+              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
+            >
               Telephone
             </th>
             <th @click="handleSort('status')" class="cursor-pointer">
@@ -97,10 +101,14 @@
                 />
               </div>
             </th>
-            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
+            <th
+              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
+            >
               Pengusul
             </th>
-            <th class="px-4 py-3 border-b border-b-gray-100 font-semibold">
+            <th
+              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
+            >
               Aksi
             </th>
           </tr>
@@ -111,19 +119,23 @@
             v-for="(item, idx) in paginatedData"
             :key="item.id"
             :class="[
-              'hover:bg-blue-50 transition-colors border-b border-b-gray-200 capitalize',
-              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+              'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700 capitalize',
+              idx % 2 === 0
+                ? 'bg-white dark:bg-gray-800'
+                : 'bg-white dark:bg-gray-800',
             ]"
           >
-            <td class="px-4 py-3 font-medium">
+            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
               {{ item.nama }}
             </td>
 
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
               {{ item.alamat }}
             </td>
 
-            <td class="px-4 py-3 whitespace-nowrap">
+            <td
+              class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
+            >
               {{ item.telepon }}
             </td>
 
@@ -132,33 +144,35 @@
                 class="px-3 py-1 rounded-full text-xs font-medium"
                 :class="
                   item.aktif
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-600'
+                    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                    : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
                 "
               >
                 {{ item.aktif ? "Aktif" : "Tidak Aktif" }}
               </span>
             </td>
 
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
               {{ item.nama_pembuat }}
             </td>
 
             <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
                 @click="openEdit(item)"
-                class="p-2 hover:bg-yellow-100 rounded-lg transition-colors group"
+                class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
               >
                 <Pencil
-                  class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600"
+                  class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
                 />
               </button>
 
               <button
-                class="p-2 hover:bg-red-100 rounded-lg transition-colors group"
+                class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
-                <Trash2 class="w-4 h-4 text-red-600 group-hover:text-red-600" />
+                <Trash2
+                  class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600"
+                />
               </button>
             </td>
           </tr>
@@ -168,9 +182,9 @@
       <!-- Pagination -->
       <div
         v-if="filteredData.length > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedData.length }} dari {{ filteredData.length }}
           data
         </div>
@@ -183,8 +197,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             <svg
@@ -208,14 +222,14 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               1
             </button>
 
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -228,7 +242,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
               ]"
             >
               {{ page }}
@@ -238,7 +252,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -246,7 +260,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               {{ totalPages }}
             </button>
@@ -259,8 +273,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             Next
@@ -283,18 +297,11 @@
     </div>
 
     <Teleport to="body">
-      <AddUsulan
-        v-model="openAdd"
-        @submit="handleSubmitFromModal"
-        @preview="handlePreview"
-    /></Teleport>
-
-    <Teleport to="body">
       <Modal v-model="showModal" @save="handleSave" size="xl">
         <template #title>
           <Heading
             variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5"
+            class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
           >
             {{ editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal" }}
           </Heading>
@@ -302,51 +309,51 @@
 
         <!-- FIELD NAMA -->
         <div class="flex flex-col gap-2 p-1">
-          <Heading variant="heading11m" class="text-xs">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             Nama <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.nama"
             type="text"
             placeholder="Masukkan nama"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
 
         <!-- FIELD ALAMAT -->
         <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             Alamat <span class="text-red-500">*</span>
           </Heading>
           <textarea
             v-model="form.alamat"
             type="text"
             placeholder="Masukkan alamat"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
 
         <!-- FIELD TELEPHONE -->
         <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             Nomor HP <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.telephone"
             type="text"
             placeholder="Masukkan no telphone"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
 
         <!-- FIELD STATUS -->
         <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             Status <span class="text-red-500">*</span>
           </Heading>
           <select
             v-model="form.aktif"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           >
             <option value="" disabled>Pilih status</option>
             <option :value="true">Aktif</option>
@@ -610,6 +617,13 @@ const refreshData = async () => {
 </script>
 
 <style scoped>
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -617,16 +631,13 @@ const refreshData = async () => {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 </style>

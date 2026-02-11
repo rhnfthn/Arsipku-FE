@@ -23,14 +23,14 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
         <!-- Rows dropdown -->
-        <div class="flex items-center gap-2 px-4 py-2">
+        <div class="flex items-center gap-2 px-4">
           <select
             v-model="limit"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}

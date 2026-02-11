@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { Search, ArrowUpDown, Pencil, Trash2, Plus } from "lucide-vue-next";
+import {
+  Search,
+  ArrowUpDown,
+  Pencil,
+  Trash2,
+  Plus,
+  RotateCcw,
+} from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
@@ -45,6 +52,15 @@ const filteredItems = computed(() => {
       it.long_text_en?.toLowerCase().includes(s),
   );
 });
+const refreshData = () => {
+  search.value = "";
+  filterStatus.value = "Semua";
+  filterLokasi.value = "Semua";
+  filterJabatan.value = "Semua";
+  sortDirection.value = null;
+  currentPage.value = 1;
+  fetchData();
+};
 
 const sortDirection = ref<"asc" | "desc" | null>(null);
 const toggleSort = () => {
@@ -257,29 +273,34 @@ const deleteNow = async () => {
       <div
         class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 flex-wrap">
           <!-- tampilkan -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-600 dark:text-gray-400"
-              >Tampilkan</span
-            >
-            <select
-              v-model="rowsPerPage"
-              class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-2 py-1 focus:ring-2 focus:ring-primary"
-            >
-              <option v-for="n in rowsChoices" :key="n" :value="n">
-                {{ n }}
-              </option>
-            </select>
-          </div>
+          <select
+            v-model="rowsPerPage"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option v-for="n in [5, 10, 15]" :key="n" :value="n">
+              {{ n }}
+            </option>
+          </select>
 
           <!-- SORT -->
           <div class="flex items-center gap-2">
             <button
               @click="toggleSort"
-              class="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs px-1 py-1 rounded-md bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
             >
-              <ArrowUpDown class="w-3.5 h-3.5" />
+              <ArrowUpDown class="w-4 h-4" />
+            </button>
+            <button
+              @click="refreshData"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+              title="Refresh"
+            >
+              <RotateCcw
+                class="w-4 h-4"
+                :class="{ 'animate-spin': isLoading }"
+              />
             </button>
           </div>
         </div>
@@ -302,9 +323,9 @@ const deleteNow = async () => {
         <table class="min-w-full text-left text-sm">
           <thead class="bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-bold">Titelatur Indonesia</th>
-              <th class="px-4 py-3 font-bold">Titelatur Inggris</th>
-              <th class="px-4 py-3 font-bold text-center">Aksi</th>
+              <th class="px-4 py-3 font-semibold">Titelatur Indonesia</th>
+              <th class="px-4 py-3 font-semibold">Titelatur Inggris</th>
+              <th class="px-4 py-3 font-semibold text-center">Aksi</th>
             </tr>
           </thead>
 

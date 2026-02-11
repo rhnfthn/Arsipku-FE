@@ -21,6 +21,14 @@
   >
     <div class="top-0 bg-white p-3 relative z-50">
       <div class="flex items-center gap-2 flex-nowrap w-full">
+        <select
+          v-model="rowsPerPage"
+          class="h-8 text-sm border border-gray-300 bg-white rounded-md px-2"
+        >
+          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
         <!-- Refresh -->
         <button
           @click="refreshData"
@@ -29,16 +37,6 @@
         >
           <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
-
-        <select
-          v-model="rowsPerPage"
-          class="h-8 text-xs border border-gray-300 bg-white rounded-md px-2"
-        >
-          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
-
         <div class="relative w-[160px] shrink-0">
           <input
             v-model="jenisSearch"
@@ -46,7 +44,7 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Jenis"
-            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
           />
 
           <ChevronDown
@@ -93,7 +91,7 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Lokasi"
-            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
           />
 
           <ChevronDown
@@ -136,7 +134,7 @@
           <!-- INPUT LOOKALIKE -->
           <div
             @click="toggle('status')"
-            class="h-8 w-full px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+            class="h-8 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
           >
             <!-- PLACEHOLDER -->
             <span v-if="!selectedStatuses.length" class="text-black truncate">
@@ -193,7 +191,7 @@
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
@@ -231,7 +229,7 @@
         <div class="relative">
           <button
             @click="toggle('year')"
-            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedYear || "Semua Tahun" }}</span>
             <ChevronDown class="w-4 h-4 ml-auto" />
@@ -463,7 +461,7 @@ const toast = useToast();
 //CONST UTIL
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
+  { label: "Rekap Naskah", to: "/laporan/rekap-naskah" },
 ];
 
 const getStatusClass = (status: string) => {

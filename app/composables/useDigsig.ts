@@ -70,6 +70,7 @@ export const useDigsig = () => {
       if (params?.limit) queryParams.append("limit", params.limit.toString());
       if (params?.search) queryParams.append("search", params.search);
       if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+      if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
 
       const url = `/digsig/log${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       const res = await apiGet<DigsigLogResponse>(url);
@@ -87,7 +88,6 @@ export const useDigsig = () => {
       loading.value = false;
     }
   };
-
   /* ======================
    * FETCH BSRE HEALTH
    * GET /digsig/log/bsre-health

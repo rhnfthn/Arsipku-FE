@@ -30,7 +30,7 @@
     <!-- MAIN CONTENT -->
     <div class="w-full">
       <!-- HEADER -->
-      <div class="mb-6">
+      <div class="mb-2">
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2"
         >
@@ -57,33 +57,43 @@
           <div
             class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           >
-            <!-- SEARCH -->
-            <div class="relative w-full flex">
-              <input
-                v-model="searchQuery"
-                @input="debounceSearch"
-                type="text"
-                placeholder="Cari berdasarkan user, IP, atau jenis naskah..."
-                class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-              />
-              <Search
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
-              />
+            <!-- SEARCH & LIMIT FILTER -->
+            <div
+              class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1"
+            >
+              <!-- LIMIT FILTER -->
+              <select
+                v-model="limitPerPage"
+                @change="handleLimitChange"
+                class="px-4 py-2 text-sm rounded-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition cursor-pointer"
+              >
+                <option :value="10">10</option>
+                <option :value="15">15</option>
+                <option :value="20">20</option>
+                <option :value="25">25</option>
+              </select>
+              <!-- SEARCH -->
+              <div class="relative flex-1">
+                <input
+                  v-model="searchQuery"
+                  @input="debounceSearch"
+                  type="text"
+                  placeholder="Cari berdasarkan user, IP, atau jenis naskah..."
+                  class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+                />
+                <Search
+                  class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
+                />
+              </div>
             </div>
 
-            <!-- BSRE HEALTH BUTTON -->
+            <!-- BSRE HEALTH BUTTON (ALWAYS RED) -->
             <button
-              class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all"
-              :class="
-                bsreHealth?.isHealthy
-                  ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-              "
+              class="flex items-center gap-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all"
               @click="showConfirmModal = true"
               :disabled="loadingHealth"
             >
-              <AlertTriangle v-if="!bsreHealth?.isHealthy" class="w-4 h-4" />
-              <Check v-else class="w-4 h-4" />
+              <AlertTriangle class="w-4 h-4" />
               {{
                 loadingHealth
                   ? "Memuat..."
@@ -205,7 +215,7 @@
               class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
             >
               <!-- LOADING STATE (SKELETON) -->
-              <tr v-if="loading" v-for="i in 5" :key="i">
+              <tr v-if="loading" v-for="i in limitPerPage" :key="i">
                 <td class="px-6 py-4">
                   <div class="space-y-2">
                     <div
@@ -249,7 +259,7 @@
               </tr>
 
               <!-- EMPTY STATE -->
-              <tr v-else-if="logs.length === 0">
+              <tr v-else-if="sortedLogs.length === 0">
                 <td colspan="6" class="px-6 py-12 text-center">
                   <div class="flex flex-col items-center gap-2">
                     <Search
@@ -335,7 +345,7 @@
 
         <!-- PAGINATION (FIXED - NO SCROLL) -->
         <div
-          v-if="meta && logs.length > 0"
+          v-if="meta && sortedLogs.length > 0"
           class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
         >
           <div
@@ -392,7 +402,7 @@
                 <!-- First page -->
                 <button
                   v-if="paginationPages[0] > 1"
-                  @click="currentPage = 1"
+                  @click="goToPage(1)"
                   class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
                 >
                   1
@@ -410,7 +420,7 @@
                 <button
                   v-for="page in paginationPages"
                   :key="page"
-                  @click="currentPage = page"
+                  @click="goToPage(page)"
                   :class="[
                     'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                     currentPage === page
@@ -436,7 +446,7 @@
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages
                   "
-                  @click="currentPage = totalPages"
+                  @click="goToPage(totalPages)"
                   class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
                 >
                   {{ totalPages }}
@@ -562,12 +572,16 @@ const {
 // State
 const searchQuery = ref("");
 const currentPage = ref(1);
+const limitPerPage = ref(10);
 const showConfirmModal = ref(false);
 const showGlobalAlert = ref(false);
 const sortKey = ref("tanggal");
 const sortOrder = ref<"asc" | "desc">("desc");
 
-// Client-side sorting
+// Computed
+const totalPages = computed(() => meta.value?.totalPages || 1);
+
+// Client-side sorting (karena backend tidak support sortBy & sortOrder)
 const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
   tanggal: "tanggal",
   ipAddress: "ipAddress",
@@ -577,7 +591,7 @@ const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
 };
 
 const sortedLogs = computed(() => {
-  if (!sortKey.value) return logs.value;
+  if (!sortKey.value || !logs.value.length) return logs.value;
 
   const field = SORT_FIELD_MAP[sortKey.value];
   if (!field) return logs.value;
@@ -608,7 +622,7 @@ const sortedLogs = computed(() => {
   });
 });
 
-// Sorting handler
+// Sorting handler - client side only
 function handleSort(key: string) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -616,13 +630,20 @@ function handleSort(key: string) {
     sortKey.value = key;
     sortOrder.value = "asc";
   }
+  // No need to fetch from API, sorting is done client-side
 }
 
-// Fetch logs
+// Handle limit change
+const handleLimitChange = () => {
+  currentPage.value = 1; // Reset to first page
+  loadLogs();
+};
+
+// Fetch logs with pagination only (NO sorting parameters)
 const loadLogs = async () => {
   await fetchLogs({
     page: currentPage.value,
-    limit: 10,
+    limit: limitPerPage.value,
     search: searchQuery.value,
   });
 };
@@ -634,7 +655,7 @@ const loadBsreHealth = async () => {
 
 // Pagination
 const goToPage = (page: number) => {
-  if (page >= 1 && page <= meta.value.totalPages) {
+  if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
     loadLogs();
   }
@@ -645,7 +666,7 @@ const paginationPages = computed(() => {
 
   const total = meta.value.totalPages;
   const current = meta.value.page;
-  const pages: (number | string)[] = [];
+  const pages: number[] = [];
 
   if (total <= 7) {
     for (let i = 1; i <= total; i++) {
@@ -654,18 +675,10 @@ const paginationPages = computed(() => {
   } else {
     if (current <= 3) {
       for (let i = 1; i <= 5; i++) pages.push(i);
-      pages.push("...");
-      pages.push(total);
     } else if (current >= total - 2) {
-      pages.push(1);
-      pages.push("...");
       for (let i = total - 4; i <= total; i++) pages.push(i);
     } else {
-      pages.push(1);
-      pages.push("...");
       for (let i = current - 1; i <= current + 1; i++) pages.push(i);
-      pages.push("...");
-      pages.push(total);
     }
   }
 
@@ -677,7 +690,7 @@ let searchTimeout: NodeJS.Timeout;
 const debounceSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
+    currentPage.value = 1; // Reset to first page on new search
     loadLogs();
   }, 500);
 };

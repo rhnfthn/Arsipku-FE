@@ -298,3 +298,10 @@ export interface SignDocumentPayload {
   file: File;
   passphrase: string;
 }
+export interface DigsigLogParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
