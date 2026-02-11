@@ -21,6 +21,9 @@ import { useToast } from "#imports";
 import { useAuth } from "~/composables/useAuth";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+definePageMeta({
+  middleware: "auth",
+});
 
 // ==============================
 // DARK MODE

@@ -301,6 +301,9 @@ import {
   Building2,
 } from "lucide-vue-next";
 import { useCompany } from "~/composables/useCompany";
+definePageMeta({
+  middleware: "auth",
+});
 
 const { getCompanies, createCompany, updateCompany, deleteCompany } =
   useCompany();

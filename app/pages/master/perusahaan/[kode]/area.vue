@@ -830,6 +830,9 @@ import {
   Pencil,
   Trash2,
 } from "lucide-vue-next";
+definePageMeta({
+  middleware: "auth",
+});
 
 import { useArea } from "~/composables/useArea";
 import { useCompany } from "~/composables/useCompany";

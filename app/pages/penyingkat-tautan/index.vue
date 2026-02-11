@@ -16,6 +16,9 @@ import {
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import ConfirmPopup from "@/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");

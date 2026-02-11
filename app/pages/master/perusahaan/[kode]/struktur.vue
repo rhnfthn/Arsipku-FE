@@ -753,6 +753,9 @@ import {
   Users,
   AlertCircle,
 } from "lucide-vue-next";
+definePageMeta({
+  middleware: "auth",
+});
 
 import { useStruktur } from "~/composables/useStruktur";
 import { useCompany } from "~/composables/useCompany";

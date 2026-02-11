@@ -812,6 +812,10 @@ import { useJenis, type JenisItem } from "~/composables/useJenis";
 import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
 
+definePageMeta({
+  middleware: "auth",
+});
+
 const items = [
   { label: "Beranda", to: "/beranda" },
   { label: "Jenis", to: "/master/jenis" },
