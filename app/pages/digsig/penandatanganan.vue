@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+  <div class="bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="">
       <!-- HEADER -->
       <div
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
       >
         <div>
-          <Heading variant="heading6b" class="text-mobile-md dark:text-white"
-            >Penandatanganan Dokumen</Heading
-          >
+          <Heading variant="heading6b" class="text-mobile-md dark:text-white">
+            Penandatanganan Dokumen
+          </Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
       </div>
@@ -183,6 +183,7 @@
                 </td>
               </tr>
 
+              <!-- EMPTY -->
               <tr v-else-if="paginatedRows.length === 0">
                 <td colspan="7" class="p-12 text-center">
                   <div class="flex flex-col items-center gap-3">
@@ -197,6 +198,7 @@
                 </td>
               </tr>
 
+              <!-- DATA -->
               <tr
                 v-else
                 v-for="row in paginatedRows"
@@ -219,51 +221,50 @@
                 >
                   {{ row.totalPenandatangan }}
                 </td>
+
+                <!-- KOLOM DOKUMEN - Buka preview langsung dari tabel -->
                 <td class="px-4 py-3 text-center">
                   <button
-                    @click="viewDocument(row)"
+                    @click="viewDocumentFromTable(row)"
                     :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
-                    class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+                    class="flex items-center gap-2 mx-auto px-3 py-1 text-xs font-medium rounded-lg transition"
                     :class="
                       row.filePreviewUrl || row.signedFilePreviewUrl
-                        ? 'bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                     "
                   >
                     <FileCheck class="w-4 h-4" />
                     Lihat
+                    <ChevronRight class="w-4 h-4" />
                   </button>
                 </td>
+
+                <!-- STATUS -->
                 <td class="px-4 py-3 text-center">
                   <span
                     v-if="row.mySignerStatus === 'waiting'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                    >Menunggu</span
                   >
-                    <!-- <Clock class="w-3.5 h-3.5" /> -->
-                    Menunggu
-                  </span>
                   <span
                     v-else-if="row.mySignerStatus === 'signed'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                    >Sudah TTD</span
                   >
-                    <!-- <CheckCircle2 class="w-3.5 h-3.5" /> -->
-                    Sudah TTD
-                  </span>
                   <span
                     v-else-if="row.mySignerStatus === 'rejected'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
+                    >Ditolak</span
                   >
-                    <!-- <XCircle class="w-3.5 h-3.5" /> -->
-                    Ditolak
-                  </span>
                   <span
                     v-else
                     class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                    >{{ row.mySignerStatus }}</span
                   >
-                    {{ row.mySignerStatus }}
-                  </span>
                 </td>
 
+                <!-- AKSI -->
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-center gap-2">
                     <button
@@ -271,7 +272,7 @@
                       class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                       title="Lihat Detail"
                     >
-                      <Eye class="w-5 h-5" />
+                      <Eye class="w-4.5 h-4.5" />
                     </button>
 
                     <button
@@ -289,7 +290,7 @@
                           : 'Tidak dapat ditandatangani'
                       "
                     >
-                      <Signature class="w-5 h-5" />
+                      <Signature class="w-4.5 h-4.5" />
                     </button>
 
                     <button
@@ -303,7 +304,7 @@
                       ]"
                       :title="row.canReject ? 'Tolak' : 'Tidak dapat ditolak'"
                     >
-                      <X class="w-5 h-5" />
+                      <X class="w-4.5 h-4.5" />
                     </button>
                   </div>
                 </td>
@@ -354,13 +355,11 @@
               >
                 1
               </button>
-
               <span
                 v-if="paginationPages[0] > 2"
                 class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >...</span
               >
-
               <button
                 v-for="page in paginationPages"
                 :key="page"
@@ -374,7 +373,6 @@
               >
                 {{ page }}
               </button>
-
               <span
                 v-if="
                   paginationPages[paginationPages.length - 1] < totalPages - 1
@@ -382,7 +380,6 @@
                 class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >...</span
               >
-
               <button
                 v-if="paginationPages[paginationPages.length - 1] < totalPages"
                 @click="currentPage = totalPages"
@@ -421,7 +418,9 @@
         </div>
       </div>
 
+      <!-- ==================== -->
       <!-- MODAL DETAIL -->
+      <!-- ==================== -->
       <Teleport to="body">
         <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
           <template #title>
@@ -430,6 +429,7 @@
             </h2>
           </template>
 
+          <!-- Loading -->
           <div v-if="loadingDetail" class="p-12 text-center">
             <div class="flex flex-col items-center gap-3">
               <div
@@ -441,19 +441,20 @@
             </div>
           </div>
 
+          <!-- Content -->
           <div
             v-else-if="penandatanganDetail"
             class="px-6 pb-6 space-y-6 max-h-[calc(100vh-150px)] overflow-y-auto"
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">No. Dokumen</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">No. Dokumen</p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.nomorDokumen }}
                 </p>
               </div>
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
                   Tanggal Dokumen
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
@@ -461,7 +462,7 @@
                 </p>
               </div>
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
                   Jenis Naskah
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
@@ -472,7 +473,7 @@
                 </p>
               </div>
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">Klasifikasi</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">Klasifikasi</p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{
                     penandatanganDetail.klasifikasiText ||
@@ -481,13 +482,13 @@
                 </p>
               </div>
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">Perihal</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">Perihal</p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.perihal }}
                 </p>
               </div>
               <div>
-                <p class="text-gray-600 dark:text-gray-400 mb-1">
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
                   Status Dokumen
                 </p>
                 <span
@@ -497,8 +498,22 @@
                   {{ getDocStatusLabel(penandatanganDetail.documentStatus) }}
                 </span>
               </div>
+
+              <!-- TOMBOL LIHAT PREVIEW - di dalam modal detail -->
+              <div class="md:col-span-2">
+                <p class="text-gray-500 dark:text-gray-400 mb-2">Dokumen</p>
+                <button
+                  @click="viewDocumentFromDetail"
+                  class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
+                >
+                  <FileCheck class="w-4 h-4" />
+                  Lihat Preview Dokumen
+                  <ChevronRight class="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
+            <!-- TABEL PENANDATANGAN -->
             <div
               class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
             >
@@ -544,7 +559,7 @@
                     </td>
                     <td class="p-3">
                       <div v-if="signer.status === 'signed' && signer.signedAt">
-                        <p class="text-xs text-gray-600 dark:text-gray-400">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
                           Ditandatangani
                         </p>
                         <p class="font-medium text-gray-900 dark:text-white">
@@ -552,7 +567,7 @@
                         </p>
                         <p
                           v-if="signer.keterangan"
-                          class="text-xs text-gray-600 dark:text-gray-400 mt-1"
+                          class="text-xs text-gray-500 dark:text-gray-400 mt-1"
                         >
                           {{ signer.keterangan }}
                         </p>
@@ -601,7 +616,7 @@
                 <User class="w-6 h-6 text-white" />
               </div>
               <div>
-                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Ditandatangani secara digital oleh
                 </p>
                 <p class="font-semibold text-gray-900 dark:text-white">
@@ -642,9 +657,6 @@
                 class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Contoh: Disetujui, sudah sesuai"
               ></textarea>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Tambahkan catatan atau komentar untuk tanda tangan ini
-              </p>
             </div>
 
             <button
@@ -737,6 +749,10 @@
         </Modal>
       </Teleport>
 
+      <!-- ==================== -->
+      <!-- DOCUMENT PREVIEW SLIDEOVER -->
+      <!-- Bisa dibuka dari tabel (tombol Lihat) atau dari modal detail (tombol Preview) -->
+      <!-- ==================== -->
       <USlideover
         v-model:open="isOpenPreview"
         title="Pratinjau Dokumen"
@@ -745,28 +761,36 @@
         :ui="{
           content: 'h-screen max-h-screen',
           body: 'p-0',
-          footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
         }"
       >
         <template #body>
           <div
             class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
           >
+            <!-- Loading state -->
+            <div v-if="loadingPreview" class="flex flex-col items-center gap-3">
+              <div
+                class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
+              <span class="text-gray-500 dark:text-gray-400 text-sm"
+                >Memuat Pratinjau...</span
+              >
+            </div>
+
+            <!-- PDF iframe -->
             <iframe
-              v-if="pdfUrl"
+              v-else-if="pdfUrl"
               :key="pdfUrl"
               :src="pdfUrl"
               class="w-full h-full border-0"
               allowfullscreen
             />
 
-            <div v-else class="flex flex-col items-center gap-2">
-              <UIcon
-                name="i-lucide-loader-2"
-                class="animate-spin w-8 h-8 text-primary-500"
-              />
-              <span class="text-gray-500 dark:text-gray-400"
-                >Memuat Pratinjau...</span
+            <!-- Error state -->
+            <div v-else class="flex flex-col items-center gap-3">
+              <FileX class="w-12 h-12 text-gray-400 dark:text-gray-600" />
+              <span class="text-gray-500 dark:text-gray-400 text-sm"
+                >Gagal memuat dokumen</span
               >
             </div>
           </div>
@@ -784,18 +808,18 @@ import {
   Signature,
   User,
   ChevronDown,
-  Clock,
-  CheckCircle2,
-  XCircle,
   FileX,
   FileCheck,
   AlertTriangle,
   ArrowUpDown,
+  ChevronRight,
 } from "lucide-vue-next";
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import Modal from "~/components/Modal.vue";
 import { useDigsig } from "~/composables/useDigsig";
 import type { PenandatangananDocument } from "~/types/digsig";
+
+const toast = useToast();
 
 const {
   penandatanganDocuments,
@@ -810,37 +834,41 @@ const {
   rejectDocument,
 } = useDigsig();
 
+// ─── Modal states ─────────────────────────────
 const openDetail = ref(false);
 const openSign = ref(false);
-const selectedDoc = ref<PenandatangananDocument | null>(null);
-const loadingSign = ref(false);
-
 const confirmRejectOpen = ref(false);
-const itemToReject = ref<PenandatangananDocument | null>(null);
-const rejectReason = ref("");
-const loadingReject = ref(false);
+const selectedDoc = ref<PenandatangananDocument | null>(null);
 
+// ─── Preview Slideover ────────────────────────
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+const loadingPreview = ref(false);
+// Simpan dari mana preview dibuka: "detail" = dari modal, null = dari tabel
+const previewSource = ref<"detail" | null>(null);
+
+// ─── Form state ───────────────────────────────
 const passphrase = ref("");
 const keterangan = ref("");
+const rejectReason = ref("");
+const loadingSign = ref(false);
+const loadingReject = ref(false);
+const itemToReject = ref<PenandatangananDocument | null>(null);
 
+// ─── Filter & Pagination ──────────────────────
 const search = ref("");
 const filterStatus = ref("");
 const openFilterStatus = ref(false);
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
-
-// sort
 const sortKey = ref("");
 const sortOrder = ref("asc");
-function handleSort(key) {
-  if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortOrder.value = "asc";
-  }
-}
+
+const breadcrumbs = [
+  { label: "Beranda", to: "/beranda" },
+  { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
+];
 
 const filterOptions = [
   { label: "Semua", value: "" },
@@ -849,25 +877,29 @@ const filterOptions = [
   { label: "Ditolak", value: "rejected" },
 ];
 
+function handleSort(key: string) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortKey.value = key;
+    sortOrder.value = "asc";
+  }
+}
+
 const filterStatusLabel = computed(() => {
   const found = filterOptions.find((opt) => opt.value === filterStatus.value);
   return found?.label || "Semua";
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
-];
-
 const filteredRows = computed(() => {
   let filtered = penandatanganDocuments.value || [];
 
   if (search.value) {
-    const searchLower = search.value.toLowerCase();
+    const s = search.value.toLowerCase();
     filtered = filtered.filter(
       (doc) =>
-        doc.nomorDokumen?.toLowerCase().includes(searchLower) ||
-        doc.perihal?.toLowerCase().includes(searchLower),
+        doc.nomorDokumen?.toLowerCase().includes(s) ||
+        doc.perihal?.toLowerCase().includes(s),
     );
   }
 
@@ -878,16 +910,6 @@ const filteredRows = computed(() => {
   }
 
   return filtered;
-});
-
-// uslideover file
-const isOpenPreview = ref(false);
-const pdfUrl = ref<string | null>(null);
-
-// pagination
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return filteredRows.value.slice(start, start + rowsPerPage.value);
 });
 
 const totalRows = computed(() => filteredRows.value.length);
@@ -901,31 +923,25 @@ const endRow = computed(() =>
   Math.min(currentPage.value * rowsPerPage.value, totalRows.value),
 );
 
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredRows.value.slice(start, start + rowsPerPage.value);
+});
+
 const paginationPages = computed(() => {
-  const pages = [];
+  const pages: number[] = [];
   const maxVisible = 5;
   let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
   let end = Math.min(totalPages.value, start + maxVisible - 1);
-
-  if (end - start < maxVisible - 1) {
-    start = Math.max(1, end - maxVisible + 1);
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
+  if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 });
 
+// ─── Helpers ──────────────────────────────────
 const formatDate = (dateString: string) => {
   if (!dateString) return "-";
-  const date = new Date(dateString);
-
-  // Convert to WIB (UTC+7)
-  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-
-  return wibDate.toLocaleDateString("id-ID", {
+  return new Date(dateString).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -936,7 +952,7 @@ const formatDate = (dateString: string) => {
 };
 
 const getSignerStatusClass = (status: string) => {
-  const statusMap = {
+  const map: Record<string, string> = {
     waiting:
       "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300",
     pending: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
@@ -944,23 +960,23 @@ const getSignerStatusClass = (status: string) => {
     rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
   return (
-    statusMap[status] ||
+    map[status] ||
     "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
   );
 };
 
 const getSignerStatusLabel = (status: string) => {
-  const statusMap = {
+  const map: Record<string, string> = {
     waiting: "Menunggu",
     pending: "Pending",
     signed: "Sudah TTD",
     rejected: "Ditolak",
   };
-  return statusMap[status] || status;
+  return map[status] || status;
 };
 
 const getDocStatusClass = (status: string) => {
-  const statusMap = {
+  const map: Record<string, string> = {
     draft: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
     on_progress:
       "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
@@ -969,19 +985,19 @@ const getDocStatusClass = (status: string) => {
     rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
   return (
-    statusMap[status] ||
+    map[status] ||
     "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
   );
 };
 
 const getDocStatusLabel = (status: string) => {
-  const statusMap = {
+  const map: Record<string, string> = {
     on_progress: "On Progress",
     completed: "Selesai",
     rejected: "Ditolak",
     draft: "Draft",
   };
-  return statusMap[status] || status;
+  return map[status] || status;
 };
 
 const selectFilterStatus = (item: { label: string; value: string }) => {
@@ -990,21 +1006,97 @@ const selectFilterStatus = (item: { label: string; value: string }) => {
   currentPage.value = 1;
 };
 
-const isUUID = (str: string) => {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
+// ─── Preview logic ────────────────────────────
+
+/**
+ * Buka preview dari tombol "Lihat" di tabel
+ * Langsung buka slideover, tidak ada return-to-modal
+ */
+const viewDocumentFromTable = (row: PenandatangananDocument) => {
+  const url = row.signedFilePreviewUrl || row.filePreviewUrl;
+  if (!url) {
+    toast.add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "red",
+    });
+    return;
+  }
+
+  previewSource.value = null; // tidak ada modal yang perlu dibuka kembali
+  pdfUrl.value = url;
+  isOpenPreview.value = true;
 };
+
+/**
+ * Buka preview dari tombol di dalam modal detail
+ * Tutup modal dulu, lalu buka slideover
+ * Saat slideover ditutup, modal detail akan dibuka kembali
+ */
+const viewDocumentFromDetail = () => {
+  if (!penandatanganDetail.value) return;
+
+  // Response GET /digsig/penandatanganan/:id pakai filePreviewUrl
+  // Prioritaskan signedFilePreviewUrl jika dokumen sudah ditandatangani
+  const url =
+    penandatanganDetail.value.signedFilePreviewUrl ||
+    penandatanganDetail.value.filePreviewUrl;
+
+  if (!url) {
+    toast.add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "red",
+    });
+    return;
+  }
+
+  // Tandai bahwa preview dibuka dari modal detail
+  previewSource.value = "detail";
+
+  // Tutup modal detail lebih dulu
+  openDetail.value = false;
+
+  // Buka slideover dengan URL dari API
+  pdfUrl.value = url;
+  isOpenPreview.value = true;
+};
+
+// ─── Watch: ketika slideover ditutup ──────────
+watch(isOpenPreview, (isOpen) => {
+  if (!isOpen) {
+    // Bersihkan URL objek jika bukan URL http
+    if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+      URL.revokeObjectURL(pdfUrl.value);
+    }
+    pdfUrl.value = null;
+
+    // Jika preview dibuka dari modal detail → buka kembali modal detail
+    if (previewSource.value === "detail") {
+      openDetail.value = true;
+      previewSource.value = null;
+    }
+  }
+});
+
+// ─── Detail ───────────────────────────────────
+const isUUID = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
-    alert("Data dokumen tidak valid");
+    toast.add({
+      title: "Gagal",
+      description: "Data dokumen tidak valid",
+      color: "red",
+    });
     return;
   }
   openDetail.value = true;
   await fetchPenandatanganDetail(doc.id);
 };
 
+// ─── Sign ─────────────────────────────────────
 const handleOpenSign = (doc: PenandatangananDocument) => {
   selectedDoc.value = doc;
   openSign.value = true;
@@ -1012,52 +1104,37 @@ const handleOpenSign = (doc: PenandatangananDocument) => {
   keterangan.value = "";
 };
 
-const viewDocument = (row: PenandatangananDocument) => {
-  const url = row.signedFilePreviewUrl || row.filePreviewUrl;
-
-  if (!url) {
-    alert("Preview dokumen tidak tersedia");
-    return;
-  }
-
-  pdfUrl.value = url;
-  isOpenPreview.value = true;
-};
-
 const handleSign = async () => {
-  if (!passphrase.value || !selectedDoc.value) {
-    alert("Mohon masukkan passphrase");
-    return;
-  }
+  if (!passphrase.value || !selectedDoc.value) return;
 
   loadingSign.value = true;
   try {
     const payload: any = { passphrase: passphrase.value };
-    if (keterangan.value.trim()) {
-      payload.keterangan = keterangan.value.trim();
-    }
+    if (keterangan.value.trim()) payload.keterangan = keterangan.value.trim();
 
     await signDocument(selectedDoc.value.id, payload);
-    alert("Dokumen berhasil ditandatangani");
+
+    toast.add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditandatangani",
+      color: "green",
+    });
     openSign.value = false;
     passphrase.value = "";
     keterangan.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const errorMsg =
+    const msg =
       err?.response?.data?.message ||
       err?.message ||
       "Gagal menandatangani dokumen";
-    if (errorMsg.toLowerCase().includes("passphrase")) {
-      alert("Passphrase yang Anda masukkan salah. Silakan coba lagi.");
-    } else {
-      alert(errorMsg);
-    }
+    toast.add({ title: "Gagal", description: msg, color: "red" });
   } finally {
     loadingSign.value = false;
   }
 };
 
+// ─── Reject ───────────────────────────────────
 const handleReject = (doc: PenandatangananDocument) => {
   itemToReject.value = doc;
   rejectReason.value = "";
@@ -1065,27 +1142,30 @@ const handleReject = (doc: PenandatangananDocument) => {
 };
 
 const rejectNow = async () => {
-  if (!itemToReject.value || !rejectReason.value.trim()) {
-    alert("Mohon masukkan alasan penolakan");
-    return;
-  }
+  if (!itemToReject.value || !rejectReason.value.trim()) return;
 
   loadingReject.value = true;
   try {
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
-    alert("Dokumen berhasil ditolak");
+
+    toast.add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditolak",
+      color: "green",
+    });
     confirmRejectOpen.value = false;
     rejectReason.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const errorMsg =
+    const msg =
       err?.response?.data?.message || err?.message || "Gagal menolak dokumen";
-    alert(errorMsg);
+    toast.add({ title: "Gagal", description: msg, color: "red" });
   } finally {
     loadingReject.value = false;
   }
 };
 
+// ─── Click outside ────────────────────────────
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (!target.closest("[data-custom-dropdown]")) {
@@ -1093,6 +1173,7 @@ const handleClickOutside = (e: MouseEvent) => {
   }
 };
 
+// ─── Lifecycle ────────────────────────────────
 onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
   await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
@@ -1104,10 +1185,5 @@ onBeforeUnmount(() => {
 
 watch([search, filterStatus, rowsPerPage], () => {
   currentPage.value = 1;
-});
-watch(isOpenPreview, (open) => {
-  if (!open) {
-    pdfUrl.value = null;
-  }
 });
 </script>

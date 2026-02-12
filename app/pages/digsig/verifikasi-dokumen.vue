@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+  <div class="bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full">
       <div>
@@ -255,10 +255,10 @@
               <td class="p-4 text-center">
                 <button
                   @click="viewDocument(doc)"
-                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition"
                 >
                   <FileCheck class="w-4 h-4" />
-                  Lihat
+                  Lihat <ChevronRight class="w-4 h-4" />
                 </button>
               </td>
               <td class="p-4 text-center">
@@ -270,20 +270,20 @@
                 </span>
               </td>
               <td class="p-4">
-                <div class="flex items-center justify-center gap-4">
+                <div class="flex items-center justify-center gap-3">
                   <button
                     @click="openDetailModal(doc.id)"
                     class="p-1 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat Detail"
                   >
-                    <Eye class="w-5 h-5" />
+                    <Eye class="w-4.5 h-4.5" />
                   </button>
                   <button
                     @click="openEditModal(doc.id)"
                     class="p-1 text-yellow-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat Detail"
                   >
-                    <Pencil class="w-5 h-5" />
+                    <Pencil class="w-4.5 h-4.5" />
                   </button>
                 </div>
               </td>
@@ -937,13 +937,14 @@
             </div>
 
             <div class="md:col-span-2">
-              <p class="text-gray-600 dark:text-gray-400 mb-2">Dokumen</p>
+              <p class="text-gray-500 dark:text-gray-400 mb-2">Dokumen</p>
               <button
                 @click="viewDocumentFromDetail"
-                class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition"
+                class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
               >
                 <FileCheck class="w-4 h-4" />
                 Lihat Preview Dokumen
+                <ChevronRight class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1089,6 +1090,7 @@ import {
   Eye,
   ChevronDown,
   ArrowUpDown,
+  ChevronRight,
 } from "lucide-vue-next";
 
 import { useDigsig } from "~/composables/useDigsig";

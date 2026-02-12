@@ -8,7 +8,7 @@
       </div>
       <UButton
         @click="showAddModal = true"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-xs transition-colors"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -20,37 +20,34 @@
     >
       <!-- Top Bar -->
       <div class="flex flex-wrap gap-4 items-center p-3">
+        <!-- Rows per page -->
+        <select
+          v-model="rowsPerPage"
+          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option v-for="n in rowsChoices" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
         <button
           @click="refreshData"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
-
-        <!-- Rows per page -->
-        <select
-          v-model="rowsPerPage"
-          class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
-        >
-          <option v-for="n in rowsChoices" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
-
         <div class="relative flex-1 w-full px-2">
           <Search
-            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
-            type="text"
-            placeholder="Cari username / nama..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Cari akun"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
 
         <button
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
         >
           <FileDown class="w-4 h-4" />
           Export

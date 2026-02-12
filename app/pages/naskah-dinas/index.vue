@@ -640,7 +640,7 @@ function exportExcel() {
         <!-- CUSTOM FILTER DROPDOWN -->
         <div class="relative" data-custom-dropdown>
           <button
-            class="flex items-center justify-between gap-2 text-xs px-2 py-0.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            class="flex items-center justify-between gap-2 text-xs px-3 py-1.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span class="text-sm">
@@ -690,12 +690,12 @@ function exportExcel() {
 
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
-            placeholder="Cari..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
+            placeholder="Cari Naskah Dinas"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
         <button

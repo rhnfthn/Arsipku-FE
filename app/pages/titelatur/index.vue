@@ -275,15 +275,15 @@ const deleteNow = async () => {
       >
         <div class="flex items-center gap-3 flex-wrap">
           <!-- tampilkan -->
+
           <select
             v-model="rowsPerPage"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option v-for="n in [5, 10, 15]" :key="n" :value="n">
               {{ n }}
             </option>
           </select>
-
           <!-- SORT -->
           <div class="flex items-center gap-2">
             <button
@@ -306,14 +306,14 @@ const deleteNow = async () => {
         </div>
 
         <!-- Search -->
-        <div class="relative flex-1 w-full md:w-56">
+        <div class="relative flex-1 w-full justify-between">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
-            placeholder="Cari Titelatur..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            placeholder="Cari Titelatur"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
@@ -539,17 +539,10 @@ const deleteNow = async () => {
             >
               Edit Titelatur
             </Heading>
-
-            <Heading
-              variant="body2"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-            >
-              Isi form di bawah ini untuk mengedit titelatur
-            </Heading>
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-1">
+        <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
@@ -581,17 +574,10 @@ const deleteNow = async () => {
             >
               Tambah Titelatur
             </Heading>
-
-            <Heading
-              variant="body2"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-            >
-              Masukkan titelatur baru
-            </Heading>
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-1">
+        <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
