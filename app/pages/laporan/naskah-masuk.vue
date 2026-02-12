@@ -389,6 +389,7 @@
                 class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
               >
                 <option value="">Semua Status</option>
+                <option value="terpakai_final">Final</option>
                 <option value="Terpakai">Terpakai</option>
                 <option value="booking">Booking</option>
                 <option value="Hangus">Hangus</option>
@@ -792,10 +793,11 @@ const fetchTable1 = async () => {
 
 const fetchTable2 = async () => {
   loadingTable2.value = true;
+
   try {
     const params: any = {
-      page: 1,
-      limit: 10000,
+      page: currentPage.value,
+      limit: itemsPerPage.value,
     };
 
     if (filters.value.tahun) {
@@ -812,7 +814,7 @@ const fetchTable2 = async () => {
 
     const res = await getRekapNaskahMasukDetail(params);
 
-    table2Data.value = res.data.map((item: any) => ({
+    table2Data.value = (res.data ?? []).map((item: any) => ({
       id: item.id,
       jenis: item.naskah,
       jenis_text: item.naskah_text,
@@ -821,10 +823,14 @@ const fetchTable2 = async () => {
       perihal: item.perihal ?? "-",
       jabatan: item.jabatan,
       lokasi: item.lokasi,
-      status: capitalize(item.status),
+      status:
+        item.status === "terpakai_final" ? "Final" : capitalize(item.status),
     }));
+
+    totalItems.value = res.pagination?.total ?? 0;
   } catch (err) {
     console.error("Gagal ambil detail naskah masuk", err);
+    totalItems.value = 0;
   } finally {
     loadingTable2.value = false;
   }
@@ -975,14 +981,12 @@ watch([selectedJenis, jenisSearch, selectedMonth, selectedYear], () => {
   currentPageTable1.value = 1;
 });
 
-const totalItems = computed(() => sortedData.value.length);
+const totalItems = ref(0);
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / itemsPerPage.value),
 );
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  return sortedData.value.slice(start, start + itemsPerPage.value);
-});
+const paginatedData = computed(() => table2Data.value);
+
 const currentItemsCount = computed(() => paginatedData.value.length);
 
 const paginationPages = computed(() => {
@@ -1007,6 +1011,10 @@ watch(totalPages, (val) => {
   if (currentPage.value > val) currentPage.value = val || 1;
 });
 
+watch(currentPage, () => {
+  fetchTable2();
+});
+
 const handleSort = (key: string) => {
   sortConfig.value = {
     key,
@@ -1020,8 +1028,8 @@ const handleSort = (key: string) => {
 const getStatusClass = (status: string) => {
   if (status === "Terpakai")
     return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300";
-  if (status === "Terpakai_final")
-    return "bg-green-300 dark:bg-green-800 text-green-700 dark:text-green-200";
+  if (status === "Final")
+    return "bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-200";
   if (status === "Booking")
     return "bg-primary-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
   return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300";
@@ -1100,34 +1108,69 @@ const exportTable1 = () => {
 };
 
 const exportTable2 = () => {
-  const headers = [
-    "Jenis",
-    "Nomor",
-    "Tanggal",
-    "Perihal",
-    "Jabatan",
-    "Lokasi",
-    "Status",
-  ];
-  const rows = sortedData.value.map((item) => [
-    item.jenis,
-    item.nomor,
-    item.tanggal,
-    item.perihal,
-    item.jabatan,
-    item.lokasi,
-    item.status,
-  ]);
+  if (!sortedData.value.length) {
+    toast.add({
+      title: "Export gagal",
+      description: "Tidak ada data untuk diexport",
+      color: "warning",
+    });
+    return;
+  }
 
-  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "naskah-masuk-detail.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const headers = [
+      "Jenis",
+      "Nomor",
+      "Tanggal",
+      "Perihal",
+      "Jabatan",
+      "Lokasi",
+      "Status",
+    ];
+
+    const rows = sortedData.value.map((item) => ({
+      Jenis: item.jenis,
+      Nomor: item.nomor,
+      Tanggal: item.tanggal,
+      Perihal: item.perihal,
+      Jabatan: item.jabatan,
+      Lokasi: item.lokasi,
+      Status: item.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    worksheet["!cols"] = [
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 },
+      { wch: 30 },
+      { wch: 20 },
+      { wch: 15 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Naskah");
+
+    XLSX.writeFile(
+      workbook,
+      `naskah-masuk-detail-${new Date().getTime()}.xlsx`,
+    );
+
+    toast.add({
+      title: "Export berhasil",
+      description: "File Excel berhasil diunduh",
+      color: "success",
+    });
+  } catch (err) {
+    console.error(err);
+    toast.add({
+      title: "Export gagal",
+      description: "Terjadi kesalahan saat membuat file Excel",
+      color: "error",
+    });
+  }
 };
 </script>
 

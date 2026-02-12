@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-4 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="flex items-center justify-between mb-5">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+    <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Detail Naskah Dinas
@@ -22,7 +22,7 @@
       class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
     >
       <div
-        class="flex flex-wrap justify-between gap-4 p-2 items-center border-b border-gray-200 dark:border-gray-700"
+        class="flex flex-wrap justify-between gap-4 p-2 items-center dark:border-gray-700"
       >
         <div class="flex items-center gap-3">
           <button
@@ -381,13 +381,16 @@
                     class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     :class="{
                       'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
-                        item.status === 'Terpakai',
-                      'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
-                        item.status === 'Terpakai_final',
+                        item.statusRaw === 'terpakai',
+
+                      'bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300':
+                        item.statusRaw === 'terpakai_final',
+
                       'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300':
-                        item.status === 'Booking',
+                        item.statusRaw === 'booking',
+
                       'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300':
-                        item.status === 'Hangus',
+                        item.statusRaw === 'hangus',
                     }"
                   >
                     {{ item.status }}
@@ -679,18 +682,16 @@ const tahunOptions = computed(() => {
 //PAGINATION
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 15];
+const rowsChoices = [5, 10, 20, 50];
 
-const totalItems = computed(() => filteredData.value.length);
+const totalItems = ref(0);
 
-const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value),
-);
-
-const paginatedNaskah = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return filteredData.value.slice(start, start + rowsPerPage.value);
+const totalPages = computed(() => {
+  if (!totalItems.value) return 1;
+  return Math.ceil(totalItems.value / rowsPerPage.value);
 });
+
+const paginatedNaskah = computed(() => rawData.value);
 
 const paginationPages = computed(() => {
   const total = totalPages.value;
@@ -719,14 +720,18 @@ const fetchDetailNaskah = async () => {
   try {
     const params: any = {
       tahun: Number(filters.value.tahun),
-      page: 1,
-      limit: 1000000,
+      page: currentPage.value,
+      limit: rowsPerPage.value,
     };
 
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
 
     const res = await getRekapNaskahDetail(params);
+
+    currentPage.value = res.pagination?.page ?? 1;
+    rowsPerPage.value = res.pagination?.limit ?? 10;
+    totalItems.value = res.pagination?.total ?? 0;
 
     rawData.value = res.data.map((item: any) => ({
       id: item.id,
@@ -735,7 +740,7 @@ const fetchDetailNaskah = async () => {
       perihal: item.perihal ?? "-",
       jabatan: item.jabatan,
       lokasi: item.lokasi,
-      status: capitalize(item.status),
+      status: formatStatusLabel(item.status),
       statusRaw: item.status,
       jenis: item.jenis,
       jenis_text: item.jenis_text,
@@ -793,6 +798,17 @@ const formatTanggal = (date: string) => {
 
 const capitalize = (text: string) =>
   text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+
+const formatStatusLabel = (status: string) => {
+  if (!status) return "-";
+
+  if (status === "terpakai_final") return "Final";
+  if (status === "terpakai") return "Terpakai";
+  if (status === "booking") return "Booking";
+  if (status === "hangus") return "Hangus";
+
+  return status;
+};
 
 //EXCEL
 const exportExcel = () => {
@@ -906,12 +922,13 @@ watch(
   },
 );
 
-watch([filters, rowsPerPage], () => {
-  currentPage.value = 1;
+watch([currentPage, rowsPerPage], () => {
+  fetchDetailNaskah();
 });
 
 //DATA STATIS
 const statusOptions = [
+  { label: "Final", value: "terpakai_final" },
   { label: "Terpakai", value: "terpakai" },
   { label: "Booking", value: "booking" },
   { label: "Hangus", value: "hangus" },
