@@ -414,8 +414,9 @@
                         {
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
+                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400':
+                            detail.status === 'terpakai',
                           'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
-                            detail.status === 'terpakai' ||
                             detail.status === 'terpakai_final',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
@@ -440,13 +441,13 @@
               <div
                 v-if="detail.file_name || detail.file_url || filesByIndex[idx]"
                 @click="openPreview(detail, idx)"
-                class="mt-2 cursor-pointer bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg px-4 py-3 transition-all"
+                class="bg-blue-50 mt-2 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
               >
                 <div class="flex items-start gap-3">
                   <!-- FILE ICON -->
                   <div class="flex-shrink-0 mt-0.5">
                     <svg
-                      class="w-5 h-5 text-green-600 dark:text-green-400"
+                      class="w-5 h-5 text-primary dark:text-blue-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -463,13 +464,13 @@
                   <!-- FILE INFO -->
                   <div class="flex-1 min-w-0">
                     <p
-                      class="text-sm font-medium text-green-700 dark:text-green-400 truncate"
+                      class="text-sm font-medium text-primary dark:text-blue-400 underline"
                     >
                       {{
                         detail.file_name || filesByIndex[idx]?.name || "Dokumen"
                       }}
                     </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <p class="text-xs text-gray-600 dark:text-gray-400">
                       Klik untuk preview
                     </p>
                   </div>
@@ -817,7 +818,13 @@ const fetchKlasifikasiMap = async () => {
     console.error("❌ Error fetch klasifikasi map:", error);
   }
 };
-
+const getStatusLabel = (item: any): string => {
+  if (item.status === "hangus") return "Hangus";
+  if (item.status === "terpakai_final") return "Final";
+  if (item.status === "terpakai") return "Terpakai";
+  if (item.status === "booking") return "Booking";
+  return "Booking";
+};
 const fetchData = async () => {
   loading.value = true;
   try {

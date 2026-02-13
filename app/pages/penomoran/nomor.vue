@@ -490,16 +490,33 @@
                   </button>
                 </div>
 
-                <div>
+                <div
+                  class="flex bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                >
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
-                    class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                    class="flex"
                     @click="previewFile(item)"
                   >
+                    <svg
+                      class="w-5 h-5 text-primary dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0 ml-3">
                     <p
                       class="text-sm font-medium text-primary dark:text-blue-400 underline"
                     >
-                      📄 {{ item.file_name }}
+                      {{ item.file_name }}
                     </p>
                     <p class="text-xs text-gray-600 dark:text-gray-400">
                       Klik untuk preview
