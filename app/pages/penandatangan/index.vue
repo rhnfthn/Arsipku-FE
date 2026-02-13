@@ -69,7 +69,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari nomor dokumen atau perihal"
+              placeholder="Cari nomor dokumen atau perihal..."
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -101,7 +101,7 @@
                 <th class="px-4 py-3 font-semibold text-sm">No Dokumen</th>
                 <th class="px-4 py-3 font-semibold text-sm">Perihal</th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  Penandatangan
+                  Penanda Tangan
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
                   Dokumen
@@ -344,7 +344,7 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back
+              Sebelumnya
             </button>
 
             <div class="flex items-center gap-1">
@@ -399,7 +399,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
               ]"
             >
-              Next
+              Selanjutnya
               <svg
                 class="w-4 h-4"
                 fill="none"
@@ -707,7 +707,7 @@
                   Peringatan
                 </p>
                 <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-                  Yakin ingin menolak penandatanganan dokumen ini? Tindakan ini
+                  Yakin ingin menolak penanda tanganan dokumen ini? Tindakan ini
                   tidak dapat dibatalkan.
                 </p>
               </div>
@@ -867,7 +867,7 @@ const sortOrder = ref("asc");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Penandatanganan", to: "/admin/digsig/penandatanganan" },
+  { label: "Penanda Tanganan", to: "/admin/digsig/penandatanganan" },
 ];
 
 const filterOptions = [

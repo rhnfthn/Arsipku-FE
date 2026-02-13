@@ -79,7 +79,7 @@
               <th class="px-4 py-3 text-left">Tanggal Dibuat</th>
               <th class="px-4 py-3 text-left">No Dokumen</th>
               <th class="px-4 py-3 text-left">Perihal</th>
-              <th class="px-4 py-3 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Penanda Tangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th class="px-4 py-3 text-center">Status</th>
               <th class="px-4 py-3 text-center">Aksi</th>
@@ -205,7 +205,7 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Penanda Tangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th
                 @click="handleSort('status')"
@@ -255,7 +255,7 @@
               <td class="p-4 text-center">
                 <button
                   @click="viewDocument(doc)"
-                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition"
+                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-300 dark:hover:bg-primary transition"
                 >
                   <FileCheck class="w-4 h-4" />
                   Lihat <ChevronRight class="w-4 h-4" />
@@ -327,7 +327,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -395,7 +395,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -641,7 +641,7 @@
             <!-- File Attachment - Compact -->
             <div>
               <Heading variant="body2m" class="mb-2 dark:text-gray-200">
-                File Attachment <span class="text-red-500">*</span>
+                Lampiran Berkas <span class="text-red-500">*</span>
               </Heading>
               <div class="flex items-center gap-3">
                 <button
@@ -1191,13 +1191,13 @@ const addForm = ref({
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
+  { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
 ];
 
 const filterOptions = [
   { label: "Semua", value: "" },
-  { label: "Draft", value: "draft" },
-  { label: "On Progress", value: "on_progress" },
+
+  { label: "Diproses", value: "on_progress" },
   { label: "Selesai", value: "completed" },
   { label: "Ditolak", value: "rejected" },
 ];
@@ -1459,7 +1459,6 @@ const formatDate = (dateString: string) => {
 
 const getStatusClass = (status: string) => {
   const statusMap = {
-    draft: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
     on_progress:
       "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
     completed:
@@ -1474,7 +1473,7 @@ const getStatusClass = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   const statusMap = {
-    on_progress: "On Progress",
+    on_progress: "Diproses",
     completed: "Selesai",
     rejected: "Ditolak",
     draft: "Draft",
@@ -1486,7 +1485,7 @@ const getSignerStatusClass = (status: string) => {
   const statusMap = {
     waiting:
       "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
-    pending: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
+    pending: "bg-gray-200 dark:bg-gray-300 text-gray-600 dark:text-white-300",
     signed: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
     rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
@@ -1498,7 +1497,7 @@ const getSignerStatusClass = (status: string) => {
 
 const getSignerStatusLabel = (status: string) => {
   const statusMap = {
-    waiting: "Waiting",
+    waiting: "Menunggu",
     pending: "Pending",
     signed: "Sudah TTD",
     rejected: "Ditolak",
@@ -1632,7 +1631,7 @@ const selectSigner = (verifikator: Verifikator) => {
     addForm.value.selectedSigners.push(verifikator);
     toast.add({
       title: "Berhasil",
-      description: `${verifikator.nama} ditambahkan sebagai penandatangan`,
+      description: `${verifikator.nama} ditambahkan sebagai Penanda Tangan`,
       color: "green",
     });
   }
@@ -1646,7 +1645,7 @@ const removeSelectedSigner = (index: number) => {
   addForm.value.selectedSigners.splice(index, 1);
   toast.add({
     title: "Info",
-    description: `${signer.nama} dihapus dari daftar penandatangan`,
+    description: `${signer.nama} dihapus dari daftar Penanda Tangan`,
     color: "blue",
   });
 };
@@ -1993,7 +1992,7 @@ const saveDokumen = async () => {
   if (!isEditMode.value && !addForm.value.file) {
     toast.add({
       title: "Gagal",
-      description: "File Attachment harus diupload",
+      description: "Lampiran Berkas harus diupload",
       color: "red",
     });
     return;
@@ -2001,7 +2000,7 @@ const saveDokumen = async () => {
   if (addForm.value.selectedSigners.length === 0) {
     toast.add({
       title: "Gagal",
-      description: "Mohon pilih minimal satu penandatangan",
+      description: "Mohon pilih minimal satu Penanda Tangan",
       color: "red",
     });
     return;

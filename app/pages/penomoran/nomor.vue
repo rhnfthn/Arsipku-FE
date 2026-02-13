@@ -198,7 +198,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -276,7 +276,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -493,11 +493,11 @@
                 <div>
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
-                    class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition"
+                    class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
                     @click="previewFile(item)"
                   >
                     <p
-                      class="text-sm font-medium text-green-700 dark:text-green-400 underline"
+                      class="text-sm font-medium text-primary dark:text-blue-400 underline"
                     >
                       📄 {{ item.file_name }}
                     </p>
@@ -863,7 +863,7 @@ const saveFile = async (detailId: string) => {
     delete fileStates.value[detailId];
 
     // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error upload file:", error);
   } finally {
     state.isUploading = false;

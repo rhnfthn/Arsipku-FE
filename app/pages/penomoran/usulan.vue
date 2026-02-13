@@ -125,32 +125,42 @@
                 :key="col.key"
                 @click="col.sortable && handleSort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap hover:bg-primary-600',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none '
+                    ? 'cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition'
                     : 'cursor-default',
                 ]"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <UIcon
+                  <ArrowUpDown
                     v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === col.key
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <UIcon
-                    :name="getSortIcon('status')"
-                    class="w-4 h-4"
-                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
@@ -249,7 +259,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -317,7 +327,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -348,7 +358,15 @@
 
   <!-- MODAL ROW DETAIL -->
   <Teleport to="body">
-    <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
+    <Modal
+      v-model="openDetail"
+      :hideDefaultFooter="true"
+      size="xl"
+      :ui="{
+        overlay: 'z-[100]',
+        content: 'z-[110]',
+      }"
+    >
       <!-- TITLE -->
       <template #title>
         <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
@@ -443,14 +461,18 @@
                         {
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-blue-400':
                             detail.status === 'terpakai',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
+                          'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                            detail.status === 'hangus',
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                            detail.status === 'terpakai_final',
                         },
                       ]"
                     >
-                      {{ detail.status }}
+                      {{ getStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
@@ -465,17 +487,17 @@
                 </button>
               </div>
 
-              <!-- FILE SECTION - KONSISTEN DENGAN VERIFIKASI -->
+              <!-- FILE SECTION - PRIMARY/BLUE COLOR -->
               <div class="mt-2">
                 <!-- File sudah ada (backend atau lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
-                  class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                  class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                 >
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 flex-1">
                       <svg
-                        class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
+                        class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -487,9 +509,12 @@
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <div class="flex-1">
+                      <div
+                        class="flex-1 cursor-pointer hover:underline"
+                        @click="previewFile(detail)"
+                      >
                         <p
-                          class="text-sm font-medium text-green-700 dark:text-green-400"
+                          class="text-sm font-medium text-primary dark:text-blue-400"
                         >
                           {{ detail.file_name || filesByIndex[idx]?.name }}
                         </p>
@@ -499,7 +524,7 @@
                           {{
                             filesByIndex[idx]
                               ? formatFileSize(filesByIndex[idx].size)
-                              : "File terlampir"
+                              : "Klik untuk preview"
                           }}
                         </p>
                       </div>
@@ -666,7 +691,9 @@
             <span v-else>Kirim Usulan</span>
           </button>
 
+          <!-- Hapus button hanya muncul jika status "Belum Diajukan" -->
           <button
+            v-if="selectedRow?.status === 'Belum Diajukan'"
             @click="openConfirmDelete = true"
             :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
             class="flex-1 px-5 py-2 text-sm border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -677,6 +704,42 @@
       </template>
     </Modal>
   </Teleport>
+
+  <!-- PREVIEW SLIDEOVER -->
+  <USlideover
+    v-model:open="isOpenPreview"
+    title="Pratinjau"
+    side="bottom"
+    :dismissible="true"
+    :ui="{
+      overlay: 'z-[200]',
+      content: 'z-[210] h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }"
+  >
+    <template #body>
+      <div
+        class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+      >
+        <iframe
+          v-if="pdfUrl"
+          :key="pdfUrl"
+          :src="pdfUrl"
+          allowfullscreen
+          class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+        />
+
+        <div v-else class="flex flex-col items-center gap-2">
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin w-8 h-8 text-primary-500"
+          />
+          <span class="text-gray-500">Memuat Pratinjau...</span>
+        </div>
+      </div>
+    </template>
+  </USlideover>
 
   <!-- CONFIRM SUBMIT POPUP -->
   <ConfirmPopup
@@ -754,6 +817,9 @@ const rows = ref([]);
 const loading = ref<boolean>(true);
 const pagination = ref(null);
 
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+
 // File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
 
@@ -782,6 +848,49 @@ const openFilterStatus = ref<boolean>(false);
 
 // Debounce timeout
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/* Get status label - FIXED untuk terpakai_final menjadi "Final" */
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    pending: "pending",
+    menunggu: "menunggu",
+    booking: "booking",
+    terpakai: "terpakai",
+    terpakai_final: "Final", // ✅ FIXED: terpakai_final jadi "Final"
+    ditolak: "ditolak",
+    hangus: "hangus",
+  };
+  return statusMap[status] || status;
+};
+
+/* Preview file */
+const previewFile = async (detail: any) => {
+  const url = detail.file_url;
+
+  if (!url) {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "yellow",
+    });
+    return;
+  }
+
+  pdfUrl.value = null;
+  isOpenPreview.value = false;
+
+  try {
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
+    isOpenPreview.value = true;
+  } catch (e) {
+    toast.add({
+      title: "Gagal memuat file",
+      description: "Tidak dapat menampilkan pratinjau dokumen",
+      color: "red",
+    });
+  }
+};
 
 const fetchPersonMap = async () => {
   try {
@@ -920,15 +1029,6 @@ const handleSort = (column: string) => {
 
   currentPage.value = 1;
   fetchData();
-};
-
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down";
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
 };
 
 const handlePageChange = (page: number) => {
@@ -1373,6 +1473,18 @@ onBeforeUnmount(() => {
   // Clear search timeout
   if (searchTimeout) {
     clearTimeout(searchTimeout);
+  }
+
+  // Clean up blob URLs
+  if (pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
+});
+
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
   }
 });
 

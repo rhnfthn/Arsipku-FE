@@ -37,8 +37,11 @@
             <Upload class="w-5 h-5 text-gray-600" />
           </div>
 
-          <p class="text-xs text-gray-500 mt-2">
-            Format yang didukung: PDF dengan tanda tangan digital
+          <p class="text-xs text-gray-500 mt-4">
+            Format yang didukung:
+            <span class="text-xs text-gray-500 font-semibold mt-2">
+              PDF dengan tanda tangan digital
+            </span>
           </p>
         </label>
 
@@ -87,7 +90,7 @@
                 :is="getStatusIcon(documentCheck.data.status)"
                 class="w-5 h-5"
               />
-              {{ documentCheck.data.status }}
+              {{ formatStatus(documentCheck.data.status) }}
             </span>
           </div>
 
@@ -493,15 +496,30 @@ function toggleSigner(index: number) {
 }
 
 /* Get Status Badge Class */
+function formatStatus(status: string) {
+  switch (status?.toUpperCase()) {
+    case "VALID":
+      return "Valid";
+    case "INVALID":
+      return "Tidak Valid";
+    case "EXPIRED":
+      return "Kedaluwarsa";
+    case "UNKNOWN":
+      return "Tidak Diketahui";
+    default:
+      return status;
+  }
+}
+
 function getStatusBadgeClass(status: string) {
   switch (status.toUpperCase()) {
     case "VALID":
       return "bg-green-100 text-green-700 border border-green-200";
     case "INVALID":
       return "bg-red-100 text-red-700 border border-red-200";
-    case "EXPIRED":
+    case "Kadaluwarsa":
       return "bg-yellow-100 text-yellow-700 border border-yellow-200";
-    case "UNKNOWN":
+    case "Tidak Diketahui":
       return "bg-gray-100 text-gray-700 border border-gray-200";
     default:
       return "bg-gray-100 text-gray-700 border border-gray-200";
