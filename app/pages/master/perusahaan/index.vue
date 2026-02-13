@@ -41,13 +41,28 @@
           <table class="w-full">
             <thead>
               <tr class="bg-primary dark:bg-primary-700 text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold">
+                <th
+                  @click="toggleSortTanggalMulai"
+                  class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
+                >
                   Tanggal Mulai
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-300"
+                    :class="{
+                      'rotate-180': sortBy === 'desc',
+                      'rotate-0': sortBy !== 'desc',
+                    }"
+                  />
                 </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
+
+                <th
+                  class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
+                >
                   Tanggal Berakhir
                 </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Kode</th>
+                <th class="px-6 py-4 text-center text-sm font-semibold">
+                  Kode
+                </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
                   Nama Pendek
                 </th>
@@ -299,6 +314,7 @@ import {
   Pencil,
   Trash2,
   Building2,
+  ArrowUpDown,
 } from "lucide-vue-next";
 import { useCompany } from "~/composables/useCompany";
 definePageMeta({
@@ -354,18 +370,47 @@ const fetchCompanies = async () => {
 onMounted(fetchCompanies);
 
 const filteredRows = computed(() => {
-  if (!search.value) return rows.value;
-  const searchLower = search.value.toLowerCase();
-  return rows.value.filter(
-    (row) =>
-      row.kode.toLowerCase().includes(searchLower) ||
-      row.namaPendek.toLowerCase().includes(searchLower) ||
-      row.namaPanjang.toLowerCase().includes(searchLower),
-  );
+  let result = [...rows.value];
+
+  // FILTER
+  if (search.value) {
+    const s = search.value.toLowerCase();
+    result = result.filter(
+      (row) =>
+        row.kode.toLowerCase().includes(s) ||
+        row.namaPendek.toLowerCase().includes(s) ||
+        row.namaPanjang.toLowerCase().includes(s),
+    );
+  }
+
+  // SORT
+  if (sortBy.value === "asc") {
+    result.sort(
+      (a, b) =>
+        new Date(a.tanggalMulai).getTime() - new Date(b.tanggalMulai).getTime(),
+    );
+  } else if (sortBy.value === "desc") {
+    result.sort(
+      (a, b) =>
+        new Date(b.tanggalMulai).getTime() - new Date(a.tanggalMulai).getTime(),
+    );
+  }
+
+  return result;
 });
 
 // post
 const handleSaveCompany = async () => {
+  if (isNaN(Number(formCompany.value.kode))) {
+    toast.add({
+      title: "Gagal",
+      description: "Kode perusahaan harus angka",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    return;
+  }
+
   try {
     await createCompany({
       company: Number(formCompany.value.kode),
@@ -430,6 +475,16 @@ const openEditModal = (row: any) => {
 };
 
 const handleSaveEdit = async () => {
+  if (isNaN(Number(editForm.value.kode))) {
+    toast.add({
+      title: "Gagal",
+      description: "Kode perusahaan harus angka",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    return;
+  }
+
   try {
     await updateCompany(editForm.value.id, {
       company: Number(editForm.value.kode),
@@ -495,6 +550,14 @@ const handleDelete = async () => {
   } finally {
     isDeleting.value = false;
   }
+};
+
+const sortBy = ref<"asc" | "desc" | null>(null);
+
+const toggleSortTanggalMulai = () => {
+  if (sortBy.value === null) sortBy.value = "asc";
+  else if (sortBy.value === "asc") sortBy.value = "desc";
+  else sortBy.value = null;
 };
 </script>
 

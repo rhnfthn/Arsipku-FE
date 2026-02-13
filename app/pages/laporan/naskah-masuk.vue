@@ -311,7 +311,7 @@
                   : 'bg-white dark:bg-gray-700 border border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Back
+              Sebelumnya
             </button>
 
             <!-- PAGE NUMBER -->
@@ -345,7 +345,7 @@
                   : 'bg-white dark:bg-gray-700 border border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Next
+              Selanjutnya
             </button>
           </div>
         </div>
@@ -615,7 +615,7 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back
+              Sebelumnya
             </button>
             <div class="flex items-center gap-1">
               <button
@@ -668,7 +668,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-500 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Next
+              Selanjutnya
               <svg
                 class="w-4 h-4"
                 fill="none"

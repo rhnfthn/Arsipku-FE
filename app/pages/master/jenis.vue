@@ -70,21 +70,18 @@
             <tr>
               <th
                 @click="sortBy('jenis')"
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary-500 dark:hover:bg-primary-600 transition-colors"
+                class="px-4 py-3 cursor-pointer select-none text-left whitespace-nowrap"
               >
-                <div class="flex items-center gap-2">
-                  <span>Kode Jenis</span>
-                  <span class="w-4 h-4 inline-flex items-center justify-center">
-                    <ArrowUpDown
-                      v-if="sortColumn !== 'jenis'"
-                      class="w-3 h-3 opacity-70"
-                    />
-                    <ChevronUp
-                      v-else-if="sortDirection === 'asc'"
-                      class="w-4 h-4"
-                    />
-                    <ChevronDown v-else class="w-4 h-4" />
-                  </span>
+                <div class="flex items-center gap-1">
+                  Kode Jenis
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-300"
+                    :class="{
+                      'rotate-180':
+                        sortColumn === 'jenis' && sortDirection === 'desc',
+                      'opacity-30': sortColumn !== 'jenis',
+                    }"
+                  />
                 </div>
               </th>
               <th
@@ -97,9 +94,6 @@
               >
                 Perihal
               </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
-              ></th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
@@ -169,19 +163,6 @@
                 <span class="text-sm">
                   {{ row.jenis_text }}
                 </span>
-              </td>
-
-              <!-- Download -->
-              <td class="px-4 py-3">
-                <button
-                  v-if="row.file_url"
-                  @click="downloadFile(row.file_url)"
-                  class="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
-                  title="Download format"
-                >
-                  <Download class="w-4 h-4" />
-                </button>
-                <span v-else class="text-gray-300 dark:text-gray-600">-</span>
               </td>
 
               <!-- FORMAT -->
@@ -366,7 +347,7 @@
 
                         <button
                           v-if="detailJenis.file_url"
-                          @click="downloadFile(detailJenis.file_url)"
+                          @click="openPreview(detailJenis.file_url)"
                           class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                         >
                           <Download class="w-3 h-3" />
@@ -678,7 +659,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -746,7 +727,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -780,6 +761,24 @@
       @cancel="showDeleteModal = false"
     />
   </div>
+
+  <!-- FILE PREVIEW SLIDEOVER -->
+  <USlideover
+    v-model:open="isOpenPreviewFile"
+    title="Pratinjau Dokumen"
+    side="bottom"
+    :dismissible="true"
+    :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
+    class="z-[9999]"
+  >
+    <template #body>
+      <iframe
+        v-if="previewFileUrl"
+        :src="previewFileUrl"
+        class="w-full h-full"
+      ></iframe>
+    </template>
+  </USlideover>
 </template>
 
 <script setup lang="ts">
@@ -874,9 +873,9 @@ const filteredJenis = computed(() => {
 
   return jenisList.value.filter((x) => {
     return (
-      x.jenis.toLowerCase().includes(q) ||
-      x.jenis_text.toLowerCase().includes(q) ||
-      x.format_penomoran.toLowerCase().includes(q)
+      (x.jenis || "").toLowerCase().includes(q) ||
+      (x.jenis_text || "").toLowerCase().includes(q) ||
+      (x.format_penomoran || "").toLowerCase().includes(q)
     );
   });
 });
@@ -897,14 +896,14 @@ const sortedJenis = computed(() => {
   return sorted;
 });
 
-const totalItems = computed(() => sortedJenis.value.length);
-
-const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
-
 const paginatedJenis = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
   return sortedJenis.value.slice(start, start + perPage.value);
 });
+
+const totalItems = computed(() => sortedJenis.value.length);
+
+const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
 // window page number
 const paginationPages = computed(() => {
@@ -938,7 +937,7 @@ const sortBy = (column: string) => {
 };
 
 // Watch for changes
-watch([search, perPage], () => {
+watch(search, () => {
   currentPage.value = 1;
 });
 
@@ -1221,6 +1220,25 @@ const getTemplateName = (data: any) => {
   if (data?.file_name) return data.file_name;
   if (data?.file_url) return getFileName(data.file_url);
   return "-";
+};
+
+const isOpenPreviewFile = ref(false);
+const previewFileUrl = ref<string | null>(null);
+
+const normalizeUrl = (url: string | null) => {
+  if (!url) return null;
+
+  if (url.startsWith("http")) return url;
+
+  const base = useRuntimeConfig().public.apiBase;
+  return `${base}/${url}`;
+};
+
+const openPreview = (url: string | null) => {
+  if (!url) return;
+
+  previewFileUrl.value = normalizeUrl(url);
+  isOpenPreviewFile.value = true;
 };
 
 //export

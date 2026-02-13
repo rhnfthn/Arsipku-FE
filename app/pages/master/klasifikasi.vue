@@ -56,7 +56,19 @@
           <table class="min-w-full text-sm">
             <thead class="bg-primary-400 dark:bg-primary-700 text-white">
               <tr>
-                <th class="px-4 py-3 text-left">Kode Klasifikasi</th>
+                <th
+                  @click="toggleSortKlasifikasi"
+                  class="px-4 py-3 text-left cursor-pointer select-none flex items-center gap-2"
+                >
+                  Kode Klasifikasi
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-300"
+                    :class="{
+                      'rotate-180': sortKlasifikasi === 'desc',
+                      'rotate-0': sortKlasifikasi !== 'desc',
+                    }"
+                  />
+                </th>
                 <th class="px-4 py-3 text-left">Nama Klasifikasi</th>
                 <th class="px-4 py-3 text-left">Deskripsi</th>
                 <th class="px-4 py-3 text-center">Aksi</th>
@@ -165,7 +177,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
               ]"
             >
-              Back
+              Sebelumnya
             </button>
 
             <!-- PAGE NUMBERS -->
@@ -233,7 +245,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
               ]"
             >
-              Next
+              Selanjutnya
             </button>
           </div>
         </div>
@@ -253,7 +265,7 @@
               class="flex justify-between items-center p-4 border-b border-b-gray-200 dark:border-b-gray-700"
             >
               <Heading variant="heading9sb" class="dark:text-white">
-                Detail Klasifikasi <span class="text-red-500">*</span>
+                Detail Klasifikasi
               </Heading>
               <button
                 @click="showDetail = false"
@@ -396,7 +408,7 @@
             <!-- DESKRIPSI -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Deskripsi <span class="text-red-500">*</span>
+                Deskripsi
               </Heading>
 
               <textarea
@@ -526,6 +538,7 @@ import {
   Hash,
   ChartNoAxesGantt,
   Calendar,
+  ArrowUpDown,
 } from "lucide-vue-next";
 import type { BreadcrumbItem } from "~/types/breadcrumb";
 import type { Klasifikasi } from "~/types/klasifikasi";
@@ -822,13 +835,14 @@ const deleteMessage = computed(() => {
 const currentPage = ref(1);
 const perPage = ref(10);
 
-const totalItems = computed(() => klasifikasiList.value.length);
+const totalItems = computed(() => filteredKlasifikasi.value.length);
 
 const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
 const paginatedKlasifikasi = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
-  return klasifikasiList.value.slice(start, start + perPage.value);
+  const end = start + perPage.value;
+  return filteredKlasifikasi.value.slice(start, end);
 });
 
 const paginationPages = computed(() => {
@@ -848,6 +862,43 @@ const paginationPages = computed(() => {
 watch(klasifikasiList, () => {
   currentPage.value = 1;
 });
+
+//search
+const filteredKlasifikasi = computed(() => {
+  let data = [...klasifikasiList.value];
+
+  // search
+  if (search.value.trim()) {
+    const s = search.value.toLowerCase();
+    data = data.filter(
+      (row) =>
+        row.klasifikasi.toLowerCase().includes(s) ||
+        row.klasifikasi_text.toLowerCase().includes(s),
+    );
+  }
+
+  // SORT by Kode Klasifikasi
+  if (sortKlasifikasi.value === "asc") {
+    data.sort((a, b) => a.klasifikasi.localeCompare(b.klasifikasi));
+  } else if (sortKlasifikasi.value === "desc") {
+    data.sort((a, b) => b.klasifikasi.localeCompare(a.klasifikasi));
+  }
+
+  return data;
+});
+
+watch(search, () => {
+  currentPage.value = 1;
+});
+
+//sort
+const sortKlasifikasi = ref<"asc" | "desc" | null>(null);
+
+const toggleSortKlasifikasi = () => {
+  if (sortKlasifikasi.value === null) sortKlasifikasi.value = "asc";
+  else if (sortKlasifikasi.value === "asc") sortKlasifikasi.value = "desc";
+  else sortKlasifikasi.value = null;
+};
 
 //export
 import * as XLSX from "xlsx";

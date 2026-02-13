@@ -160,7 +160,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -223,7 +223,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"

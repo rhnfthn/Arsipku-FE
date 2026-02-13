@@ -1787,6 +1787,16 @@ const selectedParentNode = ref<any>(null);
 
 const handleSaveUnit = async () => {
   try {
+    if (isNaN(Number(formUnit.value.idUnit))) {
+      toast.add({
+        title: "Gagal",
+        description: "ID Unit harus angka",
+        color: "error",
+        icon: "i-lucide-x-circle",
+      });
+      return;
+    }
+
     if (!company.value?.kode) return;
 
     const payload = {
@@ -1804,6 +1814,7 @@ const handleSaveUnit = async () => {
 
     await createOrganization(payload);
     await fetchData(route.params.kode as string);
+
     showSuccessToast("Berhasil menambahkan unit");
 
     showAddUnitModal.value = false;
@@ -1822,6 +1833,16 @@ const chiefOptions = [
 
 const handleSavePosition = async () => {
   try {
+    if (isNaN(Number(formPosition.value.idPos))) {
+      toast.add({
+        title: "Gagal",
+        description: "ID Posisi harus angka",
+        color: "error",
+        icon: "i-lucide-x-circle",
+      });
+      return;
+    }
+
     if (!company.value?.kode || !selectedParentNode.value) return;
 
     const payload = {
@@ -1837,6 +1858,7 @@ const handleSavePosition = async () => {
     };
 
     await createPosition(payload);
+
     selectedParentNode.value._positionsLoaded = false;
     await loadPositions(selectedParentNode.value);
 

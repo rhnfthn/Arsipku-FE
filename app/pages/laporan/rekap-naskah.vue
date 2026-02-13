@@ -392,7 +392,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Back
+          Sebelumnya
         </button>
 
         <!-- PAGE NUMBERS -->
@@ -450,7 +450,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Next
+          Selanjutnya
         </button>
       </div>
     </div>

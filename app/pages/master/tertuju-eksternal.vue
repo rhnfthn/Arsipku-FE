@@ -39,7 +39,7 @@
             class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
-            v-model="search"
+            v-model="filters.search"
             placeholder="Cari nama / alamat / no telephone"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
@@ -61,14 +61,14 @@
               <div class="flex items-center gap-2 ml-5">
                 <span>Nama</span>
                 <ArrowUpDown
-                  class="w-4 h-4 origin-center transition-transform duration-200"
-                  :class="
-                    sortColumn === 'nama'
+                  class="w-4 h-4 origin-center transition-transform duration-300"
+                  :class="[
+                    sortColumn === 'status'
                       ? sortDirection === 'desc'
                         ? 'rotate-180'
                         : 'rotate-0'
-                      : 'opacity-50'
-                  "
+                      : 'opacity-50',
+                  ]"
                 />
               </div>
             </th>
@@ -211,7 +211,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -274,7 +274,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -622,6 +622,25 @@ const refreshData = async () => {
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+.sort-animate {
+  animation: sortPulse 0.25s ease;
+}
+
+@keyframes sortPulse {
+  0% {
+    transform: scale(0.7) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 /* Scrollbar styling */

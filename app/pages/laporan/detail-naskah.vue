@@ -446,7 +446,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -514,7 +514,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -691,7 +691,7 @@ const totalPages = computed(() => {
   return Math.ceil(totalItems.value / rowsPerPage.value);
 });
 
-const paginatedNaskah = computed(() => rawData.value);
+const paginatedNaskah = computed(() => sortedData.value);
 
 const paginationPages = computed(() => {
   const total = totalPages.value;
@@ -714,6 +714,31 @@ const paginationPages = computed(() => {
 const tableColCount = computed(() => 6);
 const skeletonRows = computed(() => rowsPerPage.value);
 
+const sortedData = computed(() => {
+  let data = [...filteredData.value];
+
+  if (!sortKey.value) return data;
+
+  data.sort((a, b) => {
+    if (sortKey.value === "tanggal") {
+      return (
+        new Date(a.tanggalRaw).getTime() - new Date(b.tanggalRaw).getTime()
+      );
+    }
+
+    let valA = a[sortKey.value];
+    let valB = b[sortKey.value];
+
+    if (valA < valB) return -1;
+    if (valA > valB) return 1;
+    return 0;
+  });
+
+  if (sortOrder.value === "desc") data.reverse();
+
+  return data;
+});
+
 //API FETCH
 const fetchDetailNaskah = async () => {
   loading.value = true;
@@ -733,9 +758,10 @@ const fetchDetailNaskah = async () => {
     rowsPerPage.value = res.pagination?.limit ?? 10;
     totalItems.value = res.pagination?.total ?? 0;
 
-    rawData.value = res.data.map((item: any) => ({
+    rawData.value = res.data.map((item) => ({
       id: item.id,
       nomor: item.nomor,
+      tanggalRaw: item.tanggal,
       tanggal: formatTanggal(item.tanggal),
       perihal: item.perihal ?? "-",
       jabatan: item.jabatan,
