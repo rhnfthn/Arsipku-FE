@@ -154,7 +154,11 @@ const onResetCompany = async () => {
   });
 
   setTimeout(() => {
-    window.location.reload(); // 🔥 INI KUNCI
+    window.location.reload();
   }, 800);
 };
+
+definePageMeta({
+  middleware: "auth",
+});
 </script>

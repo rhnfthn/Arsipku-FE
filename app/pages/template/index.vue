@@ -1,12 +1,12 @@
 <template>
   <div
-    class="w-full pt-5 min-h-screen flex flex-col text-gray-800 dark:text-gray-100"
+    class="w-full pt-5 flex flex-col text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
   >
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
-          Template
+          Templat
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -14,24 +14,25 @@
       <button
         @click="openAdd"
         :disabled="isLoadingCreate"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         <Plus class="w-4 h-4" />
-        {{ isLoadingCreate ? "Menyimpan..." : "Tambah Template" }}
+        {{ isLoadingCreate ? "Menyimpan..." : "Tambah Templat" }}
       </button>
     </div>
 
     <!-- CARD -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm w-full">
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm w-full border border-gray-200 dark:border-gray-700"
+    >
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 p-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 p-3 border-b border-gray-200 dark:border-gray-700"
       >
         <div class="flex items-center gap-2">
-          <span class="text-xs dark:text-gray-300">Tampilkan</span>
           <select
             v-model="rowsPerPage"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -39,14 +40,14 @@
           </select>
         </div>
 
-        <div class="relative flex-1 w-full md:w-56">
+        <div class="relative w-full justify-between">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
-            placeholder="Cari template..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
+            placeholder="Cari Templat"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
@@ -95,44 +96,49 @@
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
-          <thead>
-            <tr class="bg-primary-400 dark:bg-primary-800 text-white">
+          <thead
+            class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10"
+          >
+            <tr class="p-3">
               <th
-                class="text-left text-[14px] p-4 border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-500 dark:hover:bg-primary-900 transition"
-                @click="sort('nama_template')"
+                class="text-left text-[14px] px-4 py-3 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                @click="handleSort('nama_templat')"
               >
                 <div class="flex items-center gap-2">
-                  Nama Template
+                  Nama Templat
+
                   <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="[
-                      'w-3 h-3 transition-all',
-                      sortBy === 'nama_template'
-                        ? 'opacity-100 text-yellow-300'
-                        : 'opacity-50',
+                      sortKey === 'nama_templat' ? 'opacity-100' : 'opacity-50',
+                      sortKey === 'nama_templat' && sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0',
                     ]"
                   />
                 </div>
               </th>
 
               <th
-                class="text-left p-3 text-[14px] border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-500 dark:hover:bg-primary-900 transition"
-                @click="toggleSort('file')"
+                class="text-left text-[14px] border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                @click="handleSort('file')"
               >
                 <div class="flex items-center gap-2">
                   Dokumen File
                   <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="[
-                      'w-3 h-3 transition-all',
-                      sortBy === 'file'
-                        ? 'opacity-100 text-yellow-300'
-                        : 'opacity-50',
+                      sortKey === 'file' ? 'opacity-100' : 'opacity-50',
+                      sortKey === 'file' && sortOrder === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0',
                     ]"
                   />
                 </div>
               </th>
 
               <th
-                class="text-left p-3 text-[14px] border-b border-gray-300 dark:border-gray-700 w-28"
+                class="text-left text-[14px] border-b border-gray-300 dark:border-gray-700 w-28"
               >
                 Aksi
               </th>
@@ -148,7 +154,7 @@
               <td class="p-4 text-sm dark:text-gray-200">
                 {{ template.nama_template }}
               </td>
-              <td class="p-4 text-primary-400 dark:text-primary-300 text-sm">
+              <td class="p-4 text-primary dark:text-primary-400 text-sm">
                 {{ getFileName(template.file) }}
               </td>
 
@@ -228,7 +234,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -296,7 +302,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -325,7 +331,7 @@
             variant="heading8b"
             class="font-semibold text-xl mb-5 mt-5 ml-7 dark:text-gray-100"
           >
-            Tambah Template
+            Tambah Templat
           </Heading>
         </template>
 
@@ -333,13 +339,13 @@
           <!-- Nama Template -->
           <div class="flex flex-col">
             <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
-              Nama Template <span class="text-red-500">*</span>
+              Nama Templat <span class="text-red-500">*</span>
             </Heading>
 
             <input
               v-model="addData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-              placeholder="Masukkan nama template"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
+              placeholder="Masukkan nama templat"
             />
           </div>
 
@@ -407,7 +413,7 @@
             variant="heading9b"
             class="font-semibold text-xl mb-2 mt-5 ml-7 dark:text-gray-100"
           >
-            Edit Template
+            Edit Templat
           </Heading>
         </template>
 
@@ -418,13 +424,13 @@
               variant="heading10sb"
               class="font-semibold mb-2 dark:text-gray-200"
             >
-              Nama Template <span class="text-red-500">*</span>
+              Nama Templat <span class="text-red-500">*</span>
             </Heading>
 
             <input
               v-model="editData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-              placeholder="Masukkan nama template"
+              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
+              placeholder="Masukkan nama templat"
             />
           </div>
 
@@ -583,7 +589,7 @@ const addData = ref<any>({
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Template", to: "/admin/template" },
+  { label: "Templat", to: "/admin/template" },
 ];
 
 // ✅ Fetch Data dari API
@@ -597,9 +603,10 @@ const fetchData = async () => {
   }
 };
 
-// Filter & Sort
-const sortBy = ref("nama_template");
-const sortDir = ref<"asc" | "desc">("asc");
+// Filter & Sort - UPDATED untuk animasi yang benar
+const sortKey = ref("");
+const sortOrder = ref<"asc" | "desc">("asc");
+
 const filteredTemplates = computed(() => {
   const s = search.value.toLowerCase();
   return templates.value.filter(
@@ -610,31 +617,25 @@ const filteredTemplates = computed(() => {
 });
 
 const sortedTemplates = computed(() => {
-  return [...filteredTemplates.value].sort((a, b) => {
-    const A = a[sortBy.value];
-    const B = b[sortBy.value];
+  if (!sortKey.value) return filteredTemplates.value;
 
-    if (A < B) return sortDir.value === "asc" ? -1 : 1;
-    if (A > B) return sortDir.value === "asc" ? 1 : -1;
+  return [...filteredTemplates.value].sort((a, b) => {
+    const A = a[sortKey.value];
+    const B = b[sortKey.value];
+
+    if (A < B) return sortOrder.value === "asc" ? -1 : 1;
+    if (A > B) return sortOrder.value === "asc" ? 1 : -1;
     return 0;
   });
 });
 
-const sort = (col: string) => {
-  if (sortBy.value === col) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+// ✅ Handler untuk sort dengan animasi seperti Penandatanganan
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    sortBy.value = col;
-    sortDir.value = "asc";
-  }
-};
-
-const toggleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = column;
-    sortDir.value = "asc";
+    sortKey.value = key;
+    sortOrder.value = "asc";
   }
 };
 

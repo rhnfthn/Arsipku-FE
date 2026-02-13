@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen pt-5">
+  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div class="flex flex-wrap justify-between mb-5">
       <div
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
@@ -8,7 +8,7 @@
       </div>
       <UButton
         @click="showAddModal = true"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 h-8 rounded-lg hover:bg-primary-800 text-xs"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
         Tambah
@@ -16,41 +16,38 @@
     </div>
 
     <div
-      class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+      class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
       <div class="flex flex-wrap gap-4 items-center p-3">
-        <button
-          @click="refreshData"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-
         <!-- Rows per page -->
         <select
           v-model="rowsPerPage"
-          class="border text-xs border-gray-300 bg-white rounded-md px-2 py-1"
+          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option v-for="n in rowsChoices" :key="n" :value="n">
             {{ n }}
           </option>
         </select>
-
+        <button
+          @click="refreshData"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
         <div class="relative flex-1 w-full px-2">
           <Search
-            class="w-3.5 h-3.5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
-            type="text"
-            placeholder="Cari username / nama..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            placeholder="Cari akun"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
 
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-700 text-xs transition-colors"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -59,7 +56,7 @@
 
       <!-- Table -->
       <table class="min-w-full border-collapse text-sm">
-        <thead class="bg-primary-400 text-white text-left">
+        <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
           <tr>
             <th class="px-7 py-3 border-primary-600 font-semibold">Username</th>
             <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
@@ -75,16 +72,24 @@
             v-for="(user, idx) in paginatedUsers"
             :key="user.username"
             :class="[
-              'border-b border-gray-100 hover:bg-blue-50 transition-colors',
-              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+              'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+              idx % 2 === 0
+                ? 'bg-white dark:bg-gray-800'
+                : 'bg-white dark:bg-gray-800',
             ]"
           >
             <td class="px-4 py-3">
               <div class="flex items-start space-x-3 ml-3">
-                <UserRound class="w-4 h-4 text-gray-500 mt-1" />
+                <UserRound
+                  class="w-4 h-4 text-gray-500 dark:text-gray-400 mt-1"
+                />
                 <div>
-                  <p class="font-semibold text-gray-700">{{ user.persnum }}</p>
-                  <p class="text-xs text-gray-600">{{ user.name }}</p>
+                  <p class="font-semibold text-gray-700 dark:text-white">
+                    {{ user.persnum }}
+                  </p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                    {{ user.name }}
+                  </p>
                 </div>
               </div>
             </td>
@@ -110,7 +115,7 @@
 
             <td class="px-4 py-3 text-center space-x-3">
               <button
-                class="text-red-600 hover:text-red-800 transition-colors"
+                class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 transition-colors"
                 @click="openDelete(user)"
               >
                 <Trash2 class="w-4 h-4" />
@@ -123,9 +128,9 @@
       <!-- Pagination -->
       <div
         v-if="filteredUsers.length > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedUsers.length }} dari
           {{ filteredUsers.length }} data
         </div>
@@ -138,8 +143,8 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             <svg
@@ -155,7 +160,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -163,14 +168,14 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               1
             </button>
 
             <span
               v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -183,7 +188,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
               ]"
             >
               {{ page }}
@@ -193,7 +198,7 @@
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
-              class="px-2 text-gray-400 text-sm"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
             </span>
@@ -201,7 +206,7 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
             >
               {{ totalPages }}
             </button>
@@ -214,11 +219,11 @@
             :class="[
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -239,18 +244,11 @@
   </div>
 
   <Teleport to="body">
-    <AddUsulan
-      v-model="openAdd"
-      @submit="handleSubmitFromModal"
-      @preview="handlePreview"
-  /></Teleport>
-
-  <Teleport to="body">
     <Modal v-model="showAddModal" @save="saveAccount">
       <template #title>
         <Heading
           variant="heading9b"
-          class="font-semibold text-sm mb-3 mt-5 ml-5"
+          class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
         >
           Tambah Akun
         </Heading>
@@ -258,21 +256,25 @@
 
       <!-- FIELD PERSNUM -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700">Persnum</label>
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
+          >Persnum</label
+        >
         <input
           v-model="form.persnum"
           type="text"
           placeholder="Masukkan persnum"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
         />
       </div>
 
       <!-- FIELD ROLE -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700">Role</label>
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
+          >Role</label
+        >
         <select
           v-model="form.role"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="" disabled>Pilih role</option>
           <option value="admin">Admin</option>
@@ -305,6 +307,9 @@ import {
 } from "lucide-vue-next";
 import Modal from "@/components/Modal.vue";
 import { useManajemenAkun } from "@/composables/useManajemenAkun";
+definePageMeta({
+  middleware: "auth",
+});
 
 const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
   useManajemenAkun();
@@ -447,16 +452,23 @@ const resetFilter = () => {
 
 const getRoleColor = (role: string) =>
   role === "admin"
-    ? "bg-yellow-100 text-yellow-700"
-    : "bg-blue-100 text-blue-700";
+    ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+    : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
 
 const getStatusColor = (status: string) =>
   status === "aktif"
-    ? "bg-green-100 text-green-700"
-    : "bg-red-100 text-red-600";
+    ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+    : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300";
 </script>
 
 <style scoped>
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -464,16 +476,13 @@ const getStatusColor = (status: string) =>
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 </style>

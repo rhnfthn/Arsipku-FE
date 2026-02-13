@@ -50,8 +50,6 @@ const switchCompany = async (relationSpId: string) => {
       localStorage.setItem("token", res.data.accessToken);
     }
 
-    // ❌ JANGAN panggil API apa pun setelah token diganti
-
     return res;
   } finally {
     switchingId.value = null;

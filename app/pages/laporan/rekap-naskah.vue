@@ -21,6 +21,14 @@
   >
     <div class="top-0 bg-white p-3 relative z-50">
       <div class="flex items-center gap-2 flex-nowrap w-full">
+        <select
+          v-model="rowsPerPage"
+          class="h-8 text-sm border border-gray-300 bg-white rounded-md px-2"
+        >
+          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
         <!-- Refresh -->
         <button
           @click="refreshData"
@@ -29,16 +37,6 @@
         >
           <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
-
-        <select
-          v-model="rowsPerPage"
-          class="h-8 text-xs border border-gray-300 bg-white rounded-md px-2"
-        >
-          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
-
         <div class="relative w-[160px] shrink-0">
           <input
             v-model="jenisSearch"
@@ -46,11 +44,12 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Jenis"
-            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
           />
 
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            :class="{ 'rotate-180': openDropdown === 'type' }"
           />
 
           <!-- DROPDOWN LIST -->
@@ -93,11 +92,12 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Lokasi"
-            class="h-8 w-full rounded-md px-2 text-xs bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
           />
 
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            :class="{ 'rotate-180': openDropdown === 'lokasi' }"
           />
 
           <div
@@ -136,7 +136,7 @@
           <!-- INPUT LOOKALIKE -->
           <div
             @click="toggle('status')"
-            class="h-8 w-full px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+            class="h-8 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
           >
             <!-- PLACEHOLDER -->
             <span v-if="!selectedStatuses.length" class="text-black truncate">
@@ -162,7 +162,10 @@
               </span>
             </div>
 
-            <ChevronDown class="w-4 h-4 ml-auto shrink-0 text-gray-500" />
+            <ChevronDown
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'status' }"
+            />
           </div>
 
           <!-- DROPDOWN -->
@@ -193,10 +196,13 @@
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
           >
             <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
+            <ChevronDown
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'month' }"
+            />
           </button>
 
           <div
@@ -231,10 +237,13 @@
         <div class="relative">
           <button
             @click="toggle('year')"
-            class="h-8 px-2 text-xs bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedYear || "Semua Tahun" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
+            <ChevronDown
+              class="w-4 h-4 ml-auto transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'year' }"
+            />
           </button>
 
           <div
@@ -383,7 +392,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Back
+          Sebelumnya
         </button>
 
         <!-- PAGE NUMBERS -->
@@ -441,7 +450,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Next
+          Selanjutnya
         </button>
       </div>
     </div>
@@ -463,7 +472,7 @@ const toast = useToast();
 //CONST UTIL
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Rekap Naskah", to: "/admin/laporan/rekap-naskah" },
+  { label: "Rekap Naskah", to: "/laporan/rekap-naskah" },
 ];
 
 const getStatusClass = (status: string) => {
@@ -523,6 +532,7 @@ const monthOptions = [
 ];
 
 const statusOptions = [
+  { label: "Final", value: "terpakai_final" },
   { label: "Terpakai", value: "terpakai" },
   { label: "Hangus", value: "hangus" },
   { label: "Booking", value: "booking" },
@@ -736,7 +746,7 @@ const exportExcel = () => {
       }
 
       baseRow["Jumlah"] = row.jumlah;
-      baseRow["Status"] = row.status;
+      baseRow["Status"] = formatStatusLabel(row.status);
       rows.push(baseRow);
     });
 
@@ -808,8 +818,8 @@ const skeletonRows = computed(() => {
 
 const formatStatusLabel = (status: string) => {
   if (!status) return "-";
-  return status
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const found = statusOptions.find((s) => s.value === status);
+  return found?.label ?? status;
 };
 </script>

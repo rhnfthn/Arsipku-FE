@@ -1,455 +1,514 @@
 <template>
-  <div class="min-h-screen">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
-    >
-      <!-- Left Section - Title & Breadcrumb -->
-      <PageHeader title="Klasifikasi" :items="items" />
-      <button
-        @click="openAddModal"
-        class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-800 text-xs transition-colors"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah
-      </button>
-    </div>
-
-    <!-- CARD TABLE -->
-    <div class="rounded-lg border border-gray-200 shadow-sm bg-white">
-      <!-- TOOLBAR (TIDAK ikut scroll) -->
+  <div class="space-y-6 pt-5 dark:bg-gray-900 min-h-screen transition-colors">
+    <!-- HEADER -->
+    <div class="min-h-screen">
       <div
-        class="rounded-lg shadow-sm sticky left-0 z-40 bg-white flex flex-wrap gap-4 items-center p-3 justify-between border-b border-gray-200"
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
       >
+        <!-- Left Section - Title & Breadcrumb -->
+        <PageHeader title="Klasifikasi" :items="items" />
         <button
-          @click="fetchKlasifikasi"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          title="Refresh"
+          @click="openAddModal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-
-        <div class="relative flex-1 w-full md:w-56">
-          <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            v-model="search"
-            placeholder="Cari Klasifikasi..."
-            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
-          />
-        </div>
-        <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:bg-primary-500 text-xs"
-          @click="onExport"
-        >
-          <FileDown class="w-4 h-4" />
-          Export
+          <Plus class="w-4 h-4" />
+          Tambah
         </button>
       </div>
 
-      <!-- TABLE -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-primary-400 text-white">
-            <tr>
-              <th class="px-4 py-3 text-left">Kode Klasifikasi</th>
-              <th class="px-4 py-3 text-left">Nama Klasifikasi</th>
-              <th class="px-4 py-3 text-left">Deskripsi</th>
-              <th class="px-4 py-3 text-center">Aksi</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <!-- LOADING -->
-            <tr v-if="loading">
-              <td colspan="4" class="py-6 text-center text-gray-500">
-                Memuat data...
-              </td>
-            </tr>
-
-            <!-- EMPTY -->
-            <tr v-else-if="klasifikasiList.length === 0">
-              <td colspan="4" class="py-6 text-center text-gray-500">
-                Data tidak ditemukan
-              </td>
-            </tr>
-
-            <!-- ROW -->
-            <tr
-              v-for="row in paginatedKlasifikasi"
-              :key="row.id"
-              class="border-b border-b-gray-200 hover:bg-blue-50"
-            >
-              <td class="px-4 py-3 font-semibold">
-                <span
-                  class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs"
-                >
-                  {{ row.klasifikasi }}
-                </span>
-              </td>
-
-              <td class="px-4 py-3">
-                {{ row.klasifikasi_text }}
-              </td>
-
-              <td class="px-4 py-3 text-gray-600">
-                {{ row.deskripsi ?? "-" }}
-              </td>
-
-              <td class="px-4 py-3">
-                <div class="flex justify-center gap-3">
-                  <button
-                    class="text-gray-600 hover:bg-gray-200 group-hover:text-gray-600 p-2 rounded-lg transition-colors group"
-                    title="Detail"
-                    @click="onView(row)"
-                  >
-                    <Eye class="w-4 h-4" />
-                  </button>
-
-                  <button
-                    class="text-yellow-500 hover:bg-yellow-100 group-hover:text-yellow-600 p-2 rounded-lg transition-colors group"
-                    title="Edit"
-                    @click="onEdit(row)"
-                  >
-                    <Pencil class="w-4 h-4" />
-                  </button>
-
-                  <button
-                    class="p-2 hover:bg-red-100 rounded-lg transition-colors group text-red-600 group-hover:text-red-600"
-                    title="Delete"
-                    @click="onDelete(row)"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- PAGINATION -->
+      <!-- CARD TABLE -->
       <div
-        v-if="totalItems > 0"
-        class="flex items-center justify-between px-4 py-4"
+        class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
       >
-        <div class="text-xs text-gray-600">
-          Menampilkan {{ paginatedKlasifikasi.length }} dari
-          {{ totalItems }} data
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- BACK -->
+        <!-- TOOLBAR (TIDAK ikut scroll) -->
+        <div
+          class="rounded-lg shadow-sm sticky left-0 z-40 bg-white dark:bg-gray-800 flex flex-wrap gap-4 items-center p-3 justify-between border-b border-gray-200 dark:border-gray-700 transition-colors"
+        >
           <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="[
-              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
-            ]"
+            @click="fetchKlasifikasi"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+            title="Refresh"
           >
-            Back
+            <RotateCcw class="w-4 h-4" />
           </button>
 
-          <!-- PAGE NUMBERS -->
-          <div class="flex items-center gap-1">
-            <!-- FIRST -->
-            <button
-              v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary"
-            >
-              1
-            </button>
+          <div class="relative flex-1 w-full md:w-56">
+            <Search
+              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="search"
+              placeholder="Cari klasifikasi"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
+          <button
+            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-500 dark:hover:bg-primary-700 text-xs transition-colors"
+            @click="onExport"
+          >
+            <FileDown class="w-4 h-4" />
+            Export
+          </button>
+        </div>
 
-            <!-- DOTS LEFT -->
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 text-sm"
-            >
-              ...
-            </span>
+        <!-- TABLE -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-primary-400 dark:bg-primary-700 text-white">
+              <tr>
+                <th
+                  @click="toggleSortKlasifikasi"
+                  class="px-4 py-3 text-left cursor-pointer select-none flex items-center gap-2"
+                >
+                  Kode Klasifikasi
+                  <ArrowUpDown
+                    class="w-4 h-4 transition-transform duration-300"
+                    :class="{
+                      'rotate-180': sortKlasifikasi === 'desc',
+                      'rotate-0': sortKlasifikasi !== 'desc',
+                    }"
+                  />
+                </th>
+                <th class="px-4 py-3 text-left">Nama Klasifikasi</th>
+                <th class="px-4 py-3 text-left">Deskripsi</th>
+                <th class="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
 
-            <!-- WINDOW -->
+            <tbody>
+              <!-- LOADING -->
+              <tr v-if="loading">
+                <td
+                  colspan="4"
+                  class="py-6 text-center text-gray-500 dark:text-gray-400"
+                >
+                  Memuat data...
+                </td>
+              </tr>
+
+              <!-- EMPTY -->
+              <tr v-else-if="klasifikasiList.length === 0">
+                <td
+                  colspan="4"
+                  class="py-6 text-center text-gray-500 dark:text-gray-400"
+                >
+                  Data tidak ditemukan
+                </td>
+              </tr>
+
+              <!-- ROW -->
+              <tr
+                v-for="(row, idx) in paginatedKlasifikasi"
+                :key="row.id"
+                :class="[
+                  'border-b border-b-gray-200 dark:border-b-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800'
+                    : 'bg-white dark:bg-gray-800',
+                ]"
+              >
+                <td class="px-4 py-3 font-semibold">
+                  <span
+                    class="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs"
+                  >
+                    {{ row.klasifikasi }}
+                  </span>
+                </td>
+
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  {{ row.klasifikasi_text }}
+                </td>
+
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  {{ row.deskripsi ?? "-" }}
+                </td>
+
+                <td class="px-4 py-3">
+                  <div class="flex justify-center gap-3">
+                    <button
+                      class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
+                      title="Detail"
+                      @click="onView(row)"
+                    >
+                      <Eye class="w-4 h-4" />
+                    </button>
+
+                    <button
+                      class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
+                      title="Edit"
+                      @click="onEdit(row)"
+                    >
+                      <Pencil class="w-4 h-4" />
+                    </button>
+
+                    <button
+                      class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
+                      title="Delete"
+                      @click="onDelete(row)"
+                    >
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <div
+          v-if="totalItems > 0"
+          class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
+        >
+          <div class="text-xs text-gray-600 dark:text-gray-400">
+            Menampilkan {{ paginatedKlasifikasi.length }} dari
+            {{ totalItems }} data
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- BACK -->
             <button
-              v-for="page in paginationPages"
-              :key="page"
-              @click="currentPage = page"
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
               :class="[
-                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-primary-50 hover:text-primary',
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
               ]"
             >
-              {{ page }}
+              Sebelumnya
             </button>
 
-            <!-- DOTS RIGHT -->
-            <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
-              class="px-2 text-gray-400 text-sm"
-            >
-              ...
-            </span>
+            <!-- PAGE NUMBERS -->
+            <div class="flex items-center gap-1">
+              <!-- FIRST -->
+              <button
+                v-if="paginationPages[0] > 1"
+                @click="currentPage = 1"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+              >
+                1
+              </button>
 
-            <!-- LAST -->
+              <!-- DOTS LEFT -->
+              <span
+                v-if="paginationPages[0] > 2"
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- WINDOW -->
+              <button
+                v-for="page in paginationPages"
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  currentPage === page
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
+                ]"
+              >
+                {{ page }}
+              </button>
+
+              <!-- DOTS RIGHT -->
+              <span
+                v-if="
+                  paginationPages[paginationPages.length - 1] < totalPages - 1
+                "
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- LAST -->
+              <button
+                v-if="paginationPages[paginationPages.length - 1] < totalPages"
+                @click="currentPage = totalPages"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
+
+            <!-- NEXT -->
             <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 hover:bg-primary-50 hover:text-primary"
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+              ]"
             >
-              {{ totalPages }}
+              Selanjutnya
             </button>
           </div>
-
-          <!-- NEXT -->
-          <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            :class="[
-              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-primary border border-primary hover:bg-primary-50',
-            ]"
-          >
-            Next
-          </button>
         </div>
       </div>
-    </div>
 
-    <!-- MODAL DETAIL -->
-    <Teleport to="body">
-      <div
-        v-if="showDetail"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      >
-        <div class="bg-white rounded-2xl w-[520px] max-w-[90vw]">
-          <!-- HEADER -->
+      <!-- MODAL DETAIL -->
+      <Teleport to="body">
+        <div
+          v-if="showDetail"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        >
           <div
-            class="flex justify-between items-center p-4 border-b border-b-gray-200"
+            class="bg-white dark:bg-gray-800 rounded-2xl w-[520px] max-w-[90vw] transition-colors"
           >
-            <Heading variant="heading9sb">
-              Detail Jenis <span class="text-red-500">*</span>
-            </Heading>
-            <button @click="showDetail = false">
-              <X class="w-4 h-4" />
-            </button>
-          </div>
+            <!-- HEADER -->
+            <div
+              class="flex justify-between items-center p-4 border-b border-b-gray-200 dark:border-b-gray-700"
+            >
+              <Heading variant="heading9sb" class="dark:text-white">
+                Detail Klasifikasi
+              </Heading>
+              <button
+                @click="showDetail = false"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
 
-          <!-- BODY -->
-          <div class="p-5 space-y-6 text-sm">
-            <!-- KODE KLASIFIKASI -->
-            <div class="flex gap-3 items-start">
-              <Hash class="w-5 h-5 text-blue-600 mt-1" />
-              <div class="flex-1">
-                <p class="text-sm text-gray-600">Kode Klasifikasi</p>
+            <!-- BODY -->
+            <div class="p-5 space-y-6 text-sm">
+              <!-- KODE KLASIFIKASI -->
+              <div class="flex gap-3 items-start">
+                <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
+                <div class="flex-1">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Kode Klasifikasi
+                  </p>
 
-                <div class="mt-2">
-                  <span
-                    class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 text-blue-700 font-semibold text-sm"
-                  >
-                    {{ detail?.klasifikasi }}
-                  </span>
+                  <div class="mt-2">
+                    <span
+                      class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-sm"
+                    >
+                      {{ detail?.klasifikasi }}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              <!-- NAMA KLASIFIKASI -->
+              <div class="flex gap-3 items-start">
+                <FileText
+                  class="w-5 h-5 text-green-600 dark:text-green-400 mt-1"
+                />
+                <div class="flex-1">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Nama Klasifikasi
+                  </p>
+                  <p
+                    class="mt-2 text-sm font-medium text-black dark:text-white"
+                  >
+                    {{ detail?.klasifikasi_text }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- DESKRIPSI -->
+              <div class="flex gap-3 items-start">
+                <ChartNoAxesGantt
+                  class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1"
+                />
+                <div class="flex-1">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Deskripsi
+                  </p>
+                  <p
+                    class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200"
+                  >
+                    {{ detail?.deskripsi ?? "-" }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- TANGGAL DIBUAT -->
+              <div class="flex gap-3 items-start">
+                <Calendar
+                  class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1"
+                />
+                <div class="flex-1">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Tanggal Dibuat
+                  </p>
+                  <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="border-t border-t-gray-200 dark:border-t-gray-700 p-4">
+              <button
+                @click="showDetail = false"
+                class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- MODAL TAMBAH KLASIFIKASI -->
+      <Teleport to="body">
+        <Modal v-model="showAddModal" size="xl" @save="submitAddKlasifikasi">
+          <template #title>
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
+            >
+              Tambah Klasifikasi
+            </Heading>
+          </template>
+
+          <div class="space-y-5 p-1">
+            <!-- KODE KLASIFIKASI -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Kode Klasifikasi <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                v-model="addForm.klasifikasi"
+                type="text"
+                placeholder="OPS.0123"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+
+              <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
+                {{ addErrors.klasifikasi }}
+              </p>
             </div>
 
             <!-- NAMA KLASIFIKASI -->
-            <div class="flex gap-3 items-start">
-              <FileText class="w-5 h-5 text-green-600 mt-1" />
-              <div class="flex-1">
-                <p class="text-sm text-gray-600">Nama Klasifikasi</p>
-                <p class="mt-2 text-sm font-medium text-black">
-                  {{ detail?.klasifikasi_text }}
-                </p>
-              </div>
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Nama Klasifikasi <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                v-model="addForm.klasifikasi_text"
+                type="text"
+                placeholder="Air Traffic Flow Management (ATFM)"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+
+              <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
+                {{ addErrors.klasifikasi_text }}
+              </p>
             </div>
 
             <!-- DESKRIPSI -->
-            <div class="flex gap-3 items-start">
-              <ChartNoAxesGantt class="w-5 h-5 text-orange-500 mt-1" />
-              <div class="flex-1">
-                <p class="text-sm text-gray-600">Deskripsi</p>
-                <p class="mt-2 text-sm font-medium text-gray-900">
-                  {{ detail?.deskripsi ?? "-" }}
-                </p>
-              </div>
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Deskripsi
+              </Heading>
+
+              <textarea
+                v-model="addForm.deskripsi"
+                rows="4"
+                placeholder="Rekaman kegiatan atau peristiwa yang berkaitan ..."
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Opsional, boleh dikosongkan.
+              </p>
             </div>
 
-            <!-- TANGGAL DIBUAT -->
-            <div class="flex gap-3 items-start">
-              <Calendar class="w-5 h-5 text-cyan-600 mt-1" />
-              <div class="flex-1">
-                <p class="text-sm text-gray-600">Tanggal Dibuat</p>
-                <p class="mt-2 text-sm text-gray-900">-</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- FOOTER -->
-          <div class="border-t border-t-gray-200 p-4">
-            <button
-              @click="showDetail = false"
-              class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
+            <!-- LOADING INFO -->
+            <p
+              v-if="savingAdd"
+              class="text-xs text-gray-500 dark:text-gray-400"
             >
-              Tutup
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- MODAL TAMBAH KLASIFIKASI -->
-    <Teleport to="body">
-      <Modal v-model="showAddModal" size="xl" @save="submitAddKlasifikasi">
-        <template #title>
-          <Heading
-            variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5"
-          >
-            Tambah Klasifikasi
-          </Heading>
-        </template>
-
-        <div class="space-y-5 p-1">
-          <!-- KODE KLASIFIKASI -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Kode Klasifikasi <span class="text-red-500">*</span>
-            </Heading>
-
-            <input
-              v-model="addForm.klasifikasi"
-              type="text"
-              placeholder="OPS.0123"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
-
-            <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
-              {{ addErrors.klasifikasi }}
+              Menyimpan data...
             </p>
           </div>
+        </Modal>
+      </Teleport>
 
-          <!-- NAMA KLASIFIKASI -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Nama Klasifikasi <span class="text-red-500">*</span>
+      <!-- MODAL EDIT KLASIFIKASI -->
+      <Teleport to="body">
+        <Modal v-model="showEditModal" size="xl" @save="submitEditKlasifikasi">
+          <template #title>
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
+            >
+              Edit Klasifikasi
             </Heading>
+          </template>
 
-            <input
-              v-model="addForm.klasifikasi_text"
-              type="text"
-              placeholder="Air Traffic Flow Management (ATFM)"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
+          <div class="space-y-5 p-1">
+            <!-- KODE -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Kode Klasifikasi <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="editForm.klasifikasi"
+                type="text"
+                placeholder="OPS.01234"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
 
-            <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
-              {{ addErrors.klasifikasi_text }}
-            </p>
+              <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
+                {{ editErrors.klasifikasi }}
+              </p>
+            </div>
+
+            <!-- NAMA -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Nama Klasifikasi <span class="text-red-500">*</span>
+              </Heading>
+
+              <input
+                v-model="editForm.klasifikasi_text"
+                type="text"
+                placeholder="Air Traffic Flow Management (ATFM)"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+
+              <p
+                v-if="editErrors.klasifikasi_text"
+                class="text-xs text-red-500"
+              >
+                {{ editErrors.klasifikasi_text }}
+              </p>
+            </div>
+
+            <!-- DESKRIPSI -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                Deskripsi <span class="text-red-500">*</span>
+              </Heading>
+
+              <textarea
+                v-model="editForm.deskripsi"
+                rows="4"
+                placeholder="Deskripsi klasifikasi..."
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Opsional, boleh dikosongkan.
+              </p>
+            </div>
           </div>
-
-          <!-- DESKRIPSI -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Deskripsi <span class="text-red-500">*</span>
-            </Heading>
-
-            <textarea
-              v-model="addForm.deskripsi"
-              rows="4"
-              placeholder="Rekaman kegiatan atau peristiwa yang berkaitan ..."
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
-
-            <p class="text-xs text-gray-500">Opsional, boleh dikosongkan.</p>
-          </div>
-
-          <!-- LOADING INFO -->
-          <p v-if="savingAdd" class="text-xs text-gray-500">
+          <p v-if="savingEdit" class="text-xs text-gray-500 dark:text-gray-400">
             Menyimpan data...
           </p>
-        </div>
-      </Modal>
-    </Teleport>
-
-    <!-- MODAL EDIT KLASIFIKASI -->
-    <Teleport to="body">
-      <Modal v-model="showEditModal" size="xl" @save="submitEditKlasifikasi">
-        <template #title>
-          <Heading
-            variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5"
-          >
-            Edit Klasifikasi
-          </Heading>
-        </template>
-
-        <div class="space-y-5 p-1">
-          <!-- KODE -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Kode Klasifikasi <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="editForm.klasifikasi"
-              type="text"
-              placeholder="OPS.01234"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
-
-            <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
-              {{ editErrors.klasifikasi }}
-            </p>
-          </div>
-
-          <!-- NAMA -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Nama Klasifikasi <span class="text-red-500">*</span>
-            </Heading>
-
-            <input
-              v-model="editForm.klasifikasi_text"
-              type="text"
-              placeholder="Air Traffic Flow Management (ATFM)"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
-
-            <p v-if="editErrors.klasifikasi_text" class="text-xs text-red-500">
-              {{ editErrors.klasifikasi_text }}
-            </p>
-          </div>
-
-          <!-- DESKRIPSI -->
-          <div class="flex flex-col gap-1">
-            <Heading variant="heading11m" class="text-xs">
-              Deskripsi <span class="text-red-500">*</span>
-            </Heading>
-
-            <textarea
-              v-model="editForm.deskripsi"
-              rows="4"
-              placeholder="Deskripsi klasifikasi..."
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300"
-            />
-
-            <p class="text-xs text-gray-500">Opsional, boleh dikosongkan.</p>
-          </div>
-
-          <p v-if="savingEdit" class="text-xs text-gray-500">
-            Menyimpan data...
-          </p>
-        </div>
-      </Modal>
-    </Teleport>
-
+        </Modal>
+      </Teleport>
+    </div>
     <ConfirmDialog
       v-model="showDeletePopup"
       type="danger"
@@ -479,12 +538,16 @@ import {
   Hash,
   ChartNoAxesGantt,
   Calendar,
+  ArrowUpDown,
 } from "lucide-vue-next";
 import type { BreadcrumbItem } from "~/types/breadcrumb";
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { useKlasifikasi } from "~/composables/useKlasifikasi";
 import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const items: BreadcrumbItem[] = [
   { label: "Beranda", to: "/beranda" },
@@ -521,6 +584,7 @@ const {
 //post
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(false);
+const search = ref("");
 
 const fetchKlasifikasi = async () => {
   loading.value = true;
@@ -771,13 +835,14 @@ const deleteMessage = computed(() => {
 const currentPage = ref(1);
 const perPage = ref(10);
 
-const totalItems = computed(() => klasifikasiList.value.length);
+const totalItems = computed(() => filteredKlasifikasi.value.length);
 
 const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
 const paginatedKlasifikasi = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
-  return klasifikasiList.value.slice(start, start + perPage.value);
+  const end = start + perPage.value;
+  return filteredKlasifikasi.value.slice(start, end);
 });
 
 const paginationPages = computed(() => {
@@ -797,6 +862,43 @@ const paginationPages = computed(() => {
 watch(klasifikasiList, () => {
   currentPage.value = 1;
 });
+
+//search
+const filteredKlasifikasi = computed(() => {
+  let data = [...klasifikasiList.value];
+
+  // search
+  if (search.value.trim()) {
+    const s = search.value.toLowerCase();
+    data = data.filter(
+      (row) =>
+        row.klasifikasi.toLowerCase().includes(s) ||
+        row.klasifikasi_text.toLowerCase().includes(s),
+    );
+  }
+
+  // SORT by Kode Klasifikasi
+  if (sortKlasifikasi.value === "asc") {
+    data.sort((a, b) => a.klasifikasi.localeCompare(b.klasifikasi));
+  } else if (sortKlasifikasi.value === "desc") {
+    data.sort((a, b) => b.klasifikasi.localeCompare(a.klasifikasi));
+  }
+
+  return data;
+});
+
+watch(search, () => {
+  currentPage.value = 1;
+});
+
+//sort
+const sortKlasifikasi = ref<"asc" | "desc" | null>(null);
+
+const toggleSortKlasifikasi = () => {
+  if (sortKlasifikasi.value === null) sortKlasifikasi.value = "asc";
+  else if (sortKlasifikasi.value === "asc") sortKlasifikasi.value = "desc";
+  else sortKlasifikasi.value = null;
+};
 
 //export
 import * as XLSX from "xlsx";
@@ -857,3 +959,12 @@ const onExport = () => {
   });
 };
 </script>
+
+<style scoped>
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+</style>

@@ -16,6 +16,9 @@ import {
 } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import ConfirmPopup from "@/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -55,6 +58,9 @@ const data = ref<Payment[]>([
     keterangan: "Lorem Ipsum is simply dummy text of the ",
   },
 ]);
+
+const loading = ref(false);
+const isRefreshing = ref(false);
 
 const columns: TableColumn<Payment>[] = [
   {
@@ -258,6 +264,10 @@ const items = [
 
 const sortOrder = ref<"asc" | "desc">("desc");
 
+const toggleSort = () => {
+  sortOrder.value = sortOrder.value === "desc" ? "asc" : "desc";
+};
+
 const sortedData = computed(() => {
   return [...data.value].sort((a, b) => {
     const timeA = new Date(a.tanggal).getTime();
@@ -312,6 +322,27 @@ const confirmDelete = () => {
   showDeleteConfirm.value = false;
   deleteIndex.value = null;
 };
+
+const refreshData = async () => {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
+
+  try {
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    toast.add({
+      title: "Data berhasil diperbarui!",
+      color: "success",
+      icon: "i-lucide-refresh-ccw",
+    });
+  } catch (error) {
+    console.error("Gagal refresh data", error);
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Penyingkat Tautan", to: "/admin/penyingkat-tautan" },
@@ -319,27 +350,11 @@ const breadcrumbs = [
 </script>
 
 <template>
-  <!-- <div class="flex flex-wrap justify-between">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-    >
-      <PageHeader title="Short Url" :items="items" />
-    </div>
-    <div>
-      <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Url
-      </button>
-    </div>
-  </div> -->
-  <div class="space-y-6 pt-5">
+  <div class="pt-5 bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md">
+        <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Penyingkat Tautan
         </Heading>
         <PageHeader :items="breadcrumbs" />
@@ -347,28 +362,39 @@ const breadcrumbs = [
 
       <button
         @click="openAdd"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-800 text-sm"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
         Tambah Tautan
       </button>
     </div>
+
     <Teleport to="body">
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
           <div class="ml-5 mb-3 mt-3">
-            <Heading variant="heading9b" class="font-semibold text-sm">
-              Buat Tautan Baru
+            <Heading
+              variant="heading9b"
+              class="font-semibold text-sm dark:text-white"
+            >
+              {{ isEditMode ? "Edit Tautan" : "Buat Tautan Baru" }}
             </Heading>
 
-            <Heading variant="body2" class="text-xs text-gray-500 mt-1">
-              Masukan Tautan Panjang untuk Dipersingkat
+            <Heading
+              variant="body2"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+            >
+              {{
+                isEditMode
+                  ? "Perbarui informasi tautan"
+                  : "Masukan Tautan Panjang untuk Dipersingkat"
+              }}
             </Heading>
           </div>
         </template>
 
         <div class="flex flex-col gap-1">
-          <Heading variant="body2m"
+          <Heading variant="body2m" class="dark:text-gray-200"
             >Tautan Panjang<span class="text-red-500">*</span></Heading
           >
           <UInput
@@ -379,7 +405,9 @@ const breadcrumbs = [
             class="mb-3"
           />
 
-          <Heading variant="body2m">Back Half</Heading>
+          <Heading variant="body2m" class="dark:text-gray-200"
+            >Back Half</Heading
+          >
           <UInput
             color="primary"
             placeholder="example favorit-link"
@@ -388,7 +416,9 @@ const breadcrumbs = [
             class="mb-3"
           />
 
-          <Heading variant="body2m">Keterangan</Heading>
+          <Heading variant="body2m" class="dark:text-gray-200"
+            >Keterangan</Heading
+          >
           <UInput
             color="primary"
             placeholder="Tambahkan Keterangan"
@@ -399,126 +429,212 @@ const breadcrumbs = [
         </div>
       </Modal>
     </Teleport>
+
     <!-- CARD FULL HEIGHT -->
     <div
-      class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
+      class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
     >
-      <div class="flex flex-wrap gap-2 p-2 items-center">
+      <div
+        class="flex flex-wrap gap-2 p-3 items-center border-b border-gray-200 dark:border-gray-700"
+      >
         <button
           @click="toggleSort"
-          class="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"
+          title="Urutkan"
         >
           <ArrowUpDown class="w-4 h-4" />
         </button>
 
-        <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
-          <RotateCcw class="w-4 h-4" />
+        <button
+          @click="refreshData"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"
+          :disabled="isRefreshing"
+          title="Refresh"
+        >
+          <RotateCcw
+            class="w-4 h-4"
+            :class="{ 'animate-spin': isRefreshing }"
+          />
         </button>
 
-        <div class="relative flex-1 w-full my-3 px-2">
+        <div class="relative flex-1 w-full justify-between">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
-            type="text"
-            placeholder="Cari berkas / klasifikasi..."
-            class="w-full bg-gray-50 border border-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg"
+            v-model="search"
+            placeholder="Cari Tautan"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
+
       <div class="w-full overflow-auto">
         <table class="min-w-full text-sm border-collapse">
-          <thead class="bg-primary-400 text-white">
+          <thead
+            class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10"
+          >
             <tr class="p-3">
-              <th class="px-4 py-3 text-left">Tanggal</th>
-              <th class="px-4 py-3 text-left">Tautan Asli</th>
-              <th class="px-4 py-3 text-left">Tautan Modifikasi</th>
-              <th class="px-4 py-3 text-left">Keterangan</th>
-              <th class="px-4 py-3 text-center">Aksi</th>
+              <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
+              <th class="px-4 py-3 text-left font-semibold">Tautan Asli</th>
+              <th class="px-4 py-3 text-left font-semibold">
+                Tautan Modifikasi
+              </th>
+              <th class="px-4 py-3 text-left font-semibold">Keterangan</th>
+              <th class="px-4 py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr
-              v-for="(row, index) in sortedData"
-              :key="index"
-              class="hover:bg-blue-50 dark:hover:bg-gray-800 border-b border-b-gray-200"
-            >
-              <!-- Tanggal -->
-              <td class="px-3 py-2 whitespace-nowrap">
-                {{
-                  new Date(row.tanggal).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })
-                }}
-              </td>
+            <!-- SKELETON LOADING -->
+            <template v-if="loading">
+              <tr
+                v-for="i in 5"
+                :key="'skeleton-' + i"
+                class="animate-pulse border-b border-gray-200 dark:border-gray-700"
+              >
+                <td class="px-3 py-2">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"
+                  ></div>
+                </td>
+                <td class="px-3 py-2">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
+                  ></div>
+                </td>
+                <td class="px-3 py-2">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
+                    ></div>
+                    <div
+                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
+                    ></div>
+                  </div>
+                </td>
+                <td class="px-3 py-2">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40"
+                  ></div>
+                </td>
+                <td class="px-3 py-2">
+                  <div class="flex items-center justify-center gap-2">
+                    <div
+                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
+                    ></div>
+                    <div
+                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+            </template>
 
-              <!-- URL Asli -->
-              <td class="px-3 py-2 max-w-[250px]">
-                <a
-                  :href="row.LUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-primary-600 underline hover:text-primary-800 break-all"
-                  :title="row.LUrl"
+            <!-- DATA ROWS -->
+            <template v-else>
+              <tr
+                v-for="(row, index) in sortedData"
+                :key="index"
+                class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition"
+              >
+                <!-- Tanggal -->
+                <td
+                  class="px-3 py-2 whitespace-nowrap text-gray-900 dark:text-white"
                 >
-                  {{ truncateUrl(row.LUrl, 35) }}
-                </a>
-              </td>
+                  {{
+                    new Date(row.tanggal).toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })
+                  }}
+                </td>
 
-              <!-- URL Modifikasi -->
-              <td class="px-3 py-2 max-w-[260px]">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-xs break-all" :title="row.SUrl">
-                    {{ truncateUrl(row.SUrl, 25) }}
-                  </span>
-
-                  <button
-                    class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                    @click="
-                      copy(row.SUrl);
-                      toast.add({
-                        title: 'URL berhasil disalin!',
-                        color: 'success',
-                        icon: 'i-lucide-copy',
-                      });
-                    "
+                <!-- URL Asli -->
+                <td class="px-3 py-2 max-w-[250px]">
+                  <a
+                    :href="row.LUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary-600 dark:text-primary-400 underline hover:text-primary-800 dark:hover:text-primary-300 break-all transition"
+                    :title="row.LUrl"
                   >
-                    <Copy class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                  </button>
-                </div>
-              </td>
+                    {{ truncateUrl(row.LUrl, 35) }}
+                  </a>
+                </td>
 
-              <!-- Keterangan -->
-              <td class="px-3 py-2 max-w-[300px]">
-                {{ row.keterangan }}
-              </td>
+                <!-- URL Modifikasi -->
+                <td class="px-3 py-2 max-w-[260px]">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="font-mono text-xs text-gray-900 dark:text-white break-all"
+                      :title="row.SUrl"
+                    >
+                      {{ truncateUrl(row.SUrl, 25) }}
+                    </span>
 
-              <!-- ACTION -->
-              <td class="px-3 py-2 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <!-- EDIT -->
-                  <button
-                    class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900"
-                    @click="openEdit(row, index)"
-                  >
-                    <Pencil
-                      class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
-                    />
-                  </button>
+                    <button
+                      class="p-1.5 rounded hover:bg-primary-300 dark:hover:bg-gray-700 transition"
+                      @click="
+                        copy(row.SUrl);
+                        toast.add({
+                          title: 'URL berhasil disalin!',
+                          color: 'success',
+                          icon: 'i-lucide-copy',
+                        });
+                      "
+                    >
+                      <Copy
+                        class="w-4 h-4 text-gray-600 hover:text-white dark:text-gray-300"
+                      />
+                    </button>
+                  </div>
+                </td>
 
-                  <!-- DELETE -->
-                  <button
-                    class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"
-                    @click="openDeleteConfirm(index)"
-                  >
-                    <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
-                  </button>
-                </div>
-              </td>
-            </tr>
+                <!-- Keterangan -->
+                <td
+                  class="px-3 py-2 max-w-[300px] text-gray-700 dark:text-gray-300"
+                >
+                  {{ row.keterangan }}
+                </td>
+
+                <!-- ACTION -->
+                <td class="px-3 py-2 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <!-- EDIT -->
+                    <button
+                      class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition"
+                      @click="openEdit(row, index)"
+                      title="Edit"
+                    >
+                      <Pencil
+                        class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
+                      />
+                    </button>
+
+                    <!-- DELETE -->
+                    <button
+                      class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                      @click="openDeleteConfirm(index)"
+                      title="Hapus"
+                    >
+                      <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- EMPTY STATE -->
+              <tr v-if="sortedData.length === 0">
+                <td
+                  colspan="5"
+                  class="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                >
+                  Tidak ada data tautan
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
 
@@ -535,3 +651,18 @@ const breadcrumbs = [
     </div>
   </div>
 </template>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

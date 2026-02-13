@@ -23,14 +23,14 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
         <!-- Rows dropdown -->
-        <div class="flex items-center gap-2 px-4 py-2">
+        <div class="flex items-center gap-2 px-4">
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -125,32 +125,42 @@
                 :key="col.key"
                 @click="col.sortable && handleSort(col.key)"
                 :class="[
-                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap hover:bg-primary-600',
+                  'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none '
+                    ? 'cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition'
                     : 'cursor-default',
                 ]"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <UIcon
+                  <ArrowUpDown
                     v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === col.key
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <UIcon
-                    :name="getSortIcon('status')"
-                    class="w-4 h-4"
-                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
@@ -249,7 +259,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -317,7 +327,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -348,7 +358,15 @@
 
   <!-- MODAL ROW DETAIL -->
   <Teleport to="body">
-    <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
+    <Modal
+      v-model="openDetail"
+      :hideDefaultFooter="true"
+      size="xl"
+      :ui="{
+        overlay: 'z-[100]',
+        content: 'z-[110]',
+      }"
+    >
       <!-- TITLE -->
       <template #title>
         <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
@@ -443,14 +461,18 @@
                         {
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-blue-400':
                             detail.status === 'terpakai',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
+                          'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                            detail.status === 'hangus',
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                            detail.status === 'terpakai_final',
                         },
                       ]"
                     >
-                      {{ detail.status }}
+                      {{ getStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
@@ -465,21 +487,17 @@
                 </button>
               </div>
 
-              <!-- FILE SECTION -->
-              <div class="mt-2 space-y-2">
-                <!-- ADA FILE (backend / lokal) -->
+              <!-- FILE SECTION - PRIMARY/BLUE COLOR -->
+              <div class="mt-2">
+                <!-- File sudah ada (backend atau lokal) -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
-                  class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md px-3 py-2 transition-colors"
+                  class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                 >
-                  <button
-                    @click="openPreview(detail, idx)"
-                    class="flex items-start gap-3 flex-1 text-left transition rounded-md group"
-                  >
-                    <!-- FILE ICON -->
-                    <div class="flex-shrink-0 mt-0.5">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 flex-1">
                       <svg
-                        class="w-5 h-5 text-green-600 dark:text-green-400"
+                        class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -488,82 +506,63 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"
                           stroke-width="2"
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
+                      <div
+                        class="flex-1 cursor-pointer hover:underline"
+                        @click="previewFile(detail)"
+                      >
+                        <p
+                          class="text-sm font-medium text-primary dark:text-blue-400"
+                        >
+                          {{ detail.file_name || filesByIndex[idx]?.name }}
+                        </p>
+                        <p
+                          class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                        >
+                          {{
+                            filesByIndex[idx]
+                              ? formatFileSize(filesByIndex[idx].size)
+                              : "Klik untuk preview"
+                          }}
+                        </p>
+                      </div>
                     </div>
 
-                    <!-- FILE INFO -->
-                    <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-medium text-green-700 dark:text-green-400 underline decoration-green-600/30 group-hover:decoration-green-600 dark:decoration-green-400/30 dark:group-hover:decoration-green-400 transition-colors truncate"
-                      >
-                        {{ detail.file_name || filesByIndex[idx]?.name }}
-                      </p>
-                      <p
-                        class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
-                      >
-                        Klik untuk preview
-                      </p>
-                    </div>
-
-                    <!-- PREVIEW ICON -->
-                    <div class="flex-shrink-0 ml-2">
-                      <svg
-                        class="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    </div>
-                  </button>
-
-                  <!-- Remove button for local files only -->
-                  <button
-                    v-if="filesByIndex[idx] && !detail.file_name"
-                    @click="removeFile(idx)"
-                    class="ml-2 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
-                    title="Hapus file"
-                  >
-                    <svg
-                      class="w-4 h-4 text-red-600 dark:text-red-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <!-- Remove button hanya untuk file lokal -->
+                    <button
+                      v-if="filesByIndex[idx] && !detail.file_name"
+                      @click="removeFile(idx)"
+                      class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
-                <!-- BELUM ADA FILE & MASIH BISA UPLOAD -->
+                <!-- Upload form (belum ada file & bisa upload) -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
                 >
                   <label
-                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
                   >
                     <svg
-                      class="w-5 h-5 text-gray-400 dark:text-gray-500"
+                      class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -583,7 +582,7 @@
                         Pilih file (Opsional)
                       </span>
                       <span
-                        class="text-xs text-gray-500 dark:text-gray-400 block"
+                        class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5"
                       >
                         PDF, DOC, DOCX (Max 5MB)
                       </span>
@@ -598,14 +597,14 @@
                   </label>
                 </div>
 
-                <!-- BELUM ADA FILE & TIDAK BISA UPLOAD -->
+                <!-- Belum ada file & tidak bisa upload -->
                 <div
                   v-else
-                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
+                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
                 >
                   <div class="flex items-center gap-2">
                     <svg
-                      class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
+                      class="w-4 h-4 text-yellow-600 dark:text-yellow-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -692,7 +691,9 @@
             <span v-else>Kirim Usulan</span>
           </button>
 
+          <!-- Hapus button hanya muncul jika status "Belum Diajukan" -->
           <button
+            v-if="selectedRow?.status === 'Belum Diajukan'"
             @click="openConfirmDelete = true"
             :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
             class="flex-1 px-5 py-2 text-sm border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -703,6 +704,42 @@
       </template>
     </Modal>
   </Teleport>
+
+  <!-- PREVIEW SLIDEOVER -->
+  <USlideover
+    v-model:open="isOpenPreview"
+    title="Pratinjau"
+    side="bottom"
+    :dismissible="true"
+    :ui="{
+      overlay: 'z-[200]',
+      content: 'z-[210] h-screen max-h-screen',
+      body: 'p-0',
+      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+    }"
+  >
+    <template #body>
+      <div
+        class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+      >
+        <iframe
+          v-if="pdfUrl"
+          :key="pdfUrl"
+          :src="pdfUrl"
+          allowfullscreen
+          class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+        />
+
+        <div v-else class="flex flex-col items-center gap-2">
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin w-8 h-8 text-primary-500"
+          />
+          <span class="text-gray-500">Memuat Pratinjau...</span>
+        </div>
+      </div>
+    </template>
+  </USlideover>
 
   <!-- CONFIRM SUBMIT POPUP -->
   <ConfirmPopup
@@ -743,188 +780,6 @@
       {{ tooltip.text }}
     </div>
   </Teleport>
-
-  <!-- PREVIEW SLIDEOVER (FULL PAGE) -->
-  <Teleport to="body">
-    <USlideover
-      v-model="isOpenPreview"
-      side="bottom"
-      :ui="{
-        width: 'w-screen max-w-full',
-        overlay: {
-          background: 'bg-gray-900/90 dark:bg-gray-900/95',
-        },
-        base: 'h-screen max-h-screen',
-        body: 'p-0 flex-1 overflow-hidden',
-        header:
-          'border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
-        footer:
-          'border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
-      }"
-    >
-      <template #header>
-        <div class="flex items-center justify-between w-full px-6 py-4">
-          <div class="flex items-center gap-3">
-            <svg
-              class="w-5 h-5 text-primary dark:text-primary-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            <h3 class="text-lg font-semibold dark:text-gray-100">
-              Preview Dokumen
-            </h3>
-          </div>
-          <button
-            @click="closePreview"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Tutup preview"
-          >
-            <svg
-              class="w-5 h-5 text-gray-600 dark:text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-      </template>
-
-      <template #body>
-        <div
-          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-        >
-          <!-- Loading State -->
-          <div v-if="!previewUrl" class="flex flex-col items-center gap-3">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary-400"
-            ></div>
-            <span class="text-gray-500 dark:text-gray-400"
-              >Memuat Preview...</span
-            >
-          </div>
-
-          <!-- Error State -->
-          <div
-            v-else-if="previewError"
-            class="flex flex-col items-center gap-3 p-6"
-          >
-            <svg
-              class="w-16 h-16 text-red-500 dark:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div class="text-center">
-              <p class="text-gray-700 dark:text-gray-300 font-medium">
-                Gagal memuat preview
-              </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ previewError }}
-              </p>
-            </div>
-            <button
-              @click="closePreview"
-              class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Tutup
-            </button>
-          </div>
-
-          <!-- Iframe Preview -->
-          <iframe
-            v-else
-            :key="previewUrl"
-            :src="previewUrl"
-            class="w-full h-full border-none"
-            @error="handlePreviewError"
-            allowfullscreen
-          />
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex items-center justify-between px-6 py-4">
-          <div
-            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <span class="truncate max-w-md">{{
-              previewFileName || "Dokumen"
-            }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              v-if="previewUrl && !previewError"
-              @click="downloadFile"
-              class="px-4 py-2 text-sm bg-primary text-white hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
-              title="Download file"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              Download
-            </button>
-            <button
-              @click="closePreview"
-              class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      </template>
-    </USlideover>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -962,20 +817,15 @@ const rows = ref([]);
 const loading = ref<boolean>(true);
 const pagination = ref(null);
 
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+
 // File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
 
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const openConfirmSubmit = ref(false);
-
-// Preview state
-const isOpenPreview = ref(false);
-const previewUrl = ref("");
-const previewFileName = ref("");
-const previewError = ref("");
-const currentPreviewDetail = ref(null);
-const currentPreviewIndex = ref(null);
 
 // Person mapping
 const personMap = ref(new Map());
@@ -998,6 +848,49 @@ const openFilterStatus = ref<boolean>(false);
 
 // Debounce timeout
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/* Get status label - FIXED untuk terpakai_final menjadi "Final" */
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    pending: "pending",
+    menunggu: "menunggu",
+    booking: "booking",
+    terpakai: "terpakai",
+    terpakai_final: "Final", // ✅ FIXED: terpakai_final jadi "Final"
+    ditolak: "ditolak",
+    hangus: "hangus",
+  };
+  return statusMap[status] || status;
+};
+
+/* Preview file */
+const previewFile = async (detail: any) => {
+  const url = detail.file_url;
+
+  if (!url) {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "yellow",
+    });
+    return;
+  }
+
+  pdfUrl.value = null;
+  isOpenPreview.value = false;
+
+  try {
+    // Directly use the signed URL from API
+    pdfUrl.value = url;
+    isOpenPreview.value = true;
+  } catch (e) {
+    toast.add({
+      title: "Gagal memuat file",
+      description: "Tidak dapat menampilkan pratinjau dokumen",
+      color: "red",
+    });
+  }
+};
 
 const fetchPersonMap = async () => {
   try {
@@ -1023,7 +916,6 @@ const fetchPersonMap = async () => {
   }
 };
 
-// ✅ FETCH DATA - Menggunakan endpoint dengan backend pagination, search, filter & sorting
 const fetchData = async () => {
   loading.value = true;
 
@@ -1035,8 +927,6 @@ const fetchData = async () => {
       return;
     }
 
-    // Build params object sesuai dokumentasi API
-    // Parameter: sort_by dan sort_order (BUKAN sortBy)
     const params = {
       search: search.value || undefined,
       page: currentPage.value,
@@ -1048,7 +938,6 @@ const fetchData = async () => {
 
     console.log("📤 Fetching data with params:", params);
 
-    // ✅ HIT ENDPOINT
     const response = await getListUsulan(String(user.value.position), params);
 
     console.log("📥 Backend response:", response);
@@ -1066,10 +955,8 @@ const fetchData = async () => {
       const klasifikasiDisplay =
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
-      // Map status dari backend
       let mappedStatus = item.status || "Belum Diajukan";
 
-      // Normalize status text
       if (mappedStatus === "Menunggu Verifikasi") {
         mappedStatus = "Menunggu Verifikasi";
       } else if (mappedStatus === "Disetujui") {
@@ -1084,7 +971,6 @@ const fetchData = async () => {
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
 
       const createdDate = new Date(item.created_at);
-      // Convert to WIB (UTC+7)
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
 
       const day = String(wibTime.getUTCDate()).padStart(2, "0");
@@ -1122,70 +1008,51 @@ const fetchData = async () => {
   }
 };
 
-// Handle search input with debounce
 const handleSearchInput = () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
 
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1; // Reset to first page on search
+    currentPage.value = 1;
     fetchData();
-  }, 500); // 500ms debounce
+  }, 500);
 };
 
-// Handle sorting
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    // Toggle sort order
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // New column, default to desc (sesuai dokumentasi)
     sortBy.value = column;
     sortOrder.value = "desc";
   }
 
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Get sort icon for column
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down"; // Default unsorted icon
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
-};
-
-// Handle page change
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   fetchData();
 };
 
-// Handle limit change
 const handleLimitChange = () => {
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Select filter status
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Computed total pages from backend pagination
 const totalPages = computed(() => {
   return pagination.value?.totalPages || 1;
 });
 
-// Computed pagination pages for display
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
@@ -1208,12 +1075,10 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// ✅ OPEN ROW MODAL - HIT ENDPOINT DETAIL
 const openRowModal = async (row) => {
   try {
     console.log("🔍 Opening row modal for:", row.id);
 
-    // ✅ HIT ENDPOINT DETAIL: GET /admin/nomor-request/{id}
     const detailData = await getDetailUsulan(row.id);
 
     if (!detailData) {
@@ -1237,6 +1102,8 @@ const openRowModal = async (row) => {
       detailData.template_nomor || "",
     );
 
+    console.log("📋 Normalized details:", normalizedDetails);
+
     selectedRow.value = {
       id_usulan: detailData.id,
       jenis: detailData.jenis,
@@ -1257,6 +1124,7 @@ const openRowModal = async (row) => {
 
     openDetail.value = true;
     console.log("✅ Modal opened with status:", selectedRow.value.status);
+    console.log("📊 Total details:", selectedRow.value.details.length);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
     toast.add({
@@ -1267,126 +1135,23 @@ const openRowModal = async (row) => {
   }
 };
 
-// GET FILE URL - Helper function untuk construct URL yang benar
-const getFileUrl = (detail, idx) => {
-  // Priority 1: Local file yang baru diupload
-  if (filesByIndex.value[idx]) {
-    const blobUrl = URL.createObjectURL(filesByIndex.value[idx]);
-    console.log("🔗 Using local blob URL:", blobUrl);
-    return blobUrl;
-  }
-
-  // Priority 2: file_url dari backend (presigned URL)
-  if (detail.file_url) {
-    console.log("🔗 Using backend file_url:", detail.file_url);
-    return detail.file_url;
-  }
-
-  // Priority 3: file_text path (fallback, construct full URL)
-  if (detail.file_text) {
-    const fullUrl = detail.file_text.startsWith("http")
-      ? detail.file_text
-      : `${apiBaseUrl}/${detail.file_text}`;
-    console.log("🔗 Using file_text path:", fullUrl);
-    return fullUrl;
-  }
-
-  console.warn("⚠️ No valid file URL found for detail:", detail);
-  return null;
-};
-
-// ✅ OPEN PREVIEW - Buka slideover full page
-const openPreview = (detail, idx) => {
-  const url = getFileUrl(detail, idx);
-  const fileName =
-    detail.file_name || filesByIndex.value[idx]?.name || "Dokumen";
-
-  if (!url) {
-    toast.add({
-      title: "File tidak tersedia",
-      description: "Tidak ada file untuk ditampilkan",
-      color: "yellow",
-    });
-    return;
-  }
-
-  // Reset error state
-  previewError.value = "";
-
-  // Set preview data
-  previewUrl.value = url;
-  previewFileName.value = fileName;
-  currentPreviewDetail.value = detail;
-  currentPreviewIndex.value = idx;
-
-  // Tutup modal detail
-  openDetail.value = false;
-
-  // Buka slideover preview full page
-  isOpenPreview.value = true;
-
-  console.log("📄 Opening full page preview for:", fileName);
-  console.log("🔗 Preview URL:", url);
-};
-
-// ✅ CLOSE PREVIEW - Tutup slideover dan buka kembali modal
-const closePreview = () => {
-  // Tutup slideover
-  isOpenPreview.value = false;
-
-  // Buka kembali modal detail setelah slideover tertutup
-  setTimeout(() => {
-    openDetail.value = true;
-  }, 150);
-
-  // Clean up URL object jika ada
-  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(previewUrl.value);
-  }
-
-  // Reset state
-  previewUrl.value = "";
-  previewFileName.value = "";
-  previewError.value = "";
-  currentPreviewDetail.value = null;
-  currentPreviewIndex.value = null;
-};
-
-// Handle preview error
-const handlePreviewError = () => {
-  previewError.value =
-    "Gagal memuat dokumen. File mungkin rusak atau format tidak didukung.";
-  console.error("❌ Preview error for:", previewFileName.value);
-};
-
-// Download file
-const downloadFile = () => {
-  if (!previewUrl.value || previewError.value) return;
-
-  const link = document.createElement("a");
-  link.href = previewUrl.value;
-  link.download = previewFileName.value || "dokumen";
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  toast.add({
-    title: "Download dimulai",
-    description: `File "${previewFileName.value}" sedang didownload`,
-    color: "green",
-  });
-};
-
-// HANDLE FILE UPLOAD berdasarkan INDEX
+// Handle file upload
 const handleFile = (index: number, event: Event) => {
+  console.log("📎 Handle file at index:", index);
+
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
 
-  if (!file) return;
+  if (!file) {
+    console.log("❌ No file selected");
+    return;
+  }
+
+  console.log("📄 File selected:", file.name, file.type, file.size);
 
   // Validasi ukuran file
   if (file.size > 5 * 1024 * 1024) {
+    console.error("❌ File too large:", file.size);
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
@@ -1402,7 +1167,9 @@ const handleFile = (index: number, event: Event) => {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
+
   if (!validTypes.includes(file.type)) {
+    console.error("❌ Invalid file type:", file.type);
     toast.add({
       title: "Tipe file tidak valid",
       description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
@@ -1412,10 +1179,11 @@ const handleFile = (index: number, event: Event) => {
     return;
   }
 
-  // Simpan file berdasarkan INDEX
+  // Save file to filesByIndex
   filesByIndex.value[index] = file;
 
-  console.log("📎 File disimpan untuk index:", index, "=>", file.name);
+  console.log("✅ File saved to index:", index);
+  console.log("📊 filesByIndex:", filesByIndex.value);
 
   toast.add({
     title: "File dipilih",
@@ -1424,34 +1192,67 @@ const handleFile = (index: number, event: Event) => {
   });
 };
 
-// Remove file berdasarkan index
+// Remove file
 const removeFile = (index: number) => {
+  console.log("🗑️ Removing file at index:", index);
+
   delete filesByIndex.value[index];
+
   toast.add({
     title: "File dihapus",
     description: "File berhasil dihapus dari daftar upload",
     color: "green",
   });
+
+  console.log("✅ File removed");
 };
 
-// JUMLAH SURAT
-const normalizeDetails = (details: any[], jumlah: number, template: string) => {
-  const result = [...(details || [])];
+// Format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+};
 
-  while (result.length < jumlah) {
-    result.push({
-      id: `temp-${result.length + 1}`,
-      nomor: null,
-      status: "booking",
-      file_name: null,
-      file_url: null,
-    });
+const normalizeDetails = (details: any[], jumlah: number, template: string) => {
+  const result = [];
+
+  for (let i = 0; i < jumlah; i++) {
+    const backendDetail = details && details[i];
+
+    if (backendDetail) {
+      result.push({
+        id: backendDetail.id || `temp-${i + 1}`,
+        nomor: backendDetail.nomor || null,
+        status: backendDetail.status || "booking",
+        file_name: backendDetail.file_name || null,
+        file_url: backendDetail.file_url || null,
+        file_text: backendDetail.file_text || null,
+      });
+    } else {
+      result.push({
+        id: `temp-${i + 1}`,
+        nomor: null,
+        status: "booking",
+        file_name: null,
+        file_url: null,
+        file_text: null,
+      });
+    }
   }
 
-  return result.slice(0, jumlah);
+  console.log("🔄 Normalized details:", {
+    input: details?.length || 0,
+    jumlah,
+    output: result.length,
+    details: result,
+  });
+
+  return result;
 };
 
-// HANDLE COPY
 const handleCopy = (value: string) => {
   if (!value) return;
 
@@ -1465,7 +1266,6 @@ const handleCopy = (value: string) => {
   });
 };
 
-// HANDLE PREVIEW
 function handlePreview(data: any) {
   selectedRow.value = data;
   openAdd.value = false;
@@ -1475,7 +1275,6 @@ function handlePreview(data: any) {
   filesByIndex.value = {};
 }
 
-// GET CONFIRM MESSAGE - Dynamic message based on files
 const getConfirmMessage = () => {
   const fileCount = Object.keys(filesByIndex.value).length;
 
@@ -1486,7 +1285,6 @@ const getConfirmMessage = () => {
   return `Apakah Anda yakin ingin mengirim usulan ini dengan ${fileCount} file? Usulan akan dikirim untuk diverifikasi.`;
 };
 
-// SUBMIT USULAN sesuai format backend
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
 
@@ -1496,7 +1294,6 @@ const confirmSubmitUsulan = async () => {
     const formData = new FormData();
     let fileCount = 0;
 
-    // Loop berdasarkan INDEX untuk match dengan backend
     Object.keys(filesByIndex.value).forEach((indexStr) => {
       const index = parseInt(indexStr);
       const file = filesByIndex.value[index];
@@ -1504,7 +1301,6 @@ const confirmSubmitUsulan = async () => {
       if (file instanceof File) {
         fileCount++;
 
-        // SESUAI FORMAT BACKEND
         formData.append("file", file);
         formData.append("file_name", file.name);
         formData.append("file_text", file.name);
@@ -1545,7 +1341,6 @@ const confirmSubmitUsulan = async () => {
   }
 };
 
-// CONFIRM DELETE USULAN
 const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan) return;
 
@@ -1577,7 +1372,6 @@ const confirmDeleteUsulan = async () => {
   }
 };
 
-// HANDLE SUBMIT FROM MODAL
 const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
@@ -1627,7 +1421,6 @@ const handleSubmitFromModal = async (payload: any) => {
 
     openAdd.value = false;
 
-    // Reset pagination and fetch
     currentPage.value = 1;
     await fetchData();
   } catch (err) {
@@ -1644,7 +1437,6 @@ const handleSubmitFromModal = async (payload: any) => {
   }
 };
 
-// FORMAT DATE
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -1654,7 +1446,6 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-// Close dropdown when click outside
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
@@ -1664,7 +1455,6 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-// INIT
 onMounted(async () => {
   loading.value = true;
 
@@ -1680,24 +1470,29 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 
-  // Clean up any blob URLs
-  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
-    URL.revokeObjectURL(previewUrl.value);
-  }
-
   // Clear search timeout
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
+
+  // Clean up blob URLs
+  if (pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+  }
 });
 
-/* Breadcrumb */
+watch(isOpenPreview, (open) => {
+  if (!open && pdfUrl.value) {
+    URL.revokeObjectURL(pdfUrl.value);
+    pdfUrl.value = null;
+  }
+});
+
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Usulan", to: "/penomoran/usulan" },
 ];
 
-/* TABLE CONFIG */
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },

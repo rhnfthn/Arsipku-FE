@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { Search, ArrowUpDown, Pencil, Trash2, Plus } from "lucide-vue-next";
+import {
+  Search,
+  ArrowUpDown,
+  Pencil,
+  Trash2,
+  Plus,
+  RotateCcw,
+} from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
@@ -45,6 +52,15 @@ const filteredItems = computed(() => {
       it.long_text_en?.toLowerCase().includes(s),
   );
 });
+const refreshData = () => {
+  search.value = "";
+  filterStatus.value = "Semua";
+  filterLokasi.value = "Semua";
+  filterJabatan.value = "Semua";
+  sortDirection.value = null;
+  currentPage.value = 1;
+  fetchData();
+};
 
 const sortDirection = ref<"asc" | "desc" | null>(null);
 const toggleSort = () => {
@@ -257,42 +273,47 @@ const deleteNow = async () => {
       <div
         class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 flex-wrap">
           <!-- tampilkan -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-600 dark:text-gray-400"
-              >Tampilkan</span
-            >
-            <select
-              v-model="rowsPerPage"
-              class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-2 py-1 focus:ring-2 focus:ring-primary"
-            >
-              <option v-for="n in rowsChoices" :key="n" :value="n">
-                {{ n }}
-              </option>
-            </select>
-          </div>
 
+          <select
+            v-model="rowsPerPage"
+            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option v-for="n in [5, 10, 15]" :key="n" :value="n">
+              {{ n }}
+            </option>
+          </select>
           <!-- SORT -->
           <div class="flex items-center gap-2">
             <button
               @click="toggleSort"
-              class="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs px-1 py-1 rounded-md bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
             >
-              <ArrowUpDown class="w-3.5 h-3.5" />
+              <ArrowUpDown class="w-4 h-4" />
+            </button>
+            <button
+              @click="refreshData"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+              title="Refresh"
+            >
+              <RotateCcw
+                class="w-4 h-4"
+                :class="{ 'animate-spin': isLoading }"
+              />
             </button>
           </div>
         </div>
 
         <!-- Search -->
-        <div class="relative flex-1 w-full md:w-56">
+        <div class="relative flex-1 w-full justify-between">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
-            placeholder="Cari Titelatur..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-xs pl-9 pr-3 py-1.5 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            placeholder="Cari Titelatur"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
@@ -302,9 +323,9 @@ const deleteNow = async () => {
         <table class="min-w-full text-left text-sm">
           <thead class="bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-bold">Titelatur Indonesia</th>
-              <th class="px-4 py-3 font-bold">Titelatur Inggris</th>
-              <th class="px-4 py-3 font-bold text-center">Aksi</th>
+              <th class="px-4 py-3 font-semibold">Titelatur Indonesia</th>
+              <th class="px-4 py-3 font-semibold">Titelatur Inggris</th>
+              <th class="px-4 py-3 font-semibold text-center">Aksi</th>
             </tr>
           </thead>
 
@@ -418,7 +439,7 @@ const deleteNow = async () => {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -486,7 +507,7 @@ const deleteNow = async () => {
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -518,17 +539,10 @@ const deleteNow = async () => {
             >
               Edit Titelatur
             </Heading>
-
-            <Heading
-              variant="body2"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-            >
-              Isi form di bawah ini untuk mengedit titelatur
-            </Heading>
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-1">
+        <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >
@@ -560,17 +574,10 @@ const deleteNow = async () => {
             >
               Tambah Titelatur
             </Heading>
-
-            <Heading
-              variant="body2"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-            >
-              Masukkan titelatur baru
-            </Heading>
           </div>
         </template>
 
-        <div class="flex flex-col gap-2 mt-1">
+        <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200"
             >Titelatur Indonesia <span class="text-red-500">*</span></Heading
           >

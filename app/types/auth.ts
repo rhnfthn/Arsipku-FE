@@ -6,8 +6,40 @@ export interface AlamatInfo {
   kota: string;
   alamat: string;
 }
+
+export interface UserDelegation {
+  id: string;
+  delegated_role: {
+    position_status: string;
+    position_status_label: string;
+    description: string;
+    persnum: string;
+    name: string;
+    position: string;
+    position_text: string;
+    organization: string;
+    organization_text: string;
+    area: string;
+    area_text: string;
+    sub_area: string;
+    sub_area_text: string;
+    company: string;
+    company_text: string;
+  };
+  delegated_from: {
+    persnum: string;
+    name: string;
+    position: string;
+    position_text: string;
+  };
+  period: {
+    start_date: string;
+    end_date: string;
+  };
+}
+
 export interface UserProfile {
-  persnum: number;
+  persnum: number | string; // Bisa number/string di JSON
   nama: string;
   role: string;
   company: string;
@@ -20,14 +52,23 @@ export interface UserProfile {
   organizationText: string;
   position: string;
   positionText: string;
+
+  // --- Field Baru ---
+  position_status?: string; // contoh: "PT", "Definitif"
+  position_status_label?: string; // contoh: "Pelaksana Tugas"
+  nik?: string;
+  // ------------------
+
   bodTag: string;
   abbreviation: string;
-  iat?: number; // Opsional (kadang tidak ada di respon raw DB)
-  exp?: number; // Opsional
+  iat?: number;
+  exp?: number;
   alamatInfo?: AlamatInfo;
+
+  // Opsional: Jika ingin menyimpan list delegasi di user profile
+  delegations?: UserDelegation[];
 }
 
-// Interface untuk kemudahan return value useAuth (Opsional tapi rapi)
 export interface AuthComposable {
   user: Ref<UserProfile | null>;
   setUser: (data: UserProfile | null) => void;

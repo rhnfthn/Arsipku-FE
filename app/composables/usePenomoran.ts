@@ -64,11 +64,18 @@ export const usePenomoran = () => {
    * =========================== */
   const getNomorRequestCountAdmin = async () => {
     try {
-      console.log("📤 Fetching admin counts...");
-      const res = await get("/admin/nomor-request-count");
+      const { user } = useAuth();
+      const positionId =
+        typeof user.value?.position === "object"
+          ? user.value?.position?.id
+          : user.value?.position;
 
-      console.log("📥 Admin count response:", res);
+      if (!positionId) {
+        console.warn("⚠️ positionId tidak tersedia untuk admin count");
+        return adminCounts.value;
+      }
 
+      const res = await get(`/admin/nomor-request-count/${positionId}`);
       if (res?.success && res?.data) {
         adminCounts.value = {
           menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
@@ -77,10 +84,7 @@ export const usePenomoran = () => {
           belum_diajukan: res.data.belum_diajukan ?? 0,
           total: res.data.total ?? 0,
         };
-
-        console.log("✅ Admin counts updated:", adminCounts.value);
       }
-
       return adminCounts.value;
     } catch (e) {
       console.error("❌ Admin count error:", e);

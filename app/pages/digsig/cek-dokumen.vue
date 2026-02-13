@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
-    <div class="mb-5">
+    <div class="mb-2">
       <Heading variant="heading6b" class="text-mobile-md">
         Cek Dokumen
       </Heading>
@@ -13,7 +13,7 @@
       <!-- UPLOAD SECTION -->
       <!-- ================== -->
       <div
-        class="bg-white p-6 mt-5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
+        class="bg-white p-6 mt-2 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
       >
         <Heading variant="heading10sb">Unggah Dokumen</Heading>
 
@@ -24,7 +24,6 @@
             class="hidden"
             @change="handleFile"
             accept=".pdf"
-            :disabled="loadingCheck"
           />
 
           <div
@@ -38,8 +37,11 @@
             <Upload class="w-5 h-5 text-gray-600" />
           </div>
 
-          <p class="text-xs text-gray-500 mt-2">
-            Format yang didukung: PDF dengan tanda tangan digital
+          <p class="text-xs text-gray-500 mt-4">
+            Format yang didukung:
+            <span class="text-xs text-gray-500 font-semibold mt-2">
+              PDF dengan tanda tangan digital
+            </span>
           </p>
         </label>
 
@@ -57,13 +59,13 @@
 
         <!-- SUBMIT BUTTON -->
         <div v-if="selectedFile && !fileUploaded" class="flex justify-end mt-2">
-          <UButton
-            @click="showConfirmation"
+          <Button
+            @click="submitDocument"
             :disabled="loadingCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Periksa Dokumen
-          </UButton>
+          </Button>
         </div>
       </div>
 
@@ -88,7 +90,7 @@
                 :is="getStatusIcon(documentCheck.data.status)"
                 class="w-5 h-5"
               />
-              {{ documentCheck.data.status }}
+              {{ formatStatus(documentCheck.data.status) }}
             </span>
           </div>
 
@@ -284,38 +286,25 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-end items-center gap-3">
-          <UButton
+          <Button
             @click="resetCheck"
-            class="bg-primary hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium"
+            class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Periksa Dokumen Lain
-          </UButton>
+          </Button>
 
-          <UButton
+          <Button
             v-if="documentCheck.data.isValid"
-            @click="downloadReport"
-            class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
+            @click="downloadPdf"
+            class="border border-primary hover:bg-primary-700 hover:text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
-            Unduh Laporan
-          </UButton>
+            Unduh PDF
+          </Button>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- CONFIRMATION DIALOG -->
-  <ConfirmPopup
-    v-model="showConfirmDialog"
-    type="question"
-    title="Konfirmasi"
-    message="Yakin ingin melanjutkan pemeriksaan dokumen ini?"
-    confirmText="Periksa"
-    cancelText="Batal"
-    :isLoading="loadingCheck"
-    @confirm="submitDocument"
-    @cancel="cancelSubmit"
-  />
 </template>
 
 <script setup lang="ts">
@@ -333,7 +322,98 @@ import {
   Download,
 } from "lucide-vue-next";
 import { ref } from "vue";
-import ConfirmPopup from "~/components/ConfirmPopup.vue";
+import jsPDF from "jspdf";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { saveAs } from "file-saver";
+
+function buildReportData() {
+  const data = documentCheck.value?.data;
+  if (!data) return null;
+
+  return {
+    namaDokumen: data.namaDokumen,
+    status: data.status,
+    valid: data.isValid ? "Valid" : "Tidak Valid",
+    jumlahSignature: data.jumlahSignature,
+    verifiedAt: formatDate(data.verifiedAt),
+    keterangan: data.keterangan,
+    signers: data.signers || [],
+  };
+}
+function downloadPdf() {
+  const report = buildReportData();
+  if (!report) return;
+
+  const pdf = new jsPDF();
+  let y = 10;
+
+  pdf.setFontSize(14);
+  pdf.text("LAPORAN VERIFIKASI DOKUMEN", 10, y);
+  y += 10;
+
+  pdf.setFontSize(11);
+  pdf.text(`Nama Dokumen: ${report.namaDokumen}`, 10, y);
+  y += 7;
+  pdf.text(`Status: ${report.status}`, 10, y);
+  y += 7;
+  pdf.text(`Status Valid: ${report.valid}`, 10, y);
+  y += 7;
+  pdf.text(`Jumlah Tanda Tangan: ${report.jumlahSignature}`, 10, y);
+  y += 7;
+  pdf.text(`Waktu Verifikasi: ${report.verifiedAt}`, 10, y);
+  y += 10;
+
+  pdf.text("Penanda Tangan:", 10, y);
+  y += 7;
+
+  report.signers.forEach((s: any, i: number) => {
+    pdf.text(`${i + 1}. ${s.name || "Tidak diketahui"}`, 12, y);
+    y += 6;
+  });
+
+  pdf.save(`laporan-${report.namaDokumen}.pdf`);
+}
+async function downloadWord() {
+  const report = buildReportData();
+  if (!report) return;
+
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "LAPORAN VERIFIKASI DOKUMEN",
+                bold: true,
+                size: 28,
+              }),
+            ],
+          }),
+
+          new Paragraph(`Nama Dokumen: ${report.namaDokumen}`),
+          new Paragraph(`Status: ${report.status}`),
+          new Paragraph(`Status Valid: ${report.valid}`),
+          new Paragraph(`Jumlah Tanda Tangan: ${report.jumlahSignature}`),
+          new Paragraph(`Waktu Verifikasi: ${report.verifiedAt}`),
+          new Paragraph(""),
+
+          new Paragraph({
+            children: [new TextRun({ text: "Penanda Tangan:", bold: true })],
+          }),
+
+          ...report.signers.map(
+            (s: any, i: number) =>
+              new Paragraph(`${i + 1}. ${s.name || "Tidak diketahui"}`),
+          ),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  saveAs(blob, `laporan-${report.namaDokumen}.docx`);
+}
 
 const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 
@@ -348,7 +428,6 @@ const fileUploaded = ref(false);
 const selectedFile = ref<File | null>(null);
 const openSigners = ref(new Set<number>());
 const fileInput = ref<HTMLInputElement | null>(null);
-const showConfirmDialog = ref(false);
 
 /* Handle File Selection */
 function handleFile(e: any) {
@@ -369,17 +448,6 @@ function handleFile(e: any) {
   documentCheck.value = null;
 }
 
-/* Show Confirmation Dialog */
-function showConfirmation() {
-  if (!selectedFile.value) return;
-  showConfirmDialog.value = true;
-}
-
-/* Cancel Submit */
-function cancelSubmit() {
-  showConfirmDialog.value = false;
-}
-
 /* Submit Document untuk Cek Digital Signature */
 async function submitDocument() {
   if (!selectedFile.value) return;
@@ -388,15 +456,12 @@ async function submitDocument() {
     await checkDocument(selectedFile.value);
     fileUploaded.value = true;
 
-    // Buka accordion pertama jika ada signers
     if (documentCheck.value?.data.signers?.length) {
       openSigners.value.add(0);
     }
   } catch (err) {
     console.error("Error checking document:", err);
     fileUploaded.value = false;
-  } finally {
-    showConfirmDialog.value = false;
   }
 }
 
@@ -431,15 +496,30 @@ function toggleSigner(index: number) {
 }
 
 /* Get Status Badge Class */
+function formatStatus(status: string) {
+  switch (status?.toUpperCase()) {
+    case "VALID":
+      return "Valid";
+    case "INVALID":
+      return "Tidak Valid";
+    case "EXPIRED":
+      return "Kedaluwarsa";
+    case "UNKNOWN":
+      return "Tidak Diketahui";
+    default:
+      return status;
+  }
+}
+
 function getStatusBadgeClass(status: string) {
   switch (status.toUpperCase()) {
     case "VALID":
       return "bg-green-100 text-green-700 border border-green-200";
     case "INVALID":
       return "bg-red-100 text-red-700 border border-red-200";
-    case "EXPIRED":
+    case "Kadaluwarsa":
       return "bg-yellow-100 text-yellow-700 border border-yellow-200";
-    case "UNKNOWN":
+    case "Tidak Diketahui":
       return "bg-gray-100 text-gray-700 border border-gray-200";
     default:
       return "bg-gray-100 text-gray-700 border border-gray-200";

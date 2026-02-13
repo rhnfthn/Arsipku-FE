@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-4 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="flex items-center justify-between mb-5">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+    <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Detail Naskah Dinas
@@ -22,7 +22,7 @@
       class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
     >
       <div
-        class="flex flex-wrap justify-between gap-4 p-2 items-center border-b border-gray-200 dark:border-gray-700"
+        class="flex flex-wrap justify-between gap-4 p-2 items-center dark:border-gray-700"
       >
         <div class="flex items-center gap-3">
           <button
@@ -381,13 +381,16 @@
                     class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     :class="{
                       'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
-                        item.status === 'Terpakai',
-                      'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
-                        item.status === 'Terpakai_final',
+                        item.statusRaw === 'terpakai',
+
+                      'bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300':
+                        item.statusRaw === 'terpakai_final',
+
                       'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300':
-                        item.status === 'Booking',
+                        item.statusRaw === 'booking',
+
                       'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300':
-                        item.status === 'Hangus',
+                        item.statusRaw === 'hangus',
                     }"
                   >
                     {{ item.status }}
@@ -443,7 +446,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -511,7 +514,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -572,6 +575,7 @@ const selectedStatuses = ref<string[]>([]);
 
 const currentYear = new Date().getFullYear();
 const showTahunDropdown = ref(false);
+const tahunMin = ref<number | null>(null);
 
 const showRowsDropdown = ref(false);
 
@@ -665,33 +669,29 @@ const filteredAreaOptions = computed(() => {
 });
 
 const tahunOptions = computed(() => {
-  const years = new Set<number>();
+  const start = tahunMin.value ?? currentYear;
+  const years = [];
 
-  rawData.value.forEach((d) => {
-    const y = Number(d.tanggal?.split("/")[2]);
-    if (!isNaN(y)) years.add(y);
-  });
+  for (let y = currentYear; y >= start; y--) {
+    years.push(y);
+  }
 
-  years.add(currentYear);
-
-  return Array.from(years).sort((a, b) => b - a);
+  return years;
 });
 
 //PAGINATION
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 15];
+const rowsChoices = [5, 10, 20, 50];
 
-const totalItems = computed(() => filteredData.value.length);
+const totalItems = ref(0);
 
-const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value),
-);
-
-const paginatedNaskah = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return filteredData.value.slice(start, start + rowsPerPage.value);
+const totalPages = computed(() => {
+  if (!totalItems.value) return 1;
+  return Math.ceil(totalItems.value / rowsPerPage.value);
 });
+
+const paginatedNaskah = computed(() => sortedData.value);
 
 const paginationPages = computed(() => {
   const total = totalPages.value;
@@ -714,32 +714,63 @@ const paginationPages = computed(() => {
 const tableColCount = computed(() => 6);
 const skeletonRows = computed(() => rowsPerPage.value);
 
+const sortedData = computed(() => {
+  let data = [...filteredData.value];
+
+  if (!sortKey.value) return data;
+
+  data.sort((a, b) => {
+    if (sortKey.value === "tanggal") {
+      return (
+        new Date(a.tanggalRaw).getTime() - new Date(b.tanggalRaw).getTime()
+      );
+    }
+
+    let valA = a[sortKey.value];
+    let valB = b[sortKey.value];
+
+    if (valA < valB) return -1;
+    if (valA > valB) return 1;
+    return 0;
+  });
+
+  if (sortOrder.value === "desc") data.reverse();
+
+  return data;
+});
+
 //API FETCH
 const fetchDetailNaskah = async () => {
   loading.value = true;
   try {
-    const params: any = {};
+    const params: any = {
+      tahun: Number(filters.value.tahun),
+      page: currentPage.value,
+      limit: rowsPerPage.value,
+    };
 
-    if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
 
     const res = await getRekapNaskahDetail(params);
 
-    rawData.value = res.data.map((item: any) => ({
+    currentPage.value = res.pagination?.page ?? 1;
+    rowsPerPage.value = res.pagination?.limit ?? 10;
+    totalItems.value = res.pagination?.total ?? 0;
+
+    rawData.value = res.data.map((item) => ({
       id: item.id,
       nomor: item.nomor,
+      tanggalRaw: item.tanggal,
       tanggal: formatTanggal(item.tanggal),
       perihal: item.perihal ?? "-",
       jabatan: item.jabatan,
       lokasi: item.lokasi,
-      status: capitalize(item.status),
+      status: formatStatusLabel(item.status),
       statusRaw: item.status,
       jenis: item.jenis,
       jenis_text: item.jenis_text,
     }));
-  } catch (err) {
-    console.error("Gagal ambil detail naskah", err);
   } finally {
     loading.value = false;
   }
@@ -766,6 +797,20 @@ const fetchJenis = async () => {
   }
 };
 
+const fetchTahunRange = async () => {
+  const res = await getRekapNaskahDetail({
+    page: 1,
+    limit: 1,
+  });
+
+  const tanggalTerlama = res.meta?.min_tanggal;
+  // atau dari response pertama
+
+  if (tanggalTerlama) {
+    tahunMin.value = new Date(tanggalTerlama).getFullYear();
+  }
+};
+
 //HELPER
 const formatTanggal = (date: string) => {
   if (!date) return "-";
@@ -779,6 +824,17 @@ const formatTanggal = (date: string) => {
 
 const capitalize = (text: string) =>
   text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+
+const formatStatusLabel = (status: string) => {
+  if (!status) return "-";
+
+  if (status === "terpakai_final") return "Final";
+  if (status === "terpakai") return "Terpakai";
+  if (status === "booking") return "Booking";
+  if (status === "hangus") return "Hangus";
+
+  return status;
+};
 
 //EXCEL
 const exportExcel = () => {
@@ -892,20 +948,21 @@ watch(
   },
 );
 
-watch([filters, rowsPerPage], () => {
-  currentPage.value = 1;
+watch([currentPage, rowsPerPage], () => {
+  fetchDetailNaskah();
 });
 
 //DATA STATIS
 const statusOptions = [
+  { label: "Final", value: "terpakai_final" },
   { label: "Terpakai", value: "terpakai" },
   { label: "Booking", value: "booking" },
   { label: "Hangus", value: "hangus" },
 ];
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/admin/dashboard" },
-  { label: "Detail Naskah", to: "/admin/laporan/detail-naskah" },
+  { label: "Beranda", to: "/beranda" },
+  { label: "Detail Naskah", to: "/laporan/detail-naskah" },
 ];
 </script>
 

@@ -14,14 +14,14 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
         <!-- Rows dropdown -->
-        <div class="flex items-center gap-2 px-4 py-2">
+        <div class="flex items-center gap-2 px-4">
           <select
             v-model="rowsPerPage"
             @change="handleLimitChange"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -118,31 +118,41 @@
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none '
+                    ? 'cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition'
                     : 'cursor-default',
                 ]"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <UIcon
+                  <ArrowUpDown
                     v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === col.key
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
 
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <UIcon
-                    :name="getSortIcon('status')"
-                    class="w-4 h-4"
-                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
@@ -240,7 +250,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -308,7 +318,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -360,17 +370,16 @@
           <!-- Tanggal -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="mt-1 dark:text-gray-200 text-sm font-medium">
               {{ selectedRow.tanggal }}
             </p>
           </div>
-
           <!-- Pengirim -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               Penandatangan
             </p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.penandatangan }}
             </p>
           </div>
@@ -378,7 +387,7 @@
           <!-- Klasifikasi -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
@@ -386,7 +395,7 @@
           <!-- Jenis Naskah -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.jenis }}
             </p>
           </div>
@@ -471,7 +480,7 @@
               class="space-y-2"
             >
               <div
-                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
+                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50 mt-2"
               >
                 <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
@@ -520,52 +529,163 @@
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'pending' ||
                             detail.status === 'menunggu',
-                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400':
+                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-primary-400':
                             detail.status === 'terpakai',
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                            detail.status === 'terpakai_final',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
-                          'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                          'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                             detail.status === 'hangus',
                         },
                       ]"
                     >
-                      {{ detail.status }}
+                      {{ getStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
 
-                <!-- File Upload/Replace Section -->
+                <!-- File Upload/Replace Section - KONSISTEN DENGAN GAMBAR 2 -->
                 <div class="relative">
                   <!-- Show existing file if available -->
-                  <div v-if="detail.file_name && !fileStates[idx]?.isReplacing">
+                  <div
+                    v-if="
+                      hasExistingFile(detail) && !fileStates[idx]?.isReplacing
+                    "
+                  >
                     <div
-                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg p-3 cursor-pointer"
-                      @click="previewFile(detail)"
+                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                     >
-                      <div class="flex items-start gap-3">
-                        <div class="flex-1">
-                          <p
-                            class="text-sm font-medium text-green-700 dark:text-green-400 underline"
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 flex-1">
+                          <svg
+                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            📄 {{ detail.file_name }}
-                          </p>
-                          <p class="text-xs text-gray-600 dark:text-gray-400">
-                            Klik untuk preview
-                          </p>
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div
+                            class="flex-1 cursor-pointer hover:underline"
+                            @click="previewFile(detail)"
+                          >
+                            <p
+                              class="text-sm font-medium text-primary dark:text-blue-400"
+                            >
+                              {{ getDisplayFileName(detail) }}
+                            </p>
+                            <p
+                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                            >
+                              Klik untuk preview
+                            </p>
+                          </div>
                         </div>
+                        <button
+                          @click.prevent="startReplacingFile(idx)"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Upload/Replace form -->
-                  <div v-else class="space-y-2">
+                  <!-- Show uploaded file (new file) -->
+                  <div
+                    v-else-if="
+                      (fileStates[idx]?.file || files[idx]) &&
+                      !fileStates[idx]?.isReplacing
+                    "
+                  >
+                    <div
+                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
+                    >
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 flex-1">
+                          <svg
+                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div class="flex-1">
+                            <p
+                              class="text-sm font-medium text-primary dark:text-blue-400"
+                            >
+                              {{
+                                fileStates[idx]?.file?.name || files[idx]?.name
+                              }}
+                            </p>
+                            <p
+                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
+                            >
+                              {{
+                                formatFileSize(
+                                  fileStates[idx]?.file?.size ||
+                                    files[idx]?.size ||
+                                    0,
+                                )
+                              }}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          @click.prevent="removeFile(idx)"
+                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Upload form (only show when no file or replacing) -->
+                  <div v-else>
                     <label
-                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
+                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
                     >
                       <svg
-                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors"
+                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -582,11 +702,7 @@
                         <span
                           class="text-gray-700 dark:text-gray-300 font-medium block"
                         >
-                          {{
-                            fileStates[idx]?.file?.name ||
-                            files[idx]?.name ||
-                            "Pilih file untuk diupload (Opsional)"
-                          }}
+                          Pilih file (Opsional)
                         </span>
                         <span
                           class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 block"
@@ -604,70 +720,14 @@
                       />
                     </label>
 
-                    <!-- File info if selected -->
-                    <div
-                      v-if="fileStates[idx]?.file || files[idx]"
-                      class="flex items-center justify-between bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-md px-3 py-2"
+                    <!-- Cancel button for replace mode -->
+                    <button
+                      v-if="fileStates[idx]?.isReplacing"
+                      @click.prevent="cancelReplace(idx, detail)"
+                      class="mt-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
                     >
-                      <div class="flex items-center gap-2">
-                        <svg
-                          class="w-4 h-4 text-green-600 dark:text-green-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span class="text-xs text-gray-700 dark:text-gray-300">
-                          {{
-                            fileStates[idx]?.file?.name ||
-                            files[idx]?.name ||
-                            "File baru"
-                          }}
-                          ({{
-                            formatFileSize(
-                              fileStates[idx]?.file?.size ||
-                                files[idx]?.size ||
-                                0,
-                            )
-                          }})
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <!-- Upload button (for replace) -->
-                        <button
-                          v-if="
-                            fileStates[idx]?.isReplacing &&
-                            fileStates[idx]?.file
-                          "
-                          @click.prevent="uploadReplaceFile(idx, detail)"
-                          :disabled="fileStates[idx]?.isUploading"
-                          class="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {{
-                            fileStates[idx]?.isUploading
-                              ? "Uploading..."
-                              : "Upload"
-                          }}
-                        </button>
-                        <button
-                          @click.prevent="
-                            fileStates[idx]?.isReplacing
-                              ? cancelReplace(idx, detail)
-                              : removeFile(idx)
-                          "
-                          :disabled="fileStates[idx]?.isUploading"
-                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs disabled:opacity-50"
-                        >
-                          {{ fileStates[idx]?.isReplacing ? "Batal" : "Hapus" }}
-                        </button>
-                      </div>
-                    </div>
+                      Batal mengganti file
+                    </button>
                   </div>
                 </div>
               </div>
@@ -687,6 +747,27 @@
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
             placeholder="Masukkan keterangan mengapa nomor ditolak..."
           ></textarea>
+
+          <!-- Warning jika keterangan belum diisi -->
+          <p
+            v-if="!keterangan_ditolak.trim() && showKeteranganWarning"
+            class="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            Keterangan penolakan wajib diisi
+          </p>
         </div>
       </div>
 
@@ -810,7 +891,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, Copy } from "lucide-vue-next";
+import { Search, Copy, ArrowUpDown } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
@@ -859,6 +940,7 @@ const currentPage = ref<number>(1);
 const search = ref<string>("");
 const selectedRow = ref<any>(null);
 const keterangan_ditolak = ref("");
+const showKeteranganWarning = ref(false);
 const isProcessing = ref(false);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
@@ -949,7 +1031,7 @@ const fetchData = async () => {
         perihal: item.perihal,
         penandatangan: item.penandatangan || "-",
         jumlah: item.jumlah,
-        pengusul: item.nama || "-", // Nama pengusul dari API
+        pengusul: item.nama || "-",
         tglUsulan: formattedTglUsulan,
         status: item.status,
         klasifikasi: item.klasifikasi,
@@ -998,16 +1080,6 @@ const handleSort = (column: string) => {
 
   currentPage.value = 1; // Reset to first page
   fetchData();
-};
-
-// Get sort icon for column
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down"; // Default unsorted icon
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
 };
 
 // Handle page change
@@ -1068,6 +1140,20 @@ const showPreview = async (row: any) => {
       return;
     }
 
+    // 🔍 DEBUG: Log detail data untuk cek struktur file
+    console.log("🔍 Detail Data Received:", detailData);
+    console.log("🔍 Details Array:", detailData.details);
+    detailData.details?.forEach((d: any, idx: number) => {
+      console.log(`🔍 Detail ${idx}:`, {
+        id: d.id,
+        nomor: d.nomor,
+        status: d.status,
+        file_name: d.file_name,
+        file_text: d.file_text,
+        file_url: d.file_url,
+      });
+    });
+
     selectedRow.value = {
       ...row,
       ...detailData,
@@ -1077,6 +1163,7 @@ const showPreview = async (row: any) => {
     fileStates.value = {};
 
     keterangan_ditolak.value = "";
+    showKeteranganWarning.value = false;
     openPreview.value = true;
 
     console.log("✅ Detail loaded:", detailData);
@@ -1227,6 +1314,20 @@ const displayNomor = (detail: any) => {
   return "-";
 };
 
+/* Get status label - FIXED untuk terpakai_final menjadi "Final" */
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    pending: "pending",
+    menunggu: "menunggu",
+    booking: "booking",
+    terpakai: "terpakai",
+    terpakai_final: "Final", // ✅ FIXED: terpakai_final jadi "Final"
+    ditolak: "ditolak",
+    hangus: "hangus",
+  };
+  return statusMap[status] || status;
+};
+
 /* Handle Copy */
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
@@ -1242,6 +1343,26 @@ const handleCopy = (value: string) => {
 const getFileName = (path: string) => {
   if (!path) return "-";
   return path.split("/").pop() || path;
+};
+
+/* Check if detail has existing file */
+const hasExistingFile = (detail: any) => {
+  const hasFile = !!(detail.file_name || detail.file_text || detail.file_url);
+  console.log(`🔍 hasExistingFile check:`, {
+    file_name: detail.file_name,
+    file_text: detail.file_text,
+    file_url: detail.file_url,
+    result: hasFile,
+  });
+  return hasFile;
+};
+
+/* Get display filename */
+const getDisplayFileName = (detail: any) => {
+  if (detail.file_name) return detail.file_name;
+  if (detail.file_text) return getFileName(detail.file_text);
+  if (detail.file_url) return getFileName(detail.file_url);
+  return "File Terlampir";
 };
 
 /* Format file size */
@@ -1349,15 +1470,27 @@ const confirmRejection = () => {
     return;
   }
 
+  // ✅ VALIDASI KETAT: Keterangan WAJIB diisi
   if (!keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true;
     toast.add({
-      title: "Peringatan",
-      description: "Keterangan penolakan harus diisi!",
-      color: "yellow",
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: "Silakan isi keterangan penolakan terlebih dahulu!",
+      color: "red",
+      timeout: 3000,
     });
+
+    // Scroll ke textarea keterangan
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.focus();
+      textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
     return;
   }
 
+  showKeteranganWarning.value = false;
   showConfirmReject.value = true;
 };
 
@@ -1386,11 +1519,13 @@ const processRejection = async () => {
     return;
   }
 
+  // ✅ VALIDASI ULANG sebelum proses
   if (!keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true;
     toast.add({
-      title: "Peringatan",
-      description: "Keterangan penolakan harus diisi!",
-      color: "yellow",
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: "Silakan isi keterangan penolakan terlebih dahulu!",
+      color: "red",
     });
     return;
   }
@@ -1439,8 +1574,6 @@ function handleDocumentClick(e: MouseEvent) {
 
 /* Load data on mount */
 onMounted(async () => {
-  // ✅ REMOVED: fetchPersonMap - Person data (nama, penandatangan) already included in API response
-  // The getListSubmitted endpoint returns all necessary user/person data
   await fetchData();
   document.addEventListener("click", handleDocumentClick);
 });
@@ -1482,6 +1615,13 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
+
+// ✅ Watch untuk menghilangkan warning saat user mulai mengetik
+watch(keterangan_ditolak, (newValue) => {
+  if (newValue.trim()) {
+    showKeteranganWarning.value = false;
+  }
+});
 
 watch(isOpenPreview, (open) => {
   if (open) {

@@ -228,6 +228,60 @@ const publicTemplates = [
   { id: 'table-identity', name: 'Tabel Identitas Kegiatan', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><td width="30%">Nama Kegiatan</td><td width="70%">:</td></tr><tr><td>Tanggal</td><td>:</td></tr><tr><td>Waktu</td><td>:</td></tr><tr><td>Tempat</td><td>:</td></tr></table>' },
   { id: 'table-participant', name: 'Tabel Peserta', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="5%">No</th><th width="35%">Nama</th><th width="30%">Jabatan</th><th width="30%">Keterangan</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
   { id: 'table-agenda', name: 'Tabel Agenda Kegiatan', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="10%">No</th><th width="30%">Hari / Tanggal</th><th width="30%">Waktu</th><th width="30%">Agenda</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
+  {
+    id: 'list-decimal-parentheses',
+    name: 'Daftar Angka (1))',
+    content: `
+      <ol style="list-style-type: decimal;">
+        <li style="list-style-type: none;">1) Poin pertama</li>
+        <li style="list-style-type: none;">2) Poin kedua</li>
+        <li style="list-style-type: none;">3) Poin ketiga</li>
+      </ol>
+    `
+  },
+
+  // 1. 1.1 1.1.1
+  {
+    id: 'list-multilevel',
+    name: 'Daftar Bertingkat (1.1.1)',
+    content: `
+      <ol>
+        <li>Poin utama
+          <ol>
+            <li>Sub poin
+              <ol>
+                <li>Sub sub poin</li>
+                <li>Sub sub poin</li>
+              </ol>
+            </li>
+            <li>Sub poin</li>
+          </ol>
+        </li>
+        <li>Poin utama</li>
+      </ol>
+    `
+  },
+
+  // Contoh eksplisit 1.1.2, 1.1.3
+  {
+    id: 'list-manual-numbering',
+    name: 'Daftar Bertingkat Manual (1.1.2)',
+    content: `
+    <ol style="list-style: none; padding-left: 0;">
+      <li>1. Poin utama
+        <ol style="list-style: none; padding-left: 20px;">
+          <li>1.1 Sub poin
+            <ol style="list-style: none; padding-left: 20px;">
+              <li>1.1.2 Detail</li>
+              <li>1.1.3 Detail lanjutan</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  `
+  }
+
 ]
 
 // --- COMPUTED ---

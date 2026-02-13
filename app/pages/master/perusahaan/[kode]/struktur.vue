@@ -753,6 +753,9 @@ import {
   Users,
   AlertCircle,
 } from "lucide-vue-next";
+definePageMeta({
+  middleware: "auth",
+});
 
 import { useStruktur } from "~/composables/useStruktur";
 import { useCompany } from "~/composables/useCompany";
@@ -1541,15 +1544,30 @@ const mapPersonToNode = (person: any, positionCode: number) => ({
   children: [],
 });
 
+const isExpired = (endDate?: string) => {
+  if (!endDate) return false;
+  return new Date(endDate) < new Date();
+};
+
 const loadPersons = async (node: any) => {
   if (node._personsLoaded) return;
   if (!node.positionCode) return;
 
   try {
     const res = await getPersonsByPosition(node.positionCode);
-    node.children = res.data.map((p: any) =>
-      mapPersonToNode(p, node.positionCode),
-    );
+
+    const validPersons: any[] = [];
+
+    for (const p of res.data) {
+      if (isExpired(p.end_date)) {
+        await deletePerson(p.id_relation_sp);
+        continue;
+      }
+
+      validPersons.push(mapPersonToNode(p, node.positionCode));
+    }
+
+    node.children = validPersons;
     node._personsLoaded = true;
   } catch (err) {
     console.error("❌ gagal load person:", err);
@@ -1769,6 +1787,16 @@ const selectedParentNode = ref<any>(null);
 
 const handleSaveUnit = async () => {
   try {
+    if (isNaN(Number(formUnit.value.idUnit))) {
+      toast.add({
+        title: "Gagal",
+        description: "ID Unit harus angka",
+        color: "error",
+        icon: "i-lucide-x-circle",
+      });
+      return;
+    }
+
     if (!company.value?.kode) return;
 
     const payload = {
@@ -1786,6 +1814,7 @@ const handleSaveUnit = async () => {
 
     await createOrganization(payload);
     await fetchData(route.params.kode as string);
+
     showSuccessToast("Berhasil menambahkan unit");
 
     showAddUnitModal.value = false;
@@ -1804,6 +1833,16 @@ const chiefOptions = [
 
 const handleSavePosition = async () => {
   try {
+    if (isNaN(Number(formPosition.value.idPos))) {
+      toast.add({
+        title: "Gagal",
+        description: "ID Posisi harus angka",
+        color: "error",
+        icon: "i-lucide-x-circle",
+      });
+      return;
+    }
+
     if (!company.value?.kode || !selectedParentNode.value) return;
 
     const payload = {
@@ -1819,6 +1858,7 @@ const handleSavePosition = async () => {
     };
 
     await createPosition(payload);
+
     selectedParentNode.value._positionsLoaded = false;
     await loadPositions(selectedParentNode.value);
 

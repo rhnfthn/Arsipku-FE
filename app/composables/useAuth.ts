@@ -1,4 +1,4 @@
-// composers/useAuth.ts
+// composables/useAuth.ts
 import type { UserProfile } from "~/types/auth";
 
 export const useAuth = () => {
@@ -10,7 +10,7 @@ export const useAuth = () => {
 
   const getProfile = async (): Promise<UserProfile | null> => {
     try {
-      const token = localStorage.getItem("token");
+      const token = process.client ? localStorage.getItem("token") : null;
       if (!token) return null;
 
       const res: any = await apiGet("/auth/profile", {
@@ -20,22 +20,25 @@ export const useAuth = () => {
       // 1. Ambil data User utama
       let profileData = res?.data?.user || res?.user || res || null;
 
-      // 2. Ambil data AlamatInfo (biasanya ada di res.data.alamatInfo)
+      // 2. Ambil data tambahan dari root response
       const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
+      const delegationsData = res?.data?.delegations || res?.delegations || null;
 
       if (profileData) {
-        // 3. GABUNGKAN: Jika alamatData ditemukan, masukkan ke dalam profileData
-        if (alamatData) {
-          profileData = {
-            ...profileData,
-            alamatInfo: alamatData,
-          };
-        }
+        // 3. GABUNGKAN: Masukkan alamatInfo dan delegations ke dalam profileData
+        profileData = {
+          ...profileData,
+          alamatInfo: alamatData || profileData.alamatInfo,
+          delegations: delegationsData || profileData.delegations
+        };
 
         // Casting ke UserProfile
         const normalizedProfile = profileData as UserProfile;
 
-        // Simpan ke state global (Pinia/useState)
+        // Debug: Pastikan position_status terbaca jika dikirim backend
+        // console.log("Position Status:", normalizedProfile.position_status);
+
+        // Simpan ke state global
         setUser(normalizedProfile);
 
         return normalizedProfile;
@@ -48,19 +51,15 @@ export const useAuth = () => {
     }
   };
 
-
-  // Ambil URL SSO Redirect
   const getSSORedirectUrl = async () => {
     try {
-      // const res = await apiGet("/auth/sso-redirect-local")
-      const res = await apiGet("/auth/sso-redirect")
-      return res?.url ?? null
+      const res: any = await apiGet("/auth/sso-redirect-local");
+      return (res?.url as string) ?? null;
     } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error)
-      return null
+      console.error("[AUTH] getSSORedirectUrl error:", error);
+      return null;
     }
-  }
-
+  };
 
   const verifyToken = async (token: string) => {
     try {
@@ -73,8 +72,8 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      const sessionId = localStorage.getItem("sessionId");
-      const token = localStorage.getItem("token");
+      const sessionId = process.client ? localStorage.getItem("sessionId") : null;
+      const token = process.client ? localStorage.getItem("token") : null;
 
       // 1️⃣ Logout internal (hapus sessionId)
       if (sessionId && token) {
@@ -86,7 +85,6 @@ export const useAuth = () => {
         });
       }
     } catch (error) {
-      // logout internal gagal TIDAK BOLEH menghalangi logout user
       console.warn("[AUTH] logout-v2 error (ignored):", error);
     }
 
@@ -99,17 +97,19 @@ export const useAuth = () => {
 
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
-      // const redirectTarget = "http://localhost:3000/autharsipku";
-      const redirectTarget = "http://172.20.16.116:3012/autharsipku";
+      const redirectTarget = window.location.origin + "/autharsipku"; // Lebih dinamis
       const encodedRedirect = btoa(redirectTarget);
 
-      window.location.href = `https://auth.airnavindonesia.co.id/user/logout?redirect_uri=${encodedRedirect}`;
+      // Pastikan URL logout sesuai environment
+      const ssoLogoutUrl = "https://auth.airnavindonesia.co.id/user/logout";
+      window.location.href = `${ssoLogoutUrl}?redirect_uri=${encodedRedirect}`;
     }
 
     return true;
   };
 
   const refreshToken = async () => {
+    if (!process.client) return null;
     const sessionId = localStorage.getItem("sessionId");
     if (!sessionId) throw new Error("No sessionId");
 

@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+  <div class="bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Verifikasi Dokumen Digsig
@@ -19,7 +19,7 @@
     </div>
 
     <div
-      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
+      class="bg-white mt-2 dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
     >
       <!-- TOP ACTION BAR -->
       <div
@@ -79,7 +79,7 @@
               <th class="px-4 py-3 text-left">Tanggal Dibuat</th>
               <th class="px-4 py-3 text-left">No Dokumen</th>
               <th class="px-4 py-3 text-left">Perihal</th>
-              <th class="px-4 py-3 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Penanda Tangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th class="px-4 py-3 text-center">Status</th>
               <th class="px-4 py-3 text-center">Aksi</th>
@@ -153,7 +153,7 @@
                 @click="handleSort('tanggalDokumen')"
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
-                <div class="flex items-center gap-2 ml-5 px-4 py-3">
+                <div class="flex items-center gap-2 px-4 py-3">
                   <span>Tanggal Dibuat</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
@@ -205,7 +205,7 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">Penandatangan</th>
+              <th class="px-4 py-3 text-center">Penanda Tangan</th>
               <th class="px-4 py-3 text-center">Dokumen</th>
               <th
                 @click="handleSort('status')"
@@ -255,30 +255,36 @@
               <td class="p-4 text-center">
                 <button
                   @click="viewDocument(doc)"
-                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+                  class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-300 dark:hover:bg-primary transition"
                 >
                   <FileCheck class="w-4 h-4" />
-                  Lihat
+                  Lihat <ChevronRight class="w-4 h-4" />
                 </button>
               </td>
               <td class="p-4 text-center">
                 <span
-                  class="px-3 py-1 rounded-lg text-center text-xs font-medium"
+                  class="px-3 py-1 rounded-full text-center text-xs font-medium"
                   :class="getStatusClass(doc.status)"
                 >
                   {{ getStatusLabel(doc.status) }}
                 </span>
               </td>
               <td class="p-4">
-                <div class="flex items-center justify-center gap-4">
-                  <Eye
-                    class="w-4 h-4 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-primary dark:hover:text-primary-400 transition"
+                <div class="flex items-center justify-center gap-3">
+                  <button
                     @click="openDetailModal(doc.id)"
-                  />
-                  <Pencil
-                    class="w-4 h-4 text-yellow-500 dark:text-yellow-400 cursor-pointer hover:text-yellow-700 dark:hover:text-yellow-300 transition"
+                    class="p-1 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Lihat Detail"
+                  >
+                    <Eye class="w-4.5 h-4.5" />
+                  </button>
+                  <button
                     @click="openEditModal(doc.id)"
-                  />
+                    class="p-1 text-yellow-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Lihat Detail"
+                  >
+                    <Pencil class="w-4.5 h-4.5" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -321,7 +327,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -389,7 +395,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -415,14 +421,14 @@
           <div class="mt-5 ml-5 mb-3">
             <Heading
               variant="heading9b"
-              class="font-semibold text-sm dark:text-white"
+              class="font-bold text-sm dark:text-white"
             >
               {{ isEditMode ? "Edit Dokumen" : "Tambah Dokumen" }}
             </Heading>
           </div>
         </template>
 
-        <div class="px-6 mt-1 max-h-[calc(100vh-180px)] overflow-y-auto">
+        <div class="p-1 mt-1 max-h-[calc(100vh-180px)] overflow-y-auto">
           <!-- FORM FIELDS -->
           <div class="space-y-4">
             <div>
@@ -635,7 +641,7 @@
             <!-- File Attachment - Compact -->
             <div>
               <Heading variant="body2m" class="mb-2 dark:text-gray-200">
-                File Attachment <span class="text-red-500">*</span>
+                Lampiran Berkas <span class="text-red-500">*</span>
               </Heading>
               <div class="flex items-center gap-3">
                 <button
@@ -764,9 +770,9 @@
                   @click="toggleSignerDropdown"
                   class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
                 >
-                  <span class="text-gray-500 dark:text-gray-400"
-                    >Pilih Jabatan</span
-                  >
+                  <span class="text-gray-500 dark:text-gray-400">{{
+                    loadingVerifikator ? "Loading..." : "Pilih Jabatan"
+                  }}</span>
                   <svg
                     class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
                     :class="{ 'rotate-180': showSignerDropdown }"
@@ -840,7 +846,7 @@
 
         <!-- Footer Buttons -->
         <div
-          class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700"
+          class="flex justify-between gap-3 px-0 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <button
             @click="closeModal"
@@ -931,13 +937,14 @@
             </div>
 
             <div class="md:col-span-2">
-              <p class="text-gray-600 dark:text-gray-400 mb-2">Dokumen</p>
+              <p class="text-gray-500 dark:text-gray-400 mb-2">Dokumen</p>
               <button
                 @click="viewDocumentFromDetail"
-                class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition"
+                class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
               >
                 <FileCheck class="w-4 h-4" />
                 Lihat Preview Dokumen
+                <ChevronRight class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1083,6 +1090,7 @@ import {
   Eye,
   ChevronDown,
   ArrowUpDown,
+  ChevronRight,
 } from "lucide-vue-next";
 
 import { useDigsig } from "~/composables/useDigsig";
@@ -1147,6 +1155,13 @@ const openFilterStatus = ref(false);
 const sortKey = ref("");
 const sortOrder = ref("asc");
 
+// Track if dropdown data has been loaded
+const dropdownDataLoaded = ref({
+  klasifikasi: false,
+  jenisNaskah: false,
+  verifikator: false,
+});
+
 function handleSort(key) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -1176,13 +1191,13 @@ const addForm = ref({
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "verifikasi-dokumen", to: "/admin/digsig/verifikasi-dokumen" },
+  { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
 ];
 
 const filterOptions = [
   { label: "Semua", value: "" },
-  { label: "Draft", value: "draft" },
-  { label: "On Progress", value: "on_progress" },
+
+  { label: "Diproses", value: "on_progress" },
   { label: "Selesai", value: "completed" },
   { label: "Ditolak", value: "rejected" },
 ];
@@ -1261,11 +1276,43 @@ const paginationPages = computed(() => {
   return pages;
 });
 
+// ✅ LAZY LOAD: Fetch dropdown data hanya saat modal dibuka
+const ensureDropdownData = async () => {
+  const promises: Promise<void>[] = [];
+
+  if (!dropdownDataLoaded.value.klasifikasi) {
+    promises.push(
+      fetchKlasifikasi().then(() => {
+        dropdownDataLoaded.value.klasifikasi = true;
+      }),
+    );
+  }
+
+  if (!dropdownDataLoaded.value.jenisNaskah) {
+    promises.push(
+      fetchJenisNaskah().then(() => {
+        dropdownDataLoaded.value.jenisNaskah = true;
+      }),
+    );
+  }
+
+  if (!dropdownDataLoaded.value.verifikator) {
+    promises.push(
+      fetchVerifikator().then(() => {
+        dropdownDataLoaded.value.verifikator = true;
+      }),
+    );
+  }
+
+  if (promises.length > 0) {
+    await Promise.all(promises);
+    console.log("✅ Dropdown data loaded");
+  }
+};
+
 onMounted(() => {
+  // ✅ HANYA FETCH DOCUMENTS SAAT LOAD
   loadDocuments();
-  fetchKlasifikasi();
-  fetchJenisNaskah();
-  fetchVerifikator();
   document.addEventListener("click", handleClickOutside);
   document.addEventListener("click", handleDropdownClickOutside);
   document.addEventListener("click", handleKlasifikasiDropdownClickOutside);
@@ -1412,7 +1459,6 @@ const formatDate = (dateString: string) => {
 
 const getStatusClass = (status: string) => {
   const statusMap = {
-    draft: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
     on_progress:
       "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
     completed:
@@ -1427,7 +1473,7 @@ const getStatusClass = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   const statusMap = {
-    on_progress: "On Progress",
+    on_progress: "Diproses",
     completed: "Selesai",
     rejected: "Ditolak",
     draft: "Draft",
@@ -1439,7 +1485,7 @@ const getSignerStatusClass = (status: string) => {
   const statusMap = {
     waiting:
       "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
-    pending: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
+    pending: "bg-gray-200 dark:bg-gray-300 text-gray-600 dark:text-white-300",
     signed: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
     rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
   };
@@ -1451,7 +1497,7 @@ const getSignerStatusClass = (status: string) => {
 
 const getSignerStatusLabel = (status: string) => {
   const statusMap = {
-    waiting: "Waiting",
+    waiting: "Menunggu",
     pending: "Pending",
     signed: "Sudah TTD",
     rejected: "Ditolak",
@@ -1494,17 +1540,27 @@ const getSelectedJenisNaskahLabel = () => {
     : addForm.value.jenisNaskah;
 };
 
-const toggleKlasifikasiDropdown = () => {
+const toggleKlasifikasiDropdown = async () => {
   showKlasifikasiDropdown.value = !showKlasifikasiDropdown.value;
   if (showKlasifikasiDropdown.value) {
     klasifikasiSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch klasifikasi saat dropdown dibuka
+    if (!dropdownDataLoaded.value.klasifikasi) {
+      await fetchKlasifikasi();
+      dropdownDataLoaded.value.klasifikasi = true;
+    }
   }
 };
 
-const toggleJenisNaskahDropdown = () => {
+const toggleJenisNaskahDropdown = async () => {
   showJenisNaskahDropdown.value = !showJenisNaskahDropdown.value;
   if (showJenisNaskahDropdown.value) {
     jenisNaskahSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch jenis naskah saat dropdown dibuka
+    if (!dropdownDataLoaded.value.jenisNaskah) {
+      await fetchJenisNaskah();
+      dropdownDataLoaded.value.jenisNaskah = true;
+    }
   }
 };
 
@@ -1554,10 +1610,15 @@ const onKlasifikasiChange = async () => {
   }
 };
 
-const toggleSignerDropdown = () => {
+const toggleSignerDropdown = async () => {
   showSignerDropdown.value = !showSignerDropdown.value;
   if (showSignerDropdown.value) {
     signerSearchQuery.value = "";
+    // ✅ LAZY LOAD: Fetch verifikator saat dropdown dibuka
+    if (!dropdownDataLoaded.value.verifikator) {
+      await fetchVerifikator();
+      dropdownDataLoaded.value.verifikator = true;
+    }
   }
 };
 
@@ -1570,7 +1631,7 @@ const selectSigner = (verifikator: Verifikator) => {
     addForm.value.selectedSigners.push(verifikator);
     toast.add({
       title: "Berhasil",
-      description: `${verifikator.nama} ditambahkan sebagai penandatangan`,
+      description: `${verifikator.nama} ditambahkan sebagai Penanda Tangan`,
       color: "green",
     });
   }
@@ -1584,7 +1645,7 @@ const removeSelectedSigner = (index: number) => {
   addForm.value.selectedSigners.splice(index, 1);
   toast.add({
     title: "Info",
-    description: `${signer.nama} dihapus dari daftar penandatangan`,
+    description: `${signer.nama} dihapus dari daftar Penanda Tangan`,
     color: "blue",
   });
 };
@@ -1624,16 +1685,25 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 
-const openAddModal = () => {
+// ✅ LAZY LOAD: Fetch dropdown data saat modal add dibuka
+const openAddModal = async () => {
   isEditMode.value = false;
   editingId.value = null;
   resetForm();
+
+  // Fetch dropdown data sebelum membuka modal
+  await ensureDropdownData();
+
   openAdd.value = true;
 };
 
+// ✅ LAZY LOAD: Fetch dropdown data saat modal edit dibuka
 const openEditModal = async (id: string) => {
   isEditMode.value = true;
   editingId.value = id;
+
+  // Fetch dropdown data terlebih dahulu
+  await ensureDropdownData();
 
   try {
     const doc = await fetchDocumentDetail(id);
@@ -1704,6 +1774,7 @@ const openDetailModal = async (id: string) => {
     // Ensure klasifikasi list is loaded
     if (klasifikasiList.value.length === 0) {
       await fetchKlasifikasi();
+      dropdownDataLoaded.value.klasifikasi = true;
     }
 
     const res = await fetchDocumentDetail(id);
@@ -1921,7 +1992,7 @@ const saveDokumen = async () => {
   if (!isEditMode.value && !addForm.value.file) {
     toast.add({
       title: "Gagal",
-      description: "File Attachment harus diupload",
+      description: "Lampiran Berkas harus diupload",
       color: "red",
     });
     return;
@@ -1929,7 +2000,7 @@ const saveDokumen = async () => {
   if (addForm.value.selectedSigners.length === 0) {
     toast.add({
       title: "Gagal",
-      description: "Mohon pilih minimal satu penandatangan",
+      description: "Mohon pilih minimal satu Penanda Tangan",
       color: "red",
     });
     return;

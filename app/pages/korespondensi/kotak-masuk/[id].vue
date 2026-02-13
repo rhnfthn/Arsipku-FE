@@ -29,26 +29,31 @@ const MAX_CONTENT_HEIGHT = 300;
 
 // --- STATE ---
 const selected = ref<any>(null);
-const iframe = ref<HTMLIFrameElement | null>(null);
+const mainIframe = ref<HTMLIFrameElement | null>(null); // Renamed iframe to mainIframe
 const isLoading = ref(true);
 
 // State Konsep Logic
 const isKonsepData = ref(false);
 const showFinalizeActions = ref(false);
-const showEditAction = ref(false); // STATE BARU: Untuk tombol edit
-const showFinalizeOptionsModal = ref(false); // NEW: State for showing finalize options
+const showEditAction = ref(false);
+const showFinalizeOptionsModal = ref(false);
 
 // State Reject
 const showRejectModal = ref(false);
 const rejectNote = ref("");
 const isRejecting = ref(false);
-const showRejectOptionsModal = ref(false); // NEW: State for showing reject options
+const showRejectOptionsModal = ref(false);
 
 // State UI Logic
 const showAllKepada = ref(false);
 const showAllTembusan = ref(false);
 const isContentExpanded = ref(false);
 const showReadMoreButton = ref(false);
+const contentWrapperHeight = ref('auto')
+
+// Iframe Refs for flows (konsep data)
+const iframeRefs = ref<HTMLIFrameElement[]>([]);
+const setIframeRef = (el: any, index: number) => { if (el) iframeRefs.value[index] = el; };
 
 // State PDF Preview
 const isPreviewOpen = ref(false);
@@ -255,6 +260,18 @@ const loadData = async () => {
       const rawData = (result && result.data && Array.isArray(result.data)) ? result.data[0] : result;
 
       if (rawData) {
+        const currentIsJenisDI = rawData.jenis.toUpperCase() === "DI" || rawData.jenis_label.toUpperCase().includes("DISPOSISI");
+        let mainContent = '';
+        let contentTitle = 'Isi Surat';
+
+        if (currentIsJenisDI) {
+          mainContent = rawData.detail?.catatan || rawData.catatan || '';
+          contentTitle = 'Catatan Disposisi';
+        } else {
+          mainContent = rawData.konten || '';
+          contentTitle = 'Isi Surat';
+        }
+
         selected.value = {
           id: rawData.id,
           nomor: rawData.nomor || '-',
@@ -265,14 +282,16 @@ const loadData = async () => {
           sifat: rawData.sifat,
           status: rawData.status,
           disposisi: rawData.detail?.disposisi || rawData.disposisi,
-          catatan: rawData.detail?.catatan || rawData.catatan,
+          catatan: rawData.detail?.catatan || rawData.catatan, // Keep for backward compatibility/other uses
           kepada_yth: rawData.detail?.kepada_yth,
           pengirim: rawData.pengirim,
           kepada: rawData.kepada || [],
           tembusan: rawData.tembusan || [],
-          konten: rawData.konten,
+          konten: rawData.konten, // Keep for backward compatibility/other uses
           lampiran_files: rawData.lampiran_files || [],
-          final_pdf_url: rawData.final_pdf_url
+          final_pdf_url: rawData.final_pdf_url,
+          mainDisplayContentHtml: mainContent, // New field for consolidated content
+          mainDisplayContentTitle: contentTitle // New field for content title
         };
       }
     }
@@ -308,20 +327,56 @@ const isJenisDI = computed(() => {
 const displayedKepada = computed(() => showAllKepada.value ? (selected.value?.kepada || []) : (selected.value?.kepada || []).slice(0, LIMIT_DISPLAY));
 const hiddenKepadaCount = computed(() => Math.max((selected.value?.kepada || []).length - LIMIT_DISPLAY, 0));
 
-// --- IFRAME RESIZER ---
-const resizeIframe = () => {
-  if (!iframe.value) return;
-  const adjust = () => {
-    const iWindow = iframe.value?.contentWindow;
-    if (!iWindow) return;
-    iframe.value!.style.height = (Math.max(iWindow.document.body.scrollHeight, iWindow.document.documentElement.scrollHeight) + 20) + 'px';
-    showReadMoreButton.value = iframe.value!.offsetHeight > MAX_CONTENT_HEIGHT;
-    if (!showReadMoreButton.value) isContentExpanded.value = true;
+const resizeMainIframe = () => {
+  if (!mainIframe.value) return;
+  const iWindow = mainIframe.value?.contentWindow;
+  if (!iWindow) return;
+  const doc = iWindow.document;
+
+  const performResize = () => {
+    // Reset tinggi iframe agar bisa menghitung scrollHeight sebenarnya (jika konten menyusut)
+    mainIframe.value!.style.height = 'auto';
+
+    // Hitung tinggi konten asli di dalam iframe
+    const contentHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight);
+
+    // Set tinggi iframe sesuai konten (+ buffer dikit biar aman)
+    const finalHeight = contentHeight + 20;
+    mainIframe.value!.style.height = finalHeight + 'px';
+
+    // Cek apakah konten melebihi batas yang ditentukan (MAX_CONTENT_HEIGHT)
+    // Jika melebihi, tampilkan tombol "Baca Selengkapnya"
+    showReadMoreButton.value = finalHeight > MAX_CONTENT_HEIGHT;
+
+    // Set tinggi wrapper awal
+    if (showReadMoreButton.value && !isContentExpanded.value) {
+      contentWrapperHeight.value = `${MAX_CONTENT_HEIGHT}px`; // Tinggi terpotong
+    } else {
+      contentWrapperHeight.value = `${finalHeight}px`; // Tinggi penuh
+      isContentExpanded.value = true; // Auto expand jika konten pendek
+    }
   };
-  iframe.value.onload = adjust; setTimeout(adjust, 100);
+
+  setTimeout(performResize, 100);
+  setTimeout(performResize, 500);
 };
-const toggleContent = () => isContentExpanded.value = !isContentExpanded.value;
-watch(() => selected.value?.konten, async () => { await nextTick(); setTimeout(resizeIframe, 100); });
+
+// Fungsi Toggle dengan Animasi Smooth
+const toggleMainContent = () => {
+  isContentExpanded.value = !isContentExpanded.value;
+
+  if (isContentExpanded.value) {
+    // Saat dibuka: Set tinggi ke tinggi iframe asli
+    if (mainIframe.value) {
+      contentWrapperHeight.value = mainIframe.value.style.height;
+    }
+  } else {
+    // Saat ditutup: Set kembali ke batas maksimum (MAX_CONTENT_HEIGHT)
+    contentWrapperHeight.value = `${MAX_CONTENT_HEIGHT}px`;
+  }
+};
+
+watch(() => selected.value?.mainDisplayContentHtml, async () => { await nextTick(); resizeMainIframe(); });
 
 // --- PREVIEW ---
 const goBack = () => router.back();
@@ -428,7 +483,8 @@ const openMainPdfPreview = () => {
                 </div>
               </div>
 
-              <div v-if="flow.aksi === 'create' || flow.aksi === 'forward'" class="mb-4 flex flex-col md:flex-row gap-2">
+              <div v-if="flow.aksi === 'create' || flow.aksi === 'forward'"
+                class="mb-4 flex flex-col md:flex-row gap-2">
                 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[80px] mt-0.5">Pengirim
                 </div>
                 <div class="flex flex-col gap-1 w-full min-w-0">
@@ -523,9 +579,9 @@ const openMainPdfPreview = () => {
                 </template>
                 <template v-else-if="flow.type === 'disposisi'">
                   <div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                    <!-- <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                       Catatan Disposisi
-                    </span>
+                    </span> -->
 
                     <div v-if="flow.disposisi_content?.catatan && flow.disposisi_content.catatan !== '-'"
                       class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
@@ -540,9 +596,9 @@ const openMainPdfPreview = () => {
 
                 <template v-else>
                   <div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                    <!-- <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                       Catatan
-                    </span>
+                    </span> -->
 
                     <p v-if="flow.catatan && flow.catatan !== '-'"
                       class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
@@ -550,7 +606,7 @@ const openMainPdfPreview = () => {
                     </p>
 
                     <p v-else class="text-sm text-gray-400 italic">
-                      - Tidak ada catatan -
+                      Tidak ada catatan
                     </p>
                   </div>
                 </template>
@@ -614,8 +670,9 @@ const openMainPdfPreview = () => {
           <div
             class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative">
 
-            <div class="border-b border-gray-100 dark:border-gray-800">
-              <div class="h-14 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-gray-900">
+            <div class="border-y border-gray-100 dark:border-gray-800">
+              <div
+                class="border-y border-gray-100 dark:border-gray-800 h-14 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-gray-900">
                 <div class="flex items-center gap-2 min-w-0">
                   <button @click="goBack"
                     class="rounded-full text-gray-600 focus:outline-none hover:bg-gray-100 p-1 transition-colors">
@@ -725,42 +782,42 @@ const openMainPdfPreview = () => {
               <div
                 class="bg-gray-50 dark:bg-gray-950/50 rounded-lg p-5 border border-gray-100 dark:border-gray-800 relative">
 
-                <div v-if="isJenisDI && selected.catatan" class="mb-4">
-                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Catatan</span>
-                  <div class="prose prose-sm prose-blue max-w-none text-gray-600 dark:text-gray-300 text-sm"
-                    v-html="selected.catatan"></div>
-                </div>
+                <template v-if="selected.mainDisplayContentHtml">
+                  <div class="relative overflow-hidden w-full transition-all duration-500 ease-in-out"
+                    :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[150px]' : 'max-h-full pb-6']">
+                    <!-- <span
+                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3 border-b border-gray-200 pb-2">
+                      {{ selected.mainDisplayContentTitle }}
+                    </span> -->
 
-                <div v-else-if="!isJenisDI && selected.konten"
-                  class="relative overflow-hidden w-full transition-all duration-500 ease-in-out"
-                  :class="[(showReadMoreButton && !isContentExpanded) ? 'max-h-[300px]' : 'max-h-full pb-6']">
+                    <iframe :ref="(el) => { mainIframe = el as HTMLIFrameElement }"
+                      :srcdoc="'<style>body{margin:0;padding:0;font-family:ui-sans-serif, system-ui, sans-serif; color:#374151; white-space: pre-wrap; word-break: break-word; line-height: 1.5;}</style>' + selected.mainDisplayContentHtml"
+                      class="w-full bg-transparent block" style="border: none;" scrolling="no" @load="resizeMainIframe">
+                    </iframe>
 
-                  <span
-                    class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3 border-b border-gray-200 pb-2">Isi
-                    Surat</span>
-
-                  <iframe ref="iframe"
-                    :srcdoc="'<style>body{margin:0;padding:0;font-family:ui-sans-serif, system-ui, sans-serif; color:#374151;}</style>' + selected.konten"
-                    class="w-full bg-transparent block" style="border: none;"
-                    onload="this.style.height=(this.contentWindow.document.body.scrollHeight)+'px';">
-                  </iframe>
-
-                  <div v-show="showReadMoreButton && !isContentExpanded"
-                    class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 pointer-events-none">
+                    <div v-show="showReadMoreButton && !isContentExpanded"
+                      class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 pointer-events-none">
+                    </div>
                   </div>
-                </div>
 
-                <div v-if="!isJenisDI && showReadMoreButton" class="flex justify-center mt-[-20px] relative z-20">
-                  <button @click="toggleContent"
-                    class="flex items-center gap-1.5 px-5 py-2 rounded-full bg-white border border-gray-200 shadow-sm text-xs font-bold text-gray-600 hover:bg-gray-50">
-                    <span v-if="!isContentExpanded" class="flex items-center gap-1">
-                      <MoreHorizontal class="w-4 h-4" /> BACA SELENGKAPNYA
-                    </span>
-                    <span v-else class="flex items-center gap-1">
-                      <ChevronUp class="w-4 h-4" /> TUTUP KONTEN
-                    </span>
-                  </button>
-                </div>
+                  <div v-if="showReadMoreButton" class="flex justify-center mt-[-20px] relative z-20">
+                    <button @click="toggleMainContent"
+                      class="flex items-center gap-1.5 px-5 py-2 rounded-full bg-white border border-gray-200 shadow-sm text-xs font-bold text-gray-600 hover:bg-gray-50">
+                      <span v-if="!isContentExpanded" class="flex items-center gap-1">
+                        <MoreHorizontal class="w-4 h-4" /> BACA SELENGKAPNYA
+                      </span>
+                      <span v-else class="flex items-center gap-1">
+                        <ChevronUp class="w-4 h-4" /> TUTUP KONTEN
+                      </span>
+                    </button>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <p class="text-sm text-gray-400 italic">
+                    Tidak ada konten untuk ditampilkan.
+                  </p>
+                </template>
 
               </div>
 

@@ -32,6 +32,14 @@ export const useDigsig = () => {
   const meta = ref<any>(null);
   const bsreHealth = ref<BsreHealthResponse["data"] | null>(null);
 
+  // BsrE Alert state
+  const bsreAlert = ref<{
+    isActive: boolean;
+    message: string | null;
+    activatedAt: string | null;
+    activatedByName: string | null;
+  } | null>(null);
+
   // Penandatanganan
   const penandatanganDocuments = ref<PenandatangananDocument[]>([]);
   const penandatanganDetail = ref<PenandatangananDocument | null>(null);
@@ -53,6 +61,7 @@ export const useDigsig = () => {
   const loadingVerifikator = ref(false);
   const loadingCheck = ref(false);
   const loadingEnik = ref(false);
+  const loadingAlert = ref(false);
   const error = ref<string | null>(null);
 
   /* ======================
@@ -70,6 +79,7 @@ export const useDigsig = () => {
       if (params?.limit) queryParams.append("limit", params.limit.toString());
       if (params?.search) queryParams.append("search", params.search);
       if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+      if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
 
       const url = `/digsig/log${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       const res = await apiGet<DigsigLogResponse>(url);
@@ -87,7 +97,6 @@ export const useDigsig = () => {
       loading.value = false;
     }
   };
-
   /* ======================
    * FETCH BSRE HEALTH
    * GET /digsig/log/bsre-health
@@ -109,6 +118,123 @@ export const useDigsig = () => {
       console.error("❌ fetchBsreHealth error:", err);
     } finally {
       loadingHealth.value = false;
+    }
+  };
+
+  /* ======================
+   * FETCH BSRE ALERT
+   * GET /digsig/log/bsre-alert
+   * ====================== */
+  const fetchBsreAlert = async () => {
+    loadingAlert.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet<{
+        success: boolean;
+        data: {
+          isActive: boolean;
+          message: string | null;
+          activatedAt: string | null;
+          activatedByName: string | null;
+        };
+      }>("/digsig/log/bsre-alert");
+
+      if (res.success && res.data) {
+        bsreAlert.value = res.data;
+        console.log("✅ BsrE Alert status:", res.data);
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch BsrE alert status";
+      console.error("❌ fetchBsreAlert error:", err);
+    } finally {
+      loadingAlert.value = false;
+    }
+  };
+
+  /* ======================
+   * ACTIVATE BSRE ALERT
+   * POST /digsig/log/bsre-alert/activate
+   * ====================== */
+  const activateBsreAlert = async (message: string) => {
+    loadingAlert.value = true;
+    error.value = null;
+
+    try {
+      console.log("📤 Activating BsrE alert:", { message });
+
+      const res = await apiPost<{
+        success: boolean;
+        message: string;
+        data: {
+          isActive: boolean;
+          message: string;
+          activatedAt: string;
+          activatedByName: string;
+        };
+      }>("/digsig/log/bsre-alert/activate", { message });
+
+      console.log("✅ BsrE Alert activated:", res);
+
+      if (res.success && res.data) {
+        bsreAlert.value = res.data;
+        return res;
+      } else {
+        throw new Error(res.message || "Failed to activate BsrE alert");
+      }
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to activate BsrE alert";
+      console.error("❌ activateBsreAlert error:", err);
+      throw err;
+    } finally {
+      loadingAlert.value = false;
+    }
+  };
+
+  /* ======================
+   * DEACTIVATE BSRE ALERT
+   * POST /digsig/log/bsre-alert/deactivate
+   * ====================== */
+  const deactivateBsreAlert = async () => {
+    loadingAlert.value = true;
+    error.value = null;
+
+    try {
+      console.log("📤 Deactivating BsrE alert");
+
+      const res = await apiPost<{
+        success: boolean;
+        message: string;
+        data: {
+          isActive: boolean;
+          message: null;
+          activatedAt: null;
+          activatedByName: null;
+        };
+      }>("/digsig/log/bsre-alert/deactivate", {});
+
+      console.log("✅ BsrE Alert deactivated:", res);
+
+      if (res.success && res.data) {
+        bsreAlert.value = res.data;
+        return res;
+      } else {
+        throw new Error(res.message || "Failed to deactivate BsrE alert");
+      }
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to deactivate BsrE alert";
+      console.error("❌ deactivateBsreAlert error:", err);
+      throw err;
+    } finally {
+      loadingAlert.value = false;
     }
   };
 
@@ -659,6 +785,7 @@ export const useDigsig = () => {
     documentCheck,
     meta,
     bsreHealth,
+    bsreAlert,
     klasifikasiList,
     klasifikasiDetail,
     jenisNaskahList,
@@ -679,11 +806,15 @@ export const useDigsig = () => {
     loadingVerifikator,
     loadingCheck,
     loadingEnik,
+    loadingAlert,
     error,
 
     // Methods
     fetchLogs,
     fetchBsreHealth,
+    fetchBsreAlert,
+    activateBsreAlert,
+    deactivateBsreAlert,
     fetchDocuments,
     fetchDocumentDetail,
     createDocument,
