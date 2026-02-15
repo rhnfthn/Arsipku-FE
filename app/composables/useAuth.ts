@@ -53,7 +53,7 @@ export const useAuth = () => {
 
   const getSSORedirectUrl = async () => {
     try {
-      const res: any = await apiGet("/auth/sso-redirect-local");
+      const res: any = await apiGet("/auth/sso-redirect");
       return (res?.url as string) ?? null;
     } catch (error) {
       console.error("[AUTH] getSSORedirectUrl error:", error);
