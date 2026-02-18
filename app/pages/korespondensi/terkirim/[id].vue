@@ -6,9 +6,6 @@ import {
   Users, FileText, Building2 // Pastikan icon ini diimport agar tidak error ReferenceError
 } from "lucide-vue-next";
 
-// Import Component Baru
-import CardSuratDetail from '@/components/CardSuratDetail.vue';
-
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
