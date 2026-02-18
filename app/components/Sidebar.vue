@@ -419,7 +419,7 @@ const tulisChildrenByBod = computed(() => {
     },
     {
       label: "Surat Dinas Eksternal",
-      to: "/korespondensi/tulis/surat-dinas-eksternal",
+      to: "/korespondensi/tulis /surat-dinas-eksternal",
     },
     { label: "Kajian", to: "/korespondensi/tulis/kajian" },
   ];
