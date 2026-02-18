@@ -118,31 +118,41 @@
                 :class="[
                   'px-5 py-3 text-left font-semibold tracking-wide whitespace-nowrap',
                   col.sortable
-                    ? 'cursor-pointer select-none '
+                    ? 'cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition'
                     : 'cursor-default',
                 ]"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ col.label }}</span>
-                  <UIcon
+                  <ArrowUpDown
                     v-if="col.sortable"
-                    :name="getSortIcon(col.key)"
-                    class="w-4 h-4"
-                    :class="sortBy === col.key ? 'opacity-100' : 'opacity-50'"
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === col.key
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
 
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
-                  <UIcon
-                    :name="getSortIcon('status')"
-                    class="w-4 h-4"
-                    :class="sortBy === 'status' ? 'opacity-100' : 'opacity-50'"
+                  <ArrowUpDown
+                    class="w-4 h-4 origin-center transition-transform duration-200"
+                    :class="
+                      sortBy === 'status'
+                        ? sortOrder === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0'
+                        : 'opacity-50'
+                    "
                   />
                 </div>
               </th>
@@ -240,7 +250,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -308,7 +318,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -519,18 +529,20 @@
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'pending' ||
                             detail.status === 'menunggu',
-                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400':
+                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'booking',
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-primary-400':
                             detail.status === 'terpakai',
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                            detail.status === 'terpakai_final',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
-                          'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                          'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                             detail.status === 'hangus',
                         },
                       ]"
                     >
-                      {{ detail.status }}
+                      {{ getStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
@@ -544,12 +556,12 @@
                     "
                   >
                     <div
-                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                     >
                       <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 flex-1">
                           <svg
-                            class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
+                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -566,7 +578,7 @@
                             @click="previewFile(detail)"
                           >
                             <p
-                              class="text-sm font-medium text-green-700 dark:text-green-400"
+                              class="text-sm font-medium text-primary dark:text-blue-400"
                             >
                               {{ getDisplayFileName(detail) }}
                             </p>
@@ -607,12 +619,12 @@
                     "
                   >
                     <div
-                      class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                     >
                       <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 flex-1">
                           <svg
-                            class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0"
+                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -626,7 +638,7 @@
                           </svg>
                           <div class="flex-1">
                             <p
-                              class="text-sm font-medium text-green-700 dark:text-green-400"
+                              class="text-sm font-medium text-primary dark:text-blue-400"
                             >
                               {{
                                 fileStates[idx]?.file?.name || files[idx]?.name
@@ -879,7 +891,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { Search, Copy } from "lucide-vue-next";
+import { Search, Copy, ArrowUpDown } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
@@ -1019,7 +1031,7 @@ const fetchData = async () => {
         perihal: item.perihal,
         penandatangan: item.penandatangan || "-",
         jumlah: item.jumlah,
-        pengusul: item.nama || "-", // Nama pengusul dari API
+        pengusul: item.nama || "-",
         tglUsulan: formattedTglUsulan,
         status: item.status,
         klasifikasi: item.klasifikasi,
@@ -1068,16 +1080,6 @@ const handleSort = (column: string) => {
 
   currentPage.value = 1; // Reset to first page
   fetchData();
-};
-
-// Get sort icon for column
-const getSortIcon = (column: string) => {
-  if (sortBy.value !== column) {
-    return "i-lucide-arrow-up-down"; // Default unsorted icon
-  }
-  return sortOrder.value === "asc"
-    ? "i-lucide-arrow-up"
-    : "i-lucide-arrow-down";
 };
 
 // Handle page change
@@ -1310,6 +1312,20 @@ const displayNomor = (detail: any) => {
     return selectedRow.value.template_nomor;
   }
   return "-";
+};
+
+/* Get status label - FIXED untuk terpakai_final menjadi "Final" */
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    pending: "pending",
+    menunggu: "menunggu",
+    booking: "booking",
+    terpakai: "terpakai",
+    terpakai_final: "Final", // ✅ FIXED: terpakai_final jadi "Final"
+    ditolak: "ditolak",
+    hangus: "hangus",
+  };
+  return statusMap[status] || status;
 };
 
 /* Handle Copy */

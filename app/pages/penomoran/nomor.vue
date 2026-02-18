@@ -198,7 +198,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back
+            Sebelumnya
           </button>
 
           <!-- Page Numbers -->
@@ -276,7 +276,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Next
+            Selanjutnya
             <svg
               class="w-4 h-4"
               fill="none"
@@ -490,16 +490,33 @@
                   </button>
                 </div>
 
-                <div>
+                <div
+                  class="flex bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                >
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
-                    class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition"
+                    class="flex"
                     @click="previewFile(item)"
                   >
-                    <p
-                      class="text-sm font-medium text-green-700 dark:text-green-400 underline"
+                    <svg
+                      class="w-5 h-5 text-primary dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      📄 {{ item.file_name }}
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0 ml-3">
+                    <p
+                      class="text-sm font-medium text-primary dark:text-blue-400 underline"
+                    >
+                      {{ item.file_name }}
                     </p>
                     <p class="text-xs text-gray-600 dark:text-gray-400">
                       Klik untuk preview
@@ -863,7 +880,7 @@ const saveFile = async (detailId: string) => {
     delete fileStates.value[detailId];
 
     // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error upload file:", error);
   } finally {
     state.isUploading = false;

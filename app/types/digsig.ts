@@ -305,3 +305,51 @@ export interface DigsigLogParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+// Tambahkan field ini ke interface PenandatangananDocument di ~/types/digsig.ts
+// (hanya bagian yang perlu ditambah/diubah)
+
+export interface PenandatangananDocument {
+  id: string;
+  nomorDokumen: string;
+  perihal: string;
+  tanggalDokumen: string;
+  tanggalDibuat: string;
+  jenisNaskah: string;
+  jenisNaskahText?: string;
+  klasifikasi: string;
+  klasifikasiText?: string | null;
+  totalPenandatangan: number;
+  documentStatus: string;
+  mySignerStatus: "waiting" | "signed" | "rejected" | "pending";
+  mySignerInfo?: {
+    nama: string;
+    jabatan: string;
+  };
+  canSign: boolean;
+  canReject: boolean;
+
+  // File preview URLs dari list endpoint (GET /digsig/penandatanganan)
+  filePreviewUrl?: string | null;
+  signedFilePreviewUrl?: string | null;
+
+  // ✅ fileUrl dari detail endpoint (GET /digsig/document/:id atau /digsig/penandatanganan/:id)
+  // Ini adalah signed URL dari MinIO/S3 untuk membuka PDF langsung
+  fileUrl?: string | null;
+
+  // Signers (dari detail endpoint)
+  signers?: Array<{
+    id: string;
+    urutan: number;
+    persnum: number;
+    nik?: string | null;
+    nama: string;
+    jabatan: string;
+    lokasi: string;
+    positionId: number;
+    status: string;
+    signedAt?: string | null;
+    signatureId?: string | null;
+    rejectedAt?: string | null;
+    keterangan?: string | null;
+  }>;
+}

@@ -48,7 +48,8 @@
           />
 
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            :class="{ 'rotate-180': openDropdown === 'type' }"
           />
 
           <!-- DROPDOWN LIST -->
@@ -95,7 +96,8 @@
           />
 
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            :class="{ 'rotate-180': openDropdown === 'lokasi' }"
           />
 
           <div
@@ -160,7 +162,10 @@
               </span>
             </div>
 
-            <ChevronDown class="w-4 h-4 ml-auto shrink-0 text-gray-500" />
+            <ChevronDown
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'status' }"
+            />
           </div>
 
           <!-- DROPDOWN -->
@@ -191,10 +196,13 @@
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
           >
             <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
+            <ChevronDown
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'month' }"
+            />
           </button>
 
           <div
@@ -232,7 +240,10 @@
             class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedYear || "Semua Tahun" }}</span>
-            <ChevronDown class="w-4 h-4 ml-auto" />
+            <ChevronDown
+              class="w-4 h-4 ml-auto transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'year' }"
+            />
           </button>
 
           <div
@@ -381,7 +392,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Back
+          Sebelumnya
         </button>
 
         <!-- PAGE NUMBERS -->
@@ -439,7 +450,7 @@
               : 'bg-white text-primary border border-primary hover:bg-primary-50',
           ]"
         >
-          Next
+          Selanjutnya
         </button>
       </div>
     </div>
@@ -521,6 +532,7 @@ const monthOptions = [
 ];
 
 const statusOptions = [
+  { label: "Final", value: "terpakai_final" },
   { label: "Terpakai", value: "terpakai" },
   { label: "Hangus", value: "hangus" },
   { label: "Booking", value: "booking" },
@@ -734,7 +746,7 @@ const exportExcel = () => {
       }
 
       baseRow["Jumlah"] = row.jumlah;
-      baseRow["Status"] = row.status;
+      baseRow["Status"] = formatStatusLabel(row.status);
       rows.push(baseRow);
     });
 
@@ -806,8 +818,8 @@ const skeletonRows = computed(() => {
 
 const formatStatusLabel = (status: string) => {
   if (!status) return "-";
-  return status
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const found = statusOptions.find((s) => s.value === status);
+  return found?.label ?? status;
 };
 </script>

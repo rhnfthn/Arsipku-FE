@@ -1,90 +1,158 @@
 <template>
-  <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" @click="closeMobile">
-  </div>
+  <div
+    v-if="isMobileOpen"
+    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+    @click="closeMobile"
+  ></div>
 
   <aside
-    class="fixed left-0 top-0 h-screen z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
+    class="h-full z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
-    ]">
+    ]"
+  >
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800">
-      <button @click="handleMenuClick"
-        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors">
-        <UIcon :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
-          class="w-6 h-6 text-gray-700 dark:text-gray-200" />
+      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
+    >
+      <button
+        @click="handleMenuClick"
+        class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 mb-2 transition-colors"
+      >
+        <UIcon
+          :name="isMobile ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+          class="w-6 h-6 text-gray-700 dark:text-gray-200"
+        />
       </button>
 
       <div class="flex flex-col gap-4 w-full items-center">
-        <div v-for="app in apps" :key="app.id" @click="setActiveApp(app.id)" @mouseenter="hoveredApp = app.id"
-          @mouseleave="hoveredApp = null" class="group flex flex-col items-center gap-1 cursor-pointer relative w-full">
-          <div class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
-            :class="activeApp === app.id
-              ? 'bg-blue-200 dark:bg-gray-800'
-              : 'hover:bg-white/50 bg-transparent'
-              ">
-            <UIcon :name="app.icon" class="w-6 h-6 transition-colors" :class="activeApp === app.id
-              ? 'text-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-400'
-              " />
+        <div
+          v-for="app in apps"
+          :key="app.id"
+          @click="setActiveApp(app.id)"
+          @mouseenter="hoveredApp = app.id"
+          @mouseleave="hoveredApp = null"
+          class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
+        >
+          <div
+            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="
+              activeApp === app.id
+                ? 'bg-blue-200 dark:bg-gray-800'
+                : 'hover:bg-white/50 bg-transparent'
+            "
+          >
+            <UIcon
+              :name="app.icon"
+              class="w-6 h-6 transition-colors"
+              :class="
+                activeApp === app.id
+                  ? 'text-gray-800 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              "
+            />
 
-            <div v-if="app.hasNotification"
-              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse">
-            </div>
+            <div
+              v-if="app.hasNotification"
+              class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse"
+            ></div>
           </div>
-          <span class="text-[10px] font-medium transition-colors" :class="activeApp === app.id
-            ? 'text-gray-900 font-bold dark:text-white'
-            : 'text-gray-600 dark:text-gray-400'
-            ">{{ app.label }}
+          <span
+            class="text-[10px] font-medium transition-colors"
+            :class="
+              activeApp === app.id
+                ? 'text-gray-900 font-bold dark:text-white'
+                : 'text-gray-600 dark:text-gray-400'
+            "
+            >{{ app.label }}
           </span>
 
-          <div v-if="collapsed && hoveredApp === app.id && !isMobile"
-            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left">
-            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+          <div
+            v-if="collapsed && hoveredApp === app.id && !isMobile"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
+          >
+            <div
+              class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+              >
                 {{ app.label }}
               </h3>
             </div>
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar">
-              <SidebarItem v-for="(item, idx) in app.menus" :key="idx" :item="item" :collapsed="false" />
+              <SidebarItem
+                v-for="(item, idx) in app.menus"
+                :key="idx"
+                :item="item"
+                :collapsed="false"
+              />
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-show="!collapsed || isMobile"
-      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900">
+    <div
+      v-show="!collapsed || isMobile"
+      class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
+    >
       <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
-        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium"
+          >ArsipKu</span
+        >
       </div>
 
-      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar">
-        <SidebarItem v-for="(item, index) in currentAppData.menus" :key="index" :item="item" :collapsed="false" />
+      <div
+        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar"
+      >
+        <SidebarItem
+          v-for="(item, index) in currentAppData.menus"
+          :key="index"
+          :item="item"
+          :collapsed="false"
+        />
 
         <div v-if="activeApp.includes('utama')" class="mt-6 mb-4">
           <div class="flex items-center justify-between px-7 mb-2 group">
-            <span class="text-[14px] font-bold text-gray-600 dark:text-gray-400">Label</span>
-            <button @click="openCreateLabelModal"
+            <span class="text-[14px] font-bold text-gray-600 dark:text-gray-400"
+              >Label</span
+            >
+            <button
+              @click="openCreateLabelModal"
               class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
-              title="Tambah Label Baru">
+              title="Tambah Label Baru"
+            >
               <UIcon name="i-lucide-plus" class="w-4 h-4" />
             </button>
           </div>
 
           <div class="space-y-0.5">
             <div v-if="isLoadingLabels" class="px-7 space-y-2 mt-2">
-              <USkeleton class="h-8 w-full rounded-full bg-gray-200 dark:bg-gray-800" v-for="n in 3" :key="n" />
+              <USkeleton
+                class="h-8 w-full rounded-full bg-gray-200 dark:bg-gray-800"
+                v-for="n in 3"
+                :key="n"
+              />
             </div>
 
             <div v-else>
-              <SidebarLabelItem v-for="rootLabel in labelTree" :key="rootLabel.id" :item="rootLabel" :level="0"
-                :labelCounts="labelCounts" @edit="openEditLabelModal" @delete="openDeleteConfirm" />
+              <SidebarLabelItem
+                v-for="rootLabel in labelTree"
+                :key="rootLabel.id"
+                :item="rootLabel"
+                :level="0"
+                :labelCounts="labelCounts"
+                @edit="openEditLabelModal"
+                @delete="openDeleteConfirm"
+              />
             </div>
 
-            <div v-if="!isLoadingLabels && labels.length === 0" class="px-7 py-2 text-xs text-gray-400 italic">
+            <div
+              v-if="!isLoadingLabels && labels.length === 0"
+              class="px-7 py-2 text-xs text-gray-400 italic"
+            >
               Belum ada label
             </div>
           </div>
@@ -93,11 +161,18 @@
     </div>
   </aside>
 
-  <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
+  <div
+    v-if="showLabelModal"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+  >
+    <div
+      class="fixed inset-0 bg-black/50 transition-opacity"
+      @click="closeLabelModal"
+    ></div>
 
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all">
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all"
+    >
       <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white">
           {{ isEditing ? "Edit Label" : "Label baru" }}
@@ -106,25 +181,40 @@
 
       <div class="p-6 space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
             Masukkan nama label {{ isEditing ? "" : "baru" }}:
           </label>
-          <input v-model="labelForm.nama" type="text"
+          <input
+            v-model="labelForm.nama"
+            type="text"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white"
-            placeholder="Contoh: Penting" />
+            placeholder="Contoh: Penting"
+          />
         </div>
 
         <div class="flex items-center gap-2">
-          <input v-model="labelForm.isNested" id="check-nest" type="checkbox"
-            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-          <label for="check-nest" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          <input
+            v-model="labelForm.isNested"
+            id="check-nest"
+            type="checkbox"
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label
+            for="check-nest"
+            class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+          >
             Pilih label parent:
           </label>
         </div>
 
         <div>
-          <select v-model="labelForm.parentId" :disabled="!labelForm.isNested"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400">
+          <select
+            v-model="labelForm.parentId"
+            :disabled="!labelForm.isNested"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400"
+          >
             <option value="">Pilih Induk</option>
             <option v-for="l in availableParents" :key="l.id" :value="l.id">
               {{ l.nama }}
@@ -133,41 +223,63 @@
         </div>
       </div>
 
-      <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3">
-        <button @click="closeLabelModal"
-          class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors">
+      <div
+        class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3"
+      >
+        <button
+          @click="closeLabelModal"
+          class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors"
+        >
           Batal
         </button>
-        <button @click="saveLabel"
+        <button
+          @click="saveLabel"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-400 hover:bg-primary-500 rounded-md shadow-sm transition-colors"
-          :disabled="!labelForm.nama || isProcessing">
+          :disabled="!labelForm.nama || isProcessing"
+        >
           {{ isProcessing ? "Menyimpan..." : isEditing ? "Simpan" : "Buat" }}
         </button>
       </div>
     </div>
   </div>
 
-  <div v-if="showDeleteModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="showDeleteModal = false"></div>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative z-10 p-6">
+  <div
+    v-if="showDeleteModal"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+  >
+    <div
+      class="fixed inset-0 bg-black/50 transition-opacity"
+      @click="showDeleteModal = false"
+    ></div>
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative z-10 p-6"
+    >
       <div class="text-center">
-        <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <UIcon
+          name="i-heroicons-exclamation-triangle"
+          class="mx-auto h-12 w-12 text-red-500 mb-4"
+        />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
           Hapus Label?
         </h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
           Apakah Anda yakin ingin menghapus label "<strong>{{
             labelToDelete?.nama
-          }}</strong>"? Tindakan ini tidak dapat dibatalkan.
+          }}</strong
+          >"? Tindakan ini tidak dapat dibatalkan.
         </p>
         <div class="flex justify-center gap-3">
-          <button @click="showDeleteModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+          <button
+            @click="showDeleteModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+          >
             Batal
           </button>
-          <button @click="confirmDelete"
+          <button
+            @click="confirmDelete"
             class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
-            :disabled="isProcessing">
+            :disabled="isProcessing"
+          >
             {{ isProcessing ? "Menghapus..." : "Hapus" }}
           </button>
         </div>
@@ -216,17 +328,14 @@ const {
   deleteLabel,
 } = useLabel();
 
-// const labelTree = computed(() => buildLabelTree(labels.value));
 const labelTree = computed(() => labels.value);
 
 const route = useRoute();
 
-// Role check helper
 const isAdminOrSuperadmin = computed(() =>
   ["admin", "superadmin"].includes(user.value?.role),
 );
 
-// Helper position ID
 const getPositionId = (userValue) => {
   if (!userValue) return null;
 
@@ -253,7 +362,6 @@ const getPositionId = (userValue) => {
   return null;
 };
 
-// Fetch counts based on role
 const fetchCounts = async () => {
   try {
     if (!user.value) return;
@@ -275,17 +383,13 @@ const fetchCounts = async () => {
 
 let countInterval = null;
 
-// --- WATCHER USER (DIPERBAIKI) ---
-// Menggunakan immediate: true agar fetchLabels jalan saat load awal & saat user login
 watch(
   () => user.value,
   async (newUser) => {
     if (newUser) {
-      // 1. Ambil Label & Count (Global untuk user yg login)
       fetchLabels();
       fetchLabelCounts();
 
-      // 2. Ambil Notifikasi & Inbox (Tergantung Posisi/Role)
       const posId = getPositionId(newUser);
       await fetchCounts();
 
@@ -307,17 +411,15 @@ onMounted(async () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    // Initial Fetch jika user sudah ada (backup jika watcher miss)
     if (user.value) {
       fetchLabels();
       fetchLabelCounts();
     }
 
-    // Interval Polling (Setiap 30 detik refresh data)
     countInterval = setInterval(() => {
       if (user.value) {
         fetchCounts();
-        fetchLabelCounts(); // Refresh jumlah label
+        fetchLabelCounts();
 
         const positionId = getPositionId(user.value);
         if (positionId && !isNaN(positionId)) {
@@ -330,19 +432,16 @@ onMounted(async () => {
   }
 });
 
-// --- 1. SETUP & PROPS ---
 const props = defineProps({
   collapsed: Boolean,
 });
 const emit = defineEmits(["update:collapsed"]);
 
-// --- 2. STATE VARIABLES ---
 const isMobileOpen = ref(false);
 const isMobile = ref(false);
 const activeApp = ref("");
 const hoveredApp = ref(null);
 
-// --- 3. DATA MENU ---
 const hasInboxUnread = computed(() => unreadCount.value > 0);
 
 const userMenuUtama = computed(() => {
@@ -373,7 +472,6 @@ const userMenuUtama = computed(() => {
 });
 
 const userMenuUtilitas = computed(() => {
-  // ✅ UPDATED: Only show count for "Belum Diajukan" status
   const badgeCount = userCounts.value.belum_diajukan || 0;
   return [
     {
@@ -466,7 +564,6 @@ const adminMenuUtilitas = computed(() => {
       to: "/penyingkat-tautan",
       icon: "i-lucide-link",
     },
-    // { label: "Berkas", to: "/berkas", icon: "i-lucide-folder" },
     { label: "Template", to: "/template", icon: "i-lucide-copy" },
     {
       label: "Usulan Penomoran",
@@ -474,7 +571,6 @@ const adminMenuUtilitas = computed(() => {
       icon: "i-lucide-hash",
       hasNotification: false,
       onlyUser: true,
-      // ✅ UPDATED: Only show count for "Belum Diajukan" status
       badge:
         userCounts.value.belum_diajukan > 0
           ? userCounts.value.belum_diajukan
@@ -500,7 +596,6 @@ const adminMenuAdministrasi = computed(() => {
         {
           label: "Usulan",
           to: "/penomoran/usulan",
-          // ✅ UPDATED: Only show count for "Belum Diajukan" status
           badge:
             adminCounts.value.belum_diajukan > 0
               ? adminCounts.value.belum_diajukan
@@ -558,12 +653,10 @@ const adminMenuLaporan = [
   },
 ];
 
-// ✅ UPDATED: Notification only for "Menunggu Verifikasi" in Administrasi
 const hasAdministrasiNotification = computed(() => {
   return adminCounts.value.menunggu_verifikasi > 0;
 });
 
-// ✅ UPDATED: Notification only for "Belum Diajukan" in Utilitas
 const hasUtilitasNotification = computed(() => {
   if (!isAdminOrSuperadmin.value) {
     return userCounts.value.belum_diajukan > 0;
@@ -662,7 +755,7 @@ const closeMobile = () => (isMobileOpen.value = false);
 const openMobile = () => (isMobileOpen.value = true);
 
 // ==========================================
-//        LOGIC LABEL MANAGEMENT (INTEGRATED)
+//        LOGIC LABEL MANAGEMENT
 // ==========================================
 
 const showLabelModal = ref(false);
@@ -706,12 +799,10 @@ const closeLabelModal = () => {
   isProcessing.value = false;
 };
 
-// --- CRUD Actions ---
 const saveLabel = async () => {
   if (!labelForm.nama) return;
   isProcessing.value = true;
 
-  // PERBAIKAN: Gunakan key 'idParent' sesuai respon JSON backend Anda
   const payload = {
     nama: labelForm.nama,
     idParent:
@@ -743,7 +834,7 @@ const confirmDelete = async () => {
     isProcessing.value = true;
     try {
       await deleteLabel(labelToDelete.value.id);
-      await fetchLabels(); // Refresh data
+      await fetchLabels();
       showDeleteModal.value = false;
       labelToDelete.value = null;
     } catch (err) {
@@ -765,54 +856,39 @@ defineExpose({ openMobile, closeMobile });
 </script>
 
 <style scoped>
-/* Styling Scrollbar Modern */
 .custom-scrollbar {
   scrollbar-width: thin;
-  /* Firefox */
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-  /* Firefox */
 }
 
-/* Webkit (Chrome, Safari, Edge) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
-  /* Lebar scrollbar */
   height: 5px;
-  /* Tinggi scrollbar horizontal */
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
-  /* Track transparan agar menyatu */
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.3);
-  /* Warna abu-abu transparan */
   border-radius: 20px;
-  /* Membuat sudut bulat */
   border: 2px solid transparent;
-  /* Padding trick agar terlihat lebih kecil */
   background-clip: content-box;
 }
 
-/* Hover effect */
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.5);
-  /* Lebih gelap saat di-hover */
 }
 
-/* Dark Mode Adjustment */
 :is(.dark .custom-scrollbar)::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.15);
-  /* Putih transparan di dark mode */
 }
 
 :is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Animasi Fade In untuk Popup Menu */
 @keyframes fadeIn {
   from {
     opacity: 0;

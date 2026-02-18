@@ -1,34 +1,5 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <!-- GLOBAL ALERT (STICKY) - Tampil jika alert aktif -->
-    <div
-      v-if="bsreAlert?.isActive && !alertDismissed"
-      class="sticky top-0 left-0 right-0 bg-red-600 dark:bg-red-700 text-white px-6 py-3 shadow-lg flex items-center gap-4 mb-5 z-50"
-    >
-      <!-- ICON -->
-      <AlertTriangle class="w-5 h-5 flex-shrink-0" />
-
-      <!-- MARQUEE CONTAINER -->
-      <div class="relative overflow-hidden flex-1">
-        <div class="animate-marquee whitespace-nowrap text-sm font-medium">
-          <strong class="mr-2">PERHATIAN!</strong>
-          {{
-            bsreAlert.message ||
-            "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
-          }}
-        </div>
-      </div>
-
-      <!-- CLOSE BUTTON -->
-      <button
-        @click="alertDismissed = true"
-        class="flex-shrink-0 p-1 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition"
-        aria-label="Tutup alert"
-      >
-        <X class="w-5 h-5" />
-      </button>
-    </div>
-
     <!-- MAIN CONTENT -->
     <div class="w-full">
       <!-- HEADER -->
@@ -405,7 +376,7 @@
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                Back
+                Sebelumnya
               </button>
 
               <!-- PAGE NUMBERS -->
@@ -475,7 +446,7 @@
                     : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
                 ]"
               >
-                Next
+                Selanjutnya
                 <svg
                   class="w-4 h-4"
                   fill="none"
@@ -671,7 +642,6 @@ const limitPerPage = ref(10);
 const showActivateModal = ref(false);
 const showDeactivateModal = ref(false);
 const alertMessage = ref("");
-const alertDismissed = ref(false);
 const sortKey = ref("tanggal");
 const sortOrder = ref<"asc" | "desc">("desc");
 
@@ -826,10 +796,9 @@ const activateAlert = async () => {
     });
 
     showActivateModal.value = false;
-    alertDismissed.value = false; // Reset dismissed state
 
-    // Refresh alert status
-    await loadBsreAlert();
+    // Alert state sudah di-update otomatis oleh composable
+    // Banner akan langsung muncul tanpa perlu refresh
   } catch (err: any) {
     toast.add({
       title: "Gagal",
@@ -851,8 +820,8 @@ const deactivateAlert = async () => {
 
     showDeactivateModal.value = false;
 
-    // Refresh alert status
-    await loadBsreAlert();
+    // Alert state sudah di-update otomatis oleh composable
+    // Banner akan langsung hilang tanpa perlu refresh
   } catch (err: any) {
     toast.add({
       title: "Gagal",
@@ -904,20 +873,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@keyframes marquee {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-.animate-marquee {
-  display: inline-block;
-  animation: marquee 15s linear infinite;
-}
-
 /* Custom scrollbar */
 .overflow-x-auto::-webkit-scrollbar {
   height: 8px;

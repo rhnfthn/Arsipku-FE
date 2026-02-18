@@ -371,6 +371,9 @@ const openNewAsalNaskah = ref(false);
 
 const openNewTertuju = ref(false);
 
+const isOpenPreviewFile = ref(false);
+const previewFileUrl = ref<string | null>(null);
+
 // click outside handling
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -505,8 +508,8 @@ function resetNewDelegasi() {
 
 function openFinalPdf(url?: string) {
   if (!url) return;
-
-  window.open(url, "_blank", "noopener,noreferrer");
+  previewFileUrl.value = url;
+  isOpenPreviewFile.value = true;
 }
 
 function getFileNameFromUrl(url?: string) {
@@ -640,7 +643,7 @@ function exportExcel() {
         <!-- CUSTOM FILTER DROPDOWN -->
         <div class="relative" data-custom-dropdown>
           <button
-            class="flex items-center justify-between gap-2 text-xs px-2 py-0.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            class="flex items-center justify-between gap-2 text-xs px-3 py-1.5 rounded-lg min-w-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span class="text-sm">
@@ -690,12 +693,12 @@ function exportExcel() {
 
         <div class="relative flex-1 w-full md:w-56">
           <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
-            placeholder="Cari..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
+            placeholder="Cari Naskah Dinas"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
         <button
@@ -772,11 +775,6 @@ function exportExcel() {
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                   {{ item.nomor || "-" }}
                 </div>
-                <div class="text-xs text-gray-400 dark:text-gray-500">
-                  {{
-                    formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
-                  }}
-                </div>
               </td>
 
               <td class="px-4 py-3 text-black dark:text-gray-200">
@@ -786,6 +784,24 @@ function exportExcel() {
                   }}
                 </div>
               </td>
+
+              <!-- FILE PREVIEW SLIDEOVER -->
+              <USlideover
+                v-model:open="isOpenPreviewFile"
+                title="Pratinjau Dokumen"
+                side="bottom"
+                :dismissible="true"
+                :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
+                class="z-[9999]"
+              >
+                <template #body>
+                  <iframe
+                    v-if="previewFileUrl"
+                    :src="previewFileUrl"
+                    class="w-full h-full"
+                  ></iframe>
+                </template>
+              </USlideover>
 
               <td
                 class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
@@ -798,7 +814,7 @@ function exportExcel() {
                   <button
                     v-if="item.final_pdf_url"
                     @click="openFinalPdf(item.final_pdf_url)"
-                    class="inline-flex max-w-[220px] items-center gap-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-xs hover:bg-emerald-200 dark:hover:bg-emerald-800 transition cursor-pointer"
+                    class="inline-flex max-w-[220px] items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs hover:bg-blue-200 dark:hover:bg-blue-800 transition cursor-pointer"
                     :title="getFileNameFromUrl(item.final_pdf_url)"
                   >
                     <FileText class="w-3 h-3 shrink-0" />
@@ -824,7 +840,16 @@ function exportExcel() {
                 </div>
               </td>
               <td class="px-4 py-3 text-black dark:text-gray-200">
-                {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
+                <div class="flex flex-col">
+                  <div>
+                    {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
+                  </div>
+                  <div>
+                    {{
+                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
+                    }}
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -869,7 +894,7 @@ function exportExcel() {
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back
+              Sebelumnya
             </button>
 
             <!-- PAGE NUMBERS -->
@@ -901,7 +926,7 @@ function exportExcel() {
                   : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
               ]"
             >
-              Next
+              Selanjutnya
               <svg
                 class="w-4 h-4"
                 fill="none"
