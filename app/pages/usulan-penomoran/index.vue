@@ -158,7 +158,7 @@
                   <p
                     class="whitespace-normal break-words line-clamp-3 cursor-help dark:text-gray-300"
                   >
-                    {{ row.perihal }}
+                    {{ row.perihal || "-" }}
                   </p>
                 </div>
               </td>
@@ -318,10 +318,7 @@
     </div>
   </div>
 
-  <!-- ==================== -->
   <!-- MODAL ROW DETAIL -->
-  <!-- Sembunyikan saat preview sedang terbuka -->
-  <!-- ==================== -->
   <Teleport to="body">
     <Modal
       v-if="!isOpenPreview"
@@ -341,12 +338,14 @@
         v-if="selectedRow"
         class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
       >
+        <!-- Perihal -->
         <p
           class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base"
         >
-          {{ selectedRow.perihal }}
+          {{ selectedRow.perihal || "-" }}
         </p>
 
+        <!-- Tanggal -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
           <p class="font-medium mt-1 dark:text-gray-200">
@@ -354,24 +353,29 @@
           </p>
         </div>
 
+        <!-- Penandatangan -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Penandatangan</p>
           <p class="font-medium mt-1 dark:text-gray-200">
-            {{ selectedRow.penandatangan }}
+            {{ selectedRow.penandatangan || "-" }}
           </p>
         </div>
 
+        <!-- Klasifikasi -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
           <p class="font-medium mt-1 dark:text-gray-200">
-            {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi }}
+            {{
+              selectedRow.klasifikasiDisplay || selectedRow.klasifikasi || "-"
+            }}
           </p>
         </div>
 
+        <!-- Jenis Naskah -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
           <p class="font-medium mt-1 dark:text-gray-200">
-            {{ selectedRow.jenis_naskah }}
+            {{ selectedRow.jenis_naskah || "-" }}
           </p>
         </div>
 
@@ -393,20 +397,32 @@
             <div
               v-for="(detail, idx) in selectedRow.details"
               :key="detail.id || idx"
-              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
+              :class="[
+                'border rounded-lg p-4 transition',
+                detail.status === 'hangus'
+                  ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
+                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
+              ]"
             >
-              <!-- Nomor surat dengan status badge -->
+              <!-- Nomor surat + status badge -->
               <div class="flex items-center gap-2 mb-3">
                 <div
                   class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                 >
                   <div class="flex items-center justify-between">
                     <span
-                      class="text-sm font-mono text-gray-700 dark:text-gray-300"
+                      :class="[
+                        'text-sm font-mono',
+                        detail.status === 'hangus'
+                          ? 'line-through text-gray-400 dark:text-gray-500'
+                          : 'text-gray-700 dark:text-gray-300',
+                      ]"
                     >
                       {{ idx + 1 }}.
                       {{ detail.nomor || selectedRow.template_nomor || "-" }}
                     </span>
+
+                    <!-- Status Badge -->
                     <span
                       v-if="detail.status"
                       :class="[
@@ -420,16 +436,19 @@
                             detail.status === 'terpakai_final',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
+                          'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400':
+                            detail.status === 'hangus',
                         },
                       ]"
                     >
-                      {{ detail.status }}
+                      {{ getStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
 
+                <!-- ✅ Sembunyikan copy button jika hangus -->
                 <button
-                  v-if="detail.nomor"
+                  v-if="detail.nomor && detail.status !== 'hangus'"
                   @click="handleCopy(detail.nomor)"
                   class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
                 >
@@ -437,133 +456,202 @@
                 </button>
               </div>
 
-              <!-- ✅ FILE SECTION - Pakai file_url dari API jika tersedia, fallback ke local file -->
-              <div
-                v-if="detail.file_name || detail.file_url || filesByIndex[idx]"
-                @click="openPreview(detail, idx)"
-                class="bg-blue-50 mt-2 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
-              >
-                <div class="flex items-start gap-3">
-                  <!-- FILE ICON -->
-                  <div class="flex-shrink-0 mt-0.5">
-                    <svg
-                      class="w-5 h-5 text-primary dark:text-blue-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-
-                  <!-- FILE INFO -->
-                  <div class="flex-1 min-w-0">
-                    <p
-                      class="text-sm font-medium text-primary dark:text-blue-400 underline"
-                    >
-                      {{
-                        detail.file_name || filesByIndex[idx]?.name || "Dokumen"
-                      }}
-                    </p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">
-                      Klik untuk preview
-                    </p>
-                  </div>
-
-                  <!-- Remove button untuk local files saja -->
-                  <button
-                    v-if="
-                      filesByIndex[idx] &&
-                      !detail.file_url &&
-                      selectedRow?.status === 'Belum Diajukan'
-                    "
-                    @click.stop="removeFile(idx)"
-                    class="flex-shrink-0 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                    title="Hapus file"
+              <!-- ✅ FILE SECTION -->
+              <div class="mt-2">
+                <!-- ✅ HANGUS: tampilkan file jika ada (read-only, tidak bisa klik preview), atau indikator hangus -->
+                <template v-if="detail.status === 'hangus'">
+                  <!-- Ada file → tampilkan tapi non-clickable (greyed out) -->
+                  <div
+                    v-if="detail.file_name || detail.file_url"
+                    class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-md p-3"
                   >
-                    <svg
-                      class="w-4 h-4 text-red-600 dark:text-red-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                    <div class="flex items-start gap-3">
+                      <svg
+                        class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <div class="flex-1 min-w-0">
+                        <p
+                          class="text-sm font-medium text-gray-400 dark:text-gray-500 line-through"
+                        >
+                          {{ detail.file_name || "Dokumen" }}
+                        </p>
+                        <p
+                          class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+                        >
+                          Nomor telah dihanguskan
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-              <!-- Upload area jika belum ada file dan status Belum Diajukan -->
-              <div
-                v-else-if="selectedRow?.status === 'Belum Diajukan'"
-                class="space-y-2"
-              >
-                <label
-                  class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
+                  <!-- Tidak ada file → indikator hangus saja -->
+                  <div
+                    v-else
+                    class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md p-3"
+                  >
+                    <div class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                        />
+                      </svg>
+                      <span class="text-xs text-gray-400 dark:text-gray-500">
+                        Nomor telah dihanguskan
+                      </span>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- ✅ Ada file (bukan hangus) → bisa di-preview -->
+                <div
+                  v-else-if="
+                    detail.file_name || detail.file_url || filesByIndex[idx]
+                  "
+                  @click="openPreview(detail, idx)"
+                  class="bg-blue-50 mt-2 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
                 >
-                  <svg
-                    class="w-5 h-5 text-gray-400 dark:text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <div class="flex-1">
-                    <span
-                      class="text-gray-700 dark:text-gray-300 font-medium block"
-                      >Pilih file (Opsional)</span
-                    >
-                    <span class="text-xs text-gray-500 dark:text-gray-400 block"
-                      >PDF, DOC, DOCX (Max 5MB)</span
-                    >
-                  </div>
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf,.doc,.docx"
-                    @change="handleFile(idx, $event)"
-                  />
-                </label>
-              </div>
+                  <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 mt-0.5">
+                      <svg
+                        class="w-5 h-5 text-primary dark:text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-primary dark:text-blue-400 underline"
+                      >
+                        {{
+                          detail.file_name ||
+                          filesByIndex[idx]?.name ||
+                          "Dokumen"
+                        }}
+                      </p>
+                      <p class="text-xs text-gray-600 dark:text-gray-400">
+                        Klik untuk preview
+                      </p>
+                    </div>
 
-              <!-- Belum ada file -->
-              <div
-                v-else
-                class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
-              >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    <!-- Remove button hanya untuk local file saat Belum Diajukan -->
+                    <button
+                      v-if="
+                        filesByIndex[idx] &&
+                        !detail.file_url &&
+                        selectedRow?.status === 'Belum Diajukan'
+                      "
+                      @click.stop="removeFile(idx)"
+                      class="flex-shrink-0 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                      title="Hapus file"
+                    >
+                      <svg
+                        class="w-4 h-4 text-red-600 dark:text-red-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- ✅ Upload area jika belum ada file dan status Belum Diajukan -->
+                <div
+                  v-else-if="selectedRow?.status === 'Belum Diajukan'"
+                  class="space-y-2"
+                >
+                  <label
+                    class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    <svg
+                      class="w-5 h-5 text-gray-400 dark:text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    <div class="flex-1">
+                      <span
+                        class="text-gray-700 dark:text-gray-300 font-medium block"
+                      >
+                        Pilih file (Opsional)
+                      </span>
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 block"
+                      >
+                        PDF, DOC, DOCX (Max 5MB)
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.doc,.docx"
+                      @change="handleFile(idx, $event)"
                     />
-                  </svg>
-                  <span class="text-xs text-yellow-800 dark:text-yellow-400"
-                    >Belum ada file diupload</span
-                  >
+                  </label>
+                </div>
+
+                <!-- ✅ Belum ada file & tidak bisa upload -->
+                <div
+                  v-else
+                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-3 h-3 text-yellow-600 dark:text-yellow-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <span class="text-xs text-yellow-800 dark:text-yellow-400">
+                      Belum ada file diupload
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -671,10 +759,7 @@
     @cancel="openConfirmDelete = false"
   />
 
-  <!-- ==================== -->
-  <!-- PREVIEW SLIDEOVER -->
-  <!-- Identik dengan pattern halaman penandatanganan -->
-  <!-- ==================== -->
+  <!-- ✅ PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
     title="Pratinjau Dokumen"
@@ -689,7 +774,6 @@
       <div
         class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
       >
-        <!-- PDF iframe -->
         <iframe
           v-if="pdfUrl"
           :key="pdfUrl"
@@ -697,8 +781,6 @@
           class="w-full h-full border-0"
           allowfullscreen
         />
-
-        <!-- Error / kosong state -->
         <div v-else class="flex flex-col items-center gap-3">
           <svg
             class="w-12 h-12 text-gray-400 dark:text-gray-600"
@@ -761,7 +843,7 @@ const openConfirmSubmit = ref(false);
 // ─── Preview Slideover ────────────────────────
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
-// Simpan dari mana preview dibuka: "detail" = dari modal, null = biasa
+// Track apakah preview dibuka dari modal detail (untuk buka kembali saat ditutup)
 const previewSource = ref<"detail" | null>(null);
 
 // Person & Klasifikasi mapping
@@ -778,7 +860,24 @@ const sortDir = ref<"asc" | "desc">("desc");
 const filterStatus = ref<string>("Semua");
 const openFilterStatus = ref<boolean>(false);
 
-// ─── HELPER: Check approved status ─────────────
+/* ===========================
+ * GET STATUS LABEL
+ * ✅ terpakai_final → "Final"
+ * =========================== */
+const getStatusLabel = (status: string): string => {
+  const map: Record<string, string> = {
+    booking: "Booking",
+    terpakai: "Terpakai",
+    terpakai_final: "Final",
+    ditolak: "Ditolak",
+    hangus: "Hangus",
+  };
+  return map[status] || status;
+};
+
+/* ===========================
+ * CHECK APPROVED STATUS
+ * =========================== */
 const isApprovedStatus = (row: any) => {
   if (!row || !Array.isArray(row.details)) return false;
   return row.details.some(
@@ -786,6 +885,9 @@ const isApprovedStatus = (row: any) => {
   );
 };
 
+/* ===========================
+ * FETCH PERSON MAP
+ * =========================== */
 const fetchPersonMap = async () => {
   try {
     const response = await getPersonWithPosition();
@@ -806,6 +908,9 @@ const fetchPersonMap = async () => {
   }
 };
 
+/* ===========================
+ * FETCH KLASIFIKASI MAP
+ * =========================== */
 const fetchKlasifikasiMap = async () => {
   try {
     const response = await getKlasifikasi();
@@ -818,13 +923,10 @@ const fetchKlasifikasiMap = async () => {
     console.error("❌ Error fetch klasifikasi map:", error);
   }
 };
-const getStatusLabel = (item: any): string => {
-  if (item.status === "hangus") return "Hangus";
-  if (item.status === "terpakai_final") return "Final";
-  if (item.status === "terpakai") return "Terpakai";
-  if (item.status === "booking") return "Booking";
-  return "Booking";
-};
+
+/* ===========================
+ * FETCH DATA
+ * =========================== */
 const fetchData = async () => {
   loading.value = true;
   try {
@@ -878,7 +980,7 @@ const fetchData = async () => {
         tanggal: formattedTanggal,
         tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
         tglUsulanSort: wibTime.getTime(),
-        perihal: item.perihal,
+        perihal: item.perihal || "-",
         jumlah: item.jumlah,
         penandatangan: item.penandatangan || "-",
         klasifikasi: item.klasifikasi || "-",
@@ -898,6 +1000,9 @@ const fetchData = async () => {
   }
 };
 
+/* ===========================
+ * OPEN ROW MODAL
+ * =========================== */
 const openRowModal = async (row) => {
   try {
     const klasifikasiDisplay =
@@ -913,7 +1018,7 @@ const openRowModal = async (row) => {
       jenis: row.jenis,
       jenis_naskah: row.jenis,
       tanggal: row.tanggal,
-      perihal: row.perihal,
+      perihal: row.perihal || "-",
       jumlah: row.jumlah,
       penandatangan: row.penandatangan || "-",
       klasifikasi: row.klasifikasi || "-",
@@ -936,20 +1041,22 @@ const openRowModal = async (row) => {
   }
 };
 
-// ─── OPEN PREVIEW ─────────────────────────────
-/**
- * Prioritas sumber URL:
- * 1. Local file (belum diupload) → blob URL
- * 2. detail.file_url → signed MinIO URL langsung dari API response ✅
- * 3. Tidak ada → toast warning
- */
+/* ===========================
+ * OPEN PREVIEW
+ * ✅ Prioritas:
+ *   1. Local file (blob URL)
+ *   2. file_url dari API (pre-signed S3) — langsung dipakai
+ *   3. Tidak ada → toast warning
+ * =========================== */
 const openPreview = (detail: any, idx: number) => {
   const localFile = filesByIndex.value[idx];
   let url: string | null = null;
 
   if (localFile instanceof File) {
+    // Local file belum diupload → buat blob URL sementara
     url = URL.createObjectURL(localFile);
   } else if (detail.file_url) {
+    // ✅ Pre-signed S3 URL dari API — langsung pakai, tidak perlu fetch/blob
     url = detail.file_url;
   } else {
     toast.add({
@@ -960,16 +1067,18 @@ const openPreview = (detail: any, idx: number) => {
     return;
   }
 
-  previewSource.value = "detail"; // akan buka kembali modal saat ditutup
+  previewSource.value = "detail";
   pdfUrl.value = url;
   openDetail.value = false;
   isOpenPreview.value = true;
 };
 
-// ─── Watch: ketika slideover ditutup ──────────
+/* ===========================
+ * WATCH: Slideover ditutup
+ * =========================== */
 watch(isOpenPreview, (isOpen) => {
   if (!isOpen) {
-    // Revoke blob URL jika local file
+    // ✅ Revoke hanya jika blob URL (local file), bukan S3 URL
     if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
       URL.revokeObjectURL(pdfUrl.value);
     }
@@ -983,7 +1092,9 @@ watch(isOpenPreview, (isOpen) => {
   }
 });
 
-// ─── Helpers ──────────────────────────────────
+/* ===========================
+ * HELPERS
+ * =========================== */
 const handleCopy = (value: string) => {
   if (!value) return;
   navigator.clipboard.writeText(value);
@@ -1070,6 +1181,9 @@ const removeFile = (index: number) => {
   });
 };
 
+/* ===========================
+ * CONFIRM SUBMIT
+ * =========================== */
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
   isUploadingFiles.value = true;
@@ -1113,6 +1227,9 @@ const confirmSubmitUsulan = async () => {
   }
 };
 
+/* ===========================
+ * CONFIRM DELETE
+ * =========================== */
 const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan) return;
   isDeletingUsulan.value = true;
@@ -1137,6 +1254,9 @@ const confirmDeleteUsulan = async () => {
   }
 };
 
+/* ===========================
+ * HANDLE SUBMIT FROM ADD MODAL
+ * =========================== */
 const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
@@ -1218,6 +1338,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
+  // ✅ Revoke hanya blob URL
   if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(pdfUrl.value);
   }
@@ -1248,6 +1369,13 @@ const filterOptions = [
   "Ditolak",
 ];
 
+const statusOrder: Record<string, number> = {
+  "Belum Diajukan": 1,
+  "Menunggu Verifikasi": 2,
+  Disetujui: 3,
+  Ditolak: 4,
+};
+
 const sortStatus = () => {
   if (sortBy.value === "status") {
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
@@ -1255,13 +1383,6 @@ const sortStatus = () => {
     sortBy.value = "status";
     sortDir.value = "asc";
   }
-};
-
-const statusOrder = {
-  "Belum Diajukan": 1,
-  "Menunggu Verifikasi": 2,
-  Disetujui: 3,
-  Ditolak: 4,
 };
 
 const sort = (col: string) => {

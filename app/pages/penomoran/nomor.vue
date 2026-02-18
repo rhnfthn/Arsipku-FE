@@ -462,16 +462,28 @@
               <div
                 v-for="(item, idx) in detailData.nomor_list"
                 :key="item.id || `nomor-${idx}`"
-                class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 hover:shadow-md transition"
+                :class="[
+                  'border rounded-lg p-4 hover:shadow-md transition',
+                  item.status === 'hangus'
+                    ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
+                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
+                ]"
               >
                 <div class="flex items-center gap-3 mb-3">
                   <div
                     class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-4 py-2"
                   >
                     <div class="flex justify-between items-center">
-                      <span class="font-mono text-sm dark:text-gray-200"
-                        >{{ idx + 1 }}. {{ item.nomor }}</span
+                      <span
+                        :class="[
+                          'font-mono text-sm',
+                          item.status === 'hangus'
+                            ? 'line-through text-gray-400'
+                            : 'dark:text-gray-200',
+                        ]"
                       >
+                        {{ idx + 1 }}. {{ item.nomor }}
+                      </span>
                       <span
                         :class="[
                           'px-3 py-1 rounded-full text-xs font-medium',
@@ -482,7 +494,9 @@
                       </span>
                     </div>
                   </div>
+                  <!-- ✅ Sembunyikan copy button jika status hangus -->
                   <button
+                    v-if="item.status !== 'hangus'"
                     @click="handleCopy(item.nomor)"
                     class="p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
@@ -490,16 +504,33 @@
                   </button>
                 </div>
 
+                <!-- ✅ Section file: hanya tampil jika ada file, atau saat mode upload/replacing -->
                 <div
-                  class="flex bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                  v-if="item.file_name || fileStates[item.id]?.isReplacing"
+                  :class="[
+                    'flex border rounded-md p-3 transition',
+                    item.status === 'hangus'
+                      ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-default'
+                      : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30',
+                  ]"
+                  @click="
+                    item.file_name &&
+                    item.status !== 'hangus' &&
+                    !fileStates[item.id]?.isReplacing &&
+                    previewFile(item)
+                  "
                 >
                   <div
                     v-if="item.file_name && !fileStates[item.id]?.isReplacing"
                     class="flex"
-                    @click="previewFile(item)"
                   >
                     <svg
-                      class="w-5 h-5 text-primary dark:text-blue-400"
+                      class="w-5 h-5"
+                      :class="
+                        item.status === 'hangus'
+                          ? 'text-gray-400'
+                          : 'text-primary dark:text-blue-400'
+                      "
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -514,16 +545,27 @@
                   </div>
                   <div class="flex-1 min-w-0 ml-3">
                     <p
-                      class="text-sm font-medium text-primary dark:text-blue-400 underline"
+                      :class="[
+                        'text-sm font-medium',
+                        item.status === 'hangus'
+                          ? 'text-gray-400 no-underline'
+                          : 'text-primary dark:text-blue-400 underline',
+                      ]"
                     >
                       {{ item.file_name }}
                     </p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                    <p
+                      v-if="item.status !== 'hangus'"
+                      class="text-xs text-gray-600 dark:text-gray-400"
+                    >
                       Klik untuk preview
                     </p>
                   </div>
 
-                  <div v-if="fileStates[item.id]?.isReplacing" class="mt-3">
+                  <div
+                    v-if="fileStates[item.id]?.isReplacing"
+                    class="mt-3 w-full"
+                  >
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx"
@@ -537,10 +579,11 @@
                 </div>
 
                 <div class="flex gap-2 mt-3">
-                  <!-- Upload button - tampil jika tidak ada file dan status terpakai/booking -->
+                  <!-- Upload button: tampil jika tidak ada file, status terpakai/booking, bukan hangus -->
                   <button
                     v-if="
                       !item.file_name &&
+                      item.status !== 'hangus' &&
                       (item.status === 'terpakai' ||
                         item.status === 'booking') &&
                       !fileStates[item.id]?.isReplacing
@@ -551,10 +594,11 @@
                     Upload File
                   </button>
 
-                  <!-- Ganti File button - tampil jika sudah ada file dan status terpakai/terpakai_final -->
+                  <!-- Ganti File button -->
                   <button
                     v-if="
                       item.file_name &&
+                      item.status !== 'hangus' &&
                       (item.status === 'terpakai' ||
                         item.status === 'terpakai_final') &&
                       !fileStates[item.id]?.isReplacing
@@ -595,8 +639,10 @@
                     </button>
                   </template>
 
+                  <!-- Hangus button: sembunyikan jika sudah hangus -->
                   <button
                     v-if="
+                      item.status !== 'hangus' &&
                       (item.status === 'terpakai' ||
                         item.status === 'terpakai_final') &&
                       !fileStates[item.id]?.isReplacing
@@ -792,19 +838,10 @@ const previewFile = async (item: any) => {
   }
 
   try {
-    openPreview.value = false;
     previewPdfUrl.value = null;
-    isOpenPreviewFile.value = false;
 
-    const res = await fetch(fileUrl, {
-      headers: { Accept: "application/pdf" },
-    });
-
-    const blob = await res.blob();
-    previewPdfUrl.value = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
+    // ✅ Gunakan file_url langsung (pre-signed S3) tanpa fetch/blob
+    previewPdfUrl.value = fileUrl;
     isOpenPreviewFile.value = true;
   } catch (err) {
     console.error("❌ Error preview file:", err);
@@ -1114,10 +1151,10 @@ const openRowModal = async (row) => {
 
     detailData.value = {
       ...(detail || row),
-      klasifikasiDisplay: detail?.klasifikasi || row.klasifikasi, // ✅ Langsung dari API
+      perihal: row.perihal || "-",
+      klasifikasiDisplay: detail?.klasifikasi || row.klasifikasi,
       nomor_list: nomorList,
     };
-
     console.log("✅ Detail loaded:", detailData.value);
   } catch (err) {
     console.error("❌ Error loading detail:", err);
@@ -1250,8 +1287,7 @@ const onRowMouseLeave = () => {
 };
 
 watch(isOpenPreviewFile, (open) => {
-  if (!open && previewPdfUrl.value) {
-    URL.revokeObjectURL(previewPdfUrl.value);
+  if (!open) {
     previewPdfUrl.value = null;
   }
 });
