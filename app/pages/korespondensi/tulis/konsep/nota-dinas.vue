@@ -40,7 +40,10 @@
             <div>
               <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                {{ refData.nomor || '-' }} • {{ formatDateRef(refData.tanggal) }}
+                <span class="font-mono font-medium">
+                  {{ refData.nomor || '-' }}
+                </span> •
+                {{ formatDateRef(refData.tanggal) }}
               </p>
             </div>
           </div>
@@ -175,7 +178,7 @@
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
-                        }}</td>
+                          }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
@@ -410,7 +413,7 @@ const selectedTembusan = ref<RecipientItem[]>([]);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 const maxPerihal = 200;
 
 // Variables for preview/modal

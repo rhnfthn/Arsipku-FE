@@ -333,102 +333,106 @@
         </div>
       </template>
 
-      <div class="w-full px-5 py-2 text-sm">
-        <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-1">
-          {{ formatDateTime(new Date()) }}
-        </p>
-        <h3 class="text-center font-bold text-base mb-5 dark:text-gray-100">
-          FORMULIR USULAN NOMOR
-        </h3>
+      <!-- ✅ OPSI B: semua konten dibungkus dalam scrollable container -->
+      <div class="max-h-[60vh] overflow-y-auto">
+        <div class="w-full px-5 py-2 text-sm">
+          <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-1">
+            {{ formatDateTime(new Date()) }}
+          </p>
+          <h3 class="text-center font-bold text-base mb-5 dark:text-gray-100">
+            FORMULIR USULAN NOMOR
+          </h3>
 
-        <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
-          <Heading variant="10sb" class="dark:text-gray-200">Nama</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            penandatanganNama || user?.nama || "-"
-          }}</Heading>
+          <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
+            <Heading variant="10sb" class="dark:text-gray-200">Nama</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              penandatanganNama || user?.nama || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200">Jabatan</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.penandatanganJabatan || "-"
-          }}</Heading>
+            <Heading variant="10sb" class="dark:text-gray-200">Jabatan</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              form.penandatanganJabatan || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200">Jenis</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.jenisDisplay || "-"
-          }}</Heading>
+            <Heading variant="10sb" class="dark:text-gray-200">Jenis</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              form.jenisDisplay || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200"
-            >Klasifikasi</Heading
-          >
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.klasifikasiDisplay || "-"
-          }}</Heading>
+            <Heading variant="10sb" class="dark:text-gray-200"
+              >Klasifikasi</Heading
+            >
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              form.klasifikasiDisplay || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200">Tanggal</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            formatDate(tanggalString) || "-"
-          }}</Heading>
+            <Heading variant="10sb" class="dark:text-gray-200">Tanggal</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              formatDate(tanggalString) || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200">Perihal</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200">{{
-            form.perihal || "-"
-          }}</Heading>
+            <Heading variant="10sb" class="dark:text-gray-200">Perihal</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{
+              form.perihal || "-"
+            }}</Heading>
 
-          <Heading variant="10sb" class="dark:text-gray-200">Jumlah</Heading>
-          <Heading variant="11sb" class="dark:text-gray-200"
-            >{{ form.jumlah || 0 }} Nomor</Heading
-          >
+            <Heading variant="10sb" class="dark:text-gray-200">Jumlah</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200"
+              >{{ form.jumlah || 0 }} Nomor</Heading
+            >
 
-          <Heading variant="10sb" class="dark:text-gray-200">Nomor</Heading>
-          <div
-            class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1"
-          >
-            <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
-              <span class="text-gray-400 dark:text-gray-500">
-                {{ String(n).padStart(2, "0") }}.
-              </span>
-              <span class="tracking-widest">
-                {{ form.jenis || "..." }}....../O/00/LPPNPI/{{
-                  form.klasifikasi || "..."
-                }}/XII/2025
-              </span>
+            <Heading variant="10sb" class="dark:text-gray-200">Nomor</Heading>
+            <div
+              class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1"
+            >
+              <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
+                <span class="text-gray-400 dark:text-gray-500">
+                  {{ String(n).padStart(2, "0") }}.
+                </span>
+                <span class="tracking-widest">
+                  {{ form.jenis || "..." }}....../O/00/LPPNPI/{{
+                    form.klasifikasi || "..."
+                  }}/XII/2025
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <hr class="my-0 dark:border-gray-700" />
+        <hr class="my-0 dark:border-gray-700" />
 
-      <div class="flex justify-between items-start px-5 pb-2">
-        <div>
-          <Heading
-            variant="10m"
-            class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
-            >Pengusul</Heading
-          >
-          <p class="font-semibold text-xs dark:text-gray-200">
-            {{ user?.nama || "-" }}
-          </p>
+        <div class="flex justify-between items-start px-5 pb-2 pt-3">
+          <div>
+            <Heading
+              variant="10m"
+              class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
+              >Pengusul</Heading
+            >
+            <p class="font-semibold text-xs dark:text-gray-200">
+              {{ user?.nama || "-" }}
+            </p>
+          </div>
+          <div class="text-right">
+            <Heading
+              variant="10m"
+              class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
+              >Diusulkan</Heading
+            >
+            <p class="font-semibold text-xs dark:text-gray-200">
+              {{ formatDateTime(new Date()) }}
+            </p>
+          </div>
         </div>
-        <div class="text-right">
-          <Heading
-            variant="10m"
-            class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
-            >Diusulkan</Heading
-          >
-          <p class="font-semibold text-xs dark:text-gray-200">
-            {{ formatDateTime(new Date()) }}
-          </p>
+
+        <div
+          class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs p-3 rounded-md mt-1 mx-5 mb-4 dark:text-gray-300"
+        >
+          Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
+          kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
+          arsip
         </div>
       </div>
-
-      <div
-        class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs p-3 rounded-md mt-1 mx-8 mb-4 dark:text-gray-300"
-      >
-        Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
-        kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
-        arsip
-      </div>
+      <!-- ✅ END scrollable container -->
 
       <template #footer>
         <div

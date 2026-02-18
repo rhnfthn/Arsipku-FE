@@ -39,67 +39,69 @@
         item: 'px-4 py-3',
         itemLabel: 'text-sm',
       }">
-        <div class="flex items-center gap-3 cursor-pointer group">
-          <div class="flex flex-col items-end text-right leading-tight">
-            <span class="hidden md:block text-sm font-semibold text-gray-900 dark:text-gray-100 text-nowrap">
+        <div class="flex items-center gap-2.5 cursor-pointer group pl-2">
+          <div class="hidden md:flex flex-col items-end text-right justify-center gap-0.5">
+
+            <span class="text-sm font-semibold leading-none text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
               {{ user?.nama }}
             </span>
-            <UTooltip :text="user?.positionText" :popper="{ placement: 'bottom-end' }">
-              <div class="flex items-center gap-2">
 
-                    <UBadge v-if="positionStatusLabel" size="xs" variant="subtle" color="primary"
-                  class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize">
-                 {{ positionStatusLabel }} / {{ user.role }}
+            <UTooltip :text="user?.positionText" :popper="{ placement: 'bottom-end' }">
+              <div class="flex items-center justify-end gap-1.5 leading-none">
+
+                <UBadge size="xs" variant="subtle" color="primary"
+                  class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize leading-none">
+                  <span v-if="positionStatusLabel">{{ positionStatusLabel }} /</span> {{ user?.role }}
                 </UBadge>
 
-                <span
-                  class="hidden md:block text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-tight truncate max-w-[100px] lg:max-w-[100px]">
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
                   {{ user?.positionText }}
                 </span>
-
-                <!-- <UBadge v-if="positionStatusLabel" size="xs" variant="subtle" color="primary"
-                  class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize">
-                  {{ positionStatusLabel }}
-                </UBadge> -->
-
-
               </div>
             </UTooltip>
+
             <UTooltip v-if="user?.companyText" :text="user?.companyText" :popper="{ placement: 'bottom-end' }">
-              <span class="hidden md:block text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+              <span
+                class="text-[10px] font-medium leading-none text-gray-400 dark:text-gray-500 truncate max-w-[150px]">
                 {{ user?.companyText }}
               </span>
             </UTooltip>
+
           </div>
+
           <UAvatar size="md"
-            class="ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all bg-primary-400 text-white font-semibold flex items-center justify-center">
+            class="ring-2 ring-transparent group-hover:ring-primary-500/30 transition-all duration-200 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm">
             {{ getInitials(user?.nama) }}
           </UAvatar>
         </div>
 
+
         <template #delegation-item="{ item }">
-          <div class="flex items-center justify-between w-full gap-2 min-w-0">
-            <div class="flex flex-col items-start min-w-0 w-full">
-              <div class="flex items-center gap-2 max-w-full">
-                <span class="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">
-                  {{ item.uiName }}
-                </span>
-                <UBadge size="xs" variant="subtle" color="primary"
-                  class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize">
-                  {{ item.uiBadge }}
-                </UBadge>
-              </div>
-              <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left">
-                {{ item.uiPosition }}
+          <div class="flex flex-col w-full min-w-0 gap-0.5 py-1">
+
+            <div class="flex items-center justify-between w-full gap-3">
+              <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {{ item.uiName }}
               </span>
 
-              <span v-if="item.uiCompany"
-                class="text-[11px] text-gray-400 dark:text-gray-500 truncate w-full text-left">
-                {{ item.uiCompany }}
-              </span>
+              <UBadge size="xs" variant="subtle" color="primary"
+                class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize leading-none">
+                {{ item.uiBadge }}
+              </UBadge>
             </div>
-            <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
-              class="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
+
+            <div class="flex items-center justify-between tracking-tight w-full gap-3">
+              <span
+                class="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-normal break-words leading-snug">
+                {{ item.uiPosition }}
+                <span class="mx-0.5 opacity-50">•</span>
+                <span class="text-gray-400 dark:text-gray-500">{{ item.uiCompany }}</span>
+              </span>
+
+              <UIcon v-if="item.isActive" name="i-heroicons-check-circle-20-solid"
+                class="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+            </div>
+
           </div>
         </template>
         <template #theme-label>
@@ -158,213 +160,260 @@
               <!-- MODAL HEADER -->
               <div class="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-3">
+
                   <div
-                    class="bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 p-3 rounded-full">
+                    class="flex items-center justify-center shrink-0 p-2.5 rounded-xl bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400">
                     <UIcon name="i-heroicons-magnifying-glass" class="w-5 h-5" />
                   </div>
+
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                     Pencarian Surat
                   </h3>
                 </div>
+
                 <button @click="isSearchModalOpen = false"
-                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors">
-                  <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+                  class="flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors">
+                  <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
                 </button>
               </div>
 
               <!-- MODAL CONTENT -->
-              <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
-                <div class="space-y-5">
-                  <!-- ADVANCED FILTERS -->
-                  <div class="space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Nomor Surat
-                        </label>
-                        <div class="relative">
-                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <UIcon name="i-heroicons-hashtag" class="w-4 h-4 text-gray-400" />
+              <div
+                class="px-6 py-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                <div class="space-y-6">
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Nomor Surat
+                      </label>
+                      <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UIcon name="i-heroicons-hashtag" class="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input type="text" v-model="advancedFilters.nomorSurat" placeholder="# 001/ADM/..."
+                          class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors" />
+                      </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Perihal
+                      </label>
+                      <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input type="text" v-model="advancedFilters.perihal" placeholder="Isi Perihal..."
+                          class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors" />
+                      </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Pengirim/Tertuju
+                      </label>
+                      <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UIcon name="i-heroicons-user" class="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input type="text" v-model="advancedFilters.pengirim" @input="handlePengirimInput"
+                          @focus="handlePengirimFocus" @blur="handlePengirimBlur" placeholder="Nama/Jabatan Pengirim..."
+                          class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500" />
+
+                        <!-- Dropdown Suggestions -->
+                        <div v-if="showPengirimPopover && filteredPengirim.length > 0"
+                          class="absolute z-[10000] w-full mt-1 max-h-60 overflow-y-auto p-1 bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 rounded-lg">
+                          <div v-for="item in filteredPengirim" :key="item.nama"
+                            @mousedown.prevent="selectPengirim(item.nama)"
+                            class="flex flex-col px-3 py-2 hover:bg-primary-50 dark:hover:bg-gray-800 cursor-pointer rounded-md transition-colors">
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white"
+                              v-html="highlightText(item.nama, advancedFilters.pengirim)"></span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400"
+                              v-html="highlightText(item.jabatan, advancedFilters.pengirim)"></span>
                           </div>
-                          <input type="text" v-model="advancedFilters.nomorSurat" placeholder="001/ADM/..."
-                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all" />
                         </div>
                       </div>
+                    </div>
 
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Perihal
-                        </label>
-                        <div class="relative">
-                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <UIcon name="i-heroicons-document-text" class="w-4 h-4 text-gray-400" />
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Penerima/Tembusan
+                      </label>
+                      <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UIcon name="i-heroicons-user-group" class="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input type="text" v-model="advancedFilters.penerima" @input="handlePenerimaInput"
+                          @focus="handlePenerimaFocus" @blur="handlePenerimaBlur" placeholder="Nama/Jabatan Penerima..."
+                          class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500" />
+
+                        <!-- Dropdown Suggestions -->
+                        <div v-if="showPenerimaPopover && filteredPenerima.length > 0"
+                          class="absolute z-[10000] w-full mt-1 max-h-60 overflow-y-auto p-1 bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 rounded-lg">
+                          <div v-for="item in filteredPenerima" :key="item.nama"
+                            @mousedown.prevent="selectPenerima(item.nama)"
+                            class="flex flex-col px-3 py-2 hover:bg-primary-50 dark:hover:bg-gray-800 cursor-pointer rounded-md transition-colors">
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white"
+                              v-html="highlightText(item.nama, advancedFilters.penerima)"></span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400"
+                              v-html="highlightText(item.jabatan, advancedFilters.penerima)"></span>
                           </div>
-                          <input type="text" v-model="advancedFilters.perihal" placeholder="Isi perihal..."
-                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all" />
                         </div>
                       </div>
+                    </div>
 
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Pengirim
-                        </label>
-                        <div class="relative">
-                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <UIcon name="i-heroicons-user" class="w-4 h-4 text-gray-400" />
-                          </div>
-                          <input type="text" v-model="advancedFilters.pengirim" placeholder="Nama pengirim..."
-                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all" />
-                        </div>
-                      </div>
+                  </div>
 
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Penerima
-                        </label>
-                        <div class="relative">
-                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <UIcon name="i-heroicons-user-group" class="w-4 h-4 text-gray-400" />
-                          </div>
-                          <input type="text" v-model="advancedFilters.penerima" placeholder="Nama penerima..."
-                            class="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all" />
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Jenis Surat
+                    </label>
+                    <div class="flex flex-wrap gap-2.5">
+
+                      <button v-for="opt in jenisOptions" :key="opt.value"
+                        @click="advancedFilters.jenis = advancedFilters.jenis === opt.value ? '' : opt.value" :class="[
+                          'px-4 py-1.5 text-sm font-medium rounded-full border border-transparent transition-all',
+                          // Gunakan getCategoryStyle untuk warna background pastel (misal: bg-blue-100 text-blue-700)
+                          getCategoryStyle(opt.value),
+                          advancedFilters.jenis === opt.value
+                            ? 'ring-2 ring-offset-1 ring-gray-400 opacity-100 font-bold shadow-sm'
+                            : 'opacity-90 hover:opacity-100 hover:shadow-sm'
+                        ]">
+                        {{ opt.label }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Sifat
+                      </label>
+                      <div class="relative">
+                        <select v-model="advancedFilters.sifat"
+                          class="appearance-none block w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors cursor-pointer">
+                          <option value="" disabled selected>Semua</option>
+                          <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                          </option>
+                        </select>
+                        <div
+                          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Jenis Surat
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Status
                       </label>
-                      <div class="flex flex-wrap gap-2">
-                        <button v-for="opt in jenisOptions" :key="opt.value" @click="
-                          advancedFilters.jenis =
-                          advancedFilters.jenis === opt.value
-                            ? ''
-                            : opt.value
-                          " :class="[
-                            'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
-                            getCategoryStyle(opt.value),
-                            advancedFilters.jenis === opt.value
-                              ? 'ring-2 ring-offset-1 ring-current border-transparent font-bold shadow-sm'
-                              : 'border-transparent opacity-70 hover:opacity-100 grayscale-[0.2] hover:grayscale-0',
-                          ]">
-                          {{ opt.label }}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Sifat
-                        </label>
-                        <div class="relative">
-                          <select v-model="advancedFilters.sifat"
-                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
-                            <option value="" disabled selected>
-                              Pilih Sifat
-                            </option>
-                            <option v-for="opt in sifatOptions" :key="opt.value" :value="opt.value">
-                              {{ opt.label }}
-                            </option>
-                          </select>
-                          <div
-                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
-                            <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Status
-                        </label>
-                        <div class="relative">
-                          <select v-model="advancedFilters.status"
-                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
-                            <option value="" disabled selected>
-                              Pilih Status
-                            </option>
-                            <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
-                              {{ opt.label }}
-                            </option>
-                          </select>
-                          <div
-                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
-                            <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Lampiran
-                        </label>
-                        <div class="relative">
-                          <select v-model="advancedFilters.hasAttachment"
-                            class="appearance-none w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow cursor-pointer">
-                            <option value="" disabled selected>Semua</option>
-                            <option v-for="opt in attachmentOptions" :key="opt.value" :value="opt.value">
-                              {{ opt.label }}
-                            </option>
-                          </select>
-                          <div
-                            class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
-                            <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="flex gap-2">
-                      <div>
-                        <label class="flex text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Rentang Tanggal
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                          <div class="w-full">
-                            <span class="flex-1 -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400">
-                              Dari
-                            </span>
-                            <input type="date" v-model="advancedFilters.dateFrom"
-                              class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
-                          </div>
-                          <div class="w-full">
-                            <span class="flex-1 -top-2 left-2 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400">
-                              Sampai
-                            </span>
-                            <input type="date" v-model="advancedFilters.dateTo"
-                              class="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
-                          </div>
+                      <div class="relative">
+                        <select v-model="advancedFilters.status"
+                          class="appearance-none block w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors cursor-pointer">
+                          <option value="" disabled selected>Semua</option>
+                          <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                          </option>
+                        </select>
+                        <div
+                          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
                         </div>
                       </div>
                     </div>
                   </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Lampiran
+                      </label>
+                      <div class="relative">
+                        <select v-model="advancedFilters.hasAttachment"
+                          class="appearance-none block w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors cursor-pointer">
+                          <option value="" disabled selected>Semua</option>
+                          <option v-for="opt in attachmentOptions" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                          </option>
+                        </select>
+                        <div
+                          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Prioritas
+                      </label>
+                      <div class="relative">
+                        <select v-model="advancedFilters.prioritas"
+                          class="appearance-none block w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors cursor-pointer">
+                          <option value="" disabled selected>Semua</option>
+                        </select>
+                        <div
+                          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Rentang Tanggal
+                    </label>
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                      <div class="relative">
+                        <label
+                          class="absolute -top-2 left-3 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400 leading-none">
+                          Dari
+                        </label>
+                        <input type="date" v-model="advancedFilters.dateFrom"
+                          class="block w-full px-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors" />
+                      </div>
+
+                      <div class="relative">
+                        <label
+                          class="absolute -top-2 left-3 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400 leading-none">
+                          Sampai
+                        </label>
+                        <input type="date" v-model="advancedFilters.dateTo"
+                          class="block w-full px-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
-              <!-- MODAL FOOTER -->
               <div
-                class="flex justify-between items-center px-6 py-4 rounded-b-xl border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                class="flex items-center justify-between px-6 py-4 border-t rounded-b-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <button @click="resetAdvancedFilters"
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors">
+                  class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
                   <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
                   Reset Filter
                 </button>
 
                 <div class="flex gap-3">
                   <button @click="isSearchModalOpen = false"
-                    class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition">
+                    class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
                     Batal
                   </button>
-
                   <button @click="handleAdvancedSearch"
-                    class="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm hover:shadow transition-all">
+                    class="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 shadow-sm transition-colors">
                     <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4" />
-                    Cari Sekarang
+                    Terapkan
                   </button>
                 </div>
               </div>
+
             </div>
           </transition>
         </div>
@@ -446,6 +495,91 @@ const attachmentOptions = [
   { label: "Ya", value: true },
   { label: "Tidak", value: false },
 ];
+
+interface UserSuggestion {
+  nama: string;
+  jabatan: string;
+}
+
+const userSuggestions = [
+  { nama: 'Ahmad Subarjo', jabatan: 'Manager IT' },
+  { nama: 'Budi Santoso', jabatan: 'Staff Administrasi' },
+  { nama: 'Siti Aminah', jabatan: 'Kepala Divisi SDM' },
+  { nama: 'Dewi Lestari', jabatan: 'Direktur Keuangan' },
+  { nama: 'Eko Prasetyo', jabatan: 'Supervisor Operasional' },
+  { nama: 'Fitri Handayani', jabatan: 'Manajer Marketing' },
+];
+
+const filteredPengirim = ref<UserSuggestion[]>([]);
+const filteredPenerima = ref<UserSuggestion[]>([]);
+const showPengirimPopover = ref(false);
+const showPenerimaPopover = ref(false);
+
+const searchUser = (query: string): UserSuggestion[] => {
+  const q = query?.toLowerCase().trim();
+  if (!q) return [];
+
+  return userSuggestions.filter(u =>
+    u.nama.toLowerCase().includes(q) ||
+    u.jabatan.toLowerCase().includes(q)
+  );
+};
+
+// Handler untuk Pengirim
+const handlePengirimInput = () => {
+  filteredPengirim.value = searchUser(advancedFilters.pengirim);
+  showPengirimPopover.value = filteredPengirim.value.length > 0;
+};
+
+const handlePengirimFocus = () => {
+  filteredPengirim.value = searchUser(advancedFilters.pengirim);
+  showPengirimPopover.value = filteredPengirim.value.length > 0;
+};
+
+const selectPengirim = (nama: string) => {
+  advancedFilters.pengirim = nama;
+  filteredPengirim.value = [];
+  showPengirimPopover.value = false;
+};
+
+const handlePengirimBlur = () => {
+  // Delay untuk memungkinkan click event terjadi dulu
+  setTimeout(() => {
+    showPengirimPopover.value = false;
+  }, 200);
+};
+
+// Handler untuk Penerima
+const handlePenerimaInput = () => {
+  filteredPenerima.value = searchUser(advancedFilters.penerima);
+  showPenerimaPopover.value = filteredPenerima.value.length > 0;
+};
+
+const handlePenerimaFocus = () => {
+  filteredPenerima.value = searchUser(advancedFilters.penerima);
+  showPenerimaPopover.value = filteredPenerima.value.length > 0;
+};
+
+const selectPenerima = (nama: string) => {
+  advancedFilters.penerima = nama;
+  filteredPenerima.value = [];
+  showPenerimaPopover.value = false;
+};
+
+const handlePenerimaBlur = () => {
+  // Delay untuk memungkinkan click event terjadi dulu
+  setTimeout(() => {
+    showPenerimaPopover.value = false;
+  }, 200);
+};
+
+// Fungsi Highlighting yang aman
+const highlightText = (text: string, query: string) => {
+  if (!query) return text;
+  const q = query.trim();
+  const regex = new RegExp(`(${q})`, 'gi');
+  return text.replace(regex, '<span class="text-primary-600 dark:text-primary-400 font-bold">$1</span>');
+};
 
 const positionStatusLabel = computed(() => {
   const u = user.value;
@@ -638,6 +772,12 @@ const resetAdvancedFilters = () => {
   advancedFilters.status = null;
   advancedFilters.hasAttachment = "Semua";
   search.value = "";
+
+  // Reset juga suggestion lists dan popover state
+  filteredPengirim.value = [];
+  filteredPenerima.value = [];
+  showPengirimPopover.value = false;
+  showPenerimaPopover.value = false;
 };
 
 const handleReset = () => {
@@ -769,15 +909,15 @@ defineEmits(["open-mobile-sidebar"]);
 const getCategoryStyle = (cat: string) => {
   const c = (cat || "").toUpperCase();
   if (["ND", "NOTA DINAS"].includes(c))
-    return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
+    return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300";
   if (["DI", "DISPOSISI"].includes(c))
-    return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
+    return "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300";
   if (["SDI", "INTERNAL", "SURAT DINAS INTERNAL"].includes(c))
-    return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
+    return "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300";
   if (["SDE", "SURAT DINAS EKSTERNAL"].includes(c))
-    return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
+    return "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300";
   if (["KAJIAN", "KA"].includes(c))
-    return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
+    return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300";
+  return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300";
 };
 </script>

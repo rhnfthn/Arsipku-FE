@@ -612,75 +612,55 @@ const exportData = () => {
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <button
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
-      >
+      <button @click="openAdd"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition">
         <Plus class="w-4 h-4" />
         Tambah Delegasi
       </button>
     </div>
 
     <div
-      class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
-    >
-      <div
-        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
-      >
+      class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3">
         <div class="flex items-center gap-3 flex-wrap">
-          <select
-            v-model="rowsPerPage"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
+          <select v-model="rowsPerPage"
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
             <option v-for="n in [5, 10, 15]" :key="n" :value="n">
               {{ n }}
             </option>
           </select>
 
           <div class="flex items-center gap-2">
-            <button
-              @click="toggleSort"
+            <button @click="toggleSort"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Urutkan"
-            >
+              title="Urutkan">
               <ArrowUpDown class="w-4 h-4" />
             </button>
 
-            <button
-              @click="refreshData"
+            <button @click="refreshData"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Refresh"
-            >
-              <RotateCcw
-                class="w-4 h-4"
-                :class="{ 'animate-spin': isLoading }"
-              />
+              title="Refresh">
+              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
             </button>
           </div>
 
-          <select
-            v-model="filterStatus"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
-          >
+          <select v-model="filterStatus"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
             <option value="Semua">Semua Status</option>
             <option value="Aktif">Aktif</option>
             <option value="Akan Datang">Akan Datang</option>
             <option value="Kadaluwarsa">Kadaluwarsa</option>
           </select>
 
-          <select
-            v-model="filterLokasi"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
-          >
+          <select v-model="filterLokasi"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
             <option value="Semua">Semua Lokasi</option>
             <option value="Cabang Surabaya">Cabang Surabaya</option>
             <option value="Kejaksaan Cabang Denpasar">Cabang Denpasar</option>
           </select>
 
-          <select
-            v-model="filterJabatan"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
-          >
+          <select v-model="filterJabatan"
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
             <option value="Semua">Semua Jabatan</option>
             <option value="Supervisor Operasional">
               Supervisor Operasional
@@ -691,10 +671,8 @@ const exportData = () => {
           </select>
         </div>
 
-        <button
-          @click="exportData"
-          class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors shadow-sm"
-        >
+        <button @click="exportData"
+          class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors shadow-sm">
           Export
         </button>
       </div>
@@ -715,9 +693,7 @@ const exportData = () => {
               <th class="px-4 py-3 text-left text-sm font-semibold text-white">
                 Status
               </th>
-              <th
-                class="px-4 py-3 text-center text-sm font-semibold text-white"
-              >
+              <th class="px-4 py-3 text-center text-sm font-semibold text-white">
                 Aksi
               </th>
             </tr>
@@ -725,49 +701,29 @@ const exportData = () => {
 
           <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
             <template v-if="isLoading">
-              <tr
-                v-for="n in rowsPerPage"
-                :key="'skeleton-' + n"
-                class="animate-pulse bg-white dark:bg-gray-800"
-              >
+              <tr v-for="n in rowsPerPage" :key="'skeleton-' + n" class="animate-pulse bg-white dark:bg-gray-800">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"
-                    ></div>
-                    <div
-                      class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
+                    <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                    <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
                   </div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex flex-col gap-2">
-                    <div
-                      class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
-                    <div
-                      class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
+                    <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
                   </div>
                 </td>
                 <td class="px-6 py-4">
-                  <div
-                    class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"
-                  ></div>
+                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
                 <td class="px-6 py-4">
-                  <div
-                    class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"
-                  ></div>
+                  <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex justify-center gap-3">
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"
-                    ></div>
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"
-                    ></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                   </div>
                 </td>
               </tr>
@@ -775,29 +731,20 @@ const exportData = () => {
 
             <template v-else-if="paginatedDelegasi.length === 0">
               <tr>
-                <td
-                  colspan="5"
-                  class="text-center py-8 text-gray-500 dark:text-gray-400"
-                >
+                <td colspan="5" class="text-center py-8 text-gray-500 dark:text-gray-400">
                   Tidak ada data ditemukan
                 </td>
               </tr>
             </template>
 
             <template v-else>
-              <tr
-                v-for="item in paginatedDelegasi"
-                :key="item.id"
-                class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
+              <tr v-for="item in paginatedDelegasi" :key="item.id"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
                     <div
-                      class="w-10 h-10 min-w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center"
-                    >
-                      <User
-                        class="w-5 h-5 text-primary dark:text-primary-400"
-                      />
+                      class="w-10 h-10 min-w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                      <User class="w-5 h-5 text-primary dark:text-primary-400" />
                     </div>
                     <span class="text-gray-900 dark:text-white font-medium">{{
                       item.nama
@@ -809,43 +756,41 @@ const exportData = () => {
                     <span class="text-gray-900 dark:text-white font-medium">{{
                       item.jabatan
                     }}</span>
-                    <span
-                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
-                      >{{ item.lokasi }}</span
-                    >
+                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ item.lokasi }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
                   {{ item.tanggal }}
                 </td>
                 <td class="px-6 py-4">
-                  <span
-                    :class="[
-                      'inline-flex px-3 py-1 text-xs font-medium rounded-full',
-                      item.status === 'Aktif'
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                        : item.status === 'Akan Datang'
-                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                          : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-                    ]"
-                  >
-                    {{ item.status }}
+                  <span :class="[
+                    'inline-flex px-3 py-1 text-xs font-medium rounded-full',
+                    item.status === 'Aktif'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                      : item.status === 'Akan Datang' || item.status === 'Tidak Aktif'
+                        ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                        : item.status === 'Kedaluwarsa'
+                          ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                  ]">
+                    {{
+                      item.status === 'Tidak Aktif'
+                        ? 'Akan Datang'
+                    : item.status
+                    }}
                   </span>
+
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex justify-center gap-3">
-                    <button
-                      @click="openEdit(item)"
+                    <button @click="openEdit(item)"
                       class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-500 transition-colors"
-                      title="Edit"
-                    >
+                      title="Edit">
                       <Pencil class="w-4 h-4" />
                     </button>
-                    <button
-                      @click="openDelete(item)"
+                    <button @click="openDelete(item)"
                       class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
-                      title="Hapus"
-                    >
+                      title="Hapus">
                       <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
@@ -856,91 +801,56 @@ const exportData = () => {
         </table>
       </div>
 
-      <div
-        class="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700"
-      >
+      <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
         <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedDelegasi.length }} dari {{ totalItems }} data
         </div>
 
         <div class="flex items-center gap-2">
-          <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="[
-              'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
-            ]"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
+          <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1" :class="[
+            'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
+            currentPage === 1
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+          ]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Sebelumnya
           </button>
 
           <div class="flex items-center gap-1">
-            <button
-              v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium"
-            >
+            <button v-if="paginationPages[0] > 1" @click="currentPage = 1"
+              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium">
               1
             </button>
 
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
-            >
+            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 dark:text-gray-500 text-sm">
               ...
             </span>
 
-            <button
-              v-for="page in paginationPages"
-              :key="page"
-              @click="currentPage = page"
-              :class="[
-                'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
-                  ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
-              ]"
-            >
+            <button v-for="page in paginationPages" :key="page" @click="currentPage = page" :class="[
+              'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+              currentPage === page
+                ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
+            ]">
               {{ page }}
             </button>
 
-            <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
-              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
-            >
+            <span v-if="
+              paginationPages[paginationPages.length - 1] < totalPages - 1
+            " class="px-2 text-gray-400 dark:text-gray-500 text-sm">
               ...
             </span>
 
-            <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium"
-            >
+            <button v-if="paginationPages[paginationPages.length - 1] < totalPages" @click="currentPage = totalPages"
+              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium">
               {{ totalPages }}
             </button>
           </div>
 
-          <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            :disabled="currentPage === totalPages"
+          <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
             :class="[
               'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
@@ -968,81 +878,49 @@ const exportData = () => {
     </div>
 
     <Teleport to="body">
-      <Modal
-        v-model="showAddModal"
-        @save="saveDelegasi"
-        size="xl"
-        :loading="isSubmitting"
-      >
+      <Modal v-model="showAddModal" @save="saveDelegasi" size="xl" :loading="isSubmitting">
         <template #title>
-          <Heading
-            variant="heading9b"
-            class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white"
-          >
+          <Heading variant="heading9b" class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white">
             Tambah Delegasi
           </Heading>
         </template>
         <!------ PERSONIL ------->
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Personil <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleNewPersonil"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleNewPersonil">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{
                     getPersonilLabel(newDelegasi.personil) || "Pilih personil"
                   }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openNewPersonil"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openNewPersonil"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="personilSearch"
-                      type="text"
-                      placeholder="Cari personil..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="personilSearch" type="text" placeholder="Cari personil..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredPersonilList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredPersonilList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
-                  <button
-                    type="button"
-                    v-for="p in filteredPersonilList"
-                    :key="p.id"
+                  <button type="button" v-for="p in filteredPersonilList" :key="p.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectNewPersonil(p.value)"
-                  >
+                    @click.prevent="selectNewPersonil(p.value)">
                     {{ p.label }}
                   </button>
                 </div>
@@ -1051,62 +929,38 @@ const exportData = () => {
           </div>
           <!------ SEBAGAI ------->
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Sebagai <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleNewSebagai"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleNewSebagai">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{ getSebagaiLabel(newDelegasi.sebagai) || "Pilih peran" }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openNewSebagai"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openNewSebagai"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="sebagaiSearch"
-                      type="text"
-                      placeholder="Cari peran..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="sebagaiSearch" type="text" placeholder="Cari peran..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredSebagaiList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredSebagaiList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
-                  <button
-                    type="button"
-                    v-for="s in filteredSebagaiList"
-                    :key="s.id"
+                  <button type="button" v-for="s in filteredSebagaiList" :key="s.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectNewSebagai(s.value)"
-                  >
+                    @click.prevent="selectNewSebagai(s.value)">
                     {{ s.label }}
                   </button>
                 </div>
@@ -1115,64 +969,40 @@ const exportData = () => {
           </div>
           <!------ JABATAN ------->
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Jabatan <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleNewJabatan"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleNewJabatan">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{ getJabatanLabel(newDelegasi.jabatan) || "Pilih jabatan" }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openNewJabatan"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openNewJabatan"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="jabatanSearch"
-                      type="text"
-                      placeholder="Cari jabatan..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="jabatanSearch" type="text" placeholder="Cari jabatan..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
 
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredJabatanList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredJabatanList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
 
-                  <button
-                    type="button"
-                    v-for="j in filteredJabatanList"
-                    :key="j.id"
+                  <button type="button" v-for="j in filteredJabatanList" :key="j.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectNewJabatan(j.value)"
-                  >
+                    @click.prevent="selectNewJabatan(j.value)">
                     {{ j.label }}
                   </button>
                 </div>
@@ -1183,31 +1013,19 @@ const exportData = () => {
           <!------ TANGGAL ------->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
-              >
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
                 Mulai <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="newDelegasi.mulai"
-                type="date"
-                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-              />
+              <input v-model="newDelegasi.mulai" type="date"
+                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all" />
             </div>
 
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
-              >
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
                 Sampai <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="newDelegasi.sampai"
-                type="date"
-                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-              />
+              <input v-model="newDelegasi.sampai" type="date"
+                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all" />
             </div>
           </div>
         </div>
@@ -1215,81 +1033,49 @@ const exportData = () => {
     </Teleport>
 
     <Teleport to="body">
-      <Modal
-        v-model="showEditModal"
-        @save="saveEditDelegasi"
-        size="xl"
-        :loading="isSubmitting"
-      >
+      <Modal v-model="showEditModal" @save="saveEditDelegasi" size="xl" :loading="isSubmitting">
         <template #title>
-          <Heading
-            variant="heading9b"
-            class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white"
-          >
+          <Heading variant="heading9b" class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white">
             Edit Delegasi
           </Heading>
         </template>
 
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Personil <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleEditPersonil"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleEditPersonil">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{
                     getPersonilLabel(editDelegasi.personil) || "Pilih personil"
                   }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openEditPersonil"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openEditPersonil"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="personilSearch"
-                      type="text"
-                      placeholder="Cari personil..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="personilSearch" type="text" placeholder="Cari personil..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredPersonilList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredPersonilList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
-                  <button
-                    type="button"
-                    v-for="p in filteredPersonilList"
-                    :key="p.id"
+                  <button type="button" v-for="p in filteredPersonilList" :key="p.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectEditPersonil(p.value)"
-                  >
+                    @click.prevent="selectEditPersonil(p.value)">
                     {{ p.label }}
                   </button>
                 </div>
@@ -1298,62 +1084,38 @@ const exportData = () => {
           </div>
 
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Sebagai <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleEditSebagai"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleEditSebagai">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{ getSebagaiLabel(editDelegasi.sebagai) || "Pilih peran" }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openEditSebagai"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openEditSebagai"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="sebagaiSearch"
-                      type="text"
-                      placeholder="Cari peran..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="sebagaiSearch" type="text" placeholder="Cari peran..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredSebagaiList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredSebagaiList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
-                  <button
-                    type="button"
-                    v-for="s in filteredSebagaiList"
-                    :key="s.id"
+                  <button type="button" v-for="s in filteredSebagaiList" :key="s.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectEditSebagai(s.value)"
-                  >
+                    @click.prevent="selectEditSebagai(s.value)">
                     {{ s.label }}
                   </button>
                 </div>
@@ -1362,64 +1124,40 @@ const exportData = () => {
           </div>
 
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Jabatan <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
-              <button
-                type="button"
+              <button type="button"
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                @click.stop="toggleEditJabatan"
-              >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                >
+                @click.stop="toggleEditJabatan">
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">
                   {{ getJabatanLabel(editDelegasi.jabatan) || "Pilih jabatan" }}
                 </span>
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
 
-              <div
-                v-if="openEditJabatan"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col"
-              >
+              <div v-if="openEditJabatan"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
                 <div
-                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10"
-                >
+                  class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                   <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    />
-                    <input
-                      v-model="jabatanSearch"
-                      type="text"
-                      placeholder="Cari jabatan..."
+                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input v-model="jabatanSearch" type="text" placeholder="Cari jabatan..."
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      @click.stop
-                    />
+                      @click.stop />
                   </div>
                 </div>
 
                 <div class="overflow-y-auto max-h-48">
-                  <div
-                    v-if="filteredJabatanList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
-                  >
+                  <div v-if="filteredJabatanList.length === 0"
+                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada data
                   </div>
 
-                  <button
-                    type="button"
-                    v-for="j in filteredJabatanList"
-                    :key="j.id"
+                  <button type="button" v-for="j in filteredJabatanList" :key="j.id"
                     class="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 truncate"
-                    @click.prevent="selectEditJabatan(j.value)"
-                  >
+                    @click.prevent="selectEditJabatan(j.value)">
                     {{ j.label }}
                   </button>
                 </div>
@@ -1429,47 +1167,26 @@ const exportData = () => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
-              >
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
                 Mulai <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="editDelegasi.mulai"
-                type="date"
-                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-              />
+              <input v-model="editDelegasi.mulai" type="date"
+                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all" />
             </div>
 
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
-              >
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
                 Sampai <span class="text-red-500">*</span>
               </Heading>
-              <input
-                v-model="editDelegasi.sampai"
-                type="date"
-                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-              />
+              <input v-model="editDelegasi.sampai" type="date"
+                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all" />
             </div>
           </div>
         </div>
       </Modal>
     </Teleport>
-    <ConfirmPopup
-      v-model="confirmDeleteOpen"
-      type="danger"
-      title="Hapus Data"
-      message="Yakin ingin menghapus data ini?"
-      confirmText="Hapus"
-      cancelText="Batal"
-      cancelColor="primary"
-      @confirm="deleteNow"
-      :loading="isSubmitting"
-    />
+    <ConfirmPopup v-model="confirmDeleteOpen" type="danger" title="Hapus Data" message="Yakin ingin menghapus data ini?"
+      confirmText="Hapus" cancelText="Batal" cancelColor="primary" @confirm="deleteNow" :loading="isSubmitting" />
   </div>
 </template>
 

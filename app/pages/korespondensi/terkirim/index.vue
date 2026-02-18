@@ -150,23 +150,30 @@ const formatShortDate = (dateString: string | null) => {
   if (isNaN(date.getTime())) return "-";
 
   const now = new Date();
-  const isToday =
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
-  const isThisYear = date.getFullYear() === now.getFullYear();
 
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+  // Menggunakan getUTC untuk pengecekan hari/tahun agar konsisten dengan jam UTC
+  const isToday =
+    date.getUTCDate() === now.getUTCDate() &&
+    date.getUTCMonth() === now.getUTCMonth() &&
+    date.getUTCFullYear() === now.getUTCFullYear();
+  const isThisYear = date.getUTCFullYear() === now.getUTCFullYear();
+
+  // Menggunakan getUTCHours dan getUTCMinutes agar tetap 14:13
+  const hours = date.getUTCHours().toString().padStart(2, "0");
+  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
   const time = `${hours}.${minutes}`;
-  const day = date.getDate();
-  const month = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(
-    date,
-  );
+
+  const day = date.getUTCDate();
+
+  // Untuk bulan, kita perlu menspesifikasikan timeZone: 'UTC' agar Intl tidak konversi ke lokal
+  const month = new Intl.DateTimeFormat("id-ID", {
+    month: "short",
+    timeZone: "UTC"
+  }).format(date);
 
   if (isToday) return time;
   if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getFullYear()} ${time}`;
+  return `${day} ${month} ${date.getUTCFullYear()} ${time}`;
 };
 
 const getTabCount = (tabValue: string) => {
@@ -1021,7 +1028,7 @@ onMounted(async () => {
                         </span>
                       </UTooltip>
                       <div
-                        class="text-[11px] text-neutral-400 dark:text-gray-500 truncate"
+                        class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 truncate"
                       >
                         {{ mail.body }}
                       </div>

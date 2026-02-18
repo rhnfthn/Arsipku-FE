@@ -814,19 +814,12 @@ export const usePenomoran = () => {
         throw new Error("Tidak ada detail ID yang valid");
       }
 
-      console.log("📤 Approve bulk nomor:", validIds);
-
       const response = await post("/admin/nomor-request-detail/approve-bulk", {
         detail_ids: validIds,
       });
 
-      console.log("✅ Approve bulk response:", response);
-
-      toast.add({
-        title: "Berhasil",
-        description: response?.message || "Nomor berhasil disetujui",
-        color: "green",
-      });
+      // ✅ Hapus toast di sini — toast sudah ditangani di processApproval
+      // toast.add({ title: "Berhasil", ... }) ← HAPUS
 
       await getNomorRequestCountAdmin();
 
@@ -883,12 +876,6 @@ export const usePenomoran = () => {
 
       console.log("✅ Reject response:", response);
 
-      toast.add({
-        title: "Berhasil",
-        description: response?.message || "Nomor berhasil ditolak",
-        color: "green",
-      });
-
       await getNomorRequestCountAdmin();
 
       return response;
@@ -900,12 +887,7 @@ export const usePenomoran = () => {
         e.response?.data?.error ||
         e.message ||
         "Gagal menolak nomor";
-
-      toast.add({
-        title: "Gagal",
-        description: errorMsg,
-        color: "red",
-      });
+      toast.add({ title: "Gagal", description: errorMsg, color: "red" });
 
       throw e;
     }

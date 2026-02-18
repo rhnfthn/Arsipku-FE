@@ -39,7 +39,6 @@
             <span class="text-sm dark:text-gray-200">
               {{ filterStatus || "Semua" }}
             </span>
-
             <svg
               :class="[
                 'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
@@ -175,7 +174,7 @@
                   <p
                     class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
                   >
-                    {{ row.perihal }}
+                    {{ row.perihal || "-" }}
                   </p>
                 </div>
               </td>
@@ -226,7 +225,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Back Button -->
           <button
             @click="handlePageChange(currentPage - 1)"
             :disabled="currentPage === 1"
@@ -253,9 +251,7 @@
             Sebelumnya
           </button>
 
-          <!-- Page Numbers -->
           <div class="flex items-center gap-1">
-            <!-- First page -->
             <button
               v-if="paginationPages[0] > 1"
               @click="handlePageChange(1)"
@@ -263,16 +259,11 @@
             >
               1
             </button>
-
-            <!-- Left ellipsis -->
             <span
               v-if="paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- Visible pages -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -286,18 +277,13 @@
             >
               {{ page }}
             </button>
-
-            <!-- Right ellipsis -->
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- Last page -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="handlePageChange(totalPages)"
@@ -307,7 +293,6 @@
             </button>
           </div>
 
-          <!-- Next Button -->
           <button
             @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -347,16 +332,11 @@
           <h2
             class="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight pt-2"
           >
-            {{ selectedRow?.perihal }}
+            {{ selectedRow?.perihal || "-" }}
           </h2>
-          <button
-            @click="openPreview = false"
-            class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-          ></button>
-
-          <span class="text-sm text-gray-500 dark:text-gray-400">
+          <!-- <span class="text-sm text-gray-500 dark:text-gray-400">
             {{ formatDateTime(new Date()) }}
-          </span>
+          </span> -->
         </div>
       </template>
 
@@ -367,14 +347,12 @@
       >
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
-          <!-- Tanggal -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
             <p class="mt-1 dark:text-gray-200 text-sm font-medium">
               {{ selectedRow.tanggal }}
             </p>
           </div>
-          <!-- Pengirim -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               Penandatangan
@@ -383,16 +361,12 @@
               {{ selectedRow.penandatangan }}
             </p>
           </div>
-
-          <!-- Klasifikasi -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
             <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
-
-          <!-- Jenis Naskah -->
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
             <p class="text-sm font-medium mt-1 dark:text-gray-200">
@@ -401,12 +375,13 @@
           </div>
         </div>
 
-        <!-- File Lampiran Utama (dari request) -->
+        <!-- File Lampiran Utama -->
         <div v-if="selectedRow.file_path" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
-            >File Lampiran Pengusul</label
           >
+            File Lampiran Pengusul
+          </label>
           <div
             class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg"
           >
@@ -434,13 +409,13 @@
           </div>
         </div>
 
-        <!-- Nomor Surat Section dengan Upload File -->
+        <!-- Nomor Surat Section -->
         <div class="mt-4">
           <label
             class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
           >
-            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)</label
-          >
+            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
+          </label>
 
           <!-- Warning jika ada nomor tanpa ID -->
           <div
@@ -479,12 +454,18 @@
               :key="detail.id || idx"
               class="space-y-2"
             >
+              <!-- ✅ Card: abu-abu + opacity jika hangus -->
               <div
-                class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50 mt-2"
+                :class="[
+                  'border rounded-lg p-4 mt-2 transition',
+                  detail.status === 'hangus'
+                    ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
+                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
+                ]"
               >
                 <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
-                  <!-- Checkbox -->
+                  <!-- ✅ Checkbox: disabled jika hangus -->
                   <input
                     type="checkbox"
                     v-model="detail.checked"
@@ -507,19 +488,29 @@
                     <input
                       type="text"
                       :value="displayNomor(detail)"
-                      class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-mono dark:text-gray-200"
+                      :class="[
+                        'flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-mono',
+                        detail.status === 'hangus'
+                          ? 'line-through text-gray-400 dark:text-gray-500'
+                          : 'dark:text-gray-200',
+                      ]"
                       readonly
                     />
-                    <!-- Copy Button -->
+
+                    <!-- ✅ Copy button: sembunyikan jika hangus -->
                     <button
-                      v-if="detail.nomor && detail.status === 'terpakai'"
+                      v-if="
+                        detail.nomor &&
+                        detail.status === 'terpakai' &&
+                        detail.status !== 'hangus'
+                      "
                       @click="handleCopy(detail.nomor)"
                       class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition flex items-center justify-center flex-shrink-0"
                     >
                       <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
-
                     <div v-else class="w-[44px]"></div>
+
                     <!-- Status Badge -->
                     <span
                       v-if="detail.status"
@@ -528,8 +519,7 @@
                         {
                           'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
                             detail.status === 'pending' ||
-                            detail.status === 'menunggu',
-                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
+                            detail.status === 'menunggu' ||
                             detail.status === 'booking',
                           'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-primary-400':
                             detail.status === 'terpakai',
@@ -537,7 +527,7 @@
                             detail.status === 'terpakai_final',
                           'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                             detail.status === 'ditolak',
-                          'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                          'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400':
                             detail.status === 'hangus',
                         },
                       ]"
@@ -547,11 +537,72 @@
                   </div>
                 </div>
 
-                <!-- File Upload/Replace Section - KONSISTEN DENGAN GAMBAR 2 -->
+                <!-- ✅ FILE SECTION -->
                 <div class="relative">
-                  <!-- Show existing file if available -->
+                  <!-- ✅ HANGUS: tampilkan file jika ada (read-only, greyed), atau indikator hangus -->
+                  <template v-if="detail.status === 'hangus'">
+                    <!-- Ada file → tampil tapi greyed out + strikethrough, tidak bisa diklik -->
+                    <div
+                      v-if="hasExistingFile(detail)"
+                      class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg p-3"
+                    >
+                      <div class="flex items-start gap-3">
+                        <svg
+                          class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                          <p
+                            class="text-sm font-medium text-gray-400 dark:text-gray-500 line-through"
+                          >
+                            {{ getDisplayFileName(detail) }}
+                          </p>
+                          <p
+                            class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+                          >
+                            Nomor telah dihanguskan
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Tidak ada file → indikator hangus -->
+                    <div
+                      v-else
+                      class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-3"
+                    >
+                      <div class="flex items-center gap-2">
+                        <svg
+                          class="w-4 h-4 text-gray-400 dark:text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                          />
+                        </svg>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">
+                          Nomor telah dihanguskan
+                        </span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- ✅ Ada file (bukan hangus) & tidak sedang replace → tampilkan file clickable -->
                   <div
-                    v-if="
+                    v-else-if="
                       hasExistingFile(detail) && !fileStates[idx]?.isReplacing
                     "
                   >
@@ -559,7 +610,10 @@
                       class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
                     >
                       <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 flex-1">
+                        <div
+                          class="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition"
+                          @click="previewFile(detail)"
+                        >
                           <svg
                             class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                             fill="none"
@@ -573,12 +627,9 @@
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          <div
-                            class="flex-1 cursor-pointer hover:underline"
-                            @click="previewFile(detail)"
-                          >
+                          <div class="flex-1">
                             <p
-                              class="text-sm font-medium text-primary dark:text-blue-400"
+                              class="text-sm font-medium text-primary dark:text-blue-400 underline"
                             >
                               {{ getDisplayFileName(detail) }}
                             </p>
@@ -611,7 +662,7 @@
                     </div>
                   </div>
 
-                  <!-- Show uploaded file (new file) -->
+                  <!-- ✅ File baru dipilih (local, belum upload) & tidak replacing -->
                   <div
                     v-else-if="
                       (fileStates[idx]?.file || files[idx]) &&
@@ -679,7 +730,7 @@
                     </div>
                   </div>
 
-                  <!-- Upload form (only show when no file or replacing) -->
+                  <!-- ✅ Upload form (tidak ada file / sedang replacing) -->
                   <div v-else>
                     <label
                       class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
@@ -697,20 +748,16 @@
                           d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                         />
                       </svg>
-
                       <div class="flex-1">
                         <span
                           class="text-gray-700 dark:text-gray-300 font-medium block"
+                          >Pilih file (Opsional)</span
                         >
-                          Pilih file (Opsional)
-                        </span>
                         <span
                           class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 block"
+                          >PDF, DOC, DOCX (Max 5MB)</span
                         >
-                          PDF, DOC, DOCX (Max 5MB)
-                        </span>
                       </div>
-
                       <input
                         type="file"
                         class="hidden"
@@ -719,8 +766,6 @@
                         :disabled="fileStates[idx]?.isUploading"
                       />
                     </label>
-
-                    <!-- Cancel button for replace mode -->
                     <button
                       v-if="fileStates[idx]?.isReplacing"
                       @click.prevent="cancelReplace(idx, detail)"
@@ -735,20 +780,18 @@
           </div>
         </div>
 
-        <!-- Keterangan Jika Ada yang Tidak Di-check (Ditolak) -->
+        <!-- ✅ Keterangan Penolakan: muncul jika ada yang tidak di-check -->
         <div v-if="hasUnchecked" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
-            >Keterangan Penolakan <span class="text-red-500">*</span></label
           >
-
+            Keterangan Penolakan <span class="text-red-500">*</span>
+          </label>
           <textarea
             v-model="keterangan_ditolak"
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
             placeholder="Masukkan keterangan mengapa nomor ditolak..."
           ></textarea>
-
-          <!-- Warning jika keterangan belum diisi -->
           <p
             v-if="!keterangan_ditolak.trim() && showKeteranganWarning"
             class="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1"
@@ -766,7 +809,7 @@
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            Keterangan penolakan wajib diisi
+            Keterangan penolakan wajib diisi sebelum menyetujui atau menolak
           </p>
         </div>
       </div>
@@ -818,7 +861,8 @@
       </template>
     </Modal>
   </Teleport>
-  <!-- PREVIEW SLIDEOVER -->
+
+  <!-- ✅ PREVIEW SLIDEOVER - pakai file_url langsung (pre-signed S3) -->
   <USlideover
     v-model:open="isOpenPreview"
     title="Pratinjau"
@@ -841,7 +885,6 @@
           allowfullscreen
           class="w-full h-full rounded-lg shadow-lg border border-gray-200"
         />
-
         <div v-else class="flex flex-col items-center gap-2">
           <UIcon
             name="i-lucide-loader-2"
@@ -857,9 +900,8 @@
   <ConfirmPopup
     v-model="showConfirmApprove"
     title="Konfirmasi Verifikasi"
-    message="Apakah Anda yakin ingin menyetujui nomor yang dipilih?"
-    :description="`Apakah Anda yakin ingin menyetujui ${checkedCount} nomor yang dipilih?`"
-    confirmText="Ya, Setujui"
+    :description="`Setujui ${checkedCount} nomor${uncheckedCount > 0 ? ` dan tolak ${uncheckedCount} nomor` : ''}?`"
+    confirmText="Ya, Proses"
     cancelText="Batal"
     @confirm="processApproval"
   />
@@ -879,10 +921,7 @@
     <div
       v-if="tooltip.show"
       class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-md shadow-lg transition-opacity"
-      :style="{
-        left: tooltip.x + 'px',
-        top: tooltip.y + 'px',
-      }"
+      :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
     >
       {{ tooltip.text }}
     </div>
@@ -904,7 +943,6 @@ const toast = useToast();
 const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
 
-// Composable
 const {
   approveBulkNomor,
   rejectNomorRequest,
@@ -918,7 +956,6 @@ const breadcrumbs = [
   { label: "Verifikasi", to: "/penomoran/verifikasi" },
 ];
 
-/* TABLE CONFIG */
 const headers = [
   { label: "Jenis", key: "jenis", sortable: true },
   { label: "Tanggal", key: "tanggal", sortable: true },
@@ -945,44 +982,33 @@ const isProcessing = ref(false);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
 
-// Sorting State
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
-
-// Filter Status State
 const filterStatus = ref<string>("Menunggu Verifikasi");
 const openFilterStatus = ref<boolean>(false);
-
-// Modal control
 const openPreview = ref(false);
 
-// Data rows & pagination
 const rows = ref<any[]>([]);
 const pagination = ref(null);
 const loading = ref(false);
-
-// Files state
 const files = ref<any[]>([]);
 
-// File states untuk tracking replace
 interface FileState {
   isReplacing: boolean;
   isUploading: boolean;
   file: File | null;
   originalFileName: string | null;
 }
-
 const fileStates = ref<Record<number, FileState>>({});
 
-// Debounce timeout
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-// ✅ FETCH DATA dengan backend pagination, search, filter & sorting
+/* ===========================
+ * FETCH DATA
+ * =========================== */
 const fetchData = async () => {
   loading.value = true;
-
   try {
-    // Build params object sesuai dokumentasi API
     const params = {
       search: search.value || undefined,
       page: currentPage.value,
@@ -992,12 +1018,7 @@ const fetchData = async () => {
       sort_order: sortOrder.value || undefined,
     };
 
-    console.log("📤 Fetching verification data with params:", params);
-
     const res = await getListSubmitted(params);
-
-    console.log("📥 Backend response:", res);
-
     const data = res.data || [];
     pagination.value = res.pagination || null;
 
@@ -1007,14 +1028,9 @@ const fetchData = async () => {
     }
 
     rows.value = data.map((item: any) => {
-      // ✅ Data pengusul dan penandatangan sudah ada di response API
-      // Tidak perlu lookup ke personMap lagi
-
-      // Format tanggal: DD/MM/YYYY (UTC)
       const tanggalDate = new Date(item.tanggal);
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
 
-      // Format tgl usulan: DD/MM/YY HH:MM (WIB = UTC+7)
       const createdDate = new Date(item.created_at);
       const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
       const day = String(wibTime.getDate()).padStart(2, "0");
@@ -1022,25 +1038,21 @@ const fetchData = async () => {
       const year = String(wibTime.getFullYear()).slice(-2);
       const hours = String(wibTime.getHours()).padStart(2, "0");
       const minutes = String(wibTime.getMinutes()).padStart(2, "0");
-      const formattedTglUsulan = `${day}/${month}/${year} ${hours}:${minutes}`;
 
       return {
         id: item.id,
         jenis: item.jenis,
         tanggal: formattedTanggal,
-        perihal: item.perihal,
+        perihal: item.perihal || "-",
         penandatangan: item.penandatangan || "-",
         jumlah: item.jumlah,
         pengusul: item.nama || "-",
-        tglUsulan: formattedTglUsulan,
+        tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
         status: item.status,
         klasifikasi: item.klasifikasi,
         file_path: item.file_path,
       };
     });
-
-    console.log("✅ Data verifikasi loaded:", rows.value.length, "rows");
-    console.log("📊 Pagination:", pagination.value);
   } catch (error) {
     console.error("❌ Error fetch data verifikasi:", error);
     toast.add({
@@ -1055,69 +1067,51 @@ const fetchData = async () => {
   }
 };
 
-// Handle search input with debounce
 const handleSearchInput = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
+  if (searchTimeout) clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1; // Reset to first page on search
+    currentPage.value = 1;
     fetchData();
-  }, 500); // 500ms debounce
+  }, 500);
 };
 
-// Handle sorting
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    // Toggle sort order
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // New column, default to desc
     sortBy.value = column;
     sortOrder.value = "desc";
   }
-
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Handle page change
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   fetchData();
 };
 
-// Handle limit change
 const handleLimitChange = () => {
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Select filter status
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val;
   openFilterStatus.value = false;
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchData();
 };
 
-// Computed total pages from backend pagination
-const totalPages = computed(() => {
-  return pagination.value?.totalPages || 1;
-});
+const totalPages = computed(() => pagination.value?.totalPages || 1);
 
-// Computed pagination pages for display
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     if (current <= 2) {
       pages.push(1, 2, 3, 4, 5);
@@ -1127,53 +1121,33 @@ const paginationPages = computed(() => {
       pages.push(current - 1, current, current + 1);
     }
   }
-
   return pages;
 });
 
-/* Show Preview Modal */
+/* ===========================
+ * SHOW PREVIEW MODAL
+ * =========================== */
 const showPreview = async (row: any) => {
   try {
     const detailData = await getDetailVerifikasiRequest(row.id);
+    if (!detailData) return;
 
-    if (!detailData) {
-      return;
-    }
-
-    // 🔍 DEBUG: Log detail data untuk cek struktur file
-    console.log("🔍 Detail Data Received:", detailData);
-    console.log("🔍 Details Array:", detailData.details);
-    detailData.details?.forEach((d: any, idx: number) => {
-      console.log(`🔍 Detail ${idx}:`, {
-        id: d.id,
-        nomor: d.nomor,
-        status: d.status,
-        file_name: d.file_name,
-        file_text: d.file_text,
-        file_url: d.file_url,
-      });
-    });
-
-    selectedRow.value = {
-      ...row,
-      ...detailData,
-    };
-
+    selectedRow.value = { ...row, ...detailData };
     files.value = Array(detailData.jumlah || 0).fill(null);
     fileStates.value = {};
-
     keterangan_ditolak.value = "";
     showKeteranganWarning.value = false;
     openPreview.value = true;
-
-    console.log("✅ Detail loaded:", detailData);
   } catch (error) {
     console.error("❌ Error fetch detail:", error);
   }
 };
 
-/* Preview file */
-const previewFile = async (detail: NomorDetail) => {
+/* ===========================
+ * PREVIEW FILE
+ * ✅ Langsung pakai file_url (pre-signed S3), tidak perlu fetch/blob
+ * =========================== */
+const previewFile = (detail: any) => {
   const url =
     detail.file_url ||
     (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
@@ -1187,33 +1161,14 @@ const previewFile = async (detail: NomorDetail) => {
     return;
   }
 
-  pdfUrl.value = null;
-  isOpenPreview.value = false;
-
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/pdf",
-      },
-    });
-
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(
-      new Blob([blob], { type: "application/pdf" }),
-    );
-
-    pdfUrl.value = blobUrl;
-    isOpenPreview.value = true;
-  } catch (e) {
-    toast.add({
-      title: "Gagal memuat file",
-      description: "Tidak dapat menampilkan pratinjau dokumen",
-      color: "red",
-    });
-  }
+  // ✅ Langsung set URL, tidak perlu fetch/blob
+  pdfUrl.value = url;
+  isOpenPreview.value = true;
 };
 
-/* Start replacing file */
+/* ===========================
+ * FILE HANDLERS
+ * =========================== */
 const startReplacingFile = (idx: number) => {
   const detail = selectedRow.value.details[idx];
   fileStates.value[idx] = {
@@ -1224,19 +1179,15 @@ const startReplacingFile = (idx: number) => {
   };
 };
 
-/* Cancel replace */
 const cancelReplace = (idx: number, detail: any) => {
   delete fileStates.value[idx];
 };
 
-/* Handle File Upload */
 const handleFile = (idx: number, event: Event, detail: any) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
-
   if (!file) return;
 
-  // Validate file size (5MB)
   if (file.size > 5 * 1024 * 1024) {
     toast.add({
       title: "File terlalu besar",
@@ -1251,84 +1202,37 @@ const handleFile = (idx: number, event: Event, detail: any) => {
   } else {
     files.value[idx] = file;
   }
-
-  console.log(`📎 File selected for index ${idx}:`, file.name);
 };
 
-/* Upload replace file */
-const uploadReplaceFile = async (idx: number, detail: any) => {
-  if (!detail.id) {
-    toast.add({
-      title: "Gagal",
-      description: "Detail ID tidak ditemukan",
-      color: "red",
-    });
-    return;
-  }
-
-  const fileState = fileStates.value[idx];
-  if (!fileState || !fileState.file) {
-    toast.add({
-      title: "Peringatan",
-      description: "Pilih file terlebih dahulu",
-      color: "yellow",
-    });
-    return;
-  }
-
-  fileState.isUploading = true;
-
-  try {
-    const result = await uploadDetailFile(detail.id, fileState.file);
-
-    if (result) {
-      detail.file_name = result.file_name;
-      detail.file_text = result.file_text;
-      detail.file_url = result.file_url;
-
-      delete fileStates.value[idx];
-    }
-  } catch (error: any) {
-    console.error("❌ Error replace file:", error);
-  } finally {
-    fileState.isUploading = false;
-  }
-};
-
-/* Remove file */
 const removeFile = (idx: number) => {
   files.value[idx] = null;
 };
 
-/* Display nomor */
+/* ===========================
+ * HELPERS
+ * =========================== */
 const displayNomor = (detail: any) => {
-  if (detail.status === "terpakai" && detail.nomor) {
-    return detail.nomor;
-  }
-  if (detail.template_nomor) {
-    return detail.template_nomor;
-  }
-  if (selectedRow.value?.template_nomor) {
+  if (detail.status === "terpakai" && detail.nomor) return detail.nomor;
+  if (detail.template_nomor) return detail.template_nomor;
+  if (selectedRow.value?.template_nomor)
     return selectedRow.value.template_nomor;
-  }
   return "-";
 };
 
-/* Get status label - FIXED untuk terpakai_final menjadi "Final" */
+/* ✅ Status label: terpakai_final → "Final" */
 const getStatusLabel = (status: string) => {
   const statusMap: Record<string, string> = {
-    pending: "pending",
-    menunggu: "menunggu",
-    booking: "booking",
-    terpakai: "terpakai",
-    terpakai_final: "Final", // ✅ FIXED: terpakai_final jadi "Final"
-    ditolak: "ditolak",
-    hangus: "hangus",
+    pending: "Pending",
+    menunggu: "Menunggu",
+    booking: "Booking",
+    terpakai: "Terpakai",
+    terpakai_final: "Final",
+    ditolak: "Ditolak",
+    hangus: "Hangus",
   };
   return statusMap[status] || status;
 };
 
-/* Handle Copy */
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   toast.add({
@@ -1339,25 +1243,15 @@ const handleCopy = (value: string) => {
   });
 };
 
-/* Get filename from path */
 const getFileName = (path: string) => {
   if (!path) return "-";
   return path.split("/").pop() || path;
 };
 
-/* Check if detail has existing file */
 const hasExistingFile = (detail: any) => {
-  const hasFile = !!(detail.file_name || detail.file_text || detail.file_url);
-  console.log(`🔍 hasExistingFile check:`, {
-    file_name: detail.file_name,
-    file_text: detail.file_text,
-    file_url: detail.file_url,
-    result: hasFile,
-  });
-  return hasFile;
+  return !!(detail.file_name || detail.file_text || detail.file_url);
 };
 
-/* Get display filename */
 const getDisplayFileName = (detail: any) => {
   if (detail.file_name) return detail.file_name;
   if (detail.file_text) return getFileName(detail.file_text);
@@ -1365,7 +1259,6 @@ const getDisplayFileName = (detail: any) => {
   return "File Terlampir";
 };
 
-/* Format file size */
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -1374,40 +1267,38 @@ const formatFileSize = (bytes: number) => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-// Computed untuk validasi dan counting
-const hasAnyChecked = computed(() => {
-  return (
-    selectedRow.value?.details?.some(
-      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
-    ) || false
+/* ===========================
+ * COMPUTED - VALIDASI
+ * =========================== */
+const validDetails = computed(() => {
+  return (selectedRow.value?.details || []).filter(
+    (d: any) =>
+      d.id &&
+      d.id !== null &&
+      d.id !== "null" &&
+      d.id !== undefined &&
+      d.status !== "hangus",
   );
 });
 
-const hasUnchecked = computed(() => {
-  return (
-    selectedRow.value?.details?.some(
-      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
-    ) || false
-  );
-});
+const hasAnyChecked = computed(() =>
+  validDetails.value.some((d: any) => d.checked),
+);
+const hasUnchecked = computed(() =>
+  validDetails.value.some((d: any) => !d.checked),
+);
 
-const checkedCount = computed(() => {
-  return (
-    selectedRow.value?.details?.filter(
-      (d: any) => d.checked && d.id && d.id !== null && d.id !== "null",
-    ).length || 0
-  );
-});
+const checkedCount = computed(
+  () => validDetails.value.filter((d: any) => d.checked).length,
+);
+const uncheckedCount = computed(
+  () => validDetails.value.filter((d: any) => !d.checked).length,
+);
 
-const uncheckedCount = computed(() => {
-  return (
-    selectedRow.value?.details?.filter(
-      (d: any) => !d.checked && d.id && d.id !== null && d.id !== "null",
-    ).length || 0
-  );
-});
-
-/* KONFIRMASI APPROVAL */
+/* ===========================
+ * CONFIRM APPROVAL
+ * ✅ Blok jika ada unchecked tapi keterangan belum diisi
+ * =========================== */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
     toast.add({
@@ -1417,28 +1308,42 @@ const confirmApproval = () => {
     });
     return;
   }
+
+  // ✅ Jika ada yang unchecked (akan ditolak), keterangan WAJIB diisi dulu
+  if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true;
+    toast.add({
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: `Ada ${uncheckedCount.value} nomor yang tidak dicentang. Isi keterangan penolakan terlebih dahulu.`,
+      color: "red",
+    });
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.focus();
+      textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return;
+  }
+
+  showKeteranganWarning.value = false;
   showConfirmApprove.value = true;
 };
 
-/* PROSES APPROVAL */
+/* ===========================
+ * PROCESS APPROVAL
+ * ✅ Toast menampilkan jumlah approved + rejected
+ * =========================== */
 const processApproval = async () => {
   showConfirmApprove.value = false;
   if (!selectedRow.value) return;
 
-  const approvedDetails = selectedRow.value.details.filter(
-    (d) =>
-      d.checked &&
-      d.id &&
-      d.id !== null &&
-      d.id !== "null" &&
-      d.id !== undefined,
-  );
+  const approvedDetails = validDetails.value.filter((d: any) => d.checked);
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
 
   if (approvedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description:
-        "Tidak ada nomor yang dapat disetujui. Pastikan nomor memiliki ID yang valid.",
+      description: "Tidak ada nomor yang dapat disetujui.",
       color: "yellow",
     });
     return;
@@ -1447,19 +1352,56 @@ const processApproval = async () => {
   isProcessing.value = true;
 
   try {
-    const detailIds = approvedDetails.map((d) => d.id);
+    // Approve yang dicentang
+    const detailIds = approvedDetails.map((d: any) => d.id);
     await approveBulkNomor(detailIds);
+
+    // ✅ Jika ada yang unchecked, tolak juga sekaligus
+    if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
+      const rejectedIds = rejectedDetails.map((d: any) => d.id);
+      await rejectNomorRequest(
+        selectedRow.value.id,
+        rejectedIds,
+        keterangan_ditolak.value,
+      );
+    }
+
+    // ✅ Toast yang benar: tampilkan approved + rejected
+    const approvedCount = approvedDetails.length;
+    const rejectedCount = rejectedDetails.length;
+
+    if (rejectedCount > 0) {
+      toast.add({
+        title: "Berhasil",
+        description: `${approvedCount} nomor disetujui, ${rejectedCount} nomor ditolak`,
+        color: "green",
+      });
+    } else {
+      toast.add({
+        title: "Berhasil",
+        description: `${approvedCount} nomor berhasil disetujui`,
+        color: "green",
+      });
+    }
 
     openPreview.value = false;
     await fetchData();
   } catch (error: any) {
     console.error("❌ Error approval:", error);
+    toast.add({
+      title: "Gagal",
+      description:
+        error?.response?.data?.message || "Terjadi kesalahan saat memproses",
+      color: "red",
+    });
   } finally {
     isProcessing.value = false;
   }
 };
 
-/* KONFIRMASI REJECTION */
+/* ===========================
+ * CONFIRM REJECTION
+ * =========================== */
 const confirmRejection = () => {
   if (!hasUnchecked.value) {
     toast.add({
@@ -1470,7 +1412,6 @@ const confirmRejection = () => {
     return;
   }
 
-  // ✅ VALIDASI KETAT: Keterangan WAJIB diisi
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
     toast.add({
@@ -1479,14 +1420,11 @@ const confirmRejection = () => {
       color: "red",
       timeout: 3000,
     });
-
-    // Scroll ke textarea keterangan
     const textarea = document.querySelector("textarea");
     if (textarea) {
       textarea.focus();
       textarea.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-
     return;
   }
 
@@ -1494,37 +1432,29 @@ const confirmRejection = () => {
   showConfirmReject.value = true;
 };
 
-/* PROSES REJECTION */
+/* ===========================
+ * PROCESS REJECTION
+ * =========================== */
 const processRejection = async () => {
   showConfirmReject.value = false;
-
   if (!selectedRow.value) return;
 
-  const rejectedDetails = selectedRow.value.details.filter(
-    (d: any) =>
-      !d.checked &&
-      d.id &&
-      d.id !== null &&
-      d.id !== "null" &&
-      d.id !== undefined,
-  );
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
 
   if (rejectedDetails.length === 0) {
     toast.add({
       title: "Peringatan",
-      description:
-        "Tidak ada nomor yang dapat ditolak. Pastikan nomor memiliki ID yang valid.",
+      description: "Tidak ada nomor yang dapat ditolak.",
       color: "yellow",
     });
     return;
   }
 
-  // ✅ VALIDASI ULANG sebelum proses
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
     toast.add({
       title: "Keterangan Penolakan Wajib Diisi",
-      description: "Silakan isi keterangan penolakan terlebih dahulu!",
+      description: "Silakan isi keterangan penolakan!",
       color: "red",
     });
     return;
@@ -1533,36 +1463,39 @@ const processRejection = async () => {
   isProcessing.value = true;
 
   try {
-    const detailIds = rejectedDetails.map((d) => d.id);
+    const detailIds = rejectedDetails.map((d: any) => d.id);
     await rejectNomorRequest(
       selectedRow.value.id,
       detailIds,
       keterangan_ditolak.value,
     );
 
+    toast.add({
+      title: "Berhasil",
+      description: `${rejectedDetails.length} nomor berhasil ditolak`,
+      color: "green",
+    });
+
     openPreview.value = false;
     await fetchData();
   } catch (error: any) {
     console.error("❌ Error rejection:", error);
+    toast.add({
+      title: "Gagal",
+      description:
+        error?.response?.data?.message || "Terjadi kesalahan saat menolak",
+      color: "red",
+    });
   } finally {
     isProcessing.value = false;
   }
 };
 
-/* Format helpers */
 function formatDateTime(dateStr: string | Date) {
   const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return `${date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })} ${date.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
+  return `${date.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" })} ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-/* Close dropdown when click outside */
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
@@ -1572,7 +1505,6 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-/* Load data on mount */
 onMounted(async () => {
   await fetchData();
   document.addEventListener("click", handleDocumentClick);
@@ -1580,35 +1512,19 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
-
-  // Clear search timeout
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  // Clean up blob URLs
-  if (pdfUrl.value) {
-    URL.revokeObjectURL(pdfUrl.value);
-  }
+  if (searchTimeout) clearTimeout(searchTimeout);
+  // ✅ Tidak perlu revokeObjectURL karena pdfUrl adalah pre-signed S3 URL
+  pdfUrl.value = null;
 });
 
-const tooltip = ref({
-  show: false,
-  text: "",
-  x: 0,
-  y: 0,
-});
+const tooltip = ref({ show: false, text: "", x: 0, y: 0 });
 
 const onRowMouseMove = (e: MouseEvent, text: string) => {
-  const offset = 12;
-  const maxX = window.innerWidth - 200;
-  const maxY = window.innerHeight - 40;
-
   tooltip.value = {
     show: true,
     text,
-    x: Math.min(e.clientX + offset, maxX),
-    y: Math.min(e.clientY + offset, maxY),
+    x: Math.min(e.clientX + 12, window.innerWidth - 200),
+    y: Math.min(e.clientY + 12, window.innerHeight - 40),
   };
 };
 
@@ -1616,25 +1532,21 @@ const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
 
-// ✅ Watch untuk menghilangkan warning saat user mulai mengetik
 watch(keterangan_ditolak, (newValue) => {
-  if (newValue.trim()) {
-    showKeteranganWarning.value = false;
-  }
+  if (newValue.trim()) showKeteranganWarning.value = false;
 });
 
+// ✅ Saat slideover dibuka, tutup modal detail
+// Saat slideover ditutup, buka kembali modal detail
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false;
-  } else if (selectedRow.value) {
-    openPreview.value = true;
-  }
-});
-
-watch(isOpenPreview, (open) => {
-  if (!open && pdfUrl.value) {
-    URL.revokeObjectURL(pdfUrl.value);
+  } else {
+    // ✅ Tidak perlu revokeObjectURL karena bukan blob URL
     pdfUrl.value = null;
+    if (selectedRow.value) {
+      openPreview.value = true;
+    }
   }
 });
 </script>
@@ -1654,26 +1566,21 @@ watch(isOpenPreview, (open) => {
   animation: fade-in 0.15s ease-out;
 }
 
-/* Dark mode scrollbar */
 :deep(.dark) {
   scrollbar-width: thin;
   scrollbar-color: #4b5563 #1f2937;
 }
-
 :deep(.dark)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 :deep(.dark)::-webkit-scrollbar-track {
   background: #1f2937;
 }
-
 :deep(.dark)::-webkit-scrollbar-thumb {
   background: #4b5563;
   border-radius: 4px;
 }
-
 :deep(.dark)::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
 }

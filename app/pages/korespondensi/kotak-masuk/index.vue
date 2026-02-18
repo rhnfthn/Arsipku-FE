@@ -1103,7 +1103,7 @@ onMounted(async () => {
                       <div
                         class="text-[11px] text-neutral-400 dark:text-gray-500 flex items-center gap-2 mt-0.5"
                       >
-                        <span class="truncate">{{ mail.nomor }}</span>
+                        <span class="font-mono truncate">{{ mail.nomor }}</span>
 
                         <span
                           v-if="mail.is_priority"

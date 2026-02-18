@@ -8,7 +8,7 @@
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu :model-value="model" :items="combinedOptions" multiple :placeholder="placeholder"
         class="w-full p-0 custom-select-menu" variant="none"
-        :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[500px]' }" :filter-fields="['label']" :ui="{
+        :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' }" :filter-fields="['label']" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
           wrapper: 'pr-10 w-full',
           input: 'pr-10 w-full',
