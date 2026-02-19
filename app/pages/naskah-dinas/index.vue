@@ -717,6 +717,11 @@ function exportExcel() {
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
               >
+                Tanggal
+              </th>
+              <th
+                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
+              >
                 Asal Naskah
               </th>
               <th
@@ -733,11 +738,6 @@ function exportExcel() {
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
               >
                 Pembuat
-              </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                Jam Dibuat
               </th>
             </tr>
           </thead>
@@ -757,15 +757,26 @@ function exportExcel() {
                 </div>
               </td>
             </tr>
-            <!-- ================= -->
             <!-- DATA ASLI -->
-            <!-- ================= -->
             <tr
               v-else
               v-for="item in paginatedData"
               :key="item.id"
               class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700"
             >
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-200">
+                <div class="flex gap-2">
+                  <div>
+                    {{
+                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
+                    }}
+                  </div>
+                  <div>
+                    {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
+                  </div>
+                </div>
+              </td>
+
               <td
                 class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
               >
@@ -837,18 +848,6 @@ function exportExcel() {
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                   {{ item.pembuat?.nama || "-" }}
-                </div>
-              </td>
-              <td class="px-4 py-3 text-black dark:text-gray-200">
-                <div class="flex flex-col">
-                  <div>
-                    {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
-                  </div>
-                  <div>
-                    {{
-                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
-                    }}
-                  </div>
                 </div>
               </td>
             </tr>
