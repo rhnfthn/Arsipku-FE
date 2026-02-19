@@ -234,9 +234,9 @@
 
         <TulisInputLampiran v-model:existingFiles="existingFiles" />
 
-        <div class="flex flex-col sm:flex-row sm:items-center py-4 border-b border-gray-200 dark:border-gray-600">
+        <div class="flex flex-col sm:flex-row sm:items-center py-4">
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="isPriority" :checked="isPriority" @click="handlePriorityClick"
+            <input type="checkbox" id="isPriority" :checked="isPriority" @change="handlePriorityChange"
               class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
             <label for="isPriority" class="text-sm cursor-pointer select-none">
               Tandai sebagai Prioritas
@@ -485,19 +485,19 @@ watch(showEditor, async (isShown) => {
     }
   }
 });
-const handlePriorityClick = async (e: Event) => {
-  // Cegah browser mengubah centang secara otomatis
-  e.preventDefault();
+const handlePriorityChange = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const wantToCheck = target.checked;
 
-  // KONDISI 1: User mau UNCHECK (Membatalkan Prioritas)
-  // Logic: Jika nilai sekarang true, langsung ubah jadi false tanpa tanya.
-  if (isPriority.value) {
+  if (!wantToCheck) {
+    // Uncheck langsung tanpa konfirmasi
     isPriority.value = false;
     return;
   }
 
-  // KONDISI 2: User mau CHECK (Mengaktifkan Prioritas)
-  // Logic: Jika nilai sekarang false, tanya dulu.
+  // Batalkan perubahan browser dulu
+  target.checked = false;
+
   const isConfirmed = await Alert.confirm(
     'Tandai sebagai Prioritas?',
     'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?',
@@ -506,13 +506,10 @@ const handlePriorityClick = async (e: Event) => {
     false
   );
 
+  Alert.close();
   if (isConfirmed) {
-    // Jika User klik YA -> Ubah jadi true
     isPriority.value = true;
   }
-
-  // Pastikan alert ditutup paksa agar tidak nyangkut
-  Alert.close();
 };
 
 const getPayload = (): DisposisiPayload => {

@@ -1,28 +1,21 @@
 <template>
   <div
-    class="min-h-dvh w-full bg-[#F6F8FC] dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300"
-  >
+    class="min-h-dvh w-full bg-[#F6F8FC] dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <!-- GLOBAL ALERT BANNER -->
     <AlertBsre />
 
     <!-- SIDEBAR - top mengikuti tinggi alert -->
-    <div
-      class="fixed left-0 bottom-0 z-[93] transition-all duration-300"
-      :style="{ top: alertHeight }"
-    >
+    <div class="fixed left-0 bottom-0 z-[93] transition-all duration-300" :style="{ top: alertHeight }">
       <Sidebar ref="sidebarRef" v-model:collapsed="collapsed" />
     </div>
 
     <!-- MAIN CONTENT AREA -->
-    <div
-      class="flex flex-col min-h-dvh transition-all duration-300"
-      :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'"
-    >
+    <div class="flex flex-col min-h-dvh transition-all duration-300"
+      :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'">
       <!-- NAVBAR - Sticky top mengikuti tinggi alert -->
       <div
         class="sticky px-4 md:px-7 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-[92]"
-        :style="{ top: alertHeight }"
-      >
+        :style="{ top: alertHeight }">
         <Navbar @open-mobile-sidebar="openMobileSidebar" />
       </div>
 
@@ -30,6 +23,7 @@
       <main class="flex-1 mx-4 sm:mx-8 z-[91]">
         <div class="mx-auto w-full">
           <NuxtPage />
+          <Alert />
         </div>
       </main>
 
@@ -46,6 +40,7 @@
 
 <script setup lang="ts">
 import { useDigsig } from "~/composables/useDigsig";
+import Alert from '~/components/Alert.vue'
 
 const collapsed = ref(false);
 const sidebarRef = ref();
