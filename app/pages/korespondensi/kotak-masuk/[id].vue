@@ -23,22 +23,24 @@ const jenisQuery = route.query.jenis as string;
 const targetHighlightId = computed(() => {
   return (route.query.highlight_id as string) || (route.params.id as string);
 });
+// --- Cari bagian script ini dan sesuaikan ---
 
-// Ganti function isHighlighted yang lama dengan ini:
+// Tambahkan Computed Property (Opsional tapi bagus untuk readability)
+const isSingleData = computed(() => {
+  return !details.value || details.value.length <= 1;
+});
+
 const isHighlighted = (detail: any) => {
-  const target = targetHighlightId.value;
+  // Guard di script (cadangan)
+  if (isSingleData.value) return false;
 
+  const target = targetHighlightId.value;
   if (!target) return false;
 
-  // Cek 1: Jika target di URL cocok dengan ID flow (jika ada) atau Urutan flow
-  // (Berguna jika Anda melempar ?highlight_id=1)
   if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) {
     return true;
   }
 
-  // Cek 2: LOGIKA KHUSUS (PENTING)
-  // Jika target di URL adalah ID Konsep Utama (UUID), maka highlight kartu 'create'
-  // Karena kartu 'create' adalah representasi dari Konsep itu sendiri.
   if (String(target) === String(id) && detail.aksi === 'create') {
     return true;
   }
@@ -47,47 +49,45 @@ const isHighlighted = (detail: any) => {
 };
 
 const scrollToTarget = async () => {
-  // Tunggu Vue update state
+  // Tunggu render selesai
   await nextTick();
 
-  // Beri jeda agar DOM benar-benar sudah muncul (render selesai)
-  setTimeout(() => {
-    // 1. Ambil ID target
-    const targetId = route.query.ref_id || route.query.highlight_id || route.params.id;
-    if (!targetId) return;
+  // GUARD UTAMA: Jika data cuma 1, LANGSUNG RETURN (Stop).
+  // Jangan jalankan logika scroll sama sekali.
+  if (details.value.length <= 1) {
+    return;
+  }
 
-    // 2. Cari data yang cocok
+  const targetId = route.query.highlight_id || route.query.ref_id || route.params.id;
+  if (!targetId) return;
+
+  setTimeout(() => {
     const foundDetail = details.value.find((d: any) => {
-      // Cek ID / Urutan
+      // Logic pencarian...
       if (d.id && String(d.id) === String(targetId)) return true;
       if (d.urutan && String(d.urutan) === String(targetId)) return true;
-      // Cek Logika Konsep Utama (UUID di URL = Kartu Create)
       if (d.aksi === 'create' && String(targetId) === String(id)) return true;
       return false;
     });
 
-    // 3. Scroll
     if (foundDetail) {
-      // Pastikan property ini SAMA dengan yang ada di Template :id
       const domId = foundDetail.id || foundDetail.urutan;
-      const elementId = `card-${domId}`;
-      const element = document.getElementById(elementId);
+      const element = document.getElementById(`card-${domId}`);
 
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Efek kedip focus (Opsional)
-        element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
-        setTimeout(() => {
-          element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
-        }, 2000);
-      } else {
-        console.log("Element belum ketemu di DOM:", elementId);
+        // Tambahkan ring manual via JS juga dicegah
+        if (details.value.length > 1) {
+           element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+           setTimeout(() => {
+             element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+           }, 2000);
+        }
       }
     }
-  }, 500); // <-- Penambahan Timeout ini kuncinya
+  }, 500);
 };
-
 // --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
@@ -426,22 +426,40 @@ const konsepOptions = [
       </div>
     </div>
 
-    <template v-else-if="details && details.length > 0">
-      <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
-        :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24"
-        :class="{ 'ring-2 ring-primary-200 rounded-xl mt-5': isHighlighted(detail) }">
+  <template v-else-if="details && details.length > 0">
+  <div
+    v-for="(detail, index) in details"
+    :key="detail.id || detail.urutan || index"
+    :id="`card-${detail.id || detail.urutan}`"
+    class="transition-all duration-500 scroll-mt-24"
+    :class="{
+      'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
+    }"
+  >
+    <DetailNaskah
+      context="inbox"
+      :data="detail"
+      :is-head="index === 0"
+      :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
+      :show-edit="isKonsepData && index === 0 && showEditAction"
+      :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim"
+      :allowed-actions="allowedActions"
+      :user-position-id="user.position"
+      @back="goBack"
+      @preview="(url) => openDocumentPreview(url, detail.perihal)"
+      @preview-file="openPreviewFile"
+      @finalize="handleFinalize"
+      @reject="handleReject"
+      @edit="handleEditKonsep"
+      @lanjut-nota="handleLanjutNotaDinas"
+      @lanjut-sdi="handleLanjutSDI"
+      @lanjut-sde="handleLanjutSDE"
+      @lanjut-disposisi="handleLanjutDisposisi"
+      @lanjut-konsep="isOpenKonsepModal = true"
+    />
 
-        <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
-          :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-          :show-edit="isKonsepData && index === 0 && showEditAction"
-          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
-          :user-position-id="user.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
-          @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
-          @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
-          @lanjut-disposisi="handleLanjutDisposisi" @lanjut-konsep="isOpenKonsepModal = true" />
-
-      </div>
-    </template>
+  </div>
+</template>
 
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>
