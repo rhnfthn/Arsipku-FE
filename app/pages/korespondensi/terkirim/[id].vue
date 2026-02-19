@@ -7,7 +7,6 @@ import {
 } from "lucide-vue-next";
 
 // Import Component Baru
-import CardSuratDetail from '@/components/CardSuratDetail.vue'; // Sesuaikan path jika perlu (DetailNaskah?)
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
 import DetailNaskah from '@/components/DetailNaskah.vue';
 
