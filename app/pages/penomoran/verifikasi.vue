@@ -949,6 +949,14 @@ const {
   getListSubmitted,
   getDetailVerifikasiRequest,
   uploadDetailFile,
+  showToastFileNotFound,
+  showToastFileTooLarge,
+  showToastCopied,
+  showToastNomorMinimal,
+  showToastKeteranganRequired,
+  showToastApprovalSuccess,
+  showToastTidakAdaYangDitolak,
+  showToastTidakAdaNomor,
 } = usePenomoran();
 
 const breadcrumbs = [
@@ -1055,11 +1063,6 @@ const fetchData = async () => {
     });
   } catch (error) {
     console.error("❌ Error fetch data verifikasi:", error);
-    toast.add({
-      title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data verifikasi",
-      color: "red",
-    });
     rows.value = [];
     pagination.value = null;
   } finally {
@@ -1153,11 +1156,7 @@ const previewFile = (detail: any) => {
     (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
 
   if (!url) {
-    toast.add({
-      title: "File tidak ditemukan",
-      description: "File tidak tersedia untuk ditampilkan",
-      color: "yellow",
-    });
+    showToastFileNotFound();
     return;
   }
 
@@ -1189,11 +1188,7 @@ const handleFile = (idx: number, event: Event, detail: any) => {
   if (!file) return;
 
   if (file.size > 5 * 1024 * 1024) {
-    toast.add({
-      title: "File terlalu besar",
-      description: "Ukuran file maksimal 5MB",
-      color: "red",
-    });
+    showToastFileTooLarge();
     return;
   }
 
@@ -1235,12 +1230,7 @@ const getStatusLabel = (status: string) => {
 
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
+  showToastCopied(value);
 };
 
 const getFileName = (path: string) => {
@@ -1301,22 +1291,14 @@ const uncheckedCount = computed(
  * =========================== */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
-    toast.add({
-      title: "Peringatan",
-      description: "Pilih minimal 1 nomor untuk disetujui!",
-      color: "yellow",
-    });
+    showToastNomorMinimal();
     return;
   }
 
   // ✅ Jika ada yang unchecked (akan ditolak), keterangan WAJIB diisi dulu
   if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: `Ada ${uncheckedCount.value} nomor yang tidak dicentang. Isi keterangan penolakan terlebih dahulu.`,
-      color: "red",
-    });
+    showToastKeteranganRequired(uncheckedCount.value);
     const textarea = document.querySelector("textarea");
     if (textarea) {
       textarea.focus();
@@ -1341,11 +1323,7 @@ const processApproval = async () => {
   const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
 
   if (approvedDetails.length === 0) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang dapat disetujui.",
-      color: "yellow",
-    });
+    showToastTidakAdaNomor("disetujui");
     return;
   }
 
@@ -1369,31 +1347,12 @@ const processApproval = async () => {
     // ✅ Toast yang benar: tampilkan approved + rejected
     const approvedCount = approvedDetails.length;
     const rejectedCount = rejectedDetails.length;
-
-    if (rejectedCount > 0) {
-      toast.add({
-        title: "Berhasil",
-        description: `${approvedCount} nomor disetujui, ${rejectedCount} nomor ditolak`,
-        color: "green",
-      });
-    } else {
-      toast.add({
-        title: "Berhasil",
-        description: `${approvedCount} nomor berhasil disetujui`,
-        color: "green",
-      });
-    }
+    showToastApprovalSuccess(approvedCount, rejectedCount);
 
     openPreview.value = false;
     await fetchData();
   } catch (error: any) {
     console.error("❌ Error approval:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message || "Terjadi kesalahan saat memproses",
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }
@@ -1404,22 +1363,13 @@ const processApproval = async () => {
  * =========================== */
 const confirmRejection = () => {
   if (!hasUnchecked.value) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang akan ditolak!",
-      color: "yellow",
-    });
+    showToastTidakAdaYangDitolak();
     return;
   }
 
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: "Silakan isi keterangan penolakan terlebih dahulu!",
-      color: "red",
-      timeout: 3000,
-    });
+    showToastKeteranganRequired();
     const textarea = document.querySelector("textarea");
     if (textarea) {
       textarea.focus();
@@ -1442,21 +1392,13 @@ const processRejection = async () => {
   const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
 
   if (rejectedDetails.length === 0) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang dapat ditolak.",
-      color: "yellow",
-    });
+    showToastTidakAdaNomor("ditolak");
     return;
   }
 
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: "Silakan isi keterangan penolakan!",
-      color: "red",
-    });
+    showToastKeteranganRequired();
     return;
   }
 
@@ -1470,22 +1412,10 @@ const processRejection = async () => {
       keterangan_ditolak.value,
     );
 
-    toast.add({
-      title: "Berhasil",
-      description: `${rejectedDetails.length} nomor berhasil ditolak`,
-      color: "green",
-    });
-
     openPreview.value = false;
     await fetchData();
   } catch (error: any) {
     console.error("❌ Error rejection:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message || "Terjadi kesalahan saat menolak",
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }

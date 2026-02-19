@@ -143,7 +143,7 @@ export const usePenomoran = () => {
         toast.add({
           title: "Gagal mengambil count",
           description: e.response?.data?.message || "Silakan refresh halaman",
-          color: "red",
+          color: "error",
         });
       }
 
@@ -203,7 +203,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Berhasil",
         description: response?.message || "Penomoran final berhasil dibuat.",
-        color: "green",
+        color: "success",
       });
 
       // ✅ Trigger refetch setelah create berhasil
@@ -224,7 +224,7 @@ export const usePenomoran = () => {
         description: Array.isArray(errorMessage)
           ? errorMessage.join(", ")
           : errorMessage,
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -260,7 +260,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Berhasil",
         description: "Usulan berhasil disimpan (Belum Diajukan).",
-        color: "green",
+        color: "success",
       });
 
       const { user } = useAuth();
@@ -323,7 +323,7 @@ export const usePenomoran = () => {
         description:
           response.data?.message ||
           "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
-        color: "green",
+        color: "success",
       });
 
       // Refresh count sesuai role
@@ -352,7 +352,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: Array.isArray(msg) ? msg.join(", ") : msg,
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -431,7 +431,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch data",
         description: e.message || "Gagal mengambil daftar nomor",
-        color: "red",
+        color: "error",
       });
       return { data: [], pagination: null };
     } finally {
@@ -454,7 +454,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch data",
         description: e.message || "Gagal mengambil daftar usulan",
-        color: "red",
+        color: "error",
       });
       return [];
     } finally {
@@ -530,7 +530,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch data",
         description: e.message || "Gagal mengambil daftar usulan",
-        color: "red",
+        color: "error",
       });
       return { data: [], pagination: null };
     } finally {
@@ -567,7 +567,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch detail",
         description: e.message || "Gagal memuat detail usulan",
-        color: "red",
+        color: "error",
       });
 
       return null;
@@ -595,7 +595,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch klasifikasi",
         description: e.message || "Gagal mengambil klasifikasi",
-        color: "red",
+        color: "error",
       });
       return [];
     }
@@ -655,7 +655,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch submitted",
         description: e.message || "Gagal mengambil data submitted",
-        color: "red",
+        color: "error",
       });
       return { data: [], pagination: null };
     } finally {
@@ -675,7 +675,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal fetch person",
         description: e.message || "Gagal mengambil data person",
-        color: "red",
+        color: "error",
       });
       return [];
     }
@@ -694,8 +694,7 @@ export const usePenomoran = () => {
         title: "Berhasil",
         description:
           res?.data?.message || res?.message || "Usulan berhasil dihapus",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        color: "error",
       });
 
       const { user } = useAuth();
@@ -716,7 +715,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw e;
@@ -735,8 +734,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Berhasil",
         description: res?.data?.message || "Usulan berhasil dihapus",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        color: "error",
       });
 
       await getNomorRequestCountAdmin();
@@ -754,7 +752,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw e;
@@ -773,8 +771,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Berhasil",
         description: res?.data?.message || "Nomor berhasil dihapus",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        color: "error",
       });
 
       return res.data ?? res;
@@ -790,7 +787,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw e;
@@ -836,7 +833,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw e;
@@ -876,6 +873,12 @@ export const usePenomoran = () => {
 
       console.log("✅ Reject response:", response);
 
+      toast.add({
+        title: "Berhasil",
+        description: response?.message || "Nomor berhasil ditolak",
+        color: "error",
+      });
+
       await getNomorRequestCountAdmin();
 
       return response;
@@ -887,7 +890,7 @@ export const usePenomoran = () => {
         e.response?.data?.error ||
         e.message ||
         "Gagal menolak nomor";
-      toast.add({ title: "Gagal", description: errorMsg, color: "red" });
+      toast.add({ title: "Gagal", description: errorMsg, color: "error" });
 
       throw e;
     }
@@ -904,7 +907,7 @@ export const usePenomoran = () => {
         toast.add({
           title: "Gagal",
           description: "Tidak dapat mengambil detail usulan",
-          color: "red",
+          color: "error",
         });
         return null;
       }
@@ -971,7 +974,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: "Terjadi kesalahan saat mengambil detail",
-        color: "red",
+        color: "error",
       });
       return null;
     }
@@ -1008,7 +1011,7 @@ export const usePenomoran = () => {
           description:
             response.data?.message ||
             "File berhasil diupload, status menjadi final",
-          color: "green",
+          color: "success",
         });
 
         // ✅ Trigger refetch setelah upload berhasil
@@ -1031,7 +1034,7 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -1059,7 +1062,7 @@ export const usePenomoran = () => {
           title: "Berhasil",
           description:
             response?.message || "Status berhasil diubah menjadi hangus",
-          color: "green",
+          color: "success",
         });
 
         // ✅ Trigger refetch setelah hangus berhasil
@@ -1081,11 +1084,133 @@ export const usePenomoran = () => {
       toast.add({
         title: "Gagal",
         description: errorMsg,
-        color: "red",
+        color: "error",
       });
 
       throw error;
     }
+  };
+
+  /* ===========================
+   * TOAST HELPERS — UI LEVEL
+   * Dipindah dari component agar semua toast terpusat di composable
+   * =========================== */
+
+  const showToastFileNotFound = () => {
+    toast.add({
+      title: "File tidak ditemukan",
+      description: "File tidak tersedia untuk ditampilkan",
+      color: "warning",
+    });
+  };
+
+  const showToastFileTooLarge = () => {
+    toast.add({
+      title: "File terlalu besar",
+      description: "Ukuran file maksimal 5MB",
+      color: "warning",
+    });
+  };
+
+  const showToastCopied = (nomor: string) => {
+    toast.add({
+      title: "Tersalin",
+      description: `Nomor surat "${nomor}" berhasil disalin.`,
+      color: "success",
+    });
+  };
+
+  const showToastNomorMinimal = () => {
+    toast.add({
+      title: "Peringatan",
+      description: "Pilih minimal 1 nomor untuk disetujui!",
+      color: "warning",
+    });
+  };
+
+  const showToastKeteranganRequired = (uncheckedCount?: number) => {
+    toast.add({
+      title: "Keterangan Penolakan Wajib Diisi",
+      description: uncheckedCount
+        ? `Ada ${uncheckedCount} nomor yang tidak dicentang. Isi keterangan penolakan terlebih dahulu.`
+        : "Silakan isi keterangan penolakan terlebih dahulu!",
+      color: "error",
+    });
+  };
+
+  const showToastApprovalSuccess = (
+    approvedCount: number,
+    rejectedCount: number,
+  ) => {
+    if (rejectedCount > 0) {
+      toast.add({
+        title: "Berhasil",
+        description: `${approvedCount} nomor disetujui, ${rejectedCount} nomor ditolak`,
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: "Berhasil",
+        description: `${approvedCount} nomor berhasil disetujui`,
+        color: "success",
+      });
+    }
+  };
+
+  const showToastTidakAdaYangDitolak = () => {
+    toast.add({
+      title: "Peringatan",
+      description: "Tidak ada nomor yang akan ditolak!",
+      color: "warning",
+    });
+  };
+
+  const showToastTidakAdaNomor = (action: "disetujui" | "ditolak") => {
+    toast.add({
+      title: "Peringatan",
+      description: `Tidak ada nomor yang dapat ${action}.`,
+      color: "warning",
+    });
+  };
+
+  const showToastGagalPreview = () => {
+    toast.add({
+      title: "Gagal membuka file",
+      description: "File tidak dapat dipratinjau",
+      color: "error",
+    });
+  };
+
+  const showToastFileTooLargeAdmin = () => {
+    toast.add({
+      title: "File terlalu besar",
+      description: "Ukuran file maksimal 10MB",
+      color: "warning",
+    });
+  };
+
+  const showToastPilihFile = () => {
+    toast.add({
+      title: "Pilih file",
+      description: "Silakan pilih file terlebih dahulu",
+      color: "warning",
+    });
+  };
+
+  const showToastSaveTitle = () => {
+    toast.add({
+      title: "Berhasil",
+      description: "Judul berhasil diperbarui",
+      color: "success",
+    });
+  };
+
+  const showToastPenomoranSuccess = (count: number) => {
+    toast.add({
+      title: "Berhasil",
+      description: `Berhasil menambahkan ${count} nomor baru`,
+      color: "success",
+    });
   };
 
   return {
@@ -1137,5 +1262,20 @@ export const usePenomoran = () => {
     isLoadingBooking,
     isLoadingList,
     isLoadingSubmitted,
+
+    // TOAST HELPERS
+    showToastFileNotFound,
+    showToastFileTooLarge,
+    showToastFileTooLargeAdmin,
+    showToastGagalPreview,
+    showToastPilihFile,
+    showToastSaveTitle,
+    showToastPenomoranSuccess,
+    showToastCopied,
+    showToastNomorMinimal,
+    showToastKeteranganRequired,
+    showToastApprovalSuccess,
+    showToastTidakAdaYangDitolak,
+    showToastTidakAdaNomor,
   };
 };

@@ -28,8 +28,6 @@ export const useTemplate = () => {
     try {
       const response = await apiGet<TemplateListResponse>("/templates");
 
-      console.log("✅ Templates loaded:", response);
-
       if (!response.success || !Array.isArray(response.data)) {
         throw new Error("Invalid response format");
       }
@@ -41,7 +39,7 @@ export const useTemplate = () => {
       toast.add({
         title: "Gagal memuat data",
         description: error?.message || "Tidak dapat mengambil daftar template",
-        color: "red",
+        color: "error",
       });
 
       return [];
@@ -58,8 +56,6 @@ export const useTemplate = () => {
     try {
       const response = await apiGet<TemplateDetailResponse>(`/templates/${id}`);
 
-      console.log("✅ Template detail loaded:", response);
-
       if (!response.success || !response.data) {
         throw new Error("Template not found");
       }
@@ -71,7 +67,7 @@ export const useTemplate = () => {
       toast.add({
         title: "Gagal memuat detail",
         description: error?.message || "Tidak dapat mengambil detail template",
-        color: "red",
+        color: "error",
       });
 
       return null;
@@ -88,28 +84,14 @@ export const useTemplate = () => {
   ): Promise<Template | null> => {
     isLoadingCreate.value = true;
     try {
-      console.log("🚀 Creating template:", payload);
-
-      // Validasi
       if (!payload.nama_template || !payload.file) {
         throw new Error("Nama template dan file wajib diisi");
       }
 
-      // Buat FormData untuk upload file
       const formData = new FormData();
       formData.append("nama_template", payload.nama_template);
       formData.append("file", payload.file);
 
-      // ❌ JANGAN kirim field tanggal - API tidak menerima field ini
-
-      console.log("📤 POST to /templates with FormData");
-      console.log("Form data:", {
-        nama_template: payload.nama_template,
-        file_name: payload.file.name,
-        file_size: payload.file.size,
-      });
-
-      // Gunakan axios langsung untuk multipart/form-data
       const response = await api.post<TemplateDetailResponse>(
         "/templates",
         formData,
@@ -120,13 +102,10 @@ export const useTemplate = () => {
         },
       );
 
-      console.log("✅ Template created:", response.data);
-
       toast.add({
-        title: "Berhasil",
-        description: "Template berhasil ditambahkan",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        title: "Berhasil ditambahkan",
+        description: `Template "${payload.nama_template}" berhasil ditambahkan.`,
+        color: "success",
       });
 
       return response.data.data;
@@ -139,16 +118,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal menambahkan template";
 
-      // Jika error message adalah array, join jadi string
       const finalMessage = Array.isArray(errorMessage)
         ? errorMessage.join(", ")
         : errorMessage;
 
       toast.add({
-        title: "Gagal",
+        title: "Gagal menambahkan",
         description: finalMessage,
-        icon: "i-heroicons-exclamation-circle",
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -166,27 +143,16 @@ export const useTemplate = () => {
   ): Promise<Template | null> => {
     isLoadingUpdate.value = true;
     try {
-      console.log("🔄 Updating template:", id, payload);
-
-      // Validasi
       if (!payload.nama_template) {
         throw new Error("Nama template wajib diisi");
       }
 
       let response;
 
-      // Jika ada file baru (File object), gunakan FormData
       if (payload.file instanceof File) {
         const formData = new FormData();
         formData.append("nama_template", payload.nama_template);
         formData.append("file", payload.file);
-
-        console.log("📤 PUT to /templates/" + id + " with new file");
-        console.log("Form data:", {
-          nama_template: payload.nama_template,
-          file_name: payload.file.name,
-          file_size: payload.file.size,
-        });
 
         response = await api.put<TemplateDetailResponse>(
           `/templates/${id}`,
@@ -198,27 +164,15 @@ export const useTemplate = () => {
           },
         );
       } else {
-        // Jika tidak ada file baru, kirim JSON biasa (hanya nama template)
-        const jsonData = {
+        response = await api.put<TemplateDetailResponse>(`/templates/${id}`, {
           nama_template: payload.nama_template,
-        };
-
-        console.log("📤 PUT to /templates/" + id + " (JSON only)");
-        console.log("JSON data:", jsonData);
-
-        response = await api.put<TemplateDetailResponse>(
-          `/templates/${id}`,
-          jsonData,
-        );
+        });
       }
 
-      console.log("✅ Template updated:", response.data);
-
       toast.add({
-        title: "Berhasil",
-        description: "Template berhasil diperbarui",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        title: "Berhasil diperbarui",
+        description: `Template "${payload.nama_template}" berhasil diperbarui.`,
+        color: "success",
       });
 
       return response.data.data;
@@ -231,16 +185,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal memperbarui template";
 
-      // Jika error message adalah array, join jadi string
       const finalMessage = Array.isArray(errorMessage)
         ? errorMessage.join(", ")
         : errorMessage;
 
       toast.add({
-        title: "Gagal",
+        title: "Gagal memperbarui",
         description: finalMessage,
-        icon: "i-heroicons-exclamation-circle",
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -252,22 +204,22 @@ export const useTemplate = () => {
   /** ===========================
    * DELETE TEMPLATE
    * =========================== */
-  const deleteTemplate = async (id: string): Promise<boolean> => {
+  const deleteTemplate = async (
+    id: string,
+    name?: string,
+  ): Promise<boolean> => {
     isLoadingDelete.value = true;
     try {
-      console.log("🗑️ Deleting template:", id);
-
       const response = await apiDelete<TemplateDeleteResponse>(
         `/templates/${id}`,
       );
 
-      console.log("✅ Template deleted:", response);
-
       toast.add({
-        title: "Berhasil",
-        description: response?.message || "Template berhasil dihapus",
-        icon: "i-heroicons-check-circle",
-        color: "green",
+        title: "Berhasil dihapus",
+        description: name
+          ? `Template "${name}" berhasil dihapus.`
+          : response?.message || "Template berhasil dihapus.",
+        color: "error",
       });
 
       return true;
@@ -280,16 +232,14 @@ export const useTemplate = () => {
         error.message ||
         "Gagal menghapus template";
 
-      // Jika error message adalah array, join jadi string
       const finalMessage = Array.isArray(errorMessage)
         ? errorMessage.join(", ")
         : errorMessage;
 
       toast.add({
-        title: "Gagal",
+        title: "Gagal menghapus",
         description: finalMessage,
-        icon: "i-heroicons-exclamation-circle",
-        color: "red",
+        color: "error",
       });
 
       throw error;
@@ -299,14 +249,11 @@ export const useTemplate = () => {
   };
 
   return {
-    // Functions
     getTemplates,
     getTemplateById,
     createTemplate,
     updateTemplate,
     deleteTemplate,
-
-    // Loading states
     isLoadingList,
     isLoadingDetail,
     isLoadingCreate,

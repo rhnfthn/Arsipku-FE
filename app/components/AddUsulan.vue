@@ -399,9 +399,9 @@
           </div>
         </div>
 
-        <hr class="my-0 dark:border-gray-700" />
+        <hr class="my-0 dark:border-gray-600" />
 
-        <div class="flex justify-between items-start px-5 pb-2 pt-3">
+        <div class="flex justify-between items-start px-5 pb-5 pt-3">
           <div>
             <Heading
               variant="10m"
@@ -424,13 +424,13 @@
           </div>
         </div>
 
-        <div
+        <!-- <div
           class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs p-3 rounded-md mt-1 mx-5 mb-4 dark:text-gray-300"
         >
           Cetak formulir dan lampirkan naskah final yang akan diberikan nomor,
           kemudian serahkan berkas ke Unit Tata Usaha untuk proses penomoran dan
           arsip
-        </div>
+        </div> -->
       </div>
       <!-- ✅ END scrollable container -->
 

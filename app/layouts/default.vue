@@ -5,6 +5,9 @@
     <!-- GLOBAL ALERT BANNER -->
     <AlertBsre />
 
+    <!-- ANNOUNCEMENT BANNER -->
+    <AnnouncementBanner />
+
     <!-- SIDEBAR - top mengikuti tinggi alert -->
     <div
       class="fixed left-0 bottom-0 z-[93] transition-all duration-300"
@@ -52,7 +55,6 @@ const sidebarRef = ref();
 
 const { bsreAlert } = useDigsig();
 
-// Satu computed untuk semua elemen - sidebar dan navbar pakai nilai yang sama
 const alertHeight = computed(() => {
   return bsreAlert.value?.isActive ? "52px" : "0px";
 });

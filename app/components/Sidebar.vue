@@ -616,22 +616,31 @@ const adminMenuAdministrasi = computed(() => {
   ];
 
   if (user.value?.role === "superadmin") {
-    base.push({
-      label: "Master Data",
-      icon: "i-lucide-database",
-      children: [
-        { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
-        { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
-        {
-          label: "Perusahaan",
-          to: "/master/perusahaan",
-          icon: "i-lucide-building-2",
-        },
-        { label: "Klasifikasi", to: "/master/klasifikasi" },
-        { label: "Jenis", to: "/master/jenis" },
-      ],
-    });
+    base.push(
+      {
+        label: "Master Data",
+        icon: "i-lucide-database",
+        children: [
+          { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
+          { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
+          {
+            label: "Perusahaan",
+            to: "/master/perusahaan",
+            icon: "i-lucide-building-2",
+          },
+          { label: "Klasifikasi", to: "/master/klasifikasi" },
+          { label: "Jenis", to: "/master/jenis" },
+        ],
+      },
+      // ✅ Menu Konfigurasi Sistem — hanya untuk superadmin, di bawah Master Data
+      {
+        label: "Konfigurasi Sistem",
+        to: "/konfigurasi-sistem",
+        icon: "i-lucide-settings-2",
+      },
+    );
   }
+
   return base;
 });
 

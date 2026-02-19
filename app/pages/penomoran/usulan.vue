@@ -880,7 +880,7 @@ const previewFile = (detail: any) => {
     toast.add({
       title: "File tidak ditemukan",
       description: "File tidak tersedia untuk ditampilkan",
-      color: "yellow",
+      color: "warning",
     });
     return;
   }
@@ -1087,11 +1087,6 @@ const openRowModal = async (row) => {
     const detailData = await getDetailUsulan(row.id);
 
     if (!detailData) {
-      toast.add({
-        title: "Gagal memuat detail",
-        description: "Data detail tidak ditemukan",
-        color: "red",
-      });
       return;
     }
 
@@ -1132,11 +1127,6 @@ const openRowModal = async (row) => {
     console.log("📊 Total details:", selectedRow.value.details.length);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
-    toast.add({
-      title: "Gagal memuat detail",
-      description: "Silakan coba lagi",
-      color: "red",
-    });
   }
 };
 
@@ -1192,7 +1182,7 @@ const handleFile = (index: number, event: Event) => {
     toast.add({
       title: "File terlalu besar",
       description: "Ukuran file maksimal 5MB",
-      color: "red",
+      color: "warning",
     });
     input.value = "";
     return;
@@ -1208,7 +1198,7 @@ const handleFile = (index: number, event: Event) => {
     toast.add({
       title: "Tipe file tidak valid",
       description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
-      color: "red",
+      color: "warning",
     });
     input.value = "";
     return;
@@ -1219,7 +1209,7 @@ const handleFile = (index: number, event: Event) => {
   toast.add({
     title: "File dipilih",
     description: `File "${file.name}" siap diupload`,
-    color: "green",
+    color: "success",
   });
 };
 
@@ -1229,7 +1219,7 @@ const removeFile = (index: number) => {
   toast.add({
     title: "File dihapus",
     description: "File berhasil dihapus dari daftar upload",
-    color: "green",
+    color: "success",
   });
 };
 
@@ -1250,7 +1240,6 @@ const handleCopy = (value: string) => {
     title: "Tersalin",
     description: `Nomor surat "${value}" berhasil disalin.`,
     color: "success",
-    icon: "i-lucide-copy",
   });
 };
 
@@ -1309,7 +1298,7 @@ const confirmSubmitUsulan = async () => {
         fileCount > 0
           ? `Usulan dikirim dengan ${fileCount} file`
           : "Usulan dikirim tanpa file",
-      color: "green",
+      color: "success",
     });
 
     filesByIndex.value = {};
@@ -1321,7 +1310,7 @@ const confirmSubmitUsulan = async () => {
     toast.add({
       title: "Gagal",
       description: e?.response?.data?.message || "Gagal mengirim usulan",
-      color: "red",
+      color: "error",
     });
   } finally {
     isUploadingFiles.value = false;
@@ -1343,7 +1332,7 @@ const confirmDeleteUsulan = async () => {
     toast.add({
       title: "Berhasil",
       description: "Usulan berhasil dihapus",
-      color: "green",
+      color: "success",
     });
 
     openConfirmDelete.value = false;
@@ -1355,7 +1344,7 @@ const confirmDeleteUsulan = async () => {
     toast.add({
       title: "Gagal",
       description: "Gagal menghapus usulan. Silakan coba lagi.",
-      color: "red",
+      color: "error",
     });
   } finally {
     isDeletingUsulan.value = false;
@@ -1383,7 +1372,7 @@ const handleSubmitFromModal = async (payload: any) => {
       toast.add({
         title: "Data Tidak Lengkap",
         description: "Pastikan semua field terisi",
-        color: "yellow",
+        color: "warning",
       });
       return;
     }
@@ -1409,7 +1398,7 @@ const handleSubmitFromModal = async (payload: any) => {
     toast.add({
       title: "Berhasil",
       description: "Usulan berhasil ditambahkan",
-      color: "green",
+      color: "success",
     });
 
     openAdd.value = false;
@@ -1423,7 +1412,7 @@ const handleSubmitFromModal = async (payload: any) => {
       title: "Gagal",
       description:
         err?.response?.data?.message || err?.message || "Usulan gagal dikirim",
-      color: "red",
+      color: "error",
     });
   } finally {
     isSubmittingUsulan.value = false;

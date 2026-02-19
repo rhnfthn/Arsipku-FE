@@ -694,10 +694,8 @@ import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
-import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
 
-const toast = useToast();
 const config = useRuntimeConfig();
 
 const {
@@ -706,8 +704,16 @@ const {
   uploadDetailFile,
   hangusDetailNomor,
   getListNomor,
-  refreshTrigger, // ✅ Get refresh trigger
+  refreshTrigger,
+  showToastFileNotFound,
+  showToastGagalPreview,
+  showToastFileTooLargeAdmin,
+  showToastPilihFile,
+  showToastSaveTitle,
+  showToastPenomoranSuccess,
+  showToastCopied,
 } = usePenomoran();
+
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
@@ -829,11 +835,7 @@ const previewFile = async (item: any) => {
     item.file_url || (item.file_text ? getFileUrl(item.file_text) : null);
 
   if (!fileUrl) {
-    toast.add({
-      title: "File tidak ditemukan",
-      description: "File tidak tersedia untuk ditampilkan",
-      color: "yellow",
-    });
+    showToastFileNotFound();
     return;
   }
 
@@ -845,11 +847,7 @@ const previewFile = async (item: any) => {
     isOpenPreviewFile.value = true;
   } catch (err) {
     console.error("❌ Error preview file:", err);
-    toast.add({
-      title: "Gagal membuka file",
-      description: "File tidak dapat dipratinjau",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -875,11 +873,7 @@ const handleFileSelect = (detailId: string, event: Event) => {
 
   if (file) {
     if (file.size > 10 * 1024 * 1024) {
-      toast.add({
-        title: "File terlalu besar",
-        description: "Ukuran file maksimal 10MB",
-        color: "red",
-      });
+      showToastFileTooLargeAdmin();
       return;
     }
     fileStates.value[detailId].file = file;
@@ -889,11 +883,7 @@ const handleFileSelect = (detailId: string, event: Event) => {
 const saveFile = async (detailId: string) => {
   const state = fileStates.value[detailId];
   if (!state?.file) {
-    toast.add({
-      title: "Pilih file",
-      description: "Silakan pilih file terlebih dahulu",
-      color: "yellow",
-    });
+    showToastPilihFile();
     return;
   }
 
@@ -975,20 +965,12 @@ function saveTitle() {
   if (!detailData.value) return;
   detailData.value.perihal = editedTitle.value;
   isEditingTitle.value = false;
-  toast.add({
-    title: "Berhasil",
-    description: "Judul berhasil diperbarui",
-    color: "green",
-  });
+  showToastSaveTitle();
 }
 
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-  });
+  showToastCopied(value);
 };
 
 const handleSort = (col: string) => {
@@ -1113,11 +1095,6 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error("❌ Error fetch data:", error);
-    toast.add({
-      title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data penomoran",
-      color: "red",
-    });
     rows.value = [];
     pagination.value = null;
   } finally {
@@ -1194,20 +1171,11 @@ const handleSubmitFromModal = async (payload) => {
     // Tapi tetap panggil fetchData untuk memastikan UI update
     await fetchData();
 
-    toast.add({
-      title: "Berhasil",
-      description: `Berhasil menambahkan ${response?.data?.nomor_list?.length || payload.jumlah} nomor baru`,
-      color: "green",
-    });
+    showToastPenomoranSuccess(
+      response?.data?.nomor_list?.length || payload.jumlah,
+    );
   } catch (error) {
     console.error("❌ Error di handleSubmitFromModal:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message ||
-        "Terjadi kesalahan saat menyimpan data",
-      color: "red",
-    });
   }
 };
 
