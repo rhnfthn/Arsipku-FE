@@ -3,11 +3,13 @@ import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
-  Users, FileText, Building2 // Pastikan icon ini diimport agar tidak error ReferenceError
+  Users, FileText, Building2
 } from "lucide-vue-next";
 
 // Import Component Baru
-import CardSuratDetail from '@/components/CardSuratDetail.vue';
+import CardSuratDetail from '@/components/CardSuratDetail.vue'; // Sesuaikan path jika perlu (DetailNaskah?)
+// Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
+import DetailNaskah from '@/components/DetailNaskah.vue';
 
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
@@ -21,9 +23,24 @@ const { rejectKonsep } = useKonsep();
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
 
+// --- DEFINISI VARIABEL YANG HILANG (FIX ERROR DISINI) ---
+const targetHighlightId = computed(() => {
+  return (route.query.highlight_id as string) || (route.query.ref_id as string) || (route.params.id as string);
+});
+
+// --- STATE ---
+const details = ref<any[]>([]);
+const selected = ref<any>(null);
+const isLoading = ref(true);
+const isKonsepData = ref(false);
+
+// Helper Computed: Cek apakah data tunggal (untuk mematikan highlight)
+const isSingleData = computed(() => {
+  return !details.value || details.value.length <= 1;
+});
+
 // --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
-  // Cek apakah URL mengandung kata 'terkirim' atau query jenis adalah 'SK' (Surat Keluar)
   const path = route.path.toLowerCase();
   const jenis = (jenisQuery || '').toUpperCase();
   return path.includes('terkirim') || path.includes('keluar') || jenis === 'SK';
@@ -34,12 +51,6 @@ const breadcrumbs = [
   { label: isTerkirim.value ? "Surat Keluar" : "Kotak Masuk", to: isTerkirim.value ? "/korespondensi/surat-keluar" : "/korespondensi/kotak-masuk" },
   { label: "Detail Surat", to: "#" },
 ];
-
-// --- STATE ---
-const details = ref<any[]>([]);
-const selected = ref<any>(null);
-const isLoading = ref(true);
-const isKonsepData = ref(false);
 
 // Actions State
 const showEditAction = ref(false);
@@ -64,46 +75,86 @@ const isJenisDI = computed(() => {
   return j.toUpperCase() === "DI" || l.toUpperCase().includes("DISPOSISI");
 });
 
+// --- LOGIC HIGHLIGHT (Fixed) ---
 const isHighlighted = (detail: any) => {
-  const targetId = route.query.ref_id || route.query.highlight_id || route.params.id;
-  // Cek apakah ID detail cocok, atau jika ini kartu 'create' dan ID params cocok dengan Konsep ID
-  return String(detail.id) === String(targetId) ||
-    (detail.aksi === 'create' && String(targetId) === String(selected.value?.konsep?.id || id));
+  // 1. Guard: Jika data cuma satu, matikan highlight
+  if (isSingleData.value) return false;
+
+  const target = targetHighlightId.value;
+  if (!target) return false;
+
+  // 2. Cek ID Flow / Urutan
+  if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) {
+    return true;
+  }
+
+  // 3. Cek ID Konsep Utama (Highlight card 'create')
+  if (String(target) === String(id) && detail.aksi === 'create') {
+    return true;
+  }
+
+  return false;
 };
 
+// --- LOGIC SCROLL (Fixed) ---
 const scrollToTarget = async () => {
-  await nextTick(); // Tunggu DOM selesai dirender ulang
+  await nextTick();
 
-  // 1. Tentukan ID mana yang dicari
-  // Prioritas: Query Param (ref_id) -> URL Param (id utama)
-  const targetId = route.query.ref_id || route.query.highlight_id || route.params.id;
+  // 1. Guard: Jangan scroll jika data cuma 1
+  if (details.value.length <= 1) {
+    return;
+  }
 
+  const targetId = targetHighlightId.value;
   if (!targetId) return;
 
-  // 2. Cari data yang cocok di array 'details'
-  const foundDetail = details.value.find((d: any) => {
-    // a. Cek exact match pada ID flow
-    if (String(d.id) === String(targetId)) return true;
+  setTimeout(() => {
+    const foundDetail = details.value.find((d: any) => {
+      if (d.id && String(d.id) === String(targetId)) return true;
+      if (d.urutan && String(d.urutan) === String(targetId)) return true;
+      if (d.aksi === 'create' && String(targetId) === String(id)) return true;
+      return false;
+    });
 
-    // b. LOGIKA KHUSUS: Jika target adalah ID Konsep (dari URL utama),
-    // maka arahkan ke kartu 'create' (karena itu akar dari ID tersebut)
-    if (d.aksi === 'create' && String(targetId) === String(id)) return true;
+    if (foundDetail) {
+      const domId = foundDetail.id || foundDetail.urutan;
+      const element = document.getElementById(`card-${domId}`);
 
-    return false;
-  });
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  // 3. Jika ketemu, cari elemen HTML-nya dan scroll
-  if (foundDetail) {
-    const elementId = `card-${foundDetail.id || foundDetail.urutan}`;
-    const el = document.getElementById(elementId);
-
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Opsional: Hapus highlight setelah beberapa detik
-      // setTimeout(() => router.replace({ query: { ...route.query, ref_id: undefined } }), 2000);
+        // Efek ring manual via JS (Double protection)
+        if (details.value.length > 1) {
+          element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+          }, 2000);
+        }
+      }
     }
-  }
+  }, 500);
 };
+
+// --- LOGIC AKSES (NEW) ---
+const allowedActions = computed(() => {
+  if (isTerkirim.value) return [];
+
+  const tag = user.value?.bodTag;
+  const surat = selected.value?.jenis;
+
+  if (!tag) {
+    if (surat === 'DI') return ['KO'];
+    return [];
+  } else if (tag === 'BOD' || tag === 'BOD-1') {
+    if (surat === 'KA') return ['DI', 'ND'];
+    return ['DI', 'ND', 'SDI', 'SDE'];
+  } else if (tag === 'BOD-2' || tag === 'BOD-3') {
+    if (surat === 'DI') return ['DI', 'ND', 'KO'];
+    return ['DI', 'ND'];
+  }
+
+  return [];
+});
 
 // --- DATA FETCHING ---
 const loadData = async () => {
@@ -114,7 +165,7 @@ const loadData = async () => {
 
   try {
     if (jenisQuery === 'K') {
-      // === LOGIC KONSEP ===
+      // === KONSEP ===
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
       const konsepData = response?.data || response;
@@ -125,19 +176,25 @@ const loadData = async () => {
         const sortedFlows = [...rawFlows].sort((a: any, b: any) => b.urutan - a.urutan);
         const lastFlow = sortedFlows.length > 0 ? sortedFlows[0] : null;
 
-        // Logic Actions
         if (lastFlow) {
-          showEditAction.value = (lastFlow.aksi === 'reject' && String(lastFlow.from?.position_id) !== String(positionId.value));
+          const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
+          const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
+          const rejectorId = String(lastFlow.from?.position_id || lastFlow.from?.id || '');
+          showEditAction.value = (lastFlow.aksi === 'reject' && rejectorId !== myPosId);
 
-          let lastTargetId = null;
-          if (Array.isArray(lastFlow.to)) {
-            const found = lastFlow.to.find((t: any) => String(t.position_id) === String(positionId.value));
-            if (found) lastTargetId = positionId.value;
-          } else {
-            lastTargetId = lastFlow.to?.position_id;
+          let isTarget = false;
+          if (myPosId) {
+            if (Array.isArray(lastFlow.to)) {
+              isTarget = lastFlow.to.some((t: any) => {
+                const tId = String(t.position_id || t.id || '');
+                return tId == myPosId;
+              });
+            } else if (lastFlow.to) {
+              const tId = String(lastFlow.to.position_id || lastFlow.to.id || '');
+              isTarget = (tId == myPosId);
+            }
           }
-
-          showFinalizeActions.value = (String(lastTargetId) === String(positionId.value));
+          showFinalizeActions.value = isTarget;
         }
 
         details.value = sortedFlows.map((flow: any) => {
@@ -145,10 +202,8 @@ const loadData = async () => {
           if ((flow.aksi === 'create' || flow.aksi === 'forward') && !kontenText) {
             kontenText = konsepData.naskah?.konten || konsepData.naskah?.content?.konten || "";
           }
-
           let penerimaList: any[] = [];
           let tembusanList: any[] = [];
-
           if (flow.aksi === 'create' || flow.aksi === 'forward') {
             penerimaList = Array.isArray(konsepData.penerima) ? konsepData.penerima : (Array.isArray(konsepData.kepada) ? konsepData.kepada : []);
             tembusanList = Array.isArray(konsepData.tembusan) ? konsepData.tembusan : [];
@@ -156,11 +211,7 @@ const loadData = async () => {
             penerimaList = Array.isArray(flow.to) ? flow.to : (flow.to ? [flow.to] : []);
             tembusanList = flow.cc || [];
           }
-
-          let flowId = flow.id;
-          if (!flowId) {
-            flowId = flow.aksi === 'create' ? konsepData.konsep?.id : `flow-${flow.urutan}`;
-          }
+          let flowId = flow.id || (flow.aksi === 'create' ? konsepData.konsep?.id : `flow-${flow.urutan}`);
 
           return {
             id: flowId,
@@ -185,7 +236,7 @@ const loadData = async () => {
         });
       }
     } else {
-      // === LOGIC SURAT MASUK/DISPOSISI/TERKIRIM ===
+      // === SURAT MASUK / KELUAR ===
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
       const rawData = response?.data || response;
@@ -206,7 +257,6 @@ const loadData = async () => {
             if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
             else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
           }
-
           if (listPenerima.length === 0 && item.detail?.kepada_yth) {
             listPenerima = item.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
           }
@@ -214,7 +264,6 @@ const loadData = async () => {
           let listTembusan: any[] = [];
           if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
           else if (Array.isArray(item.cc)) listTembusan = item.cc;
-
           if (listTembusan.length === 0) {
             if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
             else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
@@ -245,36 +294,27 @@ const loadData = async () => {
     console.error("❌ Error loading data", e);
   } finally {
     isLoading.value = false;
-    scrollToTarget();
+    scrollToTarget(); // Fungsi ini aman dijalankan karena sudah ada guard di dalamnya
   }
 };
 
 onMounted(() => { loadData(); });
 
-// --- ACTIONS HANDLERS ---
+// --- ACTION HANDLERS (Sama seperti sebelumnya) ---
 const goBack = () => router.back();
-
 const handleFinalize = () => { showFinalizeOptionsModal.value = true; };
 const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true; };
-
 const handleFinalizeAndRedirect = () => {
   showFinalizeOptionsModal.value = false;
   if (selected.value?.id) {
-    router.push({
-      path: '/korespondensi/tulis/finalisasi/nota-dinas',
-      query: { ref_id: selected.value.id, action: 'finalize' }
-    });
+    router.push({ path: '/korespondensi/tulis/finalisasi/nota-dinas', query: { ref_id: selected.value.id, action: 'finalize' } });
   }
 };
-
 const handleConfirmReject = async () => {
   if (!rejectNote.value.trim()) return alert("Mohon isi catatan penolakan.");
   isRejecting.value = true;
   try {
-    const payload = {
-      from_position_id: selected.value?.pengirim?.position_id,
-      catatan: rejectNote.value
-    };
+    const payload = { from_position_id: selected.value?.pengirim?.position_id, catatan: rejectNote.value };
     const res = await rejectKonsep(selected.value.id, payload);
     if (res && res.success) {
       showRejectModal.value = false;
@@ -290,37 +330,20 @@ const handleConfirmReject = async () => {
     isRejecting.value = false;
   }
 };
-
-const handleEditKonsep = () => {
-  if (selected.value?.id) {
-    router.push({ path: '/korespondensi/tulis/konsep/nota-dinas', query: { ref_id: selected.value.id, action: 'edit' } });
-  }
-};
-
+const handleEditKonsep = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/nota-dinas', query: { ref_id: selected.value.id, action: 'edit' } }); };
 const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/nota-dinas', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
+const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
+const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
 const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
-
-// Preview Handlers
 const openDocumentPreview = async (url: string, title = "Dokumen") => {
   if (!url) { alert("URL tidak valid."); return; }
-  previewTitle.value = title;
-  isPreviewOpen.value = true;
-  isLocalPdfLoading.value = true;
-  activePdfUrl.value = null;
+  previewTitle.value = title; isPreviewOpen.value = true; isLocalPdfLoading.value = true; activePdfUrl.value = null;
   try {
-    const response = await fetch(url);
-    const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
-    activePdfUrl.value = URL.createObjectURL(blob);
-  } catch (error) {
-    activePdfUrl.value = url;
-  } finally {
-    isLocalPdfLoading.value = false;
-  }
+    const response = await fetch(url); const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' }); activePdfUrl.value = URL.createObjectURL(blob);
+  } catch (error) { activePdfUrl.value = url; } finally { isLocalPdfLoading.value = false; }
 };
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
-
-// Options Data
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600' },
   { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
@@ -345,10 +368,12 @@ const konsepOptions = [
       </div>
     </div>
 
+
     <template v-else-if="details && details.length > 0">
-      <div v-for="(detail, index) in details" :key="detail.id || index"
-        :id="`card-${detail.id || detail.urutan || index}`" class="transition-all duration-500 scroll-mt-24"
-        :class="{ 'ring-2 ring-primary-200 rounded-xl mt-5': isHighlighted(detail) }">
+      <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
+        :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
+          'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
+        }">
 
         <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
