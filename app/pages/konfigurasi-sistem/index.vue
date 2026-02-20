@@ -90,16 +90,6 @@
               </button>
             </div>
           </div>
-
-          <div class="pt-5 flex justify-end">
-            <button
-              @click="saveDigsig"
-              class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
-            >
-              <Save class="w-4 h-4" />
-              Simpan Konfigurasi
-            </button>
-          </div>
         </div>
 
         <!-- ===================== TAB: PENGUMUMAN ===================== -->

@@ -158,7 +158,7 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>Jenis Naskah</span>
+                    <span>Naskah</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[

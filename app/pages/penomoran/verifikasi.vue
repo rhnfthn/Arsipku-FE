@@ -334,9 +334,6 @@
           >
             {{ selectedRow?.perihal || "-" }}
           </h2>
-          <!-- <span class="text-sm text-gray-500 dark:text-gray-400">
-            {{ formatDateTime(new Date()) }}
-          </span> -->
         </div>
       </template>
 
@@ -411,11 +408,102 @@
 
         <!-- Nomor Surat Section -->
         <div class="mt-4">
-          <label
-            class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
+          <!-- Header: Label + Tolak Semua toggle -->
+          <div class="flex items-center justify-between mb-3">
+            <label
+              class="text-xs font-medium text-gray-700 dark:text-gray-300 break-words"
+            >
+              Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
+            </label>
+
+            <!-- Uncheck All toggle -->
+            <label
+              class="flex items-center gap-2 cursor-pointer select-none group"
+            >
+              <div class="relative">
+                <input
+                  type="checkbox"
+                  v-model="uncheckAll"
+                  @change="toggleUncheckAll"
+                  class="sr-only peer"
+                />
+                <div
+                  class="w-9 h-5 rounded-full transition-colors duration-200 peer-checked:bg-red-500 bg-gray-300 dark:bg-gray-600 peer-disabled:opacity-50"
+                ></div>
+                <div
+                  class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 peer-checked:translate-x-4"
+                ></div>
+              </div>
+              <span
+                :class="[
+                  'text-xs font-medium transition-colors duration-200',
+                  uncheckAll
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-500 dark:text-gray-400',
+                ]"
+              >
+                Tolak Semua
+              </span>
+            </label>
+          </div>
+
+          <!-- Warning: ada sebagian uncheck tapi tidak semua -->
+          <div
+            v-if="hasUnchecked && !allUnchecked"
+            class="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2"
           >
-            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
-          </label>
+            <svg
+              class="w-4 h-4 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div class="text-xs text-orange-800 dark:text-orange-300">
+              <p class="font-medium">
+                {{ uncheckedCount }} nomor tidak akan digenerate
+              </p>
+              <p class="mt-0.5 text-orange-700 dark:text-orange-400">
+                Nomor yang tidak dicentang statusnya akan tetap
+                <strong>Booking</strong> dan tidak digenerate. Untuk menolak
+                semua nomor, gunakan toggle "Tolak Semua".
+              </p>
+            </div>
+          </div>
+
+          <!-- Warning: semua di-uncheck (mode tolak semua) -->
+          <div
+            v-if="allUnchecked && validDetails.length > 0"
+            class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2"
+          >
+            <svg
+              class="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div class="text-xs text-red-800 dark:text-red-300">
+              <p class="font-medium">Semua nomor akan ditolak</p>
+              <p class="mt-0.5 text-red-700 dark:text-red-400">
+                Seluruh {{ validDetails.length }} nomor akan berstatus
+                <strong>Ditolak</strong>. Pastikan keterangan penolakan diisi
+                sebelum melanjutkan.
+              </p>
+            </div>
+          </div>
 
           <!-- Warning jika ada nomor tanpa ID -->
           <div
@@ -454,7 +542,7 @@
               :key="detail.id || idx"
               class="space-y-2"
             >
-              <!-- ✅ Card: abu-abu + opacity jika hangus -->
+              <!-- Card: abu-abu + opacity jika hangus -->
               <div
                 :class="[
                   'border rounded-lg p-4 mt-2 transition',
@@ -465,7 +553,7 @@
               >
                 <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
-                  <!-- ✅ Checkbox: disabled jika hangus -->
+                  <!-- Checkbox: disabled jika hangus / terpakai / ditolak -->
                   <input
                     type="checkbox"
                     v-model="detail.checked"
@@ -497,7 +585,7 @@
                       readonly
                     />
 
-                    <!-- ✅ Copy button: sembunyikan jika hangus -->
+                    <!-- Copy button: hanya jika terpakai -->
                     <button
                       v-if="
                         detail.nomor &&
@@ -537,11 +625,10 @@
                   </div>
                 </div>
 
-                <!-- ✅ FILE SECTION -->
+                <!-- FILE SECTION -->
                 <div class="relative">
-                  <!-- ✅ HANGUS: tampilkan file jika ada (read-only, greyed), atau indikator hangus -->
+                  <!-- HANGUS -->
                   <template v-if="detail.status === 'hangus'">
-                    <!-- Ada file → tampil tapi greyed out + strikethrough, tidak bisa diklik -->
                     <div
                       v-if="hasExistingFile(detail)"
                       class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg p-3"
@@ -574,7 +661,6 @@
                         </div>
                       </div>
                     </div>
-                    <!-- Tidak ada file → indikator hangus -->
                     <div
                       v-else
                       class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-3"
@@ -600,7 +686,7 @@
                     </div>
                   </template>
 
-                  <!-- ✅ Ada file (bukan hangus) & tidak sedang replace → tampilkan file clickable -->
+                  <!-- Ada file (bukan hangus) & tidak sedang replace -->
                   <div
                     v-else-if="
                       hasExistingFile(detail) && !fileStates[idx]?.isReplacing
@@ -662,7 +748,7 @@
                     </div>
                   </div>
 
-                  <!-- ✅ File baru dipilih (local, belum upload) & tidak replacing -->
+                  <!-- File baru dipilih (local, belum upload) & tidak replacing -->
                   <div
                     v-else-if="
                       (fileStates[idx]?.file || files[idx]) &&
@@ -730,7 +816,7 @@
                     </div>
                   </div>
 
-                  <!-- ✅ Upload form (tidak ada file / sedang replacing) -->
+                  <!-- Upload form (tidak ada file / sedang replacing) -->
                   <div v-else>
                     <label
                       class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
@@ -780,12 +866,19 @@
           </div>
         </div>
 
-        <!-- ✅ Keterangan Penolakan: muncul jika ada yang tidak di-check -->
-        <div v-if="hasUnchecked" class="pt-2">
+        <!-- Keterangan Penolakan: muncul jika allUnchecked atau hasUnchecked -->
+        <div v-if="allUnchecked || hasUnchecked" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
           >
-            Keterangan Penolakan <span class="text-red-500">*</span>
+            Keterangan Penolakan
+            <span class="text-red-500">*</span>
+            <span
+              v-if="!allUnchecked"
+              class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
+            >
+              (untuk nomor yang tidak dicentang)
+            </span>
           </label>
           <textarea
             v-model="keterangan_ditolak"
@@ -809,7 +902,7 @@
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            Keterangan penolakan wajib diisi sebelum menyetujui atau menolak
+            Keterangan penolakan wajib diisi
           </p>
         </div>
       </div>
@@ -819,7 +912,7 @@
         <div
           class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
         >
-          <!-- Tombol Disetujui -->
+          <!-- Tombol Disetujui: aktif jika ada yang dicentang (tidak semua uncheck) -->
           <button
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
@@ -849,10 +942,10 @@
             {{ isProcessing ? "Memproses..." : "Nomor Disetujui" }}
           </button>
 
-          <!-- Tombol Ditolak -->
+          <!-- Tombol Ditolak: HANYA aktif jika SEMUA nomor di-uncheck -->
           <button
             @click="confirmRejection"
-            :disabled="isProcessing || !hasUnchecked"
+            :disabled="isProcessing || !allUnchecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             Nomor Ditolak
@@ -862,7 +955,7 @@
     </Modal>
   </Teleport>
 
-  <!-- ✅ PREVIEW SLIDEOVER - pakai file_url langsung (pre-signed S3) -->
+  <!-- PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
     title="Pratinjau"
@@ -910,7 +1003,7 @@
   <ConfirmPopup
     v-model="showConfirmReject"
     title="Konfirmasi Penolakan"
-    :description="`Apakah Anda yakin ingin menolak ${uncheckedCount} nomor yang tidak dipilih?`"
+    :description="`Apakah Anda yakin ingin menolak semua ${uncheckedCount} nomor?`"
     confirmText="Ya, Tolak"
     cancelText="Batal"
     @confirm="processRejection"
@@ -976,7 +1069,7 @@ const headers = [
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
 
-// State
+// ─── State ───────────────────────────────────────
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const rowsPerPage = ref<number>(10);
@@ -1000,6 +1093,9 @@ const rows = ref<any[]>([]);
 const pagination = ref(null);
 const loading = ref(false);
 const files = ref<any[]>([]);
+
+// Toggle "Tolak Semua"
+const uncheckAll = ref(false);
 
 interface FileState {
   isReplacing: boolean;
@@ -1140,6 +1236,7 @@ const showPreview = async (row: any) => {
     fileStates.value = {};
     keterangan_ditolak.value = "";
     showKeteranganWarning.value = false;
+    uncheckAll.value = false;
     openPreview.value = true;
   } catch (error) {
     console.error("❌ Error fetch detail:", error);
@@ -1147,8 +1244,48 @@ const showPreview = async (row: any) => {
 };
 
 /* ===========================
+ * TOGGLE UNCHECK ALL
+ * Mencentang/uncheck semua detail yang valid
+ * =========================== */
+const toggleUncheckAll = () => {
+  if (!selectedRow.value?.details) return;
+  selectedRow.value.details.forEach((d: any) => {
+    if (
+      d.status !== "hangus" &&
+      d.status !== "terpakai" &&
+      d.status !== "terpakai_final" &&
+      d.status !== "ditolak"
+    ) {
+      // jika uncheckAll true → semua unchecked (d.checked = false)
+      // jika uncheckAll false → semua checked (d.checked = true)
+      d.checked = !uncheckAll.value;
+    }
+  });
+};
+
+/* Watch manual checkbox changes → sync uncheckAll toggle */
+watch(
+  () => selectedRow.value?.details,
+  (details) => {
+    if (!details) return;
+    const valid = details.filter(
+      (d: any) =>
+        d.status !== "hangus" &&
+        d.status !== "terpakai" &&
+        d.status !== "terpakai_final" &&
+        d.status !== "ditolak",
+    );
+    if (valid.length === 0) {
+      uncheckAll.value = false;
+      return;
+    }
+    uncheckAll.value = valid.every((d: any) => !d.checked);
+  },
+  { deep: true },
+);
+
+/* ===========================
  * PREVIEW FILE
- * ✅ Langsung pakai file_url (pre-signed S3), tidak perlu fetch/blob
  * =========================== */
 const previewFile = (detail: any) => {
   const url =
@@ -1160,7 +1297,6 @@ const previewFile = (detail: any) => {
     return;
   }
 
-  // ✅ Langsung set URL, tidak perlu fetch/blob
   pdfUrl.value = url;
   isOpenPreview.value = true;
 };
@@ -1214,7 +1350,6 @@ const displayNomor = (detail: any) => {
   return "-";
 };
 
-/* ✅ Status label: terpakai_final → "Final" */
 const getStatusLabel = (status: string) => {
   const statusMap: Record<string, string> = {
     pending: "Pending",
@@ -1258,7 +1393,7 @@ const formatFileSize = (bytes: number) => {
 };
 
 /* ===========================
- * COMPUTED - VALIDASI
+ * COMPUTED — VALIDASI
  * =========================== */
 const validDetails = computed(() => {
   return (selectedRow.value?.details || []).filter(
@@ -1271,11 +1406,21 @@ const validDetails = computed(() => {
   );
 });
 
+// Ada minimal 1 yang dicentang
 const hasAnyChecked = computed(() =>
   validDetails.value.some((d: any) => d.checked),
 );
+
+// Ada yang tidak dicentang (sebagian atau semua)
 const hasUnchecked = computed(() =>
   validDetails.value.some((d: any) => !d.checked),
+);
+
+// SEMUA tidak dicentang → button "Ditolak" aktif
+const allUnchecked = computed(
+  () =>
+    validDetails.value.length > 0 &&
+    validDetails.value.every((d: any) => !d.checked),
 );
 
 const checkedCount = computed(
@@ -1287,7 +1432,7 @@ const uncheckedCount = computed(
 
 /* ===========================
  * CONFIRM APPROVAL
- * ✅ Blok jika ada unchecked tapi keterangan belum diisi
+ * Blok jika ada unchecked tapi keterangan belum diisi
  * =========================== */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
@@ -1295,7 +1440,7 @@ const confirmApproval = () => {
     return;
   }
 
-  // ✅ Jika ada yang unchecked (akan ditolak), keterangan WAJIB diisi dulu
+  // Jika ada yang unchecked (sebagian), keterangan WAJIB diisi
   if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
     showToastKeteranganRequired(uncheckedCount.value);
@@ -1313,7 +1458,6 @@ const confirmApproval = () => {
 
 /* ===========================
  * PROCESS APPROVAL
- * ✅ Toast menampilkan jumlah approved + rejected
  * =========================== */
 const processApproval = async () => {
   showConfirmApprove.value = false;
@@ -1330,11 +1474,10 @@ const processApproval = async () => {
   isProcessing.value = true;
 
   try {
-    // Approve yang dicentang
     const detailIds = approvedDetails.map((d: any) => d.id);
     await approveBulkNomor(detailIds);
 
-    // ✅ Jika ada yang unchecked, tolak juga sekaligus
+    // Jika ada yang unchecked, tolak juga sekaligus
     if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
       const rejectedIds = rejectedDetails.map((d: any) => d.id);
       await rejectNomorRequest(
@@ -1344,7 +1487,6 @@ const processApproval = async () => {
       );
     }
 
-    // ✅ Toast yang benar: tampilkan approved + rejected
     const approvedCount = approvedDetails.length;
     const rejectedCount = rejectedDetails.length;
     showToastApprovalSuccess(approvedCount, rejectedCount);
@@ -1360,10 +1502,11 @@ const processApproval = async () => {
 
 /* ===========================
  * CONFIRM REJECTION
+ * Hanya aktif jika SEMUA uncheck
  * =========================== */
 const confirmRejection = () => {
-  if (!hasUnchecked.value) {
-    showToastTidakAdaYangDitolak();
+  if (!allUnchecked.value) {
+    // Tidak seharusnya sampai sini karena button disabled, tapi jaga-jaga
     return;
   }
 
@@ -1421,11 +1564,6 @@ const processRejection = async () => {
   }
 };
 
-function formatDateTime(dateStr: string | Date) {
-  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return `${date.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" })} ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
-}
-
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
@@ -1443,7 +1581,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
   if (searchTimeout) clearTimeout(searchTimeout);
-  // ✅ Tidak perlu revokeObjectURL karena pdfUrl adalah pre-signed S3 URL
   pdfUrl.value = null;
 });
 
@@ -1466,13 +1603,11 @@ watch(keterangan_ditolak, (newValue) => {
   if (newValue.trim()) showKeteranganWarning.value = false;
 });
 
-// ✅ Saat slideover dibuka, tutup modal detail
 // Saat slideover ditutup, buka kembali modal detail
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false;
   } else {
-    // ✅ Tidak perlu revokeObjectURL karena bukan blob URL
     pdfUrl.value = null;
     if (selectedRow.value) {
       openPreview.value = true;
