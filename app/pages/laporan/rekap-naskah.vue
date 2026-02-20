@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center justify-between pt-5">
     <div>
-      <Heading variant="heading6b" class="text-mobile-md">
+      <Heading variant="heading6b" class="text-mobile-md dark:text-white">
         Rekap Naskah Dinas
       </Heading>
       <PageHeader :items="breadcrumbs" />
@@ -17,26 +17,31 @@
   </div>
 
   <div
-    class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white"
+    class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
   >
-    <div class="top-0 bg-white p-3 relative z-50">
+    <!-- FILTER BAR -->
+    <div class="top-0 bg-white dark:bg-gray-800 p-3 relative z-50">
       <div class="flex items-center gap-2 flex-nowrap w-full">
+        <!-- ROWS PER PAGE -->
         <select
           v-model="rowsPerPage"
-          class="h-8 text-sm border border-gray-300 bg-white rounded-md px-2"
+          class="h-8 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md px-2"
         >
           <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
             {{ n }}
           </option>
         </select>
-        <!-- Refresh -->
+
+        <!-- REFRESH -->
         <button
           @click="refreshData"
           :disabled="loading"
-          class="p-1.5 hover:bg-gray-100 rounded-md text-gray-500"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400"
         >
           <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
+
+        <!-- JENIS FILTER -->
         <div class="relative w-[160px] shrink-0">
           <input
             v-model="jenisSearch"
@@ -44,47 +49,40 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Jenis"
-            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
           />
-
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
             :class="{ 'rotate-180': openDropdown === 'type' }"
           />
-
-          <!-- DROPDOWN LIST -->
           <div
             v-if="openDropdown === 'type'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
-            <!-- RESET -->
             <button
               @click="selectJenis(null)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               Semua Jenis
             </button>
-
-            <!-- OPTIONS -->
             <button
               v-for="item in filteredJenisOptions"
               :key="item.id"
               @click="selectJenis(item)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               {{ item.jenis_text }}
             </button>
-
-            <!-- EMPTY -->
             <div
               v-if="filteredJenisOptions.length === 0"
-              class="px-3 py-2 text-sm text-gray-400 italic"
+              class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
             >
               Data tidak ditemukan
             </div>
           </div>
         </div>
 
+        <!-- LOKASI FILTER -->
         <div class="relative w-[160px] shrink-0">
           <input
             v-model="lokasiSearch"
@@ -92,39 +90,33 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Lokasi"
-            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 pr-7 focus:outline-none placeholder:text-black truncate"
+            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
           />
-
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
             :class="{ 'rotate-180': openDropdown === 'lokasi' }"
           />
-
           <div
             v-if="openDropdown === 'lokasi'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <button
               @click="selectLokasi(null)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               Semua Lokasi
             </button>
-
-            <!-- OPTIONS -->
             <button
               v-for="item in filteredLokasiOptions"
               :key="item.value"
               @click="selectLokasi(item)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               {{ item.label }}
             </button>
-
-            <!-- EMPTY -->
             <div
               v-if="filteredLokasiOptions.length === 0"
-              class="px-3 py-2 text-sm text-gray-400 italic"
+              class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
             >
               Data tidak ditemukan
             </div>
@@ -133,16 +125,16 @@
 
         <!-- STATUS FILTER -->
         <div class="relative w-[180px] shrink-0">
-          <!-- INPUT LOOKALIKE -->
           <div
             @click="toggle('status')"
-            class="h-8 w-full px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+            class="h-8 w-full px-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
           >
-            <!-- PLACEHOLDER -->
-            <span v-if="!selectedStatuses.length" class="text-black truncate">
+            <span
+              v-if="!selectedStatuses.length"
+              class="text-black dark:text-white truncate"
+            >
               Semua Status
             </span>
-
             <div
               v-else
               class="flex items-center gap-1 flex-nowrap overflow-hidden"
@@ -150,7 +142,7 @@
               <span
                 v-for="status in selectedStatuses"
                 :key="status"
-                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary text-[10px] whitespace-nowrap"
+                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
               >
                 {{ statusOptions.find((s) => s.value === status)?.label }}
                 <button
@@ -161,17 +153,14 @@
                 </button>
               </span>
             </div>
-
             <ChevronDown
-              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'status' }"
             />
           </div>
-
-          <!-- DROPDOWN -->
           <div
             v-if="openDropdown === 'status'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full p-2"
+            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full p-2"
           >
             <div class="flex flex-col gap-1">
               <button
@@ -183,7 +172,7 @@
                 :class="
                   selectedStatuses.includes(status.value)
                     ? 'bg-primary text-white'
-                    : 'hover:bg-gray-100'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100'
                 "
               >
                 {{ status.label }}
@@ -196,29 +185,27 @@
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
           >
             <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
             <ChevronDown
-              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform duration-200"
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'month' }"
             />
           </button>
-
           <div
             v-if="openDropdown === 'month'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <button
               @click="
                 selectedMonth = '';
                 openDropdown = null;
               "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               Semua Bulan
             </button>
-
             <button
               v-for="bulan in monthOptions"
               :key="bulan.value"
@@ -226,7 +213,7 @@
                 selectedMonth = bulan.value;
                 openDropdown = null;
               "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               {{ bulan.label }}
             </button>
@@ -237,7 +224,7 @@
         <div class="relative">
           <button
             @click="toggle('year')"
-            class="h-8 px-2 text-sm bg-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
           >
             <span>{{ selectedYear || "Semua Tahun" }}</span>
             <ChevronDown
@@ -245,10 +232,9 @@
               :class="{ 'rotate-180': openDropdown === 'year' }"
             />
           </button>
-
           <div
             v-if="openDropdown === 'year'"
-            class="absolute z-[999] mt-1 bg-white rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
+            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
           >
             <button
               v-for="tahun in yearOptions"
@@ -257,7 +243,7 @@
                 selectedYear = tahun;
                 openDropdown = null;
               "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
               {{ tahun }}
             </button>
@@ -265,13 +251,15 @@
         </div>
       </div>
     </div>
+
+    <!-- TABLE -->
     <div class="max-h-[70vh] overflow-y-auto">
       <div class="overflow-x-auto">
-        <table class="text-center">
-          <thead class="bg-primary-400">
-            <tr class="bg-primary-400 text-white">
+        <table class="text-center w-full">
+          <thead>
+            <tr class="bg-primary-400 dark:bg-primary-700 text-white">
               <th
-                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm w-[350px] text-start"
+                class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm w-[350px] text-start"
               >
                 Naskah
               </th>
@@ -279,60 +267,64 @@
                 <th
                   v-for="bulan in monthOptions"
                   :key="bulan.value"
-                  class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                  class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm"
                 >
                   {{ bulan.label }}
                 </th>
               </template>
-
               <template v-else>
                 <th
-                  class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                  class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm"
                 >
                   {{ selectedMonthLabel }}
                 </th>
               </template>
-
               <th
-                class="px-4 py-3 border-b-2 font-semibold border-b-gray-100 font-medium text-sm"
+                class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm"
               >
                 Jumlah
               </th>
               <th
-                class="px-4 py-3 border-b-2 font-semibold text-sm sticky right-0 z-20 bg-primary-400 min-w-[140px]"
+                class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm sticky right-0 z-20 bg-primary-400 dark:bg-primary-700 min-w-[140px]"
               >
                 Status
               </th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody class="bg-white dark:bg-gray-800">
+            <!-- LOADING -->
             <tr v-if="loading">
               <td :colspan="tableColCount" class="px-4 py-6">
                 <div class="space-y-4 animate-pulse">
                   <div
                     v-for="n in skeletonRows"
                     :key="'skeleton-' + n"
-                    class="h-14 w-full rounded-lg bg-gray-200"
+                    class="h-14 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
                   />
                 </div>
               </td>
             </tr>
 
+            <!-- EMPTY -->
             <tr v-else-if="!filteredTableData.length">
-              <td :colspan="tableColCount" class="py-8 text-gray-400 text-sm">
+              <td
+                :colspan="tableColCount"
+                class="py-8 text-gray-400 dark:text-gray-500 text-sm"
+              >
                 Tidak ada data
               </td>
             </tr>
 
+            <!-- DATA ROWS -->
             <tr
               v-else
               v-for="row in paginatedTableData"
               :key="row.id"
-              class="hover:bg-blue-50"
+              class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700"
             >
               <td
-                class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible"
+                class="px-4 py-3 text-sm text-start max-w-[350px] whitespace-nowrap overflow-x-visible text-gray-900 dark:text-gray-100"
               >
                 {{ row.naskah }}
               </td>
@@ -341,23 +333,25 @@
                 <td
                   v-for="bulan in monthOptions"
                   :key="bulan.value"
-                  class="px-4 py-3 text-sm"
+                  class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
                 >
                   {{ row[bulan.value] || "-" }}
                 </td>
               </template>
-
               <template v-else>
-                <td class="px-4 py-3 text-sm">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                   {{ row[selectedMonth] || "-" }}
                 </td>
               </template>
 
-              <td class="px-4 py-3 font-bold text-sm text-gray-900">
+              <td
+                class="px-4 py-3 font-bold text-sm text-gray-900 dark:text-gray-100"
+              >
                 {{ row.jumlah }}
               </td>
+
               <td
-                class="bg-white px-4 py-3 text-sm sticky right-0 z-10 min-w-[140px] shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
+                class="bg-white dark:bg-gray-800 px-4 py-3 text-sm sticky right-0 z-10 min-w-[140px] shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.4)]"
               >
                 <span
                   class="px-2 py-1 rounded-full text-xs font-semibold capitalize"
@@ -371,12 +365,13 @@
         </table>
       </div>
     </div>
+
     <!-- PAGINATION -->
     <div
       v-if="totalItems > 0"
-      class="flex items-center justify-between px-4 py-4"
+      class="flex items-center justify-between px-4 py-4 border-t border-gray-100 dark:border-gray-700"
     >
-      <div class="text-xs text-gray-600">
+      <div class="text-xs text-gray-600 dark:text-gray-400">
         Menampilkan {{ paginatedTableData.length }} dari {{ totalItems }} data
       </div>
 
@@ -388,8 +383,8 @@
           :class="[
             'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
             currentPage === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-primary border border-primary hover:bg-primary-50',
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
           ]"
         >
           Sebelumnya
@@ -400,12 +395,15 @@
           <button
             v-if="paginationPages[0] > 1"
             @click="currentPage = 1"
-            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100"
+            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
           >
             1
           </button>
 
-          <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400">
+          <span
+            v-if="paginationPages[0] > 2"
+            class="px-2 text-gray-400 dark:text-gray-500"
+          >
             ...
           </span>
 
@@ -417,7 +415,7 @@
               'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium',
               currentPage === page
                 ? 'bg-primary text-white'
-                : 'bg-gray-100 hover:bg-primary-50',
+                : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300',
             ]"
           >
             {{ page }}
@@ -425,7 +423,7 @@
 
           <span
             v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
-            class="px-2 text-gray-400"
+            class="px-2 text-gray-400 dark:text-gray-500"
           >
             ...
           </span>
@@ -433,7 +431,7 @@
           <button
             v-if="paginationPages[paginationPages.length - 1] < totalPages"
             @click="currentPage = totalPages"
-            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100"
+            class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
           >
             {{ totalPages }}
           </button>
@@ -446,8 +444,8 @@
           :class="[
             'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
             currentPage === totalPages
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-primary border border-primary hover:bg-primary-50',
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
           ]"
         >
           Selanjutnya
@@ -476,41 +474,38 @@ const breadcrumbs = [
 ];
 
 const getStatusClass = (status: string) => {
-  if (status === "terpakai") return "bg-green-100 text-green-700";
-  if (status === "terpakai_final") return "bg-green-200 text-green-700";
-  if (status === "booking") return "bg-blue-100 text-blue-700";
-  return "bg-red-100 text-red-700";
+  if (status === "terpakai")
+    return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300";
+  if (status === "terpakai_final")
+    return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300";
+  if (status === "booking")
+    return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300";
+  return "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
 };
 
 //STATE
-
-// filter utama
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref("");
 const selectedType = ref("");
 const selectedArea = ref("");
 const selectedStatuses = ref<string[]>([]);
 
-// dropdown & search
 const openDropdown = ref<null | string>(null);
 const openFilterLokasi = ref(false);
 const searchLokasi = ref("");
 const lokasiSearch = ref("");
 const jenisSearch = ref("");
 
-// pagination
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsPerPageOptions = [5, 10, 20, 50];
 
-// data
 const rekapData = ref<any[]>([]);
 const areaOptions = ref<{ label: string; value: string }[]>([]);
 const jenisOptions = ref<any[]>([]);
 const loading = ref(false);
 
 //COMPUTED
-
 const yearOptions = computed(() => {
   const y = new Date().getFullYear();
   return [y, y - 1, y - 2];
@@ -538,17 +533,9 @@ const statusOptions = [
   { label: "Booking", value: "booking" },
 ];
 
-const selectedMonthLabel = computed(() => {
-  return monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "";
-});
-
-const selectedTypeLabel = computed(() => {
-  if (!selectedType.value) return "Semua Jenis";
-  return (
-    jenisOptions.value.find((j) => j.jenis === selectedType.value)
-      ?.jenis_text ?? "Semua Jenis"
-  );
-});
+const selectedMonthLabel = computed(
+  () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
+);
 
 //FILTERING
 const filteredJenisOptions = computed(() => {
@@ -576,7 +563,6 @@ const filteredTableData = computed(() => {
     const jenisText = jenisOptions.value.find(
       (j) => j.jenis === selectedType.value,
     )?.jenis_text;
-
     data = data.filter((row) => row.naskah === jenisText);
   }
 
@@ -585,41 +571,33 @@ const filteredTableData = computed(() => {
 
 //PAGINATION
 const totalItems = computed(() => filteredTableData.value.length);
-
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
-
 const paginatedTableData = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredTableData.value.slice(start, start + rowsPerPage.value);
 });
-
 const paginationPages = computed(() => {
   const windowSize = 5;
   const pages: number[] = [];
-
   let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2));
   let end = start + windowSize - 1;
-
   if (end > totalPages.value) {
     end = totalPages.value;
     start = Math.max(1, end - windowSize + 1);
   }
-
   for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 });
 
 //WATCH
 watch(rowsPerPage, () => (currentPage.value = 1));
-
 watch(
   [selectedYear, selectedArea, selectedStatuses, selectedType, selectedMonth],
   () => (currentPage.value = 1),
   { deep: true },
 );
-
 watch(selectedType, (val) => {
   if (!val) {
     jenisSearch.value = "";
@@ -634,14 +612,12 @@ const fetchRekap = async () => {
   loading.value = true;
   try {
     const params: any = { tahun: selectedYear.value };
-
     if (selectedArea.value) params.area = selectedArea.value;
     if (selectedStatuses.value.length === 1)
       params.status = selectedStatuses.value[0];
     if (selectedType.value) params.jenis = selectedType.value;
 
     const res = await getRekapNaskah(params);
-
     rekapData.value = res.data.rekap.map((item: any, idx: number) => ({
       id: idx,
       naskah: item.jenis_text,
@@ -668,7 +644,6 @@ const fetchRekap = async () => {
 const fetchArea = async () => {
   const res = await getAreaList();
   const raw = res?.data?.data || res?.data || [];
-
   areaOptions.value = raw.map((item: any) => ({
     label: item.longText,
     value: item.area,
@@ -733,10 +708,8 @@ const exportExcel = () => {
 
   try {
     const rows: any[] = [];
-
     filteredTableData.value.forEach((row) => {
       const baseRow: any = { Naskah: row.naskah };
-
       if (selectedMonth.value) {
         baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
       } else {
@@ -744,7 +717,6 @@ const exportExcel = () => {
           baseRow[b.label] = row[b.value] ?? 0;
         });
       }
-
       baseRow["Jumlah"] = row.jumlah;
       baseRow["Status"] = formatStatusLabel(row.status);
       rows.push(baseRow);
@@ -753,7 +725,6 @@ const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Rekap");
-
     const fileName = `rekap-naskah-${selectedYear.value}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
@@ -765,7 +736,6 @@ const exportExcel = () => {
     });
   } catch (error) {
     console.error(error);
-
     toast.add({
       title: "Export gagal",
       description: "Terjadi kesalahan saat membuat file Excel",
@@ -775,7 +745,7 @@ const exportExcel = () => {
   }
 };
 
-//LIFECYLE
+//LIFECYCLE
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (!target.closest(".relative")) {
@@ -803,7 +773,6 @@ const refreshData = async () => {
   selectedStatuses.value = [];
   selectedArea.value = "";
   selectedYear.value = new Date().getFullYear();
-
   await fetchRekap();
 };
 
@@ -812,13 +781,10 @@ const tableColCount = computed(() => {
   return 1 + monthOptions.length + 2;
 });
 
-const skeletonRows = computed(() => {
-  return selectedMonth.value ? 4 : 6;
-});
+const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6));
 
 const formatStatusLabel = (status: string) => {
   if (!status) return "-";
-
   const found = statusOptions.find((s) => s.value === status);
   return found?.label ?? status;
 };

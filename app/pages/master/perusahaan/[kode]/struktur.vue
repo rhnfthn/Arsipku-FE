@@ -12,6 +12,15 @@
             class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400"
           >
             <NuxtLink
+              to="/beranda"
+              class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
+            >
+              Beranda
+            </NuxtLink>
+            <span class="mx-1.5 text-gray-400 dark:text-gray-500 text-xs"
+              >/</span
+            >
+            <NuxtLink
               to="/master/perusahaan"
               class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
             >
@@ -181,11 +190,6 @@
                   {{ formatDate(company.tanggalBerakhir) }}
                 </p>
               </div>
-              <span
-                class="px-3 py-1 bg-white/20 rounded-lg text-xs font-medium"
-              >
-                KP
-              </span>
             </div>
             <div class="flex items-center gap-2">
               <button
@@ -289,7 +293,7 @@
             <input
               v-model="formUnit.idUnit"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
-              placeholder="Contoh: UNIT-001"
+              placeholder="Contoh: 001"
             />
           </div>
 
@@ -387,6 +391,10 @@
               />
             </div>
           </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
       </Modal>
     </Teleport>
@@ -431,7 +439,7 @@
             </Heading>
             <input
               v-model="formPosition.idPos"
-              placeholder="POS-001"
+              placeholder="Contoh: 001"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
@@ -497,6 +505,10 @@
               />
             </div>
           </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
       </Modal>
     </Teleport>
@@ -611,6 +623,10 @@
               />
             </div>
           </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
       </Modal>
     </Teleport>
@@ -646,6 +662,33 @@
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Mulai <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                type="date"
+                v-model="formUnit.mulai"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Berakhir <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                type="date"
+                v-model="formUnit.berakhir"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
 
         <!-- EDIT POSISI -->
@@ -669,6 +712,33 @@
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
             />
           </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Mulai <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                type="date"
+                v-model="formPosition.mulai"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs">
+                Tanggal Berakhir <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                type="date"
+                v-model="formPosition.berakhir"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
 
         <!-- EDIT ANGGOTA -->
@@ -717,6 +787,10 @@
               />
             </div>
           </div>
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
         </div>
       </Modal>
     </Teleport>
@@ -1481,26 +1555,36 @@ const fetchData = async (kode: string | number) => {
     };
 
     const res = await getCompanyTree(String(kode));
-    organizationTree.value = mapCompanyTree(res.data.tree);
+    organizationTree.value = await mapCompanyTree(res.data.tree);
   } catch (err) {
     console.error("❌ fetchData error:", err);
   }
 };
 
-const mapCompanyTree = (nodes: any[], level = 0): any[] => {
-  return nodes.map((node) => ({
-    id: node.id,
-    organizationCode: node.organization,
-    type: level === 0 ? "direktorat" : "unit",
-    level,
-    shortText: node.shortText,
-    longText: node.longText,
-    name: node.longText || node.shortText,
-    startDate: node.startDate,
-    endDate: node.endDate,
-    children: node.children ? mapCompanyTree(node.children, level + 1) : [],
-    _positionsLoaded: false,
-  }));
+const mapCompanyTree = async (nodes: any[], level = 0): Promise<any[]> => {
+  const result = [];
+  for (const node of nodes) {
+    if (isExpired(node.endDate)) {
+      await deleteOrganization(node.id);
+      continue;
+    }
+    result.push({
+      id: node.id,
+      organizationCode: node.organization,
+      type: level === 0 ? "direktorat" : "unit",
+      level,
+      shortText: node.shortText,
+      longText: node.longText,
+      name: node.longText || node.shortText,
+      startDate: node.startDate,
+      endDate: node.endDate,
+      children: node.children
+        ? await mapCompanyTree(node.children, level + 1)
+        : [],
+      _positionsLoaded: false,
+    });
+  }
+  return result;
 };
 
 const mapPositionToNode = (pos: any) => ({
@@ -1522,8 +1606,17 @@ const loadPositions = async (node: any) => {
   if (node._positionsLoaded) return;
 
   const res = await getPositionsByOrganization(String(node.organizationCode));
-  const positions = res.data.map(mapPositionToNode);
-  const sortedPositions = sortPositionsByBod(positions);
+
+  const validPositions: any[] = [];
+  for (const pos of res.data) {
+    if (isExpired(pos.end_date)) {
+      await deletePosition(pos.id);
+      continue;
+    }
+    validPositions.push(mapPositionToNode(pos));
+  }
+
+  const sortedPositions = sortPositionsByBod(validPositions);
 
   node.children = [
     ...sortedPositions,
@@ -1546,7 +1639,14 @@ const mapPersonToNode = (person: any, positionCode: number) => ({
 
 const isExpired = (endDate?: string) => {
   if (!endDate) return false;
-  return new Date(endDate) < new Date();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+
+  return end <= today;
 };
 
 const loadPersons = async (node: any) => {
@@ -1641,8 +1741,8 @@ const openEditModal = (item: any) => {
       idsubArea: item.subArea,
       subarea: item.subAreaText,
       deskripsi: "",
-      mulai: item.startDate,
-      berakhir: item.endDate,
+      mulai: toDateOnly(item.startDate) ?? "",
+      berakhir: toDateOnly(item.endDate) ?? "",
     };
   }
 
@@ -1654,8 +1754,8 @@ const openEditModal = (item: any) => {
       titelatur: item.shortText,
       chief: !!item.bodTag,
       chiefLevel: item.bodTag ?? "",
-      mulai: item.startDate,
-      berakhir: item.endDate,
+      mulai: toDateOnly(item.startDate) ?? "",
+      berakhir: toDateOnly(item.endDate) ?? "",
     };
   }
 
@@ -1664,8 +1764,8 @@ const openEditModal = (item: any) => {
     formMember.value = {
       nama: item.name,
       personId: item.persnum,
-      mulai: toDateOnly(item.startDate),
-      berakhir: toDateOnly(item.endDate),
+      mulai: toDateOnly(item.startDate) ?? "",
+      berakhir: toDateOnly(item.endDate) ?? "",
     };
   }
 
