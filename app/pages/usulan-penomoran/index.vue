@@ -446,7 +446,7 @@
                   </div>
                 </div>
 
-                <!-- ✅ Sembunyikan copy button jika hangus -->
+                <!-- Sembunyikan copy button jika hangus -->
                 <button
                   v-if="detail.nomor && detail.status !== 'hangus'"
                   @click="handleCopy(detail.nomor)"
@@ -456,11 +456,10 @@
                 </button>
               </div>
 
-              <!-- ✅ FILE SECTION -->
+              <!-- FILE SECTION -->
               <div class="mt-2">
-                <!-- ✅ HANGUS: tampilkan file jika ada (read-only, tidak bisa klik preview), atau indikator hangus -->
+                <!-- HANGUS -->
                 <template v-if="detail.status === 'hangus'">
-                  <!-- Ada file → tampilkan tapi non-clickable (greyed out) -->
                   <div
                     v-if="detail.file_name || detail.file_url"
                     class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-md p-3"
@@ -493,8 +492,6 @@
                       </div>
                     </div>
                   </div>
-
-                  <!-- Tidak ada file → indikator hangus saja -->
                   <div
                     v-else
                     class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md p-3"
@@ -520,7 +517,7 @@
                   </div>
                 </template>
 
-                <!-- ✅ Ada file (bukan hangus) → bisa di-preview -->
+                <!-- Ada file (bukan hangus) → bisa di-preview -->
                 <div
                   v-else-if="
                     detail.file_name || detail.file_url || filesByIndex[idx]
@@ -587,7 +584,7 @@
                   </div>
                 </div>
 
-                <!-- ✅ Upload area jika belum ada file dan status Belum Diajukan -->
+                <!-- Upload area jika belum ada file dan status Belum Diajukan -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
@@ -629,7 +626,7 @@
                   </label>
                 </div>
 
-                <!-- ✅ Belum ada file & tidak bisa upload -->
+                <!-- Belum ada file & tidak bisa upload -->
                 <div
                   v-else
                   class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
@@ -759,7 +756,7 @@
     @cancel="openConfirmDelete = false"
   />
 
-  <!-- ✅ PREVIEW SLIDEOVER -->
+  <!-- PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
     title="Pratinjau Dokumen"
@@ -843,7 +840,6 @@ const openConfirmSubmit = ref(false);
 // ─── Preview Slideover ────────────────────────
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
-// Track apakah preview dibuka dari modal detail (untuk buka kembali saat ditutup)
 const previewSource = ref<"detail" | null>(null);
 
 // Person & Klasifikasi mapping
@@ -862,7 +858,6 @@ const openFilterStatus = ref<boolean>(false);
 
 /* ===========================
  * GET STATUS LABEL
- * ✅ terpakai_final → "Final"
  * =========================== */
 const getStatusLabel = (status: string): string => {
   const map: Record<string, string> = {
@@ -926,16 +921,23 @@ const fetchKlasifikasiMap = async () => {
 
 /* ===========================
  * FETCH DATA
+ * FIX: positionId tidak duplikat, tidak pakai wibTime
  * =========================== */
 const fetchData = async () => {
   loading.value = true;
   try {
-    if (!user.value?.position) {
+    // FIX: handle position sebagai object atau primitive
+    const positionId =
+      typeof user.value?.position === "object"
+        ? user.value?.position?.id
+        : user.value?.position;
+
+    if (!positionId) {
       rows.value = [];
       return;
     }
 
-    const data = await getListUsulanByPosition(String(user.value.position));
+    const data = await getListUsulanByPosition(String(positionId));
 
     if (!Array.isArray(data)) {
       rows.value = [];
@@ -962,16 +964,31 @@ const fetchData = async () => {
         }
       }
 
-      const tanggalDate = new Date(item.tanggal);
-      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
+      // FIX: tambah T00:00:00 agar tidak terjadi off-by-one UTC
+      const tanggalDate = new Date(item.tanggal + "T00:00:00");
+      const formattedTanggal = `${String(tanggalDate.getDate()).padStart(2, "0")}/${String(tanggalDate.getMonth() + 1).padStart(2, "0")}/${tanggalDate.getFullYear()}`;
 
       const createdDate = new Date(item.created_at);
-      const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
-      const day = String(wibTime.getUTCDate()).padStart(2, "0");
-      const month = String(wibTime.getUTCMonth() + 1).padStart(2, "0");
-      const year = String(wibTime.getUTCFullYear()).slice(-2);
-      const hours = String(wibTime.getUTCHours()).padStart(2, "0");
-      const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
+      // Paksa offset WIB (+7) menggunakan toLocaleString dengan timeZone
+      const wibFormatter = new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      const parts = wibFormatter.formatToParts(createdDate);
+      const getPart = (type: string) =>
+        parts.find((p) => p.type === type)?.value ?? "00";
+
+      const day = getPart("day");
+      const month = getPart("month");
+      const year = getPart("year");
+      const hours = getPart("hour");
+      const minutes = getPart("minute");
 
       return {
         id: item.id,
@@ -979,7 +996,8 @@ const fetchData = async () => {
         jenis: item.jenis,
         tanggal: formattedTanggal,
         tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
-        tglUsulanSort: wibTime.getTime(),
+        // FIX: gunakan createdDate.getTime() bukan wibTime
+        tglUsulanSort: createdDate.getTime(),
         perihal: item.perihal || "-",
         jumlah: item.jumlah,
         penandatangan: item.penandatangan || "-",
@@ -987,7 +1005,6 @@ const fetchData = async () => {
         klasifikasiDisplay,
         pengusul: pengusulInfo.nama || user.value?.nama || "-",
         status: mappedStatus,
-        // ✅ Simpan details lengkap termasuk file_url dari API
         details: item.details || [],
         template_nomor: item.template_nomor || "",
       };
@@ -1025,7 +1042,6 @@ const openRowModal = async (row) => {
       klasifikasiDisplay,
       status: row.status,
       template_nomor: row.template_nomor || "",
-      // ✅ details sudah include file_url dari API response
       details: normalizedDetails,
     };
 
@@ -1043,20 +1059,14 @@ const openRowModal = async (row) => {
 
 /* ===========================
  * OPEN PREVIEW
- * ✅ Prioritas:
- *   1. Local file (blob URL)
- *   2. file_url dari API (pre-signed S3) — langsung dipakai
- *   3. Tidak ada → toast warning
  * =========================== */
 const openPreview = (detail: any, idx: number) => {
   const localFile = filesByIndex.value[idx];
   let url: string | null = null;
 
   if (localFile instanceof File) {
-    // Local file belum diupload → buat blob URL sementara
     url = URL.createObjectURL(localFile);
   } else if (detail.file_url) {
-    // ✅ Pre-signed S3 URL dari API — langsung pakai, tidak perlu fetch/blob
     url = detail.file_url;
   } else {
     toast.add({
@@ -1078,13 +1088,11 @@ const openPreview = (detail: any, idx: number) => {
  * =========================== */
 watch(isOpenPreview, (isOpen) => {
   if (!isOpen) {
-    // ✅ Revoke hanya jika blob URL (local file), bukan S3 URL
     if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
       URL.revokeObjectURL(pdfUrl.value);
     }
     pdfUrl.value = null;
 
-    // Buka kembali modal detail
     if (previewSource.value === "detail") {
       openDetail.value = true;
       previewSource.value = null;
@@ -1277,8 +1285,14 @@ const handleSubmitFromModal = async (payload: any) => {
       return;
     }
 
+    // FIX: handle position sebagai object atau primitive
+    const positionId =
+      typeof user.value?.position === "object"
+        ? user.value?.position?.id
+        : user.value?.position;
+
     const formattedPayload = {
-      position_id: Number(user.value?.position),
+      position_id: Number(positionId),
       tanggal: new Date(payload.tanggal).toISOString().split("T")[0],
       jenis: String(payload.jenis),
       klasifikasi: String(payload.klasifikasi),
@@ -1309,8 +1323,22 @@ const handleSubmitFromModal = async (payload: any) => {
   }
 };
 
+/* ===========================
+ * FORMAT DATE TIME
+ * FIX: parse dd/mm/yyyy dengan benar
+ * =========================== */
 const formatDateTime = (dateStr: string) => {
   if (!dateStr) return "-";
+  // Format dari row adalah "dd/mm/yyyy" — parse manual
+  const parts = dateStr.split("/");
+  if (parts.length === 3) {
+    const isoStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    return new Date(isoStr + "T00:00:00").toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  }
   return new Date(dateStr).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "long",
@@ -1338,7 +1366,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
-  // ✅ Revoke hanya blob URL
   if (pdfUrl.value && pdfUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(pdfUrl.value);
   }

@@ -612,8 +612,6 @@ import Modal from "~/components/Modal.vue";
 import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
 import type { DigsigLog } from "~/types/digsig";
 
-const toast = useToast();
-
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
@@ -633,6 +631,9 @@ const {
   fetchBsreAlert,
   activateBsreAlert,
   deactivateBsreAlert,
+  showToastAlertPesanKosong,
+  showToastAlertActivated,
+  showToastAlertDeactivated,
 } = useDigsig();
 
 // State
@@ -778,56 +779,32 @@ const openDeactivateModal = () => {
 
 const activateAlert = async () => {
   if (!alertMessage.value.trim()) {
-    toast.add({
-      title: "Gagal",
-      description: "Pesan alert tidak boleh kosong",
-      color: "red",
-    });
+    showToastAlertPesanKosong();
     return;
   }
 
   try {
     await activateBsreAlert(alertMessage.value);
-
-    toast.add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil diaktifkan",
-      color: "green",
-    });
-
+    showToastAlertActivated();
     showActivateModal.value = false;
-
     // Alert state sudah di-update otomatis oleh composable
     // Banner akan langsung muncul tanpa perlu refresh
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err?.message || "Gagal mengaktifkan alert",
-      color: "red",
-    });
+    // Error toast sudah dihandle di activateBsreAlert composable
+    console.error("❌ activateAlert error:", err);
   }
 };
 
 const deactivateAlert = async () => {
   try {
     await deactivateBsreAlert();
-
-    toast.add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil dinonaktifkan",
-      color: "green",
-    });
-
+    showToastAlertDeactivated();
     showDeactivateModal.value = false;
-
     // Alert state sudah di-update otomatis oleh composable
     // Banner akan langsung hilang tanpa perlu refresh
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err?.message || "Gagal menonaktifkan alert",
-      color: "red",
-    });
+    // Error toast sudah dihandle di deactivateBsreAlert composable
+    console.error("❌ deactivateAlert error:", err);
   }
 };
 

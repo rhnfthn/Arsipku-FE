@@ -492,7 +492,7 @@ const saveDigsig = async () => {
 
 onMounted(() => {
   fetchDigsig();
-  fetchMessages();
+  fetchMessages(true);
 });
 
 // ==========================================

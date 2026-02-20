@@ -97,6 +97,7 @@ export const useDigsig = () => {
       loading.value = false;
     }
   };
+
   /* ======================
    * FETCH BSRE HEALTH
    * GET /digsig/log/bsre-health
@@ -190,6 +191,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to activate BsrE alert";
       console.error("❌ activateBsreAlert error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal mengaktifkan alert",
+        color: "error",
+      });
       throw err;
     } finally {
       loadingAlert.value = false;
@@ -232,6 +241,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to deactivate BsrE alert";
       console.error("❌ deactivateBsreAlert error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menonaktifkan alert",
+        color: "error",
+      });
       throw err;
     } finally {
       loadingAlert.value = false;
@@ -272,6 +289,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch documents";
       console.error("❌ fetchDocuments error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat dokumen",
+        color: "error",
+      });
     } finally {
       loading.value = false;
     }
@@ -299,6 +321,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch document detail";
       console.error("❌ fetchDocumentDetail error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat detail dokumen",
+        color: "error",
+      });
       return null;
     } finally {
       loadingDetail.value = false;
@@ -356,6 +383,14 @@ export const useDigsig = () => {
         "Failed to create document";
       console.error("❌ createDocument error:", err);
       console.error("❌ Error response:", err?.response?.data);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menyimpan dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -420,6 +455,14 @@ export const useDigsig = () => {
         "Failed to update document";
       console.error("❌ updateDocument error:", err);
       console.error("❌ Error response:", err?.response?.data);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menyimpan dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -692,6 +735,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch klasifikasi detail";
       console.error("❌ fetchKlasifikasiDetail error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat detail klasifikasi",
+        color: "error",
+      });
       return null;
     } finally {
       loadingKlasifikasi.value = false;
@@ -777,6 +825,105 @@ export const useDigsig = () => {
     }
   };
 
+  /* ======================
+   * TOAST HELPERS — UI LEVEL
+   * ====================== */
+  const showToastSignerAdded = (nama: string) => {
+    useToast().add({
+      title: "Berhasil",
+      description: `${nama} ditambahkan sebagai Penanda Tangan`,
+      color: "success",
+    });
+  };
+
+  const showToastSignerRemoved = (nama: string) => {
+    useToast().add({
+      title: "Info",
+      description: `${nama} dihapus dari daftar Penanda Tangan`,
+      color: "warning",
+    });
+  };
+
+  const showToastFileTooLarge = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Ukuran file maksimal 10MB",
+      color: "error",
+    });
+  };
+
+  const showToastFileSelected = (nama: string) => {
+    useToast().add({
+      title: "Berhasil",
+      description: `File "${nama}" berhasil dipilih`,
+      color: "success",
+    });
+  };
+
+  const showToastFileNotAvailable = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "error",
+    });
+  };
+
+  const showToastGagalPreview = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Gagal memuat pratinjau dokumen",
+      color: "error",
+    });
+  };
+
+  const showToastValidasiForm = (field: string) => {
+    useToast().add({
+      title: "Gagal",
+      description: field,
+      color: "error",
+    });
+  };
+
+  const showToastDokumenCreated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil dibuat",
+      color: "success",
+    });
+  };
+
+  const showToastDokumenUpdated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil diperbarui",
+      color: "success",
+    });
+  };
+
+  const showToastAlertPesanKosong = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Pesan alert tidak boleh kosong",
+      color: "error",
+    });
+  };
+
+  const showToastAlertActivated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil diaktifkan",
+      color: "success",
+    });
+  };
+
+  const showToastAlertDeactivated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil dinonaktifkan",
+      color: "success",
+    });
+  };
+
   return {
     // State
     logs,
@@ -833,5 +980,19 @@ export const useDigsig = () => {
     fetchJenisNaskah,
     fetchVerifikator,
     fetchUserEnik,
+
+    // Toast helpers
+    showToastSignerAdded,
+    showToastSignerRemoved,
+    showToastFileTooLarge,
+    showToastFileSelected,
+    showToastFileNotAvailable,
+    showToastGagalPreview,
+    showToastValidasiForm,
+    showToastDokumenCreated,
+    showToastDokumenUpdated,
+    showToastAlertPesanKosong,
+    showToastAlertActivated,
+    showToastAlertDeactivated,
   };
 };

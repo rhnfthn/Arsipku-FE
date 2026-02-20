@@ -796,7 +796,7 @@
                 >
                   <!-- Search Input -->
                   <div
-                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-gray-100 dark:bg-gray-800"
                   >
                     <div class="relative">
                       <Search
@@ -826,7 +826,7 @@
                           ) !== -1,
                       }"
                     >
-                      <p class="font-medium">
+                      <p class="font-reguler">
                         {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
                       </p>
                     </div>
@@ -1096,8 +1096,6 @@ import {
 import { useDigsig } from "~/composables/useDigsig";
 import type { Verifikator } from "~/types/digsig";
 
-const toast = useToast();
-
 const {
   documents,
   documentDetail,
@@ -1119,6 +1117,15 @@ const {
   fetchKlasifikasiDetail,
   fetchJenisNaskah,
   fetchVerifikator,
+  showToastSignerAdded,
+  showToastSignerRemoved,
+  showToastFileTooLarge,
+  showToastFileSelected,
+  showToastFileNotAvailable,
+  showToastGagalPreview,
+  showToastValidasiForm,
+  showToastDokumenCreated,
+  showToastDokumenUpdated,
 } = useDigsig();
 
 const isOpenPreview = ref(false);
@@ -1196,7 +1203,6 @@ const breadcrumbs = [
 
 const filterOptions = [
   { label: "Semua", value: "" },
-
   { label: "Diproses", value: "on_progress" },
   { label: "Selesai", value: "completed" },
   { label: "Ditolak", value: "rejected" },
@@ -1370,22 +1376,14 @@ const filteredJenisNaskahList = computed(() => {
 });
 
 const loadDocuments = async () => {
-  try {
-    await fetchDocuments({
-      page: currentPage.value,
-      limit: limit.value,
-      search: search.value,
-      status: statusFilter.value,
-      sortBy: sortKey.value,
-      sortOrder: sortOrder.value,
-    });
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat dokumen",
-      color: "red",
-    });
-  }
+  await fetchDocuments({
+    page: currentPage.value,
+    limit: limit.value,
+    search: search.value,
+    status: statusFilter.value,
+    sortBy: sortKey.value,
+    sortOrder: sortOrder.value,
+  });
 };
 
 watch(search, () => {
@@ -1569,17 +1567,9 @@ const selectKlasifikasi = async (klasifikasi: any) => {
   showKlasifikasiDropdown.value = false;
   klasifikasiSearchQuery.value = "";
 
-  // Trigger klasifikasi change handler
-  try {
-    const detail = await fetchKlasifikasiDetail(klasifikasi.id);
-    selectedKlasifikasiDetail.value = detail;
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat detail klasifikasi",
-      color: "red",
-    });
-  }
+  // Trigger klasifikasi change handler — toast error sudah dihandle di fetchKlasifikasiDetail
+  await fetchKlasifikasiDetail(klasifikasi.id);
+  selectedKlasifikasiDetail.value = klasifikasiDetail.value;
 };
 
 const selectJenisNaskah = (jenisNaskah: any) => {
@@ -1594,16 +1584,9 @@ const onKlasifikasiChange = async () => {
       (k) => k.klasifikasi === addForm.value.klasifikasi,
     );
     if (selected) {
-      try {
-        const detail = await fetchKlasifikasiDetail(selected.id);
-        selectedKlasifikasiDetail.value = detail;
-      } catch (err: any) {
-        toast.add({
-          title: "Gagal",
-          description: err.message || "Gagal memuat detail klasifikasi",
-          color: "red",
-        });
-      }
+      // Toast error sudah dihandle di fetchKlasifikasiDetail
+      await fetchKlasifikasiDetail(selected.id);
+      selectedKlasifikasiDetail.value = klasifikasiDetail.value;
     }
   } else {
     selectedKlasifikasiDetail.value = null;
@@ -1629,11 +1612,7 @@ const selectSigner = (verifikator: Verifikator) => {
 
   if (exists === -1) {
     addForm.value.selectedSigners.push(verifikator);
-    toast.add({
-      title: "Berhasil",
-      description: `${verifikator.nama} ditambahkan sebagai Penanda Tangan`,
-      color: "green",
-    });
+    showToastSignerAdded(verifikator.nama);
   }
 
   showSignerDropdown.value = false;
@@ -1643,11 +1622,7 @@ const selectSigner = (verifikator: Verifikator) => {
 const removeSelectedSigner = (index: number) => {
   const signer = addForm.value.selectedSigners[index];
   addForm.value.selectedSigners.splice(index, 1);
-  toast.add({
-    title: "Info",
-    description: `${signer.nama} dihapus dari daftar Penanda Tangan`,
-    color: "blue",
-  });
+  showToastSignerRemoved(signer.nama);
 };
 
 const triggerFileUpload = () => {
@@ -1660,11 +1635,7 @@ const handleFileUpload = async (event: Event) => {
   if (file) {
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.add({
-        title: "Gagal",
-        description: "Ukuran file maksimal 10MB",
-        color: "red",
-      });
+      showToastFileTooLarge();
       return;
     }
 
@@ -1677,11 +1648,7 @@ const handleFileUpload = async (event: Event) => {
     }
     previewUrl.value = URL.createObjectURL(file);
 
-    toast.add({
-      title: "Berhasil",
-      description: `File "${file.name}" berhasil dipilih`,
-      color: "green",
-    });
+    showToastFileSelected(file.name);
   }
 };
 
@@ -1705,65 +1672,58 @@ const openEditModal = async (id: string) => {
   // Fetch dropdown data terlebih dahulu
   await ensureDropdownData();
 
-  try {
-    const doc = await fetchDocumentDetail(id);
-    if (doc) {
-      const mappedSigners: Verifikator[] = [];
+  // fetchDocumentDetail — toast error sudah dihandle di composable
+  const doc = await fetchDocumentDetail(id);
+  if (doc) {
+    const mappedSigners: Verifikator[] = [];
 
-      if (doc.signers && doc.signers.length > 0) {
-        for (const s of doc.signers) {
-          const verifikator = verifikatorList.value.find(
-            (v) => v.persnum === Number(s.persnum),
-          );
-
-          if (verifikator) {
-            mappedSigners.push(verifikator);
-          } else {
-            mappedSigners.push({
-              positionId: Number(s.positionId) || 0,
-              persnum: Number(s.persnum) || 0,
-              nama: s.nama || "",
-              jabatan: s.jabatan || "",
-              lokasi: s.lokasi || "",
-              areaText: "",
-              companyText: "",
-            });
-          }
-        }
-      }
-
-      addForm.value = {
-        tanggal: doc.tanggalDokumen.split("T")[0],
-        klasifikasi: doc.klasifikasi,
-        jenisNaskah: doc.jenisNaskah,
-        nomorDokumen: doc.nomorDokumen,
-        perihal: doc.perihal,
-        fileName: doc.fileName || "",
-        file: null,
-        visibleSign: Boolean(doc.visibleSign),
-        signers: [],
-        selectedSigners: mappedSigners,
-      };
-
-      // Load klasifikasi detail
-      if (doc.klasifikasi) {
-        const selected = klasifikasiList.value.find(
-          (k) => k.klasifikasi === doc.klasifikasi,
+    if (doc.signers && doc.signers.length > 0) {
+      for (const s of doc.signers) {
+        const verifikator = verifikatorList.value.find(
+          (v) => v.persnum === Number(s.persnum),
         );
-        if (selected) {
-          const detail = await fetchKlasifikasiDetail(selected.id);
-          selectedKlasifikasiDetail.value = detail;
+
+        if (verifikator) {
+          mappedSigners.push(verifikator);
+        } else {
+          mappedSigners.push({
+            positionId: Number(s.positionId) || 0,
+            persnum: Number(s.persnum) || 0,
+            nama: s.nama || "",
+            jabatan: s.jabatan || "",
+            lokasi: s.lokasi || "",
+            areaText: "",
+            companyText: "",
+          });
         }
       }
-
-      openAdd.value = true;
     }
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat data dokumen",
-      color: "red",
-    });
+
+    addForm.value = {
+      tanggal: doc.tanggalDokumen.split("T")[0],
+      klasifikasi: doc.klasifikasi,
+      jenisNaskah: doc.jenisNaskah,
+      nomorDokumen: doc.nomorDokumen,
+      perihal: doc.perihal,
+      fileName: doc.fileName || "",
+      file: null,
+      visibleSign: Boolean(doc.visibleSign),
+      signers: [],
+      selectedSigners: mappedSigners,
+    };
+
+    // Load klasifikasi detail — toast error sudah dihandle di composable
+    if (doc.klasifikasi) {
+      const selected = klasifikasiList.value.find(
+        (k) => k.klasifikasi === doc.klasifikasi,
+      );
+      if (selected) {
+        await fetchKlasifikasiDetail(selected.id);
+        selectedKlasifikasiDetail.value = klasifikasiDetail.value;
+      }
+    }
+
+    openAdd.value = true;
   }
 };
 
@@ -1777,6 +1737,7 @@ const openDetailModal = async (id: string) => {
       dropdownDataLoaded.value.klasifikasi = true;
     }
 
+    // fetchDocumentDetail — toast error sudah dihandle di composable
     const res = await fetchDocumentDetail(id);
     if (res) {
       // Load klasifikasi detail if klasifikasiText is null
@@ -1796,19 +1757,9 @@ const openDetailModal = async (id: string) => {
         }
       }
       openDetail.value = true;
-    } else {
-      toast.add({
-        title: "Gagal",
-        description: "Gagal memuat detail dokumen",
-        color: "red",
-      });
     }
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat detail dokumen",
-      color: "red",
-    });
+    console.error("❌ Error openDetailModal:", err);
   }
 };
 
@@ -1820,11 +1771,7 @@ const viewDocumentFromDetail = async () => {
   const url = documentDetail.value.fileUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1846,11 +1793,7 @@ const viewDocumentFromDetail = async () => {
     pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal memuat pratinjau dokumen",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -1894,11 +1837,7 @@ const viewDocument = async (doc: any) => {
   const url = doc.filePreviewUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1917,11 +1856,7 @@ const viewDocument = async (doc: any) => {
     pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal memuat pratinjau dokumen",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -1948,61 +1883,33 @@ const previewFileInModal = async () => {
 };
 
 const saveDokumen = async () => {
-  // Validation
+  // Validation — semua menggunakan showToastValidasiForm(pesan)
   if (!addForm.value.tanggal) {
-    toast.add({
-      title: "Gagal",
-      description: "Tanggal Dokumen harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Tanggal Dokumen harus diisi");
     return;
   }
   if (!addForm.value.klasifikasi) {
-    toast.add({
-      title: "Gagal",
-      description: "Klasifikasi harus dipilih",
-      color: "red",
-    });
+    showToastValidasiForm("Klasifikasi harus dipilih");
     return;
   }
   if (!addForm.value.jenisNaskah) {
-    toast.add({
-      title: "Gagal",
-      description: "Jenis Naskah harus dipilih",
-      color: "red",
-    });
+    showToastValidasiForm("Jenis Naskah harus dipilih");
     return;
   }
   if (!addForm.value.nomorDokumen) {
-    toast.add({
-      title: "Gagal",
-      description: "Nomor Dokumen harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Nomor Dokumen harus diisi");
     return;
   }
   if (!addForm.value.perihal) {
-    toast.add({
-      title: "Gagal",
-      description: "Perihal harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Perihal harus diisi");
     return;
   }
   if (!isEditMode.value && !addForm.value.file) {
-    toast.add({
-      title: "Gagal",
-      description: "Lampiran Berkas harus diupload",
-      color: "red",
-    });
+    showToastValidasiForm("Lampiran Berkas harus diupload");
     return;
   }
   if (addForm.value.selectedSigners.length === 0) {
-    toast.add({
-      title: "Gagal",
-      description: "Mohon pilih minimal satu Penanda Tangan",
-      color: "red",
-    });
+    showToastValidasiForm("Mohon pilih minimal satu Penanda Tangan");
     return;
   }
 
@@ -2027,20 +1934,12 @@ const saveDokumen = async () => {
         payload.file = addForm.value.file;
       }
 
+      // updateDocument — toast error sudah dihandle di composable
       await updateDocument(editingId.value, payload);
-
-      toast.add({
-        title: "Berhasil",
-        description: "Dokumen berhasil diperbarui",
-        color: "green",
-      });
+      showToastDokumenUpdated();
     } else {
       if (!addForm.value.file) {
-        toast.add({
-          title: "Gagal",
-          description: "File harus diupload untuk dokumen baru",
-          color: "red",
-        });
+        showToastValidasiForm("File harus diupload untuk dokumen baru");
         return;
       }
 
@@ -2055,28 +1954,16 @@ const saveDokumen = async () => {
         signers: signersPayload,
       };
 
+      // createDocument — toast error sudah dihandle di composable
       await createDocument(payload);
-
-      toast.add({
-        title: "Berhasil",
-        description: "Dokumen berhasil dibuat",
-        color: "green",
-      });
+      showToastDokumenCreated();
     }
 
     closeModal();
     await loadDocuments();
   } catch (err: any) {
     console.error("❌ Save error:", err);
-
-    const errorMsg =
-      err.response?.data?.message || err.message || "Gagal menyimpan dokumen";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
+    // Error toast sudah dihandle di createDocument/updateDocument composable
   }
 };
 

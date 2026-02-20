@@ -87,16 +87,22 @@ export const useKonfigurasi = () => {
   const isTogglingBanner = ref<string | null>(null);
 
   // GET semua pengumuman
-  const fetchMessages = async () => {
+  // adminMode: true → /admin/config/message (CRUD page)
+  // adminMode: false → /config/message (layout banner, semua role)
+  const fetchMessages = async (adminMode = false) => {
     try {
       isLoadingMessage.value = true;
-      const res = await apiGet<KonfigurasiMessageResponse>(
-        "/admin/config/message",
-      );
+      const endpoint = adminMode ? "/admin/config/message" : "/config/message";
+      const res = await apiGet<KonfigurasiMessageResponse>(endpoint);
       if (res.success) {
         messageList.value = res.data;
       }
-    } catch (error) {
+    } catch (error: any) {
+      // 403 = role user — silent fail, tidak tampilkan toast
+      if (error?.statusCode === 403 || error?.status === 403) {
+        console.warn("fetchMessages: akses ditolak (role user).");
+        return;
+      }
       console.error("Fetch message error:", error);
       useToast().add({
         title: "Gagal",
