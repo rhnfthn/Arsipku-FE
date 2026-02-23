@@ -298,91 +298,42 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Pilih Metode Tanda Tangan
+            Tanda Tangan Digital (BSrE)
           </h3>
         </div>
       </template>
 
-      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
+          Dokumen ditandatangani secara elektronik resmi (TTE). Masukkan passphrase Anda.
         </p>
 
-        <div class="space-y-4">
-          <!-- Digital Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
-
-            <div class="flex flex-col flex-1">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Tanda Tangan Digital (BSrE)
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen ditandatangani secara elektronik resmi (TTE).
-              </span>
-
-              <!-- Signer Info -->
-              <div v-if="selectedSendType === 'digsig'"
-                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <div class="flex items-start gap-4 p-4">
-                  <div class="flex-shrink-0">
-                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col">
-                    <span class="text-xs text-gray-500 mb-0.5">
-                      {{ signerInfo.label }}
-                    </span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                      {{ signerInfo.role }}
-                    </span>
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">
-                      {{ signerInfo.name }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Passphrase -->
-                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div @click.stop>
-                    <UFormGroup label="Passphrase" required>
-                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
-                        class="w-full" autofocus />
-                    </UFormGroup>
-                  </div>
-                </div>
+        <div class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div class="flex items-start gap-4 p-4">
+            <div class="flex-shrink-0">
+              <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                <UIcon name="i-heroicons-user" class="w-6 h-6" />
               </div>
             </div>
-          </label>
-
-          <!-- Without Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
-
             <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Kirim Tanpa Tanda Tangan
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen dikirim tanpa proses tanda tangan digital.
-              </span>
+              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role }}</span>
+              <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
             </div>
-          </label>
+          </div>
+
+          <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <UFormGroup label="Passphrase" required>
+              <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
+                class="w-full" autofocus />
+            </UFormGroup>
+          </div>
         </div>
       </template>
 
-      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -405,6 +356,8 @@ import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
+
+import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 interface RecipientItem {
   label: string;
@@ -435,7 +388,7 @@ const { getRecipients, getRecipientGroups } = useRecipients();
 const recipientGroups = ref<any[]>([]);
 const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign();
+const { digsigConfig, fetchDigsigConfig } = useDigsig();
 
 const isGroupSelected = (group: any, type: 'tertuju' | 'tembusan') => {
   const targetList = type === 'tertuju' ? selectedTertuju.value : selectedTembusan.value;
@@ -687,9 +640,30 @@ const confirmKirimDokumen = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  passphrase.value = "";
-  selectedSendType.value = "qr_only";
-  isPassphraseModalOpen.value = true;
+  // Cek apakah TTE (DigSig) aktif untuk Nota Dinas
+  const ndConfig = digsigConfig.value.find(c => c.jenisNaskah === 'ND');
+  const isDigsigEnabled = ndConfig?.enabled ?? false;
+
+  if (isDigsigEnabled) {
+    // Munculkan Pop-up Passphrase Langsung
+    passphrase.value = "";
+    selectedSendType.value = "digsig";
+    isPassphraseModalOpen.value = true;
+  } else {
+    // Lewati Pop-up, langsung munculkan konfirmasi
+    selectedSendType.value = "qr_only";
+    const isConfirmed = await Alert.confirm(
+      'Konfirmasi Akhir',
+      'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?',
+      'Ya, Kirim Sekarang',
+      'Periksa Lagi',
+      false
+    );
+
+    if (isConfirmed) {
+      await handleKirimDokumen();
+    }
+  }
 };
 
 const handlePassphraseSubmit = async () => {
@@ -817,6 +791,7 @@ const handleSaveDraft = async () => {
 };
 
 onMounted(async () => {
+  await fetchDigsigConfig();
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 

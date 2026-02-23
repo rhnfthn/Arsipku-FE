@@ -59,6 +59,16 @@ const listDelegasi = ref<any[]>([]);
 const totalItems = ref(0);
 const totalPagesApi = ref(1);
 
+const listLokasi = computed(() => {
+  const set = new Set(listDelegasi.value.map((item) => item.lokasi));
+  return Array.from(set).sort();
+});
+
+const listJabatan = computed(() => {
+  const set = new Set(listDelegasi.value.map((item) => item.jabatan));
+  return Array.from(set).sort();
+});
+
 // ==============================
 // FETCH DATA (API INTEGRATION)
 // ==============================
@@ -76,11 +86,7 @@ const fetchData = async () => {
     };
 
     const res = await getDelegasiList(params);
-
-    // 1. Ambil object 'data' pembungkus
     const wrapper = res.data;
-
-    // 2. Ambil array 'data' dan object 'meta' dari pembungkus
     const dataArray = wrapper?.data || [];
     const meta = wrapper?.meta;
 
@@ -91,9 +97,16 @@ const fetchData = async () => {
 
     listDelegasi.value = dataArray.map((item: any) => ({
       id: item.id,
-      nama: item.nama,
-      jabatan: item.as_position_text || item.as_position || "-",
-      lokasi: item.as_area_text || item.company_text || "-",
+
+      delegator_nama: item.name || "-",
+      delegator_jabatan: item.position_text || "-",
+
+      nama: item.as_name || "-",
+      lokasi: item.as_organization_text || item.as_area_text || "-", // Menampilkan divisinya agar lebih jelas
+
+      sebagai: item.position_status || "-",
+      jabatan: item.as_position_text || "-",
+
       tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
       status: item.status?.label || "-",
       raw: item,
@@ -551,12 +564,18 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
 
+// function selectNewPersonil(val: string) {
+//   newDelegasi.value.personil = val;
+//   const p = personilOptions.value.find((x) => x.persnum === val);
+//   if (p) newDelegasi.value.jabatan = String(p.currentPosition);
+//   openNewPersonil.value = false;
+// }
+
 function selectNewPersonil(val: string) {
   newDelegasi.value.personil = val;
-  const p = personilOptions.value.find((x) => x.persnum === val);
-  if (p) newDelegasi.value.jabatan = String(p.currentPosition);
   openNewPersonil.value = false;
 }
+
 function selectNewSebagai(val: string) {
   newDelegasi.value.sebagai = val;
   openNewSebagai.value = false;
@@ -623,8 +642,15 @@ const exportData = () => {
       class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
       <div class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3">
         <div class="flex items-center gap-3 flex-wrap">
+
+          <div class="relative">
+            <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <input v-model.lazy="search" type="text" placeholder="Cari..."
+              class="pl-9 pr-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" />
+          </div>
+
           <select v-model="rowsPerPage"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
             <option v-for="n in [5, 10, 15]" :key="n" :value="n">
               {{ n }}
             </option>
@@ -645,34 +671,28 @@ const exportData = () => {
           </div>
 
           <select v-model="filterStatus"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary focus:border-primary">
             <option value="Semua">Semua Status</option>
-            <option value="Aktif">Aktif</option>
-            <option value="Akan Datang">Akan Datang</option>
-            <option value="Kadaluwarsa">Kadaluwarsa</option>
+            <option value="aktif">Aktif</option>
+            <option value="tidak_aktif">Akan Datang</option>
+            <option value="kedaluwarsa">Kadaluwarsa</option>
           </select>
 
           <select v-model="filterLokasi"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary focus:border-primary max-w-[200px] truncate">
             <option value="Semua">Semua Lokasi</option>
-            <option value="Cabang Surabaya">Cabang Surabaya</option>
-            <option value="Kejaksaan Cabang Denpasar">Cabang Denpasar</option>
+            <option v-for="lok in listLokasi" :key="lok" :value="lok">{{ lok }}</option>
           </select>
 
           <select v-model="filterJabatan"
-            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
+            class="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary focus:border-primary max-w-[200px] truncate">
             <option value="Semua">Semua Jabatan</option>
-            <option value="Supervisor Operasional">
-              Supervisor Operasional
-            </option>
-            <option value="Pelaksana Tugas Junior Manager">
-              Pelaksana Tugas Junior Manager
-            </option>
+            <option v-for="jab in listJabatan" :key="jab" :value="jab">{{ jab }}</option>
           </select>
         </div>
 
         <button @click="exportData"
-          class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors shadow-sm">
+          class="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors shadow-sm">
           Export
         </button>
       </div>
@@ -681,19 +701,22 @@ const exportData = () => {
         <table class="min-w-full text-sm">
           <thead class="bg-primary dark:bg-primary-700">
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Delegator
               </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
-                Jabatan
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                Penerima Delegasi
               </th>
-              <th class="px-4 py-3text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                Sebagai Jabatan
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Periode
               </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Status
               </th>
-              <th class="px-4 py-3 text-center text-sm font-semibold text-white">
+              <th class="px-4 py-3 text-center text-sm font-semibold text-white whitespace-nowrap">
                 Aksi
               </th>
             </tr>
@@ -702,25 +725,30 @@ const exportData = () => {
           <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
             <template v-if="isLoading">
               <tr v-for="n in rowsPerPage" :key="'skeleton-' + n" class="animate-pulse bg-white dark:bg-gray-800">
-                <td class="px-6 py-4">
+                <td class="px-4 py-2">
+                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </td>
+                <td class="px-4 py-2">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-                    <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div>
+                      <div class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                      <div class="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
                   </div>
                 </td>
-                <td class="px-6 py-4">
-                  <div class="flex flex-col gap-2">
-                    <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  </div>
+                <td class="px-4 py-2">
+                  <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div class="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-2">
                   <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-2">
                   <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-2">
                   <div class="flex justify-center gap-3">
                     <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                     <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
@@ -731,7 +759,7 @@ const exportData = () => {
 
             <template v-else-if="paginatedDelegasi.length === 0">
               <tr>
-                <td colspan="5" class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-400">
                   Tidak ada data ditemukan
                 </td>
               </tr>
@@ -740,48 +768,58 @@ const exportData = () => {
             <template v-else>
               <tr v-for="item in paginatedDelegasi" :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 min-w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                      <User class="w-5 h-5 text-primary dark:text-primary-400" />
-                    </div>
-                    <span class="text-gray-900 dark:text-white font-medium">{{
-                      item.nama
-                    }}</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
+
+                <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{
-                      item.jabatan
-                    }}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ item.lokasi }}</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ item.delegator_nama }}</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ item.delegator_jabatan }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+
+                <td class="px-4 py-2 min-w-[220px]">
+                  <div class="flex items-center gap-3">
+                    <!-- <div
+                      class="w-10 h-10 min-w-[2.5rem] rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                      <User class="w-5 h-5 text-primary dark:text-primary-400" />
+                    </div> -->
+                    <div class="flex flex-col">
+                      <span class="text-gray-900 dark:text-white font-medium">{{ item.nama }}</span>
+                      <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ item.lokasi }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <td class="px-4 py-2">
+                  <div class="flex flex-col">
+                    <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1">
+                      Status: {{ item.sebagai }}
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-medium leading-snug">
+                      {{ item.jabatan }}
+                    </span>
+                  </div>
+                </td>
+
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
                   {{ item.tanggal }}
                 </td>
-                <td class="px-6 py-4">
+
+                <td class="px-4 py-2">
                   <span :class="[
-                    'inline-flex px-3 py-1 text-xs font-medium rounded-full',
+                    'inline-flex px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap',
                     item.status === 'Aktif'
                       ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                      : item.status === 'Akan Datang' || item.status === 'Tidak Aktif'
+                      : item.status === 'Akan Datang' || item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
                         ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
                         : item.status === 'Kedaluwarsa'
                           ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
                   ]">
-                    {{
-                      item.status === 'Tidak Aktif'
-                        ? 'Akan Datang'
-                    : item.status
-                    }}
+                    {{ item.status === 'Tidak Aktif' || item.status === 'tidak_aktif' ? 'Akan Datang' : item.status }}
                   </span>
-
                 </td>
-                <td class="px-6 py-4">
+
+                <td class="px-4 py-2">
                   <div class="flex justify-center gap-3">
                     <button @click="openEdit(item)"
                       class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-500 transition-colors"
@@ -801,7 +839,7 @@ const exportData = () => {
         </table>
       </div>
 
-      <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+      <div class="flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-gray-700">
         <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ paginatedDelegasi.length }} dari {{ totalItems }} data
         </div>
@@ -856,21 +894,10 @@ const exportData = () => {
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
-            ]"
-          >
+            ]">
             Selanjutnya
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>

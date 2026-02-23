@@ -102,14 +102,14 @@ const hasAccess = (codes: string[]) => {
             <h1 class="text-base font-semibold text-gray-900 dark:text-white whitespace-nowrap">Kembali</h1>
           </template>
           <template v-else>
-            <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300 truncate">
+            <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
               {{
                 data.subject || (
                   data.aksi === 'create' ? 'Konsep Awal' :
                     data.aksi === 'reject' ? 'Konsep Ditolak' :
                       data.aksi === 'forward' ? 'Revisi Konsep' :
-              'Riwayat Disposisi'
-              )
+                        'Riwayat Disposisi'
+                )
               }}
             </h2>
           </template>
@@ -195,7 +195,7 @@ const hasAccess = (codes: string[]) => {
               v-for="(t, ti) in (data.showAllTo ? (data.to || data.kepada) : (data.to || data.kepada).slice(0, LIMIT_DISPLAY))"
               :key="ti" class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0">
               <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-                }}.</span>
+              }}.</span>
 
               <div class="truncate min-w-0">
                 <template v-if="data.jenis === 'SDE' || data.jenis === 'sde'">
@@ -239,7 +239,7 @@ const hasAccess = (codes: string[]) => {
             v-for="(t, ti) in (data.showAllCc ? (data.cc || data.tembusan) : (data.cc || data.tembusan).slice(0, LIMIT_DISPLAY))"
             :key="ti" class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
             <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-              }}.</span>
+            }}.</span>
             <div class="truncate min-w-0">
               <span class="font-medium">{{ t.position_text }}</span>
               <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama }})</span>
@@ -371,51 +371,51 @@ const hasAccess = (codes: string[]) => {
               class="flex bg-emerald-500 text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm"
               :class="!isHead ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-600 cursor-pointer active:scale-[0.98]'">
               <CheckCircle class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Setujui</span>
+              <span class="text-sm font-medium whitespace-nowrap">Setujui</span>
             </div>
 
             <div @click="!isHead ? null : emit('reject')"
               class="flex bg-red-500 text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm"
               :class="!isHead ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600 cursor-pointer active:scale-[0.98]'">
               <XCircle class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Tolak</span>
+              <span class="text-sm font-medium whitespace-nowrap">Tolak</span>
             </div>
           </template>
 
           <div v-if="data.to[0]?.position_id == userPositionId && data.aksi === 'reject'" @click="emit('edit')"
             class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]">
-            <Edit3 class="w-4 h-4" /><span class="text-sm font-bold whitespace-nowrap">Perbaiki Konsep</span>
+            <Edit3 class="w-4 h-4" /><span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
           </div>
 
           <template v-if="showFooterActions">
             <div v-if="hasAccess(['ND'])" @click="emit('lanjut-nota')"
-              class="flex bg-emerald-500 hover:bg-emerald-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-emerald-600 hover:bg-emerald-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
               <FileText class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Lanjut Nota Dinas</span>
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Nota Dinas</span>
             </div>
 
             <div v-if="hasAccess(['SDI'])" @click="emit('lanjut-sdi')"
-              class="flex bg-orange-400 hover:bg-orange-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-amber-600 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
               <Users class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Lanjut Surat Internal</span>
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Internal</span>
             </div>
 
             <div v-if="hasAccess(['SDE'])" @click="emit('lanjut-sde')"
-              class="flex bg-indigo-500 hover:bg-indigo-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-sky-600 hover:bg-sky-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
               <Building2 class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Lanjut Surat Eksternal</span>
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Eksternal</span>
             </div>
 
             <div v-if="hasAccess(['DI'])" @click="emit('lanjut-disposisi')"
-              class="flex bg-sky-500 hover:bg-sky-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-cyan-600 hover:bg-cyan-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
               <Send class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Lanjut Disposisi</span>
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Disposisi</span>
             </div>
 
             <div v-if="hasAccess(['KO'])" @click="emit('lanjut-konsep')"
-              class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-yellow-600 hover:bg-yellow-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
               <Edit3 class="w-4 h-4" />
-              <span class="text-sm font-bold whitespace-nowrap">Lanjut Konsep</span>
+              <span class="text-sm font-medium whitespace-nowrap">Lanjut Konsep</span>
             </div>
           </template>
 

@@ -27,7 +27,7 @@
     </Teleport>
 
     <PageHeader title="Tulis Lanjut Nota Dinas" :items="breadcrumbs" />
-
+<!-- {{refData}} -->
     <div v-if="refData" class="mb-4 mt-6">
       <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"

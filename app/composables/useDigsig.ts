@@ -40,6 +40,9 @@ export const useDigsig = () => {
     activatedByName: string | null;
   } | null>(null);
 
+  // --- NEW: Digsig Config State ---
+  const digsigConfig = ref<any[]>([]);
+
   // Penandatanganan
   const penandatanganDocuments = ref<PenandatangananDocument[]>([]);
   const penandatanganDetail = ref<PenandatangananDocument | null>(null);
@@ -62,7 +65,31 @@ export const useDigsig = () => {
   const loadingCheck = ref(false);
   const loadingEnik = ref(false);
   const loadingAlert = ref(false);
+  const loadingDigsigConfig = ref(false); // New Loading State
   const error = ref<string | null>(null);
+
+  /* ======================
+   * FETCH DIGSIG CONFIG
+   * GET /admin/config/digsig
+   * ====================== */
+  const fetchDigsigConfig = async () => {
+    loadingDigsigConfig.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet<{ success: boolean; data: any[] }>("/admin/config/digsig");
+      if (res.success && res.data) {
+        digsigConfig.value = res.data;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch digsig config";
+      console.error("❌ fetchDigsigConfig error:", err);
+    } finally {
+      loadingDigsigConfig.value = false;
+    }
+  };
 
   /* ======================
    * FETCH LOGS
@@ -933,6 +960,7 @@ export const useDigsig = () => {
     meta,
     bsreHealth,
     bsreAlert,
+    digsigConfig, // EXPORTED CONFIG STATE
     klasifikasiList,
     klasifikasiDetail,
     jenisNaskahList,
@@ -954,9 +982,11 @@ export const useDigsig = () => {
     loadingCheck,
     loadingEnik,
     loadingAlert,
+    loadingDigsigConfig, // EXPORTED CONFIG LOADING
     error,
 
     // Methods
+    fetchDigsigConfig, // EXPORTED CONFIG METHOD
     fetchLogs,
     fetchBsreHealth,
     fetchBsreAlert,
