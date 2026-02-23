@@ -819,8 +819,6 @@ import Modal from "~/components/Modal.vue";
 import { useDigsig } from "~/composables/useDigsig";
 import type { PenandatangananDocument } from "~/types/digsig";
 
-const toast = useToast();
-
 const {
   penandatanganDocuments,
   penandatanganDetail,
@@ -832,6 +830,10 @@ const {
   fetchPenandatanganDetail,
   signDocument,
   rejectDocument,
+  showToastFileNotAvailable,
+  showToastDataTidakValid,
+  showToastDokumenSigned,
+  showToastDokumenRejected,
 } = useDigsig();
 
 // ─── Modal states ─────────────────────────────
@@ -1015,11 +1017,7 @@ const selectFilterStatus = (item: { label: string; value: string }) => {
 const viewDocumentFromTable = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1043,11 +1041,7 @@ const viewDocumentFromDetail = () => {
     penandatanganDetail.value.filePreviewUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1085,11 +1079,7 @@ const isUUID = (str: string) =>
 
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
-    toast.add({
-      title: "Gagal",
-      description: "Data dokumen tidak valid",
-      color: "red",
-    });
+    showToastDataTidakValid();
     return;
   }
   openDetail.value = true;
@@ -1114,21 +1104,14 @@ const handleSign = async () => {
 
     await signDocument(selectedDoc.value.id, payload);
 
-    toast.add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditandatangani",
-      color: "green",
-    });
+    showToastDokumenSigned();
     openSign.value = false;
     passphrase.value = "";
     keterangan.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Gagal menandatangani dokumen";
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    // Error toast sudah dihandle di signDocument composable
+    console.error("❌ handleSign error:", err);
   } finally {
     loadingSign.value = false;
   }
@@ -1148,18 +1131,13 @@ const rejectNow = async () => {
   try {
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
 
-    toast.add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditolak",
-      color: "green",
-    });
+    showToastDokumenRejected();
     confirmRejectOpen.value = false;
     rejectReason.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message || err?.message || "Gagal menolak dokumen";
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    // Error toast sudah dihandle di rejectDocument composable
+    console.error("❌ rejectNow error:", err);
   } finally {
     loadingReject.value = false;
   }

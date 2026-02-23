@@ -645,6 +645,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to sign document";
       console.error("❌ signDocument error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menandatangani dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -920,6 +928,30 @@ export const useDigsig = () => {
     useToast().add({
       title: "Berhasil",
       description: "Alert gangguan BsrE berhasil dinonaktifkan",
+      color: "success",
+    });
+  };
+
+  const showToastDataTidakValid = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Data dokumen tidak valid",
+      color: "error",
+    });
+  };
+
+  const showToastDokumenSigned = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditandatangani",
+      color: "success",
+    });
+  };
+
+  const showToastDokumenRejected = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditolak",
       color: "success",
     });
   };

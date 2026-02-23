@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <!-- Backdrop blur gelap — muncul jika ada banner aktif yang belum di-dismiss -->
+    <!-- Backdrop blur gelap -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
       enter-from-class="opacity-0"
@@ -41,7 +41,6 @@
                 : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800',
           ]"
         >
-          <!-- Icon -->
           <component
             :is="iconFor(item.type)"
             :class="[
@@ -54,7 +53,6 @@
             ]"
           />
 
-          <!-- Teks -->
           <div class="flex-1 min-w-0">
             <p
               :class="[
@@ -82,7 +80,6 @@
             </p>
           </div>
 
-          <!-- Tombol X — dismiss permanen sampai refresh -->
           <button
             @click="dismiss(item.id)"
             :class="[
@@ -109,32 +106,53 @@ import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import { useDigsig } from "@/composables/useDigsig";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 
+const STORAGE_KEY = "announcement_dismissed_ids";
+
 const { messageList, fetchMessages } = useKonfigurasi();
 const { bsreAlert } = useDigsig();
 
-// Offset atas: jika AlertBsre aktif banner turun di bawahnya
 const topOffset = computed(() => (bsreAlert.value?.isActive ? "52px" : "0px"));
 
-// ID yang sudah di-dismiss — hilang sampai refresh (session only, pakai ref)
+// Set ID yang sudah di-dismiss — sumber kebenaran dari localStorage
 const dismissed = ref<Set<string>>(new Set());
 
-// Hanya tampilkan banner yang showBanner=true DAN belum di-dismiss sesi ini
+// Baca dari localStorage saat mount
+onMounted(() => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      dismissed.value = new Set(JSON.parse(raw) as string[]);
+    }
+  } catch {
+    dismissed.value = new Set();
+  }
+
+  fetchMessages();
+});
+
+// Klik X → simpan ID ke localStorage secara permanen
+// Tidak ada mekanisme yang menghapus entry ini — satu-satunya cara
+// banner muncul lagi adalah jika admin membuat pengumuman BARU (ID berbeda)
+const dismiss = (id: string) => {
+  dismissed.value.add(id);
+  // Buat Set baru agar Vue reaktif
+  dismissed.value = new Set(dismissed.value);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...dismissed.value]));
+  } catch {
+    // localStorage tidak tersedia — abaikan
+  }
+};
+
+// Filter: tampil hanya jika showBanner=true DAN ID belum pernah di-dismiss user
 const activeMessages = computed(() =>
   messageList.value.filter((m) => m.showBanner && !dismissed.value.has(m.id)),
 );
-
-// Dismiss: tambah ke Set → hilang dari view, tidak muncul lagi sampai refresh
-const dismiss = (id: string) => {
-  dismissed.value = new Set([...dismissed.value, id]);
-};
 
 const iconFor = (type: KonfigurasiMessageItem["type"]) => {
   if (type === "warning") return TriangleAlert;
   if (type === "success") return CircleCheck;
   return Info;
 };
-
-onMounted(() => {
-  fetchMessages();
-});
 </script>
