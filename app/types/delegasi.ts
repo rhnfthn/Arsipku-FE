@@ -11,25 +11,38 @@ export const DelegasiItemSchema = z.object({
   id: z.string(),
   start_date: z.string(),
   end_date: z.string(),
-  as_name: z.string(),
 
-  // PERBAIKAN DI SINI:
-  // Gunakan .nullish() menggantikan .string() atau .optional()
-  // Ini mengizinkan tipe data: String | Null | Undefined
-  as_position_text: z.string().nullish(),
-  as_area_text: z.string().nullish(),
-  company_text: z.string().nullish(),
-
-  status: StatusSchema,
-
-  // Update field opsional lainnya ke .nullish() untuk keamanan (jaga-jaga jika API kirim null)
+  // --- PENERIMA DELEGASI (as_*) ---
+  as_name: z.string().nullish(),
   as_persnum: z.string().nullish(),
   as_position: z.string().nullish(),
-  position_status: z.string().nullish(),
-
-  // Tambahan field yang terlihat null di JSON Anda (opsional, saran ditambahkan agar tidak error kedepannya)
-  as_sub_area_text: z.string().nullish(),
+  as_position_text: z.string().nullish(),
+  as_organization: z.string().nullish(),
   as_organization_text: z.string().nullish(),
+  as_area: z.string().nullish(),
+  as_area_text: z.string().nullish(),
+  as_sub_area: z.string().nullish(),
+  as_sub_area_text: z.string().nullish(),
+
+  // --- PEMBERI DELEGASI (Delegator) ---
+  name: z.string().nullish(),
+  persnum: z.string().nullish(),
+  position: z.string().nullish(),
+  position_text: z.string().nullish(),
+  organization: z.string().nullish(),
+  organization_text: z.string().nullish(),
+  area: z.string().nullish(),
+  area_text: z.string().nullish(),
+  sub_area: z.string().nullish(),
+  sub_area_text: z.string().nullish(),
+
+  // --- UMUM & STATUS ---
+  company: z.string().nullish(),
+  company_text: z.string().nullish(),
+  position_status: z.string().nullish(), // cth: "PT", "VI", "PH"
+  create_at: z.string().nullish(),
+  update_at: z.string().nullish(),
+  status: StatusSchema,
 });
 
 export const DelegasiResponseSchema = z.object({
@@ -45,7 +58,7 @@ export const DelegasiResponseSchema = z.object({
   }),
 });
 
-// ... (Sisa kode ke bawah sama seperti sebelumnya)
+// ... (Sisa kode ke bawah tidak ada yang diubah)
 export const PersonilSchema = z.object({
   persnum: z.string(),
   name: z.string(),

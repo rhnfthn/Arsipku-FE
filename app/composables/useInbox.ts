@@ -224,9 +224,19 @@ export function useInbox() {
       const res = await apiGet(
         `/persuratan/naskah/${encodeURIComponent(idNaskah)}`,
       );
-      const d = res?.data && Array.isArray(res.data) ? res.data[0] : res?.data;
-      if (!d) return null;
-      return {
+
+      // Ambil semua data sebagai array, bukan hanya [0]
+      const dataArray =
+        res?.data && Array.isArray(res.data)
+          ? res.data
+          : res?.data
+            ? [res.data]
+            : [];
+
+      if (dataArray.length === 0) return null;
+
+      // Map semua item
+      const mapped = dataArray.map((d: any) => ({
         id: d.id,
         jenis: d.jenis,
         jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
@@ -244,8 +254,12 @@ export function useInbox() {
         konten: d.konten,
         lampiran_files: d.lampiran_files || [],
         final_pdf_url: d.final_pdf_url || d.final_pdf,
+        referensi: d.referensi || null,
         raw: d,
-      };
+      }));
+
+      // Return array jika lebih dari 1, object jika hanya 1 (backward compatible)
+      return mapped.length === 1 ? mapped[0] : mapped;
     } catch (err: any) {
       console.error("fetchInboxDetail error:", err);
       error.value = err;

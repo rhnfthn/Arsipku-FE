@@ -432,11 +432,9 @@ const breadcrumbs = [
 
     <!-- CARD FULL HEIGHT -->
     <div
-      class="flex flex-col mt-3 w-full flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+      class="flex flex-col mt-2 w-full flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div
-        class="flex flex-wrap gap-2 p-3 items-center border-b border-gray-200 dark:border-gray-700"
-      >
+      <div class="flex flex-wrap gap-2 p-3 items-center dark:border-gray-700">
         <button
           @click="toggleSort"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"

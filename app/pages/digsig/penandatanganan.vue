@@ -69,7 +69,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari nomor dokumen atau perihal..."
+              placeholder="Cari nomor dokumen atau perihal"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -869,7 +869,7 @@ const sortOrder = ref("asc");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Penanda Tanganan", to: "/admin/digsig/penandatanganan" },
+  { label: "Penanda Tanganan", to: "/digsig/penandatanganan" },
 ];
 
 const filterOptions = [

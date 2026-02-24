@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
           Daftar Usulan Penomoran
@@ -20,7 +20,9 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
+    <div
+      class="bg-white border border-gray-200 dark:bg-gray-800 shadow-sm rounded-xl w-full"
+    >
       <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3"
@@ -28,7 +30,7 @@
         <div class="flex items-center gap-2 px-4 py-2">
           <select
             v-model="rowsPerPage"
-            class="border text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-2 py-1"
+            class="border text-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md px-3 py-1.5"
           >
             <option v-for="n in rowsChoices" :key="n" :value="n">
               {{ n }}
@@ -36,18 +38,17 @@
           </select>
         </div>
 
-        <div class="relative inline-block">
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-1 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="text-sm dark:text-gray-200">{{
-              filterStatus || "Semua"
-            }}</span>
+            <span class="truncate">{{ filterStatus || "Semua" }}</span>
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -62,21 +63,27 @@
               />
             </svg>
           </button>
-
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item"
-              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  filterStatus === item
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <div class="relative flex-1 w-full md:w-56">
@@ -85,8 +92,8 @@
           />
           <input
             v-model="search"
-            placeholder="Cari..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
+            placeholder="Cari"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -338,14 +345,12 @@
         v-if="selectedRow"
         class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
       >
-        <!-- Perihal -->
         <p
           class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base"
         >
           {{ selectedRow.perihal || "-" }}
         </p>
 
-        <!-- Tanggal -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
           <p class="font-medium mt-1 dark:text-gray-200">
@@ -353,7 +358,6 @@
           </p>
         </div>
 
-        <!-- Penandatangan -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Penandatangan</p>
           <p class="font-medium mt-1 dark:text-gray-200">
@@ -361,7 +365,6 @@
           </p>
         </div>
 
-        <!-- Klasifikasi -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
           <p class="font-medium mt-1 dark:text-gray-200">
@@ -371,7 +374,6 @@
           </p>
         </div>
 
-        <!-- Jenis Naskah -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
           <p class="font-medium mt-1 dark:text-gray-200">
@@ -379,7 +381,6 @@
           </p>
         </div>
 
-        <!-- Nomor Surat & File Section -->
         <div class="mt-4">
           <label
             class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
@@ -404,7 +405,6 @@
                   : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
               ]"
             >
-              <!-- Nomor surat + status badge -->
               <div class="flex items-center gap-2 mb-3">
                 <div
                   class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
@@ -421,8 +421,6 @@
                       {{ idx + 1 }}.
                       {{ detail.nomor || selectedRow.template_nomor || "-" }}
                     </span>
-
-                    <!-- Status Badge -->
                     <span
                       v-if="detail.status"
                       :class="[
@@ -440,13 +438,10 @@
                             detail.status === 'hangus',
                         },
                       ]"
+                      >{{ getStatusLabel(detail.status) }}</span
                     >
-                      {{ getStatusLabel(detail.status) }}
-                    </span>
                   </div>
                 </div>
-
-                <!-- Sembunyikan copy button jika hangus -->
                 <button
                   v-if="detail.nomor && detail.status !== 'hangus'"
                   @click="handleCopy(detail.nomor)"
@@ -456,9 +451,7 @@
                 </button>
               </div>
 
-              <!-- FILE SECTION -->
               <div class="mt-2">
-                <!-- HANGUS -->
                 <template v-if="detail.status === 'hangus'">
                   <div
                     v-if="detail.file_name || detail.file_url"
@@ -510,14 +503,13 @@
                           d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                         />
                       </svg>
-                      <span class="text-xs text-gray-400 dark:text-gray-500">
-                        Nomor telah dihanguskan
-                      </span>
+                      <span class="text-xs text-gray-400 dark:text-gray-500"
+                        >Nomor telah dihanguskan</span
+                      >
                     </div>
                   </div>
                 </template>
 
-                <!-- Ada file (bukan hangus) → bisa di-preview -->
                 <div
                   v-else-if="
                     detail.file_name || detail.file_url || filesByIndex[idx]
@@ -555,8 +547,6 @@
                         Klik untuk preview
                       </p>
                     </div>
-
-                    <!-- Remove button hanya untuk local file saat Belum Diajukan -->
                     <button
                       v-if="
                         filesByIndex[idx] &&
@@ -584,7 +574,6 @@
                   </div>
                 </div>
 
-                <!-- Upload area jika belum ada file dan status Belum Diajukan -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
@@ -608,14 +597,12 @@
                     <div class="flex-1">
                       <span
                         class="text-gray-700 dark:text-gray-300 font-medium block"
+                        >Pilih file (Opsional)</span
                       >
-                        Pilih file (Opsional)
-                      </span>
                       <span
                         class="text-xs text-gray-500 dark:text-gray-400 block"
+                        >PDF, DOC, DOCX (Max 5MB)</span
                       >
-                        PDF, DOC, DOCX (Max 5MB)
-                      </span>
                     </div>
                     <input
                       type="file"
@@ -626,7 +613,6 @@
                   </label>
                 </div>
 
-                <!-- Belum ada file & tidak bisa upload -->
                 <div
                   v-else
                   class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2"
@@ -645,9 +631,9 @@
                         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                       />
                     </svg>
-                    <span class="text-xs text-yellow-800 dark:text-yellow-400">
-                      Belum ada file diupload
-                    </span>
+                    <span class="text-xs text-yellow-800 dark:text-yellow-400"
+                      >Belum ada file diupload</span
+                    >
                   </div>
                 </div>
               </div>
@@ -655,7 +641,6 @@
           </div>
         </div>
 
-        <!-- Info upload -->
         <div
           v-if="selectedRow?.status === 'Belum Diajukan'"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2"
@@ -682,7 +667,6 @@
           </div>
         </div>
 
-        <!-- Upload Progress -->
         <div
           v-if="isUploadingFiles"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
@@ -716,7 +700,6 @@
             <span v-if="isUploadingFiles">Mengirim...</span>
             <span v-else>Kirim Usulan</span>
           </button>
-
           <button
             v-if="selectedRow?.status === 'Belum Diajukan'"
             @click="openConfirmDelete = true"
@@ -762,10 +745,7 @@
     title="Pratinjau Dokumen"
     side="bottom"
     :dismissible="true"
-    :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0',
-    }"
+    :ui="{ content: 'h-screen max-h-screen', body: 'p-0' }"
   >
     <template #body>
       <div
@@ -1494,17 +1474,24 @@ watch([search, rowsPerPage, sortBy, sortDir, filterStatus], () => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
 }
-.animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
 }
 </style>

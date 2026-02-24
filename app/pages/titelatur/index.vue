@@ -245,7 +245,7 @@ const deleteNow = async () => {
 <template>
   <div class="space-y-6 pt-5 min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Titelatur Inggris

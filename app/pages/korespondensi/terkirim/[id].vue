@@ -238,52 +238,44 @@ const loadData = async () => {
       // === SURAT MASUK / KELUAR ===
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
-      const rawData = response?.data || response;
-      const inboxData = Array.isArray(rawData) ? rawData[0] : rawData;
 
-      if (inboxData) {
-        selected.value = inboxData;
-        const rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
+      // Handle: bisa array (multi) atau object (single)
+      const dataArray: any[] = Array.isArray(response) ? response : (response ? [response] : []);
+      const firstItem = dataArray[0]?.raw || dataArray[0];
 
-        details.value = rawFlows.map((item: any) => {
+      if (firstItem) {
+        selected.value = firstItem;
+
+        details.value = dataArray.map((item: any) => {
+          const d = item.raw || item;
+
           let listPenerima: any[] = [];
-          if (Array.isArray(item.penerima) && item.penerima.length > 0) listPenerima = item.penerima;
-          else if (Array.isArray(item.kepada) && item.kepada.length > 0) listPenerima = item.kepada;
-          else if (Array.isArray(item.to)) listPenerima = item.to;
-          else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
-
-          if (listPenerima.length === 0) {
-            if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
-            else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
-          }
-          if (listPenerima.length === 0 && item.detail?.kepada_yth) {
-            listPenerima = item.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
+          if (Array.isArray(d.penerima) && d.penerima.length > 0) listPenerima = d.penerima;
+          else if (Array.isArray(d.kepada) && d.kepada.length > 0) listPenerima = d.kepada;
+          if (listPenerima.length === 0 && d.detail?.kepada_yth) {
+            listPenerima = d.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
           }
 
           let listTembusan: any[] = [];
-          if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
-          else if (Array.isArray(item.cc)) listTembusan = item.cc;
-          if (listTembusan.length === 0) {
-            if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
-            else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
-          }
+          if (Array.isArray(d.tembusan)) listTembusan = d.tembusan;
+          else if (Array.isArray(d.cc)) listTembusan = d.cc;
 
           return {
-            id: item.id,
-            aksi: item.status || 'read',
-            jenis: item.jenis || inboxData.jenis || 'SM',
-            jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
-            perihal: item.perihal || inboxData.perihal,
-            nomor: item.nomor || inboxData.nomor || '-',
-            tanggal: item.tanggal || item.created_at || inboxData.tanggal,
-            pengirim: item.pengirim || item.from || inboxData.pengirim,
+            id: d.id,
+            aksi: d.status || 'read',
+            jenis: d.jenis || 'SM',
+            jenis_label: d.jenis_label || 'SURAT MASUK',
+            perihal: d.perihal,
+            nomor: d.nomor || '-',
+            tanggal: d.tanggal || d.created_at,
+            pengirim: d.pengirim,
             to: listPenerima,
             cc: listTembusan,
-            mainDisplayContentHtml: item.konten || item.isi || '',
-            catatan: item.catatan,
-            disposisi: item.disposisi || item.instruksi,
-            lampiran_files: item.lampiran_files || item.attachments || [],
-            final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
+            mainDisplayContentHtml: d.konten || d.isi || '',
+            catatan: d.catatan,
+            disposisi: d.disposisi || d.instruksi,
+            lampiran_files: d.lampiran_files || d.attachments || [],
+            final_pdf_url: d.final_pdf_url || d.file_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });

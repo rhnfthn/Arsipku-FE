@@ -35,9 +35,9 @@
             <div class="flex-1 min-w-0">
               <span class="block text-sm text-left truncate w-full">
                 {{ item.label }}
-                <span class="text-xs text-gray-500">
+                <!-- <span class="text-xs text-gray-500">
                   ({{ item.count }} Anggota)
-                </span>
+                </span> -->
               </span>
             </div>
           </div>

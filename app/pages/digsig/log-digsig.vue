@@ -614,7 +614,7 @@ import type { DigsigLog } from "~/types/digsig";
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
+  { label: "Log Digsig", to: "/digsig/log-digsig" },
 ];
 
 const {

@@ -420,7 +420,7 @@ const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
+  { label: "Cek Dokumen", to: "/digsig/cek-dokumen" },
 ];
 
 const fileName = ref("");

@@ -21,7 +21,9 @@ const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
 
 const targetHighlightId = computed(() => {
-  return (route.query.highlight_id as string) || (route.params.id as string);
+  // Jangan fallback ke route.params.id karena itu adalah ID konsep,
+  // bukan ID card/flow yang ada di DOM
+  return (route.query.highlight_id as string) || null;
 });
 // --- Cari bagian script ini dan sesuaikan ---
 
@@ -49,45 +51,42 @@ const isHighlighted = (detail: any) => {
 };
 
 const scrollToTarget = async () => {
-  // Tunggu render selesai
   await nextTick();
 
-  // GUARD UTAMA: Jika data cuma 1, LANGSUNG RETURN (Stop).
-  // Jangan jalankan logika scroll sama sekali.
-  if (details.value.length <= 1) {
-    return;
-  }
-
-  const targetId = route.query.highlight_id || route.query.ref_id || route.params.id;
-  if (!targetId) return;
+  if (details.value.length <= 1) return;
 
   setTimeout(() => {
-    const foundDetail = details.value.find((d: any) => {
-      // Logic pencarian...
-      if (d.id && String(d.id) === String(targetId)) return true;
-      if (d.urutan && String(d.urutan) === String(targetId)) return true;
-      if (d.aksi === 'create' && String(targetId) === String(id)) return true;
-      return false;
-    });
+    const targetId = route.query.highlight_id as string;
+    let targetDetail: any = null;
 
-    if (foundDetail) {
-      const domId = foundDetail.id || foundDetail.urutan;
-      const element = document.getElementById(`card-${domId}`);
+    if (targetId) {
+      // Ada highlight_id → scroll ke card spesifik
+      targetDetail = details.value.find((d: any) =>
+        String(d.id) === String(targetId) || String(d.urutan) === String(targetId)
+      );
+    } else {
+      // Tidak ada highlight_id → scroll ke card pertama (index 0)
+      targetDetail = details.value[0];
+    }
 
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!targetDetail) return;
 
-        // Tambahkan ring manual via JS juga dicegah
-        if (details.value.length > 1) {
-           element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
-           setTimeout(() => {
-             element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
-           }, 2000);
-        }
-      }
+    const domId = targetDetail.id || targetDetail.urutan;
+    const element = document.getElementById(`card-${domId}`);
+    if (!element) return;
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (targetId) {
+      // Highlight ring hanya kalau ada highlight_id eksplisit
+      element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+      }, 2000);
     }
   }, 500);
 };
+
 // --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
@@ -304,20 +303,20 @@ const loadData = async () => {
       }
     }
 
-    await nextTick(); // Tunggu DOM selesai render
+    // await nextTick(); // Tunggu DOM selesai render
 
-    if (targetHighlightId.value) {
-      const elementId = `card-${targetHighlightId.value}`;
-      const element = document.getElementById(elementId);
+    // if (targetHighlightId.value) {
+    //   const elementId = `card-${targetHighlightId.value}`;
+    //   const element = document.getElementById(elementId);
 
-      if (element) {
-        // Scroll ke elemen
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //   if (element) {
+    //     // Scroll ke elemen
+    //     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Opsional: Fokuskan element jika perlu aksesibilitas
-        element.focus();
-      }
-    }
+    //     // Opsional: Fokuskan element jika perlu aksesibilitas
+    //     element.focus();
+    //   }
+    // }
 
   } catch (e) {
     console.error("❌ Error loading data", e);

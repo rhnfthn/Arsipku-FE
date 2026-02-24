@@ -268,20 +268,65 @@ const publicTemplates = [
     name: 'Daftar Bertingkat Manual (1.1.2)',
     content: `
     <ol style="list-style: none; padding-left: 0;">
-      <li>1. Poin utama
+      <li>1. Pendahuluan
         <ol style="list-style: none; padding-left: 20px;">
-          <li>1.1 Sub poin
+          <li>1.1 Latar Belakang
             <ol style="list-style: none; padding-left: 20px;">
-              <li>1.1.2 Detail</li>
-              <li>1.1.3 Detail lanjutan</li>
+              <li>1.1.1 Sejarah Singkat</li>
+              <li>1.1.2 Kondisi Saat Ini</li>
             </ol>
           </li>
+          <li>1.2 Tujuan dan Manfaat</li>
+        </ol>
+      </li>
+
+      <li>2. Tinjauan Pustaka
+        <ol style="list-style: none; padding-left: 20px;">
+          <li>2.1 Landasan Teori</li>
+          <li>2.2 Penelitian Terdahulu
+            <ol style="list-style: none; padding-left: 20px;">
+              <li>2.2.1 Metode Pertama</li>
+              <li>2.2.2 Metode Kedua</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+
+      <li>3. Metodologi Pelaksanaan
+        <ol style="list-style: none; padding-left: 20px;">
+          <li>3.1 Tahap Persiapan</li>
+          <li>3.2 Tahap Pengumpulan Data
+            <ol style="list-style: none; padding-left: 20px;">
+              <li>3.2.1 Observasi Lapangan</li>
+              <li>3.2.2 Wawancara Mendalam</li>
+              <li>3.2.3 Studi Dokumen</li>
+            </ol>
+          </li>
+          <li>3.3 Tahap Analisis Data</li>
+        </ol>
+      </li>
+
+      <li>4. Hasil dan Pembahasan
+        <ol style="list-style: none; padding-left: 20px;">
+          <li>4.1 Deskripsi Data</li>
+          <li>4.2 Analisis Temuan Utama</li>
+        </ol>
+      </li>
+
+      <li>5. Kesimpulan dan Saran
+        <ol style="list-style: none; padding-left: 20px;">
+          <li>5.1 Kesimpulan
+            <ol style="list-style: none; padding-left: 20px;">
+              <li>5.1.1 Implikasi Teoritis</li>
+              <li>5.1.2 Implikasi Praktis</li>
+            </ol>
+          </li>
+          <li>5.2 Saran untuk Tindak Lanjut</li>
         </ol>
       </li>
     </ol>
   `
   }
-
 ]
 
 // --- COMPUTED ---
