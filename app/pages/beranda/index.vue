@@ -114,7 +114,7 @@
               variant="heading9m"
               class="mt-1 text-primary-400 dark:text-primary-300"
             >
-              Semoga hari anda menyenangkan
+              {{ $t("hero") }}
             </Heading>
           </div>
           <img
@@ -179,27 +179,27 @@
           <UCard :ui="cardUI" class="w-full lg:flex-1">
             <template #header>
               <div class="flex flex-col gap-3">
-                <Heading variant="heading9sb" class="font-semibold"
-                  >Statistik Surat</Heading
-                >
+                <Heading variant="heading9sb" class="font-semibold">{{
+                  $t("statstitle")
+                }}</Heading>
                 <div class="flex items-center gap-4 text-sm flex-wrap">
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400"
-                      >Surat Masuk</span
-                    >
+                    <span class="text-gray-600 dark:text-gray-400">{{
+                      $t("stats1")
+                    }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400"
-                      >Surat Terkirim</span
-                    >
+                    <span class="text-gray-600 dark:text-gray-400">{{
+                      $t("stats2")
+                    }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-purple-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400"
-                      >Surat Ditindaklanjuti</span
-                    >
+                    <span class="text-gray-600 dark:text-gray-400">{{
+                      $t("stats3")
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -213,7 +213,7 @@
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-gray-900 dark:text-white">
-                  Surat Masuk Terbaru
+                  {{ $t("righttitle") }}
                 </h3>
                 <UButton
                   to="/korespondensi/kotak-masuk"
@@ -222,7 +222,7 @@
                   variant="ghost"
                   trailing-icon="i-heroicons-arrow-right"
                 >
-                  Lihat Semua
+                  {{ $t("rightbutton") }}
                 </UButton>
               </div>
             </template>
@@ -335,6 +335,8 @@ const {
   fetchDashboardData,
   dashboardData,
 } = useDashboard();
+
+const { t } = useI18n();
 
 const cardUI = {
   root: "rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden",
