@@ -548,6 +548,9 @@ import PageHeader from "~/components/PageHeader.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useTemplate } from "~/composables/useTemplate";
 import type { Template } from "~/types/template";
+definePageMeta({
+  middleware: "auth",
+});
 
 const toast = useToast();
 

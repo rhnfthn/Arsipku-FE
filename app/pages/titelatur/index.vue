@@ -13,6 +13,9 @@ import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useTitelatur } from "~/composables/useTitelatur";
 import type { TitelaturItem } from "~/types/titelatur";
+definePageMeta({
+  middleware: "auth",
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },

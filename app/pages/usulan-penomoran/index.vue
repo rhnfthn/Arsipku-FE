@@ -791,6 +791,9 @@ import { Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const { user, getProfile } = useAuth();
 const {

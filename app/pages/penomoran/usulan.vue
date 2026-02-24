@@ -38,20 +38,17 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown -->
-        <div class="relative inline-block">
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="text-sm dark:text-gray-200">
-              {{ filterStatus || "Semua" }}
-            </span>
-
+            <span class="truncate">{{ filterStatus || "Semua" }}</span>
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -66,22 +63,27 @@
               />
             </svg>
           </button>
-
-          <!-- Dropdown -->
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item"
-              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  filterStatus === item
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- SEARCH -->
@@ -271,14 +273,11 @@
             >
               1
             </button>
-
             <span
               v-if="paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -292,16 +291,13 @@
             >
               {{ page }}
             </button>
-
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="handlePageChange(totalPages)"
@@ -796,6 +792,9 @@ import { Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
+definePageMeta({
+  middleware: "auth",
+});
 
 const { user, getProfile } = useAuth();
 const {
@@ -1510,18 +1509,25 @@ const onMouseLeave = () => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
 }
-.animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
 }
 
 :deep(.dark) {

@@ -325,6 +325,9 @@ import { ref } from "vue";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+definePageMeta({
+  middleware: "auth",
+});
 
 function buildReportData() {
   const data = documentCheck.value?.data;

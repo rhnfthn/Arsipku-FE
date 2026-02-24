@@ -818,6 +818,9 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import Modal from "~/components/Modal.vue";
 import { useDigsig } from "~/composables/useDigsig";
 import type { PenandatangananDocument } from "~/types/digsig";
+definePageMeta({
+  middleware: "auth",
+});
 
 const {
   penandatanganDocuments,

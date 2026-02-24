@@ -1095,6 +1095,9 @@ import {
 
 import { useDigsig } from "~/composables/useDigsig";
 import type { Verifikator } from "~/types/digsig";
+definePageMeta({
+  middleware: "auth",
+});
 
 const {
   documents,

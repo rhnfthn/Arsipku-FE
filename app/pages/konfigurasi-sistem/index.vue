@@ -435,6 +435,9 @@ import { ref, reactive, onMounted } from "vue";
 import { Save, Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
+definePageMeta({
+  middleware: "auth",
+});
 
 const activeTab = ref("digsig");
 

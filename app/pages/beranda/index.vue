@@ -154,12 +154,12 @@
                     >
                       {{ stat.value }}
                     </Heading>
-                    <p
+                    <!-- <p
                       v-if="stat.subtitle"
                       class="text-xs text-gray-400 dark:text-gray-500 mt-2 truncate"
                     >
                       {{ stat.subtitle }}
-                    </p>
+                    </p> -->
                   </div>
                   <div
                     :class="`mt-7 p-2 rounded-lg flex items-center ${stat.bgSolid} dark:bg-gray-700 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 flex-shrink-0 ml-3`"

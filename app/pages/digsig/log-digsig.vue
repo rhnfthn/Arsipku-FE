@@ -287,7 +287,7 @@
                 >
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 flex items-center justify-center font-semibold text-xs"
+                      class="w-8 h-8 rounded-full bg-primary-500 dark:bg-primary-900 text-white dark:text-primary-300 flex items-center justify-center font-semibold text-xs"
                     >
                       {{ getUserInitials(row.userName) }}
                     </div>
@@ -611,6 +611,9 @@
 import Modal from "~/components/Modal.vue";
 import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
 import type { DigsigLog } from "~/types/digsig";
+definePageMeta({
+  middleware: "auth",
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -827,12 +830,11 @@ const formatTime = (dateString: string) => {
 };
 
 const getUserInitials = (name: string) => {
-  if (!name) return "?";
-  const parts = name.split(" ");
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return (
+    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
+  ).toUpperCase();
 };
 
 const statusClass = (status: string) => {

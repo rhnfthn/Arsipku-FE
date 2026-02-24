@@ -860,6 +860,9 @@ import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
+definePageMeta({
+  middleware: "auth",
+});
 
 const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
