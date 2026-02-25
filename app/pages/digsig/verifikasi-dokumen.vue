@@ -26,35 +26,41 @@
         class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
       >
         <!-- STATUS FILTER -->
-        <div class="relative">
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm px-4 py-2 rounded-lg transition"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span>{{ filterStatusLabel }}</span>
+            <span class="truncate">{{ filterStatusLabel }}</span>
             <ChevronDown
               :class="[
-                'w-4 h-4 transition-transform duration-200',
-                openFilterStatus ? 'rotate-180' : '',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
+                openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
             />
           </button>
-
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item.value"
-              class="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item.label }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item.value"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  statusFilter === item.value
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- SEARCH -->
@@ -1989,3 +1995,25 @@ watch(isOpenPreview, (open) => {
   }
 });
 </script>
+<style scoped>
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+</style>
