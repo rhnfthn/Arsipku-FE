@@ -443,6 +443,7 @@ const activeApp = ref("");
 const hoveredApp = ref(null);
 
 const hasInboxUnread = computed(() => unreadCount.value > 0);
+const { t } = useI18n();
 
 const userMenuUtama = computed(() => {
   return [
@@ -500,7 +501,7 @@ const userMenuUtilitas = computed(() => {
 });
 
 const tulisMenu = computed(() => ({
-  label: "Tulis",
+  label: t("tulis"),
   to: "/korespondensi/tulis",
   icon: "i-lucide-edit",
   children: tulisChildrenByBod.value,
@@ -509,17 +510,17 @@ const tulisMenu = computed(() => ({
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? "";
   const all = [
-    { label: "Nota Dinas", to: "/korespondensi/tulis/nota-dinas" },
-    { label: "Disposisi", to: "/korespondensi/tulis/disposisi" },
+    { label: t("nota_dinas"), to: "/korespondensi/tulis/nota-dinas" },
+    { label: t("disposisi"), to: "/korespondensi/tulis/disposisi" },
     {
-      label: "Surat Dinas Internal",
+      label: t("surat_dinas_internal"),
       to: "/korespondensi/tulis/surat-dinas-internal",
     },
     {
-      label: "Surat Dinas Eksternal",
-      to: "/korespondensi/tulis/surat-dinas-eksternal",
+      label: t("surat_dinas_eksternal"),
+      to: "/korespondensi/tulis /surat-dinas-eksternal",
     },
-    { label: "Kajian", to: "/korespondensi/tulis/kajian" },
+    { label: t("kajian"), to: "/korespondensi/tulis/kajian" },
   ];
 
   if (tag === "BOD" || tag === "BOD-1") return all;
@@ -535,36 +536,40 @@ const tulisChildrenByBod = computed(() => {
 });
 
 const adminMenuUtama = computed(() => [
-  { label: "Beranda", to: "/beranda", icon: "i-lucide-layout-dashboard" },
+  { label: t("beranda"), to: "/beranda", icon: "i-lucide-layout-dashboard" },
   tulisMenu.value,
   {
-    label: "Kotak Masuk",
+    label: t("kotak_masuk"),
     to: "/korespondensi/kotak-masuk",
     icon: "i-lucide-inbox",
     badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
-  { label: "Terkirim", to: "/korespondensi/terkirim", icon: "i-lucide-send" },
-  { label: "Draf", to: "/korespondensi/draf", icon: "i-lucide-file-text" },
+  {
+    label: t("terkirim"),
+    to: "/korespondensi/terkirim",
+    icon: "i-lucide-send",
+  },
+  { label: t("draft"), to: "/korespondensi/draf", icon: "i-lucide-file-text" },
 ]);
 
 const adminMenuUtilitas = computed(() => {
   const menus = [
     {
-      label: "Digsig",
+      label: t("digsig"),
       icon: "i-lucide-signature",
       children: [
-        { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
-        { label: "Penandatanganan", to: "/digsig/penandatanganan" },
-        { label: "Cek Dokumen", to: "/digsig/cek-dokumen" },
+        { label: t("verifikasi"), to: "/digsig/verifikasi-dokumen" },
+        { label: t("sign"), to: "/digsig/penandatanganan" },
+        { label: t("check_dokumen"), to: "/digsig/cek-dokumen" },
         { label: "Log Digsig", to: "/digsig/log-digsig" },
       ],
     },
     {
-      label: "Penyingkat Tautan",
+      label: t("short_url"),
       to: "/penyingkat-tautan",
       icon: "i-lucide-link",
     },
-    { label: "Template", to: "/template", icon: "i-lucide-copy" },
+    { label: t("template"), to: "/template", icon: "i-lucide-copy" },
     {
       label: "Usulan Penomoran",
       to: "/usulan-penomoran",
@@ -582,19 +587,19 @@ const adminMenuUtilitas = computed(() => {
 
 const adminMenuAdministrasi = computed(() => {
   const base = [
-    { label: "Delegasi", to: "/delegasi", icon: "i-lucide-users" },
+    { label: t("delegasi"), to: "/delegasi", icon: "i-lucide-users" },
     {
-      label: "Titelatur Inggris",
+      label: t("titelatur_inggris"),
       to: "/titelatur",
       icon: "i-lucide-languages",
     },
     {
-      label: "Penomoran",
+      label: t("penomoran"),
       icon: "i-lucide-hash",
       hasNotification: false,
       children: [
         {
-          label: "Usulan",
+          label: t("usulan"),
           to: "/penomoran/usulan",
           badge:
             adminCounts.value.belum_diajukan > 0
@@ -602,39 +607,46 @@ const adminMenuAdministrasi = computed(() => {
               : null,
         },
         {
-          label: "Verifikasi",
+          label: t("ver"),
           to: "/penomoran/verifikasi",
           badge:
             adminCounts.value.menunggu_verifikasi > 0
               ? adminCounts.value.menunggu_verifikasi
               : null,
         },
-        { label: "Penomoran", to: "/penomoran/nomor" },
+        { label: t("penomoran"), to: "/penomoran/nomor" },
       ],
     },
-    { label: "Naskah Masuk", to: "/naskah-dinas", icon: "i-lucide-file-text" },
+    {
+      label: t("naskah_masuk"),
+      to: "/naskah-dinas",
+      icon: "i-lucide-file-text",
+    },
   ];
 
   if (user.value?.role === "superadmin") {
     base.push(
       {
-        label: "Master Data",
+        label: t("master_data"),
         icon: "i-lucide-database",
         children: [
-          { label: "Akun", to: "/master/akun", icon: "i-lucide-user-round" },
-          { label: "Tertuju Eksternal", to: "/master/tertuju-eksternal" },
           {
-            label: "Perusahaan",
+            label: t("akun"),
+            to: "/master/akun",
+            icon: "i-lucide-user-round",
+          },
+          { label: t("tertuju"), to: "/master/tertuju-eksternal" },
+          {
+            label: t("perusahaan"),
             to: "/master/perusahaan",
             icon: "i-lucide-building-2",
           },
-          { label: "Klasifikasi", to: "/master/klasifikasi" },
-          { label: "Jenis", to: "/master/jenis" },
+          { label: t("klasifikasi"), to: "/master/klasifikasi" },
+          { label: t("jenis"), to: "/master/jenis" },
         ],
       },
-      // ✅ Menu Konfigurasi Sistem — hanya untuk superadmin, di bawah Master Data
       {
-        label: "Konfigurasi Sistem",
+        label: t("konfigurasi"),
         to: "/konfigurasi-sistem",
         icon: "i-lucide-settings-2",
       },
@@ -644,23 +656,23 @@ const adminMenuAdministrasi = computed(() => {
   return base;
 });
 
-const adminMenuLaporan = [
+const adminMenuLaporan = computed(() => [
   {
-    label: "Rekap Naskah",
+    label: t("rekap"),
     to: "/laporan/rekap-naskah",
     icon: "i-lucide-file-bar-chart-2",
   },
   {
-    label: "Detail Naskah",
+    label: t("detail"),
     to: "/laporan/detail-naskah",
     icon: "i-lucide-file-search",
   },
   {
-    label: "Naskah Masuk",
+    label: t("naskah"),
     to: "/laporan/naskah-masuk",
     icon: "i-lucide-folder-input",
   },
-];
+]);
 
 const hasAdministrasiNotification = computed(() => {
   return adminCounts.value.menunggu_verifikasi > 0;
@@ -678,14 +690,14 @@ const apps = computed(() => {
     const baseApps = [
       {
         id: "admin-utama",
-        label: "Utama",
+        label: t("utama"),
         icon: "i-heroicons-squares-2x2",
         menus: adminMenuUtama.value,
         hasNotification: hasInboxUnread.value,
       },
       {
         id: "admin-utilitas",
-        label: "Utilitas",
+        label: t("utilitas"),
         icon: "i-heroicons-briefcase",
         menus: adminMenuUtilitas.value,
         hasNotification: false,
@@ -694,16 +706,16 @@ const apps = computed(() => {
     baseApps.push(
       {
         id: "admin-administrasi",
-        label: "Administrasi",
+        label: t("administrasi"),
         icon: "i-heroicons-cog-6-tooth",
         menus: adminMenuAdministrasi.value,
         hasNotification: hasAdministrasiNotification.value,
       },
       {
         id: "admin-laporan",
-        label: "Laporan",
+        label: t("laporan"),
         icon: "i-heroicons-presentation-chart-line",
-        menus: adminMenuLaporan,
+        menus: adminMenuLaporan.value,
         hasNotification: false,
       },
     );
@@ -712,14 +724,14 @@ const apps = computed(() => {
   return [
     {
       id: "user-utama",
-      label: "Utama",
+      label: t("utama"),
       icon: "i-heroicons-home",
       menus: userMenuUtama.value,
       hasNotification: hasInboxUnread.value,
     },
     {
       id: "user-utilitas",
-      label: "Utilitas",
+      label: t("utilitas"),
       icon: "i-heroicons-squares-plus",
       menus: userMenuUtilitas.value,
       hasNotification: hasUtilitasNotification.value,

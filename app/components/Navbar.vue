@@ -204,11 +204,12 @@
                 :key="lang.code"
                 :label="lang.name"
                 color="primary"
-                :variant="currentLocale === lang.code ? 'solid' : 'ghost'"
-                @click="setLocale(lang.code)"
+                :variant="locale === lang.code ? 'solid' : 'ghost'"
+                @click="changeLocale(lang.code)"
                 class="h-6 text-[10px] px-2"
               />
             </div>
+            z
           </div>
         </template>
       </UDropdownMenu>
@@ -266,6 +267,7 @@
                       class="w-5 h-5"
                     />
                   </div>
+
                   <h3
                     class="text-lg font-semibold text-gray-900 dark:text-white"
                   >
@@ -290,6 +292,7 @@
               >
                 <div class="space-y-6">
                   <!-- NOMOR SURAT & PERIHAL -->
+
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div class="md:col-span-2">
                       <label
@@ -1181,12 +1184,19 @@ const handleReset = () => {
 
 // --- THEME & LOCALE ---
 const isDark = useDark();
-const currentLocale = ref("id");
 const locales = [
   { code: "id", name: "ID" },
   { code: "en", name: "EN" },
 ];
-const setLocale = (code: string) => (currentLocale.value = code);
+const { locale, setLocale } = useI18n();
+const currentLocale = locale;
+
+const changeLocale = (code: string) => {
+  setLocale(code);
+  if (process.client) {
+    localStorage.setItem("arsipku_locale", code);
+  }
+};
 
 // --- MENU ITEMS ---
 const itemClass = "text-sm truncate transition-colors cursor-pointer";
@@ -1259,6 +1269,12 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 onMounted(() => {
   if (process.client) {
     initActiveState();
+
+    const savedLocale = localStorage.getItem("arsipku_locale");
+    if (savedLocale && ["id", "en"].includes(savedLocale)) {
+      setLocale(savedLocale);
+    }
+
     const successMsg = localStorage.getItem("switch_role_message");
     if (successMsg) {
       toast.add({

@@ -9,7 +9,7 @@
         <PageHeader title="Klasifikasi" :items="items" />
         <button
           @click="openAddModal"
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
           <Plus class="w-4 h-4" />
           Tambah
