@@ -517,13 +517,8 @@ const tulisChildrenByBod = computed(() => {
       to: "/korespondensi/tulis/surat-dinas-internal",
     },
     {
-<<<<<<< Updated upstream
-      label: "Surat Dinas Eksternal",
-      to: "/korespondensi/tulis/surat-dinas-eksternal",
-=======
       label: t("surat_dinas_eksternal"),
       to: "/korespondensi/tulis /surat-dinas-eksternal",
->>>>>>> Stashed changes
     },
     { label: t("kajian"), to: "/korespondensi/tulis/kajian" },
   ];
