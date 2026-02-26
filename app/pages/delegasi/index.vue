@@ -47,7 +47,7 @@ const showEditModal = ref(false);
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Delegasi", to: "/admin/delegasi" },
+  { label: "Delegasi", to: "/delegasi" },
 ];
 
 const listDelegasi = ref<any[]>([]);

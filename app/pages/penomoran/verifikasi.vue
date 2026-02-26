@@ -28,19 +28,17 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown -->
-        <div class="relative inline-block">
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="text-sm dark:text-gray-200">{{
-              filterStatus || "Semua"
-            }}</span>
+            <span class="truncate">{{ filterStatus || "Semua" }}</span>
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -55,20 +53,27 @@
               />
             </svg>
           </button>
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item"
-              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  filterStatus === item
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- SEARCH -->
@@ -402,7 +407,6 @@
             >
               Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
             </label>
-            <!-- Uncheck All toggle -->
             <label
               class="flex items-center gap-2 cursor-pointer select-none group"
             >
@@ -433,7 +437,6 @@
             </label>
           </div>
 
-          <!-- Warning: sebagian uncheck -->
           <div
             v-if="hasUnchecked && !allUnchecked"
             class="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2"
@@ -463,7 +466,6 @@
             </div>
           </div>
 
-          <!-- Warning: semua uncheck -->
           <div
             v-if="allUnchecked && validDetails.length > 0"
             class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2"
@@ -491,7 +493,6 @@
             </div>
           </div>
 
-          <!-- Warning: ada nomor tanpa ID -->
           <div
             v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
             class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
@@ -536,7 +537,6 @@
                     : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
                 ]"
               >
-                <!-- Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
                   <input
                     type="checkbox"
@@ -596,14 +596,11 @@
                             detail.status === 'hangus',
                         },
                       ]"
+                      >{{ getStatusLabel(detail.status) }}</span
                     >
-                      {{ getStatusLabel(detail.status) }}
-                    </span>
                   </div>
                 </div>
 
-                <!-- FILE SECTION: hanya preview, tidak ada upload -->
-                <!-- Tidak ada file -->
                 <div
                   v-if="!hasExistingFile(detail) && detail.status !== 'hangus'"
                   class="flex items-center gap-2 border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2.5"
@@ -627,7 +624,6 @@
                 </div>
 
                 <template v-if="hasExistingFile(detail)">
-                  <!-- Hangus: tampil file tapi style redup, tetap bisa preview -->
                   <div
                     v-if="detail.status === 'hangus'"
                     class="flex items-start border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition opacity-70"
@@ -660,7 +656,6 @@
                     </div>
                   </div>
 
-                  <!-- Normal: bisa preview -->
                   <div
                     v-else
                     class="flex items-start border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
@@ -738,7 +733,6 @@
         </div>
       </div>
 
-      <!-- FOOTER -->
       <template #footer>
         <div
           class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
@@ -783,7 +777,7 @@
     </Modal>
   </Teleport>
 
-  <!-- PREVIEW SLIDEOVER — teleport ke body agar muncul di atas Modal -->
+  <!-- PREVIEW SLIDEOVER -->
   <Teleport to="body">
     <USlideover
       v-model:open="isOpenPreview"
@@ -1311,17 +1305,24 @@ watch(isOpenPreview, (open) => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
 }
-.animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
 }
 </style>
