@@ -22,7 +22,7 @@
   "surat_dinas_eksternal": "Surat Dinas Eksternal",
   "kajian":"Kajian",
   "registrasi": "Registrasi",
-  "digsig": "Tanda Tangan Digital",
+  "digsig": "TTD Digital",
   "create": "Buat Baru",
   "sign": "Penandatangan",
   "check_dokumen": "Cek Dokumen",
@@ -30,6 +30,7 @@
   "delegasi": "Delegasi",
 
   "penomoran": "Penomoran",
+  "usulan-penomoran": "Usulan Penomoran",
   "usulan": "Usulan",
   "ver":"Verifikasi",
   "verifikasi": "Verifikasi Dokumen",
@@ -65,6 +66,9 @@
   "righttitle": "Surat Masuk Terbaru",
   "rightbutton": "Lihat Semua",
 
+  "vd_title":"Verifikasi Dokumen Digsig",
+  "vd_cari": "Cari Dokumen",
+
   "nm_title": "Daftar Naskah Masuk",
   "nm_button": "Tambah",
   "nm_modal_title": "Tambah Naskah Masuk",
@@ -89,6 +93,8 @@
   "cari":"Cari",
   "namauser":"Nama Pengguna",
   "aksi": "Aksi",
+  "nodokumen": "No Dokumen",
+  "dokumen": "Dokumen",
 
   "menampilkan": "Menampilkan",
   "dari": "dari",

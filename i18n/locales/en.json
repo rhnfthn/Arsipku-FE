@@ -30,6 +30,7 @@
   "delegasi": "Delegation",
 
   "penomoran": "Numbering",
+  "usulan-penomoran": "Numbering Proposal",
   "usulan": "Proposal",
   "ver":"Verify",
   "verifikasi": "Verify Document",
@@ -81,6 +82,9 @@
 
   "ma":"Account Management",
 
+  "vd_title":"Digsig Document Verification",
+  "vd_cari": "Search Documents",
+
   "tanggal": "Date",
   "asal_naskah": "Document Origin",
   "Tertuju": "Recipient",
@@ -89,6 +93,8 @@
   "cari": "Search",
   "namauser":"Username",
   "aksi": "Action",
+  "nodokumen": "Document Number",
+  "dokumen": "Document",
 
   "menampilkan": "Showing",
   "dari": "of",
