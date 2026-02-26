@@ -49,37 +49,39 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Jenis"
-            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
+            class="h-8 w-full rounded-lg px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-7 focus:outline-none focus:border-primary hover:border-primary transition-all truncate"
           />
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform duration-200"
             :class="{ 'rotate-180': openDropdown === 'type' }"
           />
-          <div
-            v-if="openDropdown === 'type'"
-            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <button
-              @click="selectJenis(null)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
-            >
-              Semua Jenis
-            </button>
-            <button
-              v-for="item in filteredJenisOptions"
-              :key="item.id"
-              @click="selectJenis(item)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
-            >
-              {{ item.jenis_text }}
-            </button>
+          <Transition name="filter-dd">
             <div
-              v-if="filteredJenisOptions.length === 0"
-              class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+              v-if="openDropdown === 'type'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full max-h-60 overflow-y-auto"
             >
-              Data tidak ditemukan
+              <button
+                @click="selectJenis(null)"
+                class="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 border-b border-gray-50 dark:border-gray-700"
+              >
+                Semua Jenis
+              </button>
+              <button
+                v-for="item in filteredJenisOptions"
+                :key="item.id"
+                @click="selectJenis(item)"
+                class="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 border-b border-gray-50 dark:border-gray-700 last:border-0"
+              >
+                {{ item.jenis_text }}
+              </button>
+              <div
+                v-if="filteredJenisOptions.length === 0"
+                class="px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 italic"
+              >
+                Data tidak ditemukan
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
 
         <!-- LOKASI FILTER -->
@@ -90,54 +92,56 @@
             @keydown.escape="openDropdown = null"
             type="text"
             placeholder="Semua Lokasi"
-            class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
+            class="h-8 w-full rounded-lg px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-7 focus:outline-none focus:border-primary hover:border-primary transition-all truncate"
           />
           <ChevronDown
-            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
+            class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform duration-200"
             :class="{ 'rotate-180': openDropdown === 'lokasi' }"
           />
-          <div
-            v-if="openDropdown === 'lokasi'"
-            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <button
-              @click="selectLokasi(null)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
-            >
-              Semua Lokasi
-            </button>
-            <button
-              v-for="item in filteredLokasiOptions"
-              :key="item.value"
-              @click="selectLokasi(item)"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
-            >
-              {{ item.label }}
-            </button>
+          <Transition name="filter-dd">
             <div
-              v-if="filteredLokasiOptions.length === 0"
-              class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+              v-if="openDropdown === 'lokasi'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full max-h-60 overflow-y-auto"
             >
-              Data tidak ditemukan
+              <button
+                @click="selectLokasi(null)"
+                class="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 border-b border-gray-50 dark:border-gray-700"
+              >
+                Semua Lokasi
+              </button>
+              <button
+                v-for="item in filteredLokasiOptions"
+                :key="item.value"
+                @click="selectLokasi(item)"
+                class="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 border-b border-gray-50 dark:border-gray-700 last:border-0"
+              >
+                {{ item.label }}
+              </button>
+              <div
+                v-if="filteredLokasiOptions.length === 0"
+                class="px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 italic"
+              >
+                Data tidak ditemukan
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
 
         <!-- STATUS FILTER -->
         <div class="relative w-[180px] shrink-0">
           <div
             @click="toggle('status')"
-            class="h-8 w-full px-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-md flex items-center gap-1 cursor-pointer overflow-hidden"
+            class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
           >
             <span
               v-if="!selectedStatuses.length"
-              class="text-black dark:text-white truncate"
+              class="text-gray-700 dark:text-white truncate text-sm flex-1"
             >
               Semua Status
             </span>
             <div
               v-else
-              class="flex items-center gap-1 flex-nowrap overflow-hidden"
+              class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
             >
               <span
                 v-for="status in selectedStatuses"
@@ -154,100 +158,120 @@
               </span>
             </div>
             <ChevronDown
-              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
+              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'status' }"
             />
           </div>
-          <div
-            v-if="openDropdown === 'status'"
-            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full p-2"
-          >
-            <div class="flex flex-col gap-1">
-              <button
-                v-for="status in statusOptions"
-                :key="status.value"
-                @mousedown.prevent
-                @click="toggleStatus(status.value)"
-                class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                :class="
-                  selectedStatuses.includes(status.value)
-                    ? 'bg-primary text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100'
-                "
-              >
-                {{ status.label }}
-              </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openDropdown === 'status'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+            >
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="status in statusOptions"
+                  :key="status.value"
+                  @mousedown.prevent
+                  @click="toggleStatus(status.value)"
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    selectedStatuses.includes(status.value)
+                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                  "
+                >
+                  {{ status.label }}
+                </button>
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
 
         <!-- BULAN -->
         <div class="relative">
           <button
             @click="toggle('month')"
-            class="h-8 px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
+            class="h-8 px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 rounded-lg flex items-center gap-2 min-w-[130px] hover:border-primary transition-all"
           >
-            <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
+            <span class="flex-1 text-left truncate">{{
+              selectedMonthLabel || "Semua Bulan"
+            }}</span>
             <ChevronDown
-              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
+              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'month' }"
             />
           </button>
-          <div
-            v-if="openDropdown === 'month'"
-            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <button
-              @click="
-                selectedMonth = '';
-                openDropdown = null;
-              "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
+          <Transition name="filter-dd">
+            <div
+              v-if="openDropdown === 'month'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full max-h-60 overflow-y-auto"
             >
-              Semua Bulan
-            </button>
-            <button
-              v-for="bulan in monthOptions"
-              :key="bulan.value"
-              @click="
-                selectedMonth = bulan.value;
-                openDropdown = null;
-              "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
-            >
-              {{ bulan.label }}
-            </button>
-          </div>
+              <button
+                @click="
+                  selectedMonth = '';
+                  openDropdown = null;
+                "
+                class="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 border-b border-gray-50 dark:border-gray-700"
+              >
+                Semua Bulan
+              </button>
+              <button
+                v-for="bulan in monthOptions"
+                :key="bulan.value"
+                @click="
+                  selectedMonth = bulan.value;
+                  openDropdown = null;
+                "
+                :class="[
+                  'block w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  selectedMonth === bulan.value
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100',
+                ]"
+              >
+                {{ bulan.label }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- TAHUN -->
         <div class="relative">
           <button
             @click="toggle('year')"
-            class="h-8 px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md flex items-center gap-1 min-w-[120px] truncate"
+            class="h-8 px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 rounded-lg flex items-center gap-2 min-w-[100px] hover:border-primary transition-all"
           >
-            <span>{{ selectedYear || "Semua Tahun" }}</span>
+            <span class="flex-1 text-left">{{
+              selectedYear || "Semua Tahun"
+            }}</span>
             <ChevronDown
-              class="w-4 h-4 ml-auto transition-transform duration-200"
+              class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'year' }"
             />
           </button>
-          <div
-            v-if="openDropdown === 'year'"
-            class="absolute z-[999] mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-md w-full max-h-60 overflow-y-auto"
-          >
-            <button
-              v-for="tahun in yearOptions"
-              :key="tahun"
-              @click="
-                selectedYear = tahun;
-                openDropdown = null;
-              "
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
+          <Transition name="filter-dd">
+            <div
+              v-if="openDropdown === 'year'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full max-h-60 overflow-y-auto"
             >
-              {{ tahun }}
-            </button>
-          </div>
+              <button
+                v-for="tahun in yearOptions"
+                :key="tahun"
+                @click="
+                  selectedYear = tahun;
+                  openDropdown = null;
+                "
+                :class="[
+                  'block w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  selectedYear === tahun
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100',
+                ]"
+              >
+                {{ tahun }}
+              </button>
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
@@ -789,3 +813,21 @@ const formatStatusLabel = (status: string) => {
   return found?.label ?? status;
 };
 </script>
+<style scoped>
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>

@@ -27,6 +27,7 @@
               />
             </button>
 
+            <!-- JENIS FILTER -->
             <div class="relative w-[220px] jenis-dropdown">
               <input
                 v-model="jenisSearch"
@@ -34,121 +35,136 @@
                 @input="jenisOpen = true"
                 type="text"
                 :placeholder="selectedJenis || 'Cari jenis naskah'"
-                class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-4 py-2 text-sm w-full border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+                class="h-9 w-full rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-8 focus:outline-none focus:border-primary hover:border-primary transition-all"
               />
-
-              <svg
-                class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300"
+              <ChevronDown
+                class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform duration-200"
                 :class="jenisOpen ? 'rotate-180' : 'rotate-0'"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-
-              <!-- Dropdown -->
-              <div
-                v-if="jenisOpen"
-                class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
-              >
-                <ul class="max-h-60 overflow-auto text-sm">
-                  <li
-                    @click="selectJenis('')"
-                    class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    Semua Jenis
-                  </li>
-
-                  <li
-                    v-for="jenis in jenisOptions"
-                    :key="jenis"
-                    @click="selectJenis(jenis)"
-                    class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    {{ jenis }}
-                  </li>
-
-                  <li
-                    v-if="!jenisOptions.length"
-                    class="px-4 py-2 text-gray-400 dark:text-gray-500"
-                  >
-                    Tidak ditemukan
-                  </li>
-                </ul>
-              </div>
+              />
+              <Transition name="filter-dd">
+                <div
+                  v-if="jenisOpen"
+                  class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+                >
+                  <ul class="max-h-60 overflow-auto text-sm">
+                    <li
+                      @click="selectJenis('')"
+                      class="px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white border-b border-gray-50 dark:border-gray-700"
+                    >
+                      Semua Jenis
+                    </li>
+                    <li
+                      v-for="jenis in jenisOptions"
+                      :key="jenis"
+                      @click="selectJenis(jenis)"
+                      class="px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white border-b border-gray-50 dark:border-gray-700 last:border-0"
+                    >
+                      {{ jenis }}
+                    </li>
+                    <li
+                      v-if="!jenisOptions.length"
+                      class="px-4 py-2.5 text-gray-400 dark:text-gray-500 italic"
+                    >
+                      Tidak ditemukan
+                    </li>
+                  </ul>
+                </div>
+              </Transition>
             </div>
 
-            <div class="relative w-[180px]">
-              <select
-                v-model="selectedMonth"
-                @mousedown="monthOpen = !monthOpen"
-                @change="monthOpen = false"
-                class="appearance-none bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 pr-10 text-sm w-full cursor-pointer border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+            <!-- BULAN FILTER -->
+            <div class="relative" data-t1-dropdown>
+              <button
+                type="button"
+                @click.stop="t1Open = t1Open === 'bulan' ? null : 'bulan'"
+                class="h-9 flex items-center gap-2 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[150px] justify-between"
               >
-                <option value="">Semua Bulan</option>
-                <option
-                  v-for="bulan in monthOptions"
-                  :key="bulan.value"
-                  :value="bulan.value"
-                >
-                  {{ bulan.label }}
-                </option>
-              </select>
-
-              <!-- ICON -->
-              <svg
-                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300"
-                :class="monthOpen ? 'rotate-180' : 'rotate-0'"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
+                <span class="truncate">{{
+                  selectedMonthLabel || "Semua Bulan"
+                }}</span>
+                <ChevronDown
+                  class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                  :class="t1Open === 'bulan' ? 'rotate-180' : ''"
                 />
-              </svg>
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="t1Open === 'bulan'"
+                  class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[160px] max-h-64 overflow-y-auto"
+                >
+                  <button
+                    type="button"
+                    @click.stop="
+                      selectedMonth = '';
+                      t1Open = null;
+                    "
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
+                      selectedMonth === ''
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    Semua Bulan
+                  </button>
+                  <button
+                    v-for="bulan in monthOptions"
+                    :key="bulan.value"
+                    type="button"
+                    @click.stop="
+                      selectedMonth = bulan.value;
+                      t1Open = null;
+                    "
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                      selectedMonth === bulan.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ bulan.label }}
+                  </button>
+                </div>
+              </Transition>
             </div>
 
-            <div class="relative w-[140px]">
-              <select
-                v-model="selectedYear"
-                @mousedown="yearOpen = !yearOpen"
-                @change="yearOpen = false"
-                class="appearance-none bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 pr-10 text-sm w-full cursor-pointer border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+            <!-- TAHUN FILTER -->
+            <div class="relative" data-t1-dropdown>
+              <button
+                type="button"
+                @click.stop="t1Open = t1Open === 'tahun' ? null : 'tahun'"
+                class="h-9 flex items-center gap-2 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[100px] justify-between"
               >
-                <option
-                  v-for="tahun in yearOptions"
-                  :key="tahun"
-                  :value="tahun"
-                >
-                  {{ tahun }}
-                </option>
-              </select>
-
-              <!-- ICON -->
-              <svg
-                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300"
-                :class="yearOpen ? 'rotate-180' : 'rotate-0'"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
+                <span>{{ selectedYear }}</span>
+                <ChevronDown
+                  class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                  :class="t1Open === 'tahun' ? 'rotate-180' : ''"
                 />
-              </svg>
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="t1Open === 'tahun'"
+                  class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[110px]"
+                >
+                  <button
+                    v-for="tahun in yearOptions"
+                    :key="tahun"
+                    type="button"
+                    @click.stop="
+                      selectedYear = tahun;
+                      t1Open = null;
+                    "
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                      selectedYear === tahun
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ tahun }}
+                  </button>
+                </div>
+              </Transition>
             </div>
           </div>
 
@@ -367,47 +383,253 @@
                   :class="{ 'animate-spin': loadingTable2 }"
                 />
               </button>
-              <select
-                v-model="filters.jenis"
-                class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                <option value="">Semua Jenis</option>
-                <option value="ND">Nota Dinas</option>
-                <option value="ST">Surat Tugas</option>
-              </select>
-              <select
-                v-model="filters.lokasi"
-                class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                <option value="">Semua Lokasi</option>
-                <option v-for="lok in lokasiOptions" :key="lok" :value="lok">
-                  {{ lok }}
-                </option>
-              </select>
-              <select
-                v-model="filters.status"
-                class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                <option value="">Semua Status</option>
-                <option value="terpakai_final">Final</option>
-                <option value="Terpakai">Terpakai</option>
-                <option value="booking">Booking</option>
-                <option value="Hangus">Hangus</option>
-              </select>
-              <select
-                v-model="filters.tahun"
-                class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                <option value="">Semua Tahun</option>
-                <option
-                  v-for="tahun in tahunOptions"
-                  :key="tahun"
-                  :value="tahun"
+
+              <!-- ROWS PER PAGE -->
+              <div class="relative" data-t2-dropdown>
+                <button
+                  type="button"
+                  @click.stop="t2Open = t2Open === 'limit' ? null : 'limit'"
+                  class="h-9 flex items-center gap-2 rounded-lg px-3 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[70px] justify-between"
                 >
-                  {{ tahun }}
-                </option>
-              </select>
+                  <span>{{ itemsPerPage }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="t2Open === 'limit' ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="t2Open === 'limit'"
+                    class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[80px]"
+                  >
+                    <button
+                      v-for="n in [5, 10, 20, 50]"
+                      :key="n"
+                      type="button"
+                      @click.stop="
+                        itemsPerPage = n;
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        itemsPerPage === n
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      {{ n }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- JENIS -->
+              <div class="relative" data-t2-dropdown>
+                <button
+                  type="button"
+                  @click.stop="t2Open = t2Open === 'jenis' ? null : 'jenis'"
+                  class="h-9 flex items-center gap-2 rounded-lg px-3 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[130px] justify-between"
+                >
+                  <span class="truncate">{{
+                    filters.jenis === ""
+                      ? "Semua Jenis"
+                      : filters.jenis === "ND"
+                        ? "Nota Dinas"
+                        : "Surat Tugas"
+                  }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="t2Open === 'jenis' ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="t2Open === 'jenis'"
+                    class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                  >
+                    <button
+                      v-for="opt in [
+                        { label: 'Semua Jenis', value: '' },
+                        { label: 'Nota Dinas', value: 'ND' },
+                        { label: 'Surat Tugas', value: 'ST' },
+                      ]"
+                      :key="opt.value"
+                      type="button"
+                      @click.stop="
+                        filters.jenis = opt.value;
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        filters.jenis === opt.value
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- LOKASI -->
+              <div class="relative" data-t2-dropdown>
+                <button
+                  type="button"
+                  @click.stop="t2Open = t2Open === 'lokasi' ? null : 'lokasi'"
+                  class="h-9 flex items-center gap-2 rounded-lg px-3 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[140px] justify-between"
+                >
+                  <span class="truncate">{{
+                    filters.lokasi || "Semua Lokasi"
+                  }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="t2Open === 'lokasi' ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="t2Open === 'lokasi'"
+                    class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[160px] max-h-60 overflow-y-auto"
+                  >
+                    <button
+                      type="button"
+                      @click.stop="
+                        filters.lokasi = '';
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
+                        filters.lokasi === ''
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      Semua Lokasi
+                    </button>
+                    <button
+                      v-for="lok in lokasiOptions"
+                      :key="lok"
+                      type="button"
+                      @click.stop="
+                        filters.lokasi = lok;
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        filters.lokasi === lok
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      {{ lok }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- STATUS -->
+              <div class="relative" data-t2-dropdown>
+                <button
+                  type="button"
+                  @click.stop="t2Open = t2Open === 'status' ? null : 'status'"
+                  class="h-9 flex items-center gap-2 rounded-lg px-3 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[140px] justify-between"
+                >
+                  <span class="truncate">{{ t2StatusLabel }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="t2Open === 'status' ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="t2Open === 'status'"
+                    class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                  >
+                    <button
+                      v-for="opt in [
+                        { label: 'Semua Status', value: '' },
+                        { label: 'Final', value: 'terpakai_final' },
+                        { label: 'Terpakai', value: 'Terpakai' },
+                        { label: 'Booking', value: 'booking' },
+                        { label: 'Hangus', value: 'Hangus' },
+                      ]"
+                      :key="opt.value"
+                      type="button"
+                      @click.stop="
+                        filters.status = opt.value;
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        filters.status === opt.value
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- TAHUN -->
+              <div class="relative" data-t2-dropdown>
+                <button
+                  type="button"
+                  @click.stop="t2Open = t2Open === 'tahun' ? null : 'tahun'"
+                  class="h-9 flex items-center gap-2 rounded-lg px-3 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white hover:border-primary transition-all min-w-[120px] justify-between"
+                >
+                  <span class="truncate">{{
+                    filters.tahun || "Semua Tahun"
+                  }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="t2Open === 'tahun' ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="t2Open === 'tahun'"
+                    class="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-[130px] max-h-60 overflow-y-auto"
+                  >
+                    <button
+                      type="button"
+                      @click.stop="
+                        filters.tahun = '';
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
+                        filters.tahun === ''
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      Semua Tahun
+                    </button>
+                    <button
+                      v-for="tahun in tahunOptions"
+                      :key="tahun"
+                      type="button"
+                      @click.stop="
+                        filters.tahun = tahun;
+                        t2Open = null;
+                      "
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        filters.tahun === tahun
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      ]"
+                    >
+                      {{ tahun }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
             </div>
+
             <button
               class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
               @click="exportTable2"
@@ -434,58 +656,55 @@
           <table class="w-full text-sm">
             <thead class="bg-primary dark:bg-primary-700 text-white">
               <tr>
+                <!-- Sortable: Naskah -->
                 <th
-                  v-for="col in [
-                    'naskah',
-                    'nomor',
-                    'tanggal',
-                    'perihal',
-                    'jabatan',
-                    'lokasi',
-                    'status',
-                  ]"
-                  :key="col"
-                  @click="handleSort(col)"
-                  class="px-4 py-3 text-left font-semibold cursor-pointer transition-colors"
+                  @click="handleSort('naskah')"
+                  class="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition-colors select-none"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{
-                      col.charAt(0).toUpperCase() + col.slice(1)
-                    }}</span>
-                    <div class="flex flex-col">
-                      <svg
-                        class="w-3 h-3 -mb-1"
-                        :class="
-                          sortConfig.key === col &&
-                          sortConfig.direction === 'asc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                        />
-                      </svg>
-                      <svg
-                        class="w-3 h-3"
-                        :class="
-                          sortConfig.key === col &&
-                          sortConfig.direction === 'desc'
-                            ? 'opacity-100'
-                            : 'opacity-40'
-                        "
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                        />
-                      </svg>
-                    </div>
+                    <span>Naskah</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200 flex-shrink-0"
+                      :class="[
+                        sortConfig.key === 'naskah'
+                          ? 'opacity-100'
+                          : 'opacity-40',
+                        sortConfig.key === 'naskah' &&
+                        sortConfig.direction === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0',
+                      ]"
+                    />
                   </div>
                 </th>
+                <!-- Non-sortable -->
+                <th class="px-4 py-3 text-left font-semibold">Nomor</th>
+                <!-- Sortable: Tanggal -->
+                <th
+                  @click="handleSort('tanggal')"
+                  class="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition-colors select-none"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>Tanggal</span>
+                    <ArrowUpDown
+                      class="w-4 h-4 transition-transform duration-200 flex-shrink-0"
+                      :class="[
+                        sortConfig.key === 'tanggal'
+                          ? 'opacity-100'
+                          : 'opacity-40',
+                        sortConfig.key === 'tanggal' &&
+                        sortConfig.direction === 'desc'
+                          ? 'rotate-180'
+                          : 'rotate-0',
+                      ]"
+                    />
+                  </div>
+                </th>
+                <!-- Non-sortable -->
+                <th class="px-4 py-3 text-left font-semibold">Perihal</th>
+                <th class="px-4 py-3 text-left font-semibold">Jabatan</th>
+                <th class="px-4 py-3 text-left font-semibold">Lokasi</th>
+                <th class="px-4 py-3 text-left font-semibold">Status</th>
               </tr>
             </thead>
 
@@ -689,10 +908,9 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { RotateCcw } from "lucide-vue-next";
+import { RotateCcw, ChevronDown, ArrowUpDown } from "lucide-vue-next";
 import { useLaporan } from "~/composables/useLaporan";
 import { useToast } from "#imports";
 import * as XLSX from "xlsx";
@@ -734,6 +952,13 @@ const handleClickOutside = (e: MouseEvent) => {
   if (el && !el.contains(e.target as Node)) {
     jenisOpen.value = false;
   }
+  const target = e.target as HTMLElement;
+  if (!target.closest("[data-t2-dropdown]")) {
+    t2Open.value = null;
+  }
+  if (!target.closest("[data-t1-dropdown]")) {
+    t1Open.value = null;
+  }
 };
 
 onMounted(() => {
@@ -759,7 +984,9 @@ const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
   direction: "asc",
 });
 const currentPage = ref(1);
-const itemsPerPage = ref(5);
+const itemsPerPage = ref(10);
+const t2Open = ref<string | null>(null);
+const t1Open = ref<string | null>(null);
 
 const monthOptions = [
   { label: "Januari", value: "jan" },
@@ -912,6 +1139,17 @@ const lokasiOptions = computed(() => [
   ...new Set(table2Data.value.map((d) => d.lokasi)),
 ]);
 
+const t2StatusLabel = computed(() => {
+  const map: Record<string, string> = {
+    "": "Semua Status",
+    terpakai_final: "Final",
+    Terpakai: "Terpakai",
+    booking: "Booking",
+    Hangus: "Hangus",
+  };
+  return map[filters.value.status] ?? "Semua Status";
+});
+
 const tahunOptions = computed(() =>
   [
     ...new Set(
@@ -1012,6 +1250,11 @@ watch(totalPages, (val) => {
 });
 
 watch(currentPage, () => {
+  fetchTable2();
+});
+
+watch(itemsPerPage, () => {
+  currentPage.value = 1;
   fetchTable2();
 });
 
@@ -1173,7 +1416,6 @@ const exportTable2 = () => {
   }
 };
 </script>
-
 <style scoped>
 .animate-spin {
   animation: spin 1s linear infinite;
@@ -1186,5 +1428,22 @@ const exportTable2 = () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Animasi dropdown filter */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
 }
 </style>
