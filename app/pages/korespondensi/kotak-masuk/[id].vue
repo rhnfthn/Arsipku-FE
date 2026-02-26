@@ -21,7 +21,9 @@ const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
 
 const targetHighlightId = computed(() => {
-  return (route.query.highlight_id as string) || (route.params.id as string);
+  // Jangan fallback ke route.params.id karena itu adalah ID konsep,
+  // bukan ID card/flow yang ada di DOM
+  return (route.query.highlight_id as string) || null;
 });
 // --- Cari bagian script ini dan sesuaikan ---
 
@@ -49,45 +51,42 @@ const isHighlighted = (detail: any) => {
 };
 
 const scrollToTarget = async () => {
-  // Tunggu render selesai
   await nextTick();
 
-  // GUARD UTAMA: Jika data cuma 1, LANGSUNG RETURN (Stop).
-  // Jangan jalankan logika scroll sama sekali.
-  if (details.value.length <= 1) {
-    return;
-  }
-
-  const targetId = route.query.highlight_id || route.query.ref_id || route.params.id;
-  if (!targetId) return;
+  if (details.value.length <= 1) return;
 
   setTimeout(() => {
-    const foundDetail = details.value.find((d: any) => {
-      // Logic pencarian...
-      if (d.id && String(d.id) === String(targetId)) return true;
-      if (d.urutan && String(d.urutan) === String(targetId)) return true;
-      if (d.aksi === 'create' && String(targetId) === String(id)) return true;
-      return false;
-    });
+    const targetId = route.query.highlight_id as string;
+    let targetDetail: any = null;
 
-    if (foundDetail) {
-      const domId = foundDetail.id || foundDetail.urutan;
-      const element = document.getElementById(`card-${domId}`);
+    if (targetId) {
+      // Ada highlight_id → scroll ke card spesifik
+      targetDetail = details.value.find((d: any) =>
+        String(d.id) === String(targetId) || String(d.urutan) === String(targetId)
+      );
+    } else {
+      // Tidak ada highlight_id → scroll ke card pertama (index 0)
+      targetDetail = details.value[0];
+    }
 
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!targetDetail) return;
 
-        // Tambahkan ring manual via JS juga dicegah
-        if (details.value.length > 1) {
-           element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
-           setTimeout(() => {
-             element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
-           }, 2000);
-        }
-      }
+    const domId = targetDetail.id || targetDetail.urutan;
+    const element = document.getElementById(`card-${domId}`);
+    if (!element) return;
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (targetId) {
+      // Highlight ring hanya kalau ada highlight_id eksplisit
+      element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+      }, 2000);
     }
   }, 500);
 };
+
 // --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
@@ -164,84 +163,62 @@ const loadData = async () => {
       // === LOGIC KONSEP ===
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
-      const konsepData = response?.data || response;
+      const rawData = response?.data || response;
 
-      if (konsepData) {
-        selected.value = konsepData;
-        const rawFlows = konsepData.flow || [];
-        const sortedFlows = [...rawFlows].sort((a: any, b: any) => b.urutan - a.urutan);
-        const lastFlow = sortedFlows.length > 0 ? sortedFlows[0] : null;
-        if (lastFlow) {
-          // 1. Ambil ID user saat ini (Konversi ke String agar aman)
-          // Gunakan fallback ke localStorage jika useAuth belum ready
-          const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-          const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
+      // 1. Jadikan rawData sebagai array
+      const rawFlows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
 
-          // 2. LOGIKA TOMBOL EDIT (Reject)
-          const rejectorId = String(lastFlow.from?.position_id || lastFlow.from?.id || '');
-          showEditAction.value = (lastFlow.aksi === 'reject' && rejectorId !== myPosId);
+      // 2. Urutkan berdasarkan created_at descending (terbaru di index 0)
+      const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
+        new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
+      );
 
-          // 3. LOGIKA TOMBOL SETUJUI/TOLAK (FINALIZE) -- PERBAIKAN DISINI --
-          let isTarget = false;
+      if (sortedFlows.length > 0) {
+        // Ambil elemen pertama sebagai data utama (terbaru)
+        const lastFlow = sortedFlows[0];
+        selected.value = lastFlow;
 
-          // Debugging log (bisa dihapus nanti)
-          // console.log("Cek Target -> MyID:", myPosId, "Flow To:", lastFlow.to);
+        // Ambil ID user saat ini
+        const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
+        const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
 
-          if (myPosId) {
-            // Cek jika Array
-            if (Array.isArray(lastFlow.to)) {
-              isTarget = lastFlow.to.some((t: any) => {
-                const tId = String(t.position_id || t.id || '');
-                return tId == myPosId; // Gunakan loose equality (==)
-              });
-            }
-            // Cek jika Object
-            else if (lastFlow.to) {
-              const tId = String(lastFlow.to.position_id || lastFlow.to.id || '');
-              isTarget = (tId == myPosId); // Gunakan loose equality (==)
-            }
-          }
+        // Ambil aksi terakhir dari objek 'detail'
+        const lastAksi = lastFlow.detail?.aksi || lastFlow.aksi || '';
 
-          // Force true jika user adalah target, biarkan false jika tidak.
-          // Nanti Child Component akan melakukan cek ulang based on Context.
-          showFinalizeActions.value = isTarget;
+        // LOGIKA TOMBOL EDIT (Reject)
+        const rejectorId = String(lastFlow.pengirim?.position_id || lastFlow.pengirim?.id || '');
+        showEditAction.value = (lastAksi === 'reject' && rejectorId !== myPosId);
+
+        // LOGIKA TOMBOL SETUJUI/TOLAK (FINALIZE)
+        let isTarget = false;
+        if (myPosId && Array.isArray(lastFlow.penerima)) {
+          isTarget = lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') == myPosId);
         }
+        showFinalizeActions.value = isTarget;
 
-        details.value = sortedFlows.map((flow: any) => {
-          let kontenText = flow.rich_content;
-          if ((flow.aksi === 'create' || flow.aksi === 'forward') && !kontenText) {
-            kontenText = konsepData.naskah?.konten || konsepData.naskah?.content?.konten || "";
-          }
-
-          let penerimaList: any[] = [];
-          let tembusanList: any[] = [];
-
-          if (flow.aksi === 'create' || flow.aksi === 'forward') {
-            penerimaList = Array.isArray(konsepData.penerima) ? konsepData.penerima : (Array.isArray(konsepData.kepada) ? konsepData.kepada : []);
-            tembusanList = Array.isArray(konsepData.tembusan) ? konsepData.tembusan : [];
-          } else {
-            penerimaList = Array.isArray(flow.to) ? flow.to : (flow.to ? [flow.to] : []);
-            tembusanList = flow.cc || [];
-          }
+        // Mapping array ke state details
+        details.value = sortedFlows.map((flow: any, index: number) => {
+          // Ambil properti dari flow (disesuaikan dengan JSON baru)
+          const aksi = flow.detail?.aksi || flow.aksi || 'read';
+          const catatan = flow.detail?.catatan || flow.catatan || '';
 
           return {
-            id: flow.id || flow.urutan,
-            urutan: flow.urutan,
-            aksi: flow.aksi,
-            jenis: flow.aksi === 'kirim_disposisi' ? 'DI' : 'ND',
-            jenis_label: flow.aksi === 'create' ? 'KONSEP AWAL' : (flow.aksi === 'kirim_disposisi' ? 'DISPOSISI' : flow.aksi.toUpperCase()),
-            perihal: flow.subject || konsepData.perihal,
-            nomor: konsepData.nomor || '-',
+            id: flow.id,
+            urutan: sortedFlows.length - index, // Fallback urutan jika diperlukan UI
+            aksi: aksi,
+            jenis: flow.jenis || 'K',
+            jenis_label: flow.jenis_label || 'Konsep',
+            perihal: flow.perihal || '-',
+            nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
-            pengirim: (flow.aksi === 'create') ? konsepData.pengirim : flow.from,
-            from: flow.from,
-            to: penerimaList,
-            cc: tembusanList,
-            rich_content: kontenText,
-            catatan: flow.catatan || flow.disposisi_content?.catatan,
-            disposisi_content: flow.disposisi_content,
-            attachments: flow.attachments || [],
-            pdf_snapshot: flow.pdf_snapshot || konsepData.final_pdf_url,
+            pengirim: flow.pengirim || {},
+            from: flow.pengirim || {},
+            to: flow.penerima || [],
+            cc: flow.tembusan || [],
+            rich_content: flow.konten || '', // Konten HTML (sekarang langsung dari flow.konten)
+            catatan: catatan,
+            attachments: flow.lampiran_files || [],
+            pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
@@ -251,11 +228,29 @@ const loadData = async () => {
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
       const rawData = response?.data || response;
-      const inboxData = Array.isArray(rawData) ? rawData[0] : rawData;
 
-      if (inboxData) {
+      // PERBAIKAN: Identifikasi apakah rawData adalah array of flows langsung
+      let rawFlows = [];
+      let inboxData = null;
+
+      if (Array.isArray(rawData)) {
+        if (rawData.length > 0 && rawData[0].flow) {
+          // Kasus jika formatnya array dan punya child "flow"
+          inboxData = rawData[0];
+          rawFlows = inboxData.flow;
+        } else {
+          // Kasus jika formatnya langsung flat array (seperti source data JSON terbaru)
+          rawFlows = rawData;
+          inboxData = rawData[0]; // Jadikan item pertama sebagai fallback data utama
+        }
+      } else if (rawData) {
+        // Kasus jika formatnya single object
+        inboxData = rawData;
+        rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
+      }
+
+      if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
-        const rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
 
         details.value = rawFlows.map((item: any) => {
           let listPenerima: any[] = [];
@@ -264,23 +259,28 @@ const loadData = async () => {
           else if (Array.isArray(item.to)) listPenerima = item.to;
           else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
 
-          if (listPenerima.length === 0) {
+          if (listPenerima.length === 0 && inboxData) {
             if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
             else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
           }
 
-          if (listPenerima.length === 0 && item.detail?.kepada_yth) {
-            listPenerima = item.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
-          }
+          // ---- GRUPING PENERIMA ----
+          const penerimaGrup = item.penerima_grup || inboxData?.penerima_grup || inboxData?.raw?.penerima_grup || [];
+          listPenerima = processGrouping(listPenerima, penerimaGrup);
+
 
           let listTembusan: any[] = [];
           if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
           else if (Array.isArray(item.cc)) listTembusan = item.cc;
 
-          if (listTembusan.length === 0) {
+          if (listTembusan.length === 0 && inboxData) {
             if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
             else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
           }
+
+          // ---- GRUPING TEMBUSAN ----
+          const tembusanGrup = item.tembusan_grup || inboxData?.tembusan_grup || inboxData?.raw?.tembusan_grup || [];
+          listTembusan = processGrouping(listTembusan, tembusanGrup);
 
           return {
             id: item.id,
@@ -304,20 +304,20 @@ const loadData = async () => {
       }
     }
 
-    await nextTick(); // Tunggu DOM selesai render
+    // await nextTick(); // Tunggu DOM selesai render
 
-    if (targetHighlightId.value) {
-      const elementId = `card-${targetHighlightId.value}`;
-      const element = document.getElementById(elementId);
+    // if (targetHighlightId.value) {
+    //   const elementId = `card-${targetHighlightId.value}`;
+    //   const element = document.getElementById(elementId);
 
-      if (element) {
-        // Scroll ke elemen
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //   if (element) {
+    //     // Scroll ke elemen
+    //     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Opsional: Fokuskan element jika perlu aksesibilitas
-        element.focus();
-      }
-    }
+    //     // Opsional: Fokuskan element jika perlu aksesibilitas
+    //     element.focus();
+    //   }
+    // }
 
   } catch (e) {
     console.error("❌ Error loading data", e);
@@ -325,6 +325,50 @@ const loadData = async () => {
     isLoading.value = false;
     scrollToTarget();
   }
+};
+
+// Tambahkan fungsi ini di atas fungsi loadData()
+const processGrouping = (individuals: any[], groups: any[]) => {
+  if (!Array.isArray(individuals) || individuals.length === 0) return [];
+  if (!Array.isArray(groups) || groups.length === 0) return individuals;
+
+  // Pastikan ambil ID dengan fallback yang aman
+  const individualIds = new Set(individuals.map(item => String(item.position_id || item.id)));
+  const matchedIds = new Set();
+  const result: any[] = [];
+
+  // 1. Ambil ID posisi user saat ini untuk dieksklusi (dikecualikan)
+  const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
+  const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
+
+  for (const group of groups) {
+    const reqIds = group.position_ids || [];
+
+    // 2. Cek apakah setiap ID ada di individualIds, ATAU ID tersebut adalah milik user saat ini
+    const isComplete = reqIds.length > 0 && reqIds.every((id: any) => {
+      const strId = String(id);
+      return individualIds.has(strId) || strId === myPosId;
+    });
+
+    if (isComplete) {
+      result.push({
+        nama: group.nama,
+        position_text: group.nama,
+        is_group: true
+      });
+      // Tandai semua ID dalam grup ini sebagai sudah di-grouping
+      reqIds.forEach((id: any) => matchedIds.add(String(id)));
+    }
+  }
+
+  // 3. Masukkan sisa individu yang tidak tergabung ke dalam grup manapun yang valid
+  for (const indiv of individuals) {
+    if (!matchedIds.has(String(indiv.position_id || indiv.id))) {
+      result.push(indiv);
+    }
+  }
+
+  return result;
 };
 
 onMounted(() => { loadData(); });
@@ -426,40 +470,22 @@ const konsepOptions = [
       </div>
     </div>
 
-  <template v-else-if="details && details.length > 0">
-  <div
-    v-for="(detail, index) in details"
-    :key="detail.id || detail.urutan || index"
-    :id="`card-${detail.id || detail.urutan}`"
-    class="transition-all duration-500 scroll-mt-24"
-    :class="{
-      'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
-    }"
-  >
-    <DetailNaskah
-      context="inbox"
-      :data="detail"
-      :is-head="index === 0"
-      :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-      :show-edit="isKonsepData && index === 0 && showEditAction"
-      :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim"
-      :allowed-actions="allowedActions"
-      :user-position-id="user.position"
-      @back="goBack"
-      @preview="(url) => openDocumentPreview(url, detail.perihal)"
-      @preview-file="openPreviewFile"
-      @finalize="handleFinalize"
-      @reject="handleReject"
-      @edit="handleEditKonsep"
-      @lanjut-nota="handleLanjutNotaDinas"
-      @lanjut-sdi="handleLanjutSDI"
-      @lanjut-sde="handleLanjutSDE"
-      @lanjut-disposisi="handleLanjutDisposisi"
-      @lanjut-konsep="isOpenKonsepModal = true"
-    />
+    <template v-else-if="details && details.length > 0">
+      <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
+        :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
+          'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
+        }">
+        <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
+          :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
+          :show-edit="isKonsepData && index === 0 && showEditAction"
+          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
+          :user-position-id="user.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
+          @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
+          @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
+          @lanjut-disposisi="handleLanjutDisposisi" @lanjut-konsep="isOpenKonsepModal = true" />
 
-  </div>
-</template>
+      </div>
+    </template>
 
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>

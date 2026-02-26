@@ -1,24 +1,21 @@
 // composables/useSearch.ts
 export const useSearch = () => {
-  const { apiGet } = useApi(); // Menggunakan useApi yang Anda buat
+  const { apiGet } = useApi();
   const isLoading = ref(false);
   const error = ref(null);
 
-  // State untuk hasil
   const results = ref<any[]>([]);
   const pagination = ref({
     page: 1,
     limit: 20,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
   });
 
-  // Interface params (sesuaikan dengan kebutuhan filter advanced nanti)
   interface SearchParams {
     keyword?: string;
     page?: number;
     limit?: number;
-    // Tambahkan parameter advanced lain jika perlu (perihal, tanggal, dll)
     [key: string]: any;
   }
 
@@ -27,14 +24,13 @@ export const useSearch = () => {
     error.value = null;
 
     try {
-      // Bersihkan params yang kosong/null
       const cleanParams = Object.fromEntries(
-        Object.entries(params).filter(([_, v]) => v != null && v !== "")
+        Object.entries(params).filter(([_, v]) => v != null && v !== ""),
       );
 
-      // Panggil endpoint search
-      const response = await apiGet('/search', {
-        params: cleanParams
+      const response = await apiGet("/search/v3", {
+        // ← ganti di sini
+        params: cleanParams,
       });
 
       if (response.success) {
@@ -52,11 +48,39 @@ export const useSearch = () => {
     }
   };
 
+  const suggestions = ref<{ nama: string; jabatan: string }[]>([]);
+  const isSuggestionsLoading = ref(false);
+
+  const fetchSuggestions = async (q: string, type: "pengirim" | "penerima") => {
+    if (!q || q.trim().length < 2) {
+      suggestions.value = [];
+      return;
+    }
+    isSuggestionsLoading.value = true;
+    try {
+      const response = await apiGet("/search/v3/suggestions", {
+        params: { q: q.trim(), type },
+      });
+      if (response.success) {
+        suggestions.value = response.data?.items ?? []; // ← fix: .items
+      } else {
+        suggestions.value = [];
+      }
+    } catch {
+      suggestions.value = [];
+    } finally {
+      isSuggestionsLoading.value = false;
+    }
+  };
+
   return {
     fetchSearch,
     results,
     pagination,
     isLoading,
-    error
+    error,
+    suggestions,
+    isSuggestionsLoading,
+    fetchSuggestions,
   };
 };

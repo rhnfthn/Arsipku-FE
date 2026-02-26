@@ -1,18 +1,26 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <div class="flex flex-wrap justify-between mb-5">
-      <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-      >
-        <PageHeader title="Manajemen Akun" :items="items" />
+    <!-- Header -->
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
+    >
+      <div>
+        <PageHeader :title="$t('ma')" :items="items" />
       </div>
-      <UButton
-        @click="showAddModal = true"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 h-8 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
+
+      <button
+        @click="
+          () => {
+            isEditMode = false;
+            form = { persnum: '', role: '' };
+            showAddModal = true;
+          }
+        "
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        Tambah
-      </UButton>
+        {{ $t("nm_button") }}
+      </button>
     </div>
 
     <div
@@ -41,7 +49,7 @@
           />
           <input
             v-model="filters.search"
-            placeholder="Cari akun"
+            :placeholder="t('cari')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
@@ -58,11 +66,12 @@
       <table class="min-w-full border-collapse text-sm">
         <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
           <tr>
-            <th class="px-7 py-3 border-primary-600 font-semibold">Username</th>
+            <th class="px-7 py-3 border-primary-600 font-semibold">
+              {{ $t("namauser") }}
+            </th>
             <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
-            <th class="px-4 py-3 border-primary-600 font-semibold">Status</th>
             <th class="px-4 py-3 border-primary-600 font-semibold text-center">
-              Aksi
+              {{ $t("aksi") }}
             </th>
           </tr>
         </thead>
@@ -80,9 +89,12 @@
           >
             <td class="px-4 py-3">
               <div class="flex items-start space-x-3 ml-3">
-                <UserRound
-                  class="w-4 h-4 text-gray-500 dark:text-gray-400 mt-1"
-                />
+                <div
+                  class="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-white text-xs font-semibold uppercase"
+                >
+                  {{ getInitials(user.name) }}
+                </div>
+
                 <div>
                   <p class="font-semibold text-gray-700 dark:text-white">
                     {{ user.persnum }}
@@ -104,21 +116,45 @@
               </span>
             </td>
 
-            <td class="px-4 py-3">
-              <span
-                class="px-3 py-1 text-xs rounded-full font-medium"
-                :class="getStatusColor(user.status)"
-              >
-                {{ user.status }}
-              </span>
-            </td>
-
-            <td class="px-4 py-3 text-center space-x-3">
+            <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
-                class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 transition-colors"
-                @click="openDelete(user)"
+                class="p-2 rounded-lg transition-colors group"
+                :class="
+                  isSelfSuperAdmin(user)
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30'
+                "
+                :disabled="isSelfSuperAdmin(user)"
+                @click="!isSelfSuperAdmin(user) && openEdit(user)"
               >
-                <Trash2 class="w-4 h-4" />
+                <Pencil
+                  class="w-4 h-4"
+                  :class="
+                    isSelfSuperAdmin(user)
+                      ? 'text-gray-400'
+                      : 'text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600'
+                  "
+                />
+              </button>
+
+              <button
+                class="p-2 rounded-lg transition-colors group"
+                :class="
+                  isSelfSuperAdmin(user)
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-red-100 dark:hover:bg-red-900/30'
+                "
+                :disabled="isSelfSuperAdmin(user)"
+                @click="!isSelfSuperAdmin(user) && openDelete(user)"
+              >
+                <Trash2
+                  class="w-4 h-4"
+                  :class="
+                    isSelfSuperAdmin(user)
+                      ? 'text-gray-400'
+                      : 'text-red-600 dark:text-red-500 group-hover:text-red-600'
+                  "
+                />
               </button>
             </td>
           </tr>
@@ -131,8 +167,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedUsers.length }} dari
-          {{ filteredUsers.length }} data
+          {{ $t("menampilkan") }} {{ paginatedUsers.length }} {{ $t("dari") }}
+          {{ filteredUsers.length }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -160,7 +196,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- Page Numbers -->
@@ -223,7 +259,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -250,7 +286,7 @@
           variant="heading9b"
           class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
         >
-          Tambah Akun
+          {{ isEditMode ? "Edit Role Akun" : "Tambah Akun" }}
         </Heading>
       </template>
 
@@ -262,8 +298,9 @@
         <input
           v-model="form.persnum"
           type="text"
+          :disabled="isEditMode"
           placeholder="Masukkan persnum"
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
         />
       </div>
 
@@ -286,10 +323,11 @@
 
   <ConfirmPopup
     v-model="confirmDeleteOpen"
-    title="Hapus Data?"
-    description="Data yang dihapus tidak dapat dikembalikan."
-    confirmText="Hapus"
-    cancelText="Batal"
+    type="danger"
+    title="Hapus Data"
+    message="Akun ini akan menjadi user"
+    confirm-text="Hapus"
+    cancel-text="Batal"
     @confirm="deleteNow"
   />
 </template>
@@ -304,9 +342,15 @@ import {
   FileDown,
   Search,
   Plus,
+  Pencil,
 } from "lucide-vue-next";
 import Modal from "@/components/Modal.vue";
 import { useManajemenAkun } from "@/composables/useManajemenAkun";
+import { useToast } from "#imports";
+
+const { user: authUser } = useAuth();
+const toast = useToast();
+const { t } = useI18n();
 definePageMeta({
   middleware: "auth",
 });
@@ -317,20 +361,21 @@ const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref<any>(null);
 
-const openDelete = (user) => {
-  itemToDelete.value = user;
+const openDelete = (row: any) => {
+  if (isSelfSuperAdmin(row)) return;
+
+  itemToDelete.value = row;
   confirmDeleteOpen.value = true;
 };
 
-const items = [
-  { label: "Beranda", to: "/" },
-  { label: "Manajemen Akun", to: "/admin/master/akun" },
-];
+const items = computed(() => [
+  { label: t("beranda"), to: "/" },
+  { label: t("ma"), to: "/admin/master/akun" },
+]);
 
 const filters = ref({
   search: "",
   role: "",
-  status: "",
 });
 
 // Pagination
@@ -338,21 +383,66 @@ const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
 
+const getInitials = (name: string) => {
+  if (!name) return "";
+
+  const words = name.trim().split(/\s+/);
+
+  if (words.length === 1) {
+    return words[0][0].toUpperCase();
+  }
+
+  if (words.length === 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+};
+
+const isSelfSuperAdmin = (row: any) => {
+  return (
+    authUser.value?.role === "superadmin" &&
+    authUser.value?.persnum === row.persnum
+  );
+};
+const isEditMode = ref(false);
+const editingUser = ref<any>(null);
+
+const openEdit = (row: any) => {
+  if (isSelfSuperAdmin(row)) return;
+
+  isEditMode.value = true;
+  editingUser.value = row;
+  form.value = {
+    persnum: row.persnum,
+    role: row.role,
+  };
+  showAddModal.value = true;
+};
+
 const saveAccount = async () => {
   if (!form.value.persnum || !form.value.role) {
-    alert("Persnum dan role wajib diisi");
+    showToast("Validasi gagal", "Persnum dan role wajib diisi", "warning");
     return;
   }
+
+  const isEdit = isEditMode.value;
 
   try {
     await addAccount(form.value.persnum, form.value.role);
 
     showAddModal.value = false;
+    isEditMode.value = false;
+    editingUser.value = null;
     form.value = { persnum: "", role: "" };
 
-    alert("Role berhasil diberikan kepada user!");
+    showToast(
+      "Berhasil",
+      isEdit ? "Berhasil mengubah role" : "Berhasil menambahkan role",
+      "success",
+    );
   } catch (error) {
-    alert("Gagal memberikan role!");
+    showToast("Gagal", "Gagal menyimpan role", "error");
   }
 };
 
@@ -362,15 +452,14 @@ const deleteNow = async () => {
   try {
     await deleteAccount(itemToDelete.value.persnum);
 
-    alert("Role berhasil dihapus. Pengguna kembali menjadi user biasa.");
+    showToast("Berhasil", "Akun berhasil menjadi user kembali", "success");
 
     confirmDeleteOpen.value = false;
     itemToDelete.value = null;
   } catch (err) {
-    alert("Gagal menghapus role!");
+    showToast("Gagal", "Gagal menghapus role", "error");
   }
 };
-
 const refreshData = () => {
   fetchAccounts();
   currentPage.value = 1;
@@ -391,7 +480,6 @@ const filteredUsers = computed(() => {
 
   return accounts.value.filter((user) => {
     const userRole = (user.role || "").toLowerCase();
-    const userStatus = (user.status || "").toLowerCase();
 
     const matchesSearch =
       !searchText ||
@@ -402,11 +490,7 @@ const filteredUsers = computed(() => {
     const matchesRole =
       !filters.value.role || userRole === filters.value.role.toLowerCase();
 
-    const matchesStatus =
-      !filters.value.status ||
-      userStatus === filters.value.status.toLowerCase();
-
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 });
 
@@ -446,7 +530,7 @@ watch([() => filters.value.search, rowsPerPage], () => {
 });
 
 const resetFilter = () => {
-  filters.value = { search: "", role: "", status: "" };
+  filters.value = { search: "", role: "" };
   currentPage.value = 1;
 };
 
@@ -455,10 +539,23 @@ const getRoleColor = (role: string) =>
     ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
     : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
 
-const getStatusColor = (status: string) =>
-  status === "aktif"
-    ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-    : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300";
+const showToast = (
+  title: string,
+  message: string,
+  color: "success" | "error" | "warning" | "primary" = "success",
+) => {
+  toast.add({
+    title,
+    description: message,
+    color,
+    icon:
+      color === "success"
+        ? "i-lucide-check-circle"
+        : color === "error"
+          ? "i-lucide-x-circle"
+          : "i-lucide-info",
+  });
+};
 </script>
 
 <style scoped>

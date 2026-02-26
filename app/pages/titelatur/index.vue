@@ -13,6 +13,9 @@ import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useTitelatur } from "~/composables/useTitelatur";
 import type { TitelaturItem } from "~/types/titelatur";
+definePageMeta({
+  middleware: "auth",
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -34,14 +37,14 @@ const {
 } = useTitelatur();
 
 // ================================
-// LIFECYCLE
+// LIFECYCLE — silent: tidak tampilkan toast
 // ================================
 onMounted(async () => {
-  await fetchTitelatur();
+  await fetchTitelatur(true);
 });
 
 // ================================
-// SEARCH + FILTER + SORT
+// SEARCH + SORT
 // ================================
 const search = ref("");
 const filteredItems = computed(() => {
@@ -52,14 +55,13 @@ const filteredItems = computed(() => {
       it.long_text_en?.toLowerCase().includes(s),
   );
 });
-const refreshData = () => {
+
+// reload juga silent, tidak perlu toast
+const refreshData = async () => {
   search.value = "";
-  filterStatus.value = "Semua";
-  filterLokasi.value = "Semua";
-  filterJabatan.value = "Semua";
   sortDirection.value = null;
   currentPage.value = 1;
-  fetchData();
+  await fetchTitelatur(true);
 };
 
 const sortDirection = ref<"asc" | "desc" | null>(null);
@@ -88,7 +90,6 @@ const sortedItems = computed(() => {
 // ================================
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 15, 25, 50, 100];
 
 const totalItems = computed(() => filteredItems.value.length);
 const totalPages = computed(() =>
@@ -102,15 +103,14 @@ const paginatedItems = computed(() => {
 });
 
 watch(rowsPerPage, () => (currentPage.value = 1));
+
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
 
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     if (current <= 2) {
       pages.push(1, 2, 3, 4, 5);
@@ -123,11 +123,13 @@ const paginationPages = computed(() => {
 
   return pages;
 });
+
 // ================================
 // MODAL: EDIT
 // ================================
 const showEditModal = ref(false);
 const selectedItem = ref<TitelaturItem | null>(null);
+const isSavingEdit = ref(false);
 
 const editForm = ref({
   company: "10000",
@@ -156,19 +158,19 @@ const openEdit = async (item: TitelaturItem) => {
 
 const saveEdit = async () => {
   if (!selectedItem.value) return;
-
-  const success = await updateTitelatur(selectedItem.value.id, {
-    company: editForm.value.company,
-    start_date: editForm.value.start_date,
-    end_date: editForm.value.end_date,
-    object_type: editForm.value.object_type,
-    long_text: editForm.value.long_text,
-    long_text_en: editForm.value.long_text_en,
-  });
-
-  if (success) {
-    showEditModal.value = false;
-    // Optionally show success notification
+  isSavingEdit.value = true;
+  try {
+    const success = await updateTitelatur(selectedItem.value.id, {
+      company: editForm.value.company,
+      start_date: editForm.value.start_date,
+      end_date: editForm.value.end_date,
+      object_type: editForm.value.object_type,
+      long_text: editForm.value.long_text,
+      long_text_en: editForm.value.long_text_en,
+    });
+    if (success) showEditModal.value = false;
+  } finally {
+    isSavingEdit.value = false;
   }
 };
 
@@ -176,6 +178,7 @@ const saveEdit = async () => {
 // MODAL: ADD
 // ================================
 const showAddModal = ref(false);
+const isSavingAdd = ref(false);
 
 const addForm = ref({
   company: "10000",
@@ -199,18 +202,19 @@ const openAdd = () => {
 };
 
 const saveAdd = async () => {
-  const success = await createTitelatur({
-    company: addForm.value.company,
-    start_date: addForm.value.start_date,
-    end_date: addForm.value.end_date,
-    object_type: addForm.value.object_type,
-    long_text: addForm.value.long_text,
-    long_text_en: addForm.value.long_text_en,
-  });
-
-  if (success) {
-    showAddModal.value = false;
-    // Optionally show success notification
+  isSavingAdd.value = true;
+  try {
+    const success = await createTitelatur({
+      company: addForm.value.company,
+      start_date: addForm.value.start_date,
+      end_date: addForm.value.end_date,
+      object_type: addForm.value.object_type,
+      long_text: addForm.value.long_text,
+      long_text_en: addForm.value.long_text_en,
+    });
+    if (success) showAddModal.value = false;
+  } finally {
+    isSavingAdd.value = false;
   }
 };
 
@@ -219,6 +223,7 @@ const saveAdd = async () => {
 // ================================
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref<TitelaturItem | null>(null);
+const isDeletingItem = ref(false);
 
 const openDelete = (item: TitelaturItem) => {
   itemToDelete.value = item;
@@ -227,12 +232,15 @@ const openDelete = (item: TitelaturItem) => {
 
 const deleteNow = async () => {
   if (!itemToDelete.value) return;
-
-  const success = await deleteTitelatur(itemToDelete.value.id);
-
-  if (success) {
-    confirmDeleteOpen.value = false;
-    // Optionally show success notification
+  isDeletingItem.value = true;
+  try {
+    const success = await deleteTitelatur(
+      itemToDelete.value.id,
+      itemToDelete.value.long_text,
+    );
+    if (success) confirmDeleteOpen.value = false;
+  } finally {
+    isDeletingItem.value = false;
   }
 };
 </script>
@@ -240,7 +248,7 @@ const deleteNow = async () => {
 <template>
   <div class="space-y-6 pt-5 min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
-    <div class="flex items-center justify-between w-full mb-5">
+    <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
           Titelatur Inggris
@@ -274,8 +282,6 @@ const deleteNow = async () => {
         class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
         <div class="flex items-center gap-3 flex-wrap">
-          <!-- tampilkan -->
-
           <select
             v-model="rowsPerPage"
             class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -284,11 +290,12 @@ const deleteNow = async () => {
               {{ n }}
             </option>
           </select>
-          <!-- SORT -->
+
           <div class="flex items-center gap-2">
             <button
               @click="toggleSort"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+              title="Urutkan"
             >
               <ArrowUpDown class="w-4 h-4" />
             </button>
@@ -297,16 +304,13 @@ const deleteNow = async () => {
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
               title="Refresh"
             >
-              <RotateCcw
-                class="w-4 h-4"
-                :class="{ 'animate-spin': isLoading }"
-              />
+              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
             </button>
           </div>
         </div>
 
         <!-- Search -->
-        <div class="relative flex-1 w-full justify-between">
+        <div class="relative flex-1 w-full">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
@@ -373,18 +377,18 @@ const deleteNow = async () => {
                 <td class="px-5 py-3 text-gray-900 dark:text-white">
                   {{ it.long_text_en || "-" }}
                 </td>
-
                 <td class="px-4 py-3 text-center flex justify-center gap-5">
                   <button
                     @click="openEdit(it)"
                     class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition"
+                    title="Edit"
                   >
                     <Pencil class="w-4 h-4" />
                   </button>
-
                   <button
                     @click="openDelete(it)"
                     class="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition"
+                    title="Hapus"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -444,7 +448,6 @@ const deleteNow = async () => {
 
           <!-- PAGE NUMBERS -->
           <div class="flex items-center gap-1">
-            <!-- FIRST -->
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
@@ -452,16 +455,12 @@ const deleteNow = async () => {
             >
               1
             </button>
-
-            <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
 
-            <!-- WINDOW -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -476,17 +475,14 @@ const deleteNow = async () => {
               {{ page }}
             </button>
 
-            <!-- DOTS RIGHT -->
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
 
-            <!-- LAST -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
@@ -543,24 +539,25 @@ const deleteNow = async () => {
         </template>
 
         <div class="flex flex-col gap-2 mt-1 p-1">
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Titelatur Indonesia <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">
+            Titelatur Indonesia <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="editForm.long_text"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Titelatur Inggris <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">
+            Titelatur Inggris <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="editForm.long_text_en"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </Modal>
     </Teleport>
+
     <!-- ========================= -->
     <!-- MODAL ADD -->
     <!-- ========================= -->
@@ -578,26 +575,27 @@ const deleteNow = async () => {
         </template>
 
         <div class="flex flex-col gap-2 mt-1 p-1">
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Titelatur Indonesia <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">
+            Titelatur Indonesia <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="addForm.long_text"
             placeholder="Masukkan Titelatur Indonesia"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Titelatur Inggris <span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">
+            Titelatur Inggris <span class="text-red-500">*</span>
+          </Heading>
           <input
             v-model="addForm.long_text_en"
             placeholder="Masukkan Titelatur Inggris"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 dark:bg-gray-700 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </Modal>
     </Teleport>
+
     <!-- ========================= -->
     <!-- POPUP DELETE -->
     <!-- ========================= -->
@@ -609,6 +607,7 @@ const deleteNow = async () => {
       confirmText="Hapus"
       cancelText="Batal"
       cancelColor="primary"
+      :loading="isDeletingItem"
       @confirm="deleteNow"
     />
   </div>

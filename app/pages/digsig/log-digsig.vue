@@ -158,7 +158,7 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>Jenis Naskah</span>
+                    <span>Naskah</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -287,7 +287,7 @@
                 >
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 flex items-center justify-center font-semibold text-xs"
+                      class="w-8 h-8 rounded-full bg-primary-500 dark:bg-primary-900 text-white dark:text-primary-300 flex items-center justify-center font-semibold text-xs"
                     >
                       {{ getUserInitials(row.userName) }}
                     </div>
@@ -611,12 +611,13 @@
 import Modal from "~/components/Modal.vue";
 import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
 import type { DigsigLog } from "~/types/digsig";
-
-const toast = useToast();
+definePageMeta({
+  middleware: "auth",
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Log Digsig", to: "/admin/digsig/log-digsig" },
+  { label: "Log Digsig", to: "/digsig/log-digsig" },
 ];
 
 const {
@@ -633,6 +634,9 @@ const {
   fetchBsreAlert,
   activateBsreAlert,
   deactivateBsreAlert,
+  showToastAlertPesanKosong,
+  showToastAlertActivated,
+  showToastAlertDeactivated,
 } = useDigsig();
 
 // State
@@ -778,56 +782,32 @@ const openDeactivateModal = () => {
 
 const activateAlert = async () => {
   if (!alertMessage.value.trim()) {
-    toast.add({
-      title: "Gagal",
-      description: "Pesan alert tidak boleh kosong",
-      color: "red",
-    });
+    showToastAlertPesanKosong();
     return;
   }
 
   try {
     await activateBsreAlert(alertMessage.value);
-
-    toast.add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil diaktifkan",
-      color: "green",
-    });
-
+    showToastAlertActivated();
     showActivateModal.value = false;
-
     // Alert state sudah di-update otomatis oleh composable
     // Banner akan langsung muncul tanpa perlu refresh
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err?.message || "Gagal mengaktifkan alert",
-      color: "red",
-    });
+    // Error toast sudah dihandle di activateBsreAlert composable
+    console.error("❌ activateAlert error:", err);
   }
 };
 
 const deactivateAlert = async () => {
   try {
     await deactivateBsreAlert();
-
-    toast.add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil dinonaktifkan",
-      color: "green",
-    });
-
+    showToastAlertDeactivated();
     showDeactivateModal.value = false;
-
     // Alert state sudah di-update otomatis oleh composable
     // Banner akan langsung hilang tanpa perlu refresh
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err?.message || "Gagal menonaktifkan alert",
-      color: "red",
-    });
+    // Error toast sudah dihandle di deactivateBsreAlert composable
+    console.error("❌ deactivateAlert error:", err);
   }
 };
 
@@ -850,12 +830,11 @@ const formatTime = (dateString: string) => {
 };
 
 const getUserInitials = (name: string) => {
-  if (!name) return "?";
-  const parts = name.split(" ");
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return (
+    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
+  ).toUpperCase();
 };
 
 const statusClass = (status: string) => {

@@ -74,6 +74,54 @@ const isJenisDI = computed(() => {
   return j.toUpperCase() === "DI" || l.toUpperCase().includes("DISPOSISI");
 });
 
+// --- HELPER FUNCTION UNTUK GROUPING ---
+const processGrouping = (individuals: any[], groups: any[]) => {
+  if (!Array.isArray(individuals) || individuals.length === 0) return [];
+  if (!Array.isArray(groups) || groups.length === 0) return individuals;
+
+  // 1. Kumpulkan semua ID yang benar-benar ada di list penerima/tembusan
+  const individualIds = new Set(individuals.map(item => String(item.position_id || item.id)));
+  const matchedIds = new Set();
+  const result: any[] = [];
+
+  // 2. Ambil ID user saat ini (Pengirim yang dikecualikan)
+  const myPosId = String(user.value?.position?.id || user.value?.position_id || user.value?.position || '');
+
+  // 3. Evaluasi setiap grup
+  for (const group of groups) {
+    const reqIds = group.position_ids || [];
+
+    // Cek apakah semua ID grup terpenuhi (Ada di list ATAU merupakan si pengirim)
+    const isComplete = reqIds.length > 0 && reqIds.every((id: any) => {
+      const strId = String(id);
+      return individualIds.has(strId) || strId === myPosId;
+    });
+
+    if (isComplete) {
+      // Masukkan representasi Grup
+      result.push({
+        id: group.id || `group-${Math.random()}`,
+        nama: group.nama,
+        position_text: group.nama,
+        organization_text: 'Grup Penerima',
+        is_group: true
+      });
+      // Tandai ID yang sudah masuk ke grup ini
+      reqIds.forEach((id: any) => matchedIds.add(String(id)));
+    }
+  }
+
+  // 4. Masukkan sisa individu yang tidak tergabung ke dalam grup manapun
+  for (const indiv of individuals) {
+    const indivId = String(indiv.position_id || indiv.id);
+    if (!matchedIds.has(indivId)) {
+      result.push(indiv);
+    }
+  }
+
+  return result;
+};
+
 // --- LOGIC HIGHLIGHT (Fixed) ---
 const isHighlighted = (detail: any) => {
   // 1. Guard: Jika data cuma satu, matikan highlight
@@ -156,6 +204,7 @@ const allowedActions = computed(() => {
 });
 
 // --- DATA FETCHING ---
+// --- DATA FETCHING ---
 const loadData = async () => {
   if (!id) return;
   isLoading.value = true;
@@ -172,64 +221,58 @@ const loadData = async () => {
       if (konsepData) {
         selected.value = konsepData;
         const rawFlows = konsepData.flow || [];
-        const sortedFlows = [...rawFlows].sort((a: any, b: any) => b.urutan - a.urutan);
+
+        const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
+          new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
+        );
+
         const lastFlow = sortedFlows.length > 0 ? sortedFlows[0] : null;
 
         if (lastFlow) {
           const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
           const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
-          const rejectorId = String(lastFlow.from?.position_id || lastFlow.from?.id || '');
-          showEditAction.value = (lastFlow.aksi === 'reject' && rejectorId !== myPosId);
+
+          // Rejector adalah aktor root pengirim dari flow terakhir
+          const rejectorId = String(lastFlow.pengirim?.position_id || lastFlow.pengirim?.id || '');
+          const lastAction = lastFlow.detail?.aksi;
+
+          showEditAction.value = (lastAction === 'reject' && rejectorId !== myPosId);
 
           let isTarget = false;
-          if (myPosId) {
-            if (Array.isArray(lastFlow.to)) {
-              isTarget = lastFlow.to.some((t: any) => {
-                const tId = String(t.position_id || t.id || '');
-                return tId == myPosId;
-              });
-            } else if (lastFlow.to) {
-              const tId = String(lastFlow.to.position_id || lastFlow.to.id || '');
-              isTarget = (tId == myPosId);
-            }
+          // Cek akses menggunakan penerima flow root (siapa yang dituju oleh forward/reject)
+          if (myPosId && Array.isArray(lastFlow.penerima)) {
+            isTarget = lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') === myPosId);
           }
           showFinalizeActions.value = isTarget;
         }
 
-        details.value = sortedFlows.map((flow: any) => {
-          let kontenText = flow.rich_content;
-          if ((flow.aksi === 'create' || flow.aksi === 'forward') && !kontenText) {
-            kontenText = konsepData.naskah?.konten || konsepData.naskah?.content?.konten || "";
-          }
-          let penerimaList: any[] = [];
-          let tembusanList: any[] = [];
-          if (flow.aksi === 'create' || flow.aksi === 'forward') {
-            penerimaList = Array.isArray(konsepData.penerima) ? konsepData.penerima : (Array.isArray(konsepData.kepada) ? konsepData.kepada : []);
-            tembusanList = Array.isArray(konsepData.tembusan) ? konsepData.tembusan : [];
-          } else {
-            penerimaList = Array.isArray(flow.to) ? flow.to : (flow.to ? [flow.to] : []);
-            tembusanList = flow.cc || [];
-          }
-          let flowId = flow.id || (flow.aksi === 'create' ? konsepData.konsep?.id : `flow-${flow.urutan}`);
+        // --- MAP DATA UNTUK UI COMPONENT DETAIL ---
+        details.value = sortedFlows.map((flow: any, index: number) => {
+          const aksi = flow.detail?.aksi || 'read';
+          const flowId = flow.id;
 
           return {
             id: flowId,
-            urutan: flow.urutan,
-            aksi: flow.aksi,
-            jenis: flow.aksi === 'kirim_disposisi' ? 'DI' : 'ND',
-            jenis_label: flow.aksi === 'create' ? 'KONSEP AWAL' : (flow.aksi === 'kirim_disposisi' ? 'DISPOSISI' : flow.aksi.toUpperCase()),
-            perihal: flow.subject || konsepData.perihal,
-            nomor: konsepData.nomor || '-',
+            urutan: sortedFlows.length - index,
+            aksi: aksi,
+            jenis: flow.jenis || 'K',
+            jenis_label: flow.jenis_label || (aksi === 'create' ? 'KONSEP AWAL' : aksi.toUpperCase()),
+            perihal: flow.perihal || konsepData.perihal,
+            nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
-            pengirim: (flow.aksi === 'create') ? konsepData.pengirim : flow.from,
-            from: flow.from,
-            to: penerimaList,
-            cc: tembusanList,
-            rich_content: kontenText,
-            catatan: flow.catatan || flow.disposisi_content?.catatan,
-            disposisi_content: flow.disposisi_content,
-            attachments: flow.attachments || [],
-            pdf_snapshot: flow.pdf_snapshot || konsepData.final_pdf_url,
+
+            // Pengirim dokumen di-header utama vs aktor flow
+            pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
+            from: flow.pengirim, // Aktor alur (Yusak meneruskan ke Suryadi, from = Yusak)
+
+            // Jika aksi 'create', tampilkan target asli surat. Jika alur biasa, tampilkan tujuan alur
+            to: aksi === 'create' ? (flow.detail?.naskah_penerima || flow.penerima || []) : (flow.penerima || []),
+            cc: aksi === 'create' ? (flow.detail?.naskah_tembusan || flow.tembusan || []) : (flow.tembusan || []),
+
+            rich_content: flow.konten || '',
+            catatan: flow.detail?.catatan,
+            attachments: flow.lampiran_files || [],
+            pdf_snapshot: flow.final_pdf_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
@@ -238,52 +281,55 @@ const loadData = async () => {
       // === SURAT MASUK / KELUAR ===
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
-      const rawData = response?.data || response;
-      const inboxData = Array.isArray(rawData) ? rawData[0] : rawData;
 
-      if (inboxData) {
-        selected.value = inboxData;
-        const rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
+      const dataArray: any[] = Array.isArray(response) ? response : (response ? [response] : []);
+      const firstItem = dataArray[0]?.raw || dataArray[0];
 
-        details.value = rawFlows.map((item: any) => {
+      if (firstItem) {
+        selected.value = firstItem;
+
+        details.value = dataArray.map((item: any) => {
+          const d = item.raw || item;
+
           let listPenerima: any[] = [];
-          if (Array.isArray(item.penerima) && item.penerima.length > 0) listPenerima = item.penerima;
-          else if (Array.isArray(item.kepada) && item.kepada.length > 0) listPenerima = item.kepada;
-          else if (Array.isArray(item.to)) listPenerima = item.to;
-          else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
-
-          if (listPenerima.length === 0) {
-            if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
-            else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
-          }
-          if (listPenerima.length === 0 && item.detail?.kepada_yth) {
-            listPenerima = item.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
+          if (Array.isArray(d.penerima) && d.penerima.length > 0) listPenerima = d.penerima;
+          else if (Array.isArray(d.kepada) && d.kepada.length > 0) listPenerima = d.kepada;
+          if (listPenerima.length === 0 && d.detail?.kepada_yth) {
+            listPenerima = d.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
           }
 
           let listTembusan: any[] = [];
-          if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
-          else if (Array.isArray(item.cc)) listTembusan = item.cc;
-          if (listTembusan.length === 0) {
-            if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
-            else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
-          }
+          if (Array.isArray(d.tembusan)) listTembusan = d.tembusan;
+          else if (Array.isArray(d.cc)) listTembusan = d.cc;
+
+          // ==========================================
+          // EKSEKUSI GROUPING DI SINI
+          // ==========================================
+          const penerimaGrup = d.penerima_grup || [];
+          const tembusanGrup = d.tembusan_grup || [];
+
+          const finalPenerima = processGrouping(listPenerima, penerimaGrup);
+          const finalTembusan = processGrouping(listTembusan, tembusanGrup);
 
           return {
-            id: item.id,
-            aksi: item.status || 'read',
-            jenis: item.jenis || inboxData.jenis || 'SM',
-            jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
-            perihal: item.perihal || inboxData.perihal,
-            nomor: item.nomor || inboxData.nomor || '-',
-            tanggal: item.tanggal || item.created_at || inboxData.tanggal,
-            pengirim: item.pengirim || item.from || inboxData.pengirim,
-            to: listPenerima,
-            cc: listTembusan,
-            mainDisplayContentHtml: item.konten || item.isi || '',
-            catatan: item.catatan,
-            disposisi: item.disposisi || item.instruksi,
-            lampiran_files: item.lampiran_files || item.attachments || [],
-            final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
+            id: d.id,
+            aksi: d.status || 'read',
+            jenis: d.jenis || 'SM',
+            jenis_label: d.jenis_label || 'SURAT MASUK',
+            perihal: d.perihal,
+            nomor: d.nomor || '-',
+            tanggal: d.tanggal || d.created_at,
+            pengirim: d.pengirim,
+
+            // Masukkan hasil grouping ke 'to' dan 'cc'
+            to: finalPenerima,
+            cc: finalTembusan,
+
+            mainDisplayContentHtml: d.konten || '',
+            catatan: d.catatan,
+            disposisi: d.disposisi || d.instruksi,
+            lampiran_files: d.lampiran_files || d.attachments || [],
+            final_pdf_url: d.final_pdf_url || d.file_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
@@ -293,7 +339,7 @@ const loadData = async () => {
     console.error("❌ Error loading data", e);
   } finally {
     isLoading.value = false;
-    scrollToTarget(); // Fungsi ini aman dijalankan karena sudah ada guard di dalamnya
+    scrollToTarget();
   }
 };
 

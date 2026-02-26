@@ -20,29 +20,26 @@
           itemLabel: 'w-full'
         }">
         <template #item="{ item }">
-          <!-- Label/Header Section -->
           <div v-if="item.type === 'label'" class="header-label">
             <span class="header-label-text">
               {{ item.label }}
             </span>
           </div>
 
-          <!-- Group Section -->
-          <div v-else-if="item.type === 'group'" class="flex items-center gap-3 w-full py-1"
-            @click.stop.prevent="handleGroupClick(item)">
+          <div v-else-if="item.type === 'group'" class="flex items-start gap-3 w-full py-1 overflow-hidden"
+            :class="{ 'opacity-50 cursor-not-allowed': item.disabled }" @click.stop.prevent="handleGroupClick(item)">
             <UCheckbox :model-value="isGroupSelected(item)" class="pointer-events-none shrink-0"
-              :ui="{ base: 'w-4 h-4' }" />
+              :disabled="item.disabled" :ui="{ base: 'w-4 h-4' }" />
             <div class="flex-1 min-w-0">
               <span class="block text-sm text-left truncate w-full">
                 {{ item.label }}
-                <span class="text-xs text-gray-500">
-                  ({{ item.count }} Anggota)
-                </span>
+              </span>
+              <span v-if="item.disabled" class="text-xs text-red-500 italic block">
+                {{ disabledMessage }}
               </span>
             </div>
           </div>
 
-          <!-- Person Section -->
           <div v-else class="flex items-start gap-3 w-full py-1 overflow-hidden"
             :class="{ 'opacity-50 cursor-not-allowed': item.disabled }" @click.stop.prevent="handlePersonClick(item)">
             <UCheckbox :model-value="isSelected(item)" class="pointer-events-none shrink-0" :checked="isSelected(item)"
@@ -106,17 +103,55 @@ const processedPeople = computed(() => {
   }));
 });
 
-// 2. Memproses Grup - Format Data
+// 2. Memproses Grup - Format Data & Cek Disabled
 const processedGroups = computed(() => {
   if (!props.groups) return [];
-  return props.groups.map(g => ({
-    ...g,
-    label: g.nama, // Mapping nama grup ke label agar bisa disearch
-    value: g.id,
-    type: 'group',
-    count: g.details ? g.details.length : 0
-  }));
+  return props.groups.map(g => {
+    const groupValue = `GROUP_${g.id}`;
+    const groupMemberIds = g.details?.map((d: any) => String(d.position)) || [];
+
+    // Disable grup ini jika grup utuh sudah dipilih di list lawan,
+    // ATAU salah satu anggota grup ini sudah dipilih secara individu di list lawan
+    const isDisabled = props.excludeItems?.some((ex) =>
+      ex.value === groupValue || groupMemberIds.includes(String(ex.value))
+    ) || false;
+
+    return {
+      ...g,
+      label: g.nama,
+      labelJob: g.nama,
+      value: groupValue,
+      type: 'group',
+      isGroup: true,
+      raw: g,
+      count: g.details ? g.details.length : 0,
+      disabled: isDisabled // Flag disabled untuk grup
+    };
+  });
 });
+
+// Handle Klik Grup
+const handleGroupClick = (group: any) => {
+  // Cegah aksi jika grup sedang disabled
+  if (group.disabled) return;
+
+  const currentlySelected = isGroupSelected(group);
+
+  if (!currentlySelected) {
+    // Hapus individu dari badge model jika mereka ada di dalam grup ini
+    const groupPosIds = group.raw.details?.map((d: any) => String(d.position)) || [];
+    const filteredModel = model.value.filter(m => !groupPosIds.includes(String(m.value)));
+
+    // Buang properti khusus dropdown
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { type, count, disabled, ...groupItem } = group;
+
+    model.value = [...filteredModel, groupItem];
+  } else {
+    // UN-CHECKLIST: Hapus badge grup dari model
+    model.value = model.value.filter(m => m.value !== group.value);
+  }
+};
 
 // 3. Menggabungkan Semua Opsi untuk Dropdown (Header + Grup + Header + Orang)
 const combinedOptions = computed(() => {
@@ -139,53 +174,14 @@ const combinedOptions = computed(() => {
 
 const isSelected = (item: any) => model.value.some((s) => s.value === item.value);
 
-// Helper: Ambil Objek Orang Asli berdasarkan Grup
-const getValidPeopleInGroup = (group: any) => {
-  if (!group.details) return [];
-  const groupPosIds = group.details.map((d: any) => String(d.position));
-
-  // Cari orang di master data yang ID-nya cocok DAN tidak disabled (tidak ada di exclude)
-  return processedPeople.value.filter(p =>
-    groupPosIds.includes(String(p.value)) && !p.disabled
-  );
-};
-
-// Cek Status Centang Grup
+// Cek Status Centang Grup (Cukup cek berdasarkan Value Prefix Grupnya)
 const isGroupSelected = (group: any) => {
-  const validPeople = getValidPeopleInGroup(group);
-  if (validPeople.length === 0) return false;
-
-  // Grup tercentang HANYA JIKA semua member validnya sudah ada di model
-  return validPeople.every(p => isSelected(p));
-};
-
-// Handle Klik Grup
-const handleGroupClick = (group: any) => {
-  const currentlySelected = isGroupSelected(group);
-  const validPeople = getValidPeopleInGroup(group);
-
-  if (!currentlySelected) {
-    // CHECKLIST: Tambahkan member valid yang belum ada di model
-    const newPeople = validPeople.filter(p => !isSelected(p));
-    // Kita push objek aslinya (bersihkan properti UI helper jika perlu, tapi di sini aman)
-    const cleanNewPeople = newPeople.map(p => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { type, disabled, ...rest } = p;
-      return rest; // Kembalikan ke format raw item
-    });
-
-    // Gabungkan dengan model yang ada
-    model.value = [...model.value, ...cleanNewPeople];
-  } else {
-    // UN-CHECKLIST: Hapus semua member grup ini dari model
-    const idsToRemove = validPeople.map(p => p.value);
-    model.value = model.value.filter(m => !idsToRemove.includes(m.value));
-  }
+  return model.value.some((s) => s.value === group.value);
 };
 
 // Handle Klik Orang (Single)
 const handlePersonClick = (person: any) => {
-  if (person.disabled) return; // Cegah klik jika disabled (validasi cross-check)
+  if (person.disabled) return; // Cegah klik jika disabled
 
   if (isSelected(person)) {
     removePerson(person);

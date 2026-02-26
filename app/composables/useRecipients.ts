@@ -53,10 +53,11 @@ export const useRecipients = () => {
     };
   };
 
-  const getRecipientGroups = async () => {
-    const res = await apiGet<{ success: boolean; data: any[] }>(
-      "/persuratan/grup-penerima",
-    );
+  const getRecipientGroups = async (jenis?: string) => {
+    const endpoint = jenis
+      ? `/persuratan/grup-penerima?jenis=${jenis}`
+      : "/persuratan/grup-penerima";
+    const res = await apiGet<{ success: boolean; data: any[] }>(endpoint);
     return res?.data || [];
   };
 

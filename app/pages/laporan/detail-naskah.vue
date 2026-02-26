@@ -380,16 +380,16 @@
                   <span
                     class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     :class="{
-                      'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300':
+                      'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300':
                         item.statusRaw === 'terpakai',
 
-                      'bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300':
+                      'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 ':
                         item.statusRaw === 'terpakai_final',
 
-                      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300':
+                      'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300':
                         item.statusRaw === 'booking',
 
-                      'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300':
+                      'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                         item.statusRaw === 'hangus',
                     }"
                   >

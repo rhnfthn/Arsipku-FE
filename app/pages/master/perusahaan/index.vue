@@ -182,7 +182,10 @@
               />
             </div>
           </div>
-
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Kode Perusahaan <span class="text-red-500">*</span>
@@ -256,7 +259,10 @@
               />
             </div>
           </div>
-
+          <p class="text-xs text-red-500">
+            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
+            mulai
+          </p>
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
               Kode <span class="text-red-500">*</span>
@@ -336,7 +342,7 @@ const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Perusahaan", to: "/master/perusahaan" },
+  { label: "Master Perusahaan", to: "/master/perusahaan" },
 ];
 
 const formCompany = ref({
@@ -350,18 +356,39 @@ const formCompany = ref({
 //get
 const rows = ref<any[]>([]);
 
+const isExpired = (endDate: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+
+  return end <= today;
+};
+
 const fetchCompanies = async () => {
   try {
     const res = await getCompanies();
 
-    rows.value = res.data.map((item) => ({
-      id: item.id,
-      tanggalMulai: item.startDate,
-      tanggalBerakhir: item.endDate,
-      kode: String(item.company),
-      namaPendek: item.shortText,
-      namaPanjang: item.longText,
-    }));
+    const validRows: any[] = [];
+
+    for (const item of res.data) {
+      if (isExpired(item.endDate)) {
+        await deleteCompany(item.id);
+        continue;
+      }
+
+      validRows.push({
+        id: item.id,
+        tanggalMulai: item.startDate,
+        tanggalBerakhir: item.endDate,
+        kode: String(item.company),
+        namaPendek: item.shortText,
+        namaPanjang: item.longText,
+      });
+    }
+
+    rows.value = validRows;
   } catch (error) {
     console.error("Gagal mengambil data company", error);
   }

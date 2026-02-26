@@ -325,6 +325,9 @@ import { ref } from "vue";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+definePageMeta({
+  middleware: "auth",
+});
 
 function buildReportData() {
   const data = documentCheck.value?.data;
@@ -420,7 +423,7 @@ const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
 /* Breadcrumb */
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Cek Dokumen", to: "/admin/digsig/cek-dokumen" },
+  { label: "Cek Dokumen", to: "/digsig/cek-dokumen" },
 ];
 
 const fileName = ref("");

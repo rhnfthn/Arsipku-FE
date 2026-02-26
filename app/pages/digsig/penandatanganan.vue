@@ -32,35 +32,41 @@
             </select>
           </div>
 
-          <div class="relative">
+          <div class="relative" data-custom-dropdown>
             <button
-              data-custom-dropdown
-              class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm px-4 py-2 rounded-lg min-w-[140px] transition"
+              type="button"
               @click.stop="openFilterStatus = !openFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
             >
-              <span>{{ filterStatusLabel }}</span>
+              <span class="truncate">{{ filterStatusLabel }}</span>
               <ChevronDown
                 :class="[
-                  'w-4 h-4 transition-transform duration-200',
-                  openFilterStatus ? 'rotate-180' : '',
+                  'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
+                  openFilterStatus ? 'rotate-180' : 'rotate-0',
                 ]"
               />
             </button>
-
-            <div
-              v-if="openFilterStatus"
-              data-custom-dropdown
-              class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
-            >
-              <button
-                v-for="item in filterOptions"
-                :key="item.value"
-                class="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                @click.prevent="selectFilterStatus(item)"
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
               >
-                {{ item.label }}
-              </button>
-            </div>
+                <button
+                  v-for="item in filterOptions"
+                  :key="item.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(item)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filterStatus === item.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ item.label }}
+                </button>
+              </div>
+            </Transition>
           </div>
 
           <div class="relative w-full justify-between">
@@ -69,7 +75,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari nomor dokumen atau perihal..."
+              placeholder="Cari nomor dokumen atau perihal"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -818,8 +824,9 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import Modal from "~/components/Modal.vue";
 import { useDigsig } from "~/composables/useDigsig";
 import type { PenandatangananDocument } from "~/types/digsig";
-
-const toast = useToast();
+definePageMeta({
+  middleware: "auth",
+});
 
 const {
   penandatanganDocuments,
@@ -832,6 +839,10 @@ const {
   fetchPenandatanganDetail,
   signDocument,
   rejectDocument,
+  showToastFileNotAvailable,
+  showToastDataTidakValid,
+  showToastDokumenSigned,
+  showToastDokumenRejected,
 } = useDigsig();
 
 // ─── Modal states ─────────────────────────────
@@ -867,7 +878,7 @@ const sortOrder = ref("asc");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Penanda Tanganan", to: "/admin/digsig/penandatanganan" },
+  { label: "Penanda Tanganan", to: "/digsig/penandatanganan" },
 ];
 
 const filterOptions = [
@@ -1015,11 +1026,7 @@ const selectFilterStatus = (item: { label: string; value: string }) => {
 const viewDocumentFromTable = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1043,11 +1050,7 @@ const viewDocumentFromDetail = () => {
     penandatanganDetail.value.filePreviewUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1085,11 +1088,7 @@ const isUUID = (str: string) =>
 
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
-    toast.add({
-      title: "Gagal",
-      description: "Data dokumen tidak valid",
-      color: "red",
-    });
+    showToastDataTidakValid();
     return;
   }
   openDetail.value = true;
@@ -1114,21 +1113,14 @@ const handleSign = async () => {
 
     await signDocument(selectedDoc.value.id, payload);
 
-    toast.add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditandatangani",
-      color: "green",
-    });
+    showToastDokumenSigned();
     openSign.value = false;
     passphrase.value = "";
     keterangan.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Gagal menandatangani dokumen";
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    // Error toast sudah dihandle di signDocument composable
+    console.error("❌ handleSign error:", err);
   } finally {
     loadingSign.value = false;
   }
@@ -1148,18 +1140,13 @@ const rejectNow = async () => {
   try {
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
 
-    toast.add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditolak",
-      color: "green",
-    });
+    showToastDokumenRejected();
     confirmRejectOpen.value = false;
     rejectReason.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message || err?.message || "Gagal menolak dokumen";
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    // Error toast sudah dihandle di rejectDocument composable
+    console.error("❌ rejectNow error:", err);
   } finally {
     loadingReject.value = false;
   }
@@ -1187,3 +1174,25 @@ watch([search, filterStatus, rowsPerPage], () => {
   currentPage.value = 1;
 });
 </script>
+<style scoped>
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+</style>

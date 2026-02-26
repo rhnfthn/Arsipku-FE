@@ -220,32 +220,104 @@ export function useInbox() {
   const fetchInboxDetail = async (idNaskah: string, jenis?: string) => {
     pending.value = true;
     error.value = null;
+
+    // --- HELPER FUNCTION: Untuk grouping penerima & tembusan ---
+    const processGrouping = (individuals: any[], groups: any[]) => {
+      if (!Array.isArray(individuals) || individuals.length === 0) return [];
+      if (!Array.isArray(groups) || groups.length === 0) return individuals;
+
+      // Kumpulkan semua position_id dari list individual (jadikan string agar aman)
+      const individualIds = new Set(
+        individuals.map((item) => String(item.position_id)),
+      );
+      const matchedIds = new Set();
+      const result: any[] = [];
+
+      // 1. Cek setiap grup
+      for (const group of groups) {
+        const reqIds = group.position_ids || [];
+        // Cek apakah SEMUA position_ids grup ada di list individuals
+        const isComplete =
+          reqIds.length > 0 &&
+          reqIds.every((id: any) => individualIds.has(String(id)));
+
+        if (isComplete) {
+          // Jika lengkap, masukkan representasi Grup ke result
+          result.push({
+            nama: group.nama,
+            position_text: group.nama,
+            organization_text: "Grup Penerima",
+            is_group: true,
+          });
+          // Tandai ID yang sudah dikelompokkan agar tidak diprint ulang
+          reqIds.forEach((id: any) => matchedIds.add(String(id)));
+        }
+      }
+
+      // 2. Masukkan sisa individual yang tidak masuk ke dalam grup manapun
+      for (const indiv of individuals) {
+        if (!matchedIds.has(String(indiv.position_id))) {
+          result.push(indiv);
+        }
+      }
+
+      return result;
+    };
+
     try {
       const res = await apiGet(
         `/persuratan/naskah/${encodeURIComponent(idNaskah)}`,
       );
-      const d = res?.data && Array.isArray(res.data) ? res.data[0] : res?.data;
-      if (!d) return null;
-      return {
-        id: d.id,
-        jenis: d.jenis,
-        jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
-        nomor: d.nomor,
-        tanggal: d.tanggal,
-        perihal: d.perihal,
-        sifat: d.sifat,
-        status: d.status,
-        pengirim: d.pengirim,
-        kepada: Array.isArray(d.penerima) ? d.penerima : d.kepada || [],
-        tembusan: d.tembusan || [],
-        kepada_yth: d.detail?.kepada_yth || d.kepada_yth,
-        disposisi: d.detail?.disposisi || d.disposisi,
-        catatan: d.detail?.catatan || d.catatan,
-        konten: d.konten,
-        lampiran_files: d.lampiran_files || [],
-        final_pdf_url: d.final_pdf_url || d.final_pdf,
-        raw: d,
-      };
+
+      const dataArray =
+        res?.data && Array.isArray(res.data)
+          ? res.data
+          : res?.data
+            ? [res.data]
+            : [];
+      if (dataArray.length === 0) return null;
+
+      const mapped = dataArray.map((d: any) => {
+        const rawPenerima = Array.isArray(d.penerima)
+          ? d.penerima
+          : d.kepada || [];
+        const rawTembusan = d.tembusan || [];
+
+        // Terapkan helper function
+        const groupedPenerima = processGrouping(
+          rawPenerima,
+          d.penerima_grup || [],
+        );
+        const groupedTembusan = processGrouping(
+          rawTembusan,
+          d.tembusan_grup || [],
+        );
+
+        return {
+          id: d.id,
+          jenis: d.jenis,
+          jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
+          nomor: d.nomor,
+          tanggal: d.tanggal,
+          perihal: d.perihal,
+          sifat: d.sifat,
+          status: d.status,
+          pengirim: d.pengirim,
+          kepada: groupedPenerima,
+          penerima: groupedPenerima, // Tetap sediakan penerima untuk backward compatibility UI
+          tembusan: groupedTembusan,
+          kepada_yth: d.detail?.kepada_yth || d.kepada_yth,
+          disposisi: d.detail?.disposisi || d.disposisi,
+          catatan: d.detail?.catatan || d.catatan,
+          konten: d.konten,
+          lampiran_files: d.lampiran_files || [],
+          final_pdf_url: d.final_pdf_url || d.final_pdf,
+          referensi: d.referensi || null,
+          raw: d,
+        };
+      });
+
+      return mapped.length === 1 ? mapped[0] : mapped;
     } catch (err: any) {
       console.error("fetchInboxDetail error:", err);
       error.value = err;
@@ -263,60 +335,40 @@ export function useInbox() {
 
       if (!res || !res.data) return null;
 
-      const d = res.data;
-      const flows = d.flow || [];
+      // API Baru merespons dengan Array di dalam res.data
+      const flows = Array.isArray(res.data) ? res.data : [res.data];
 
-      // --- LOGIKA BARU ---
+      // Pastikan flow terurut dari yang terbaru
+      const sortedFlows = [...flows].sort(
+        (a, b) =>
+          new Date(b.created_at || b.tanggal).getTime() -
+          new Date(a.created_at || a.tanggal).getTime(),
+      );
 
-      // 1. Ambil Flow Terakhir untuk cek Status & Catatan
-      // (Ini yang memuat aksi "reject" dan catatan "TOLAK DEH")
-      const lastFlow = flows.length > 0 ? flows[flows.length - 1] : null;
+      const lastFlow = sortedFlows.length > 0 ? sortedFlows[0] : null;
+      const firstFlow = sortedFlows[sortedFlows.length - 1];
 
-      // 2. Ambil Catatan Reject (Hanya jika aksi terakhir adalah reject)
       const catatanReject =
-        lastFlow?.aksi === "reject" ? lastFlow.catatan : null;
+        lastFlow?.detail?.aksi === "reject" ? lastFlow.detail.catatan : null;
 
-      // 3. Cari PDF Snapshot Terakhir yang TIDAK NULL
-      // Flow reject punya pdf_snapshot: null, jadi kita harus mundur ke flow sebelumnya (create)
-      // Kita copy array flow, reverse, lalu cari yang punya pdf
-      const lastFlowWithPdf = [...flows].reverse().find((f) => f.pdf_snapshot);
-      const finalPdf = lastFlowWithPdf ? lastFlowWithPdf.pdf_snapshot : null;
-
-      // 4. Data Referensi (Naskah Asal / Flow[0])
-      // Tetap ambil ini jika butuh info surat asal, tapi BUKAN untuk catatan reject
-      const originFlow = flows.length > 0 ? flows[0] : null;
-      const refData =
-        originFlow && (originFlow.naskah || originFlow.pdf_snapshot)
-          ? {
-              id: originFlow.naskah?.id,
-              nomor: originFlow.naskah?.nomor,
-              // ... data referensi lainnya
-            }
-          : null;
+      const lastFlowWithPdf = sortedFlows.find((f) => f.final_pdf_url);
+      const finalPdf = lastFlowWithPdf ? lastFlowWithPdf.final_pdf_url : null;
 
       return {
-        // --- Data Konsep ---
-        konsep: d.konsep,
-        naskah: d.naskah,
-        id: d.konsep?.id,
+        id: idKonsep,
+        nomor: lastFlow?.nomor || "-",
+        perihal: lastFlow?.perihal || firstFlow?.perihal || "",
+        status: lastFlow?.status,
+        last_action: lastFlow?.detail?.aksi,
 
-        // --- Data Penting untuk UI ---
-        // Gunakan hasil logika di atas
-        final_pdf_url: finalPdf, // PDF dari step 'create'
-        catatan_reject: catatanReject, // Catatan dari step 'reject'
+        // Ambil identitas dokumen asli dari naskah_pengirim/penerima (fallback ke flow root)
+        pengirim: lastFlow?.detail?.naskah_pengirim || lastFlow?.pengirim,
+        kepada: lastFlow?.detail?.naskah_penerima || lastFlow?.penerima || [],
+        tembusan: lastFlow?.detail?.naskah_tembusan || lastFlow?.tembusan || [],
 
-        // Info Status
-        status: d.konsep?.status,
-        last_action: lastFlow?.aksi,
-
-        // --- Sisa data mapping kamu ---
-        nomor: d.naskah?.nomor || "-",
-        perihal: d.naskah?.perihal || d.konsep?.perihal,
-        pengirim: d.pengirim,
-        kepada: d.penerima || [],
-        tembusan: d.tembusan || [],
-        flow: flows,
-        ref_data: refData, // Jika perlu ditampilkan di UI terpisah
+        final_pdf_url: finalPdf,
+        catatan_reject: catatanReject,
+        flow: sortedFlows,
       };
     } catch (err: any) {
       console.error("fetchKonsepDetail error:", err);

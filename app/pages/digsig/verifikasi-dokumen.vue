@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Verifikasi Dokumen Digsig
+          {{ $t("vd_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -14,7 +14,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ $t("nm_button") }}
       </button>
     </div>
 
@@ -26,35 +26,41 @@
         class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
       >
         <!-- STATUS FILTER -->
-        <div class="relative">
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm px-4 py-2 rounded-lg transition"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span>{{ filterStatusLabel }}</span>
+            <span class="truncate">{{ filterStatusLabel }}</span>
             <ChevronDown
               :class="[
-                'w-4 h-4 transition-transform duration-200',
-                openFilterStatus ? 'rotate-180' : '',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
+                openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
             />
           </button>
-
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item.value"
-              class="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item.label }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item.value"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  statusFilter === item.value
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- SEARCH -->
@@ -65,7 +71,7 @@
           <input
             v-model="search"
             @input="handleSearch"
-            placeholder="Cari Dokumen"
+            :placeholder="$t('vd_cari')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -154,7 +160,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>Tanggal Dibuat</span>
+                  <span>{{ $t("tanggal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -173,7 +179,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>No Dokumen</span>
+                  <span>{{ $t("nodokumen") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -192,7 +198,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>Perihal</span>
+                  <span>{{ $t("perihal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -205,8 +211,8 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">Penanda Tangan</th>
-              <th class="px-4 py-3 text-center">Dokumen</th>
+              <th class="px-4 py-3 text-center">{{ $t("sign") }}</th>
+              <th class="px-4 py-3 text-center">{{ $t("dokumen") }}</th>
               <th
                 @click="handleSort('status')"
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
@@ -226,7 +232,7 @@
                 </div>
               </th>
 
-              <th class="px-4 py-3 text-center">Aksi</th>
+              <th class="px-4 py-3 text-center">{{ $t("aksi") }}</th>
             </tr>
           </thead>
 
@@ -298,7 +304,7 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedRows.length }} dari
+          {{ $t("menampilkan") }} {{ paginatedRows.length }} {{ $t("dari") }}
           {{ filteredRows.length }} data
         </div>
 
@@ -327,7 +333,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- Page Numbers -->
@@ -395,7 +401,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -796,7 +802,7 @@
                 >
                   <!-- Search Input -->
                   <div
-                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800"
+                    class="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-gray-100 dark:bg-gray-800"
                   >
                     <div class="relative">
                       <Search
@@ -826,7 +832,7 @@
                           ) !== -1,
                       }"
                     >
-                      <p class="font-medium">
+                      <p class="font-reguler">
                         {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
                       </p>
                     </div>
@@ -1095,9 +1101,11 @@ import {
 
 import { useDigsig } from "~/composables/useDigsig";
 import type { Verifikator } from "~/types/digsig";
+definePageMeta({
+  middleware: "auth",
+});
 
-const toast = useToast();
-
+const { t } = useI18n();
 const {
   documents,
   documentDetail,
@@ -1119,6 +1127,15 @@ const {
   fetchKlasifikasiDetail,
   fetchJenisNaskah,
   fetchVerifikator,
+  showToastSignerAdded,
+  showToastSignerRemoved,
+  showToastFileTooLarge,
+  showToastFileSelected,
+  showToastFileNotAvailable,
+  showToastGagalPreview,
+  showToastValidasiForm,
+  showToastDokumenCreated,
+  showToastDokumenUpdated,
 } = useDigsig();
 
 const isOpenPreview = ref(false);
@@ -1189,14 +1206,13 @@ const addForm = ref({
   selectedSigners: [] as Verifikator[],
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
-];
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("verifikasi"), to: "/digsig/verifikasi-dokumen" },
+]);
 
 const filterOptions = [
   { label: "Semua", value: "" },
-
   { label: "Diproses", value: "on_progress" },
   { label: "Selesai", value: "completed" },
   { label: "Ditolak", value: "rejected" },
@@ -1370,22 +1386,14 @@ const filteredJenisNaskahList = computed(() => {
 });
 
 const loadDocuments = async () => {
-  try {
-    await fetchDocuments({
-      page: currentPage.value,
-      limit: limit.value,
-      search: search.value,
-      status: statusFilter.value,
-      sortBy: sortKey.value,
-      sortOrder: sortOrder.value,
-    });
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat dokumen",
-      color: "red",
-    });
-  }
+  await fetchDocuments({
+    page: currentPage.value,
+    limit: limit.value,
+    search: search.value,
+    status: statusFilter.value,
+    sortBy: sortKey.value,
+    sortOrder: sortOrder.value,
+  });
 };
 
 watch(search, () => {
@@ -1569,17 +1577,9 @@ const selectKlasifikasi = async (klasifikasi: any) => {
   showKlasifikasiDropdown.value = false;
   klasifikasiSearchQuery.value = "";
 
-  // Trigger klasifikasi change handler
-  try {
-    const detail = await fetchKlasifikasiDetail(klasifikasi.id);
-    selectedKlasifikasiDetail.value = detail;
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat detail klasifikasi",
-      color: "red",
-    });
-  }
+  // Trigger klasifikasi change handler — toast error sudah dihandle di fetchKlasifikasiDetail
+  await fetchKlasifikasiDetail(klasifikasi.id);
+  selectedKlasifikasiDetail.value = klasifikasiDetail.value;
 };
 
 const selectJenisNaskah = (jenisNaskah: any) => {
@@ -1594,16 +1594,9 @@ const onKlasifikasiChange = async () => {
       (k) => k.klasifikasi === addForm.value.klasifikasi,
     );
     if (selected) {
-      try {
-        const detail = await fetchKlasifikasiDetail(selected.id);
-        selectedKlasifikasiDetail.value = detail;
-      } catch (err: any) {
-        toast.add({
-          title: "Gagal",
-          description: err.message || "Gagal memuat detail klasifikasi",
-          color: "red",
-        });
-      }
+      // Toast error sudah dihandle di fetchKlasifikasiDetail
+      await fetchKlasifikasiDetail(selected.id);
+      selectedKlasifikasiDetail.value = klasifikasiDetail.value;
     }
   } else {
     selectedKlasifikasiDetail.value = null;
@@ -1629,11 +1622,7 @@ const selectSigner = (verifikator: Verifikator) => {
 
   if (exists === -1) {
     addForm.value.selectedSigners.push(verifikator);
-    toast.add({
-      title: "Berhasil",
-      description: `${verifikator.nama} ditambahkan sebagai Penanda Tangan`,
-      color: "green",
-    });
+    showToastSignerAdded(verifikator.nama);
   }
 
   showSignerDropdown.value = false;
@@ -1643,11 +1632,7 @@ const selectSigner = (verifikator: Verifikator) => {
 const removeSelectedSigner = (index: number) => {
   const signer = addForm.value.selectedSigners[index];
   addForm.value.selectedSigners.splice(index, 1);
-  toast.add({
-    title: "Info",
-    description: `${signer.nama} dihapus dari daftar Penanda Tangan`,
-    color: "blue",
-  });
+  showToastSignerRemoved(signer.nama);
 };
 
 const triggerFileUpload = () => {
@@ -1660,11 +1645,7 @@ const handleFileUpload = async (event: Event) => {
   if (file) {
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.add({
-        title: "Gagal",
-        description: "Ukuran file maksimal 10MB",
-        color: "red",
-      });
+      showToastFileTooLarge();
       return;
     }
 
@@ -1677,11 +1658,7 @@ const handleFileUpload = async (event: Event) => {
     }
     previewUrl.value = URL.createObjectURL(file);
 
-    toast.add({
-      title: "Berhasil",
-      description: `File "${file.name}" berhasil dipilih`,
-      color: "green",
-    });
+    showToastFileSelected(file.name);
   }
 };
 
@@ -1705,65 +1682,58 @@ const openEditModal = async (id: string) => {
   // Fetch dropdown data terlebih dahulu
   await ensureDropdownData();
 
-  try {
-    const doc = await fetchDocumentDetail(id);
-    if (doc) {
-      const mappedSigners: Verifikator[] = [];
+  // fetchDocumentDetail — toast error sudah dihandle di composable
+  const doc = await fetchDocumentDetail(id);
+  if (doc) {
+    const mappedSigners: Verifikator[] = [];
 
-      if (doc.signers && doc.signers.length > 0) {
-        for (const s of doc.signers) {
-          const verifikator = verifikatorList.value.find(
-            (v) => v.persnum === Number(s.persnum),
-          );
-
-          if (verifikator) {
-            mappedSigners.push(verifikator);
-          } else {
-            mappedSigners.push({
-              positionId: Number(s.positionId) || 0,
-              persnum: Number(s.persnum) || 0,
-              nama: s.nama || "",
-              jabatan: s.jabatan || "",
-              lokasi: s.lokasi || "",
-              areaText: "",
-              companyText: "",
-            });
-          }
-        }
-      }
-
-      addForm.value = {
-        tanggal: doc.tanggalDokumen.split("T")[0],
-        klasifikasi: doc.klasifikasi,
-        jenisNaskah: doc.jenisNaskah,
-        nomorDokumen: doc.nomorDokumen,
-        perihal: doc.perihal,
-        fileName: doc.fileName || "",
-        file: null,
-        visibleSign: Boolean(doc.visibleSign),
-        signers: [],
-        selectedSigners: mappedSigners,
-      };
-
-      // Load klasifikasi detail
-      if (doc.klasifikasi) {
-        const selected = klasifikasiList.value.find(
-          (k) => k.klasifikasi === doc.klasifikasi,
+    if (doc.signers && doc.signers.length > 0) {
+      for (const s of doc.signers) {
+        const verifikator = verifikatorList.value.find(
+          (v) => v.persnum === Number(s.persnum),
         );
-        if (selected) {
-          const detail = await fetchKlasifikasiDetail(selected.id);
-          selectedKlasifikasiDetail.value = detail;
+
+        if (verifikator) {
+          mappedSigners.push(verifikator);
+        } else {
+          mappedSigners.push({
+            positionId: Number(s.positionId) || 0,
+            persnum: Number(s.persnum) || 0,
+            nama: s.nama || "",
+            jabatan: s.jabatan || "",
+            lokasi: s.lokasi || "",
+            areaText: "",
+            companyText: "",
+          });
         }
       }
-
-      openAdd.value = true;
     }
-  } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat data dokumen",
-      color: "red",
-    });
+
+    addForm.value = {
+      tanggal: doc.tanggalDokumen.split("T")[0],
+      klasifikasi: doc.klasifikasi,
+      jenisNaskah: doc.jenisNaskah,
+      nomorDokumen: doc.nomorDokumen,
+      perihal: doc.perihal,
+      fileName: doc.fileName || "",
+      file: null,
+      visibleSign: Boolean(doc.visibleSign),
+      signers: [],
+      selectedSigners: mappedSigners,
+    };
+
+    // Load klasifikasi detail — toast error sudah dihandle di composable
+    if (doc.klasifikasi) {
+      const selected = klasifikasiList.value.find(
+        (k) => k.klasifikasi === doc.klasifikasi,
+      );
+      if (selected) {
+        await fetchKlasifikasiDetail(selected.id);
+        selectedKlasifikasiDetail.value = klasifikasiDetail.value;
+      }
+    }
+
+    openAdd.value = true;
   }
 };
 
@@ -1777,6 +1747,7 @@ const openDetailModal = async (id: string) => {
       dropdownDataLoaded.value.klasifikasi = true;
     }
 
+    // fetchDocumentDetail — toast error sudah dihandle di composable
     const res = await fetchDocumentDetail(id);
     if (res) {
       // Load klasifikasi detail if klasifikasiText is null
@@ -1796,19 +1767,9 @@ const openDetailModal = async (id: string) => {
         }
       }
       openDetail.value = true;
-    } else {
-      toast.add({
-        title: "Gagal",
-        description: "Gagal memuat detail dokumen",
-        color: "red",
-      });
     }
   } catch (err: any) {
-    toast.add({
-      title: "Gagal",
-      description: err.message || "Gagal memuat detail dokumen",
-      color: "red",
-    });
+    console.error("❌ Error openDetailModal:", err);
   }
 };
 
@@ -1820,11 +1781,7 @@ const viewDocumentFromDetail = async () => {
   const url = documentDetail.value.fileUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1846,11 +1803,7 @@ const viewDocumentFromDetail = async () => {
     pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal memuat pratinjau dokumen",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -1894,11 +1847,7 @@ const viewDocument = async (doc: any) => {
   const url = doc.filePreviewUrl;
 
   if (!url) {
-    toast.add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "red",
-    });
+    showToastFileNotAvailable();
     return;
   }
 
@@ -1917,11 +1866,7 @@ const viewDocument = async (doc: any) => {
     pdfUrl.value = url;
     isOpenPreview.value = true;
   } catch (err) {
-    toast.add({
-      title: "Gagal",
-      description: "Gagal memuat pratinjau dokumen",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -1948,61 +1893,33 @@ const previewFileInModal = async () => {
 };
 
 const saveDokumen = async () => {
-  // Validation
+  // Validation — semua menggunakan showToastValidasiForm(pesan)
   if (!addForm.value.tanggal) {
-    toast.add({
-      title: "Gagal",
-      description: "Tanggal Dokumen harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Tanggal Dokumen harus diisi");
     return;
   }
   if (!addForm.value.klasifikasi) {
-    toast.add({
-      title: "Gagal",
-      description: "Klasifikasi harus dipilih",
-      color: "red",
-    });
+    showToastValidasiForm("Klasifikasi harus dipilih");
     return;
   }
   if (!addForm.value.jenisNaskah) {
-    toast.add({
-      title: "Gagal",
-      description: "Jenis Naskah harus dipilih",
-      color: "red",
-    });
+    showToastValidasiForm("Jenis Naskah harus dipilih");
     return;
   }
   if (!addForm.value.nomorDokumen) {
-    toast.add({
-      title: "Gagal",
-      description: "Nomor Dokumen harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Nomor Dokumen harus diisi");
     return;
   }
   if (!addForm.value.perihal) {
-    toast.add({
-      title: "Gagal",
-      description: "Perihal harus diisi",
-      color: "red",
-    });
+    showToastValidasiForm("Perihal harus diisi");
     return;
   }
   if (!isEditMode.value && !addForm.value.file) {
-    toast.add({
-      title: "Gagal",
-      description: "Lampiran Berkas harus diupload",
-      color: "red",
-    });
+    showToastValidasiForm("Lampiran Berkas harus diupload");
     return;
   }
   if (addForm.value.selectedSigners.length === 0) {
-    toast.add({
-      title: "Gagal",
-      description: "Mohon pilih minimal satu Penanda Tangan",
-      color: "red",
-    });
+    showToastValidasiForm("Mohon pilih minimal satu Penanda Tangan");
     return;
   }
 
@@ -2027,20 +1944,12 @@ const saveDokumen = async () => {
         payload.file = addForm.value.file;
       }
 
+      // updateDocument — toast error sudah dihandle di composable
       await updateDocument(editingId.value, payload);
-
-      toast.add({
-        title: "Berhasil",
-        description: "Dokumen berhasil diperbarui",
-        color: "green",
-      });
+      showToastDokumenUpdated();
     } else {
       if (!addForm.value.file) {
-        toast.add({
-          title: "Gagal",
-          description: "File harus diupload untuk dokumen baru",
-          color: "red",
-        });
+        showToastValidasiForm("File harus diupload untuk dokumen baru");
         return;
       }
 
@@ -2055,28 +1964,16 @@ const saveDokumen = async () => {
         signers: signersPayload,
       };
 
+      // createDocument — toast error sudah dihandle di composable
       await createDocument(payload);
-
-      toast.add({
-        title: "Berhasil",
-        description: "Dokumen berhasil dibuat",
-        color: "green",
-      });
+      showToastDokumenCreated();
     }
 
     closeModal();
     await loadDocuments();
   } catch (err: any) {
     console.error("❌ Save error:", err);
-
-    const errorMsg =
-      err.response?.data?.message || err.message || "Gagal menyimpan dokumen";
-
-    toast.add({
-      title: "Gagal",
-      description: errorMsg,
-      color: "red",
-    });
+    // Error toast sudah dihandle di createDocument/updateDocument composable
   }
 };
 
@@ -2099,3 +1996,25 @@ watch(isOpenPreview, (open) => {
   }
 });
 </script>
+<style scoped>
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+</style>

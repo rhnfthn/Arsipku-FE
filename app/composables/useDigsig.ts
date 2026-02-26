@@ -40,6 +40,9 @@ export const useDigsig = () => {
     activatedByName: string | null;
   } | null>(null);
 
+  // --- NEW: Digsig Config State ---
+  const digsigConfig = ref<any[]>([]);
+
   // Penandatanganan
   const penandatanganDocuments = ref<PenandatangananDocument[]>([]);
   const penandatanganDetail = ref<PenandatangananDocument | null>(null);
@@ -62,7 +65,31 @@ export const useDigsig = () => {
   const loadingCheck = ref(false);
   const loadingEnik = ref(false);
   const loadingAlert = ref(false);
+  const loadingDigsigConfig = ref(false); // New Loading State
   const error = ref<string | null>(null);
+
+  /* ======================
+   * FETCH DIGSIG CONFIG
+   * GET /admin/config/digsig
+   * ====================== */
+  const fetchDigsigConfig = async () => {
+    loadingDigsigConfig.value = true;
+    error.value = null;
+
+    try {
+      const res = await apiGet<{ success: boolean; data: any[] }>("/admin/config/digsig");
+      if (res.success && res.data) {
+        digsigConfig.value = res.data;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      error.value = err?.message || "Failed to fetch digsig config";
+      console.error("❌ fetchDigsigConfig error:", err);
+    } finally {
+      loadingDigsigConfig.value = false;
+    }
+  };
 
   /* ======================
    * FETCH LOGS
@@ -97,6 +124,7 @@ export const useDigsig = () => {
       loading.value = false;
     }
   };
+
   /* ======================
    * FETCH BSRE HEALTH
    * GET /digsig/log/bsre-health
@@ -190,6 +218,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to activate BsrE alert";
       console.error("❌ activateBsreAlert error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal mengaktifkan alert",
+        color: "error",
+      });
       throw err;
     } finally {
       loadingAlert.value = false;
@@ -232,6 +268,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to deactivate BsrE alert";
       console.error("❌ deactivateBsreAlert error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menonaktifkan alert",
+        color: "error",
+      });
       throw err;
     } finally {
       loadingAlert.value = false;
@@ -272,6 +316,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch documents";
       console.error("❌ fetchDocuments error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat dokumen",
+        color: "error",
+      });
     } finally {
       loading.value = false;
     }
@@ -299,6 +348,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch document detail";
       console.error("❌ fetchDocumentDetail error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat detail dokumen",
+        color: "error",
+      });
       return null;
     } finally {
       loadingDetail.value = false;
@@ -356,6 +410,14 @@ export const useDigsig = () => {
         "Failed to create document";
       console.error("❌ createDocument error:", err);
       console.error("❌ Error response:", err?.response?.data);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menyimpan dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -420,6 +482,14 @@ export const useDigsig = () => {
         "Failed to update document";
       console.error("❌ updateDocument error:", err);
       console.error("❌ Error response:", err?.response?.data);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menyimpan dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -602,6 +672,14 @@ export const useDigsig = () => {
         err?.message ||
         "Failed to sign document";
       console.error("❌ signDocument error:", err);
+      useToast().add({
+        title: "Gagal",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menandatangani dokumen",
+        color: "error",
+      });
       throw err;
     } finally {
       loading.value = false;
@@ -692,6 +770,11 @@ export const useDigsig = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch klasifikasi detail";
       console.error("❌ fetchKlasifikasiDetail error:", err);
+      useToast().add({
+        title: "Gagal",
+        description: err?.message || "Gagal memuat detail klasifikasi",
+        color: "error",
+      });
       return null;
     } finally {
       loadingKlasifikasi.value = false;
@@ -777,6 +860,129 @@ export const useDigsig = () => {
     }
   };
 
+  /* ======================
+   * TOAST HELPERS — UI LEVEL
+   * ====================== */
+  const showToastSignerAdded = (nama: string) => {
+    useToast().add({
+      title: "Berhasil",
+      description: `${nama} ditambahkan sebagai Penanda Tangan`,
+      color: "success",
+    });
+  };
+
+  const showToastSignerRemoved = (nama: string) => {
+    useToast().add({
+      title: "Info",
+      description: `${nama} dihapus dari daftar Penanda Tangan`,
+      color: "warning",
+    });
+  };
+
+  const showToastFileTooLarge = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Ukuran file maksimal 10MB",
+      color: "error",
+    });
+  };
+
+  const showToastFileSelected = (nama: string) => {
+    useToast().add({
+      title: "Berhasil",
+      description: `File "${nama}" berhasil dipilih`,
+      color: "success",
+    });
+  };
+
+  const showToastFileNotAvailable = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "File pratinjau tidak tersedia",
+      color: "error",
+    });
+  };
+
+  const showToastGagalPreview = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Gagal memuat pratinjau dokumen",
+      color: "error",
+    });
+  };
+
+  const showToastValidasiForm = (field: string) => {
+    useToast().add({
+      title: "Gagal",
+      description: field,
+      color: "error",
+    });
+  };
+
+  const showToastDokumenCreated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil dibuat",
+      color: "success",
+    });
+  };
+
+  const showToastDokumenUpdated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil diperbarui",
+      color: "success",
+    });
+  };
+
+  const showToastAlertPesanKosong = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Pesan alert tidak boleh kosong",
+      color: "error",
+    });
+  };
+
+  const showToastAlertActivated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil diaktifkan",
+      color: "success",
+    });
+  };
+
+  const showToastAlertDeactivated = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Alert gangguan BsrE berhasil dinonaktifkan",
+      color: "success",
+    });
+  };
+
+  const showToastDataTidakValid = () => {
+    useToast().add({
+      title: "Gagal",
+      description: "Data dokumen tidak valid",
+      color: "error",
+    });
+  };
+
+  const showToastDokumenSigned = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditandatangani",
+      color: "success",
+    });
+  };
+
+  const showToastDokumenRejected = () => {
+    useToast().add({
+      title: "Berhasil",
+      description: "Dokumen berhasil ditolak",
+      color: "success",
+    });
+  };
+
   return {
     // State
     logs,
@@ -786,6 +992,7 @@ export const useDigsig = () => {
     meta,
     bsreHealth,
     bsreAlert,
+    digsigConfig, // EXPORTED CONFIG STATE
     klasifikasiList,
     klasifikasiDetail,
     jenisNaskahList,
@@ -807,9 +1014,11 @@ export const useDigsig = () => {
     loadingCheck,
     loadingEnik,
     loadingAlert,
+    loadingDigsigConfig, // EXPORTED CONFIG LOADING
     error,
 
     // Methods
+    fetchDigsigConfig, // EXPORTED CONFIG METHOD
     fetchLogs,
     fetchBsreHealth,
     fetchBsreAlert,
@@ -833,5 +1042,19 @@ export const useDigsig = () => {
     fetchJenisNaskah,
     fetchVerifikator,
     fetchUserEnik,
+
+    // Toast helpers
+    showToastSignerAdded,
+    showToastSignerRemoved,
+    showToastFileTooLarge,
+    showToastFileSelected,
+    showToastFileNotAvailable,
+    showToastGagalPreview,
+    showToastValidasiForm,
+    showToastDokumenCreated,
+    showToastDokumenUpdated,
+    showToastAlertPesanKosong,
+    showToastAlertActivated,
+    showToastAlertDeactivated,
   };
 };

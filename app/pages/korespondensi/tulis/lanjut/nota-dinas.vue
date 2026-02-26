@@ -27,7 +27,7 @@
     </Teleport>
 
     <PageHeader title="Tulis Lanjut Nota Dinas" :items="breadcrumbs" />
-
+<!-- {{refData?.[0]?.final_pdf_url}} -->
     <div v-if="refData" class="mb-4 mt-6">
       <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
@@ -39,7 +39,7 @@
             <div>
               <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                {{ refData.nomor || '-' }} • {{ formatDateRef(refData.tanggal) }}
+                {{ refData?.[0].nomor || '-' }} • {{ formatDateRef(refData?.[0].tanggal) }}
               </p>
             </div>
           </div>
@@ -370,12 +370,17 @@ const formatDateRef = (dateString: string) => {
 
 // LOGIKA PDF URL
 const refPdfUrl = computed(() => {
-  if (!refData.value) return '';
-  if (refData.value.final_pdf_url) return refData.value.final_pdf_url;
-  if (refData.value.lampiran_files && refData.value.lampiran_files.length > 0) {
-    const file = refData.value.lampiran_files[0];
+  if (!refData.value || refData.value.length === 0) return '';
+
+  const item = refData.value[0];
+
+  if (item.final_pdf_url) return item.final_pdf_url;
+
+  if (item.lampiran_files && item.lampiran_files.length > 0) {
+    const file = item.lampiran_files[0];
     return file.file_url || file.file_path || file.url || '';
   }
+
   return '';
 });
 

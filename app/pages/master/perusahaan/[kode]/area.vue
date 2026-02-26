@@ -13,6 +13,15 @@
               class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400"
             >
               <NuxtLink
+                to="/beranda"
+                class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
+              >
+                Beranda
+              </NuxtLink>
+              <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
+                >/</span
+              >
+              <NuxtLink
                 to="/master/perusahaan"
                 class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >

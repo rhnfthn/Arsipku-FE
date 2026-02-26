@@ -16,7 +16,6 @@
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
-        <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4">
           <select
             v-model="rowsPerPage"
@@ -29,19 +28,17 @@
           </select>
         </div>
 
-        <!-- Filter button + dropdown -->
-        <div class="relative inline-block">
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
           <button
-            data-custom-dropdown
-            class="flex items-center justify-between gap-2 bg-gray-100 dark:bg-gray-700 text-xs px-3 py-1 rounded-lg min-w-[100px]"
+            type="button"
             @click.stop="openFilterStatus = !openFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="text-sm dark:text-gray-200">
-              {{ filterStatus || "Semua" }}
-            </span>
+            <span class="truncate">{{ filterStatus || "Semua" }}</span>
             <svg
               :class="[
-                'w-4 h-4 transition-transform duration-200 dark:text-gray-300',
+                'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0',
               ]"
               fill="none"
@@ -56,22 +53,27 @@
               />
             </svg>
           </button>
-
-          <!-- Dropdown -->
-          <div
-            v-if="openFilterStatus"
-            data-custom-dropdown
-            class="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in"
-          >
-            <button
-              v-for="item in filterOptions"
-              :key="item"
-              class="w-full text-left px-4 py-2 text-sm dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click.prevent="selectFilterStatus(item)"
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
             >
-              {{ item }}
-            </button>
-          </div>
+              <button
+                v-for="item in filterOptions"
+                :key="item"
+                type="button"
+                @click.stop="selectFilterStatus(item)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  filterStatus === item
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ item }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
         <!-- SEARCH -->
@@ -88,7 +90,7 @@
         </div>
       </div>
 
-      <!-- LOADING (SHIMMER) -->
+      <!-- LOADING -->
       <div v-if="loading" class="space-y-3 p-4">
         <div
           v-for="i in 5"
@@ -136,7 +138,6 @@
                   />
                 </div>
               </th>
-
               <th
                 @click="handleSort('status')"
                 class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
@@ -157,7 +158,6 @@
               </th>
             </tr>
           </thead>
-
           <tbody>
             <tr
               v-for="row in rows"
@@ -190,7 +190,6 @@
               <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
               <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
               <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
-
               <td
                 class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
               >
@@ -223,7 +222,6 @@
         <div class="text-xs text-gray-600 dark:text-gray-400">
           Menampilkan {{ rows.length }} dari {{ pagination.total }} data
         </div>
-
         <div class="flex items-center gap-2">
           <button
             @click="handlePageChange(currentPage - 1)"
@@ -250,12 +248,11 @@
             </svg>
             Sebelumnya
           </button>
-
           <div class="flex items-center gap-1">
             <button
               v-if="paginationPages[0] > 1"
               @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary transition-all"
             >
               1
             </button>
@@ -272,7 +269,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary',
               ]"
             >
               {{ page }}
@@ -287,12 +284,11 @@
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="handlePageChange(totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary transition-all"
             >
               {{ totalPages }}
             </button>
           </div>
-
           <button
             @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -326,7 +322,6 @@
   <!-- MODAL VERIFIKASI -->
   <Teleport to="body">
     <Modal v-model="openPreview" :hideDefaultFooter="true" size="xl">
-      <!-- HEADER -->
       <template #title>
         <div class="flex items-center justify-between w-full px-6 pt-4 pb-4">
           <h2
@@ -334,13 +329,9 @@
           >
             {{ selectedRow?.perihal || "-" }}
           </h2>
-          <!-- <span class="text-sm text-gray-500 dark:text-gray-400">
-            {{ formatDateTime(new Date()) }}
-          </span> -->
         </div>
       </template>
 
-      <!-- BODY -->
       <div
         v-if="selectedRow"
         class="px-5 pb-3 space-y-5 overflow-y-auto max-h-[70vh]"
@@ -375,13 +366,12 @@
           </div>
         </div>
 
-        <!-- File Lampiran Utama -->
+        <!-- File Lampiran Pengusul -->
         <div v-if="selectedRow.file_path" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
+            >File Lampiran Pengusul</label
           >
-            File Lampiran Pengusul
-          </label>
           <div
             class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg"
           >
@@ -411,13 +401,98 @@
 
         <!-- Nomor Surat Section -->
         <div class="mt-4">
-          <label
-            class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
-          >
-            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
-          </label>
+          <div class="flex items-center justify-between mb-3">
+            <label
+              class="text-xs font-medium text-gray-700 dark:text-gray-300 break-words"
+            >
+              Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
+            </label>
+            <label
+              class="flex items-center gap-2 cursor-pointer select-none group"
+            >
+              <div class="relative">
+                <input
+                  type="checkbox"
+                  v-model="uncheckAll"
+                  @change="toggleUncheckAll"
+                  class="sr-only peer"
+                />
+                <div
+                  class="w-9 h-5 rounded-full transition-colors duration-200 peer-checked:bg-red-500 bg-gray-300 dark:bg-gray-600"
+                ></div>
+                <div
+                  class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 peer-checked:translate-x-4"
+                ></div>
+              </div>
+              <span
+                :class="[
+                  'text-xs font-medium transition-colors duration-200',
+                  uncheckAll
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-500 dark:text-gray-400',
+                ]"
+              >
+                Tolak Semua
+              </span>
+            </label>
+          </div>
 
-          <!-- Warning jika ada nomor tanpa ID -->
+          <div
+            v-if="hasUnchecked && !allUnchecked"
+            class="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2"
+          >
+            <svg
+              class="w-4 h-4 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div class="text-xs text-orange-800 dark:text-orange-300">
+              <p class="font-medium">
+                {{ uncheckedCount }} nomor tidak akan digenerate
+              </p>
+              <p class="mt-0.5 text-orange-700 dark:text-orange-400">
+                Nomor yang tidak dicentang statusnya akan tetap
+                <strong>Booking</strong>. Untuk menolak semua, gunakan toggle
+                "Tolak Semua".
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-if="allUnchecked && validDetails.length > 0"
+            class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2"
+          >
+            <svg
+              class="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div class="text-xs text-red-800 dark:text-red-300">
+              <p class="font-medium">Semua nomor akan ditolak</p>
+              <p class="mt-0.5 text-red-700 dark:text-red-400">
+                Seluruh {{ validDetails.length }} nomor akan berstatus
+                <strong>Ditolak</strong>. Isi keterangan penolakan sebelum
+                melanjutkan.
+              </p>
+            </div>
+          </div>
+
           <div
             v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
             class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
@@ -442,8 +517,8 @@
                 Peringatan
               </p>
               <p class="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
-                Beberapa nomor belum memiliki ID (status pending). Nomor
-                tersebut tidak dapat diproses sampai memiliki ID yang valid.
+                Beberapa nomor belum memiliki ID (status pending) dan tidak
+                dapat diproses.
               </p>
             </div>
           </div>
@@ -454,7 +529,6 @@
               :key="detail.id || idx"
               class="space-y-2"
             >
-              <!-- ✅ Card: abu-abu + opacity jika hangus -->
               <div
                 :class="[
                   'border rounded-lg p-4 mt-2 transition',
@@ -463,9 +537,7 @@
                     : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
                 ]"
               >
-                <!-- Row: Checkbox + Nomor + Status + Copy -->
                 <div class="flex items-center gap-2 mb-3">
-                  <!-- ✅ Checkbox: disabled jika hangus -->
                   <input
                     type="checkbox"
                     v-model="detail.checked"
@@ -477,14 +549,11 @@
                     "
                     class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                   />
-
-                  <!-- Nomor Container -->
                   <div class="relative flex flex-1 items-center gap-2">
                     <span
                       class="text-sm text-gray-600 dark:text-gray-400 font-medium"
                       >{{ idx + 1 }}</span
                     >
-
                     <input
                       type="text"
                       :value="displayNomor(detail)"
@@ -496,8 +565,6 @@
                       ]"
                       readonly
                     />
-
-                    <!-- ✅ Copy button: sembunyikan jika hangus -->
                     <button
                       v-if="
                         detail.nomor &&
@@ -510,8 +577,6 @@
                       <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
                     <div v-else class="w-[44px]"></div>
-
-                    <!-- Status Badge -->
                     <span
                       v-if="detail.status"
                       :class="[
@@ -531,261 +596,115 @@
                             detail.status === 'hangus',
                         },
                       ]"
+                      >{{ getStatusLabel(detail.status) }}</span
                     >
-                      {{ getStatusLabel(detail.status) }}
-                    </span>
                   </div>
                 </div>
 
-                <!-- ✅ FILE SECTION -->
-                <div class="relative">
-                  <!-- ✅ HANGUS: tampilkan file jika ada (read-only, greyed), atau indikator hangus -->
-                  <template v-if="detail.status === 'hangus'">
-                    <!-- Ada file → tampil tapi greyed out + strikethrough, tidak bisa diklik -->
-                    <div
-                      v-if="hasExistingFile(detail)"
-                      class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg p-3"
-                    >
-                      <div class="flex items-start gap-3">
-                        <svg
-                          class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <div class="flex-1 min-w-0">
-                          <p
-                            class="text-sm font-medium text-gray-400 dark:text-gray-500 line-through"
-                          >
-                            {{ getDisplayFileName(detail) }}
-                          </p>
-                          <p
-                            class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
-                          >
-                            Nomor telah dihanguskan
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- Tidak ada file → indikator hangus -->
-                    <div
-                      v-else
-                      class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-3"
-                    >
-                      <div class="flex items-center gap-2">
-                        <svg
-                          class="w-4 h-4 text-gray-400 dark:text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                          />
-                        </svg>
-                        <span class="text-xs text-gray-400 dark:text-gray-500">
-                          Nomor telah dihanguskan
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-
-                  <!-- ✅ Ada file (bukan hangus) & tidak sedang replace → tampilkan file clickable -->
-                  <div
-                    v-else-if="
-                      hasExistingFile(detail) && !fileStates[idx]?.isReplacing
-                    "
+                <div
+                  v-if="!hasExistingFile(detail) && detail.status !== 'hangus'"
+                  class="flex items-center gap-2 border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2.5"
+                >
+                  <svg
+                    class="w-4 h-4 text-yellow-500 dark:text-yellow-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <div
-                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
-                    >
-                      <div class="flex items-center justify-between gap-3">
-                        <div
-                          class="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition"
-                          @click="previewFile(detail)"
-                        >
-                          <svg
-                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div class="flex-1">
-                            <p
-                              class="text-sm font-medium text-primary dark:text-blue-400 underline"
-                            >
-                              {{ getDisplayFileName(detail) }}
-                            </p>
-                            <p
-                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
-                            >
-                              Klik untuk preview
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          @click.prevent="startReplacingFile(idx)"
-                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
-                        >
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- ✅ File baru dipilih (local, belum upload) & tidak replacing -->
-                  <div
-                    v-else-if="
-                      (fileStates[idx]?.file || files[idx]) &&
-                      !fileStates[idx]?.isReplacing
-                    "
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <span class="text-xs text-yellow-700 dark:text-yellow-400"
+                    >Belum ada file diupload</span
                   >
-                    <div
-                      class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
-                    >
-                      <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 flex-1">
-                          <svg
-                            class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div class="flex-1">
-                            <p
-                              class="text-sm font-medium text-primary dark:text-blue-400"
-                            >
-                              {{
-                                fileStates[idx]?.file?.name || files[idx]?.name
-                              }}
-                            </p>
-                            <p
-                              class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
-                            >
-                              {{
-                                formatFileSize(
-                                  fileStates[idx]?.file?.size ||
-                                    files[idx]?.size ||
-                                    0,
-                                )
-                              }}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          @click.prevent="removeFile(idx)"
-                          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
-                        >
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                </div>
 
-                  <!-- ✅ Upload form (tidak ada file / sedang replacing) -->
-                  <div v-else>
-                    <label
-                      class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
+                <template v-if="hasExistingFile(detail)">
+                  <div
+                    v-if="detail.status === 'hangus'"
+                    class="flex items-start border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition opacity-70"
+                    @click="previewFile(detail)"
+                  >
+                    <svg
+                      class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                      <div class="flex-1">
-                        <span
-                          class="text-gray-700 dark:text-gray-300 font-medium block"
-                          >Pilih file (Opsional)</span
-                        >
-                        <span
-                          class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 block"
-                          >PDF, DOC, DOCX (Max 5MB)</span
-                        >
-                      </div>
-                      <input
-                        type="file"
-                        class="hidden"
-                        accept=".pdf,.doc,.docx"
-                        @change="handleFile(idx, $event, detail)"
-                        :disabled="fileStates[idx]?.isUploading"
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                       />
-                    </label>
-                    <button
-                      v-if="fileStates[idx]?.isReplacing"
-                      @click.prevent="cancelReplace(idx, detail)"
-                      class="mt-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
-                    >
-                      Batal mengganti file
-                    </button>
+                    </svg>
+                    <div class="flex-1 min-w-0 ml-3">
+                      <p
+                        class="text-sm font-medium text-gray-500 dark:text-gray-400 underline truncate"
+                      >
+                        {{ getDisplayFileName(detail) }}
+                      </p>
+                      <p
+                        class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+                      >
+                        Klik untuk preview
+                      </p>
+                    </div>
                   </div>
-                </div>
+
+                  <div
+                    v-else
+                    class="flex items-start border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                    @click="previewFile(detail)"
+                  >
+                    <svg
+                      class="w-5 h-5 text-primary dark:text-blue-400 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <div class="flex-1 min-w-0 ml-3">
+                      <p
+                        class="text-sm font-medium text-primary dark:text-blue-400 underline truncate"
+                      >
+                        {{ getDisplayFileName(detail) }}
+                      </p>
+                      <p
+                        class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+                      >
+                        Klik untuk preview
+                      </p>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ✅ Keterangan Penolakan: muncul jika ada yang tidak di-check -->
-        <div v-if="hasUnchecked" class="pt-2">
+        <!-- Keterangan Penolakan -->
+        <div v-if="allUnchecked || hasUnchecked" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
           >
-            Keterangan Penolakan <span class="text-red-500">*</span>
+            Keterangan Penolakan
+            <span class="text-red-500">*</span>
+            <span
+              v-if="!allUnchecked"
+              class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
+              >(untuk nomor yang tidak dicentang)</span
+            >
           </label>
           <textarea
             v-model="keterangan_ditolak"
@@ -809,17 +728,15 @@
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            Keterangan penolakan wajib diisi sebelum menyetujui atau menolak
+            Keterangan penolakan wajib diisi
           </p>
         </div>
       </div>
 
-      <!-- FOOTER -->
       <template #footer>
         <div
           class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
         >
-          <!-- Tombol Disetujui -->
           <button
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
@@ -848,11 +765,9 @@
             </svg>
             {{ isProcessing ? "Memproses..." : "Nomor Disetujui" }}
           </button>
-
-          <!-- Tombol Ditolak -->
           <button
             @click="confirmRejection"
-            :disabled="isProcessing || !hasUnchecked"
+            :disabled="isProcessing || !allUnchecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             Nomor Ditolak
@@ -862,41 +777,44 @@
     </Modal>
   </Teleport>
 
-  <!-- ✅ PREVIEW SLIDEOVER - pakai file_url langsung (pre-signed S3) -->
-  <USlideover
-    v-model:open="isOpenPreview"
-    title="Pratinjau"
-    side="bottom"
-    :dismissible="true"
-    :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0',
-      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-    }"
-  >
-    <template #body>
-      <div
-        class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-      >
-        <iframe
-          v-if="pdfUrl"
-          :key="pdfUrl"
-          :src="pdfUrl"
-          allowfullscreen
-          class="w-full h-full rounded-lg shadow-lg border border-gray-200"
-        />
-        <div v-else class="flex flex-col items-center gap-2">
-          <UIcon
-            name="i-lucide-loader-2"
-            class="animate-spin w-8 h-8 text-primary-500"
+  <!-- PREVIEW SLIDEOVER -->
+  <Teleport to="body">
+    <USlideover
+      v-model:open="isOpenPreview"
+      title="Pratinjau"
+      side="bottom"
+      :dismissible="true"
+      :ui="{
+        content: 'h-screen max-h-screen',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+      }"
+      class="z-[9999]"
+    >
+      <template #body>
+        <div
+          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+        >
+          <iframe
+            v-if="pdfUrl"
+            :key="pdfUrl"
+            :src="pdfUrl"
+            allowfullscreen
+            class="w-full h-full rounded-lg shadow-lg border border-gray-200"
           />
-          <span class="text-gray-500">Memuat Pratinjau...</span>
+          <div v-else class="flex flex-col items-center gap-2">
+            <UIcon
+              name="i-lucide-loader-2"
+              class="animate-spin w-8 h-8 text-primary-500"
+            />
+            <span class="text-gray-500">Memuat Pratinjau...</span>
+          </div>
         </div>
-      </div>
-    </template>
-  </USlideover>
+      </template>
+    </USlideover>
+  </Teleport>
 
-  <!-- CONFIRM MODAL APPROVE -->
+  <!-- CONFIRM APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
     title="Konfirmasi Verifikasi"
@@ -906,11 +824,11 @@
     @confirm="processApproval"
   />
 
-  <!-- CONFIRM MODAL REJECT -->
+  <!-- CONFIRM REJECT -->
   <ConfirmPopup
     v-model="showConfirmReject"
     title="Konfirmasi Penolakan"
-    :description="`Apakah Anda yakin ingin menolak ${uncheckedCount} nomor yang tidak dipilih?`"
+    :description="`Apakah Anda yakin ingin menolak semua ${uncheckedCount} nomor?`"
     confirmText="Ya, Tolak"
     cancelText="Batal"
     @confirm="processRejection"
@@ -920,7 +838,7 @@
   <Teleport to="body">
     <div
       v-if="tooltip.show"
-      class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-md shadow-lg transition-opacity"
+      class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-md shadow-lg"
       :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
     >
       {{ tooltip.text }}
@@ -935,11 +853,11 @@ import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
-import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
-import type { NomorDetail } from "~/types/penomoran";
+definePageMeta({
+  middleware: "auth",
+});
 
-const toast = useToast();
 const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
 
@@ -948,7 +866,12 @@ const {
   rejectNomorRequest,
   getListSubmitted,
   getDetailVerifikasiRequest,
-  uploadDetailFile,
+  showToastFileNotFound,
+  showToastCopied,
+  showToastNomorMinimal,
+  showToastKeteranganRequired,
+  showToastApprovalSuccess,
+  showToastTidakAdaNomor,
 } = usePenomoran();
 
 const breadcrumbs = [
@@ -968,7 +891,7 @@ const headers = [
 
 const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
 
-// State
+// ─── State ───────────────────────────────────────
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const rowsPerPage = ref<number>(10);
@@ -981,25 +904,15 @@ const showKeteranganWarning = ref(false);
 const isProcessing = ref(false);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
-
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
 const filterStatus = ref<string>("Menunggu Verifikasi");
 const openFilterStatus = ref<boolean>(false);
 const openPreview = ref(false);
-
 const rows = ref<any[]>([]);
 const pagination = ref(null);
 const loading = ref(false);
-const files = ref<any[]>([]);
-
-interface FileState {
-  isReplacing: boolean;
-  isUploading: boolean;
-  file: File | null;
-  originalFileName: string | null;
-}
-const fileStates = ref<Record<number, FileState>>({});
+const uncheckAll = ref(false);
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -1030,14 +943,9 @@ const fetchData = async () => {
     rows.value = data.map((item: any) => {
       const tanggalDate = new Date(item.tanggal);
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
-
       const createdDate = new Date(item.created_at);
-      const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
-      const day = String(wibTime.getDate()).padStart(2, "0");
-      const month = String(wibTime.getMonth() + 1).padStart(2, "0");
-      const year = String(wibTime.getFullYear()).slice(-2);
-      const hours = String(wibTime.getHours()).padStart(2, "0");
-      const minutes = String(wibTime.getMinutes()).padStart(2, "0");
+      const wib = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
+      const tglUsulan = `${String(wib.getDate()).padStart(2, "0")}/${String(wib.getMonth() + 1).padStart(2, "0")}/${String(wib.getFullYear()).slice(-2)} ${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")}`;
 
       return {
         id: item.id,
@@ -1047,7 +955,7 @@ const fetchData = async () => {
         penandatangan: item.penandatangan || "-",
         jumlah: item.jumlah,
         pengusul: item.nama || "-",
-        tglUsulan: `${day}/${month}/${year} ${hours}:${minutes}`,
+        tglUsulan,
         status: item.status,
         klasifikasi: item.klasifikasi,
         file_path: item.file_path,
@@ -1055,11 +963,6 @@ const fetchData = async () => {
     });
   } catch (error) {
     console.error("❌ Error fetch data verifikasi:", error);
-    toast.add({
-      title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data verifikasi",
-      color: "red",
-    });
     rows.value = [];
     pagination.value = null;
   } finally {
@@ -1112,14 +1015,12 @@ const paginationPages = computed(() => {
   const pages: number[] = [];
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5);
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total);
   } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
+    pages.push(current - 1, current, current + 1);
   }
   return pages;
 });
@@ -1131,12 +1032,10 @@ const showPreview = async (row: any) => {
   try {
     const detailData = await getDetailVerifikasiRequest(row.id);
     if (!detailData) return;
-
     selectedRow.value = { ...row, ...detailData };
-    files.value = Array(detailData.jumlah || 0).fill(null);
-    fileStates.value = {};
     keterangan_ditolak.value = "";
     showKeteranganWarning.value = false;
+    uncheckAll.value = false;
     openPreview.value = true;
   } catch (error) {
     console.error("❌ Error fetch detail:", error);
@@ -1144,68 +1043,51 @@ const showPreview = async (row: any) => {
 };
 
 /* ===========================
+ * TOGGLE UNCHECK ALL
+ * =========================== */
+const toggleUncheckAll = () => {
+  if (!selectedRow.value?.details) return;
+  selectedRow.value.details.forEach((d: any) => {
+    if (
+      d.status !== "hangus" &&
+      d.status !== "terpakai" &&
+      d.status !== "terpakai_final" &&
+      d.status !== "ditolak"
+    ) {
+      d.checked = !uncheckAll.value;
+    }
+  });
+};
+
+watch(
+  () => selectedRow.value?.details,
+  (details) => {
+    if (!details) return;
+    const valid = details.filter(
+      (d: any) =>
+        d.status !== "hangus" &&
+        d.status !== "terpakai" &&
+        d.status !== "terpakai_final" &&
+        d.status !== "ditolak",
+    );
+    uncheckAll.value = valid.length > 0 && valid.every((d: any) => !d.checked);
+  },
+  { deep: true },
+);
+
+/* ===========================
  * PREVIEW FILE
- * ✅ Langsung pakai file_url (pre-signed S3), tidak perlu fetch/blob
  * =========================== */
 const previewFile = (detail: any) => {
   const url =
     detail.file_url ||
     (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
-
   if (!url) {
-    toast.add({
-      title: "File tidak ditemukan",
-      description: "File tidak tersedia untuk ditampilkan",
-      color: "yellow",
-    });
+    showToastFileNotFound();
     return;
   }
-
-  // ✅ Langsung set URL, tidak perlu fetch/blob
   pdfUrl.value = url;
   isOpenPreview.value = true;
-};
-
-/* ===========================
- * FILE HANDLERS
- * =========================== */
-const startReplacingFile = (idx: number) => {
-  const detail = selectedRow.value.details[idx];
-  fileStates.value[idx] = {
-    isReplacing: true,
-    isUploading: false,
-    file: null,
-    originalFileName: detail.file_name,
-  };
-};
-
-const cancelReplace = (idx: number, detail: any) => {
-  delete fileStates.value[idx];
-};
-
-const handleFile = (idx: number, event: Event, detail: any) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) {
-    toast.add({
-      title: "File terlalu besar",
-      description: "Ukuran file maksimal 5MB",
-      color: "red",
-    });
-    return;
-  }
-
-  if (fileStates.value[idx]?.isReplacing) {
-    fileStates.value[idx].file = file;
-  } else {
-    files.value[idx] = file;
-  }
-};
-
-const removeFile = (idx: number) => {
-  files.value[idx] = null;
 };
 
 /* ===========================
@@ -1219,9 +1101,8 @@ const displayNomor = (detail: any) => {
   return "-";
 };
 
-/* ✅ Status label: terpakai_final → "Final" */
 const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
+  const map: Record<string, string> = {
     pending: "Pending",
     menunggu: "Menunggu",
     booking: "Booking",
@@ -1230,27 +1111,19 @@ const getStatusLabel = (status: string) => {
     ditolak: "Ditolak",
     hangus: "Hangus",
   };
-  return statusMap[status] || status;
+  return map[status] || status;
 };
 
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-    icon: "i-lucide-copy",
-  });
+  showToastCopied(value);
 };
 
-const getFileName = (path: string) => {
-  if (!path) return "-";
-  return path.split("/").pop() || path;
-};
+const getFileName = (path: string) =>
+  path ? path.split("/").pop() || path : "-";
 
-const hasExistingFile = (detail: any) => {
-  return !!(detail.file_name || detail.file_text || detail.file_url);
-};
+const hasExistingFile = (detail: any) =>
+  !!(detail.file_name || detail.file_text || detail.file_url);
 
 const getDisplayFileName = (detail: any) => {
   if (detail.file_name) return detail.file_name;
@@ -1259,27 +1132,15 @@ const getDisplayFileName = (detail: any) => {
   return "File Terlampir";
 };
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-};
-
 /* ===========================
- * COMPUTED - VALIDASI
+ * COMPUTED — VALIDASI
  * =========================== */
-const validDetails = computed(() => {
-  return (selectedRow.value?.details || []).filter(
+const validDetails = computed(() =>
+  (selectedRow.value?.details || []).filter(
     (d: any) =>
-      d.id &&
-      d.id !== null &&
-      d.id !== "null" &&
-      d.id !== undefined &&
-      d.status !== "hangus",
-  );
-});
+      d.id && d.id !== null && d.id !== "null" && d.status !== "hangus",
+  ),
+);
 
 const hasAnyChecked = computed(() =>
   validDetails.value.some((d: any) => d.checked),
@@ -1287,7 +1148,11 @@ const hasAnyChecked = computed(() =>
 const hasUnchecked = computed(() =>
   validDetails.value.some((d: any) => !d.checked),
 );
-
+const allUnchecked = computed(
+  () =>
+    validDetails.value.length > 0 &&
+    validDetails.value.every((d: any) => !d.checked),
+);
 const checkedCount = computed(
   () => validDetails.value.filter((d: any) => d.checked).length,
 );
@@ -1296,210 +1161,105 @@ const uncheckedCount = computed(
 );
 
 /* ===========================
- * CONFIRM APPROVAL
- * ✅ Blok jika ada unchecked tapi keterangan belum diisi
+ * CONFIRM / PROCESS APPROVAL
  * =========================== */
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
-    toast.add({
-      title: "Peringatan",
-      description: "Pilih minimal 1 nomor untuk disetujui!",
-      color: "yellow",
-    });
+    showToastNomorMinimal();
     return;
   }
-
-  // ✅ Jika ada yang unchecked (akan ditolak), keterangan WAJIB diisi dulu
   if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: `Ada ${uncheckedCount.value} nomor yang tidak dicentang. Isi keterangan penolakan terlebih dahulu.`,
-      color: "red",
-    });
-    const textarea = document.querySelector("textarea");
-    if (textarea) {
-      textarea.focus();
-      textarea.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    showToastKeteranganRequired(uncheckedCount.value);
+    document
+      .querySelector("textarea")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-
   showKeteranganWarning.value = false;
   showConfirmApprove.value = true;
 };
 
-/* ===========================
- * PROCESS APPROVAL
- * ✅ Toast menampilkan jumlah approved + rejected
- * =========================== */
 const processApproval = async () => {
   showConfirmApprove.value = false;
   if (!selectedRow.value) return;
-
   const approvedDetails = validDetails.value.filter((d: any) => d.checked);
   const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
-
   if (approvedDetails.length === 0) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang dapat disetujui.",
-      color: "yellow",
-    });
+    showToastTidakAdaNomor("disetujui");
     return;
   }
-
   isProcessing.value = true;
-
   try {
-    // Approve yang dicentang
-    const detailIds = approvedDetails.map((d: any) => d.id);
-    await approveBulkNomor(detailIds);
-
-    // ✅ Jika ada yang unchecked, tolak juga sekaligus
+    await approveBulkNomor(approvedDetails.map((d: any) => d.id));
     if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
-      const rejectedIds = rejectedDetails.map((d: any) => d.id);
       await rejectNomorRequest(
         selectedRow.value.id,
-        rejectedIds,
+        rejectedDetails.map((d: any) => d.id),
         keterangan_ditolak.value,
       );
     }
-
-    // ✅ Toast yang benar: tampilkan approved + rejected
-    const approvedCount = approvedDetails.length;
-    const rejectedCount = rejectedDetails.length;
-
-    if (rejectedCount > 0) {
-      toast.add({
-        title: "Berhasil",
-        description: `${approvedCount} nomor disetujui, ${rejectedCount} nomor ditolak`,
-        color: "green",
-      });
-    } else {
-      toast.add({
-        title: "Berhasil",
-        description: `${approvedCount} nomor berhasil disetujui`,
-        color: "green",
-      });
-    }
-
+    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length);
     openPreview.value = false;
     await fetchData();
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Error approval:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message || "Terjadi kesalahan saat memproses",
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }
 };
 
 /* ===========================
- * CONFIRM REJECTION
+ * CONFIRM / PROCESS REJECTION
  * =========================== */
 const confirmRejection = () => {
-  if (!hasUnchecked.value) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang akan ditolak!",
-      color: "yellow",
-    });
-    return;
-  }
-
+  if (!allUnchecked.value) return;
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: "Silakan isi keterangan penolakan terlebih dahulu!",
-      color: "red",
-      timeout: 3000,
-    });
-    const textarea = document.querySelector("textarea");
-    if (textarea) {
-      textarea.focus();
-      textarea.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    showToastKeteranganRequired();
+    document
+      .querySelector("textarea")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-
   showKeteranganWarning.value = false;
   showConfirmReject.value = true;
 };
 
-/* ===========================
- * PROCESS REJECTION
- * =========================== */
 const processRejection = async () => {
   showConfirmReject.value = false;
   if (!selectedRow.value) return;
-
   const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
-
   if (rejectedDetails.length === 0) {
-    toast.add({
-      title: "Peringatan",
-      description: "Tidak ada nomor yang dapat ditolak.",
-      color: "yellow",
-    });
+    showToastTidakAdaNomor("ditolak");
     return;
   }
-
   if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true;
-    toast.add({
-      title: "Keterangan Penolakan Wajib Diisi",
-      description: "Silakan isi keterangan penolakan!",
-      color: "red",
-    });
+    showToastKeteranganRequired();
     return;
   }
-
   isProcessing.value = true;
-
   try {
-    const detailIds = rejectedDetails.map((d: any) => d.id);
     await rejectNomorRequest(
       selectedRow.value.id,
-      detailIds,
+      rejectedDetails.map((d: any) => d.id),
       keterangan_ditolak.value,
     );
-
-    toast.add({
-      title: "Berhasil",
-      description: `${rejectedDetails.length} nomor berhasil ditolak`,
-      color: "green",
-    });
-
     openPreview.value = false;
     await fetchData();
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Error rejection:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message || "Terjadi kesalahan saat menolak",
-      color: "red",
-    });
   } finally {
     isProcessing.value = false;
   }
 };
 
-function formatDateTime(dateStr: string | Date) {
-  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return `${date.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" })} ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
-}
-
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
-  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
-  for (const el of Array.from(dropdownEls)) {
+  for (const el of Array.from(
+    document.querySelectorAll("[data-custom-dropdown]"),
+  )) {
     if (el.contains(target)) return;
   }
   openFilterStatus.value = false;
@@ -1513,12 +1273,10 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
   if (searchTimeout) clearTimeout(searchTimeout);
-  // ✅ Tidak perlu revokeObjectURL karena pdfUrl adalah pre-signed S3 URL
   pdfUrl.value = null;
 });
 
 const tooltip = ref({ show: false, text: "", x: 0, y: 0 });
-
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
     show: true,
@@ -1527,61 +1285,44 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
     y: Math.min(e.clientY + 12, window.innerHeight - 40),
   };
 };
-
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
 
-watch(keterangan_ditolak, (newValue) => {
-  if (newValue.trim()) showKeteranganWarning.value = false;
+watch(keterangan_ditolak, (v) => {
+  if (v.trim()) showKeteranganWarning.value = false;
 });
 
-// ✅ Saat slideover dibuka, tutup modal detail
-// Saat slideover ditutup, buka kembali modal detail
+// Saat slideover dibuka, tutup modal; saat ditutup, buka kembali modal
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false;
   } else {
-    // ✅ Tidak perlu revokeObjectURL karena bukan blob URL
     pdfUrl.value = null;
-    if (selectedRow.value) {
-      openPreview.value = true;
-    }
+    if (selectedRow.value) openPreview.value = true;
   }
 });
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Animasi dropdown filter — sama dengan halaman Delegasi */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
 }
-.animate-fade-in {
-  animation: fade-in 0.15s ease-out;
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
 }
 
-:deep(.dark) {
-  scrollbar-width: thin;
-  scrollbar-color: #4b5563 #1f2937;
-}
-:deep(.dark)::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-:deep(.dark)::-webkit-scrollbar-track {
-  background: #1f2937;
-}
-:deep(.dark)::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 4px;
-}
-:deep(.dark)::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+[data-custom-dropdown] button:focus {
+  outline: none;
 }
 </style>

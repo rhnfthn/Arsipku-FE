@@ -54,16 +54,41 @@
 
         <!-- Content with search highlight -->
         <div class="flex-1 min-w-0">
-          <span
-            :class="['text-sm', getNodeConfig().textColor]"
-            v-html="highlightText(node.name)"
-          ></span>
-          <p
-            v-if="node.persnum"
-            :class="['text-xs mt-0.5', getNodeConfig().iconColor]"
-          >
-            PN: {{ node.persnum }}
-          </p>
+          <template v-if="node.type !== 'member'">
+            <span
+              :class="['text-sm', getNodeConfig().textColor]"
+              v-html="highlightText(node.name)"
+            ></span>
+            <div
+              class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white"
+            >
+              <span>{{ formatDate(node.startDate) }}</span>
+              <span>–</span>
+              <span>{{ formatDate(node.endDate) }}</span>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="flex items-center gap-1">
+              <span
+                :class="['text-sm', getNodeConfig().textColor]"
+                v-html="highlightText(node.name)"
+              ></span>
+              <span class="text-sm text-black dark:text-white">-</span>
+              <span class="text-sm text-black dark:text-white">{{
+                node.persnum
+              }}</span>
+            </div>
+            <div
+              class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white"
+            >
+              <span>{{ formatDate(node.startDate) }}</span>
+              <span>–</span>
+              <span>{{ formatDate(node.endDate) }}</span>
+            </div>
+          </template>
+
+          <!-- Search highlight badge -->
           <div
             v-if="isSearchHighlighted"
             class="flex items-center gap-1 mt-1.5"
@@ -366,5 +391,15 @@ const getNodeConfig = () => {
         hideDelete: false,
       };
   }
+};
+
+const formatDate = (date: string) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 </script>

@@ -15,11 +15,13 @@ export const useTitelatur = () => {
   const error = ref<string | null>(null);
 
   const { get, post, put, del } = useApi();
+  const toast = useToast();
 
   /* ======================
    * FETCH ALL
+   * silent: true → tidak tampilkan toast (untuk onMounted / reload)
    * ====================== */
-  const fetchTitelatur = async () => {
+  const fetchTitelatur = async (silent = false) => {
     loading.value = true;
     error.value = null;
 
@@ -34,6 +36,13 @@ export const useTitelatur = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to fetch data";
       console.error("❌ fetchTitelatur error:", err);
+      if (!silent) {
+        toast.add({
+          title: "Gagal memuat data",
+          description: "Terjadi kesalahan saat mengambil data titelatur.",
+          color: "error",
+        });
+      }
     } finally {
       loading.value = false;
     }
@@ -77,13 +86,23 @@ export const useTitelatur = () => {
       const res = await post<TitelaturSingleResponse>("/titelatur-en", payload);
 
       if (res.success && res.data) {
-        items.value.unshift(res.data); // 🔥 optimistic update
+        items.value.unshift(res.data);
+        toast.add({
+          title: "Berhasil ditambahkan",
+          description: `Titelatur "${payload.long_text}" berhasil ditambahkan.`,
+          color: "success",
+        });
         return true;
       }
       throw new Error("Failed to create titelatur");
     } catch (err: any) {
       error.value = err?.message || "Failed to create titelatur";
       console.error("❌ createTitelatur error:", err);
+      toast.add({
+        title: "Gagal menambahkan",
+        description: "Terjadi kesalahan saat menambahkan data. Coba lagi.",
+        color: "error",
+      });
       return false;
     } finally {
       loading.value = false;
@@ -111,12 +130,22 @@ export const useTitelatur = () => {
         if (index !== -1) {
           items.value[index] = res.data;
         }
+        toast.add({
+          title: "Berhasil diperbarui",
+          description: `Titelatur "${payload.long_text}" berhasil diperbarui.`,
+          color: "success",
+        });
         return true;
       }
       throw new Error("Failed to update titelatur");
     } catch (err: any) {
       error.value = err?.message || "Failed to update titelatur";
       console.error("❌ updateTitelatur error:", err);
+      toast.add({
+        title: "Gagal memperbarui",
+        description: "Terjadi kesalahan saat memperbarui data. Coba lagi.",
+        color: "error",
+      });
       return false;
     } finally {
       loading.value = false;
@@ -126,7 +155,10 @@ export const useTitelatur = () => {
   /* ======================
    * DELETE
    * ====================== */
-  const deleteTitelatur = async (id: string): Promise<boolean> => {
+  const deleteTitelatur = async (
+    id: string,
+    name?: string,
+  ): Promise<boolean> => {
     loading.value = true;
     error.value = null;
 
@@ -135,12 +167,24 @@ export const useTitelatur = () => {
 
       if (res.success) {
         items.value = items.value.filter((item) => item.id !== id);
+        toast.add({
+          title: "Berhasil dihapus",
+          description: name
+            ? `Titelatur "${name}" berhasil dihapus.`
+            : "Data berhasil dihapus.",
+          color: "error",
+        });
         return true;
       }
       throw new Error("Failed to delete titelatur");
     } catch (err: any) {
       error.value = err?.message || "Failed to delete titelatur";
       console.error("❌ deleteTitelatur error:", err);
+      toast.add({
+        title: "Gagal menghapus",
+        description: "Terjadi kesalahan saat menghapus data. Coba lagi.",
+        color: "error",
+      });
       return false;
     } finally {
       loading.value = false;

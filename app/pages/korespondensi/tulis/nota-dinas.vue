@@ -85,10 +85,10 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -298,91 +298,42 @@
     </USlideover>
 
     <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
       <template #header>
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Pilih Metode Tanda Tangan
+            Tanda Tangan Digital (BSrE)
           </h3>
         </div>
       </template>
 
-      <!-- Body -->
       <template #body>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
+          Dokumen ditandatangani secara elektronik resmi (TTE). Masukkan passphrase Anda.
         </p>
 
-        <div class="space-y-4">
-          <!-- Digital Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
-
-            <div class="flex flex-col flex-1">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Tanda Tangan Digital (BSrE)
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen ditandatangani secara elektronik resmi (TTE).
-              </span>
-
-              <!-- Signer Info -->
-              <div v-if="selectedSendType === 'digsig'"
-                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <div class="flex items-start gap-4 p-4">
-                  <div class="flex-shrink-0">
-                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col">
-                    <span class="text-xs text-gray-500 mb-0.5">
-                      {{ signerInfo.label }}
-                    </span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                      {{ signerInfo.role }}
-                    </span>
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">
-                      {{ signerInfo.name }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Passphrase -->
-                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div @click.stop>
-                    <UFormGroup label="Passphrase" required>
-                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
-                        class="w-full" autofocus />
-                    </UFormGroup>
-                  </div>
-                </div>
+        <div class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div class="flex items-start gap-4 p-4">
+            <div class="flex-shrink-0">
+              <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                <UIcon name="i-heroicons-user" class="w-6 h-6" />
               </div>
             </div>
-          </label>
-
-          <!-- Without Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
-
             <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Kirim Tanpa Tanda Tangan
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen dikirim tanpa proses tanda tangan digital.
-              </span>
+              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
+              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role }}</span>
+              <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
             </div>
-          </label>
+          </div>
+
+          <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <UFormGroup label="Passphrase" required>
+              <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
+                class="w-full" autofocus />
+            </UFormGroup>
+          </div>
         </div>
       </template>
 
-      <!-- Footer -->
       <template #footer>
         <div class="flex w-full justify-end gap-2">
           <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
@@ -406,11 +357,14 @@ import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
+import TemplateManager from '@/components/Tulis/TemplateManager.vue';
+
 interface RecipientItem {
   label: string;
   labelJob: string;
   value: string;
   raw: any;
+  isGroup?: boolean;
 }
 
 interface SifatOption {
@@ -435,52 +389,62 @@ const { getRecipients, getRecipientGroups } = useRecipients();
 const recipientGroups = ref<any[]>([]);
 const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign();
+const { digsigConfig, fetchDigsigConfig } = useDigsig();
 
 const isGroupSelected = (group: any, type: 'tertuju' | 'tembusan') => {
   const targetList = type === 'tertuju' ? selectedTertuju.value : selectedTembusan.value;
-  const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
-
-  if (groupPositions.length === 0) return false;
-  const validGroupItems = items.value.filter(i => groupPositions.includes(i.value));
-
-  if (validGroupItems.length === 0) return false;
-  return validGroupItems.every(gItem =>
-    targetList.some(selected => selected.value === gItem.value)
-  );
+  return targetList.some(s => s.value === `GROUP_${group.id}`);
 };
 
 const toggleGroup = (isChecked: boolean, group: any, type: 'tertuju' | 'tembusan') => {
   const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
 
-  const itemsInGroup = items.value.filter(i => groupPositions.includes(i.value));
+  // Format objek untuk badge grup
+  const groupItem: RecipientItem = {
+    label: group.nama,
+    labelJob: group.nama,
+    value: `GROUP_${group.id}`,
+    isGroup: true,
+    raw: group
+  };
 
-  if (type === 'tertuju') {
-    if (isChecked) {
-      const toAdd = itemsInGroup.filter(item =>
-        !selectedTertuju.value.some(s => s.value === item.value) &&
-        !selectedTembusan.value.some(s => s.value === item.value)
-      );
-      selectedTertuju.value = [...selectedTertuju.value, ...toAdd];
-    } else {
-      selectedTertuju.value = selectedTertuju.value.filter(
-        s => !groupPositions.includes(s.value)
-      );
+  const targetList = type === 'tertuju' ? selectedTertuju : selectedTembusan;
+  const otherList = type === 'tertuju' ? selectedTembusan : selectedTertuju;
+
+  if (isChecked) {
+    // Hapus individu dari tertuju & tembusan jika mereka adalah bagian dari grup ini
+    selectedTertuju.value = selectedTertuju.value.filter(s => !groupPositions.includes(s.value));
+    selectedTembusan.value = selectedTembusan.value.filter(s => !groupPositions.includes(s.value));
+
+    // Tambahkan badge grup jika belum ada
+    if (!targetList.value.some(s => s.value === groupItem.value) &&
+      !otherList.value.some(s => s.value === groupItem.value)) {
+      targetList.value.push(groupItem);
     }
   } else {
-    if (isChecked) {
-      const toAdd = itemsInGroup.filter(item =>
-        !selectedTembusan.value.some(s => s.value === item.value) &&
-        !selectedTertuju.value.some(s => s.value === item.value)
-      );
-      selectedTembusan.value = [...selectedTembusan.value, ...toAdd];
-    } else {
-      selectedTembusan.value = selectedTembusan.value.filter(
-        s => !groupPositions.includes(s.value)
-      );
-    }
+    // Hapus badge grup jika di-uncheck
+    targetList.value = targetList.value.filter(s => s.value !== groupItem.value);
   }
 };
+
+// Computed ini bertugas men-disable dropdown individu/grup jika mereka tergabung dalam list lawan
+const excludeTertujuList = computed(() => {
+  const excluded: any[] = [...selectedTembusan.value];
+  selectedTembusan.value.filter(i => i.isGroup).forEach(g => {
+    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+    excluded.push(...members);
+  });
+  return excluded;
+});
+
+const excludeTembusanList = computed(() => {
+  const excluded: any[] = [...selectedTertuju.value];
+  selectedTertuju.value.filter(i => i.isGroup).forEach(g => {
+    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+    excluded.push(...members);
+  });
+  return excluded;
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -592,12 +556,20 @@ const getBasePayload = (): DraftPayload => {
     .map((f) => f.id)
     .filter((id): id is string => !!id);
 
+  // Pisahkan ID individu dan ID Grup
+  const penerimaIndividu = selectedTertuju.value.filter(i => !i.isGroup).map(i => i.value);
+  const tembusanIndividu = selectedTembusan.value.filter(i => !i.isGroup).map(i => i.value);
+
+  const penerimaGrup = selectedTertuju.value.filter(i => i.isGroup).map(i => i.raw.id);
+  const tembusanGrup = selectedTembusan.value.filter(i => i.isGroup).map(i => i.raw.id);
+
   return {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),
-    tembusan: selectedTembusan.value.map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+    tertuju: penerimaIndividu,
+    tembusan: tembusanIndividu,
+    penerima_grup: penerimaGrup,
+    tembusan_grup: tembusanGrup,
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
     sifat: selectedSifat.value?.value || 'biasa',
@@ -687,9 +659,30 @@ const confirmKirimDokumen = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  passphrase.value = "";
-  selectedSendType.value = "qr_only";
-  isPassphraseModalOpen.value = true;
+  // Cek apakah TTE (DigSig) aktif untuk Nota Dinas
+  const ndConfig = digsigConfig.value.find(c => c.jenisNaskah === 'ND');
+  const isDigsigEnabled = ndConfig?.enabled ?? false;
+
+  if (isDigsigEnabled) {
+    // Munculkan Pop-up Passphrase Langsung
+    passphrase.value = "";
+    selectedSendType.value = "digsig";
+    isPassphraseModalOpen.value = true;
+  } else {
+    // Lewati Pop-up, langsung munculkan konfirmasi
+    selectedSendType.value = "qr_only";
+    const isConfirmed = await Alert.confirm(
+      'Konfirmasi Akhir',
+      'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?',
+      'Ya, Kirim Sekarang',
+      'Periksa Lagi',
+      false
+    );
+
+    if (isConfirmed) {
+      await handleKirimDokumen();
+    }
+  }
 };
 
 const handlePassphraseSubmit = async () => {
@@ -817,6 +810,7 @@ const handleSaveDraft = async () => {
 };
 
 onMounted(async () => {
+  await fetchDigsigConfig();
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -836,8 +830,7 @@ onMounted(async () => {
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
-    const groups = await getRecipientGroups();
-    // Hanya tampilkan grup yang aktif
+    const groups = await getRecipientGroups('ND');
     recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch {
     klasifikasiStatus.value = "error";
@@ -860,22 +853,84 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
+      // 1. Fungsi Mapping Individu
         const mapApiToUI = (list: any[]): RecipientItem[] => {
-          return list?.map(item => {
-            const posId = String(item.position_id || item.position || item.value);
+          if (!list || !Array.isArray(list)) return [];
+          return list.map(item => {
+            // Cek apakah item berupa object (dari master) atau hanya string ID
+            const posId = String(item.position_id || item.position || item.value || item);
             const master = items.value.find(m => m.value === posId);
+
             if (master) return master;
+
+            // Fallback jika tidak ada di master items
             return {
-              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-              labelJob: item.positionText || item.labelJob || '',
+              label: item.positionText ? `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}` : posId,
+              labelJob: item.positionText || item.labelJob || posId,
               value: posId,
               raw: item
             };
-          }) || [];
+          });
         };
 
-        selectedTertuju.value = mapApiToUI(d.penerima);
-        selectedTembusan.value = mapApiToUI(d.tembusan);
+        // 2. Fungsi Mapping Grup
+        const mapGroupsToUI = (groupList: any[]): RecipientItem[] => {
+          if (!groupList || !Array.isArray(groupList)) return [];
+          return groupList.map(g => {
+            // Karena API draft mungkin hanya mengembalikan ID String, kita bandingkan ID-nya
+            const gId = String(g.id || g);
+            const masterGroup = recipientGroups.value.find(mg => String(mg.id) === gId);
+
+            if (masterGroup) {
+              return {
+                label: masterGroup.nama,
+                labelJob: masterGroup.nama,
+                value: `GROUP_${masterGroup.id}`, // Harus cocok dengan format grup di komponen anak
+                isGroup: true,
+                raw: masterGroup
+              };
+            }
+            return null;
+          }).filter(Boolean) as RecipientItem[];
+        };
+
+        // ==========================================
+        // EKSEKUSI TERTUJU
+        // ==========================================
+        // 1. Petakan ID dari draft menjadi format UI
+        const loadedTertujuGrup = mapGroupsToUI(d.penerima_grup);
+        const loadedTertujuIndividu = mapApiToUI(d.penerima);
+
+        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
+        const tertujuGroupMemberIds = loadedTertujuGrup.flatMap(g =>
+          g.raw.details?.map((x: any) => String(x.position)) || []
+        );
+
+        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
+        const filteredTertujuIndividu = loadedTertujuIndividu.filter(i =>
+          !tertujuGroupMemberIds.includes(String(i.value))
+        );
+
+        selectedTertuju.value = [...loadedTertujuGrup, ...filteredTertujuIndividu];
+
+        // ==========================================
+        // EKSEKUSI TEMBUSAN
+        // ==========================================
+        // 1. Petakan ID dari draft menjadi format UI
+        const loadedTembusanGrup = mapGroupsToUI(d.tembusan_grup);
+        const loadedTembusanIndividu = mapApiToUI(d.tembusan);
+
+        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
+        const tembusanGroupMemberIds = loadedTembusanGrup.flatMap(g =>
+          g.raw.details?.map((x: any) => String(x.position)) || []
+        );
+
+        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
+        const filteredTembusanIndividu = loadedTembusanIndividu.filter(i =>
+          !tembusanGroupMemberIds.includes(String(i.value))
+        );
+
+        selectedTembusan.value = [...loadedTembusanGrup, ...filteredTembusanIndividu];
 
         if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any): UploadedFile => ({

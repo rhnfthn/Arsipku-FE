@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
-    <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
@@ -8,8 +7,6 @@
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
-
-      <!-- ADD BUTTON -->
       <button
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
@@ -19,13 +16,10 @@
       </button>
     </div>
 
-    <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
-      <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
-        <!-- Rows dropdown -->
         <div class="flex items-center gap-2 px-4">
           <select
             v-model="limit"
@@ -37,8 +31,6 @@
             </option>
           </select>
         </div>
-
-        <!-- SEARCH -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
             class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
@@ -52,7 +44,6 @@
         </div>
       </div>
 
-      <!-- LOADING (SHIMMER) -->
       <div v-if="loading" class="space-y-3 p-4">
         <div
           v-for="i in 5"
@@ -61,7 +52,6 @@
         ></div>
       </div>
 
-      <!-- EMPTY -->
       <div
         v-else-if="rows.length === 0"
         class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
@@ -69,7 +59,6 @@
         <p class="text-sm font-medium">Data tidak ditemukan</p>
       </div>
 
-      <!-- TABLE -->
       <div v-else class="overflow-x-auto relative">
         <table class="w-full bg-white dark:bg-gray-800 text-sm">
           <thead
@@ -107,7 +96,6 @@
               </th>
             </tr>
           </thead>
-
           <tbody>
             <tr
               v-for="row in rows"
@@ -126,8 +114,6 @@
                   </p>
                 </div>
               </td>
-
-              <!-- ✅ Tampilkan tanggal sekali dan semua nomor di bawahnya -->
               <td class="px-5 py-4">
                 <div class="flex flex-col gap-0.5">
                   <div class="text-sm font-medium">{{ row.tanggal }}</div>
@@ -142,14 +128,13 @@
                     </div>
                     <div
                       v-if="row.nomor_list.length > 3"
-                      class="text-primary font-medium dark:hover:bg-gray-700"
+                      class="text-primary font-medium"
                     >
                       +{{ row.nomor_list.length - 3 }} nomor lainnya
                     </div>
                   </div>
                 </div>
               </td>
-
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
                   <p class="whitespace-normal break-words line-clamp-3">
@@ -157,13 +142,12 @@
                   </p>
                 </div>
               </td>
-              <td class="px-5 py-4 dark:hover:bg-gray-700">{{ row.waktu }}</td>
+              <td class="px-5 py-4">{{ row.waktu }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- PAGINATION -->
       <div
         v-if="pagination && pagination.total > 0 && rows.length > 0"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
@@ -172,9 +156,7 @@
           Menampilkan {{ paginationStart }} - {{ paginationEnd }} dari
           {{ pagination.total }} data
         </div>
-
         <div class="flex items-center gap-2">
-          <!-- Back Button -->
           <button
             @click="goToPage((pagination.current_page || pagination.page) - 1)"
             :disabled="(pagination.current_page || pagination.page) === 1"
@@ -200,10 +182,7 @@
             </svg>
             Sebelumnya
           </button>
-
-          <!-- Page Numbers -->
           <div class="flex items-center gap-1">
-            <!-- First page -->
             <button
               v-if="paginationPages.length > 0 && paginationPages[0] > 1"
               @click="goToPage(1)"
@@ -211,16 +190,11 @@
             >
               1
             </button>
-
-            <!-- Left ellipsis -->
             <span
               v-if="paginationPages.length > 0 && paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- Visible pages -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -234,8 +208,6 @@
             >
               {{ page }}
             </button>
-
-            <!-- Right ellipsis -->
             <span
               v-if="
                 paginationPages.length > 0 &&
@@ -243,11 +215,8 @@
                   (pagination.total_pages || pagination.totalPages) - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- Last page -->
             <button
               v-if="
                 paginationPages.length > 0 &&
@@ -260,8 +229,6 @@
               {{ pagination.total_pages || pagination.totalPages }}
             </button>
           </div>
-
-          <!-- Next Button -->
           <button
             @click="goToPage((pagination.current_page || pagination.page) + 1)"
             :disabled="
@@ -295,7 +262,13 @@
       </div>
     </div>
 
-    <!-- FILE PREVIEW SLIDEOVER -->
+    <Teleport to="body">
+      <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
+    </Teleport>
+  </div>
+
+  <!-- FILE PREVIEW SLIDEOVER — di luar div utama, teleport ke body agar z-index benar di atas Modal -->
+  <Teleport to="body">
     <USlideover
       v-model:open="isOpenPreviewFile"
       title="Pratinjau Dokumen"
@@ -316,14 +289,9 @@
         </div>
       </template>
     </USlideover>
+  </Teleport>
 
-    <!-- ADD USULAN -->
-    <Teleport to="body">
-      <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
-    </Teleport>
-  </div>
-
-  <!-- MODAL DETAIL - z-index 8000 to be below toast (9000+) -->
+  <!-- MODAL DETAIL -->
   <Teleport to="body">
     <Modal
       v-model="openPreview"
@@ -413,7 +381,6 @@
                 {{ formatTanggalWIB(detailData.tanggal) }}
               </p>
             </div>
-
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
                 Penandatangan
@@ -422,7 +389,6 @@
                 {{ detailData.jabatan }}
               </p>
             </div>
-
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
                 Klasifikasi
@@ -431,7 +397,6 @@
                 {{ detailData.klasifikasiDisplay || detailData.klasifikasi }}
               </p>
             </div>
-
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
                 Jenis Naskah
@@ -469,6 +434,7 @@
                     : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50',
                 ]"
               >
+                <!-- Nomor + Status + Copy -->
                 <div class="flex items-center gap-3 mb-3">
                   <div
                     class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-4 py-2"
@@ -494,7 +460,6 @@
                       </span>
                     </div>
                   </div>
-                  <!-- ✅ Sembunyikan copy button jika status hangus -->
                   <button
                     v-if="item.status !== 'hangus'"
                     @click="handleCopy(item.nomor)"
@@ -504,82 +469,88 @@
                   </button>
                 </div>
 
-                <!-- ✅ Section file: hanya tampil jika ada file, atau saat mode upload/replacing -->
+                <!-- File preview — tampil jika ada file DAN tidak sedang replacing -->
+                <!-- Nomor hangus: tetap bisa preview file (read-only), tapi style redup -->
                 <div
-                  v-if="item.file_name || fileStates[item.id]?.isReplacing"
+                  v-if="item.file_name && !fileStates[item.id]?.isReplacing"
                   :class="[
-                    'flex border rounded-md p-3 transition',
+                    'flex items-start border rounded-md p-3 transition',
                     item.status === 'hangus'
-                      ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-default'
+                      ? 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 opacity-70'
                       : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30',
                   ]"
-                  @click="
-                    item.file_name &&
-                    item.status !== 'hangus' &&
-                    !fileStates[item.id]?.isReplacing &&
-                    previewFile(item)
-                  "
+                  @click="previewFile(item)"
                 >
-                  <div
-                    v-if="item.file_name && !fileStates[item.id]?.isReplacing"
-                    class="flex"
+                  <svg
+                    class="w-5 h-5 flex-shrink-0 mt-0.5"
+                    :class="
+                      item.status === 'hangus'
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-primary dark:text-blue-400'
+                    "
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      class="w-5 h-5"
-                      :class="
-                        item.status === 'hangus'
-                          ? 'text-gray-400'
-                          : 'text-primary dark:text-blue-400'
-                      "
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
                   <div class="flex-1 min-w-0 ml-3">
                     <p
                       :class="[
-                        'text-sm font-medium',
+                        'text-sm font-medium truncate',
                         item.status === 'hangus'
-                          ? 'text-gray-400 no-underline'
+                          ? 'text-gray-500 dark:text-gray-400 underline'
                           : 'text-primary dark:text-blue-400 underline',
                       ]"
                     >
                       {{ item.file_name }}
                     </p>
                     <p
-                      v-if="item.status !== 'hangus'"
-                      class="text-xs text-gray-600 dark:text-gray-400"
+                      class="text-xs mt-0.5"
+                      :class="
+                        item.status === 'hangus'
+                          ? 'text-gray-400 dark:text-gray-500'
+                          : 'text-gray-500 dark:text-gray-400'
+                      "
                     >
                       Klik untuk preview
                     </p>
                   </div>
-
-                  <div
-                    v-if="fileStates[item.id]?.isReplacing"
-                    class="mt-3 w-full"
-                  >
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      @change="handleFileSelect(item.id, $event)"
-                      class="block w-full text-sm border dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 dark:text-gray-200"
-                    />
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Max 10MB - PDF, DOC, DOCX
-                    </p>
-                  </div>
                 </div>
 
+                <!-- FIX 3: Upload/replace input — TERPISAH, hanya tampil saat isReplacing = true -->
+                <div
+                  v-if="fileStates[item.id]?.isReplacing"
+                  class="border border-dashed border-primary/40 dark:border-primary/30 rounded-md p-3 bg-blue-50/50 dark:bg-blue-900/10"
+                >
+                  <p
+                    class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2"
+                  >
+                    {{
+                      item.file_name
+                        ? "Pilih file pengganti:"
+                        : "Pilih file untuk diupload:"
+                    }}
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    @change="handleFileSelect(item.id, $event)"
+                    class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
+                  />
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                    Max 10MB — PDF, DOC, DOCX
+                  </p>
+                </div>
+
+                <!-- Action buttons -->
                 <div class="flex gap-2 mt-3">
-                  <!-- Upload button: tampil jika tidak ada file, status terpakai/booking, bukan hangus -->
+                  <!-- Upload button: tidak ada file, status aktif, tidak sedang replacing -->
                   <button
                     v-if="
                       !item.file_name &&
@@ -589,12 +560,12 @@
                       !fileStates[item.id]?.isReplacing
                     "
                     @click="startUploadFile(item.id)"
-                    class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition"
+                    class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm"
                   >
                     Upload File
                   </button>
 
-                  <!-- Ganti File button -->
+                  <!-- Ganti File button: ada file, status aktif, tidak sedang replacing -->
                   <button
                     v-if="
                       item.file_name &&
@@ -604,11 +575,12 @@
                       !fileStates[item.id]?.isReplacing
                     "
                     @click="startReplacingFile(item.id)"
-                    class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
+                    class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm"
                   >
                     Ganti File
                   </button>
 
+                  <!-- Simpan & Batal: saat sedang replacing -->
                   <template v-if="fileStates[item.id]?.isReplacing">
                     <button
                       @click="saveFile(item.id)"
@@ -617,7 +589,7 @@
                         fileStates[item.id]?.isUploading
                       "
                       :class="[
-                        'flex-1 px-4 py-2 rounded-lg transition',
+                        'flex-1 px-4 py-2 rounded-lg transition text-sm',
                         !fileStates[item.id]?.file ||
                         fileStates[item.id]?.isUploading
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -633,13 +605,13 @@
                     <button
                       @click="cancelReplacing(item.id)"
                       :disabled="fileStates[item.id]?.isUploading"
-                      class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+                      class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm"
                     >
                       Batal
                     </button>
                   </template>
 
-                  <!-- Hangus button: sembunyikan jika sudah hangus -->
+                  <!-- Hangus button -->
                   <button
                     v-if="
                       item.status !== 'hangus' &&
@@ -648,7 +620,7 @@
                       !fileStates[item.id]?.isReplacing
                     "
                     @click.stop="confirmHangusNomor(item.id)"
-                    class="flex-1 px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition"
+                    class="flex-1 px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition text-sm"
                   >
                     Hangus
                   </button>
@@ -661,7 +633,6 @@
     </Modal>
   </Teleport>
 
-  <!-- CONFIRM HANGUS - z-index 8500 to be below toast but above modal -->
   <ConfirmPopup
     v-model="openConfirmHangus"
     type="danger"
@@ -674,7 +645,6 @@
     class="z-[8500]"
   />
 
-  <!-- TOOLTIP -->
   <Teleport to="body">
     <div
       v-if="tooltip.show"
@@ -694,10 +664,11 @@ import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
-import { useToast } from "#imports";
 import { usePenomoran } from "~/composables/usePenomoran";
+definePageMeta({
+  middleware: "auth",
+});
 
-const toast = useToast();
 const config = useRuntimeConfig();
 
 const {
@@ -706,8 +677,16 @@ const {
   uploadDetailFile,
   hangusDetailNomor,
   getListNomor,
-  refreshTrigger, // ✅ Get refresh trigger
+  refreshTrigger,
+  showToastFileNotFound,
+  showToastGagalPreview,
+  showToastFileTooLargeAdmin,
+  showToastPilihFile,
+  showToastSaveTitle,
+  showToastPenomoranSuccess,
+  showToastCopied,
 } = usePenomoran();
+
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
@@ -723,7 +702,6 @@ const fileStates = ref<Record<string, any>>({});
 const isEditingTitle = ref(false);
 const editedTitle = ref("");
 
-// Pagination & Search params - aligned with API documentation
 const searchQuery = ref<string>("");
 const limit = ref<number>(10);
 const currentPage = ref<number>(1);
@@ -746,35 +724,27 @@ const headers = [
   { label: "Waktu", key: "waktu", sortable: true },
 ];
 
-// ✅ Watch refresh trigger untuk auto refetch
 watch(refreshTrigger, () => {
-  console.log("🔄 Auto refetch triggered by upload/hangus");
   fetchData();
-
-  // ✅ Jika modal detail terbuka, refetch detail juga
   if (openPreview.value && selectedRow.value) {
     openRowModal(selectedRow.value);
   }
 });
 
-// ✅ Computed for pagination display: "Menampilkan X - Y dari Z data"
 const paginationStart = computed(() => {
   if (!pagination.value || !pagination.value.total || rows.value.length === 0)
     return 0;
-  const currentPage =
-    pagination.value.current_page || pagination.value.page || 1;
-  const itemsPerPage = pagination.value.limit || limit.value || 10;
-  return (currentPage - 1) * itemsPerPage + 1;
+  const page = pagination.value.current_page || pagination.value.page || 1;
+  const perPage = pagination.value.limit || limit.value || 10;
+  return (page - 1) * perPage + 1;
 });
 
 const paginationEnd = computed(() => {
   if (!pagination.value || !pagination.value.total || rows.value.length === 0)
     return 0;
-  const currentPage =
-    pagination.value.current_page || pagination.value.page || 1;
-  const itemsPerPage = pagination.value.limit || limit.value || 10;
-  const end = currentPage * itemsPerPage;
-  return Math.min(end, pagination.value.total);
+  const page = pagination.value.current_page || pagination.value.page || 1;
+  const perPage = pagination.value.limit || limit.value || 10;
+  return Math.min(page * perPage, pagination.value.total);
 });
 
 const getStatusLabel = (item: any): string => {
@@ -796,30 +766,23 @@ const getStatusClass = (item: any): string => {
 const WIB_OFFSET = 7 * 60 * 60 * 1000;
 
 function toWIB(dateStr: string) {
-  const utcDate = new Date(dateStr);
-  return new Date(utcDate.getTime() + WIB_OFFSET);
+  return new Date(new Date(dateStr).getTime() + WIB_OFFSET);
 }
 
 function formatTanggalWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const wib = toWIB(dateStr);
-  const day = String(wib.getDate()).padStart(2, "0");
-  const month = String(wib.getMonth() + 1).padStart(2, "0");
-  const year = wib.getFullYear();
-  return `${day}/${month}/${year}`;
+  const d = toWIB(dateStr);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
 function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const wib = toWIB(dateStr);
-  const hours = String(wib.getHours()).padStart(2, "0");
-  const minutes = String(wib.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const d = toWIB(dateStr);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const getFileUrl = (filePath: string) => {
-  return `${config.public.apiBaseUrl}/${filePath}`;
-};
+const getFileUrl = (filePath: string) =>
+  `${config.public.apiBaseUrl}/${filePath}`;
 
 const isOpenPreviewFile = ref(false);
 const previewPdfUrl = ref<string | null>(null);
@@ -827,29 +790,17 @@ const previewPdfUrl = ref<string | null>(null);
 const previewFile = async (item: any) => {
   const fileUrl =
     item.file_url || (item.file_text ? getFileUrl(item.file_text) : null);
-
   if (!fileUrl) {
-    toast.add({
-      title: "File tidak ditemukan",
-      description: "File tidak tersedia untuk ditampilkan",
-      color: "yellow",
-    });
+    showToastFileNotFound();
     return;
   }
-
   try {
     previewPdfUrl.value = null;
-
-    // ✅ Gunakan file_url langsung (pre-signed S3) tanpa fetch/blob
     previewPdfUrl.value = fileUrl;
     isOpenPreviewFile.value = true;
   } catch (err) {
     console.error("❌ Error preview file:", err);
-    toast.add({
-      title: "Gagal membuka file",
-      description: "File tidak dapat dipratinjau",
-      color: "red",
-    });
+    showToastGagalPreview();
   }
 };
 
@@ -870,16 +821,10 @@ const startReplacingFile = (detailId: string) => {
 };
 
 const handleFileSelect = (detailId: string, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
     if (file.size > 10 * 1024 * 1024) {
-      toast.add({
-        title: "File terlalu besar",
-        description: "Ukuran file maksimal 10MB",
-        color: "red",
-      });
+      showToastFileTooLargeAdmin();
       return;
     }
     fileStates.value[detailId].file = file;
@@ -889,34 +834,22 @@ const handleFileSelect = (detailId: string, event: Event) => {
 const saveFile = async (detailId: string) => {
   const state = fileStates.value[detailId];
   if (!state?.file) {
-    toast.add({
-      title: "Pilih file",
-      description: "Silakan pilih file terlebih dahulu",
-      color: "yellow",
-    });
+    showToastPilihFile();
     return;
   }
-
   state.isUploading = true;
-
   try {
     const result = await uploadDetailFile(detailId, state.file);
-
     const target = detailData.value?.nomor_list?.find(
       (n: any) => n.id === detailId,
     );
-
     if (target) {
       target.file_name = result?.file_name || state.file.name;
       target.file_text = result?.file_text || null;
       target.file_url = result?.file_url || null;
-      // ✅ Status changes to terpakai_final ONLY after file upload
       target.status = result?.status || "terpakai_final";
     }
-
     delete fileStates.value[detailId];
-
-    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
   } catch (error: any) {
     console.error("❌ Error upload file:", error);
   } finally {
@@ -935,24 +868,15 @@ const confirmHangusNomor = (detailId: string) => {
 
 const executeHangusNomor = async () => {
   if (!selectedDetailId.value) return;
-
   isHangusing.value = true;
-
   try {
     await hangusDetailNomor(selectedDetailId.value);
-
     const target = detailData.value?.nomor_list?.find(
       (n: any) => n.id === selectedDetailId.value,
     );
-
-    if (target) {
-      target.status = "hangus";
-    }
-
+    if (target) target.status = "hangus";
     openConfirmHangus.value = false;
     selectedDetailId.value = null;
-
-    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
   } catch (error: any) {
     console.error("❌ Error hangus nomor:", error);
   } finally {
@@ -975,44 +899,28 @@ function saveTitle() {
   if (!detailData.value) return;
   detailData.value.perihal = editedTitle.value;
   isEditingTitle.value = false;
-  toast.add({
-    title: "Berhasil",
-    description: "Judul berhasil diperbarui",
-    color: "green",
-  });
+  showToastSaveTitle();
 }
 
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
-  toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
-    color: "success",
-  });
+  showToastCopied(value);
 };
 
 const handleSort = (col: string) => {
-  // ✅ Map frontend column names to backend field names per API documentation
   const columnMapping: Record<string, string> = {
     jenis: "jenis",
     tanggal: "tanggal",
-    waktu: "waktu", // Maps to created_at in backend
+    waktu: "waktu",
   };
-
   const backendColumn = columnMapping[col] || col;
-
   if (sortBy.value === backendColumn) {
-    // Toggle sort order if clicking same column
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // New column, set to asc
     sortBy.value = backendColumn;
     sortOrder.value = "asc";
   }
-
-  console.log(`🔄 Sort changed: ${sortBy.value} ${sortOrder.value}`);
-
-  currentPage.value = 1; // Reset to first page when sorting changes
+  currentPage.value = 1;
   fetchData();
 };
 
@@ -1024,7 +932,6 @@ const handleLimitChange = () => {
 let searchTimeout: any = null;
 const handleSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout);
-
   searchTimeout = setTimeout(() => {
     currentPage.value = 1;
     fetchData();
@@ -1033,25 +940,19 @@ const handleSearchInput = () => {
 
 const goToPage = (page: number) => {
   if (!pagination.value) return;
-
   const totalPages =
     pagination.value.total_pages || pagination.value.totalPages || 1;
-
   if (page < 1 || page > totalPages) return;
-
   currentPage.value = page;
   fetchData();
 };
 
 function groupDuplicateRows(dataArray) {
   const grouped = new Map();
-
   dataArray.forEach((item) => {
     const key = item.id_request;
-
     if (grouped.has(key)) {
-      const existing = grouped.get(key);
-      existing.nomor_list.push(item.nomor);
+      grouped.get(key).nomor_list.push(item.nomor);
     } else {
       grouped.set(key, {
         id_request: item.id_request,
@@ -1060,64 +961,36 @@ function groupDuplicateRows(dataArray) {
         perihal: item.perihal || "-",
         pengusul: item.nama_pengirim || "-",
         klasifikasi: item.klasifikasi || "-",
-        klasifikasiDisplay: item.klasifikasi || "-", // ✅ Langsung dari API
+        klasifikasiDisplay: item.klasifikasi || "-",
         nomor_list: [item.nomor],
         tanggal: formatTanggalWIB(item.tanggal),
         waktu: formatWaktuWIB(item.waktu),
       });
     }
   });
-
   return Array.from(grouped.values());
 }
 
 const fetchData = async () => {
   loading.value = true;
-
   try {
-    // ✅ Build params according to API documentation for GET /nomor
-    const params: any = {
-      page: currentPage.value,
-      limit: limit.value,
-    };
-
-    if (searchQuery.value) {
-      params.search = searchQuery.value;
-    }
-
+    const params: any = { page: currentPage.value, limit: limit.value };
+    if (searchQuery.value) params.search = searchQuery.value;
     if (sortBy.value) {
       params.sort_by = sortBy.value;
       params.sort_order = sortOrder.value;
     }
 
-    console.log("📤 Fetching with params:", params);
-
     const response = await getListNomor(params);
-
-    console.log("📥 Response received:", response);
-
     if (response?.data && Array.isArray(response.data)) {
-      console.log("📦 Raw data count from API:", response.data.length);
-
       rows.value = groupDuplicateRows(response.data);
       pagination.value = response.pagination || null;
-
-      console.log("✅ Rows processed (after grouping):", rows.value.length);
-      console.log("✅ Pagination set:", pagination.value);
-      console.log("📊 Limit setting:", limit.value);
-      console.log("📄 Expected rows per page:", limit.value);
     } else {
-      console.warn("⚠️ No data in response");
       rows.value = [];
       pagination.value = null;
     }
   } catch (error) {
     console.error("❌ Error fetch data:", error);
-    toast.add({
-      title: "Gagal memuat data",
-      description: "Tidak dapat mengambil data penomoran",
-      color: "red",
-    });
     rows.value = [];
     pagination.value = null;
   } finally {
@@ -1134,38 +1007,38 @@ const openRowModal = async (row) => {
 
   try {
     const detail = await getDetailNomor(row.id_request);
+    if (!detail) throw new Error("Detail tidak ditemukan");
 
-    if (!detail) {
-      throw new Error("Detail tidak ditemukan");
-    }
-
+    // ✅ Map nomor_list dari detail API — sudah ada file_name, file_url
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
       id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
-      // ✅ Status dari backend: terpakai (setelah create), terpakai_final (setelah upload file)
       status: item.status || "terpakai",
-      file_name: item.file_name || null,
-      file_text: item.file_text || null,
-      file_url: item.file_url || null,
+      file_name: item.file_name ?? null,
+      file_text: item.file_text ?? null,
+      file_url: item.file_url ?? null,
     }));
 
+    // ✅ Spread detail DULU agar file info tidak tertimpa
     detailData.value = {
-      ...(detail || row),
-      perihal: row.perihal || "-",
-      klasifikasiDisplay: detail?.klasifikasi || row.klasifikasi,
+      ...detail,
+      perihal: detail.perihal || row.perihal || "-",
+      jabatan: detail.jabatan || row.jabatan || "-",
+      jenis: detail.jenis || row.jenis || "-",
+      klasifikasiDisplay: detail.klasifikasi || row.klasifikasi || "-",
+      tanggal: detail.tanggal || row.tanggal,
       nomor_list: nomorList,
     };
-    console.log("✅ Detail loaded:", detailData.value);
   } catch (err) {
     console.error("❌ Error loading detail:", err);
-
     detailData.value = {
       ...row,
-      klasifikasiDisplay: row.klasifikasi, // ✅ Langsung dari row
-      nomor_list: row.nomor_list.map((nomor, idx) => ({
+      klasifikasiDisplay: row.klasifikasi,
+      nomor_list: (row.nomor_list || []).map((nomor, idx) => ({
         id: `${row.id_request}-${idx}`,
         nomor: typeof nomor === "string" ? nomor : nomor.nomor,
-        status: "terpakai",
+        status:
+          typeof nomor === "string" ? "terpakai" : nomor.status || "terpakai",
         file_name: null,
         file_text: null,
         file_url: null,
@@ -1179,106 +1052,54 @@ const openRowModal = async (row) => {
 const handleSubmitFromModal = async (payload) => {
   try {
     const response = await createPenomoranFinal(payload);
-
-    console.log("✅ Data berhasil ditambahkan:", response);
-
-    // ✅ Reset pagination and sorting to show newest data first
     currentPage.value = 1;
-    sortBy.value = "waktu"; // Sort by created_at/waktu
-    sortOrder.value = "desc"; // Newest first
-
-    // ✅ Clear search to show all data
+    sortBy.value = "waktu";
+    sortOrder.value = "desc";
     searchQuery.value = "";
-
-    // ✅ usePenomoran akan auto trigger refetch via triggerRefresh()
-    // Tapi tetap panggil fetchData untuk memastikan UI update
     await fetchData();
-
-    toast.add({
-      title: "Berhasil",
-      description: `Berhasil menambahkan ${response?.data?.nomor_list?.length || payload.jumlah} nomor baru`,
-      color: "green",
-    });
+    showToastPenomoranSuccess(
+      response?.data?.nomor_list?.length || payload.jumlah,
+    );
   } catch (error) {
     console.error("❌ Error di handleSubmitFromModal:", error);
-    toast.add({
-      title: "Gagal",
-      description:
-        error?.response?.data?.message ||
-        "Terjadi kesalahan saat menyimpan data",
-      color: "red",
-    });
   }
 };
 
-// ✅ Improved pagination pages calculation
 const paginationPages = computed(() => {
   if (!pagination.value) return [];
-
-  // Handle both camelCase (totalPages) and snake_case (total_pages)
   const total =
     pagination.value.total_pages || pagination.value.totalPages || 0;
   const current = pagination.value.current_page || pagination.value.page || 1;
-
   if (total === 0) return [];
-
   const pages: number[] = [];
-
   if (total <= 9) {
-    // ✅ Show all pages if 9 or fewer (increased from 7)
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
-    // ✅ Show current page with 3 pages on each side (increased from 2)
     let start = Math.max(2, current - 3);
     let end = Math.min(total - 1, current + 3);
-
-    // Adjust if we're near the start
-    if (current <= 4) {
-      end = 7; // Show pages 2-7
-    }
-
-    // Adjust if we're near the end
-    if (current >= total - 3) {
-      start = total - 6; // Show last 7 pages (excluding first and last)
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
+    if (current <= 4) end = 7;
+    if (current >= total - 3) start = total - 6;
+    for (let i = start; i <= end; i++) pages.push(i);
   }
-
   return pages;
 });
 
 onMounted(async () => {
   loading.value = true;
-
-  // Set default sort to show newest data first
   sortBy.value = "waktu";
   sortOrder.value = "desc";
-
-  // Fetch initial data
   await fetchData();
   loading.value = false;
 });
 
-const tooltip = ref({
-  show: false,
-  text: "",
-  x: 0,
-  y: 0,
-});
+const tooltip = ref({ show: false, text: "", x: 0, y: 0 });
 
 const onRowMouseMove = (e: MouseEvent, text: string) => {
-  const offset = 12;
-  const maxX = window.innerWidth - 200;
-  const maxY = window.innerHeight - 40;
-
   tooltip.value = {
     show: true,
     text,
-    x: Math.min(e.clientX + offset, maxX),
-    y: Math.min(e.clientY + offset, maxY),
+    x: Math.min(e.clientX + 12, window.innerWidth - 200),
+    y: Math.min(e.clientY + 12, window.innerHeight - 40),
   };
 };
 
@@ -1287,9 +1108,7 @@ const onRowMouseLeave = () => {
 };
 
 watch(isOpenPreviewFile, (open) => {
-  if (!open) {
-    previewPdfUrl.value = null;
-  }
+  if (!open) previewPdfUrl.value = null;
 });
 </script>
 
@@ -1304,34 +1123,27 @@ watch(isOpenPreviewFile, (open) => {
     transform: translateY(0);
   }
 }
-
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
 }
-
 thead th:last-child {
   z-index: 11;
 }
-
 tbody tr:hover td:last-child {
   background-color: rgb(249 250 251);
 }
-
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
