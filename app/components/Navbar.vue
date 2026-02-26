@@ -209,7 +209,6 @@
                 class="h-6 text-[10px] px-2"
               />
             </div>
-            z
           </div>
         </template>
       </UDropdownMenu>
