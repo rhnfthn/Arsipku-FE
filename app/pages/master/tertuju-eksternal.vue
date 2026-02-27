@@ -4,13 +4,13 @@
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
       <!-- Left Section - Title & Breadcrumb -->
-      <PageHeader title="Tertuju Eksternal" :items="items" />
+      <PageHeader :title="$t('tertuju')" :items="items" />
       <button
         @click="showModal = true"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ $t("nm_button") }}
       </button>
     </div>
 
@@ -40,7 +40,7 @@
           />
           <input
             v-model="filters.search"
-            placeholder="Cari nama / alamat / no telephone"
+            :placeholder="$t('cari')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
@@ -59,7 +59,7 @@
           <tr>
             <th @click="handleSort('nama')" class="cursor-pointer">
               <div class="flex items-center gap-2 ml-5">
-                <span>Nama</span>
+                <span>{{ $t("te_nama") }}</span>
                 <ArrowUpDown
                   class="w-4 h-4 origin-center transition-transform duration-300"
                   :class="[
@@ -76,12 +76,12 @@
             <th
               class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
             >
-              Alamat
+              {{ $t("te_alamat") }}
             </th>
             <th
               class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
             >
-              Telephone
+              {{ $t("te_telepon") }}
             </th>
             <th @click="handleSort('status')" class="cursor-pointer">
               <div class="flex items-center gap-2">
@@ -101,12 +101,12 @@
             <th
               class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
             >
-              Pengusul
+              {{ $t("te_pengusul") }}
             </th>
             <th
               class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
             >
-              Aksi
+              {{ $t("aksi") }}
             </th>
           </tr>
         </thead>
@@ -145,7 +145,7 @@
                     : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
                 "
               >
-                {{ item.aktif ? "Aktif" : "Tidak Aktif" }}
+                {{ item.aktif ? $t("te_aktif") : $t("te_tidak_aktif") }}
               </span>
             </td>
 
@@ -182,8 +182,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedData.length }} dari {{ filteredData.length }}
-          data
+          {{ $t("menampilkan") }} {{ paginatedData.length }} {{ $t("dari") }}
+          {{ filteredData.length }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -211,7 +211,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- Page Numbers -->
@@ -274,7 +274,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -300,19 +300,19 @@
             variant="heading9b"
             class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
           >
-            {{ editId ? "Edit Tertuju Eksternal" : "Tambah Tertuju Eksternal" }}
+            {{ editId ? $t("te_modal_edit") : $t("te_modal_add") }}
           </Heading>
         </template>
 
         <!-- FIELD NAMA -->
         <div class="flex flex-col gap-2 p-1">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Nama <span class="text-red-500">*</span>
+            {{ $t("te_nama") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.nama"
             type="text"
-            placeholder="Masukkan nama"
+            :placeholder="$t('te_nama_placeholder')"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
@@ -320,12 +320,12 @@
         <!-- FIELD ALAMAT -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Alamat <span class="text-red-500">*</span>
+            {{ $t("te_alamat") }} <span class="text-red-500">*</span>
           </Heading>
           <textarea
             v-model="form.alamat"
             type="text"
-            placeholder="Masukkan alamat"
+            :placeholder="$t('te_alamat_placeholder')"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
@@ -333,12 +333,12 @@
         <!-- FIELD TELEPHONE -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Nomor HP <span class="text-red-500">*</span>
+            {{ $t("te_telepon") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.telephone"
             type="text"
-            placeholder="Masukkan no telphone"
+            :placeholder="$t('te_telepon_placeholder')"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
@@ -352,9 +352,9 @@
             v-model="form.aktif"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           >
-            <option value="" disabled>Pilih status</option>
-            <option :value="true">Aktif</option>
-            <option :value="false">Tidak Aktif</option>
+            <option value="" disabled>{{ $t("te_status_placeholder") }}</option>
+            <option :value="true">{{ $t("te_aktif") }}</option>
+            <option :value="false">{{ $t("te_tidak_aktif") }}</option>
           </select>
         </div>
       </Modal>
@@ -363,10 +363,10 @@
     <ConfirmPopup
       v-model="showConfirmDelete"
       type="danger"
-      title="Hapus Data"
-      message="Data yang dihapus tidak dapat dikembalikan. Yakin ingin melanjutkan?"
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :title="$t('te_pop_title')"
+      :message="$t('te_pop_desc')"
+      :confirm-text="$t('popup_hapus')"
+      :cancel-text="$t('popup_batal')"
       :is-loading="isDeleting"
       @confirm="confirmDelete"
       @cancel="showConfirmDelete = false"
@@ -375,17 +375,6 @@
 </template>
 
 <script setup lang="ts">
-const items = [
-  {
-    label: "Dashboard",
-    to: "/beranda",
-  },
-  {
-    label: "Tertuju Eksternal",
-    to: "/admin/master/tertuju-eksternal",
-  },
-] satisfies BreadcrumbItem[];
-
 import { onMounted, ref, computed, watch } from "vue";
 import {
   Search,
@@ -402,9 +391,17 @@ import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 import { useAuth } from "~/composables/useAuth";
 import Modal from "@/components/Modal.vue";
 import ConfirmPopup from "@/components/ConfirmPopup.vue";
+
 definePageMeta({
   middleware: "auth",
 });
+
+const { t } = useI18n();
+
+const items = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("tertuju"), to: "/admin/master/tertuju-eksternal" },
+]);
 
 const auth = useAuth();
 const user = auth.user;
@@ -450,6 +447,8 @@ const currentPage = ref<number>(1);
 // Sorting
 const sortColumn = ref<string>("nama");
 const sortDirection = ref<"asc" | "desc">("asc");
+const sortKey = ref("");
+const sortOrder = ref("asc");
 
 const handleSave = async () => {
   if (editId.value) {

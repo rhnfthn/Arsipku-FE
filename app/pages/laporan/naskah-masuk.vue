@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Naskah Masuk
+          {{ $t("naskah_masuk") }}
         </h1>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -33,7 +33,7 @@
                 @mousedown.stop="toggleJenis"
                 @input="jenisOpen = true"
                 type="text"
-                :placeholder="selectedJenis || 'Cari jenis naskah'"
+                :placeholder="selectedJenis || $t('semua_jenis')"
                 class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-4 py-2 text-sm w-full border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
               />
 
@@ -62,7 +62,7 @@
                     @click="selectJenis('')"
                     class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
                   >
-                    Semua Jenis
+                    {{ $t("semua_jenis") }}
                   </li>
 
                   <li
@@ -91,7 +91,7 @@
                 @change="monthOpen = false"
                 class="appearance-none bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 pr-10 text-sm w-full cursor-pointer border border-transparent focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
               >
-                <option value="">Semua Bulan</option>
+                <option value="">{{ $t("semua_bulan") }}</option>
                 <option
                   v-for="bulan in monthOptions"
                   :key="bulan.value"
@@ -179,7 +179,9 @@
               class="sticky top-0 z-30 bg-primary dark:bg-primary-700 text-white"
             >
               <tr>
-                <th class="px-4 py-3 text-left font-semibold">Naskah</th>
+                <th class="px-4 py-3 text-left font-semibold">
+                  {{ $t("naskah_tbl") }}
+                </th>
                 <template v-if="!selectedMonth">
                   <th
                     v-for="bulan in monthOptions"
@@ -194,7 +196,9 @@
                     {{ selectedMonthLabel }}
                   </th>
                 </template>
-                <th class="px-4 py-3 text-center font-semibold">Jumlah</th>
+                <th class="px-4 py-3 text-center font-semibold">
+                  {{ $t("jumlah") }}
+                </th>
               </tr>
             </thead>
 
@@ -292,11 +296,11 @@
           class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            Menampilkan
+            {{ $t("menampilkan") }}
             {{
               Math.min(currentPageTable1 * itemsPerPageTable1, totalItemsTable1)
             }}
-            dari {{ totalItemsTable1 }} data
+            {{ $t("dari") }} {{ totalItemsTable1 }} {{ $t("data") }}
           </div>
 
           <div class="flex items-center gap-2">
@@ -311,7 +315,7 @@
                   : 'bg-white dark:bg-gray-700 border border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Sebelumnya
+              {{ $t("sebelumnya") }}
             </button>
 
             <!-- PAGE NUMBER -->
@@ -345,7 +349,7 @@
                   : 'bg-white dark:bg-gray-700 border border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Selanjutnya
+              {{ $t("selanjutnya") }}
             </button>
           </div>
         </div>
@@ -371,7 +375,7 @@
                 v-model="filters.jenis"
                 class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="">Semua Jenis</option>
+                <option value="">{{ $t("semua_jenis") }}</option>
                 <option value="ND">Nota Dinas</option>
                 <option value="ST">Surat Tugas</option>
               </select>
@@ -379,7 +383,7 @@
                 v-model="filters.lokasi"
                 class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="">Semua Lokasi</option>
+                <option value="">{{ $t("semua_lokasi") }}</option>
                 <option v-for="lok in lokasiOptions" :key="lok" :value="lok">
                   {{ lok }}
                 </option>
@@ -388,7 +392,7 @@
                 v-model="filters.status"
                 class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 text-sm border border-transparent focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="">Semua Status</option>
+                <option value="">{{ $t("semua_status") }}</option>
                 <option value="terpakai_final">Final</option>
                 <option value="Terpakai">Terpakai</option>
                 <option value="booking">Booking</option>
@@ -435,28 +439,18 @@
             <thead class="bg-primary dark:bg-primary-700 text-white">
               <tr>
                 <th
-                  v-for="col in [
-                    'naskah',
-                    'nomor',
-                    'tanggal',
-                    'perihal',
-                    'jabatan',
-                    'lokasi',
-                    'status',
-                  ]"
-                  :key="col"
-                  @click="handleSort(col)"
+                  v-for="col in table2Columns"
+                  :key="col.key"
+                  @click="handleSort(col.key)"
                   class="px-4 py-3 text-left font-semibold cursor-pointer transition-colors"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{
-                      col.charAt(0).toUpperCase() + col.slice(1)
-                    }}</span>
+                    <span>{{ col.label }}</span>
                     <div class="flex flex-col">
                       <svg
                         class="w-3 h-3 -mb-1"
                         :class="
-                          sortConfig.key === col &&
+                          sortConfig.key === col.key &&
                           sortConfig.direction === 'asc'
                             ? 'opacity-100'
                             : 'opacity-40'
@@ -471,7 +465,7 @@
                       <svg
                         class="w-3 h-3"
                         :class="
-                          sortConfig.key === col &&
+                          sortConfig.key === col.key &&
                           sortConfig.direction === 'desc'
                             ? 'opacity-100'
                             : 'opacity-40'
@@ -589,7 +583,8 @@
           class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            Menampilkan {{ currentItemsCount }} dari {{ totalItems }} data
+            {{ $t("menampilkan") }} {{ currentItemsCount }} {{ $t("dari") }}
+            {{ totalItems }} {{ $t("data") }}
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -615,7 +610,7 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Sebelumnya
+              {{ $t("sebelumnya") }}
             </button>
             <div class="flex items-center gap-1">
               <button
@@ -668,7 +663,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-500 hover:bg-blue-50 dark:hover:bg-gray-600',
               ]"
             >
-              Selanjutnya
+              {{ $t("selanjutnya") }}
               <svg
                 class="w-4 h-4"
                 fill="none"
@@ -698,10 +693,11 @@ import { useToast } from "#imports";
 import * as XLSX from "xlsx";
 
 const toast = useToast();
+const { t } = useI18n();
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Naskah Masuk", to: "/admin/laporan/naskah-masuk" },
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("naskah_masuk"), to: "/admin/laporan/naskah-masuk" },
 ];
 
 const { getRekapNaskahMasuk, getRekapNaskahMasukDetail } = useLaporan();
@@ -761,20 +757,30 @@ const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
 const currentPage = ref(1);
 const itemsPerPage = ref(5);
 
-const monthOptions = [
-  { label: "Januari", value: "jan" },
-  { label: "Februari", value: "feb" },
-  { label: "Maret", value: "mar" },
-  { label: "April", value: "apr" },
-  { label: "Mei", value: "mei" },
-  { label: "Juni", value: "jun" },
-  { label: "Juli", value: "jul" },
-  { label: "Agustus", value: "agu" },
-  { label: "September", value: "sep" },
-  { label: "Oktober", value: "okt" },
-  { label: "November", value: "nov" },
-  { label: "Desember", value: "des" },
-];
+const monthOptions = computed(() => [
+  { label: t("jan"), value: "jan" },
+  { label: t("feb"), value: "feb" },
+  { label: t("mar"), value: "mar" },
+  { label: t("apr"), value: "apr" },
+  { label: t("mei"), value: "mei" },
+  { label: t("juni"), value: "jun" },
+  { label: t("juli"), value: "jul" },
+  { label: t("agu"), value: "agu" },
+  { label: t("sep"), value: "sep" },
+  { label: t("okt"), value: "okt" },
+  { label: t("nov"), value: "nov" },
+  { label: t("des"), value: "des" },
+]);
+
+const table2Columns = computed(() => [
+  { key: "naskah", label: t("naskah_tbl") },
+  { key: "nomor", label: t("nodokumen") },
+  { key: "tanggal", label: t("tanggal") },
+  { key: "perihal", label: t("perihal") },
+  { key: "jabatan", label: t("jabatan") },
+  { key: "lokasi", label: t("lokasi") },
+  { key: "status", label: "Status" },
+]);
 
 const fetchTable1 = async () => {
   loadingTable1.value = true;
@@ -896,7 +902,9 @@ const jenisOptions = computed(() => {
 });
 
 const selectedMonthLabel = computed(
-  () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
+  () =>
+    monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ??
+    "",
 );
 
 watch(selectedYear, () => {
@@ -1054,23 +1062,21 @@ const exportTable1 = () => {
   }
 
   try {
-    // ===== HEADER =====
-    const headers: string[] = ["Naskah"];
+    const headers: string[] = [t("naskah_tbl")];
 
     if (!selectedMonth.value) {
-      headers.push(...monthOptions.map((m) => m.label));
+      headers.push(...monthOptions.value.map((m) => m.label));
     } else {
       headers.push(selectedMonthLabel.value);
     }
 
-    headers.push("Jumlah");
+    headers.push(t("jumlah"));
 
-    // ===== ROWS =====
     const rows = filteredTableData.value.map((row) => {
       const data: (string | number)[] = [row.naskah];
 
       if (!selectedMonth.value) {
-        monthOptions.forEach((m) => {
+        monthOptions.value.forEach((m) => {
           data.push(Number(row[m.value] ?? 0));
         });
       } else {
@@ -1089,7 +1095,6 @@ const exportTable1 = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Naskah Masuk");
 
-    // ===== DOWNLOAD =====
     XLSX.writeFile(workbook, `naskah-masuk-summary-${selectedYear.value}.xlsx`);
 
     toast.add({
@@ -1118,23 +1123,13 @@ const exportTable2 = () => {
   }
 
   try {
-    const headers = [
-      "Jenis",
-      "Nomor",
-      "Tanggal",
-      "Perihal",
-      "Jabatan",
-      "Lokasi",
-      "Status",
-    ];
-
     const rows = sortedData.value.map((item) => ({
-      Jenis: item.jenis,
-      Nomor: item.nomor,
-      Tanggal: item.tanggal,
-      Perihal: item.perihal,
-      Jabatan: item.jabatan,
-      Lokasi: item.lokasi,
+      [t("naskah_tbl")]: item.jenis,
+      [t("nodokumen")]: item.nomor,
+      [t("tanggal")]: item.tanggal,
+      [t("perihal")]: item.perihal,
+      [t("jabatan")]: item.jabatan,
+      [t("lokasi")]: item.lokasi,
       Status: item.status,
     }));
 

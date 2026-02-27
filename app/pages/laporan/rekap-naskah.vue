@@ -2,7 +2,7 @@
   <div class="flex items-center justify-between pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-        Rekap Naskah Dinas
+        {{ $t("rn_title") }}
       </Heading>
       <PageHeader :items="breadcrumbs" />
     </div>
@@ -48,7 +48,7 @@
             @focus="openDropdown = 'type'"
             @keydown.escape="openDropdown = null"
             type="text"
-            placeholder="Semua Jenis"
+            :placeholder="$t('semua_jenis')"
             class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
           />
           <ChevronDown
@@ -63,7 +63,7 @@
               @click="selectJenis(null)"
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
-              Semua Jenis
+              {{ $t("semua_jenis") }}
             </button>
             <button
               v-for="item in filteredJenisOptions"
@@ -89,7 +89,7 @@
             @focus="openDropdown = 'lokasi'"
             @keydown.escape="openDropdown = null"
             type="text"
-            placeholder="Semua Lokasi"
+            :placeholder="$t('semua_lokasi')"
             class="h-8 w-full rounded-md px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder:text-black dark:placeholder:text-white pr-7 focus:outline-none truncate"
           />
           <ChevronDown
@@ -104,7 +104,7 @@
               @click="selectLokasi(null)"
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
-              Semua Lokasi
+              {{ $t("semua_lokasi") }}
             </button>
             <button
               v-for="item in filteredLokasiOptions"
@@ -133,7 +133,7 @@
               v-if="!selectedStatuses.length"
               class="text-black dark:text-white truncate"
             >
-              Semua Status
+              {{ $t("semua_status") }}
             </span>
             <div
               v-else
@@ -187,7 +187,7 @@
             @click="toggle('month')"
             class="h-8 px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md flex items-center gap-1 min-w-[130px] truncate"
           >
-            <span>{{ selectedMonthLabel || "Semua Bulan" }}</span>
+            <span>{{ selectedMonthLabel || $t("semua_bulan") }}</span>
             <ChevronDown
               class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'month' }"
@@ -204,7 +204,7 @@
               "
               class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
             >
-              Semua Bulan
+              {{ $t("semua_bulan") }}
             </button>
             <button
               v-for="bulan in monthOptions"
@@ -261,7 +261,7 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm w-[350px] text-start"
               >
-                Naskah
+                {{ $t("naskah_tbl") }}
               </th>
               <template v-if="!selectedMonth">
                 <th
@@ -282,7 +282,7 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm"
               >
-                Jumlah
+                {{ $t("jumlah") }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm sticky right-0 z-20 bg-primary-400 dark:bg-primary-700 min-w-[140px]"
@@ -372,7 +372,8 @@
       class="flex items-center justify-between px-4 py-4 border-t border-gray-100 dark:border-gray-700"
     >
       <div class="text-xs text-gray-600 dark:text-gray-400">
-        Menampilkan {{ paginatedTableData.length }} dari {{ totalItems }} data
+        {{ $t("menampilkan") }} {{ paginatedTableData.length }} {{ $t("dari") }}
+        {{ totalItems }} {{ $t("data") }}
       </div>
 
       <div class="flex items-center gap-2">
@@ -387,7 +388,7 @@
               : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
           ]"
         >
-          Sebelumnya
+          {{ $t("sebelumnya") }}
         </button>
 
         <!-- PAGE NUMBERS -->
@@ -448,7 +449,7 @@
               : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
           ]"
         >
-          Selanjutnya
+          {{ $t("selanjutnya") }}
         </button>
       </div>
     </div>
@@ -466,12 +467,13 @@ import * as XLSX from "xlsx";
 //COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
 const toast = useToast();
+const { t } = useI18n();
 
 //CONST UTIL
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Rekap Naskah", to: "/laporan/rekap-naskah" },
-];
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("rekap"), to: "/laporan/rekap-naskah" },
+]);
 
 const getStatusClass = (status: string) => {
   if (status === "terpakai")
@@ -511,20 +513,20 @@ const yearOptions = computed(() => {
   return [y, y - 1, y - 2];
 });
 
-const monthOptions = [
-  { label: "Januari", value: "januari" },
-  { label: "Februari", value: "februari" },
-  { label: "Maret", value: "maret" },
-  { label: "April", value: "april" },
-  { label: "Mei", value: "mei" },
-  { label: "Juni", value: "juni" },
-  { label: "Juli", value: "juli" },
-  { label: "Agustus", value: "agustus" },
-  { label: "September", value: "september" },
-  { label: "Oktober", value: "oktober" },
-  { label: "November", value: "november" },
-  { label: "Desember", value: "desember" },
-];
+const monthOptions = computed(() => [
+  { label: t("jan"), value: "januari" },
+  { label: t("feb"), value: "februari" },
+  { label: t("mar"), value: "maret" },
+  { label: t("apr"), value: "april" },
+  { label: t("mei"), value: "mei" },
+  { label: t("juni"), value: "juni" },
+  { label: t("juli"), value: "juli" },
+  { label: t("agu"), value: "agustus" },
+  { label: t("sep"), value: "september" },
+  { label: t("okt"), value: "oktober" },
+  { label: t("nov"), value: "november" },
+  { label: t("des"), value: "desember" },
+]);
 
 const statusOptions = [
   { label: "Final", value: "terpakai_final" },
@@ -534,7 +536,9 @@ const statusOptions = [
 ];
 
 const selectedMonthLabel = computed(
-  () => monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? "",
+  () =>
+    monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ??
+    "",
 );
 
 //FILTERING
@@ -713,7 +717,7 @@ const exportExcel = () => {
       if (selectedMonth.value) {
         baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
       } else {
-        monthOptions.forEach((b) => {
+        monthOptions.value.forEach((b) => {
           baseRow[b.label] = row[b.value] ?? 0;
         });
       }
@@ -778,7 +782,7 @@ const refreshData = async () => {
 
 const tableColCount = computed(() => {
   if (selectedMonth.value) return 4;
-  return 1 + monthOptions.length + 2;
+  return 1 + monthOptions.value.length + 2;
 });
 
 const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6));

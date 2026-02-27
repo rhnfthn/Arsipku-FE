@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Detail Naskah Dinas
+          {{ $t("dn_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -72,7 +72,7 @@
             <input
               v-model="jenisKeyword"
               @click="showJenisDropdown = !showJenisDropdown"
-              placeholder="Semua Jenis"
+              :placeholder="$t('semua_jenis')"
               class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400"
             />
 
@@ -89,11 +89,11 @@
                 class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.jenis = '';
-                  jenisKeyword = 'Semua Jenis';
+                  jenisKeyword = $t('semua_jenis');
                   showJenisDropdown = false;
                 "
               >
-                Semua Jenis
+                {{ $t("semua_jenis") }}
               </div>
 
               <div
@@ -123,7 +123,7 @@
             <input
               v-model="lokasiKeyword"
               @click="showLokasiDropdown = !showLokasiDropdown"
-              placeholder="Semua Lokasi"
+              :placeholder="$t('semua_lokasi')"
               class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
             />
 
@@ -140,11 +140,11 @@
                 class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
                 @click="
                   filters.lokasi = '';
-                  lokasiKeyword = 'Semua Lokasi';
+                  lokasiKeyword = $t('semua_lokasi');
                   showLokasiDropdown = false;
                 "
               >
-                Semua Lokasi
+                {{ $t("semua_lokasi") }}
               </div>
 
               <div
@@ -181,7 +181,7 @@
                 v-if="!selectedStatuses.length"
                 class="text-gray-900 dark:text-gray-300 truncate"
               >
-                Semua Status
+                {{ $t("semua_status") }}
               </span>
 
               <!-- SELECTED TAGS -->
@@ -272,13 +272,13 @@
         <table class="min-w-max border-collapse text-sm mt-3 w-full">
           <thead class="text-left bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-semibold">Nomor</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("nomor") }}</th>
               <th
                 @click="handleSort('tanggal')"
                 class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
               >
                 <div class="flex items-center gap-2">
-                  <span>Tanggal</span>
+                  <span>{{ $t("tanggal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-200"
                     :class="[
@@ -290,9 +290,9 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 font-semibold">Perihal</th>
-              <th class="px-4 py-3 font-semibold">Jabatan</th>
-              <th class="px-4 py-3 font-semibold">Lokasi</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("perihal") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("jabatan") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("lokasi") }}</th>
               <th
                 @click="handleSort('status')"
                 class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
@@ -418,7 +418,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedNaskah.length }} dari {{ totalItems }} data
+          {{ $t("menampilkan") }} {{ paginatedNaskah.length }} {{ $t("dari") }}
+          {{ totalItems }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -446,7 +447,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -514,7 +515,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -546,6 +547,7 @@ import { saveAs } from "file-saver";
 
 //GLOBAL UTIL
 const toast = useToast();
+const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
 
 //SORT
@@ -560,6 +562,7 @@ function handleSort(key) {
     sortOrder.value = "asc";
   }
 }
+
 //FILTER STATE
 const loading = ref(false);
 const isRefreshing = ref(false);
@@ -579,7 +582,7 @@ const tahunMin = ref<number | null>(null);
 
 const showRowsDropdown = ref(false);
 
-//REF COUTSIDE CLICK
+//REF OUTSIDE CLICK
 const jenisRef = ref<HTMLElement | null>(null);
 const lokasiRef = ref<HTMLElement | null>(null);
 const statusRef = ref<HTMLElement | null>(null);
@@ -804,7 +807,6 @@ const fetchTahunRange = async () => {
   });
 
   const tanggalTerlama = res.meta?.min_tanggal;
-  // atau dari response pertama
 
   if (tanggalTerlama) {
     tahunMin.value = new Date(tanggalTerlama).getFullYear();
@@ -906,8 +908,8 @@ const refreshData = async () => {
       search: "",
     };
 
-    jenisKeyword.value = "Semua Jenis";
-    lokasiKeyword.value = "Semua Lokasi";
+    jenisKeyword.value = t("semua_jenis");
+    lokasiKeyword.value = t("semua_lokasi");
     selectedStatuses.value = [];
 
     showJenisDropdown.value = false;
@@ -960,10 +962,10 @@ const statusOptions = [
   { label: "Hangus", value: "hangus" },
 ];
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Detail Naskah", to: "/laporan/detail-naskah" },
-];
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("detail"), to: "/laporan/detail-naskah" },
+]);
 </script>
 
 <style scoped>

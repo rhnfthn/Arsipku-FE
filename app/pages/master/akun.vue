@@ -286,7 +286,7 @@
           variant="heading9b"
           class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
         >
-          {{ isEditMode ? "Edit Role Akun" : "Tambah Akun" }}
+          {{ isEditMode ? $t("ma_modal_edit") : $t("ma_modal_add") }}
         </Heading>
       </template>
 
@@ -299,7 +299,7 @@
           v-model="form.persnum"
           type="text"
           :disabled="isEditMode"
-          placeholder="Masukkan persnum"
+          :placeholder="$t('ma_persnum_placeholder')"
           class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
         />
       </div>
@@ -313,7 +313,7 @@
           v-model="form.role"
           class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
         >
-          <option value="" disabled>Pilih role</option>
+          <option value="" disabled>{{ $t("ma_role_placeholder") }}</option>
           <option value="admin">Admin</option>
           <option value="superadmin">Super Admin</option>
         </select>
@@ -324,10 +324,10 @@
   <ConfirmPopup
     v-model="confirmDeleteOpen"
     type="danger"
-    title="Hapus Data"
-    message="Akun ini akan menjadi user"
-    confirm-text="Hapus"
-    cancel-text="Batal"
+    :title="$t('ma_pop_title')"
+    :message="$t('ma_pop_desc')"
+    :confirm-text="$t('popup_hapus')"
+    :cancel-text="$t('popup_batal')"
     @confirm="deleteNow"
   />
 </template>
@@ -422,7 +422,7 @@ const openEdit = (row: any) => {
 
 const saveAccount = async () => {
   if (!form.value.persnum || !form.value.role) {
-    showToast("Validasi gagal", "Persnum dan role wajib diisi", "warning");
+    showToast(t("ma_val_title"), t("ma_val_desc"), "warning");
     return;
   }
 
@@ -437,12 +437,12 @@ const saveAccount = async () => {
     form.value = { persnum: "", role: "" };
 
     showToast(
-      "Berhasil",
-      isEdit ? "Berhasil mengubah role" : "Berhasil menambahkan role",
+      t("ma_tb_title"),
+      isEdit ? t("ma_te_desc") : t("ma_tb_desc"),
       "success",
     );
   } catch (error) {
-    showToast("Gagal", "Gagal menyimpan role", "error");
+    showToast(t("ma_err_title"), t("ma_err_save_desc"), "error");
   }
 };
 
@@ -452,14 +452,15 @@ const deleteNow = async () => {
   try {
     await deleteAccount(itemToDelete.value.persnum);
 
-    showToast("Berhasil", "Akun berhasil menjadi user kembali", "success");
+    showToast(t("ma_tb_title"), t("ma_th_desc"), "success");
 
     confirmDeleteOpen.value = false;
     itemToDelete.value = null;
   } catch (err) {
-    showToast("Gagal", "Gagal menghapus role", "error");
+    showToast(t("ma_err_title"), t("ma_err_del_desc"), "error");
   }
 };
+
 const refreshData = () => {
   fetchAccounts();
   currentPage.value = 1;
