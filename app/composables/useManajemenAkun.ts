@@ -16,7 +16,6 @@ export const useManajemenAkun = () => {
   const error = ref<string | null>(null)
   const accounts = ref<Account[]>([])
 
-  // 🔵 Fetch List Akun
   const fetchAccounts = async () => {
     loading.value = true
     error.value = null
@@ -41,7 +40,6 @@ export const useManajemenAkun = () => {
     }
   }
 
-  // 🔥 Add / Assign Role User
   const addAccount = async (persnum: string | number, role: string) => {
     try {
       const res = await apiPost(`/superadmin/users/${persnum}/role`, {

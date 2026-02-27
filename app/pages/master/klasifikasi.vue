@@ -6,13 +6,13 @@
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
       >
         <!-- Left Section - Title & Breadcrumb -->
-        <PageHeader title="Klasifikasi" :items="items" />
+        <PageHeader :title="t('ka_title')" :items="items" />
         <button
           @click="openAddModal"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
           <Plus class="w-4 h-4" />
-          Tambah
+          {{ t("nm_button") }}
         </button>
       </div>
 
@@ -38,7 +38,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari klasifikasi"
+              :placeholder="t('ka_cari_placeholder')"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -60,7 +60,7 @@
                   @click="toggleSortKlasifikasi"
                   class="px-4 py-3 text-left cursor-pointer select-none flex items-center gap-2"
                 >
-                  Kode Klasifikasi
+                  {{ t("ka_kode") }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -69,9 +69,9 @@
                     }"
                   />
                 </th>
-                <th class="px-4 py-3 text-left">Nama Klasifikasi</th>
-                <th class="px-4 py-3 text-left">Deskripsi</th>
-                <th class="px-4 py-3 text-center">Aksi</th>
+                <th class="px-4 py-3 text-left">{{ t("ka_nama") }}</th>
+                <th class="px-4 py-3 text-left">{{ t("ka_deskripsi") }}</th>
+                <th class="px-4 py-3 text-center">{{ t("aksi") }}</th>
               </tr>
             </thead>
 
@@ -82,7 +82,7 @@
                   colspan="4"
                   class="py-6 text-center text-gray-500 dark:text-gray-400"
                 >
-                  Memuat data...
+                  {{ t("ka_loading") }}
                 </td>
               </tr>
 
@@ -92,7 +92,7 @@
                   colspan="4"
                   class="py-6 text-center text-gray-500 dark:text-gray-400"
                 >
-                  Data tidak ditemukan
+                  {{ t("ka_empty") }}
                 </td>
               </tr>
 
@@ -126,14 +126,6 @@
                 <td class="px-4 py-3">
                   <div class="flex justify-center gap-3">
                     <button
-                      class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
-                      title="Detail"
-                      @click="onView(row)"
-                    >
-                      <Eye class="w-4 h-4" />
-                    </button>
-
-                    <button
                       class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                       title="Edit"
                       @click="onEdit(row)"
@@ -161,8 +153,8 @@
           class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            Menampilkan {{ paginatedKlasifikasi.length }} dari
-            {{ totalItems }} data
+            {{ t("menampilkan") }} {{ paginatedKlasifikasi.length }}
+            {{ t("dari") }} {{ totalItems }} {{ t("data") }}
           </div>
 
           <div class="flex items-center gap-2">
@@ -177,7 +169,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
               ]"
             >
-              Sebelumnya
+              {{ t("sebelumnya") }}
             </button>
 
             <!-- PAGE NUMBERS -->
@@ -245,7 +237,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
               ]"
             >
-              Selanjutnya
+              {{ t("selanjutnya") }}
             </button>
           </div>
         </div>
@@ -265,7 +257,7 @@
               class="flex justify-between items-center p-4 border-b border-b-gray-200 dark:border-b-gray-700"
             >
               <Heading variant="heading9sb" class="dark:text-white">
-                Detail Klasifikasi
+                {{ t("ka_modal_detail") }}
               </Heading>
               <button
                 @click="showDetail = false"
@@ -282,9 +274,8 @@
                 <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
                 <div class="flex-1">
                   <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Kode Klasifikasi
+                    {{ t("ka_kode") }}
                   </p>
-
                   <div class="mt-2">
                     <span
                       class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-sm"
@@ -302,7 +293,7 @@
                 />
                 <div class="flex-1">
                   <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Nama Klasifikasi
+                    {{ t("ka_nama") }}
                   </p>
                   <p
                     class="mt-2 text-sm font-medium text-black dark:text-white"
@@ -319,7 +310,7 @@
                 />
                 <div class="flex-1">
                   <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Deskripsi
+                    {{ t("ka_deskripsi") }}
                   </p>
                   <p
                     class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200"
@@ -336,7 +327,7 @@
                 />
                 <div class="flex-1">
                   <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Tanggal Dibuat
+                    {{ t("ka_tgl_dibuat") }}
                   </p>
                   <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">-</p>
                 </div>
@@ -349,7 +340,7 @@
                 @click="showDetail = false"
                 class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
               >
-                Tutup
+                {{ t("ka_tutup") }}
               </button>
             </div>
           </div>
@@ -364,7 +355,7 @@
               variant="heading9b"
               class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
             >
-              Tambah Klasifikasi
+              {{ t("ka_modal_add") }}
             </Heading>
           </template>
 
@@ -372,16 +363,14 @@
             <!-- KODE KLASIFIKASI -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Kode Klasifikasi <span class="text-red-500">*</span>
+                {{ t("ka_kode") }} <span class="text-red-500">*</span>
               </Heading>
-
               <input
                 v-model="addForm.klasifikasi"
                 type="text"
-                placeholder="OPS.0123"
+                :placeholder="t('ka_kode_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
                 {{ addErrors.klasifikasi }}
               </p>
@@ -390,16 +379,14 @@
             <!-- NAMA KLASIFIKASI -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Nama Klasifikasi <span class="text-red-500">*</span>
+                {{ t("ka_nama") }} <span class="text-red-500">*</span>
               </Heading>
-
               <input
                 v-model="addForm.klasifikasi_text"
                 type="text"
-                placeholder="Air Traffic Flow Management (ATFM)"
+                :placeholder="t('ka_nama_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
                 {{ addErrors.klasifikasi_text }}
               </p>
@@ -408,18 +395,16 @@
             <!-- DESKRIPSI -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Deskripsi
+                {{ t("ka_deskripsi") }}
               </Heading>
-
               <textarea
                 v-model="addForm.deskripsi"
                 rows="4"
-                placeholder="Rekaman kegiatan atau peristiwa yang berkaitan ..."
+                :placeholder="t('ka_deskripsi_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                Opsional, boleh dikosongkan.
+                {{ t("ka_deskripsi_hint") }}
               </p>
             </div>
 
@@ -428,7 +413,7 @@
               v-if="savingAdd"
               class="text-xs text-gray-500 dark:text-gray-400"
             >
-              Menyimpan data...
+              {{ t("ka_saving") }}
             </p>
           </div>
         </Modal>
@@ -442,7 +427,7 @@
               variant="heading9b"
               class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
             >
-              Edit Klasifikasi
+              {{ t("ka_modal_edit") }}
             </Heading>
           </template>
 
@@ -450,15 +435,14 @@
             <!-- KODE -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Kode Klasifikasi <span class="text-red-500">*</span>
+                {{ t("ka_kode") }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.klasifikasi"
                 type="text"
-                placeholder="OPS.01234"
+                :placeholder="t('ka_kode_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
                 {{ editErrors.klasifikasi }}
               </p>
@@ -467,16 +451,14 @@
             <!-- NAMA -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Nama Klasifikasi <span class="text-red-500">*</span>
+                {{ t("ka_nama") }} <span class="text-red-500">*</span>
               </Heading>
-
               <input
                 v-model="editForm.klasifikasi_text"
                 type="text"
-                placeholder="Air Traffic Flow Management (ATFM)"
+                :placeholder="t('ka_nama_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p
                 v-if="editErrors.klasifikasi_text"
                 class="text-xs text-red-500"
@@ -488,34 +470,33 @@
             <!-- DESKRIPSI -->
             <div class="flex flex-col gap-1">
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Deskripsi <span class="text-red-500">*</span>
+                {{ t("ka_deskripsi") }} <span class="text-red-500">*</span>
               </Heading>
-
               <textarea
                 v-model="editForm.deskripsi"
                 rows="4"
-                placeholder="Deskripsi klasifikasi..."
+                :placeholder="t('ka_deskripsi_placeholder')"
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               />
-
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                Opsional, boleh dikosongkan.
+                {{ t("ka_deskripsi_hint") }}
               </p>
             </div>
           </div>
           <p v-if="savingEdit" class="text-xs text-gray-500 dark:text-gray-400">
-            Menyimpan data...
+            {{ t("ka_saving") }}
           </p>
         </Modal>
       </Teleport>
     </div>
+
     <ConfirmDialog
       v-model="showDeletePopup"
       type="danger"
-      title="Hapus Klasifikasi"
+      :title="t('ka_pop_title')"
       :message="deleteMessage"
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :confirm-text="t('popup_hapus')"
+      :cancel-text="t('popup_batal')"
       :is-loading="deleting"
       @confirm="confirmDelete"
       @cancel="cancelDelete"
@@ -545,16 +526,27 @@ import type { Klasifikasi } from "~/types/klasifikasi";
 import { useKlasifikasi } from "~/composables/useKlasifikasi";
 import Modal from "@/components/Modal.vue";
 import ConfirmDialog from "@/components/ConfirmPopup.vue";
+
 definePageMeta({
   middleware: "auth",
 });
 
-const items: BreadcrumbItem[] = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Klasifikasi", to: "/master/klasifikasi" },
-];
+// ─────────────────────────────────────────────
+// i18n — pakai useI18n() yang sudah diatur Navbar
+// ─────────────────────────────────────────────
+const { t, locale } = useI18n();
 
-//toast
+// ─────────────────────────────────────────────
+// BREADCRUMB (reaktif terhadap bahasa)
+// ─────────────────────────────────────────────
+const items = computed<BreadcrumbItem[]>(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("ka_title"), to: "/master/klasifikasi" },
+]);
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
 import { useToast } from "#imports";
 
 const toast = useToast();
@@ -573,6 +565,9 @@ const showToast = (opt: {
   });
 };
 
+// ─────────────────────────────────────────────
+// COMPOSABLE
+// ─────────────────────────────────────────────
 const {
   getKlasifikasi,
   getKlasifikasiDetail,
@@ -581,7 +576,9 @@ const {
   deleteKlasifikasi,
 } = useKlasifikasi();
 
-//post
+// ─────────────────────────────────────────────
+// FETCH
+// ─────────────────────────────────────────────
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(false);
 const search = ref("");
@@ -600,14 +597,15 @@ const fetchKlasifikasi = async () => {
 
 onMounted(fetchKlasifikasi);
 
-//detail
+// ─────────────────────────────────────────────
+// DETAIL
+// ─────────────────────────────────────────────
 const showDetail = ref(false);
 const detail = ref<Klasifikasi | null>(null);
 
 const onView = async (row: Klasifikasi) => {
   showDetail.value = true;
   detail.value = null;
-
   try {
     const res = await getKlasifikasiDetail(row.id);
     detail.value = (res as any).data ?? res;
@@ -616,7 +614,9 @@ const onView = async (row: Klasifikasi) => {
   }
 };
 
-//post
+// ─────────────────────────────────────────────
+// ADD
+// ─────────────────────────────────────────────
 const showAddModal = ref(false);
 const savingAdd = ref(false);
 
@@ -630,55 +630,42 @@ const addErrors = ref<Record<string, string>>({});
 
 const openAddModal = () => {
   addErrors.value = {};
-  addForm.value = {
-    klasifikasi: "",
-    klasifikasi_text: "",
-    deskripsi: "",
-  };
+  addForm.value = { klasifikasi: "", klasifikasi_text: "", deskripsi: "" };
   showAddModal.value = true;
 };
 
 const validateAdd = () => {
   const err: Record<string, string> = {};
-
-  if (!addForm.value.klasifikasi.trim())
-    err.klasifikasi = "Kode klasifikasi wajib diisi";
-
+  if (!addForm.value.klasifikasi.trim()) err.klasifikasi = t("ka_val_kode");
   if (!addForm.value.klasifikasi_text.trim())
-    err.klasifikasi_text = "Nama klasifikasi wajib diisi";
-
+    err.klasifikasi_text = t("ka_val_nama");
   addErrors.value = err;
   return Object.keys(err).length === 0;
 };
 
 const submitAddKlasifikasi = async () => {
   if (!validateAdd()) return;
-
   try {
     savingAdd.value = true;
-
     await createKlasifikasi({
       company: "10000",
       klasifikasi: addForm.value.klasifikasi,
       klasifikasi_text: addForm.value.klasifikasi_text,
       deskripsi: addForm.value.deskripsi || null,
     });
-
     showAddModal.value = false;
     await fetchKlasifikasi();
-
     showToast({
-      title: "Berhasil",
-      message: "Data klasifikasi berhasil ditambahkan",
+      title: t("berhasil"),
+      message: t("ka_success_add"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
   } catch (e) {
     console.error("Gagal tambah klasifikasi:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data klasifikasi gagal ditambahkan",
+      title: t("gagal"),
+      message: t("ka_err_add"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -687,7 +674,9 @@ const submitAddKlasifikasi = async () => {
   }
 };
 
-//put
+// ─────────────────────────────────────────────
+// EDIT
+// ─────────────────────────────────────────────
 const showEditModal = ref(false);
 const savingEdit = ref(false);
 const editId = ref<string | null>(null);
@@ -702,13 +691,9 @@ const editErrors = ref<Record<string, string>>({});
 
 const validateEdit = () => {
   const err: Record<string, string> = {};
-
-  if (!editForm.value.klasifikasi.trim())
-    err.klasifikasi = "Kode klasifikasi wajib diisi";
-
+  if (!editForm.value.klasifikasi.trim()) err.klasifikasi = t("ka_val_kode");
   if (!editForm.value.klasifikasi_text.trim())
-    err.klasifikasi_text = "Nama klasifikasi wajib diisi";
-
+    err.klasifikasi_text = t("ka_val_nama");
   editErrors.value = err;
   return Object.keys(err).length === 0;
 };
@@ -719,16 +704,10 @@ const onEdit = async (row: Klasifikasi) => {
     savingEdit.value = false;
     editErrors.value = {};
     editId.value = row.id;
-
-    editForm.value = {
-      klasifikasi: "",
-      klasifikasi_text: "",
-      deskripsi: "",
-    };
+    editForm.value = { klasifikasi: "", klasifikasi_text: "", deskripsi: "" };
 
     const res = await getKlasifikasiDetail(row.id);
     const data = (res as any).data ?? res;
-
     editForm.value.klasifikasi = data.klasifikasi || "";
     editForm.value.klasifikasi_text = data.klasifikasi_text || "";
     editForm.value.deskripsi = data.deskripsi || "";
@@ -742,34 +721,28 @@ const onEdit = async (row: Klasifikasi) => {
 const submitEditKlasifikasi = async () => {
   if (!editId.value) return;
   if (!validateEdit()) return;
-
   try {
     savingEdit.value = true;
-
     await updateKlasifikasi(editId.value, {
       company: "10000",
       klasifikasi: editForm.value.klasifikasi,
       klasifikasi_text: editForm.value.klasifikasi_text,
       deskripsi: editForm.value.deskripsi || null,
     });
-
     showEditModal.value = false;
     editId.value = null;
-
     await fetchKlasifikasi();
-
     showToast({
-      title: "Berhasil",
-      message: "Data klasifikasi berhasil diperbarui",
+      title: t("berhasil"),
+      message: t("ka_success_edit"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
   } catch (e) {
     console.error("Gagal update klasifikasi:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data klasifikasi gagal diperbarui",
+      title: t("gagal"),
+      message: t("ka_err_edit"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -778,7 +751,9 @@ const submitEditKlasifikasi = async () => {
   }
 };
 
-//delete
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
 const showDeletePopup = ref(false);
 const deleting = ref(false);
 const deleteTarget = ref<Klasifikasi | null>(null);
@@ -790,29 +765,23 @@ const onDelete = (row: Klasifikasi) => {
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
-
   try {
     deleting.value = true;
-
     await deleteKlasifikasi(deleteTarget.value.id);
-
     showDeletePopup.value = false;
-
     showToast({
-      title: "Berhasil",
-      message: "Data klasifikasi berhasil dihapus",
+      title: t("berhasil"),
+      message: t("ka_success_delete"),
       color: "error",
       icon: "i-lucide-check-circle",
     });
-
     deleteTarget.value = null;
     await fetchKlasifikasi();
   } catch (e) {
     console.error("Gagal menghapus klasifikasi:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data klasifikasi gagal dihapus",
+      title: t("gagal"),
+      message: t("ka_err_delete"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -828,15 +797,18 @@ const cancelDelete = () => {
 
 const deleteMessage = computed(() => {
   if (!deleteTarget.value) return "";
-  return `Yakin ingin menghapus klasifikasi "${deleteTarget.value.klasifikasi_text}"? Tindakan ini tidak dapat dibatalkan.`;
+  return locale.value === "id"
+    ? `Yakin ingin menghapus klasifikasi "${deleteTarget.value.klasifikasi_text}"? ${t("ka_pop_desc")}`
+    : `Are you sure you want to delete classification "${deleteTarget.value.klasifikasi_text}"? ${t("ka_pop_desc")}`;
 });
 
-// pagination
+// ─────────────────────────────────────────────
+// PAGINATION
+// ─────────────────────────────────────────────
 const currentPage = ref(1);
 const perPage = ref(10);
 
 const totalItems = computed(() => filteredKlasifikasi.value.length);
-
 const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
 const paginatedKlasifikasi = computed(() => {
@@ -848,14 +820,11 @@ const paginatedKlasifikasi = computed(() => {
 const paginationPages = computed(() => {
   const windowSize = 5;
   const half = Math.floor(windowSize / 2);
-
   let start = Math.max(1, currentPage.value - half);
   let end = Math.min(totalPages.value, start + windowSize - 1);
-
   if (end - start < windowSize - 1) {
     start = Math.max(1, end - windowSize + 1);
   }
-
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 });
 
@@ -863,11 +832,14 @@ watch(klasifikasiList, () => {
   currentPage.value = 1;
 });
 
-//search
+// ─────────────────────────────────────────────
+// SEARCH & SORT
+// ─────────────────────────────────────────────
+const sortKlasifikasi = ref<"asc" | "desc" | null>(null);
+
 const filteredKlasifikasi = computed(() => {
   let data = [...klasifikasiList.value];
 
-  // search
   if (search.value.trim()) {
     const s = search.value.toLowerCase();
     data = data.filter(
@@ -877,7 +849,6 @@ const filteredKlasifikasi = computed(() => {
     );
   }
 
-  // SORT by Kode Klasifikasi
   if (sortKlasifikasi.value === "asc") {
     data.sort((a, b) => a.klasifikasi.localeCompare(b.klasifikasi));
   } else if (sortKlasifikasi.value === "desc") {
@@ -891,24 +862,23 @@ watch(search, () => {
   currentPage.value = 1;
 });
 
-//sort
-const sortKlasifikasi = ref<"asc" | "desc" | null>(null);
-
 const toggleSortKlasifikasi = () => {
   if (sortKlasifikasi.value === null) sortKlasifikasi.value = "asc";
   else if (sortKlasifikasi.value === "asc") sortKlasifikasi.value = "desc";
   else sortKlasifikasi.value = null;
 };
 
-//export
+// ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 const onExport = () => {
   if (!klasifikasiList.value.length) {
     showToast({
-      title: "Tidak ada data",
-      message: "Data kosong, tidak ada yang bisa diexport",
+      title: locale.value === "id" ? "Tidak ada data" : "No Data",
+      message: t("ka_export_empty"),
       color: "warning",
       icon: "i-lucide-alert-triangle",
     });
@@ -917,14 +887,20 @@ const onExport = () => {
 
   const excelData = klasifikasiList.value.map((item, index) => ({
     No: index + 1,
-    "Kode Klasifikasi": item.klasifikasi,
-    "Nama Klasifikasi": item.klasifikasi_text,
-    Deskripsi: item.deskripsi ?? "-",
-    Status: item.active === 1 ? "Aktif" : "Non Aktif",
+    [t("ka_kode")]: item.klasifikasi,
+    [t("ka_nama")]: item.klasifikasi_text,
+    [t("ka_deskripsi")]: item.deskripsi ?? "-",
+    Status:
+      item.active === 1
+        ? locale.value === "id"
+          ? "Aktif"
+          : "Active"
+        : locale.value === "id"
+          ? "Non Aktif"
+          : "Inactive",
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
-
   worksheet["!cols"] = [
     { wch: 5 },
     { wch: 20 },
@@ -934,26 +910,19 @@ const onExport = () => {
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Klasifikasi");
+  XLSX.utils.book_append_sheet(workbook, worksheet, t("ka_title"));
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
-
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
   const blob = new Blob([excelBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
 
-  const fileName = `master_klasifikasi_${new Date()
-    .toISOString()
-    .slice(0, 10)}.xlsx`;
-
+  const fileName = `master_klasifikasi_${new Date().toISOString().slice(0, 10)}.xlsx`;
   saveAs(blob, fileName);
 
   showToast({
-    title: "Export berhasil",
-    message: "File Excel klasifikasi berhasil dibuat",
+    title: locale.value === "id" ? "Export berhasil" : "Export Successful",
+    message: t("ka_export_success"),
     color: "success",
     icon: "i-lucide-file-down",
   });
