@@ -37,10 +37,8 @@
       <h1
         :class="textClass"
         class="absolute left-1/2 transform -translate-x-1/2 font-bold opacity-0 transition-all duration-1000 bg-clip-text text-transparent top-[10rem] sm:top-[14rem] md:top-[15rem] lg:top-[3rem] text-[70px] sm:text-[130px] md:text-[110px] lg:text-[170px]"
-        style="background-image: linear-gradient(to right, #2d6a9f, #c8dff0)"
+        style="background-image: linear-gradient(to right, #2d6a9f, #8bb8d8)"
       >
-        <!-- style="background-image: linear-gradient(to right, #2d6a9f, #8bb8d8)" -->
-
         {{ $t("Arsipku") }}
       </h1>
 

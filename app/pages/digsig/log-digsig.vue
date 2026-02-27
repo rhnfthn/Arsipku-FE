@@ -12,7 +12,7 @@
               variant="heading6b"
               class="text-2xl font-bold text-gray-900 dark:text-white"
             >
-              Log Digsig
+              {{ $t("log_title") }}
             </Heading>
             <PageHeader :items="breadcrumbs" class="mt-1" />
           </div>
@@ -35,7 +35,7 @@
               class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1"
             >
               <!-- LIMIT FILTER -->
-              <select
+              <!-- <select
                 v-model="limitPerPage"
                 @change="handleLimitChange"
                 class="px-4 py-2 text-sm rounded-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition cursor-pointer"
@@ -44,14 +44,55 @@
                 <option :value="15">15</option>
                 <option :value="20">20</option>
                 <option :value="25">25</option>
-              </select>
+              </select> -->
+              <div class="flex items-center gap-2">
+                <div class="relative" ref="rowsRef">
+                  <button
+                    @change="handleLimitChange"
+                    type="button"
+                    @click.stop="showRowsDropdown = !showRowsDropdown"
+                    class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+                  >
+                    <span>{{ rowsPerPage }}</span>
+                    <ChevronDown
+                      class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                      :class="{ 'rotate-180': showRowsDropdown }"
+                    />
+                  </button>
+                  <Transition name="filter-dd">
+                    <div
+                      v-if="showRowsDropdown"
+                      class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                    >
+                      <button
+                        v-for="n in rowsChoices"
+                        :key="n"
+                        type="button"
+                        @click.stop="
+                          rowsPerPage = n;
+                          showRowsDropdown = false;
+                        "
+                        :class="[
+                          'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                          rowsPerPage === n
+                            ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                            : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ]"
+                      >
+                        {{ n }}
+                      </button>
+                    </div>
+                  </Transition>
+                </div>
+              </div>
+
               <!-- SEARCH -->
               <div class="relative flex-1">
                 <input
                   v-model="searchQuery"
                   @input="debounceSearch"
                   type="text"
-                  placeholder="Cari berdasarkan user, IP, atau jenis naskah"
+                  :placeholder="$t('log_cari_placeholder')"
                   class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
                 />
                 <Search
@@ -60,7 +101,7 @@
               </div>
             </div>
 
-            <!-- BSRE ALERT BUTTON (Dynamic color based on alert status) -->
+            <!-- BSRE ALERT BUTTON -->
             <button
               :class="[
                 'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
@@ -78,10 +119,10 @@
               <AlertTriangle class="w-4 h-4" />
               {{
                 loadingAlert
-                  ? "Memuat..."
+                  ? $t("log_btn_loading")
                   : bsreAlert?.isActive
-                    ? "Nonaktifkan Alert"
-                    : "Aktifkan Alert Gangguan"
+                    ? $t("log_btn_deactivate")
+                    : $t("log_btn_activate")
               }}
             </button>
           </div>
@@ -102,7 +143,7 @@
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>Tanggal</span>
+                    <span>{{ $t("log_col_tanggal") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -119,7 +160,7 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>IP Address</span>
+                    <span>{{ $t("log_col_ip") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -136,7 +177,7 @@
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>User</span>
+                    <span>{{ $t("log_col_user") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -150,7 +191,7 @@
                 </th>
                 <th class="px-4 py-3 text-left text-sm tracking-wider">
                   <div class="flex items-center gap-2">
-                    <span>API Endpoint</span>
+                    <span>{{ $t("log_col_api") }}</span>
                   </div>
                 </th>
                 <th
@@ -158,7 +199,7 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>Naskah</span>
+                    <span>{{ $t("log_col_naskah") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -177,7 +218,7 @@
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>Status </span>
+                    <span>{{ $t("log_col_status") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
@@ -249,11 +290,11 @@
                     />
                     <span
                       class="text-sm text-gray-500 dark:text-gray-400 font-medium"
-                      >Tidak ada data ditemukan</span
+                      >{{ $t("log_empty") }}</span
                     >
-                    <span class="text-xs text-gray-400 dark:text-gray-500"
-                      >Coba ubah kriteria pencarian Anda</span
-                    >
+                    <span class="text-xs text-gray-400 dark:text-gray-500">{{
+                      $t("log_empty_hint")
+                    }}</span>
                   </div>
                 </td>
               </tr>
@@ -325,7 +366,7 @@
           </table>
         </div>
 
-        <!-- PAGINATION (FIXED - NO SCROLL) -->
+        <!-- PAGINATION -->
         <div
           v-if="meta && sortedLogs.length > 0"
           class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
@@ -335,7 +376,7 @@
           >
             <!-- INFO -->
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              Menampilkan
+              {{ $t("menampilkan") }}
               <span class="text-gray-600 dark:text-gray-300">{{
                 (meta.page - 1) * meta.limit + 1
               }}</span>
@@ -343,11 +384,11 @@
               <span class="text-gray-600 dark:text-gray-300">{{
                 Math.min(meta.page * meta.limit, meta.total)
               }}</span>
-              dari
+              {{ $t("dari") }}
               <span class="text-gray-600 dark:text-gray-300">{{
                 meta.total
               }}</span>
-              data
+              {{ $t("data") }}
             </div>
 
             <!-- PAGINATION CONTROLS -->
@@ -376,12 +417,11 @@
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                Sebelumnya
+                {{ $t("sebelumnya") }}
               </button>
 
               <!-- PAGE NUMBERS -->
               <div class="flex items-center gap-1">
-                <!-- First page -->
                 <button
                   v-if="paginationPages[0] > 1"
                   @click="goToPage(1)"
@@ -389,16 +429,12 @@
                 >
                   1
                 </button>
-
-                <!-- Left ellipsis -->
                 <span
                   v-if="paginationPages[0] > 2"
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >
                   ...
                 </span>
-
-                <!-- Visible pages -->
                 <button
                   v-for="page in paginationPages"
                   :key="page"
@@ -412,8 +448,6 @@
                 >
                   {{ page }}
                 </button>
-
-                <!-- Right ellipsis -->
                 <span
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages - 1
@@ -422,8 +456,6 @@
                 >
                   ...
                 </span>
-
-                <!-- Last page -->
                 <button
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages
@@ -446,7 +478,7 @@
                     : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
                 ]"
               >
-                Selanjutnya
+                {{ $t("selanjutnya") }}
                 <svg
                   class="w-4 h-4"
                   fill="none"
@@ -470,7 +502,6 @@
     <!-- MODAL ACTIVATE ALERT -->
     <Teleport to="body">
       <Modal v-model="showActivateModal" :hideDefaultFooter="true" size="xl">
-        <!-- TITLE -->
         <template #title>
           <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
             <div
@@ -482,21 +513,17 @@
               variant="heading9b"
               class="text-sm font-semibold dark:text-white"
             >
-              Aktifkan Alert Gangguan BsrE
+              {{ $t("log_modal_activate_title") }}
             </Heading>
           </div>
         </template>
 
-        <!-- BODY -->
         <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
-          <p>
-            Masukkan pesan gangguan yang akan ditampilkan ke seluruh pengguna
-            sistem:
-          </p>
+          <p>{{ $t("log_modal_activate_desc") }}</p>
 
           <textarea
             v-model="alertMessage"
-            placeholder="Contoh: BSrE sedang dalam maintenance sampai pukul 15:00 WIB"
+            :placeholder="$t('log_modal_activate_placeholder')"
             rows="3"
             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
           ></textarea>
@@ -505,14 +532,10 @@
             class="flex items-center gap-5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm"
           >
             <AlertTriangle class="w-8 h-8 flex-shrink-0" />
-            <span>
-              Tindakan ini sangat penting dan akan mempengaruhi seluruh
-              pengguna!
-            </span>
+            <span>{{ $t("log_modal_activate_warning") }}</span>
           </div>
         </div>
 
-        <!-- FOOTER -->
         <template #footer>
           <div
             class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
@@ -521,15 +544,18 @@
               @click="showActivateModal = false"
               class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
             >
-              Batal
+              {{ $t("log_batal") }}
             </button>
-
             <button
               @click="activateAlert"
               :disabled="!alertMessage.trim() || loadingAlert"
               class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loadingAlert ? "Mengaktifkan..." : "Ya, Aktifkan Alert" }}
+              {{
+                loadingAlert
+                  ? $t("log_modal_activating")
+                  : $t("log_modal_activate_confirm")
+              }}
             </button>
           </div>
         </template>
@@ -539,7 +565,6 @@
     <!-- MODAL DEACTIVATE ALERT -->
     <Teleport to="body">
       <Modal v-model="showDeactivateModal" :hideDefaultFooter="true" size="xl">
-        <!-- TITLE -->
         <template #title>
           <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
             <div
@@ -551,17 +576,13 @@
               variant="heading9b"
               class="text-sm font-semibold dark:text-white"
             >
-              Nonaktifkan Alert Gangguan BsrE
+              {{ $t("log_modal_deactivate_title") }}
             </Heading>
           </div>
         </template>
 
-        <!-- BODY -->
         <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
-          <p>
-            Apakah Anda yakin ingin menonaktifkan alert gangguan BsrE? Alert
-            akan dihapus dari tampilan seluruh pengguna.
-          </p>
+          <p>{{ $t("log_modal_deactivate_desc") }}</p>
 
           <div
             class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
@@ -571,17 +592,19 @@
                 class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"
               />
               <div class="text-sm text-yellow-800 dark:text-yellow-300">
-                <p class="font-medium">Pesan alert saat ini:</p>
+                <p class="font-medium">
+                  {{ $t("log_modal_deactivate_current") }}
+                </p>
                 <p class="mt-1 italic">"{{ bsreAlert?.message }}"</p>
                 <p class="mt-2 text-xs">
-                  Diaktifkan oleh: {{ bsreAlert?.activatedByName || "-" }}
+                  {{ $t("log_modal_deactivate_by") }}
+                  {{ bsreAlert?.activatedByName || "-" }}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- FOOTER -->
         <template #footer>
           <div
             class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
@@ -590,15 +613,18 @@
               @click="showDeactivateModal = false"
               class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
             >
-              Batal
+              {{ $t("log_batal") }}
             </button>
-
             <button
               @click="deactivateAlert"
               :disabled="loadingAlert"
               class="flex-1 px-5 py-2 text-sm mt-5 bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loadingAlert ? "Menonaktifkan..." : "Ya, Nonaktifkan Alert" }}
+              {{
+                loadingAlert
+                  ? $t("log_modal_deactivating")
+                  : $t("log_modal_deactivate_confirm")
+              }}
             </button>
           </div>
         </template>
@@ -609,16 +635,46 @@
 
 <script setup lang="ts">
 import Modal from "~/components/Modal.vue";
-import { Search, AlertTriangle, X, ArrowUpDown, Check } from "lucide-vue-next";
+import {
+  Search,
+  AlertTriangle,
+  X,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+} from "lucide-vue-next";
+import { useI18n } from "vue-i18n";
 import type { DigsigLog } from "~/types/digsig";
+
 definePageMeta({
   middleware: "auth",
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Log Digsig", to: "/digsig/log-digsig" },
-];
+const { t } = useI18n();
+
+// ─── Refs for click-outside ───────────────────
+const rowsRef = ref<HTMLElement | null>(null);
+const filterStatusRef = ref<HTMLElement | null>(null);
+
+const rowsPerPage = ref(10);
+const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
+// ─── Click outside ────────────────────────────
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
+    showRowsDropdown.value = false;
+  }
+  if (filterStatusRef.value && !filterStatusRef.value.contains(target)) {
+    openFilterStatus.value = false;
+  }
+};
+
+// ─── Breadcrumbs (reactive to locale) ────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("log_title"), to: "/digsig/log-digsig" },
+]);
 
 const {
   logs,
@@ -652,7 +708,7 @@ const sortOrder = ref<"asc" | "desc">("desc");
 // Computed
 const totalPages = computed(() => meta.value?.totalPages || 1);
 
-// Client-side sorting (karena backend tidak support sortBy & sortOrder)
+// Client-side sorting
 const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
   tanggal: "tanggal",
   ipAddress: "ipAddress",
@@ -674,7 +730,6 @@ const sortedLogs = computed(() => {
     if (aVal == null) return 1;
     if (bVal == null) return -1;
 
-    // Date sorting
     if (field === "tanggal") {
       return sortOrder.value === "asc"
         ? new Date(aVal as string).getTime() -
@@ -683,7 +738,6 @@ const sortedLogs = computed(() => {
             new Date(aVal as string).getTime();
     }
 
-    // String sorting
     const aStr = String(aVal).toLowerCase();
     const bStr = String(bVal).toLowerCase();
 
@@ -693,7 +747,6 @@ const sortedLogs = computed(() => {
   });
 });
 
-// Sorting handler - client side only
 function handleSort(key: string) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -703,13 +756,11 @@ function handleSort(key: string) {
   }
 }
 
-// Handle limit change
 const handleLimitChange = () => {
   currentPage.value = 1;
   loadLogs();
 };
 
-// Fetch logs with pagination only (NO sorting parameters)
 const loadLogs = async () => {
   await fetchLogs({
     page: currentPage.value,
@@ -718,17 +769,14 @@ const loadLogs = async () => {
   });
 };
 
-// Fetch BsrE health
 const loadBsreHealth = async () => {
   await fetchBsreHealth();
 };
 
-// Fetch BsrE alert status
 const loadBsreAlert = async () => {
   await fetchBsreAlert();
 };
 
-// Pagination
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
@@ -744,9 +792,7 @@ const paginationPages = computed(() => {
   const pages: number[] = [];
 
   if (total <= 7) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     if (current <= 3) {
       for (let i = 1; i <= 5; i++) pages.push(i);
@@ -760,7 +806,6 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// Search with debounce
 let searchTimeout: NodeJS.Timeout;
 const debounceSearch = () => {
   clearTimeout(searchTimeout);
@@ -770,7 +815,6 @@ const debounceSearch = () => {
   }, 500);
 };
 
-// Modal actions
 const openActivateModal = () => {
   alertMessage.value = "";
   showActivateModal.value = true;
@@ -785,15 +829,11 @@ const activateAlert = async () => {
     showToastAlertPesanKosong();
     return;
   }
-
   try {
     await activateBsreAlert(alertMessage.value);
     showToastAlertActivated();
     showActivateModal.value = false;
-    // Alert state sudah di-update otomatis oleh composable
-    // Banner akan langsung muncul tanpa perlu refresh
   } catch (err: any) {
-    // Error toast sudah dihandle di activateBsreAlert composable
     console.error("❌ activateAlert error:", err);
   }
 };
@@ -803,15 +843,11 @@ const deactivateAlert = async () => {
     await deactivateBsreAlert();
     showToastAlertDeactivated();
     showDeactivateModal.value = false;
-    // Alert state sudah di-update otomatis oleh composable
-    // Banner akan langsung hilang tanpa perlu refresh
   } catch (err: any) {
-    // Error toast sudah dihandle di deactivateBsreAlert composable
     console.error("❌ deactivateAlert error:", err);
   }
 };
 
-// Utils
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString("id-ID", {
@@ -843,24 +879,24 @@ const statusClass = (status: string) => {
   return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800";
 };
 
-// Load data on mount
 onMounted(() => {
   loadLogs();
   loadBsreHealth();
-  loadBsreAlert(); // Load alert status on mount
+  loadBsreAlert();
+
+  watch([rowsPerPage], () => {
+    currentPage.value = 1;
+  });
 });
 </script>
 
 <style scoped>
-/* Custom scrollbar */
 .overflow-x-auto::-webkit-scrollbar {
   height: 8px;
 }
-
 .overflow-x-auto::-webkit-scrollbar-track {
   border-radius: 10px;
 }
-
 .overflow-x-auto::-webkit-scrollbar-thumb {
   border-radius: 10px;
 }

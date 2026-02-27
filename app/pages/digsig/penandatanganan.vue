@@ -7,7 +7,7 @@
       >
         <div>
           <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-            Penandatanganan Dokumen
+            {{ $t("sign_title") }}
           </Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
@@ -21,47 +21,77 @@
         <div
           class="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-700"
         >
+          <!-- ROWS PER PAGE -->
           <div class="flex items-center gap-2">
-            <select
-              v-model="rowsPerPage"
-              class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option v-for="n in rowsChoices" :key="n" :value="n">
-                {{ n }}
-              </option>
-            </select>
+            <div class="relative" ref="rowsRef">
+              <button
+                type="button"
+                @click.stop="showRowsDropdown = !showRowsDropdown"
+                class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+              >
+                <span>{{ rowsPerPage }}</span>
+                <ChevronDown
+                  class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                  :class="{ 'rotate-180': showRowsDropdown }"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="showRowsDropdown"
+                  class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                >
+                  <button
+                    v-for="n in rowsChoices"
+                    :key="n"
+                    type="button"
+                    @click.stop="
+                      rowsPerPage = n;
+                      showRowsDropdown = false;
+                    "
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                      rowsPerPage === n
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ n }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
           </div>
 
-          <div class="relative" data-custom-dropdown>
+          <!-- FILTER STATUS -->
+          <div class="relative" ref="filterStatusRef">
             <button
               type="button"
+              class="h-9 flex items-center justify-between gap-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white text-sm px-3 rounded-lg min-w-[160px] hover:border-primary transition-all"
               @click.stop="openFilterStatus = !openFilterStatus"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
             >
-              <span class="truncate">{{ filterStatusLabel }}</span>
+              <span>{{ filterStatusLabel }}</span>
               <ChevronDown
                 :class="[
-                  'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
-                  openFilterStatus ? 'rotate-180' : 'rotate-0',
+                  'w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200',
+                  openFilterStatus ? 'rotate-180' : '',
                 ]"
               />
             </button>
             <Transition name="filter-dd">
               <div
                 v-if="openFilterStatus"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
+                class="absolute left-0 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden"
               >
                 <button
                   v-for="item in filterOptions"
                   :key="item.value"
-                  type="button"
-                  @click.stop="selectFilterStatus(item)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                  :class="
                     filterStatus === item.value
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
-                  ]"
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  "
+                  @click.stop="selectFilterStatus(item)"
                 >
                   {{ item.label }}
                 </button>
@@ -69,13 +99,14 @@
             </Transition>
           </div>
 
+          <!-- SEARCH -->
           <div class="relative w-full justify-between">
             <Search
               class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             />
             <input
               v-model="search"
-              placeholder="Cari nomor dokumen atau perihal"
+              :placeholder="$t('sign_cari_placeholder')"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -88,10 +119,10 @@
               <tr>
                 <th
                   @click="handleSort('tanggalDibuat')"
-                  class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                  class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition select-none"
                 >
                   <div class="flex items-center gap-2 px-4 py-3">
-                    <span>Tanggal Dibuat</span>
+                    <span>{{ $t("sign_tanggal_dibuat") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 origin-center transition-transform duration-200"
                       :class="
@@ -104,20 +135,24 @@
                     />
                   </div>
                 </th>
-                <th class="px-4 py-3 font-semibold text-sm">No Dokumen</th>
-                <th class="px-4 py-3 font-semibold text-sm">Perihal</th>
-                <th class="px-4 py-3 font-semibold text-sm text-center">
-                  Penanda Tangan
+                <th class="px-4 py-3 font-semibold text-sm">
+                  {{ $t("nodokumen") }}
+                </th>
+                <th class="px-4 py-3 font-semibold text-sm">
+                  {{ $t("perihal") }}
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  Dokumen
+                  {{ $t("sign_penanda_tangan") }}
+                </th>
+                <th class="px-4 py-3 font-semibold text-sm text-center">
+                  {{ $t("dokumen") }}
                 </th>
                 <th
                   @click="handleSort('status')"
-                  class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                  class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition select-none"
                 >
                   <div class="flex items-center gap-2 ml-5 px-4 py-3">
-                    <span>Status</span>
+                    <span>{{ $t("sign_status") }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 origin-center transition-transform duration-200"
                       :class="
@@ -131,7 +166,7 @@
                   </div>
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  Aksi
+                  {{ $t("aksi") }}
                 </th>
               </tr>
             </thead>
@@ -195,10 +230,10 @@
                   <div class="flex flex-col items-center gap-3">
                     <FileX class="w-12 h-12 text-gray-400 dark:text-gray-600" />
                     <p class="text-gray-500 dark:text-gray-400 font-medium">
-                      Tidak ada data
+                      {{ $t("sign_tidak_ada_data") }}
                     </p>
                     <p class="text-sm text-gray-400 dark:text-gray-500">
-                      Belum ada dokumen yang perlu ditandatangani
+                      {{ $t("sign_belum_ada_dokumen") }}
                     </p>
                   </div>
                 </td>
@@ -228,7 +263,7 @@
                   {{ row.totalPenandatangan }}
                 </td>
 
-                <!-- KOLOM DOKUMEN - Buka preview langsung dari tabel -->
+                <!-- KOLOM DOKUMEN -->
                 <td class="px-4 py-3 text-center">
                   <button
                     @click="viewDocumentFromTable(row)"
@@ -241,7 +276,7 @@
                     "
                   >
                     <FileCheck class="w-4 h-4" />
-                    Lihat
+                    {{ $t("sign_lihat") }}
                     <ChevronRight class="w-4 h-4" />
                   </button>
                 </td>
@@ -251,17 +286,17 @@
                   <span
                     v-if="row.mySignerStatus === 'waiting'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-                    >Menunggu</span
+                    >{{ $t("sign_status_menunggu") }}</span
                   >
                   <span
                     v-else-if="row.mySignerStatus === 'signed'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                    >Sudah TTD</span
+                    >{{ $t("sign_status_sudah_ttd") }}</span
                   >
                   <span
                     v-else-if="row.mySignerStatus === 'rejected'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
-                    >Ditolak</span
+                    >{{ $t("sign_status_ditolak") }}</span
                   >
                   <span
                     v-else
@@ -276,11 +311,10 @@
                     <button
                       @click="handleViewDetail(row)"
                       class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
-                      title="Lihat Detail"
+                      :title="$t('sign_lihat_detail')"
                     >
                       <Eye class="w-4.5 h-4.5" />
                     </button>
-
                     <button
                       @click="row.canSign ? handleOpenSign(row) : null"
                       :disabled="!row.canSign"
@@ -292,13 +326,12 @@
                       ]"
                       :title="
                         row.canSign
-                          ? 'Tanda Tangan'
-                          : 'Tidak dapat ditandatangani'
+                          ? $t('sign_tanda_tangani')
+                          : $t('sign_tidak_bisa_ttd')
                       "
                     >
                       <Signature class="w-4.5 h-4.5" />
                     </button>
-
                     <button
                       @click="row.canReject ? handleReject(row) : null"
                       :disabled="!row.canReject"
@@ -308,7 +341,11 @@
                           ? 'text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 cursor-pointer'
                           : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
                       ]"
-                      :title="row.canReject ? 'Tolak' : 'Tidak dapat ditolak'"
+                      :title="
+                        row.canReject
+                          ? $t('sign_tolak')
+                          : $t('sign_tidak_bisa_tolak')
+                      "
                     >
                       <X class="w-4.5 h-4.5" />
                     </button>
@@ -324,7 +361,8 @@
           class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-4"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            Menampilkan {{ startRow }} - {{ endRow }} dari {{ totalRows }} data
+            {{ $t("menampilkan") }} {{ startRow }} - {{ endRow }}
+            {{ $t("dari") }} {{ totalRows }} {{ $t("data") }}
           </div>
           <div class="flex gap-2">
             <button
@@ -350,7 +388,7 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Sebelumnya
+              {{ $t("sebelumnya") }}
             </button>
 
             <div class="flex items-center gap-1">
@@ -405,7 +443,7 @@
                   : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
               ]"
             >
-              Selanjutnya
+              {{ $t("selanjutnya") }}
               <svg
                 class="w-4 h-4"
                 fill="none"
@@ -424,44 +462,40 @@
         </div>
       </div>
 
-      <!-- ==================== -->
       <!-- MODAL DETAIL -->
-      <!-- ==================== -->
       <Teleport to="body">
         <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
           <template #title>
             <h2 class="text-xl font-semibold ml-5 mt-5 mb-4 dark:text-white">
-              Detail Dokumen
+              {{ $t("sign_detail_dokumen") }}
             </h2>
           </template>
-
-          <!-- Loading -->
           <div v-if="loadingDetail" class="p-12 text-center">
             <div class="flex flex-col items-center gap-3">
               <div
                 class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
               ></div>
               <p class="text-gray-500 dark:text-gray-400 text-sm">
-                Memuat detail...
+                {{ $t("sign_memuat_detail") }}
               </p>
             </div>
           </div>
-
-          <!-- Content -->
           <div
             v-else-if="penandatanganDetail"
             class="px-6 pb-6 space-y-6 max-h-[calc(100vh-150px)] overflow-y-auto"
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1">No. Dokumen</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
+                  {{ $t("sign_no_dokumen_label") }}
+                </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.nomorDokumen }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  Tanggal Dokumen
+                  {{ $t("sign_tanggal_dokumen") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ formatDate(penandatanganDetail.tanggalDokumen) }}
@@ -469,7 +503,7 @@
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  Jenis Naskah
+                  {{ $t("sign_jenis_naskah") }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{
@@ -479,7 +513,9 @@
                 </p>
               </div>
               <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1">Klasifikasi</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
+                  {{ $t("klasifikasi") }}
+                </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{
                     penandatanganDetail.klasifikasiText ||
@@ -488,14 +524,16 @@
                 </p>
               </div>
               <div>
-                <p class="text-gray-500 dark:text-gray-400 mb-1">Perihal</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">
+                  {{ $t("perihal") }}
+                </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.perihal }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  Status Dokumen
+                  {{ $t("sign_status_dokumen") }}
                 </p>
                 <span
                   class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
@@ -504,33 +542,42 @@
                   {{ getDocStatusLabel(penandatanganDetail.documentStatus) }}
                 </span>
               </div>
-
-              <!-- TOMBOL LIHAT PREVIEW - di dalam modal detail -->
               <div class="md:col-span-2">
-                <p class="text-gray-500 dark:text-gray-400 mb-2">Dokumen</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">
+                  {{ $t("dokumen") }}
+                </p>
                 <button
                   @click="viewDocumentFromDetail"
                   class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
                 >
                   <FileCheck class="w-4 h-4" />
-                  Lihat Preview Dokumen
+                  {{ $t("sign_lihat_preview") }}
                   <ChevronRight class="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <!-- TABEL PENANDATANGAN -->
             <div
               class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
             >
               <table class="w-full text-sm">
                 <thead class="bg-primary dark:bg-primary-700 text-white">
                   <tr>
-                    <th class="p-3 text-left font-semibold">No</th>
-                    <th class="p-3 text-left font-semibold">E-NIK</th>
-                    <th class="p-3 text-left font-semibold">Nama/Jabatan</th>
-                    <th class="p-3 text-center font-semibold">Status</th>
-                    <th class="p-3 text-left font-semibold">Keterangan</th>
+                    <th class="p-3 text-left font-semibold">
+                      {{ $t("sign_col_no") }}
+                    </th>
+                    <th class="p-3 text-left font-semibold">
+                      {{ $t("sign_col_enik") }}
+                    </th>
+                    <th class="p-3 text-left font-semibold">
+                      {{ $t("sign_col_nama_jabatan") }}
+                    </th>
+                    <th class="p-3 text-center font-semibold">
+                      {{ $t("sign_status") }}
+                    </th>
+                    <th class="p-3 text-left font-semibold">
+                      {{ $t("sign_col_keterangan") }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -566,7 +613,7 @@
                     <td class="p-3">
                       <div v-if="signer.status === 'signed' && signer.signedAt">
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                          Ditandatangani
+                          {{ $t("sign_ditandatangani_pada") }}
                         </p>
                         <p class="font-medium text-gray-900 dark:text-white">
                           {{ formatDate(signer.signedAt) }}
@@ -607,10 +654,9 @@
         <Modal v-model="openSign" :hideDefaultFooter="true" size="xl">
           <template #title>
             <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 dark:text-white">
-              Tanda Tangan Digital
+              {{ $t("sign_tanda_tangan_digital") }}
             </h2>
           </template>
-
           <div class="px-6 pb-6 space-y-5">
             <div
               v-if="selectedDoc"
@@ -623,7 +669,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Ditandatangani secara digital oleh
+                  {{ $t("sign_ditandatangani_oleh") }}
                 </p>
                 <p class="font-semibold text-gray-900 dark:text-white">
                   {{ selectedDoc.mySignerInfo?.nama }}
@@ -633,38 +679,38 @@
                 </p>
               </div>
             </div>
-
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                Passphrase <span class="text-red-500">*</span>
+                {{ $t("sign_passphrase") }} <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="passphrase"
                 type="password"
                 class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Masukkan passphrase sertifikat digital"
+                :placeholder="$t('sign_passphrase_placeholder')"
               />
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Passphrase yang digunakan untuk sertifikat digital Anda
+                {{ $t("sign_passphrase_hint") }}
               </p>
             </div>
-
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                Keterangan <span class="text-gray-400 text-xs">(Opsional)</span>
+                {{ $t("sign_keterangan") }}
+                <span class="text-gray-400 text-xs"
+                  >({{ $t("sign_keterangan_opsional") }})</span
+                >
               </label>
               <textarea
                 v-model="keterangan"
                 rows="3"
                 class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Contoh: Disetujui, sudah sesuai"
+                :placeholder="$t('sign_keterangan_placeholder')"
               ></textarea>
             </div>
-
             <button
               @click="handleSign"
               :disabled="!passphrase || loadingSign"
@@ -682,9 +728,9 @@
                 <div
                   class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
                 ></div>
-                Memproses...
+                {{ $t("sign_memproses") }}
               </span>
-              <span v-else>Proses Tanda Tangan</span>
+              <span v-else>{{ $t("sign_proses_tanda_tangan") }}</span>
             </button>
           </div>
         </Modal>
@@ -697,10 +743,9 @@
             <h2
               class="text-lg font-semibold ml-5 mt-5 mb-3 text-gray-900 dark:text-white"
             >
-              Tolak Dokumen
+              {{ $t("sign_tolak_dokumen") }}
             </h2>
           </template>
-
           <div class="px-6 pb-6 space-y-4">
             <div
               class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg"
@@ -710,29 +755,27 @@
               />
               <div>
                 <p class="text-sm font-medium text-red-800 dark:text-red-400">
-                  Peringatan
+                  {{ $t("sign_peringatan") }}
                 </p>
                 <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-                  Yakin ingin menolak penanda tanganan dokumen ini? Tindakan ini
-                  tidak dapat dibatalkan.
+                  {{ $t("sign_konfirmasi_tolak") }}
                 </p>
               </div>
             </div>
-
             <div>
               <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                Alasan Penolakan <span class="text-red-500">*</span>
+                {{ $t("sign_alasan_penolakan") }}
+                <span class="text-red-500">*</span>
               </label>
               <textarea
                 v-model="rejectReason"
                 rows="3"
                 class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Masukkan alasan penolakan..."
+                :placeholder="$t('sign_alasan_placeholder')"
               ></textarea>
             </div>
-
             <div
               class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
             >
@@ -740,50 +783,41 @@
                 @click="confirmRejectOpen = false"
                 class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
               >
-                Batal
+                {{ $t("sign_batal") }}
               </button>
               <button
                 @click="rejectNow"
                 :disabled="!rejectReason || loadingReject"
                 class="flex-1 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span v-if="loadingReject">Memproses...</span>
-                <span v-else>Tolak Dokumen</span>
+                <span v-if="loadingReject">{{ $t("sign_memproses") }}</span>
+                <span v-else>{{ $t("sign_tolak_dokumen") }}</span>
               </button>
             </div>
           </div>
         </Modal>
       </Teleport>
 
-      <!-- ==================== -->
       <!-- DOCUMENT PREVIEW SLIDEOVER -->
-      <!-- Bisa dibuka dari tabel (tombol Lihat) atau dari modal detail (tombol Preview) -->
-      <!-- ==================== -->
       <USlideover
         v-model:open="isOpenPreview"
-        title="Pratinjau Dokumen"
+        :title="$t('sign_pratinjau_dokumen')"
         side="bottom"
         :dismissible="true"
-        :ui="{
-          content: 'h-screen max-h-screen',
-          body: 'p-0',
-        }"
+        :ui="{ content: 'h-screen max-h-screen', body: 'p-0' }"
       >
         <template #body>
           <div
             class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
           >
-            <!-- Loading state -->
             <div v-if="loadingPreview" class="flex flex-col items-center gap-3">
               <div
                 class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
               ></div>
-              <span class="text-gray-500 dark:text-gray-400 text-sm"
-                >Memuat Pratinjau...</span
-              >
+              <span class="text-gray-500 dark:text-gray-400 text-sm">{{
+                $t("sign_memuat_pratinjau")
+              }}</span>
             </div>
-
-            <!-- PDF iframe -->
             <iframe
               v-else-if="pdfUrl"
               :key="pdfUrl"
@@ -791,13 +825,11 @@
               class="w-full h-full border-0"
               allowfullscreen
             />
-
-            <!-- Error state -->
             <div v-else class="flex flex-col items-center gap-3">
               <FileX class="w-12 h-12 text-gray-400 dark:text-gray-600" />
-              <span class="text-gray-500 dark:text-gray-400 text-sm"
-                >Gagal memuat dokumen</span
-              >
+              <span class="text-gray-500 dark:text-gray-400 text-sm">{{
+                $t("sign_gagal_memuat")
+              }}</span>
             </div>
           </div>
         </template>
@@ -821,12 +853,13 @@ import {
   ChevronRight,
 } from "lucide-vue-next";
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import Modal from "~/components/Modal.vue";
 import { useDigsig } from "~/composables/useDigsig";
 import type { PenandatangananDocument } from "~/types/digsig";
-definePageMeta({
-  middleware: "auth",
-});
+
+const { t } = useI18n();
+const toast = useToast();
 
 const {
   penandatanganDocuments,
@@ -839,10 +872,6 @@ const {
   fetchPenandatanganDetail,
   signDocument,
   rejectDocument,
-  showToastFileNotAvailable,
-  showToastDataTidakValid,
-  showToastDokumenSigned,
-  showToastDokumenRejected,
 } = useDigsig();
 
 // ─── Modal states ─────────────────────────────
@@ -855,7 +884,6 @@ const selectedDoc = ref<PenandatangananDocument | null>(null);
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const loadingPreview = ref(false);
-// Simpan dari mana preview dibuka: "detail" = dari modal, null = dari tabel
 const previewSource = ref<"detail" | null>(null);
 
 // ─── Form state ───────────────────────────────
@@ -873,20 +901,27 @@ const openFilterStatus = ref(false);
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
 const sortKey = ref("");
 const sortOrder = ref("asc");
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Penanda Tanganan", to: "/digsig/penandatanganan" },
-];
+// ─── Refs for click-outside ───────────────────
+const rowsRef = ref<HTMLElement | null>(null);
+const filterStatusRef = ref<HTMLElement | null>(null);
 
-const filterOptions = [
-  { label: "Semua", value: "" },
-  { label: "Menunggu", value: "waiting" },
-  { label: "Sudah TTD", value: "signed" },
-  { label: "Ditolak", value: "rejected" },
-];
+// ─── Breadcrumbs (reactive to locale) ────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("sign_title"), to: "/admin/digsig/penandatanganan" },
+]);
+
+// ─── Filter options (reactive to locale) ─────
+const filterOptions = computed(() => [
+  { label: t("sign_filter_semua"), value: "" },
+  { label: t("sign_filter_menunggu"), value: "waiting" },
+  { label: t("sign_filter_sudah_ttd"), value: "signed" },
+  { label: t("sign_filter_ditolak"), value: "rejected" },
+]);
 
 function handleSort(key: string) {
   if (sortKey.value === key) {
@@ -898,13 +933,14 @@ function handleSort(key: string) {
 }
 
 const filterStatusLabel = computed(() => {
-  const found = filterOptions.find((opt) => opt.value === filterStatus.value);
-  return found?.label || "Semua";
+  const found = filterOptions.value.find(
+    (opt) => opt.value === filterStatus.value,
+  );
+  return found?.label || t("sign_filter_semua");
 });
 
 const filteredRows = computed(() => {
   let filtered = penandatanganDocuments.value || [];
-
   if (search.value) {
     const s = search.value.toLowerCase();
     filtered = filtered.filter(
@@ -913,13 +949,11 @@ const filteredRows = computed(() => {
         doc.perihal?.toLowerCase().includes(s),
     );
   }
-
   if (filterStatus.value) {
     filtered = filtered.filter(
       (doc) => doc.mySignerStatus === filterStatus.value,
     );
   }
-
   return filtered;
 });
 
@@ -952,13 +986,14 @@ const paginationPages = computed(() => {
 // ─── Helpers ──────────────────────────────────
 const formatDate = (dateString: string) => {
   if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("id-ID", {
+  const localString = dateString.replace("Z", "").replace("+00:00", "");
+  const date = new Date(localString);
+  return date.toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Jakarta",
   });
 };
 
@@ -978,10 +1013,10 @@ const getSignerStatusClass = (status: string) => {
 
 const getSignerStatusLabel = (status: string) => {
   const map: Record<string, string> = {
-    waiting: "Menunggu",
-    pending: "Pending",
-    signed: "Sudah TTD",
-    rejected: "Ditolak",
+    waiting: t("sign_status_menunggu"),
+    pending: t("sign_status_pending"),
+    signed: t("sign_status_sudah_ttd"),
+    rejected: t("sign_status_ditolak"),
   };
   return map[status] || status;
 };
@@ -1003,10 +1038,10 @@ const getDocStatusClass = (status: string) => {
 
 const getDocStatusLabel = (status: string) => {
   const map: Record<string, string> = {
-    on_progress: "On Progress",
-    completed: "Selesai",
-    rejected: "Ditolak",
-    draft: "Draft",
+    on_progress: t("sign_status_on_progress"),
+    completed: t("sign_status_selesai"),
+    rejected: t("sign_status_ditolak"),
+    draft: t("sign_status_draft"),
   };
   return map[status] || status;
 };
@@ -1018,49 +1053,36 @@ const selectFilterStatus = (item: { label: string; value: string }) => {
 };
 
 // ─── Preview logic ────────────────────────────
-
-/**
- * Buka preview dari tombol "Lihat" di tabel
- * Langsung buka slideover, tidak ada return-to-modal
- */
 const viewDocumentFromTable = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
   if (!url) {
-    showToastFileNotAvailable();
+    toast.add({
+      title: "Gagal",
+      description: t("sign_toast_gagal_preview"),
+      color: "red",
+    });
     return;
   }
-
-  previewSource.value = null; // tidak ada modal yang perlu dibuka kembali
+  previewSource.value = null;
   pdfUrl.value = url;
   isOpenPreview.value = true;
 };
 
-/**
- * Buka preview dari tombol di dalam modal detail
- * Tutup modal dulu, lalu buka slideover
- * Saat slideover ditutup, modal detail akan dibuka kembali
- */
 const viewDocumentFromDetail = () => {
   if (!penandatanganDetail.value) return;
-
-  // Response GET /digsig/penandatanganan/:id pakai filePreviewUrl
-  // Prioritaskan signedFilePreviewUrl jika dokumen sudah ditandatangani
   const url =
     penandatanganDetail.value.signedFilePreviewUrl ||
     penandatanganDetail.value.filePreviewUrl;
-
   if (!url) {
-    showToastFileNotAvailable();
+    toast.add({
+      title: "Gagal",
+      description: t("sign_toast_gagal_preview"),
+      color: "red",
+    });
     return;
   }
-
-  // Tandai bahwa preview dibuka dari modal detail
   previewSource.value = "detail";
-
-  // Tutup modal detail lebih dulu
   openDetail.value = false;
-
-  // Buka slideover dengan URL dari API
   pdfUrl.value = url;
   isOpenPreview.value = true;
 };
@@ -1068,13 +1090,10 @@ const viewDocumentFromDetail = () => {
 // ─── Watch: ketika slideover ditutup ──────────
 watch(isOpenPreview, (isOpen) => {
   if (!isOpen) {
-    // Bersihkan URL objek jika bukan URL http
     if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
       URL.revokeObjectURL(pdfUrl.value);
     }
     pdfUrl.value = null;
-
-    // Jika preview dibuka dari modal detail → buka kembali modal detail
     if (previewSource.value === "detail") {
       openDetail.value = true;
       previewSource.value = null;
@@ -1088,7 +1107,11 @@ const isUUID = (str: string) =>
 
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
-    showToastDataTidakValid();
+    toast.add({
+      title: "Gagal",
+      description: t("sign_toast_data_tidak_valid"),
+      color: "red",
+    });
     return;
   }
   openDetail.value = true;
@@ -1105,22 +1128,24 @@ const handleOpenSign = (doc: PenandatangananDocument) => {
 
 const handleSign = async () => {
   if (!passphrase.value || !selectedDoc.value) return;
-
   loadingSign.value = true;
   try {
     const payload: any = { passphrase: passphrase.value };
     if (keterangan.value.trim()) payload.keterangan = keterangan.value.trim();
-
     await signDocument(selectedDoc.value.id, payload);
-
-    showToastDokumenSigned();
+    toast.add({
+      title: "Berhasil",
+      description: t("sign_toast_berhasil_ttd"),
+      color: "green",
+    });
     openSign.value = false;
     passphrase.value = "";
     keterangan.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    // Error toast sudah dihandle di signDocument composable
-    console.error("❌ handleSign error:", err);
+    const msg =
+      err?.response?.data?.message || err?.message || t("sign_toast_gagal_ttd");
+    toast.add({ title: "Gagal", description: msg, color: "red" });
   } finally {
     loadingSign.value = false;
   }
@@ -1135,18 +1160,23 @@ const handleReject = (doc: PenandatangananDocument) => {
 
 const rejectNow = async () => {
   if (!itemToReject.value || !rejectReason.value.trim()) return;
-
   loadingReject.value = true;
   try {
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
-
-    showToastDokumenRejected();
+    toast.add({
+      title: "Berhasil",
+      description: t("sign_toast_berhasil_tolak"),
+      color: "green",
+    });
     confirmRejectOpen.value = false;
     rejectReason.value = "";
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    // Error toast sudah dihandle di rejectDocument composable
-    console.error("❌ rejectNow error:", err);
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      t("sign_toast_gagal_tolak");
+    toast.add({ title: "Gagal", description: msg, color: "red" });
   } finally {
     loadingReject.value = false;
   }
@@ -1155,7 +1185,10 @@ const rejectNow = async () => {
 // ─── Click outside ────────────────────────────
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  if (!target.closest("[data-custom-dropdown]")) {
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
+    showRowsDropdown.value = false;
+  }
+  if (filterStatusRef.value && !filterStatusRef.value.contains(target)) {
     openFilterStatus.value = false;
   }
 };
@@ -1174,8 +1207,8 @@ watch([search, filterStatus, rowsPerPage], () => {
   currentPage.value = 1;
 });
 </script>
+
 <style scoped>
-/* Animasi dropdown filter — sama dengan halaman Delegasi */
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1190,9 +1223,5 @@ watch([search, filterStatus, rowsPerPage], () => {
 .filter-dd-leave-from {
   opacity: 1;
   transform: scaleY(1) translateY(0);
-}
-
-[data-custom-dropdown] button:focus {
-  outline: none;
 }
 </style>

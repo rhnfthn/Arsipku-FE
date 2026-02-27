@@ -1014,6 +1014,16 @@ const initActiveState = () => {
   }
 };
 
+const fetchDelegationRoles = async () => {
+  if (!user.value) return;
+  try {
+    const roles = await getAvailableRoles();
+    delegationRoles.value = roles || [];
+  } catch (e) {
+    console.error("Error fetch roles", e);
+  }
+};
+
 watch(
   user,
   (newUser) => {
@@ -1034,16 +1044,6 @@ watch(
   },
   { immediate: true },
 );
-
-const fetchDelegationRoles = async () => {
-  if (!user.value) return;
-  try {
-    const roles = await getAvailableRoles();
-    delegationRoles.value = roles || [];
-  } catch (e) {
-    console.error("Error fetch roles", e);
-  }
-};
 
 const isSwitching = ref(false);
 

@@ -21,17 +21,7 @@
   >
     <!-- FILTER BAR -->
     <div class="top-0 bg-white dark:bg-gray-800 p-3 relative z-50">
-      <div class="flex items-center gap-2 flex-nowrap w-full">
-        <!-- ROWS PER PAGE -->
-        <select
-          v-model="rowsPerPage"
-          class="h-8 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md px-2"
-        >
-          <option v-for="n in rowsPerPageOptions" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
-
+      <div class="flex items-center gap-2 flex-nowrap w-full mt-1">
         <!-- REFRESH -->
         <button
           @click="refreshData"
@@ -40,6 +30,45 @@
         >
           <RotateCcw class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
         </button>
+
+        <!-- ROWS PER PAGE -->
+        <div class="relative" ref="rowsRef">
+          <button
+            type="button"
+            @click="showRowsDropdown = !showRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ rowsPerPage }}</span>
+            <ChevronDown
+              class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': showRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="showRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="
+                  rowsPerPage = n;
+                  showRowsDropdown = false;
+                "
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  rowsPerPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
 
         <!-- JENIS FILTER -->
         <div class="relative w-[160px] shrink-0">
@@ -522,7 +551,8 @@ const jenisSearch = ref("");
 
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
-const rowsPerPageOptions = [5, 10, 20, 50];
+const rowsChoices = [5, 10, 20, 50];
+const showRowsDropdown = ref(false);
 
 const rekapData = ref<any[]>([]);
 const areaOptions = ref<{ label: string; value: string }[]>([]);
@@ -775,6 +805,7 @@ const handleClickOutside = (e: MouseEvent) => {
   if (!target.closest(".relative")) {
     openDropdown.value = null;
     openFilterLokasi.value = false;
+    showRowsDropdown.value = false;
   }
 };
 

@@ -22,7 +22,7 @@
       class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
     >
       <div
-        class="flex flex-wrap justify-between gap-4 p-2 items-center dark:border-gray-700"
+        class="flex flex-wrap justify-between ml-3 mt-3 gap-4 items-center dark:border-gray-700"
       >
         <div class="flex items-center gap-3">
           <button
@@ -38,33 +38,41 @@
 
           <!-- ROWS PER PAGE -->
           <div class="relative" ref="rowsRef">
-            <div
+            <button
+              type="button"
               @click="showRowsDropdown = !showRowsDropdown"
-              class="h-7 px-2 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md flex items-center gap-1 cursor-pointer focus-within:ring-1 focus-within:ring-primary-400"
+              class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
             >
-              {{ rowsPerPage }}
+              <span>{{ rowsPerPage }}</span>
               <ChevronDown
-                class="w-3 h-3 ml-auto transition-transform duration-200"
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': showRowsDropdown }"
               />
-            </div>
-
-            <div
-              v-if="showRowsDropdown"
-              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow"
-            >
+            </button>
+            <Transition name="filter-dd">
               <div
-                v-for="n in rowsChoices"
-                :key="n"
-                @click="
-                  rowsPerPage = n;
-                  showRowsDropdown = false;
-                "
-                class="px-2 py-1 text-xs text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
               >
-                {{ n }}
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click="
+                    rowsPerPage = n;
+                    showRowsDropdown = false;
+                  "
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ n }}
+                </button>
               </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- Filter Jenis -->
@@ -73,49 +81,59 @@
               v-model="jenisKeyword"
               @click="showJenisDropdown = !showJenisDropdown"
               placeholder="Semua Jenis"
-              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400"
+              class="h-8 w-48 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-8 focus:outline-none focus:border-primary hover:border-primary transition-all"
             />
-
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': showJenisDropdown }"
             />
-
-            <div
-              v-if="showJenisDropdown"
-              class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow max-h-48 overflow-y-auto"
-            >
+            <Transition name="filter-dd">
               <div
-                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
-                @click="
-                  filters.jenis = '';
-                  jenisKeyword = 'Semua Jenis';
-                  showJenisDropdown = false;
-                "
+                v-if="showJenisDropdown"
+                class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto"
               >
-                Semua Jenis
+                <button
+                  type="button"
+                  class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors"
+                  :class="
+                    filters.jenis === ''
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  "
+                  @click="
+                    filters.jenis = '';
+                    jenisKeyword = '';
+                    showJenisDropdown = false;
+                  "
+                >
+                  Semua Jenis
+                </button>
+                <button
+                  v-for="jenis in filteredJenisOptions"
+                  :key="jenis.jenis"
+                  type="button"
+                  class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                  :class="
+                    filters.jenis === jenis.jenis
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  "
+                  @click="
+                    filters.jenis = jenis.jenis;
+                    jenisKeyword = jenis.jenis_text;
+                    showJenisDropdown = false;
+                  "
+                >
+                  {{ jenis.jenis_text }}
+                </button>
+                <div
+                  v-if="filteredJenisOptions.length === 0"
+                  class="px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 italic text-center"
+                >
+                  Data tidak ditemukan
+                </div>
               </div>
-
-              <div
-                v-for="jenis in filteredJenisOptions"
-                :key="jenis.jenis"
-                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
-                @click="
-                  filters.jenis = jenis.jenis;
-                  jenisKeyword = jenis.jenis_text;
-                  showJenisDropdown = false;
-                "
-              >
-                {{ jenis.jenis_text }}
-              </div>
-
-              <div
-                v-if="filteredJenisOptions.length === 0"
-                class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 text-center"
-              >
-                Data tidak ditemukan
-              </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- Filter Lokasi -->
@@ -124,70 +142,77 @@
               v-model="lokasiKeyword"
               @click="showLokasiDropdown = !showLokasiDropdown"
               placeholder="Semua Lokasi"
-              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
+              class="h-8 w-48 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-8 focus:outline-none focus:border-primary hover:border-primary transition-all"
             />
-
             <ChevronDown
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': showLokasiDropdown }"
             />
-
-            <div
-              v-if="showLokasiDropdown"
-              class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow max-h-48 overflow-y-auto"
-            >
+            <Transition name="filter-dd">
               <div
-                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
-                @click="
-                  filters.lokasi = '';
-                  lokasiKeyword = 'Semua Lokasi';
-                  showLokasiDropdown = false;
-                "
+                v-if="showLokasiDropdown"
+                class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto"
               >
-                Semua Lokasi
+                <button
+                  type="button"
+                  class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors"
+                  :class="
+                    filters.lokasi === ''
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  "
+                  @click="
+                    filters.lokasi = '';
+                    lokasiKeyword = '';
+                    showLokasiDropdown = false;
+                  "
+                >
+                  Semua Lokasi
+                </button>
+                <button
+                  v-for="area in filteredAreaOptions"
+                  :key="area.kode"
+                  type="button"
+                  class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                  :class="
+                    filters.lokasi === area.kode
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  "
+                  @click="
+                    filters.lokasi = area.kode;
+                    lokasiKeyword = area.nama;
+                    showLokasiDropdown = false;
+                  "
+                >
+                  {{ area.nama }}
+                </button>
+                <div
+                  v-if="filteredAreaOptions.length === 0"
+                  class="px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 italic text-center"
+                >
+                  Data tidak ditemukan
+                </div>
               </div>
-
-              <div
-                v-for="area in filteredAreaOptions"
-                :key="area.kode"
-                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
-                @click="
-                  filters.lokasi = area.kode;
-                  lokasiKeyword = area.nama;
-                  showLokasiDropdown = false;
-                "
-              >
-                {{ area.nama }}
-              </div>
-              <div
-                v-if="filteredAreaOptions.length === 0"
-                class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 text-center"
-              >
-                Data tidak ditemukan
-              </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- STATUS FILTER -->
           <div class="relative w-[180px] shrink-0" ref="statusRef">
-            <!-- INPUT LOOKALIKE -->
             <div
               tabindex="0"
               @click="toggle('status')"
-              class="h-9 w-full px-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md flex items-center gap-1 cursor-pointer overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary-400"
+              class="h-8 w-full px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all focus:outline-none"
             >
-              <!-- PLACEHOLDER -->
               <span
                 v-if="!selectedStatuses.length"
-                class="text-gray-900 dark:text-gray-300 truncate"
+                class="text-gray-400 dark:text-gray-400 truncate flex-1 text-sm"
               >
                 Semua Status
               </span>
-
-              <!-- SELECTED TAGS -->
               <div
                 v-else
-                class="flex items-center gap-1 flex-nowrap overflow-hidden"
+                class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
               >
                 <span
                   v-for="status in selectedStatuses"
@@ -203,67 +228,74 @@
                   </button>
                 </span>
               </div>
-
               <ChevronDown
-                class="w-4 h-4 ml-auto shrink-0 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': openDropdown === 'status' }"
               />
             </div>
-
-            <!-- DROPDOWN -->
-            <div
-              v-if="openDropdown === 'status'"
-              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md w-full p-2"
-            >
-              <div class="flex flex-col gap-1">
-                <button
-                  v-for="status in statusOptions"
-                  :key="status.value"
-                  @mousedown.prevent
-                  @click="toggleStatus(status.value)"
-                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                  :class="
-                    selectedStatuses.includes(status.value)
-                      ? 'bg-primary dark:bg-primary-600 text-white'
-                      : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                  "
-                >
-                  {{ status.label }}
-                </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openDropdown === 'status'"
+                class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+              >
+                <div class="flex flex-col gap-1">
+                  <button
+                    v-for="status in statusOptions"
+                    :key="status.value"
+                    @mousedown.prevent
+                    @click="toggleStatus(status.value)"
+                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                    :class="
+                      selectedStatuses.includes(status.value)
+                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                    "
+                  >
+                    {{ status.label }}
+                  </button>
+                </div>
               </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- FILTER TAHUN -->
-          <div class="relative">
-            <div
+          <div class="relative" ref="tahunRef">
+            <button
+              type="button"
               tabindex="0"
               @click="showTahunDropdown = !showTahunDropdown"
-              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm flex items-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-400"
+              class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[90px] justify-between hover:border-primary transition-all focus:outline-none"
             >
-              {{ filters.tahun }}
+              <span>{{ filters.tahun }}</span>
               <ChevronDown
-                class="w-4 h-4 ml-auto transition-transform duration-200"
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': showTahunDropdown }"
               />
-            </div>
-
-            <div
-              v-if="showTahunDropdown"
-              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow"
-            >
+            </button>
+            <Transition name="filter-dd">
               <div
-                v-for="tahun in tahunOptions"
-                :key="tahun"
-                @click="
-                  filters.tahun = tahun;
-                  showTahunDropdown = false;
-                "
-                class="px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-primary-50 dark:hover:bg-gray-700 cursor-pointer"
+                v-if="showTahunDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
               >
-                {{ tahun }}
+                <button
+                  v-for="tahun in tahunOptions"
+                  :key="tahun"
+                  type="button"
+                  @click="
+                    filters.tahun = tahun;
+                    showTahunDropdown = false;
+                  "
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    filters.tahun === tahun
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ tahun }}
+                </button>
               </div>
-            </div>
+            </Transition>
           </div>
         </div>
       </div>
@@ -275,7 +307,7 @@
               <th class="px-4 py-3 font-semibold">Nomor</th>
               <th
                 @click="handleSort('tanggal')"
-                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
+                class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
               >
                 <div class="flex items-center gap-2">
                   <span>Tanggal</span>
@@ -295,7 +327,7 @@
               <th class="px-4 py-3 font-semibold">Lokasi</th>
               <th
                 @click="handleSort('status')"
-                class="px-6 py-4 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600"
+                class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
               >
                 <div class="flex items-center gap-2">
                   <span>Status</span>
@@ -382,13 +414,10 @@
                     :class="{
                       'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300':
                         item.statusRaw === 'terpakai',
-
-                      'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 ':
+                      'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300':
                         item.statusRaw === 'terpakai_final',
-
                       'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300':
                         item.statusRaw === 'booking',
-
                       'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
                         item.statusRaw === 'hangus',
                     }"
@@ -422,7 +451,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- BACK -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
@@ -449,9 +477,7 @@
             Sebelumnya
           </button>
 
-          <!-- PAGE NUMBERS -->
           <div class="flex items-center gap-1">
-            <!-- FIRST -->
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
@@ -459,16 +485,11 @@
             >
               1
             </button>
-
-            <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- WINDOW -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -482,18 +503,13 @@
             >
               {{ page }}
             </button>
-
-            <!-- DOTS RIGHT -->
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- LAST -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
@@ -503,7 +519,6 @@
             </button>
           </div>
 
-          <!-- NEXT -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -534,7 +549,6 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 //IMPORT
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
@@ -560,6 +574,7 @@ function handleSort(key) {
     sortOrder.value = "asc";
   }
 }
+
 //FILTER STATE
 const loading = ref(false);
 const isRefreshing = ref(false);
@@ -579,11 +594,12 @@ const tahunMin = ref<number | null>(null);
 
 const showRowsDropdown = ref(false);
 
-//REF COUTSIDE CLICK
+//REF OUTSIDE CLICK
 const jenisRef = ref<HTMLElement | null>(null);
 const lokasiRef = ref<HTMLElement | null>(null);
 const statusRef = ref<HTMLElement | null>(null);
 const rowsRef = ref<HTMLElement | null>(null);
+const tahunRef = ref<HTMLElement | null>(null);
 
 //DATA STATE
 const rawData = ref<any[]>([]);
@@ -623,11 +639,9 @@ const handleClickOutside = (e: MouseEvent) => {
   if (jenisRef.value && !jenisRef.value.contains(target)) {
     showJenisDropdown.value = false;
   }
-
   if (lokasiRef.value && !lokasiRef.value.contains(target)) {
     showLokasiDropdown.value = false;
   }
-
   if (
     openDropdown.value === "status" &&
     statusRef.value &&
@@ -635,22 +649,22 @@ const handleClickOutside = (e: MouseEvent) => {
   ) {
     openDropdown.value = null;
   }
-
   if (rowsRef.value && !rowsRef.value.contains(target)) {
     showRowsDropdown.value = false;
+  }
+  if (tahunRef.value && !tahunRef.value.contains(target)) {
+    showTahunDropdown.value = false;
   }
 };
 
 //FILTERING
 const filteredData = computed(() => {
   let result = [...rawData.value];
-
   if (selectedStatuses.value.length) {
     result = result.filter((item) =>
       selectedStatuses.value.includes(item.statusRaw),
     );
   }
-
   return result;
 });
 
@@ -671,11 +685,9 @@ const filteredAreaOptions = computed(() => {
 const tahunOptions = computed(() => {
   const start = tahunMin.value ?? currentYear;
   const years = [];
-
   for (let y = currentYear; y >= start; y--) {
     years.push(y);
   }
-
   return years;
 });
 
@@ -697,7 +709,6 @@ const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
@@ -707,7 +718,6 @@ const paginationPages = computed(() => {
   } else {
     pages.push(current - 1, current, current + 1);
   }
-
   return pages;
 });
 
@@ -716,26 +726,20 @@ const skeletonRows = computed(() => rowsPerPage.value);
 
 const sortedData = computed(() => {
   let data = [...filteredData.value];
-
   if (!sortKey.value) return data;
-
   data.sort((a, b) => {
     if (sortKey.value === "tanggal") {
       return (
         new Date(a.tanggalRaw).getTime() - new Date(b.tanggalRaw).getTime()
       );
     }
-
     let valA = a[sortKey.value];
     let valB = b[sortKey.value];
-
     if (valA < valB) return -1;
     if (valA > valB) return 1;
     return 0;
   });
-
   if (sortOrder.value === "desc") data.reverse();
-
   return data;
 });
 
@@ -748,12 +752,10 @@ const fetchDetailNaskah = async () => {
       page: currentPage.value,
       limit: rowsPerPage.value,
     };
-
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
 
     const res = await getRekapNaskahDetail(params);
-
     currentPage.value = res.pagination?.page ?? 1;
     rowsPerPage.value = res.pagination?.limit ?? 10;
     totalItems.value = res.pagination?.total ?? 0;
@@ -798,14 +800,8 @@ const fetchJenis = async () => {
 };
 
 const fetchTahunRange = async () => {
-  const res = await getRekapNaskahDetail({
-    page: 1,
-    limit: 1,
-  });
-
+  const res = await getRekapNaskahDetail({ page: 1, limit: 1 });
   const tanggalTerlama = res.meta?.min_tanggal;
-  // atau dari response pertama
-
   if (tanggalTerlama) {
     tahunMin.value = new Date(tanggalTerlama).getFullYear();
   }
@@ -827,12 +823,10 @@ const capitalize = (text: string) =>
 
 const formatStatusLabel = (status: string) => {
   if (!status) return "-";
-
   if (status === "terpakai_final") return "Final";
   if (status === "terpakai") return "Terpakai";
   if (status === "booking") return "Booking";
   if (status === "hangus") return "Hangus";
-
   return status;
 };
 
@@ -872,11 +866,7 @@ const exportExcel = () => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Naskah");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
-
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
   const blob = new Blob([excelBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
@@ -896,7 +886,6 @@ const exportExcel = () => {
 const refreshData = async () => {
   if (isRefreshing.value) return;
   isRefreshing.value = true;
-
   try {
     filters.value = {
       jenis: "",
@@ -905,15 +894,12 @@ const refreshData = async () => {
       tahun: currentYear,
       search: "",
     };
-
-    jenisKeyword.value = "Semua Jenis";
-    lokasiKeyword.value = "Semua Lokasi";
+    jenisKeyword.value = "";
+    lokasiKeyword.value = "";
     selectedStatuses.value = [];
-
     showJenisDropdown.value = false;
     showLokasiDropdown.value = false;
     openDropdown.value = null;
-
     currentPage.value = 1;
     await fetchDetailNaskah();
   } catch (err) {
@@ -939,7 +925,6 @@ onBeforeUnmount(() => {
 watch(selectedStatuses, () => {
   currentPage.value = 1;
 });
-
 watch(
   () => [filters.value.tahun, filters.value.lokasi, filters.value.jenis],
   () => {
@@ -947,7 +932,6 @@ watch(
     fetchDetailNaskah();
   },
 );
-
 watch([currentPage, rowsPerPage], () => {
   fetchDetailNaskah();
 });
@@ -965,7 +949,6 @@ const breadcrumbs = [
   { label: "Detail Naskah", to: "/laporan/detail-naskah" },
 ];
 </script>
-
 <style scoped>
 .animate-spin {
   animation: spin 1s linear infinite;
@@ -978,5 +961,22 @@ const breadcrumbs = [
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Animasi dropdown filter */
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
 }
 </style>

@@ -108,7 +108,7 @@ const hasAccess = (codes: string[]) => {
                   data.aksi === 'create' ? 'Konsep Awal' :
                     data.aksi === 'reject' ? 'Konsep Ditolak' :
                       data.aksi === 'forward' ? 'Revisi Konsep' :
-                        'Riwayat Disposisi'
+                        'Riwayat'
                 )
               }}
             </h2>

@@ -448,24 +448,24 @@ const { t } = useI18n();
 const userMenuUtama = computed(() => {
   return [
     {
-      label: "Dashboard",
+      label: t("beranda"),
       to: "/beranda",
       icon: "i-lucide-layout-dashboard",
     },
     tulisMenu.value,
     {
-      label: "Kotak Masuk",
+      label: t("kotak_masuk"),
       to: "/korespondensi/kotak-masuk",
       icon: "i-lucide-inbox",
       badge: unreadCount.value > 0 ? unreadCount.value : null,
     },
     {
-      label: "Terkirim",
+      label: t("terkirim"),
       to: "/korespondensi/terkirim",
       icon: "i-lucide-send",
     },
     {
-      label: "Draf",
+      label: t("draft"),
       to: "/korespondensi/draf",
       icon: "i-lucide-file-text",
     },
@@ -476,23 +476,23 @@ const userMenuUtilitas = computed(() => {
   const badgeCount = userCounts.value.belum_diajukan || 0;
   return [
     {
-      label: "Penandatangan",
+      label: t("digsig"),
       to: "/penandatangan",
       icon: "i-lucide-signature",
     },
     {
-      label: "Penyingkat Tautan",
+      label: t("short_url"),
       to: "/penyingkat-tautan",
       icon: "i-lucide-link",
     },
-    { label: "Template", to: "/template", icon: "i-lucide-copy" },
+    { label: t("template"), to: "/template", icon: "i-lucide-copy" },
     {
-      label: "Titelatur Inggris",
+      label: t("titelatur_inggris"),
       to: "/titelatur",
       icon: "i-lucide-languages",
     },
     {
-      label: "Usulan Penomoran",
+      label: t("usulan-penomoran"),
       to: "/usulan-penomoran",
       icon: "i-lucide-hash",
       badge: badgeCount > 0 ? badgeCount : null,
@@ -527,12 +527,14 @@ const tulisChildrenByBod = computed(() => {
   if (tag === "BOD-2" || tag === "BOD-3") {
     return all.filter(
       (i) =>
-        !["Surat Dinas Internal", "Surat Dinas Eksternal", "Kajian"].includes(
-          i.label,
-        ),
+        ![
+          t("surat_dinas_internal"),
+          t("surat_dinas_eksternal"),
+          t("kajian"),
+        ].includes(i.label),
     );
   }
-  return all.filter((i) => i.label === "Kajian");
+  return all.filter((i) => i.label === t("kajian"));
 });
 
 const adminMenuUtama = computed(() => [
