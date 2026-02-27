@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Detail Naskah Dinas
+          {{ $t("dn_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -80,8 +80,8 @@
             <input
               v-model="jenisKeyword"
               @click="showJenisDropdown = !showJenisDropdown"
-              placeholder="Semua Jenis"
-              class="h-8 w-48 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-8 focus:outline-none focus:border-primary hover:border-primary transition-all"
+              :placeholder="$t('semua_jenis')"
+              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400"
             />
             <ChevronDown
               class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -141,8 +141,8 @@
             <input
               v-model="lokasiKeyword"
               @click="showLokasiDropdown = !showLokasiDropdown"
-              placeholder="Semua Lokasi"
-              class="h-8 w-48 rounded-lg px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 pr-8 focus:outline-none focus:border-primary hover:border-primary transition-all"
+              :placeholder="$t('semua_lokasi')"
+              class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-gray-300 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus-within:ring-1 focus-within:ring-primary-400 focus:border-transparent"
             />
             <ChevronDown
               class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -208,7 +208,7 @@
                 v-if="!selectedStatuses.length"
                 class="text-gray-400 dark:text-gray-400 truncate flex-1 text-sm"
               >
-                Semua Status
+                {{ $t("semua_status") }}
               </span>
               <div
                 v-else
@@ -304,13 +304,13 @@
         <table class="min-w-max border-collapse text-sm mt-3 w-full">
           <thead class="text-left bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-semibold">Nomor</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("nomor") }}</th>
               <th
                 @click="handleSort('tanggal')"
                 class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
               >
                 <div class="flex items-center gap-2">
-                  <span>Tanggal</span>
+                  <span>{{ $t("tanggal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-200"
                     :class="[
@@ -322,9 +322,9 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 font-semibold">Perihal</th>
-              <th class="px-4 py-3 font-semibold">Jabatan</th>
-              <th class="px-4 py-3 font-semibold">Lokasi</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("perihal") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("jabatan") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t("lokasi") }}</th>
               <th
                 @click="handleSort('status')"
                 class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
@@ -447,7 +447,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedNaskah.length }} dari {{ totalItems }} data
+          {{ $t("menampilkan") }} {{ paginatedNaskah.length }} {{ $t("dari") }}
+          {{ totalItems }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -474,7 +475,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <div class="flex items-center gap-1">
@@ -529,7 +530,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -560,6 +561,7 @@ import { saveAs } from "file-saver";
 
 //GLOBAL UTIL
 const toast = useToast();
+const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
 
 //SORT
@@ -894,8 +896,9 @@ const refreshData = async () => {
       tahun: currentYear,
       search: "",
     };
-    jenisKeyword.value = "";
-    lokasiKeyword.value = "";
+
+    jenisKeyword.value = t("semua_jenis");
+    lokasiKeyword.value = t("semua_lokasi");
     selectedStatuses.value = [];
     showJenisDropdown.value = false;
     showLokasiDropdown.value = false;
@@ -944,10 +947,10 @@ const statusOptions = [
   { label: "Hangus", value: "hangus" },
 ];
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Detail Naskah", to: "/laporan/detail-naskah" },
-];
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("detail"), to: "/laporan/detail-naskah" },
+]);
 </script>
 <style scoped>
 .animate-spin {
