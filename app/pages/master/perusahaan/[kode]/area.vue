@@ -5,9 +5,10 @@
       <div class="flex items-center justify-between mb-8">
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            Kelola Area
+            {{ t("ar_title") }}
           </h1>
 
+          <!-- Breadcrumb -->
           <div class="mb-5">
             <nav
               class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400"
@@ -16,7 +17,7 @@
                 to="/beranda"
                 class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >
-                Beranda
+                {{ t("beranda") }}
               </NuxtLink>
               <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
                 >/</span
@@ -25,7 +26,7 @@
                 to="/master/perusahaan"
                 class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >
-                Master Perusahaan
+                {{ t("mp_title") }}
               </NuxtLink>
               <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
                 >/</span
@@ -34,33 +35,39 @@
                 :to="`/master/perusahaan/${route.params.kode}/struktur`"
                 class="text-gray-500 dark:text-gray-400 font-medium hover:text-primary dark:hover:text-primary-400 transition-colors text-xs"
               >
-                Struktur Organisasi
+                {{ t("ar_breadcrumb_struktur") }}
               </NuxtLink>
               <span class="mx-1.5 text-gray-400 dark:text-gray-600 text-xs"
                 >/</span
               >
               <span
                 class="text-primary-400 dark:text-primary-300 font-semibold text-xs"
-                >Kelola Area</span
               >
+                {{ t("ar_title") }}
+              </span>
             </nav>
           </div>
+
+          <!-- Company Info -->
           <div
             class="flex gap-3 mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl"
           >
             <Building2 class="w-4 h-4 text-blue-900 dark:text-blue-300" />
             <p class="text-sm text-blue-900 dark:text-blue-100">
-              Perusahaan:
+              {{ t("ar_perusahaan_label") }}:
               <span class="font-bold">{{ company?.namaPanjang }}</span>
             </p>
           </div>
         </div>
+
         <button
           @click="openAddAreaModal"
           class="flex items-center gap-2 bg-primary dark:bg-primary-700 hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          Tambah {{ activeTab === "area" ? "Area" : "Sub Area" }}
+          {{
+            activeTab === "area" ? t("ar_tambah_area") : t("ar_tambah_subarea")
+          }}
         </button>
       </div>
 
@@ -87,7 +94,7 @@
                 ]"
               >
                 <MapPin class="w-4 h-4" />
-                Area
+                {{ t("ar_tab_area") }}
               </button>
               <button
                 @click="activeTab = 'subArea'"
@@ -99,13 +106,12 @@
                 ]"
               >
                 <Map class="w-4 h-4" />
-                Sub Area
+                {{ t("ar_tab_subarea") }}
               </button>
             </div>
 
             <!-- Rows per page & Search -->
             <div class="flex justify-between items-center gap-3">
-              <!-- Rows dropdown -->
               <select
                 v-model="rowsPerPage"
                 class="border text-sm border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2"
@@ -115,14 +121,13 @@
                 </option>
               </select>
 
-              <!-- Search -->
               <div class="relative flex-1 w-full md:w-160">
                 <Search
                   class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                 />
                 <input
                   v-model="searchQuery"
-                  placeholder="Cari..."
+                  :placeholder="t('ar_cari_placeholder')"
                   class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -136,22 +141,26 @@
             <thead>
               <tr class="bg-primary dark:bg-primary-700 text-white">
                 <th class="px-6 py-4 text-left text-sm font-semibold w-12"></th>
-                <th class="px-0 py-4 text-left text-sm font-semibold">Kode</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Nama</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Alamat
+                <th class="px-0 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_kode") }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Tanggal Mulai
+                  {{ t("ar_col_nama") }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Tanggal Berakhir
+                  {{ t("ar_col_alamat") }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Sub Areas
+                  {{ t("ar_col_tgl_mulai") }}
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_tgl_berakhir") }}
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_sub_areas") }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  Aksi
+                  {{ t("ar_col_aksi") }}
                 </th>
               </tr>
             </thead>
@@ -211,7 +220,8 @@
                     <span
                       class="flex text-nowrap items-center text-xs font-medium text-gray-700 dark:text-gray-300"
                     >
-                      {{ area.subCount }} sub areas
+                      {{ area.subCount }}
+                      {{ t("ar_tab_subarea").toLowerCase() }}
                     </span>
                   </td>
                   <td class="px-6 py-4">
@@ -248,7 +258,9 @@
                         <h4
                           class="text-sm font-bold text-gray-900 dark:text-white"
                         >
-                          Sub Areas ({{ getSubAreasForArea(area.kode).length }})
+                          {{ t("ar_sub_areas_label") }} ({{
+                            getSubAreasForArea(area.kode).length
+                          }})
                         </h4>
                       </div>
                       <div class="space-y-2">
@@ -261,8 +273,9 @@
                             <div class="ml-7">
                               <span
                                 class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
-                                >Kode</span
                               >
+                                {{ t("ar_col_kode") }}
+                              </span>
                               <span
                                 class="inline-flex items-center px-5 py-2 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold"
                               >
@@ -272,8 +285,9 @@
                             <div>
                               <span
                                 class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
-                                >Nama</span
                               >
+                                {{ t("ar_col_nama") }}
+                              </span>
                               <span
                                 class="text-sm font-semibold text-gray-900 dark:text-white"
                                 >{{ sub.nama }}</span
@@ -282,8 +296,9 @@
                             <div>
                               <span
                                 class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
-                                >Alamat</span
                               >
+                                {{ t("ar_col_alamat") }}
+                              </span>
                               <span
                                 class="text-sm text-gray-700 dark:text-gray-300"
                                 >{{ sub.alamat }}</span
@@ -292,8 +307,9 @@
                             <div>
                               <span
                                 class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
-                                >Tanggal Mulai</span
                               >
+                                {{ t("ar_col_tgl_mulai") }}
+                              </span>
                               <span
                                 class="text-sm text-gray-700 dark:text-gray-300"
                                 >{{ sub.mulai }}</span
@@ -302,8 +318,9 @@
                             <div>
                               <span
                                 class="text-xs text-gray-500 dark:text-gray-400 block mb-1"
-                                >Tanggal Berakhir</span
                               >
+                                {{ t("ar_col_tgl_berakhir") }}
+                              </span>
                               <span
                                 class="text-sm text-gray-700 dark:text-gray-300"
                                 >{{ sub.berakhir }}</span
@@ -325,12 +342,10 @@
             class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
           >
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              Menampilkan {{ paginatedAreas.length }} dari
-              {{ filteredAreas.length }} data
+              {{ t("menampilkan") }} {{ paginatedAreas.length }} {{ t("dari") }}
+              {{ filteredAreas.length }} {{ t("data") }}
             </div>
-
             <div class="flex items-center gap-2">
-              <!-- Back Button -->
               <button
                 @click="currentPage = Math.max(1, currentPage - 1)"
                 :disabled="currentPage === 1"
@@ -354,10 +369,9 @@
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                Sebelumnya
+                {{ t("sebelumnya") }}
               </button>
 
-              <!-- Page Numbers -->
               <div class="flex items-center gap-1">
                 <button
                   v-if="paginationPages[0] > 1"
@@ -366,14 +380,11 @@
                 >
                   1
                 </button>
-
                 <span
                   v-if="paginationPages[0] > 2"
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
-
                 <button
                   v-for="page in paginationPages"
                   :key="page"
@@ -387,16 +398,13 @@
                 >
                   {{ page }}
                 </button>
-
                 <span
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages - 1
                   "
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
-
                 <button
                   v-if="
                     paginationPages[paginationPages.length - 1] < totalPages
@@ -408,7 +416,6 @@
                 </button>
               </div>
 
-              <!-- Next Button -->
               <button
                 @click="currentPage = Math.min(totalPages, currentPage + 1)"
                 :disabled="currentPage === totalPages"
@@ -419,7 +426,7 @@
                     : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
-                Selanjutnya
+                {{ t("selanjutnya") }}
                 <svg
                   class="w-4 h-4"
                   fill="none"
@@ -443,24 +450,30 @@
           <table class="w-full">
             <thead>
               <tr class="bg-primary dark:bg-primary-700 text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold">Kode</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Nama</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Area</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Alamat
+                  {{ t("ar_col_kode") }}
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_nama") }}
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_area") }}
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  {{ t("ar_col_alamat") }}
                 </th>
                 <th
                   class="px-6 py-4 text-nowrap text-left text-sm font-semibold"
                 >
-                  Tanggal Mulai
+                  {{ t("ar_col_tgl_mulai") }}
                 </th>
                 <th
                   class="px-6 py-4 text-nowrap text-left text-sm font-semibold"
                 >
-                  Tanggal Berakhir
+                  {{ t("ar_col_tgl_berakhir") }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  Aksi
+                  {{ t("ar_col_aksi") }}
                 </th>
               </tr>
             </thead>
@@ -534,12 +547,10 @@
             class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
           >
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              Menampilkan {{ paginatedSubAreas.length }} dari
-              {{ filteredSubAreas.length }} data
+              {{ t("menampilkan") }} {{ paginatedSubAreas.length }}
+              {{ t("dari") }} {{ filteredSubAreas.length }} {{ t("data") }}
             </div>
-
             <div class="flex items-center gap-2">
-              <!-- Back Button -->
               <button
                 @click="currentPageSub = Math.max(1, currentPageSub - 1)"
                 :disabled="currentPageSub === 1"
@@ -563,10 +574,9 @@
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                Sebelumnya
+                {{ t("sebelumnya") }}
               </button>
 
-              <!-- Page Numbers -->
               <div class="flex items-center gap-1">
                 <button
                   v-if="paginationPagesSub[0] > 1"
@@ -575,14 +585,11 @@
                 >
                   1
                 </button>
-
                 <span
                   v-if="paginationPagesSub[0] > 2"
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
-
                 <button
                   v-for="page in paginationPagesSub"
                   :key="page"
@@ -596,17 +603,14 @@
                 >
                   {{ page }}
                 </button>
-
                 <span
                   v-if="
                     paginationPagesSub[paginationPagesSub.length - 1] <
                     totalPagesSub - 1
                   "
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
-
                 <button
                   v-if="
                     paginationPagesSub[paginationPagesSub.length - 1] <
@@ -619,7 +623,6 @@
                 </button>
               </div>
 
-              <!-- Next Button -->
               <button
                 @click="
                   currentPageSub = Math.min(totalPagesSub, currentPageSub + 1)
@@ -632,7 +635,7 @@
                     : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20',
                 ]"
               >
-                Selanjutnya
+                {{ t("selanjutnya") }}
                 <svg
                   class="w-4 h-4"
                   fill="none"
@@ -653,51 +656,60 @@
       </div>
     </div>
 
-    <!-- Add/Edit Area Modal -->
+    <!-- Add/Edit Modal -->
     <Teleport to="body">
       <Modal v-model="openAddArea" size="xl" @save="submitArea">
         <template #title>
           <div class="p-3 ml-2">
             <h3 class="text-xl font-bold dark:text-white">
-              {{ isEditing ? "Edit" : "Tambah" }}
-              {{ activeTab === "area" ? "Area" : "Sub Area" }}
+              {{ modalTitle }}
             </h3>
           </div>
         </template>
 
         <div class="space-y-4 p-1">
+          <!-- Nama -->
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              Nama {{ activeTab === "area" ? "Area" : "Sub Area" }}
+              {{
+                activeTab === "area"
+                  ? t("ar_form_nama_area")
+                  : t("ar_form_nama_subarea")
+              }}
               <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formArea.nama"
               type="text"
-              placeholder="Contoh: KANTOR PUSAT"
+              :placeholder="t('ar_form_nama_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
+          <!-- Kode -->
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              Kode {{ activeTab === "area" ? "Area" : "Sub Area" }}
+              {{
+                activeTab === "area"
+                  ? t("ar_form_kode_area")
+                  : t("ar_form_kode_subarea")
+              }}
               <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formArea.kode"
               type="text"
-              placeholder="Contoh: AREA-001"
+              :placeholder="t('ar_form_kode_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
+          <!-- Area Induk (SubArea only) -->
           <div v-if="activeTab === 'subArea'" class="area-dropdown-container">
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              Area <span class="text-red-500">*</span>
+              {{ t("ar_form_area_induk") }} <span class="text-red-500">*</span>
             </Heading>
 
-            <!-- Dropdown Toggle -->
             <div class="relative mt-1">
               <button
                 type="button"
@@ -711,18 +723,16 @@
                       : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  {{ getSelectedAreaText() || "Pilih Area" }}
+                  {{ getSelectedAreaText() || t("ar_form_pilih_area") }}
                 </span>
                 <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500" />
               </button>
 
-              <!-- Dropdown Panel -->
               <div
                 v-if="showAreaDropdown"
                 class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
                 @click.stop
               >
-                <!-- Search Inside Dropdown -->
                 <div class="p-2 border-b border-gray-200 dark:border-gray-600">
                   <div class="relative">
                     <Search
@@ -731,14 +741,13 @@
                     <input
                       v-model="areaSearchQuery"
                       @input="filterAreas"
-                      placeholder="Cari area..."
+                      :placeholder="t('ar_form_cari_area')"
                       class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       @click.stop
                     />
                   </div>
                 </div>
 
-                <!-- Options List -->
                 <div class="max-h-64 overflow-y-auto">
                   <div
                     v-for="area in filteredAreasDropdown"
@@ -757,7 +766,7 @@
                       {{ area.nama }}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                      Kode: {{ area.kode }}
+                      {{ t("ar_col_kode") }}: {{ area.kode }}
                     </p>
                   </div>
 
@@ -765,29 +774,31 @@
                     v-if="filteredAreasDropdown.length === 0"
                     class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
                   >
-                    Tidak ada area ditemukan
+                    {{ t("ar_form_area_not_found") }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Alamat -->
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              Alamat Lengkap <span class="text-red-500">*</span>
+              {{ t("ar_form_alamat") }} <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="formArea.alamat"
               rows="3"
-              placeholder="Masukkan alamat lengkap..."
+              :placeholder="t('ar_form_alamat_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
 
+          <!-- Tanggal -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-                Tanggal Mulai <span class="text-red-500">*</span>
+                {{ t("ar_form_tgl_mulai") }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formArea.mulai"
@@ -797,7 +808,8 @@
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-                Tanggal Berakhir <span class="text-red-500">*</span>
+                {{ t("ar_form_tgl_berakhir") }}
+                <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formArea.berakhir"
@@ -810,14 +822,14 @@
       </Modal>
     </Teleport>
 
-    <!-- Delete Confirm Modal -->
+    <!-- Delete Confirm -->
     <ConfirmPopup
       v-model="showDeleteConfirm"
       type="danger"
-      title="Hapus Data"
-      :message="`Apakah Anda yakin ingin menghapus ${selectedItem?.nama}?`"
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :title="t('ar_pop_title')"
+      :message="deleteMessage"
+      :confirm-text="t('ar_pop_confirm')"
+      :cancel-text="t('ar_pop_cancel')"
       :is-loading="isDeleting"
       @confirm="handleDelete"
       @cancel="showDeleteConfirm = false"
@@ -826,7 +838,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import {
   ChevronLeft,
   Building2,
@@ -839,12 +851,19 @@ import {
   Pencil,
   Trash2,
 } from "lucide-vue-next";
+
 definePageMeta({
   middleware: "auth",
 });
 
 import { useArea } from "~/composables/useArea";
 import { useCompany } from "~/composables/useCompany";
+import { useToast } from "#imports";
+
+// ─────────────────────────────────────────────
+// i18n
+// ─────────────────────────────────────────────
+const { t, locale } = useI18n();
 
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
@@ -855,7 +874,6 @@ const {
   createAreaByCompany,
   updateAreaByCompany,
   deleteArea,
-
   getSubAreasByCompany,
   createSubAreaByCompany,
   updateSubAreaByCompany,
@@ -863,7 +881,11 @@ const {
 } = useArea();
 
 const { getCompanyByCode } = useCompany();
+const toast = useToast();
 
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
 const activeTab = ref<"area" | "subArea">("area");
 const searchQuery = ref("");
 const expandedAreas = ref<Record<string, boolean>>({});
@@ -873,12 +895,10 @@ const selectedItem = ref<any>(null);
 const isDeleting = ref(false);
 const isEditing = ref(false);
 
-// Area dropdown states
 const showAreaDropdown = ref(false);
 const areaSearchQuery = ref("");
 const filteredAreasDropdown = ref<any[]>([]);
 
-// Pagination
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
@@ -893,23 +913,38 @@ const formArea = ref({
   berakhir: "",
 });
 
-const company = ref<{
-  kode: string;
-  namaPanjang: string;
-} | null>(null);
-
+const company = ref<{ kode: string; namaPanjang: string } | null>(null);
 const areas = ref<any[]>([]);
 const subAreas = ref<any[]>([]);
 
-// Handle click outside dropdown
+// ─────────────────────────────────────────────
+// COMPUTED
+// ─────────────────────────────────────────────
+const modalTitle = computed(() => {
+  if (activeTab.value === "area") {
+    return isEditing.value
+      ? t("ar_modal_edit_area")
+      : t("ar_modal_tambah_area");
+  }
+  return isEditing.value
+    ? t("ar_modal_edit_subarea")
+    : t("ar_modal_tambah_subarea");
+});
+
+const deleteMessage = computed(() => {
+  if (!selectedItem.value) return "";
+  return locale.value === "id"
+    ? `Apakah Anda yakin ingin menghapus ${selectedItem.value.nama}?`
+    : `Are you sure you want to delete ${selectedItem.value.nama}?`;
+});
+
+// ─────────────────────────────────────────────
+// CLICK OUTSIDE DROPDOWN
+// ─────────────────────────────────────────────
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-
-  if (showAreaDropdown.value) {
-    const isClickInside = target.closest(".area-dropdown-container");
-    if (!isClickInside) {
-      showAreaDropdown.value = false;
-    }
+  if (showAreaDropdown.value && !target.closest(".area-dropdown-container")) {
+    showAreaDropdown.value = false;
   }
 };
 
@@ -923,10 +958,12 @@ onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
 });
 
+// ─────────────────────────────────────────────
+// FETCH
+// ─────────────────────────────────────────────
 const fetchAreas = async () => {
   try {
     const res = await getAreasByCompany(companyId.value);
-
     areas.value = res.data.map((item) => ({
       id: item.id,
       kode: item.area,
@@ -936,8 +973,6 @@ const fetchAreas = async () => {
       berakhir: item.endDate,
       subCount: item.subAreasCount ?? 0,
     }));
-
-    // Initialize filtered areas for dropdown
     filteredAreasDropdown.value = areas.value;
   } catch (error) {
     console.error("Gagal mengambil area", error);
@@ -947,7 +982,6 @@ const fetchAreas = async () => {
 const fetchSubAreas = async (areaCode: string) => {
   try {
     const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
-
     const mapped = res.data.map((item) => ({
       id: item.id,
       kode: String(item.sub_area),
@@ -958,7 +992,6 @@ const fetchSubAreas = async (areaCode: string) => {
       mulai: item.startDate,
       berakhir: item.endDate,
     }));
-
     subAreas.value = [
       ...subAreas.value.filter((s) => s.area !== areaCode),
       ...mapped,
@@ -971,7 +1004,6 @@ const fetchSubAreas = async (areaCode: string) => {
 const fetchAllSubAreas = async () => {
   try {
     const res = await getSubAreasByCompany(companyId.value);
-
     subAreas.value = res.data.map((item) => ({
       id: item.id,
       kode: String(item.sub_area),
@@ -990,39 +1022,33 @@ const fetchAllSubAreas = async () => {
 const fetchCompany = async () => {
   try {
     const data = await getCompanyByCode(companyId.value);
-
     if (!data) return;
-
-    company.value = {
-      kode: String(data.company),
-      namaPanjang: data.longText,
-    };
+    company.value = { kode: String(data.company), namaPanjang: data.longText };
   } catch (error) {
     console.error("Gagal mengambil data company", error);
   }
 };
 
-// Area dropdown functions
+// ─────────────────────────────────────────────
+// DROPDOWN AREA
+// ─────────────────────────────────────────────
 const getSelectedAreaText = () => {
   if (!formArea.value.area) return "";
-
   const selected = areas.value.find((a) => a.kode === formArea.value.area);
   return selected ? `${selected.nama} (${selected.kode})` : "";
 };
 
 const filterAreas = () => {
   const query = areaSearchQuery.value.toLowerCase().trim();
-
   if (!query) {
     filteredAreasDropdown.value = areas.value;
     return;
   }
-
   filteredAreasDropdown.value = areas.value.filter((area) => {
-    const kode = String(area.kode).toLowerCase();
-    const nama = (area.nama || "").toLowerCase();
-
-    return kode.includes(query) || nama.includes(query);
+    return (
+      String(area.kode).toLowerCase().includes(query) ||
+      (area.nama || "").toLowerCase().includes(query)
+    );
   });
 };
 
@@ -1032,16 +1058,9 @@ const selectArea = (area: any) => {
   areaSearchQuery.value = "";
 };
 
-watch(activeTab, async (tab) => {
-  if (tab === "subArea") {
-    subAreas.value = [];
-    await fetchAllSubAreas();
-  }
-  // Reset pagination when switching tabs
-  currentPage.value = 1;
-  currentPageSub.value = 1;
-});
-
+// ─────────────────────────────────────────────
+// FILTER & PAGINATION
+// ─────────────────────────────────────────────
 const filteredAreas = computed(() => {
   if (!searchQuery.value) return areas.value;
   const query = searchQuery.value.toLowerCase();
@@ -1065,7 +1084,6 @@ const filteredSubAreas = computed(() => {
   );
 });
 
-// Pagination for Areas
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(filteredAreas.value.length / rowsPerPage.value)),
 );
@@ -1079,23 +1097,18 @@ const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5);
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total);
   } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
+    pages.push(current - 1, current, current + 1);
   }
-
   return pages;
 });
 
-// Pagination for Sub Areas
 const totalPagesSub = computed(() =>
   Math.max(1, Math.ceil(filteredSubAreas.value.length / rowsPerPage.value)),
 );
@@ -1109,31 +1122,37 @@ const paginationPagesSub = computed(() => {
   const total = totalPagesSub.value;
   const current = currentPageSub.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5);
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total);
   } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
+    pages.push(current - 1, current, current + 1);
   }
-
   return pages;
 });
 
-// Watch for changes that should reset pagination
+watch(activeTab, async (tab) => {
+  if (tab === "subArea") {
+    subAreas.value = [];
+    await fetchAllSubAreas();
+  }
+  currentPage.value = 1;
+  currentPageSub.value = 1;
+});
+
 watch([searchQuery, rowsPerPage], () => {
   currentPage.value = 1;
   currentPageSub.value = 1;
 });
 
+// ─────────────────────────────────────────────
+// EXPAND
+// ─────────────────────────────────────────────
 const toggleAreaExpand = async (areaCode: string) => {
   expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
-
   if (expandedAreas.value[areaCode]) {
     await fetchSubAreas(areaCode);
   }
@@ -1143,6 +1162,9 @@ const getSubAreasForArea = (areaKode: string) => {
   return subAreas.value.filter((sub) => sub.area === areaKode);
 };
 
+// ─────────────────────────────────────────────
+// MODAL OPEN
+// ─────────────────────────────────────────────
 const openAddAreaModal = () => {
   isEditing.value = false;
   formArea.value = {
@@ -1160,7 +1182,6 @@ const openAddAreaModal = () => {
 const openEditModal = (item: any) => {
   isEditing.value = true;
   selectedItem.value = item;
-
   formArea.value = {
     nama: item.nama,
     kode: item.kode,
@@ -1169,7 +1190,6 @@ const openEditModal = (item: any) => {
     mulai: item.mulai,
     berakhir: item.berakhir,
   };
-
   areaSearchQuery.value = "";
   openAddArea.value = true;
 };
@@ -1179,18 +1199,21 @@ const openDeleteConfirm = (item: any) => {
   showDeleteConfirm.value = true;
 };
 
+// ─────────────────────────────────────────────
+// SUBMIT
+// ─────────────────────────────────────────────
 const submitArea = async () => {
   if (activeTab.value === "subArea" && isNaN(Number(formArea.value.kode))) {
     toast.add({
-      title: "Gagal",
-      description: "Kode sub area harus angka",
+      title: t("gagal"),
+      description: t("ar_val_kode_angka"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
-    return; // hentikan proses submit
+    return;
   }
+
   try {
-    // AREA
     if (activeTab.value === "area") {
       const payload = {
         area: formArea.value.kode,
@@ -1202,20 +1225,18 @@ const submitArea = async () => {
 
       if (!isEditing.value) {
         await createAreaByCompany(companyId.value, payload);
-        showToast("Berhasil", "Area berhasil ditambahkan", "success");
+        showToast(t("berhasil"), t("ar_success_add_area"), "success");
       } else {
         await updateAreaByCompany(
           companyId.value,
           selectedItem.value.id,
           payload,
         );
-        showToast("Berhasil", "Area berhasil diperbarui", "success");
+        showToast(t("berhasil"), t("ar_success_edit_area"), "success");
       }
-
       await fetchAreas();
     }
 
-    //SUB AREA
     if (activeTab.value === "subArea") {
       const payload = {
         area: formArea.value.area,
@@ -1228,23 +1249,21 @@ const submitArea = async () => {
 
       if (!isEditing.value) {
         await createSubAreaByCompany(companyId.value, payload);
-        showToast("Berhasil", "Sub Area berhasil ditambahkan", "success");
+        showToast(t("berhasil"), t("ar_success_add_subarea"), "success");
       } else {
         await updateSubAreaByCompany(
           companyId.value,
           selectedItem.value.id,
           payload,
         );
-        showToast("Berhasil", "Sub Area berhasil diperbarui", "success");
+        showToast(t("berhasil"), t("ar_success_edit_subarea"), "success");
       }
-
       await fetchAllSubAreas();
     }
 
     openAddArea.value = false;
     isEditing.value = false;
     selectedItem.value = null;
-
     formArea.value = {
       nama: "",
       kode: "",
@@ -1255,10 +1274,13 @@ const submitArea = async () => {
     };
   } catch (error) {
     console.error("Gagal menyimpan data", error);
-    showToast("Gagal", "Terjadi kesalahan saat menyimpan data", "error");
+    showToast(t("gagal"), t("ar_err_save"), "error");
   }
 };
 
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
 const handleDelete = async () => {
   try {
     isDeleting.value = true;
@@ -1266,29 +1288,28 @@ const handleDelete = async () => {
     if (activeTab.value === "area") {
       await deleteArea(selectedItem.value.id);
       await fetchAreas();
-      showToast("Berhasil", "Area berhasil dihapus", "success");
+      showToast(t("berhasil"), t("ar_success_delete_area"), "success");
     }
 
     if (activeTab.value === "subArea") {
       await deleteSubArea(selectedItem.value.id);
       await fetchAllSubAreas();
-      showToast("Berhasil", "Sub Area berhasil dihapus", "success");
+      showToast(t("berhasil"), t("ar_success_delete_subarea"), "success");
     }
 
     showDeleteConfirm.value = false;
     selectedItem.value = null;
   } catch (error) {
     console.error("Gagal menghapus data", error);
-    showToast("Gagal", "Data gagal dihapus", "error");
+    showToast(t("gagal"), t("ar_err_delete"), "error");
   } finally {
     isDeleting.value = false;
   }
 };
 
-import { useToast } from "#imports";
-
-const toast = useToast();
-
+// ─────────────────────────────────────────────
+// TOAST HELPER
+// ─────────────────────────────────────────────
 const showToast = (
   title: string,
   message: string,

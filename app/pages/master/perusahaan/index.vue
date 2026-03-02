@@ -5,9 +5,9 @@
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3"
       >
         <div>
-          <Heading variant="heading6b" class="text-mobile-md dark:text-white"
-            >Master Perusahaan</Heading
-          >
+          <Heading variant="heading6b" class="text-mobile-md dark:text-white">
+            {{ t("mp_title") }}
+          </Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
         <button
@@ -15,9 +15,10 @@
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          Tambah
+          {{ t("nm_button") }}
         </button>
       </div>
+
       <!-- Card -->
       <div
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors"
@@ -30,7 +31,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari perusahaan"
+              :placeholder="t('mp_cari_placeholder')"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
@@ -45,7 +46,7 @@
                   @click="toggleSortTanggalMulai"
                   class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
                 >
-                  Tanggal Mulai
+                  {{ t("mp_col_tgl_mulai") }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -54,23 +55,22 @@
                     }"
                   />
                 </th>
-
                 <th
                   class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
                 >
-                  Tanggal Berakhir
+                  {{ t("mp_col_tgl_berakhir") }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  Kode
+                  {{ t("mp_col_kode") }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Nama Pendek
+                  {{ t("mp_col_nama_pendek") }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  Nama Panjang
+                  {{ t("mp_col_nama_panjang") }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  Aksi
+                  {{ t("mp_col_aksi") }}
                 </th>
               </tr>
             </thead>
@@ -86,10 +86,10 @@
                 ]"
               >
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row.tanggalMulai }}
+                  {{ formatDate(row.tanggalMulai) }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row.tanggalBerakhir }}
+                  {{ formatDate(row.tanggalBerakhir) }}
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
@@ -154,7 +154,9 @@
       <Modal v-model="openAddCompany" size="xl" @save="handleSaveCompany">
         <template #title>
           <div class="p-3 ml-2">
-            <h3 class="text-xl font-bold dark:text-white">Tambah Perusahaan</h3>
+            <h3 class="text-xl font-bold dark:text-white">
+              {{ t("mp_modal_add") }}
+            </h3>
           </div>
         </template>
 
@@ -162,7 +164,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Tanggal Mulai <span class="text-red-500">*</span>
+                {{ t("mp_tgl_mulai") }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formCompany.tanggalMulai"
@@ -172,9 +174,8 @@
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Tanggal Berakhir <span class="text-red-500">*</span>
+                {{ t("mp_tgl_berakhir") }} <span class="text-red-500">*</span>
               </Heading>
-
               <input
                 v-model="formCompany.tanggalBerakhir"
                 type="date"
@@ -182,42 +183,40 @@
               />
             </div>
           </div>
-          <p class="text-xs text-red-500">
-            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
-            mulai
-          </p>
+          <p class="text-xs text-red-500">{{ t("mp_tgl_warning") }}</p>
+
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Kode Perusahaan <span class="text-red-500">*</span>
+              {{ t("mp_kode") }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.kode"
               type="text"
-              placeholder="Contoh: 10000"
+              :placeholder="t('mp_kode_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Nama Pendek <span class="text-red-500">*</span>
+              {{ t("mp_nama_pendek") }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.namaPendek"
               type="text"
-              placeholder="Contoh: TELKOM"
+              :placeholder="t('mp_nama_pendek_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Nama Panjang <span class="text-red-500">*</span>
+              {{ t("mp_nama_panjang") }} <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="formCompany.namaPanjang"
               rows="3"
-              placeholder="Contoh: PT Telekomunikasi Indonesia (Persero) Tbk"
+              :placeholder="t('mp_nama_panjang_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             ></textarea>
           </div>
@@ -231,7 +230,7 @@
         <template #title>
           <div>
             <h3 class="text-lg font-bold p-3 dark:text-white">
-              Edit Perusahaan
+              {{ t("mp_modal_edit") }}
             </h3>
           </div>
         </template>
@@ -240,7 +239,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Tanggal Mulai <span class="text-red-500">*</span>
+                {{ t("mp_tgl_mulai") }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalMulai"
@@ -250,7 +249,7 @@
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                Tanggal Berakhir <span class="text-red-500">*</span>
+                {{ t("mp_tgl_berakhir") }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalBerakhir"
@@ -259,13 +258,11 @@
               />
             </div>
           </div>
-          <p class="text-xs text-red-500">
-            *Tanggal berakhir tidak boleh sama atau lebih awal dari tanggal
-            mulai
-          </p>
+          <p class="text-xs text-red-500">{{ t("mp_tgl_warning") }}</p>
+
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Kode <span class="text-red-500">*</span>
+              {{ t("mp_kode_edit") }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.kode"
@@ -275,7 +272,7 @@
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Nama Pendek <span class="text-red-500">*</span>
+              {{ t("mp_nama_pendek") }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.namaPendek"
@@ -285,7 +282,7 @@
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              Nama Panjang <span class="text-red-500">*</span>
+              {{ t("mp_nama_panjang") }} <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="editForm.namaPanjang"
@@ -296,14 +293,15 @@
         </div>
       </Modal>
     </Teleport>
+
     <!-- Delete Confirm Modal -->
     <ConfirmPopup
       v-model="showDeleteConfirm"
       type="danger"
-      title="Hapus Perusahaan"
-      :message="`Apakah Anda yakin ingin menghapus perusahaan ${selectedRow?.namaPendek}?`"
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :title="t('mp_pop_title')"
+      :message="deleteMessage"
+      :confirm-text="t('mp_pop_confirm')"
+      :cancel-text="t('mp_pop_cancel')"
       :is-loading="isDeleting"
       @confirm="handleDelete"
       @cancel="showDeleteConfirm = false"
@@ -323,15 +321,28 @@ import {
   ArrowUpDown,
 } from "lucide-vue-next";
 import { useCompany } from "~/composables/useCompany";
+
 definePageMeta({
   middleware: "auth",
 });
 
+const { t, locale } = useI18n();
+
+// ─────────────────────────────────────────────
+// BREADCRUMB (reaktif terhadap bahasa)
+// ─────────────────────────────────────────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("mp_title"), to: "/master/perusahaan" },
+]);
+
+// ─────────────────────────────────────────────
+// COMPOSABLE & STATE
+// ─────────────────────────────────────────────
 const { getCompanies, createCompany, updateCompany, deleteCompany } =
   useCompany();
 
 import { useToast } from "#imports";
-
 const toast = useToast();
 
 const search = ref("");
@@ -340,10 +351,6 @@ const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
 const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Master Perusahaan", to: "/master/perusahaan" },
-];
 
 const formCompany = ref({
   tanggalMulai: "",
@@ -353,31 +360,38 @@ const formCompany = ref({
   namaPanjang: "",
 });
 
-//get
+// ─────────────────────────────────────────────
+// DELETE MESSAGE (reaktif terhadap bahasa)
+// ─────────────────────────────────────────────
+const deleteMessage = computed(() => {
+  if (!selectedRow.value) return "";
+  return locale.value === "id"
+    ? `Apakah Anda yakin ingin menghapus perusahaan ${selectedRow.value.namaPendek}?`
+    : `Are you sure you want to delete company ${selectedRow.value.namaPendek}?`;
+});
+
+// ─────────────────────────────────────────────
+// FETCH
+// ─────────────────────────────────────────────
 const rows = ref<any[]>([]);
 
 const isExpired = (endDate: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const end = new Date(endDate);
   end.setHours(0, 0, 0, 0);
-
   return end <= today;
 };
 
 const fetchCompanies = async () => {
   try {
     const res = await getCompanies();
-
     const validRows: any[] = [];
-
     for (const item of res.data) {
       if (isExpired(item.endDate)) {
         await deleteCompany(item.id);
         continue;
       }
-
       validRows.push({
         id: item.id,
         tanggalMulai: item.startDate,
@@ -387,7 +401,6 @@ const fetchCompanies = async () => {
         namaPanjang: item.longText,
       });
     }
-
     rows.value = validRows;
   } catch (error) {
     console.error("Gagal mengambil data company", error);
@@ -396,10 +409,14 @@ const fetchCompanies = async () => {
 
 onMounted(fetchCompanies);
 
+// ─────────────────────────────────────────────
+// FILTER & SORT
+// ─────────────────────────────────────────────
+const sortBy = ref<"asc" | "desc" | null>(null);
+
 const filteredRows = computed(() => {
   let result = [...rows.value];
 
-  // FILTER
   if (search.value) {
     const s = search.value.toLowerCase();
     result = result.filter(
@@ -410,7 +427,6 @@ const filteredRows = computed(() => {
     );
   }
 
-  // SORT
   if (sortBy.value === "asc") {
     result.sort(
       (a, b) =>
@@ -426,12 +442,20 @@ const filteredRows = computed(() => {
   return result;
 });
 
-// post
+const toggleSortTanggalMulai = () => {
+  if (sortBy.value === null) sortBy.value = "asc";
+  else if (sortBy.value === "asc") sortBy.value = "desc";
+  else sortBy.value = null;
+};
+
+// ─────────────────────────────────────────────
+// ADD
+// ─────────────────────────────────────────────
 const handleSaveCompany = async () => {
   if (isNaN(Number(formCompany.value.kode))) {
     toast.add({
-      title: "Gagal",
-      description: "Kode perusahaan harus angka",
+      title: t("gagal"),
+      description: t("mp_val_kode_angka"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -450,14 +474,13 @@ const handleSaveCompany = async () => {
     await fetchCompanies();
 
     toast.add({
-      title: "Berhasil",
-      description: "Perusahaan berhasil ditambahkan",
+      title: t("berhasil"),
+      description: t("mp_success_add"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
 
     openAddCompany.value = false;
-
     formCompany.value = {
       tanggalMulai: "",
       tanggalBerakhir: "",
@@ -467,8 +490,8 @@ const handleSaveCompany = async () => {
     };
   } catch (error) {
     toast.add({
-      title: "Gagal",
-      description: "Gagal menambahkan perusahaan",
+      title: t("gagal"),
+      description: t("mp_err_add"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -476,7 +499,9 @@ const handleSaveCompany = async () => {
   }
 };
 
-//put
+// ─────────────────────────────────────────────
+// EDIT
+// ─────────────────────────────────────────────
 const editForm = ref({
   id: "",
   tanggalMulai: "",
@@ -488,7 +513,6 @@ const editForm = ref({
 
 const openEditModal = (row: any) => {
   selectedRow.value = row;
-
   editForm.value = {
     id: row.id,
     tanggalMulai: row.tanggalMulai,
@@ -497,15 +521,14 @@ const openEditModal = (row: any) => {
     namaPendek: row.namaPendek,
     namaPanjang: row.namaPanjang,
   };
-
   showEditModal.value = true;
 };
 
 const handleSaveEdit = async () => {
   if (isNaN(Number(editForm.value.kode))) {
     toast.add({
-      title: "Gagal",
-      description: "Kode perusahaan harus angka",
+      title: t("gagal"),
+      description: t("mp_val_kode_angka"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -524,8 +547,8 @@ const handleSaveEdit = async () => {
     await fetchCompanies();
 
     toast.add({
-      title: "Berhasil",
-      description: "Perusahaan berhasil diperbarui",
+      title: t("berhasil"),
+      description: t("mp_success_edit"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
@@ -533,8 +556,8 @@ const handleSaveEdit = async () => {
     showEditModal.value = false;
   } catch (error) {
     toast.add({
-      title: "Gagal",
-      description: "Gagal memperbarui perusahaan",
+      title: t("gagal"),
+      description: t("mp_err_edit"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -542,7 +565,9 @@ const handleSaveEdit = async () => {
   }
 };
 
-//delete
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
 const openDeleteConfirm = (row: any) => {
   selectedRow.value = row;
   showDeleteConfirm.value = true;
@@ -553,13 +578,12 @@ const handleDelete = async () => {
 
   try {
     isDeleting.value = true;
-
     await deleteCompany(selectedRow.value.id);
     await fetchCompanies();
 
     toast.add({
-      title: "Berhasil",
-      description: `Perusahaan ${selectedRow.value.namaPendek} berhasil dihapus`,
+      title: t("berhasil"),
+      description: `${selectedRow.value.namaPendek} ${t("mp_success_delete")}`,
       color: "success",
       icon: "i-lucide-trash-2",
     });
@@ -568,8 +592,8 @@ const handleDelete = async () => {
     selectedRow.value = null;
   } catch (error) {
     toast.add({
-      title: "Gagal",
-      description: "Gagal menghapus perusahaan",
+      title: t("gagal"),
+      description: t("mp_err_delete"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -579,12 +603,15 @@ const handleDelete = async () => {
   }
 };
 
-const sortBy = ref<"asc" | "desc" | null>(null);
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
 
-const toggleSortTanggalMulai = () => {
-  if (sortBy.value === null) sortBy.value = "asc";
-  else if (sortBy.value === "asc") sortBy.value = "desc";
-  else sortBy.value = null;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
 };
 </script>
 

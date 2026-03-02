@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   Search,
   ArrowUpDown,
@@ -13,14 +14,16 @@ import Modal from "~/components/Modal.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useTitelatur } from "~/composables/useTitelatur";
 import type { TitelaturItem } from "~/types/titelatur";
-definePageMeta({
-  middleware: "auth",
-});
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Titelatur Inggris", to: "/admin/titelatur" },
-];
+definePageMeta({ middleware: "auth" });
+
+const { t } = useI18n();
+
+// ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("tit_title"), to: "/admin/titelatur" },
+]);
 
 // ================================
 // COMPOSABLE
@@ -36,9 +39,6 @@ const {
   deleteTitelatur,
 } = useTitelatur();
 
-// ================================
-// LIFECYCLE — silent: tidak tampilkan toast
-// ================================
 onMounted(async () => {
   await fetchTitelatur(true);
 });
@@ -56,7 +56,6 @@ const filteredItems = computed(() => {
   );
 });
 
-// reload juga silent, tidak perlu toast
 const refreshData = async () => {
   search.value = "";
   sortDirection.value = null;
@@ -76,12 +75,10 @@ const toggleSort = () => {
 
 const sortedItems = computed(() => {
   let arr = [...filteredItems.value];
-  if (sortDirection.value === "asc") {
+  if (sortDirection.value === "asc")
     arr.sort((a, b) => (a.long_text || "").localeCompare(b.long_text || ""));
-  }
-  if (sortDirection.value === "desc") {
+  if (sortDirection.value === "desc")
     arr.sort((a, b) => (b.long_text || "").localeCompare(a.long_text || ""));
-  }
   return arr;
 });
 
@@ -98,8 +95,7 @@ const totalPages = computed(() =>
 
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
-  const end = start + rowsPerPage.value;
-  return sortedItems.value.slice(start, end);
+  return sortedItems.value.slice(start, start + rowsPerPage.value);
 });
 
 watch(rowsPerPage, () => (currentPage.value = 1));
@@ -108,19 +104,15 @@ const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5);
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total);
   } else {
-    if (current <= 2) {
-      pages.push(1, 2, 3, 4, 5);
-    } else if (current >= total - 1) {
-      pages.push(total - 2, total - 1, total);
-    } else {
-      pages.push(current - 1, current, current + 1);
-    }
+    pages.push(current - 1, current, current + 1);
   }
-
   return pages;
 });
 
@@ -251,17 +243,16 @@ const deleteNow = async () => {
     <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Titelatur Inggris
+          {{ $t("tit_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
-
       <button
         @click="openAdd()"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Titelatur
+        {{ $t("tit_btn_tambah") }}
       </button>
     </div>
 
@@ -295,14 +286,14 @@ const deleteNow = async () => {
             <button
               @click="toggleSort"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Urutkan"
+              :title="$t('tit_tooltip_urutkan')"
             >
               <ArrowUpDown class="w-4 h-4" />
             </button>
             <button
               @click="refreshData"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Refresh"
+              :title="$t('tit_tooltip_refresh')"
             >
               <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
             </button>
@@ -316,7 +307,7 @@ const deleteNow = async () => {
           />
           <input
             v-model="search"
-            placeholder="Cari Titelatur"
+            :placeholder="$t('tit_cari_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
@@ -327,14 +318,20 @@ const deleteNow = async () => {
         <table class="min-w-full text-left text-sm">
           <thead class="bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-semibold">Titelatur Indonesia</th>
-              <th class="px-4 py-3 font-semibold">Titelatur Inggris</th>
-              <th class="px-4 py-3 font-semibold text-center">Aksi</th>
+              <th class="px-4 py-3 font-semibold">
+                {{ $t("tit_col_indonesia") }}
+              </th>
+              <th class="px-4 py-3 font-semibold">
+                {{ $t("tit_col_inggris") }}
+              </th>
+              <th class="px-4 py-3 font-semibold text-center">
+                {{ $t("tit_col_aksi") }}
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            <!-- LOADING SKELETON -->
+            <!-- SKELETON -->
             <template v-if="loading">
               <tr
                 v-for="i in rowsPerPage"
@@ -377,18 +374,18 @@ const deleteNow = async () => {
                 <td class="px-5 py-3 text-gray-900 dark:text-white">
                   {{ it.long_text_en || "-" }}
                 </td>
-                <td class="px-4 py-3 text-center flex justify-center gap-5">
+                <td class="px-4 py-3 text-center flex justify-center gap-1">
                   <button
                     @click="openEdit(it)"
-                    class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition"
-                    title="Edit"
+                    class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg dark:hover:text-yellow-300 dark:hover:bg-yellow-50 transition"
+                    :title="$t('tit_tooltip_edit')"
                   >
                     <Pencil class="w-4 h-4" />
                   </button>
                   <button
                     @click="openDelete(it)"
-                    class="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition"
-                    title="Hapus"
+                    class="text-red-500 dark:text-red-400 hover:text-red-600 dark:bg-red-100 hover:bg-red-100 p-2 rounded-lg dark:hover:text-red-300 transition"
+                    :title="$t('tit_tooltip_hapus')"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -401,7 +398,7 @@ const deleteNow = async () => {
                   colspan="3"
                   class="px-5 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
-                  Tidak ada data titelatur
+                  {{ $t("tit_empty") }}
                 </td>
               </tr>
             </template>
@@ -415,7 +412,8 @@ const deleteNow = async () => {
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedItems.length }} dari {{ totalItems }} data
+          {{ $t("menampilkan") }} {{ paginatedItems.length }} {{ $t("dari") }}
+          {{ totalItems }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -443,7 +441,7 @@ const deleteNow = async () => {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -503,7 +501,7 @@ const deleteNow = async () => {
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -522,9 +520,7 @@ const deleteNow = async () => {
       </div>
     </div>
 
-    <!-- ========================= -->
     <!-- MODAL EDIT -->
-    <!-- ========================= -->
     <Teleport to="body">
       <Modal v-model="showEditModal" @save="saveEdit" size="xl">
         <template #title>
@@ -533,22 +529,20 @@ const deleteNow = async () => {
               variant="heading9b"
               class="font-semibold text-sm dark:text-white"
             >
-              Edit Titelatur
+              {{ $t("tit_modal_edit_title") }}
             </Heading>
           </div>
         </template>
-
         <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200">
-            Titelatur Indonesia <span class="text-red-500">*</span>
+            {{ $t("tit_label_indonesia") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="editForm.long_text"
             class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md text-sm bg-gray-50 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
-
           <Heading variant="body2m" class="dark:text-gray-200">
-            Titelatur Inggris <span class="text-red-500">*</span>
+            {{ $t("tit_label_inggris") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="editForm.long_text_en"
@@ -558,9 +552,7 @@ const deleteNow = async () => {
       </Modal>
     </Teleport>
 
-    <!-- ========================= -->
     <!-- MODAL ADD -->
-    <!-- ========================= -->
     <Teleport to="body">
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
@@ -569,43 +561,39 @@ const deleteNow = async () => {
               variant="heading9b"
               class="font-semibold text-sm dark:text-white"
             >
-              Tambah Titelatur
+              {{ $t("tit_modal_tambah_title") }}
             </Heading>
           </div>
         </template>
-
         <div class="flex flex-col gap-2 mt-1 p-1">
           <Heading variant="body2m" class="dark:text-gray-200">
-            Titelatur Indonesia <span class="text-red-500">*</span>
+            {{ $t("tit_label_indonesia") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="addForm.long_text"
-            placeholder="Masukkan Titelatur Indonesia"
+            :placeholder="$t('tit_placeholder_indonesia')"
             class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
           />
-
           <Heading variant="body2m" class="dark:text-gray-200">
-            Titelatur Inggris <span class="text-red-500">*</span>
+            {{ $t("tit_label_inggris") }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="addForm.long_text_en"
-            placeholder="Masukkan Titelatur Inggris"
+            :placeholder="$t('tit_placeholder_inggris')"
             class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
       </Modal>
     </Teleport>
 
-    <!-- ========================= -->
     <!-- POPUP DELETE -->
-    <!-- ========================= -->
     <ConfirmPopup
       v-model="confirmDeleteOpen"
       type="danger"
-      title="Hapus Data"
-      message="Yakin ingin menghapus data ini?"
-      confirmText="Hapus"
-      cancelText="Batal"
+      :title="$t('tit_popup_hapus_title')"
+      :message="$t('tit_popup_hapus_message')"
+      :confirmText="$t('tit_popup_hapus_confirm')"
+      :cancelText="$t('tit_popup_hapus_batal')"
       cancelColor="primary"
       :loading="isDeletingItem"
       @confirm="deleteNow"

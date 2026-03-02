@@ -3,7 +3,7 @@
     <!-- HEADER -->
     <div class="mb-2">
       <Heading variant="heading6b" class="text-mobile-md">
-        Cek Dokumen
+        {{ $t("cek_title") }}
       </Heading>
       <PageHeader :items="breadcrumbs" />
     </div>
@@ -15,7 +15,7 @@
       <div
         class="bg-white p-6 mt-2 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
       >
-        <Heading variant="heading10sb">Unggah Dokumen</Heading>
+        <Heading variant="heading10sb">{{ $t("cek_upload_title") }}</Heading>
 
         <label class="w-full cursor-pointer">
           <input
@@ -32,15 +32,15 @@
           >
             <FileText class="w-5 h-5 text-gray-500" />
             <span class="text-gray-600 dark:text-white flex-1 text-center">
-              {{ fileName || "Pilih file PDF untuk diperiksa" }}
+              {{ fileName || $t("cek_pilih_file") }}
             </span>
             <Upload class="w-5 h-5 text-gray-600" />
           </div>
 
           <p class="text-xs text-gray-500 mt-4">
-            Format yang didukung:
+            {{ $t("cek_format_info") }}
             <span class="text-xs text-gray-500 font-semibold mt-2">
-              PDF dengan tanda tangan digital
+              {{ $t("cek_format_detail") }}
             </span>
           </p>
         </label>
@@ -52,7 +52,9 @@
         >
           <AlertCircle class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div class="flex-1">
-            <p class="text-sm font-medium text-red-800">Error</p>
+            <p class="text-sm font-medium text-red-800">
+              {{ $t("cek_error_label") }}
+            </p>
             <p class="text-sm text-red-700">{{ error }}</p>
           </div>
         </div>
@@ -64,7 +66,7 @@
             :disabled="loadingCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Periksa Dokumen
+            {{ $t("cek_btn_periksa") }}
           </Button>
         </div>
       </div>
@@ -81,7 +83,9 @@
           class="bg-white dark:bg-gray-800 dark:text-white dark:border-gray-600 p-6 rounded-xl shadow-sm border border-gray-200"
         >
           <div class="flex items-center justify-between mb-4">
-            <Heading variant="heading10sb">Status Verifikasi</Heading>
+            <Heading variant="heading10sb">{{
+              $t("cek_status_verifikasi")
+            }}</Heading>
             <span
               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
               :class="getStatusBadgeClass(documentCheck.data.status)"
@@ -103,59 +107,56 @@
               class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
             />
             <div class="flex-1">
-              <p class="text-sm font-medium text-yellow-800">Informasi</p>
+              <p class="text-sm font-medium text-yellow-800">
+                {{ $t("cek_info_label") }}
+              </p>
               <p class="text-sm text-yellow-700">{{ documentCheck.message }}</p>
             </div>
           </div>
 
           <!-- Grid Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-            <!-- Nama Dokumen -->
             <div>
               <p class="text-sm font-medium text-gray-700 dark:text-white mb-1">
-                Nama Dokumen
+                {{ $t("cek_nama_dokumen") }}
               </p>
               <p class="text-sm text-gray-900 dark:text-white break-all">
                 {{ documentCheck.data.namaDokumen }}
               </p>
             </div>
 
-            <!-- Keterangan -->
             <div>
               <p class="text-sm font-medium dark:text-white text-gray-700 mb-1">
-                Keterangan
+                {{ $t("cek_keterangan") }}
               </p>
               <p class="text-sm dark:text-white text-gray-900">
                 {{ documentCheck.data.keterangan }}
               </p>
             </div>
 
-            <!-- Jumlah Signature -->
             <div>
               <p class="text-sm font-medium dark:text-white text-gray-700 mb-1">
-                Jumlah Tanda Tangan
+                {{ $t("cek_jumlah_ttd") }}
               </p>
               <p class="text-sm text-gray-900 dark:text-white">
                 {{ documentCheck.data.jumlahSignature }}
               </p>
             </div>
 
-            <!-- Waktu Verifikasi -->
             <div>
               <p class="text-sm font-medium text-gray-700 dark:text-white mb-1">
-                Waktu Verifikasi
+                {{ $t("cek_waktu_verifikasi") }}
               </p>
               <p class="text-sm text-gray-900 dark:text-white">
                 {{ formatDate(documentCheck.data.verifiedAt) }}
               </p>
             </div>
 
-            <!-- Valid -->
             <div>
               <p
                 class="text-sm font-medium dark:text-white dark:text-semibold text-gray-700 mb-1"
               >
-                Status Valid
+                {{ $t("cek_status_valid") }}
               </p>
               <span
                 class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium"
@@ -169,7 +170,11 @@
                   :is="documentCheck.data.isValid ? CheckCircle2 : XCircle"
                   class="w-4 h-4"
                 />
-                {{ documentCheck.data.isValid ? "Valid" : "Tidak Valid" }}
+                {{
+                  documentCheck.data.isValid
+                    ? $t("cek_valid")
+                    : $t("cek_tidak_valid")
+                }}
               </span>
             </div>
           </div>
@@ -198,10 +203,10 @@
 
               <div class="text-left">
                 <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                  Penanda Tangan {{ index + 1 }}
+                  {{ $t("cek_penanda_tangan") }} {{ index + 1 }}
                 </p>
                 <p class="text-sm text-gray-600 mt-0.5 dark:text-white">
-                  {{ signer.name || "Tidak diketahui" }}
+                  {{ signer.name || $t("cek_tidak_diketahui") }}
                 </p>
               </div>
             </div>
@@ -248,11 +253,10 @@
         >
           <FileQuestion class="w-16 h-16 text-gray-400 mx-auto mb-3" />
           <p class="text-gray-600 font-medium">
-            Tidak ada tanda tangan digital ditemukan
+            {{ $t("cek_empty_ttd") }}
           </p>
           <p class="text-sm text-gray-500 mt-1">
-            Dokumen ini mungkin belum ditandatangani atau menggunakan format
-            yang tidak didukung
+            {{ $t("cek_empty_ttd_hint") }}
           </p>
         </div>
 
@@ -264,9 +268,9 @@
           "
           class="bg-white p-6 rounded-xl shadow-sm dark:text-white border border-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600"
         >
-          <Heading variant="heading10sb" class="mb-4"
-            >Detail Verifikasi</Heading
-          >
+          <Heading variant="heading10sb" class="mb-4">
+            {{ $t("cek_detail_verifikasi") }}
+          </Heading>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div
               v-for="(value, key) in documentCheck.data.verificationDetails"
@@ -290,7 +294,7 @@
             @click="resetCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Periksa Dokumen Lain
+            {{ $t("cek_btn_periksa_lain") }}
           </Button>
 
           <Button
@@ -299,7 +303,7 @@
             class="border border-primary hover:bg-primary-700 hover:text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
-            Unduh PDF
+            {{ $t("cek_btn_unduh_pdf") }}
           </Button>
         </div>
       </div>
@@ -321,14 +325,153 @@ import {
   FileQuestion,
   Download,
 } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+
 definePageMeta({
   middleware: "auth",
 });
 
+const { t } = useI18n();
+
+// ─── Breadcrumbs (reactive to locale) ────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("cek_title"), to: "/digsig/cek-dokumen" },
+]);
+
+const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
+
+const fileName = ref("");
+const fileUploaded = ref(false);
+const selectedFile = ref<File | null>(null);
+const openSigners = ref(new Set<number>());
+const fileInput = ref<HTMLInputElement | null>(null);
+
+/* Handle File Selection */
+function handleFile(e: any) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith(".pdf")) {
+    error.value = t("cek_error_bukan_pdf");
+    selectedFile.value = null;
+    fileName.value = "";
+    return;
+  }
+
+  error.value = null;
+  fileName.value = file.name;
+  selectedFile.value = file;
+  fileUploaded.value = false;
+  documentCheck.value = null;
+}
+
+/* Submit Document */
+async function submitDocument() {
+  if (!selectedFile.value) return;
+
+  try {
+    await checkDocument(selectedFile.value);
+    fileUploaded.value = true;
+
+    if (documentCheck.value?.data.signers?.length) {
+      openSigners.value.add(0);
+    }
+  } catch (err) {
+    console.error("Error checking document:", err);
+    fileUploaded.value = false;
+  }
+}
+
+/* Reset Check */
+function resetCheck() {
+  fileName.value = "";
+  selectedFile.value = null;
+  fileUploaded.value = false;
+  documentCheck.value = null;
+  error.value = null;
+  openSigners.value.clear();
+
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+}
+
+/* Toggle Signer Accordion */
+function toggleSigner(index: number) {
+  if (openSigners.value.has(index)) {
+    openSigners.value.delete(index);
+  } else {
+    openSigners.value.add(index);
+  }
+}
+
+/* Format Status — uses t() so it switches with locale */
+function formatStatus(status: string) {
+  switch (status?.toUpperCase()) {
+    case "VALID":
+      return t("cek_status_valid_label");
+    case "INVALID":
+      return t("cek_status_invalid_label");
+    case "EXPIRED":
+      return t("cek_status_expired_label");
+    case "UNKNOWN":
+      return t("cek_status_unknown_label");
+    default:
+      return status;
+  }
+}
+
+function getStatusBadgeClass(status: string) {
+  switch (status.toUpperCase()) {
+    case "VALID":
+      return "bg-green-100 text-green-700 border border-green-200";
+    case "INVALID":
+      return "bg-red-100 text-red-700 border border-red-200";
+    case "EXPIRED":
+      return "bg-yellow-100 text-yellow-700 border border-yellow-200";
+    case "UNKNOWN":
+      return "bg-gray-100 text-gray-700 border border-gray-200";
+    default:
+      return "bg-gray-100 text-gray-700 border border-gray-200";
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status.toUpperCase()) {
+    case "VALID":
+      return CheckCircle2;
+    case "INVALID":
+      return XCircle;
+    case "EXPIRED":
+    case "UNKNOWN":
+      return AlertTriangle;
+    default:
+      return AlertCircle;
+  }
+}
+
+function formatDate(dateString: string) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatKey(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+/* PDF / Word report helpers */
 function buildReportData() {
   const data = documentCheck.value?.data;
   if (!data) return null;
@@ -336,13 +479,14 @@ function buildReportData() {
   return {
     namaDokumen: data.namaDokumen,
     status: data.status,
-    valid: data.isValid ? "Valid" : "Tidak Valid",
+    valid: data.isValid ? t("cek_valid") : t("cek_tidak_valid"),
     jumlahSignature: data.jumlahSignature,
     verifiedAt: formatDate(data.verifiedAt),
     keterangan: data.keterangan,
     signers: data.signers || [],
   };
 }
+
 function downloadPdf() {
   const report = buildReportData();
   if (!report) return;
@@ -355,27 +499,28 @@ function downloadPdf() {
   y += 10;
 
   pdf.setFontSize(11);
-  pdf.text(`Nama Dokumen: ${report.namaDokumen}`, 10, y);
+  pdf.text(`${t("cek_nama_dokumen")}: ${report.namaDokumen}`, 10, y);
   y += 7;
   pdf.text(`Status: ${report.status}`, 10, y);
   y += 7;
-  pdf.text(`Status Valid: ${report.valid}`, 10, y);
+  pdf.text(`${t("cek_status_valid")}: ${report.valid}`, 10, y);
   y += 7;
-  pdf.text(`Jumlah Tanda Tangan: ${report.jumlahSignature}`, 10, y);
+  pdf.text(`${t("cek_jumlah_ttd")}: ${report.jumlahSignature}`, 10, y);
   y += 7;
-  pdf.text(`Waktu Verifikasi: ${report.verifiedAt}`, 10, y);
+  pdf.text(`${t("cek_waktu_verifikasi")}: ${report.verifiedAt}`, 10, y);
   y += 10;
 
-  pdf.text("Penanda Tangan:", 10, y);
+  pdf.text(`${t("cek_penanda_tangan")}:`, 10, y);
   y += 7;
 
   report.signers.forEach((s: any, i: number) => {
-    pdf.text(`${i + 1}. ${s.name || "Tidak diketahui"}`, 12, y);
+    pdf.text(`${i + 1}. ${s.name || t("cek_tidak_diketahui")}`, 12, y);
     y += 6;
   });
 
   pdf.save(`laporan-${report.namaDokumen}.pdf`);
 }
+
 async function downloadWord() {
   const report = buildReportData();
   if (!report) return;
@@ -393,21 +538,20 @@ async function downloadWord() {
               }),
             ],
           }),
-
-          new Paragraph(`Nama Dokumen: ${report.namaDokumen}`),
+          new Paragraph(`${t("cek_nama_dokumen")}: ${report.namaDokumen}`),
           new Paragraph(`Status: ${report.status}`),
-          new Paragraph(`Status Valid: ${report.valid}`),
-          new Paragraph(`Jumlah Tanda Tangan: ${report.jumlahSignature}`),
-          new Paragraph(`Waktu Verifikasi: ${report.verifiedAt}`),
+          new Paragraph(`${t("cek_status_valid")}: ${report.valid}`),
+          new Paragraph(`${t("cek_jumlah_ttd")}: ${report.jumlahSignature}`),
+          new Paragraph(`${t("cek_waktu_verifikasi")}: ${report.verifiedAt}`),
           new Paragraph(""),
-
           new Paragraph({
-            children: [new TextRun({ text: "Penanda Tangan:", bold: true })],
+            children: [
+              new TextRun({ text: `${t("cek_penanda_tangan")}:`, bold: true }),
+            ],
           }),
-
           ...report.signers.map(
             (s: any, i: number) =>
-              new Paragraph(`${i + 1}. ${s.name || "Tidak diketahui"}`),
+              new Paragraph(`${i + 1}. ${s.name || t("cek_tidak_diketahui")}`),
           ),
         ],
       },
@@ -416,150 +560,6 @@ async function downloadWord() {
 
   const blob = await Packer.toBlob(doc);
   saveAs(blob, `laporan-${report.namaDokumen}.docx`);
-}
-
-const { checkDocument, loadingCheck, error, documentCheck } = useDigsig();
-
-/* Breadcrumb */
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Cek Dokumen", to: "/digsig/cek-dokumen" },
-];
-
-const fileName = ref("");
-const fileUploaded = ref(false);
-const selectedFile = ref<File | null>(null);
-const openSigners = ref(new Set<number>());
-const fileInput = ref<HTMLInputElement | null>(null);
-
-/* Handle File Selection */
-function handleFile(e: any) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  if (!file.name.toLowerCase().endsWith(".pdf")) {
-    error.value = "File harus berformat PDF";
-    selectedFile.value = null;
-    fileName.value = "";
-    return;
-  }
-
-  error.value = null;
-  fileName.value = file.name;
-  selectedFile.value = file;
-  fileUploaded.value = false;
-  documentCheck.value = null;
-}
-
-/* Submit Document untuk Cek Digital Signature */
-async function submitDocument() {
-  if (!selectedFile.value) return;
-
-  try {
-    await checkDocument(selectedFile.value);
-    fileUploaded.value = true;
-
-    if (documentCheck.value?.data.signers?.length) {
-      openSigners.value.add(0);
-    }
-  } catch (err) {
-    console.error("Error checking document:", err);
-    fileUploaded.value = false;
-  }
-}
-
-/* Reset Check - Mulai pemeriksaan baru */
-function resetCheck() {
-  fileName.value = "";
-  selectedFile.value = null;
-  fileUploaded.value = false;
-  documentCheck.value = null;
-  error.value = null;
-  openSigners.value.clear();
-
-  if (fileInput.value) {
-    fileInput.value.value = "";
-  }
-}
-
-/* Download Report */
-function downloadReport() {
-  // Implementasi download report
-  console.log("Downloading report...");
-  // TODO: Implement actual download logic
-}
-
-/* Toggle Signer Accordion */
-function toggleSigner(index: number) {
-  if (openSigners.value.has(index)) {
-    openSigners.value.delete(index);
-  } else {
-    openSigners.value.add(index);
-  }
-}
-
-/* Get Status Badge Class */
-function formatStatus(status: string) {
-  switch (status?.toUpperCase()) {
-    case "VALID":
-      return "Valid";
-    case "INVALID":
-      return "Tidak Valid";
-    case "EXPIRED":
-      return "Kedaluwarsa";
-    case "UNKNOWN":
-      return "Tidak Diketahui";
-    default:
-      return status;
-  }
-}
-
-function getStatusBadgeClass(status: string) {
-  switch (status.toUpperCase()) {
-    case "VALID":
-      return "bg-green-100 text-green-700 border border-green-200";
-    case "INVALID":
-      return "bg-red-100 text-red-700 border border-red-200";
-    case "Kadaluwarsa":
-      return "bg-yellow-100 text-yellow-700 border border-yellow-200";
-    case "Tidak Diketahui":
-      return "bg-gray-100 text-gray-700 border border-gray-200";
-    default:
-      return "bg-gray-100 text-gray-700 border border-gray-200";
-  }
-}
-
-/* Get Status Icon */
-function getStatusIcon(status: string) {
-  switch (status.toUpperCase()) {
-    case "VALID":
-      return CheckCircle2;
-    case "INVALID":
-      return XCircle;
-    case "EXPIRED":
-    case "UNKNOWN":
-      return AlertTriangle;
-    default:
-      return AlertCircle;
-  }
-}
-
-/* Format Date */
-function formatDate(dateString: string) {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(date);
-}
-
-/* Format Key untuk display */
-function formatKey(key: string) {
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
 }
 </script>
 

@@ -44,7 +44,7 @@
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span class="text-sm">
-              {{ perPage === "all" ? "Semua" : ` ${perPage}` }}
+              {{ perPage === "all" ? $t("semua") : ` ${perPage}` }}
             </span>
 
             <!-- Icon V -->
@@ -74,7 +74,7 @@
               class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
               @click.prevent="setPerPage('all')"
             >
-              Semua
+              {{ $t("semua") }}
             </button>
 
             <button
@@ -103,14 +103,16 @@
           class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
         >
           <FileDown class="w-4 h-4" />
-          Export
+          {{ $t("export") }}
         </button>
       </div>
       <!-- LIST TABLE -->
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">
           <thead>
-            <tr class="bg-primary-400 text-white whitespace-nowrap text-left">
+            <tr
+              class="bg-primary-400 dark:bg-primary-700 text-white whitespace-nowrap text-left"
+            >
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
               >
@@ -196,7 +198,7 @@
               <!-- FILE PREVIEW SLIDEOVER -->
               <USlideover
                 v-model:open="isOpenPreviewFile"
-                title="Pratinjau Dokumen"
+                :title="$t('nm_pratinjau_dokumen')"
                 side="bottom"
                 :dismissible="true"
                 :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
@@ -382,7 +384,7 @@
                       : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  {{ newDelegasi.jenisnaskah || "Pilih Jenis Naskah" }}
+                  {{ newDelegasi.jenisnaskah || $t("nm_pilih_jenis_naskah") }}
                 </span>
               </button>
 
@@ -436,7 +438,7 @@
                       : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  {{ newDelegasi.sifat_naskah || "Pilih sifat naskah" }}
+                  {{ newDelegasi.sifat_naskah || $t("nm_pilih_sifat_naskah") }}
                 </span>
               </button>
 
@@ -467,7 +469,7 @@
               v-model="newDelegasi.nomor_asal"
               type="text"
               class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-              placeholder="Masukan nomor"
+              :placeholder="$t('nm_masukan_nomor')"
             />
           </div>
 
@@ -489,7 +491,7 @@
                   :value="newDelegasi.asal_naskah_label || searchAsalNaskah"
                   @input="searchAsalNaskah = $event.target.value"
                   @focus="openNewAsalNaskah = true"
-                  placeholder="Cari asal naskah"
+                  :placeholder="$t('nm_cari_asal_naskah')"
                   class="flex-1 outline-none text-sm dark:bg-gray-700 dark:text-gray-200"
                   :class="
                     newDelegasi.asal_naskah_label
@@ -522,7 +524,7 @@
                   v-if="loadingAsalNaskah"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  Memuat data...
+                  {{ $t("memuat_data") }}
                 </div>
 
                 <button
@@ -540,7 +542,7 @@
                   "
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  Data tidak ditemukan
+                  {{ $t("tidak_ditemukan") }}
                 </div>
               </div>
             </div>
@@ -557,7 +559,7 @@
               v-model="newDelegasi.perihal"
               type="text"
               class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-              placeholder="Masukan perihal"
+              :placeholder="$t('nm_masukan_perihal')"
             />
           </div>
 
@@ -571,9 +573,9 @@
             <input
               :value="lampiranText"
               type="text"
-              readonly
-              class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-              placeholder="0 Lampiran"
+              disabled
+              class="mt-1 w-full text-left border bg-gray-100 border-gray-100 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+              :placeholder="$t('nm_0lampiran')"
             />
           </div>
 
@@ -622,7 +624,9 @@
                   v-model="searchTertuju"
                   @focus="openNewTertuju = true"
                   :placeholder="
-                    newDelegasi.tertuju.length === 0 ? 'Cari tertuju' : ''
+                    newDelegasi.tertuju.length === 0
+                      ? $t('nm_cari_tertuju')
+                      : ''
                   "
                   class="flex-1 min-w-[180px] outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
                 />
@@ -636,14 +640,14 @@
                   v-if="loadingTertuju"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  Memuat data...
+                  {{ $t("memuat_data") }}
                 </div>
 
                 <div
                   v-if="!loadingTertuju && filteredTertujuList.length === 0"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  Data tidak ditemukan
+                  {{ $t("tidak_ditemukan") }}
                 </div>
 
                 <button
@@ -675,7 +679,7 @@
               variant="heading11m"
               class="text-xs font-medium dark:text-gray-200"
             >
-              File <span class="text-red-500">*</span>
+              {{ $t("nm_file") }} <span class="text-red-500">*</span>
             </Heading>
 
             <!-- Upload Box -->
@@ -1014,8 +1018,8 @@ const newDelegasi = ref({
 const saveDelegasi = async () => {
   if (!newDelegasi.value.asal_naskah) {
     toast.add({
-      title: "Validasi gagal",
-      description: "Asal naskah wajib dipilih",
+      title: t("nm_validasi_gagal"),
+      description: t("nm_asal_naskah_wajib"),
       color: "warning",
       icon: "i-lucide-alert-circle",
     });
@@ -1023,8 +1027,8 @@ const saveDelegasi = async () => {
   }
   if (filesRef.value.length === 0) {
     toast.add({
-      title: "Validasi gagal",
-      description: "File wajib diisi",
+      title: t("nm_validasi_gagal"),
+      description: t("nm_file_wajib"),
       color: "warning",
       icon: "i-lucide-alert-circle",
     });
@@ -1045,8 +1049,8 @@ const saveDelegasi = async () => {
     });
 
     toast.add({
-      title: "Berhasil",
-      description: "Naskah dinas berhasil ditambahkan",
+      title: t("berhasil"),
+      description: t("nm_berhasil_tambah"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
@@ -1058,8 +1062,8 @@ const saveDelegasi = async () => {
     console.error("Gagal kirim naskah dinas", e);
 
     toast.add({
-      title: "Gagal",
-      description: "Terjadi kesalahan saat menyimpan data",
+      title: t("gagal"),
+      description: t("nm_gagal_simpan"),
       color: "error",
       icon: "i-lucide-x-circle",
     });
@@ -1187,8 +1191,8 @@ function handleFileChange(e: Event) {
   // VALIDASI MIME TYPE
   if (file.type !== "application/pdf") {
     toast.add({
-      title: "File tidak valid",
-      description: "Hanya file PDF yang diperbolehkan",
+      title: t("nm_file_tidak_valid"),
+      description: t("nm_file_hanya_pdf"),
       color: "warning",
       icon: "i-lucide-alert-circle",
     });
@@ -1289,8 +1293,8 @@ function setPerPage(val: number | "all") {
 function exportExcel() {
   if (filteredData.value.length === 0) {
     toast.add({
-      title: "Tidak ada data",
-      description: "Data kosong, tidak bisa diexport",
+      title: t("export_tidak_ada"),
+      description: t("export_data_kosong"),
       color: "warning",
       icon: "i-lucide-alert-circle",
     });
@@ -1335,8 +1339,8 @@ function exportExcel() {
   saveAs(blob, filename);
 
   toast.add({
-    title: "Export berhasil",
-    description: "File Excel berhasil diunduh",
+    title: t("export_berhasil"),
+    description: t("export_file_berhasil"),
     color: "success",
     icon: "i-lucide-check-circle",
   });

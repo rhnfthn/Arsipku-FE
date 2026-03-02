@@ -1,9 +1,10 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+    <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
-          Daftar Penomoran Dokumen
+          {{ $t("nom_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -12,11 +13,13 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ $t("nom_btn_tambah") }}
       </button>
     </div>
 
+    <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
+      <!-- TOP BAR -->
       <div
         class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3"
       >
@@ -38,28 +41,14 @@
           <input
             v-model="searchQuery"
             @input="handleSearchInput"
-            placeholder="Cari..."
+            :placeholder="$t('nom_cari_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
           />
         </div>
       </div>
 
-      <div v-if="loading" class="space-y-3 p-4">
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="w-full h-10 bg-gray-200 animate-pulse rounded-md"
-        ></div>
-      </div>
-
-      <div
-        v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
-      >
-        <p class="text-sm font-medium">Data tidak ditemukan</p>
-      </div>
-
-      <div v-else class="overflow-x-auto relative">
+      <!-- TABLE BODY (skeleton / empty / data) -->
+      <div class="overflow-x-auto relative">
         <table class="w-full bg-white dark:bg-gray-800 text-sm">
           <thead
             class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-0 z-10"
@@ -97,64 +86,97 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="row in rows"
-              :key="row.id_request"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition dark:text-gray-200"
-              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail ')"
-              @mouseleave="onRowMouseLeave"
-              @click="openRowModal(row)"
-            >
-              <td class="px-5 py-4">{{ row.jenis }}</td>
-              <td class="px-5 py-4">{{ row.jabatan }}</td>
-              <td class="px-5 py-4">
-                <div class="relative group max-w-[250px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
-                    {{ row.perihal }}
-                  </p>
-                </div>
-              </td>
-              <td class="px-5 py-4">
-                <div class="flex flex-col gap-0.5">
-                  <div class="text-sm font-medium">{{ row.tanggal }}</div>
+            <!-- SKELETON -->
+            <template v-if="loading">
+              <tr
+                v-for="i in limit"
+                :key="`sk-${i}`"
+                class="border-b border-gray-200 dark:border-gray-700"
+              >
+                <td v-for="j in headers.length" :key="j" class="px-5 py-4">
                   <div
-                    class="text-xs text-gray-600 dark:text-gray-200 font-mono"
-                  >
+                    class="h-4 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
+                    :style="{ width: `${50 + (j % 4) * 12}%` }"
+                  ></div>
+                </td>
+              </tr>
+            </template>
+
+            <!-- EMPTY -->
+            <template v-else-if="rows.length === 0">
+              <tr>
+                <td
+                  :colspan="headers.length"
+                  class="py-20 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ $t("nom_empty") }}
+                </td>
+              </tr>
+            </template>
+
+            <!-- DATA ROWS -->
+            <template v-else>
+              <tr
+                v-for="row in rows"
+                :key="row.id_request"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition dark:text-gray-200"
+                @mousemove="onRowMouseMove($event, $t('nom_tooltip_detail'))"
+                @mouseleave="onRowMouseLeave"
+                @click="openRowModal(row)"
+              >
+                <td class="px-5 py-4">{{ row.jenis }}</td>
+                <td class="px-5 py-4">{{ row.jabatan }}</td>
+                <td class="px-5 py-4">
+                  <div class="relative group max-w-[250px]">
+                    <p class="whitespace-normal break-words line-clamp-3">
+                      {{ row.perihal }}
+                    </p>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex flex-col gap-0.5">
+                    <div class="text-sm font-medium">{{ row.tanggal }}</div>
                     <div
-                      v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
-                      :key="idx"
+                      class="text-xs text-gray-600 dark:text-gray-200 font-mono"
                     >
-                      {{ nomor }}
-                    </div>
-                    <div
-                      v-if="row.nomor_list.length > 3"
-                      class="text-primary font-medium"
-                    >
-                      +{{ row.nomor_list.length - 3 }} nomor lainnya
+                      <div
+                        v-for="(nomor, idx) in row.nomor_list.slice(0, 3)"
+                        :key="idx"
+                      >
+                        {{ nomor }}
+                      </div>
+                      <div
+                        v-if="row.nomor_list.length > 3"
+                        class="text-primary font-medium"
+                      >
+                        +{{ row.nomor_list.length - 3 }}
+                        {{ $t("nom_nomor_lainnya") }}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </td>
-              <td class="px-5 py-4">
-                <div class="relative group max-w-[300px]">
-                  <p class="whitespace-normal break-words line-clamp-3">
-                    {{ row.pengusul }}
-                  </p>
-                </div>
-              </td>
-              <td class="px-5 py-4">{{ row.waktu }}</td>
-            </tr>
+                </td>
+                <td class="px-5 py-4">
+                  <div class="relative group max-w-[300px]">
+                    <p class="whitespace-normal break-words line-clamp-3">
+                      {{ row.pengusul }}
+                    </p>
+                  </div>
+                </td>
+                <td class="px-5 py-4">{{ row.waktu }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
 
+      <!-- PAGINATION -->
       <div
         v-if="pagination && pagination.total > 0 && rows.length > 0"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginationStart }} - {{ paginationEnd }} dari
-          {{ pagination.total }} data
+          {{ $t("menampilkan") }} {{ paginationStart }} - {{ paginationEnd }}
+          {{ $t("dari") }} {{ pagination.total }} {{ $t("data") }}
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -180,7 +202,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
           <div class="flex items-center gap-1">
             <button
@@ -243,7 +265,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -267,11 +289,11 @@
     </Teleport>
   </div>
 
-  <!-- FILE PREVIEW SLIDEOVER — di luar div utama, teleport ke body agar z-index benar di atas Modal -->
+  <!-- FILE PREVIEW SLIDEOVER -->
   <Teleport to="body">
     <USlideover
       v-model:open="isOpenPreviewFile"
-      title="Pratinjau Dokumen"
+      :title="$t('nom_pratinjau_dokumen')"
       side="bottom"
       :dismissible="true"
       :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
@@ -304,12 +326,13 @@
           <h2
             class="p-3 ml-1 text-xl font-bold text-gray-900 dark:text-gray-100"
           >
-            Detail Penomoran
+            {{ $t("nom_modal_title") }}
           </h2>
         </div>
       </template>
 
       <div class="px-3 pb-6">
+        <!-- Loading skeleton -->
         <div v-if="loadingDetail" class="space-y-3">
           <div
             class="w-full h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
@@ -324,6 +347,7 @@
 
         <template v-else-if="detailData">
           <div class="gap-4 mb-2 space-y-6 overflow-y-auto text-sm">
+            <!-- Perihal / Edit Title -->
             <div class="md:col-span-2">
               <template v-if="!isEditingTitle">
                 <div class="flex items-start justify-between gap-4 mb-2">
@@ -349,7 +373,7 @@
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                       />
                     </svg>
-                    Edit
+                    {{ $t("nom_edit") }}
                   </button>
                 </div>
               </template>
@@ -363,27 +387,29 @@
                     @click="saveTitle"
                     class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-800 transition text-sm"
                   >
-                    Simpan
+                    {{ $t("nom_btn_simpan") }}
                   </button>
                   <button
                     @click="cancelEditTitle"
                     class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
                   >
-                    Batal
+                    {{ $t("nom_btn_batal") }}
                   </button>
                 </div>
               </template>
             </div>
 
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-              <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+              <p class="text-gray-500 dark:text-gray-400 text-xs">
+                {{ $t("nom_modal_tanggal") }}
+              </p>
               <p class="font-medium mt-1 dark:text-gray-200">
                 {{ formatTanggalWIB(detailData.tanggal) }}
               </p>
             </div>
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
-                Penandatangan
+                {{ $t("nom_modal_penandatangan") }}
               </p>
               <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.jabatan }}
@@ -391,7 +417,7 @@
             </div>
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
-                Klasifikasi
+                {{ $t("nom_modal_klasifikasi") }}
               </p>
               <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.klasifikasiDisplay || detailData.klasifikasi }}
@@ -399,7 +425,7 @@
             </div>
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
-                Jenis Naskah
+                {{ $t("nom_modal_jenis_naskah") }}
               </p>
               <p class="font-medium mt-1 dark:text-gray-200">
                 {{ detailData.jenis }}
@@ -411,11 +437,12 @@
           <div class="pt-6">
             <div class="flex items-center justify-between mb-4">
               <h4 class="text-l font-semibold text-gray-900 dark:text-gray-100">
-                Nomor Surat
+                {{ $t("nom_nomor_surat") }}
                 <span
                   class="text-sm font-normal text-gray-500 dark:text-gray-400"
                 >
-                  ({{ detailData.nomor_list?.length || 0 }} nomor)
+                  ({{ detailData.nomor_list?.length || 0 }}
+                  {{ $t("nom_nomor_suffix") }})
                 </span>
               </h4>
             </div>
@@ -469,8 +496,7 @@
                   </button>
                 </div>
 
-                <!-- File preview — tampil jika ada file DAN tidak sedang replacing -->
-                <!-- Nomor hangus: tetap bisa preview file (read-only), tapi style redup -->
+                <!-- File preview -->
                 <div
                   v-if="item.file_name && !fileStates[item.id]?.isReplacing"
                   :class="[
@@ -518,12 +544,12 @@
                           : 'text-gray-500 dark:text-gray-400'
                       "
                     >
-                      Klik untuk preview
+                      {{ $t("nom_file_klik_preview") }}
                     </p>
                   </div>
                 </div>
 
-                <!-- FIX 3: Upload/replace input — TERPISAH, hanya tampil saat isReplacing = true -->
+                <!-- Upload/replace input -->
                 <div
                   v-if="fileStates[item.id]?.isReplacing"
                   class="border border-dashed border-primary/40 dark:border-primary/30 rounded-md p-3 bg-blue-50/50 dark:bg-blue-900/10"
@@ -533,8 +559,8 @@
                   >
                     {{
                       item.file_name
-                        ? "Pilih file pengganti:"
-                        : "Pilih file untuk diupload:"
+                        ? $t("nom_file_pilih_pengganti")
+                        : $t("nom_file_pilih_upload")
                     }}
                   </p>
                   <input
@@ -544,13 +570,13 @@
                     class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
                   />
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                    Max 10MB — PDF, DOC, DOCX
+                    {{ $t("nom_file_max_size") }}
                   </p>
                 </div>
 
                 <!-- Action buttons -->
                 <div class="flex gap-2 mt-3">
-                  <!-- Upload button: tidak ada file, status aktif, tidak sedang replacing -->
+                  <!-- Upload button -->
                   <button
                     v-if="
                       !item.file_name &&
@@ -562,10 +588,10 @@
                     @click="startUploadFile(item.id)"
                     class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm"
                   >
-                    Upload File
+                    {{ $t("nom_btn_upload_file") }}
                   </button>
 
-                  <!-- Ganti File button: ada file, status aktif, tidak sedang replacing -->
+                  <!-- Ganti File button -->
                   <button
                     v-if="
                       item.file_name &&
@@ -577,10 +603,10 @@
                     @click="startReplacingFile(item.id)"
                     class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm"
                   >
-                    Ganti File
+                    {{ $t("nom_btn_ganti_file") }}
                   </button>
 
-                  <!-- Simpan & Batal: saat sedang replacing -->
+                  <!-- Simpan & Batal (saat isReplacing) -->
                   <template v-if="fileStates[item.id]?.isReplacing">
                     <button
                       @click="saveFile(item.id)"
@@ -598,8 +624,8 @@
                     >
                       {{
                         fileStates[item.id]?.isUploading
-                          ? "Uploading..."
-                          : "Simpan"
+                          ? $t("nom_btn_uploading")
+                          : $t("nom_btn_simpan_file")
                       }}
                     </button>
                     <button
@@ -607,7 +633,7 @@
                       :disabled="fileStates[item.id]?.isUploading"
                       class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm"
                     >
-                      Batal
+                      {{ $t("nom_btn_batal") }}
                     </button>
                   </template>
 
@@ -622,7 +648,7 @@
                     @click.stop="confirmHangusNomor(item.id)"
                     class="flex-1 px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition text-sm"
                   >
-                    Hangus
+                    {{ $t("nom_btn_hangus") }}
                   </button>
                 </div>
               </div>
@@ -633,18 +659,20 @@
     </Modal>
   </Teleport>
 
+  <!-- CONFIRM HANGUS -->
   <ConfirmPopup
     v-model="openConfirmHangus"
     type="danger"
-    title="Hanguskan Nomor?"
-    message="Nomor yang dihanguskan tidak dapat digunakan kembali. Apakah Anda yakin?"
-    confirm-text="Ya, Hanguskan"
-    cancel-text="Batal"
+    :title="$t('nom_confirm_hangus_title')"
+    :message="$t('nom_confirm_hangus_message')"
+    :confirm-text="$t('nom_confirm_hangus_ya')"
+    :cancel-text="$t('nom_confirm_hangus_batal')"
     :is-loading="isHangusing"
     @confirm="executeHangusNomor"
     class="z-[8500]"
   />
 
+  <!-- TOOLTIP -->
   <Teleport to="body">
     <div
       v-if="tooltip.show"
@@ -658,6 +686,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
@@ -665,10 +694,10 @@ import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
-definePageMeta({
-  middleware: "auth",
-});
 
+definePageMeta({ middleware: "auth" });
+
+const { t } = useI18n();
 const config = useRuntimeConfig();
 
 const {
@@ -687,6 +716,7 @@ const {
   showToastCopied,
 } = usePenomoran();
 
+// ─── State ────────────────────────────────────────────────────────────────────
 const loading = ref<boolean>(true);
 const loadingDetail = ref<boolean>(false);
 const openAdd = ref<boolean>(false);
@@ -707,83 +737,57 @@ const limit = ref<number>(10);
 const currentPage = ref<number>(1);
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
-
 const rowsChoices = [5, 10, 20, 50];
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Penomoran", to: "/penomoran/nomor" },
-];
+const getFileUrl = (filePath: string) =>
+  `${config.public.apiBaseUrl}/${filePath}`;
 
-const headers = [
-  { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Penandatangan", key: "jabatan", sortable: false },
-  { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Tanggal & Nomor", key: "tanggal", sortable: true },
-  { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Waktu", key: "waktu", sortable: true },
-];
+// ─── Computed breadcrumbs & headers (locale-reactive) ─────────────────────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("nom_title"), to: "/penomoran/nomor" },
+]);
 
-watch(refreshTrigger, () => {
-  fetchData();
-  if (openPreview.value && selectedRow.value) {
-    openRowModal(selectedRow.value);
-  }
-});
+const headers = computed(() => [
+  { label: t("nom_col_jenis"), key: "jenis", sortable: true },
+  { label: t("nom_col_penandatangan"), key: "jabatan", sortable: false },
+  { label: t("nom_col_perihal"), key: "perihal", sortable: false },
+  { label: t("nom_col_tanggal_nomor"), key: "tanggal", sortable: true },
+  { label: t("nom_col_pengusul"), key: "pengusul", sortable: false },
+  { label: t("nom_col_waktu"), key: "waktu", sortable: true },
+]);
 
-const paginationStart = computed(() => {
-  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
-    return 0;
-  const page = pagination.value.current_page || pagination.value.page || 1;
-  const perPage = pagination.value.limit || limit.value || 10;
-  return (page - 1) * perPage + 1;
-});
-
-const paginationEnd = computed(() => {
-  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
-    return 0;
-  const page = pagination.value.current_page || pagination.value.page || 1;
-  const perPage = pagination.value.limit || limit.value || 10;
-  return Math.min(page * perPage, pagination.value.total);
-});
-
+// ─── Status helpers ────────────────────────────────────────────────────────────
 const getStatusLabel = (item: any): string => {
-  if (item.status === "hangus") return "Hangus";
-  if (item.status === "terpakai_final") return "Final";
-  if (item.status === "terpakai") return "Terpakai";
-  if (item.status === "booking") return "Booking";
-  return "Booking";
+  if (item.status === "hangus") return t("nom_status_hangus");
+  if (item.status === "terpakai_final") return t("nom_status_final");
+  if (item.status === "terpakai") return t("nom_status_terpakai");
+  return t("nom_status_booking");
 };
 
 const getStatusClass = (item: any): string => {
   if (item.status === "hangus") return "bg-red-100 text-red-800";
   if (item.status === "terpakai_final") return "bg-green-100 text-green-800";
   if (item.status === "terpakai") return "bg-blue-100 text-blue-800";
-  if (item.status === "booking") return "bg-yellow-100 text-yellow-800";
   return "bg-yellow-100 text-yellow-800";
 };
 
-const WIB_OFFSET = 7 * 60 * 60 * 1000;
-
-function toWIB(dateStr: string) {
-  return new Date(new Date(dateStr).getTime() + WIB_OFFSET);
+// ─── Date helpers ──────────────────────────────────────────────────────────────
+function toLocal(dateStr: string) {
+  return new Date(dateStr.replace("Z", "").replace("+00:00", ""));
 }
-
 function formatTanggalWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const d = toWIB(dateStr);
+  const d = toLocal(dateStr);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
-
 function formatWaktuWIB(dateStr: string) {
   if (!dateStr) return "-";
-  const d = toWIB(dateStr);
+  const d = toLocal(dateStr);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const getFileUrl = (filePath: string) =>
-  `${config.public.apiBaseUrl}/${filePath}`;
-
+// ─── Preview file ─────────────────────────────────────────────────────────────
 const isOpenPreviewFile = ref(false);
 const previewPdfUrl = ref<string | null>(null);
 
@@ -804,6 +808,7 @@ const previewFile = async (item: any) => {
   }
 };
 
+// ─── File actions ──────────────────────────────────────────────────────────────
 const startUploadFile = (detailId: string) => {
   fileStates.value[detailId] = {
     isReplacing: true,
@@ -811,7 +816,6 @@ const startUploadFile = (detailId: string) => {
     file: null,
   };
 };
-
 const startReplacingFile = (detailId: string) => {
   fileStates.value[detailId] = {
     isReplacing: true,
@@ -819,7 +823,6 @@ const startReplacingFile = (detailId: string) => {
     file: null,
   };
 };
-
 const handleFileSelect = (detailId: string, event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
@@ -830,7 +833,6 @@ const handleFileSelect = (detailId: string, event: Event) => {
     fileStates.value[detailId].file = file;
   }
 };
-
 const saveFile = async (detailId: string) => {
   const state = fileStates.value[detailId];
   if (!state?.file) {
@@ -856,16 +858,15 @@ const saveFile = async (detailId: string) => {
     state.isUploading = false;
   }
 };
-
 const cancelReplacing = (detailId: string) => {
   delete fileStates.value[detailId];
 };
 
+// ─── Hangus ────────────────────────────────────────────────────────────────────
 const confirmHangusNomor = (detailId: string) => {
   selectedDetailId.value = detailId;
   openConfirmHangus.value = true;
 };
-
 const executeHangusNomor = async () => {
   if (!selectedDetailId.value) return;
   isHangusing.value = true;
@@ -884,17 +885,16 @@ const executeHangusNomor = async () => {
   }
 };
 
+// ─── Edit title ────────────────────────────────────────────────────────────────
 function startEditTitle() {
   if (!detailData.value) return;
   editedTitle.value = detailData.value.perihal;
   isEditingTitle.value = true;
 }
-
 function cancelEditTitle() {
   isEditingTitle.value = false;
   editedTitle.value = "";
 }
-
 function saveTitle() {
   if (!detailData.value) return;
   detailData.value.perihal = editedTitle.value;
@@ -902,11 +902,13 @@ function saveTitle() {
   showToastSaveTitle();
 }
 
+// ─── Copy ──────────────────────────────────────────────────────────────────────
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   showToastCopied(value);
 };
 
+// ─── Sort & search ─────────────────────────────────────────────────────────────
 const handleSort = (col: string) => {
   const columnMapping: Record<string, string> = {
     jenis: "jenis",
@@ -923,7 +925,6 @@ const handleSort = (col: string) => {
   currentPage.value = 1;
   fetchData();
 };
-
 const handleLimitChange = () => {
   currentPage.value = 1;
   fetchData();
@@ -947,6 +948,41 @@ const goToPage = (page: number) => {
   fetchData();
 };
 
+// ─── Pagination computed ──────────────────────────────────────────────────────
+const paginationStart = computed(() => {
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
+    return 0;
+  const page = pagination.value.current_page || pagination.value.page || 1;
+  const perPage = pagination.value.limit || limit.value || 10;
+  return (page - 1) * perPage + 1;
+});
+const paginationEnd = computed(() => {
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0)
+    return 0;
+  const page = pagination.value.current_page || pagination.value.page || 1;
+  const perPage = pagination.value.limit || limit.value || 10;
+  return Math.min(page * perPage, pagination.value.total);
+});
+const paginationPages = computed(() => {
+  if (!pagination.value) return [];
+  const total =
+    pagination.value.total_pages || pagination.value.totalPages || 0;
+  const current = pagination.value.current_page || pagination.value.page || 1;
+  if (total === 0) return [];
+  const pages: number[] = [];
+  if (total <= 9) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    let start = Math.max(2, current - 3);
+    let end = Math.min(total - 1, current + 3);
+    if (current <= 4) end = 7;
+    if (current >= total - 3) start = total - 6;
+    for (let i = start; i <= end; i++) pages.push(i);
+  }
+  return pages;
+});
+
+// ─── Fetch data ────────────────────────────────────────────────────────────────
 function groupDuplicateRows(dataArray) {
   const grouped = new Map();
   dataArray.forEach((item) => {
@@ -1008,8 +1044,6 @@ const openRowModal = async (row) => {
   try {
     const detail = await getDetailNomor(row.id_request);
     if (!detail) throw new Error("Detail tidak ditemukan");
-
-    // ✅ Map nomor_list dari detail API — sudah ada file_name, file_url
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
       id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
@@ -1018,8 +1052,6 @@ const openRowModal = async (row) => {
       file_text: item.file_text ?? null,
       file_url: item.file_url ?? null,
     }));
-
-    // ✅ Spread detail DULU agar file info tidak tertimpa
     detailData.value = {
       ...detail,
       perihal: detail.perihal || row.perihal || "-",
@@ -1065,23 +1097,13 @@ const handleSubmitFromModal = async (payload) => {
   }
 };
 
-const paginationPages = computed(() => {
-  if (!pagination.value) return [];
-  const total =
-    pagination.value.total_pages || pagination.value.totalPages || 0;
-  const current = pagination.value.current_page || pagination.value.page || 1;
-  if (total === 0) return [];
-  const pages: number[] = [];
-  if (total <= 9) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    let start = Math.max(2, current - 3);
-    let end = Math.min(total - 1, current + 3);
-    if (current <= 4) end = 7;
-    if (current >= total - 3) start = total - 6;
-    for (let i = start; i <= end; i++) pages.push(i);
-  }
-  return pages;
+watch(refreshTrigger, () => {
+  fetchData();
+  if (openPreview.value && selectedRow.value) openRowModal(selectedRow.value);
+});
+
+watch(isOpenPreviewFile, (open) => {
+  if (!open) previewPdfUrl.value = null;
 });
 
 onMounted(async () => {
@@ -1092,8 +1114,8 @@ onMounted(async () => {
   loading.value = false;
 });
 
+// ─── Tooltip ───────────────────────────────────────────────────────────────────
 const tooltip = ref({ show: false, text: "", x: 0, y: 0 });
-
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
     show: true,
@@ -1102,14 +1124,9 @@ const onRowMouseMove = (e: MouseEvent, text: string) => {
     y: Math.min(e.clientY + 12, window.innerHeight - 40),
   };
 };
-
 const onRowMouseLeave = () => {
   tooltip.value.show = false;
 };
-
-watch(isOpenPreviewFile, (open) => {
-  if (!open) previewPdfUrl.value = null;
-});
 </script>
 
 <style scoped>

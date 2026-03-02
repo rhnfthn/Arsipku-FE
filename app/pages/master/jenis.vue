@@ -5,7 +5,7 @@
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
     >
       <div>
-        <PageHeader title="Jenis" :items="items" />
+        <PageHeader :title="t('je_title')" :items="items" />
       </div>
 
       <button
@@ -13,7 +13,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ t("nm_button") }}
       </button>
     </div>
 
@@ -47,7 +47,7 @@
             />
             <input
               v-model="search"
-              placeholder="Cari kode / nama / format"
+              :placeholder="t('je_cari_placeholder')"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -73,7 +73,7 @@
                 class="px-4 py-3 cursor-pointer select-none text-left whitespace-nowrap"
               >
                 <div class="flex items-center gap-1">
-                  Kode Jenis
+                  {{ t("je_kode") }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -87,22 +87,22 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                Nama Jenis
+                {{ t("je_nama") }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                Perihal
+                {{ t("je_perihal") }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                Format Penomoran
+                {{ t("je_format") }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold text-center"
               >
-                Aksi
+                {{ t("aksi") }}
               </th>
             </tr>
           </thead>
@@ -114,7 +114,7 @@
                 colspan="6"
                 class="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
               >
-                Memuat data...
+                {{ t("je_loading") }}
               </td>
             </tr>
 
@@ -124,7 +124,7 @@
                 colspan="6"
                 class="px-4 py-10 text-center text-gray-500 dark:text-gray-400"
               >
-                Data tidak ditemukan
+                {{ t("je_empty") }}
               </td>
             </tr>
 
@@ -177,7 +177,7 @@
                 <div class="flex justify-center gap-2">
                   <button
                     class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
-                    title="Detail"
+                    :title="t('je_modal_detail')"
                     @click="onView(row)"
                   >
                     <Eye class="w-4 h-4" />
@@ -185,7 +185,7 @@
 
                   <button
                     class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
-                    title="Edit"
+                    :title="t('je_modal_edit')"
                     @click="onEdit(row)"
                   >
                     <Pencil class="w-4 h-4" />
@@ -193,7 +193,7 @@
 
                   <button
                     class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
-                    title="Delete"
+                    :title="t('popup_hapus')"
                     @click="onDelete(row)"
                   >
                     <Trash2 class="w-4 h-4" />
@@ -219,7 +219,7 @@
               >
                 <div class="p-4">
                   <Heading variant="heading9sb" class="dark:text-white">
-                    Detail Jenis <span class="text-red-500">*</span>
+                    {{ t("je_modal_detail") }}
                   </Heading>
                 </div>
 
@@ -240,14 +240,14 @@
                   v-if="detailLoading"
                   class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
-                  Memuat detail...
+                  {{ t("je_detail_loading") }}
                 </div>
 
                 <div
                   v-else-if="!detailJenis"
                   class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
-                  Detail tidak ditemukan
+                  {{ t("je_detail_empty") }}
                 </div>
 
                 <div v-else class="space-y-6 pb-2">
@@ -258,7 +258,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Kode Jenis
+                        {{ t("je_kode") }}
                       </p>
                       <div class="mt-2">
                         <span
@@ -277,7 +277,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Nama Jenis
+                        {{ t("je_nama") }}
                       </p>
                       <p
                         class="mt-2 text-sm font-medium text-black dark:text-white"
@@ -294,7 +294,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Perihal
+                        {{ t("je_perihal") }}
                       </p>
                       <p
                         class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200 uppercase"
@@ -311,7 +311,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Format Penomoran
+                        {{ t("je_format") }}
                       </p>
                       <p
                         class="mt-2 text-sm font-mono text-gray-900 dark:text-gray-200 whitespace-pre-line"
@@ -328,7 +328,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        File Template
+                        {{ t("je_file_template") }}
                       </p>
 
                       <div
@@ -351,14 +351,15 @@
                           class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                         >
                           <Download class="w-3 h-3" />
-                          Unduh
+                          {{ t("je_unduh") }}
                         </button>
 
                         <span
                           v-else
                           class="text-xs text-gray-400 dark:text-gray-500"
-                          >Tidak ada file</span
                         >
+                          {{ t("je_tidak_ada_file") }}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -370,7 +371,7 @@
                     />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Tanggal Dibuat
+                        {{ t("je_tgl_dibuat") }}
                       </p>
                       <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">
                         {{
@@ -382,7 +383,7 @@
                 </div>
               </div>
 
-              <!-- FOOTER (custom) -->
+              <!-- FOOTER -->
               <div
                 class="border-t border-gray-300 dark:border-gray-700 mt-7 mb-1 gap-3 px-5 py-2"
               >
@@ -390,7 +391,7 @@
                   @click="showDetailModal = false"
                   class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
                 >
-                  Tutup
+                  {{ t("je_tutup") }}
                 </button>
               </div>
             </div>
@@ -405,7 +406,7 @@
                 variant="heading9b"
                 class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
-                Tambah Jenis
+                {{ t("je_modal_add") }}
               </Heading>
             </template>
 
@@ -416,12 +417,12 @@
                   variant="heading11m"
                   class="text-xs dark:text-gray-200"
                 >
-                  Kode Jenis <span class="text-red-500">*</span>
+                  {{ t("je_kode") }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis"
                   type="text"
-                  placeholder="PER"
+                  :placeholder="t('je_kode_placeholder')"
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.jenis" class="text-xs text-red-500">
@@ -435,12 +436,12 @@
                   variant="heading11m"
                   class="text-xs dark:text-gray-200"
                 >
-                  Nama Jenis <span class="text-red-500">*</span>
+                  {{ t("je_nama") }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis_text"
                   type="text"
-                  placeholder="Peraturan Direksi"
+                  :placeholder="t('je_nama_placeholder')"
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.jenis_text" class="text-xs text-red-500">
@@ -454,12 +455,12 @@
                   variant="heading11m"
                   class="text-xs dark:text-gray-200"
                 >
-                  Perihal <span class="text-red-500">*</span>
+                  {{ t("je_perihal") }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.file_text"
                   type="text"
-                  placeholder="PERATURAN DIREKSI"
+                  :placeholder="t('je_perihal_placeholder')"
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p v-if="addErrors.file_text" class="text-xs text-red-500">
@@ -473,12 +474,12 @@
                   variant="heading11m"
                   class="text-xs dark:text-gray-200"
                 >
-                  Format Penomoran <span class="text-red-500">*</span>
+                  {{ t("je_format") }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.format_penomoran"
                   type="text"
-                  placeholder="{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}"
+                  :placeholder="t('je_format_placeholder')"
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
                 <p
@@ -495,7 +496,8 @@
                   variant="heading11m"
                   class="text-xs dark:text-gray-200"
                 >
-                  Upload File Template <span class="text-red-500">*</span>
+                  {{ t("je_upload_template") }}
+                  <span class="text-red-500">*</span>
                 </Heading>
 
                 <label
@@ -503,7 +505,9 @@
                 >
                   <span class="text-gray-600 dark:text-gray-300 truncate">
                     {{
-                      addForm.file ? addForm.file.name : "Pilih file template"
+                      addForm.file
+                        ? addForm.file.name
+                        : t("je_file_placeholder")
                     }}
                   </span>
 
@@ -520,13 +524,14 @@
                 </p>
 
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Format: .doc, .docx, .pdf
+                  {{ t("je_file_hint") }}
                 </p>
               </div>
             </div>
           </Modal>
         </Teleport>
 
+        <!-- MODAL EDIT JENIS -->
         <Teleport to="body">
           <Modal v-model="showEditModal" size="xl" @save="submitEditJenis">
             <template #title>
@@ -534,7 +539,7 @@
                 variant="heading9b"
                 class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
-                Edit Jenis
+                {{ t("je_modal_edit") }}
               </Heading>
             </template>
 
@@ -542,12 +547,12 @@
               <!-- Kode Jenis -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  Kode Jenis <span class="text-red-500">*</span>
+                  {{ t("je_kode") }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis"
                   type="text"
-                  placeholder="PER"
+                  :placeholder="t('je_kode_placeholder')"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
@@ -555,12 +560,12 @@
               <!-- Nama Jenis -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  Nama Jenis <span class="text-red-500">*</span>
+                  {{ t("je_nama") }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis_text"
                   type="text"
-                  placeholder="Peraturan Direksi"
+                  :placeholder="t('je_nama_placeholder')"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
@@ -568,12 +573,12 @@
               <!-- Perihal -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  Perihal <span class="text-red-500">*</span>
+                  {{ t("je_perihal") }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.file_text"
                   type="text"
-                  placeholder="PERATURAN DIREKSI"
+                  :placeholder="t('je_perihal_placeholder')"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
@@ -581,19 +586,20 @@
               <!-- Format Penomoran -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  Format Penomoran <span class="text-red-500">*</span>
+                  {{ t("je_format") }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.format_penomoran"
                   type="text"
-                  placeholder="{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}"
+                  :placeholder="t('je_format_placeholder')"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 font-mono dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
 
               <!-- Upload File Template -->
               <label class="text-sm text-gray-700 dark:text-gray-300">
-                Upload File Template <span class="text-red-500">*</span>
+                {{ t("je_upload_template") }}
+                <span class="text-red-500">*</span>
               </label>
 
               <label
@@ -605,7 +611,7 @@
                       ? editForm.file.name
                       : editForm.file_name
                         ? editForm.file_name
-                        : "Upload file"
+                        : t("je_file_placeholder")
                   }}
                 </span>
 
@@ -631,7 +637,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedJenis.length }} dari {{ totalItems }} data
+          {{ t("menampilkan") }} {{ paginatedJenis.length }} {{ t("dari") }}
+          {{ totalItems }} {{ t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -659,7 +666,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ t("sebelumnya") }}
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -727,7 +734,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
-            Selanjutnya
+            {{ t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -745,17 +752,20 @@
         </div>
       </div>
     </div>
+
     <ConfirmDialog
       v-model="showDeleteModal"
       type="danger"
-      title="Hapus Data Jenis"
+      :title="t('je_pop_title')"
       :message="
         deleteTarget
-          ? `Apakah kamu yakin ingin menghapus jenis '${deleteTarget.jenis}'?`
+          ? locale === 'id'
+            ? `Apakah kamu yakin ingin menghapus jenis '${deleteTarget.jenis}'?`
+            : `Are you sure you want to delete type '${deleteTarget.jenis}'?`
           : ''
       "
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :confirm-text="t('popup_hapus')"
+      :cancel-text="t('popup_batal')"
       :is-loading="deleteLoading"
       @confirm="confirmDelete"
       @cancel="showDeleteModal = false"
@@ -765,7 +775,7 @@
   <!-- FILE PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreviewFile"
-    title="Pratinjau Dokumen"
+    :title="t('je_file_template')"
     side="bottom"
     :dismissible="true"
     :ui="{ content: 'h-screen max-h-screen', body: 'p-0 h-full' }"
@@ -812,12 +822,22 @@ definePageMeta({
   middleware: "auth",
 });
 
-const items = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Jenis", to: "/master/jenis" },
-] satisfies BreadcrumbItem[];
+// ─────────────────────────────────────────────
+// i18n — pakai useI18n() yang sudah diatur Navbar
+// ─────────────────────────────────────────────
+const { t, locale } = useI18n();
 
-//toast
+// ─────────────────────────────────────────────
+// BREADCRUMB (reaktif terhadap bahasa)
+// ─────────────────────────────────────────────
+const items = computed<BreadcrumbItem[]>(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("je_title"), to: "/master/jenis" },
+]);
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
 import { useToast } from "#imports";
 
 const toast = useToast();
@@ -836,6 +856,9 @@ const showToast = (opt: {
   });
 };
 
+// ─────────────────────────────────────────────
+// COMPOSABLE
+// ─────────────────────────────────────────────
 const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis } =
   useJenis();
 
@@ -845,13 +868,18 @@ const deletingId = ref<string | null>(null);
 const search = ref("");
 const jenisList = ref<JenisItem[]>([]);
 
-// Pagination & Sorting
+// ─────────────────────────────────────────────
+// PAGINATION & SORTING
+// ─────────────────────────────────────────────
 const currentPage = ref(1);
 const perPage = ref(10);
 const rowsChoices = [5, 10, 20, 50];
 const sortColumn = ref<string>("jenis");
 const sortDirection = ref<"asc" | "desc">("asc");
 
+// ─────────────────────────────────────────────
+// FETCH
+// ─────────────────────────────────────────────
 const fetchJenis = async () => {
   try {
     loading.value = true;
@@ -870,7 +898,6 @@ onMounted(fetchJenis);
 const filteredJenis = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return jenisList.value;
-
   return jenisList.value.filter((x) => {
     return (
       (x.jenis || "").toLowerCase().includes(q) ||
@@ -880,19 +907,15 @@ const filteredJenis = computed(() => {
   });
 });
 
-// Sorted data
 const sortedJenis = computed(() => {
   const sorted = [...filteredJenis.value];
-
   sorted.sort((a, b) => {
     const aVal = String(a[sortColumn.value] || "").toLowerCase();
     const bVal = String(b[sortColumn.value] || "").toLowerCase();
-
     if (aVal < bVal) return sortDirection.value === "asc" ? -1 : 1;
     if (aVal > bVal) return sortDirection.value === "asc" ? 1 : -1;
     return 0;
   });
-
   return sorted;
 });
 
@@ -902,15 +925,12 @@ const paginatedJenis = computed(() => {
 });
 
 const totalItems = computed(() => sortedJenis.value.length);
-
 const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
-// window page number
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
@@ -922,11 +942,9 @@ const paginationPages = computed(() => {
       pages.push(current - 1, current, current + 1);
     }
   }
-
   return pages;
 });
 
-// Sorting function
 const sortBy = (column: string) => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
@@ -936,7 +954,6 @@ const sortBy = (column: string) => {
   }
 };
 
-// Watch for changes
 watch(search, () => {
   currentPage.value = 1;
 });
@@ -945,7 +962,7 @@ const router = useRouter();
 
 const getFileName = (url: string) => {
   try {
-    const cleanUrl = url.split("?")[0]; // hapus query panjang
+    const cleanUrl = url.split("?")[0];
     const parts = cleanUrl.split("/");
     return parts[parts.length - 1] || "file";
   } catch {
@@ -953,16 +970,18 @@ const getFileName = (url: string) => {
   }
 };
 
-const downloadFile = (url: string) => {
-  window.open(url, "_blank");
-};
+// ─────────────────────────────────────────────
+// DETAIL
+// ─────────────────────────────────────────────
+const showDetailModal = ref(false);
+const detailLoading = ref(false);
+const detailJenis = ref<any>(null);
 
 const onView = async (row: JenisItem) => {
   try {
     showDetailModal.value = true;
     detailLoading.value = true;
     detailJenis.value = null;
-
     const res = await getJenisDetail(row.id);
     detailJenis.value = res.data;
   } catch (e) {
@@ -972,7 +991,31 @@ const onView = async (row: JenisItem) => {
   }
 };
 
-//delete
+const getTemplateName = (data: any) => {
+  if (data?.file_name) return data.file_name;
+  if (data?.file_url) return getFileName(data.file_url);
+  return "-";
+};
+
+const isOpenPreviewFile = ref(false);
+const previewFileUrl = ref<string | null>(null);
+
+const normalizeUrl = (url: string | null) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  const base = useRuntimeConfig().public.apiBase;
+  return `${base}/${url}`;
+};
+
+const openPreview = (url: string | null) => {
+  if (!url) return;
+  previewFileUrl.value = normalizeUrl(url);
+  isOpenPreviewFile.value = true;
+};
+
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
 const showDeleteModal = ref(false);
 const deleteTarget = ref<JenisItem | null>(null);
 const deleteLoading = ref(false);
@@ -984,32 +1027,25 @@ const onDelete = (row: JenisItem) => {
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
-
   try {
     deleteLoading.value = true;
-
     await deleteJenis(deleteTarget.value.id);
-
     jenisList.value = jenisList.value.filter(
       (x) => x.id !== deleteTarget.value!.id,
     );
-
     showDeleteModal.value = false;
-
     showToast({
-      title: "Berhasil",
-      message: `Data jenis berhasil dihapus`,
+      title: t("berhasil"),
+      message: t("je_success_delete"),
       color: "error",
       icon: "i-lucide-check-circle",
     });
-
     deleteTarget.value = null;
   } catch (e) {
     console.error("Gagal hapus jenis:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data jenis gagal dihapus ",
+      title: t("gagal"),
+      message: t("je_err_delete"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -1018,9 +1054,12 @@ const confirmDelete = async () => {
   }
 };
 
-//create
+// ─────────────────────────────────────────────
+// ADD
+// ─────────────────────────────────────────────
 const showAddModal = ref(false);
 const savingAdd = ref(false);
+const addErrors = ref<Record<string, string>>({});
 
 const addForm = ref({
   jenis: "",
@@ -1044,24 +1083,19 @@ const openAddModal = () => {
 
 const validateAdd = () => {
   const err: Record<string, string> = {};
-
-  if (!addForm.value.jenis.trim()) err.jenis = "Kode Jenis wajib diisi";
-  if (!addForm.value.jenis_text.trim())
-    err.jenis_text = "Nama Jenis wajib diisi";
-  if (!addForm.value.file_text.trim()) err.file_text = "Perihal wajib diisi";
+  if (!addForm.value.jenis.trim()) err.jenis = t("je_val_kode");
+  if (!addForm.value.jenis_text.trim()) err.jenis_text = t("je_val_nama");
+  if (!addForm.value.file_text.trim()) err.file_text = t("je_val_perihal");
   if (!addForm.value.format_penomoran.trim())
-    err.format_penomoran = "Format Penomoran wajib diisi";
-
+    err.format_penomoran = t("je_val_format");
   addErrors.value = err;
   return Object.keys(err).length === 0;
 };
 
 const submitAddJenis = async () => {
   if (!validateAdd()) return;
-
   try {
     savingAdd.value = true;
-
     await createJenis({
       jenis: addForm.value.jenis,
       jenis_text: addForm.value.jenis_text,
@@ -1069,22 +1103,19 @@ const submitAddJenis = async () => {
       format_penomoran: addForm.value.format_penomoran,
       file: addForm.value.file,
     });
-
     showAddModal.value = false;
     await fetchJenis();
-
     showToast({
-      title: "Berhasil",
-      message: "Data jenis berhasil ditambahkan",
+      title: t("berhasil"),
+      message: t("je_success_add"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
   } catch (e) {
     console.error("Gagal tambah jenis:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data jenis gagal ditambahkan",
+      title: t("gagal"),
+      message: t("je_err_add"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -1099,12 +1130,13 @@ const onPickFileAdd = (e: Event) => {
   addForm.value.file = file;
 };
 
-const addErrors = ref<Record<string, string>>({});
-
-//edit
+// ─────────────────────────────────────────────
+// EDIT
+// ─────────────────────────────────────────────
 const showEditModal = ref(false);
 const savingEdit = ref(false);
 const editId = ref<string | null>(null);
+const editErrors = ref<Record<string, string>>({});
 
 const editForm = ref({
   jenis: "",
@@ -1112,7 +1144,6 @@ const editForm = ref({
   file_text: "",
   format_penomoran: "",
   file: null as File | null,
-
   file_name: "" as string,
   file_url: "" as string,
 });
@@ -1123,17 +1154,13 @@ const onEdit = async (row: JenisItem) => {
     editId.value = row.id;
     savingEdit.value = false;
     editErrors.value = {};
-
     const res = await getJenisDetail(row.id);
     const data = res.data;
-
     editForm.value.jenis = data.jenis;
     editForm.value.jenis_text = data.jenis_text;
     editForm.value.file_text = data.file_text || "";
     editForm.value.format_penomoran = data.format_penomoran;
-
     editForm.value.file = null;
-
     editForm.value.file_name = data.file_name || "";
     editForm.value.file_url = data.file_url || "";
   } catch (e) {
@@ -1143,14 +1170,29 @@ const onEdit = async (row: JenisItem) => {
   }
 };
 
+const validateEdit = () => {
+  const err: Record<string, string> = {};
+  if (!editForm.value.jenis.trim()) err.jenis = t("je_val_kode");
+  if (!editForm.value.jenis_text.trim()) err.jenis_text = t("je_val_nama");
+  if (!editForm.value.file_text.trim()) err.file_text = t("je_val_perihal");
+  if (!editForm.value.format_penomoran.trim())
+    err.format_penomoran = t("je_val_format");
+
+  const hasExistingFile = !!editForm.value.file_url;
+  const hasNewFile = !!editForm.value.file;
+  if (!hasExistingFile && !hasNewFile) {
+    err.file = t("je_val_file");
+  }
+
+  editErrors.value = err;
+  return Object.keys(err).length === 0;
+};
+
 const submitEditJenis = async () => {
   if (!editId.value) return;
-
   if (!validateEdit()) return;
-
   try {
     savingEdit.value = true;
-
     await updateJenis(editId.value, {
       jenis: editForm.value.jenis,
       jenis_text: editForm.value.jenis_text,
@@ -1158,22 +1200,19 @@ const submitEditJenis = async () => {
       format_penomoran: editForm.value.format_penomoran,
       file: editForm.value.file,
     });
-
     showEditModal.value = false;
     await fetchJenis();
-
     showToast({
-      title: "Berhasil",
-      message: "Data jenis berhasil diperbarui",
+      title: t("berhasil"),
+      message: t("je_success_edit"),
       color: "success",
       icon: "i-lucide-check-circle",
     });
   } catch (e) {
     console.error("Gagal update jenis:", e);
-
     showToast({
-      title: "Gagal",
-      message: "Data jenis gagal diperbarui",
+      title: t("gagal"),
+      message: t("je_err_edit"),
       color: "error",
       icon: "i-lucide-alert-circle",
     });
@@ -1188,77 +1227,26 @@ const onPickFileEdit = (e: Event) => {
   editForm.value.file = file;
 };
 
-const validateEdit = () => {
-  const err: Record<string, string> = {};
-
-  if (!editForm.value.jenis.trim()) err.jenis = "Kode Jenis wajib diisi";
-  if (!editForm.value.jenis_text.trim())
-    err.jenis_text = "Nama Jenis wajib diisi";
-  if (!editForm.value.file_text.trim()) err.file_text = "Perihal wajib diisi";
-  if (!editForm.value.format_penomoran.trim())
-    err.format_penomoran = "Format Penomoran wajib diisi";
-
-  const hasExistingFile = !!editForm.value.file_url;
-  const hasNewFile = !!editForm.value.file;
-
-  if (!hasExistingFile && !hasNewFile) {
-    err.file = "File template wajib diupload saat edit";
-  }
-
-  editErrors.value = err;
-  return Object.keys(err).length === 0;
-};
-
-const editErrors = ref<Record<string, string>>({});
-
-//detail
-const showDetailModal = ref(false);
-const detailLoading = ref(false);
-const detailJenis = ref<any>(null);
-
-const getTemplateName = (data: any) => {
-  if (data?.file_name) return data.file_name;
-  if (data?.file_url) return getFileName(data.file_url);
-  return "-";
-};
-
-const isOpenPreviewFile = ref(false);
-const previewFileUrl = ref<string | null>(null);
-
-const normalizeUrl = (url: string | null) => {
-  if (!url) return null;
-
-  if (url.startsWith("http")) return url;
-
-  const base = useRuntimeConfig().public.apiBase;
-  return `${base}/${url}`;
-};
-
-const openPreview = (url: string | null) => {
-  if (!url) return;
-
-  previewFileUrl.value = normalizeUrl(url);
-  isOpenPreviewFile.value = true;
-};
-
-//export
+// ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 const onExport = () => {
   const data = sortedJenis.value.map((row, index) => ({
     No: index + 1,
-    "Kode Jenis": row.jenis,
-    "Nama Jenis": row.jenis_text,
-    Perihal: row.file_text || row.jenis_text,
-    "Format Penomoran": row.format_penomoran,
-    "Tanggal Dibuat": row.created_at || "-",
+    [t("je_kode")]: row.jenis,
+    [t("je_nama")]: row.jenis_text,
+    [t("je_perihal")]: row.file_text || row.jenis_text,
+    [t("je_format")]: row.format_penomoran,
+    [t("je_tgl_dibuat")]: row.created_at || "-",
   }));
 
   if (data.length === 0) {
     showToast({
-      title: "Tidak ada data",
-      message: "Tidak ada data untuk diexport.",
+      title: locale.value === "id" ? "Tidak ada data" : "No Data",
+      message: t("je_export_empty"),
       color: "warning",
       icon: "i-lucide-alert-triangle",
     });
@@ -1266,7 +1254,6 @@ const onExport = () => {
   }
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-
   worksheet["!cols"] = [
     { wch: 5 },
     { wch: 15 },
@@ -1277,13 +1264,9 @@ const onExport = () => {
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Jenis");
+  XLSX.utils.book_append_sheet(workbook, worksheet, t("je_title"));
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
-
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
   const blob = new Blob([excelBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
@@ -1292,8 +1275,8 @@ const onExport = () => {
   saveAs(blob, `master_jenis_${date}.xlsx`);
 
   showToast({
-    title: "Export berhasil",
-    message: `Data jenis berhasil diexport`,
+    title: locale.value === "id" ? "Export berhasil" : "Export Successful",
+    message: t("je_export_success"),
     color: "success",
     icon: "i-lucide-file-down",
   });
@@ -1308,7 +1291,6 @@ const onExport = () => {
     color 0.2s ease;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

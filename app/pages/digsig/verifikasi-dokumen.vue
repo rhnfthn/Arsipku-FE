@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Verifikasi Dokumen Digsig
+          {{ $t("vd_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -14,7 +14,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ $t("nm_button") }}
       </button>
     </div>
 
@@ -71,7 +71,7 @@
           <input
             v-model="search"
             @input="handleSearch"
-            placeholder="Cari Dokumen"
+            :placeholder="$t('vd_cari')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -160,7 +160,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>Tanggal Dibuat</span>
+                  <span>{{ $t("tanggal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -179,7 +179,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>No Dokumen</span>
+                  <span>{{ $t("nodokumen") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -198,7 +198,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>Perihal</span>
+                  <span>{{ $t("perihal") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -211,8 +211,8 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">Penanda Tangan</th>
-              <th class="px-4 py-3 text-center">Dokumen</th>
+              <th class="px-4 py-3 text-center">{{ $t("sign") }}</th>
+              <th class="px-4 py-3 text-center">{{ $t("dokumen") }}</th>
               <th
                 @click="handleSort('status')"
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
@@ -232,7 +232,7 @@
                 </div>
               </th>
 
-              <th class="px-4 py-3 text-center">Aksi</th>
+              <th class="px-4 py-3 text-center">{{ $t("aksi") }}</th>
             </tr>
           </thead>
 
@@ -243,7 +243,7 @@
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
             >
               <td class="p-4 text-gray-900 dark:text-white">
-                {{ formatDate(doc.tanggalDokumen) }}
+                {{ formatDate(doc.createdAt) }}
               </td>
               <td class="p-4">
                 <div class="font-medium text-gray-900 dark:text-white">
@@ -304,7 +304,7 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedRows.length }} dari
+          {{ $t("menampilkan") }} {{ paginatedRows.length }} {{ $t("dari") }}
           {{ filteredRows.length }} data
         </div>
 
@@ -333,7 +333,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- Page Numbers -->
@@ -401,7 +401,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -1105,6 +1105,7 @@ definePageMeta({
   middleware: "auth",
 });
 
+const { t } = useI18n();
 const {
   documents,
   documentDetail,
@@ -1191,7 +1192,7 @@ const search = ref("");
 const currentPage = ref(1);
 const limit = ref(10);
 const rowsPerPage = ref(10);
-
+ 
 const addForm = ref({
   tanggal: "",
   klasifikasi: "",
@@ -1205,10 +1206,10 @@ const addForm = ref({
   selectedSigners: [] as Verifikator[],
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Verifikasi Dokumen", to: "/digsig/verifikasi-dokumen" },
-];
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("verifikasi"), to: "/digsig/verifikasi-dokumen" },
+]);
 
 const filterOptions = [
   { label: "Semua", value: "" },
@@ -1450,9 +1451,10 @@ const sortBy = (key: string) => {
 };
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+  if (!dateString) return "-";
 
-  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const localString = dateString.replace("Z", "").replace("+00:00", "");
+  const date = new Date(localString);
 
   return date.toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -1460,7 +1462,6 @@ const formatDate = (dateString: string) => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Jakarta",
   });
 };
 
