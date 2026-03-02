@@ -96,25 +96,44 @@ const model = defineModel<any[]>({ default: [] });
 
 // 1. Memproses Orang (Person) - Menandai Disabled
 const processedPeople = computed(() => {
-  return props.items.map((item) => ({
-    ...item,
-    type: 'person', // Penanda tipe
-    disabled: props.excludeItems?.some((ex) => ex.value === item.value) || false,
-  }));
+  // Ambil ID semua individu yang sudah ter-cover oleh grup yang SEDANG DIPILIH di input ini
+  const selectedGroupMemberIds = model.value
+    .filter(m => m.isGroup)
+    .flatMap(g => g.raw.details?.map((d: any) => String(d.position)) || []);
+
+  return props.items.map((item) => {
+    const isExcluded = props.excludeItems?.some((ex) => ex.value === item.value);
+    // Disabled jika: Ada di list lawan (excludeItems) ATAU grupnya sudah dipilih di input ini
+    const isDisabled = isExcluded || selectedGroupMemberIds.includes(String(item.value));
+
+    return {
+      ...item,
+      type: 'person',
+      disabled: isDisabled,
+    };
+  });
 });
 
 // 2. Memproses Grup - Format Data & Cek Disabled
 const processedGroups = computed(() => {
   if (!props.groups) return [];
+
+  // Ambil ID semua individu yang sudah dipilih secara manual di input ini
+  const selectedIndividualIds = model.value
+    .filter(m => !m.isGroup)
+    .map(m => String(m.value));
+
   return props.groups.map(g => {
     const groupValue = `GROUP_${g.id}`;
     const groupMemberIds = g.details?.map((d: any) => String(d.position)) || [];
 
-    // Disable grup ini jika grup utuh sudah dipilih di list lawan,
-    // ATAU salah satu anggota grup ini sudah dipilih secara individu di list lawan
-    const isDisabled = props.excludeItems?.some((ex) =>
+    // Cek apakah grup ini ada di list lawan
+    const isExcluded = props.excludeItems?.some((ex) =>
       ex.value === groupValue || groupMemberIds.includes(String(ex.value))
-    ) || false;
+    );
+
+    // Cek apakah salah satu anggota grup ini sudah dipilih secara manual di input ini
+    const hasSelectedMemberInSelf = groupMemberIds.some(id => selectedIndividualIds.includes(id));
 
     return {
       ...g,
@@ -124,8 +143,7 @@ const processedGroups = computed(() => {
       type: 'group',
       isGroup: true,
       raw: g,
-      count: g.details ? g.details.length : 0,
-      disabled: isDisabled // Flag disabled untuk grup
+      disabled: isExcluded || hasSelectedMemberInSelf // Tambahkan pengecekan mandiri
     };
   });
 });

@@ -1,39 +1,7 @@
 <template>
   <div class="relative">
 
-    <Teleport to="body">
-      <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
-
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
-          </div>
-        </div>
-
-        <div class="relative flex flex-col items-center gap-6 z-10">
-          <div class="relative flex items-center justify-center w-24 h-24">
-            <div
-              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
-              style="animation-duration: 1.5s;">
-            </div>
-            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
-              <div class="plane-float">
-                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">
-              {{ loadingMessage || 'Memproses Data' }}
-            </span>
-            <span class="text-sm text-gray-600">
-              Mohon tunggu sebentar
-            </span>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <InputLoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
 
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
@@ -46,7 +14,6 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-
         <div class="pt-2">
           <div class="flex justify-between items-center gap-4">
             <div class="flex gap-3 sm:gap-4">
@@ -56,7 +23,6 @@
             <USkeleton class="h-8 w-36 rounded" />
           </div>
         </div>
-
         <div
           class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
@@ -73,14 +39,11 @@
             <USkeleton class="h-3 w-full" />
           </div>
         </div>
-
         <USkeleton class="h-30 w-full rounded-md" />
-
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
           <USkeleton class="h-10 w-32 rounded-lg" />
         </div>
       </div>
-
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
@@ -90,10 +53,10 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -114,36 +77,16 @@
         </div>
 
         <div class="flex flex-col py-4">
-          <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
+
+          <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
             <div
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
-
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
-                  <div class="flex items-center pb-2 mb-6">
-                    <div class="flex items-end gap-4">
-                      <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-                      <div class="flex flex-col mb-1">
-                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">
-                          AirNav Indonesia
-                        </span>
-                      </div>
-                    </div>
 
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
-                      <div class="font-bold uppercase">
-                        {{ user?.alamatInfo?.kantor }}
-                      </div>
-                      <div>
-                        {{ user?.alamatInfo?.gedung }}
-                        {{ user?.alamatInfo?.kota }}
-                      </div>
-                      <div v-html="user?.alamatInfo?.alamat"></div>
-                    </div>
-                  </div>
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
 
                   <div class="text-center mb-6 text-black">
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
@@ -151,7 +94,6 @@
                     </h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
-
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
@@ -167,8 +109,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                                                  </div>`
+                                      ${i + 1}. ${s.labelJob || s.label}
+                                    </div>`
                               )
                               .join('')
                             : '................................................'
@@ -205,7 +147,6 @@
                       <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
-
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
@@ -222,10 +163,8 @@
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
                 </div>
-
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
                   class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
-
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
@@ -243,7 +182,6 @@
                       </table>
                     </div>
                   </div>
-
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
@@ -252,7 +190,6 @@
                       </li>
                     </ol>
                   </div>
-
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
@@ -267,6 +204,7 @@
           </ClientOnly>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
         </div>
 
         <div
@@ -274,164 +212,37 @@
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
+
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0',
-      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-    }">
-      <template #body>
-        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
-          <div v-else class="flex flex-col items-center gap-2">
-            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex gap-4 w-full">
-          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" @click="confirmSaveDraft" />
+    <!-- <InputPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :dismissible="!alertState.isOpen" @draft="confirmSaveDraft" @kirim="confirmKirimDokumen" /> -->
+    <InputPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" @draft="confirmSaveDraft"
+      @kirim="confirmKirimDokumen" />
 
-          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
-            @click="confirmKirimDokumen" />
-        </div>
-      </template>
-    </USlideover>
-
-    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <!-- Header -->
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Pilih Metode Tanda Tangan
-          </h3>
-        </div>
-      </template>
-
-      <!-- Body -->
-      <template #body>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.
-        </p>
-
-        <div class="space-y-4">
-          <!-- Digital Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
-
-            <div class="flex flex-col flex-1">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Tanda Tangan Digital (BSrE)
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen ditandatangani secara elektronik resmi (TTE).
-              </span>
-
-              <!-- Signer Info -->
-              <div v-if="selectedSendType === 'digsig'"
-                class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <div class="flex items-start gap-4 p-4">
-                  <div class="flex-shrink-0">
-                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                      <UIcon name="i-heroicons-user" class="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col">
-                    <span class="text-xs text-gray-500 mb-0.5">
-                      {{ signerInfo.label }}
-                    </span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">
-                      {{ signerInfo.role }}
-                    </span>
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">
-                      {{ signerInfo.name }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Passphrase -->
-                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div @click.stop>
-                    <UFormGroup label="Passphrase" required>
-                      <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
-                        class="w-full" autofocus />
-                    </UFormGroup>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </label>
-
-          <!-- Without Signature -->
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only'
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
-
-            <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">
-                Kirim Tanpa Tanda Tangan
-              </span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                Dokumen dikirim tanpa proses tanda tangan digital.
-              </span>
-            </div>
-          </label>
-        </div>
-      </template>
-
-      <!-- Footer -->
-      <template #footer>
-        <div class="flex w-full justify-end gap-2">
-          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            :loading="isLoadingData" @click="handlePassphraseSubmit" />
-        </div>
-      </template>
-    </UModal>
+    <InputDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
+      :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
 
   </div>
 </template>
 
 <script setup lang="ts">
-/* -------------------------------------------------------------------------- */
-/* 1. IMPORTS                                                                 */
-/* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
-// Components
-import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TemplateManager from '@/components/Tulis/TemplateManager.vue';
-
-// Types & Validation
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
-// Composables
-import { useDigSign } from "@/composables/useDigSign"; // Pastikan path ini benar
-
-/* -------------------------------------------------------------------------- */
-/* 2. LOCAL TYPES                                                             */
-/* -------------------------------------------------------------------------- */
 interface RecipientItem {
   label: string;
   labelJob: string;
   value: string;
   raw: any;
+  isGroup?: boolean;
 }
 
 interface SifatOption {
@@ -446,19 +257,83 @@ interface UploadedFile {
   fileSize: number;
 }
 
-/* -------------------------------------------------------------------------- */
-/* 3. COMPOSABLES & CONFIG                                                    */
-/* -------------------------------------------------------------------------- */
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useRecipients();
-const { isLoadingDraft, getDraftDetail } = useDraft();
+const { getRecipients, getRecipientGroups } = useRecipients();
+const recipientGroups = ref<any[]>([]);
+const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign(); // Init composable getKtp
+const { digsigConfig, fetchDigsigConfig } = useDigsig();
+
+const isGroupSelected = (group: any, type: 'tertuju' | 'tembusan') => {
+  const targetList = type === 'tertuju' ? selectedTertuju.value : selectedTembusan.value;
+  return targetList.some(s => s.value === `GROUP_${group.id}`);
+};
+
+const toggleGroup = (isChecked: boolean, group: any, type: 'tertuju' | 'tembusan') => {
+  const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
+
+  // Format objek untuk badge grup
+  const groupItem: RecipientItem = {
+    label: group.nama,
+    labelJob: group.nama,
+    value: `GROUP_${group.id}`,
+    isGroup: true,
+    raw: group
+  };
+
+  const targetList = type === 'tertuju' ? selectedTertuju : selectedTembusan;
+  const otherList = type === 'tertuju' ? selectedTembusan : selectedTertuju;
+
+  if (isChecked) {
+    // Hapus individu dari tertuju & tembusan jika mereka adalah bagian dari grup ini
+    selectedTertuju.value = selectedTertuju.value.filter(s => !groupPositions.includes(s.value));
+    selectedTembusan.value = selectedTembusan.value.filter(s => !groupPositions.includes(s.value));
+
+    // Tambahkan badge grup jika belum ada
+    if (!targetList.value.some(s => s.value === groupItem.value) &&
+      !otherList.value.some(s => s.value === groupItem.value)) {
+      targetList.value.push(groupItem);
+    }
+  } else {
+    // Hapus badge grup jika di-uncheck
+    targetList.value = targetList.value.filter(s => s.value !== groupItem.value);
+  }
+};
+
+// Computed ini bertugas men-disable dropdown individu/grup jika mereka tergabung dalam list lawan
+const excludeTertujuList = computed(() => {
+  // 1. Ambil semua item yang dipilih di Tembusan (Individu & Grup)
+  const excluded: any[] = [...selectedTembusan.value];
+
+  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tembusan
+  selectedTembusan.value.filter(i => i.isGroup).forEach(g => {
+    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+    excluded.push(...members);
+  });
+
+  // 3. Tambahkan pengecekan sebaliknya: Jika ada individu di Tembusan yang merupakan anggota suatu grup,
+  // maka grup tersebut harusnya disabled di Tertuju (Logika ini sudah dicover oleh komponen anak via props excludeItems)
+
+  return excluded;
+});
+
+const excludeTembusanList = computed(() => {
+  // 1. Ambil semua item yang dipilih di Tertuju (Individu & Grup)
+  const excluded: any[] = [...selectedTertuju.value];
+
+  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tertuju
+  selectedTertuju.value.filter(i => i.isGroup).forEach(g => {
+    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+    excluded.push(...members);
+  });
+
+  return excluded;
+});
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -490,16 +365,13 @@ const tinyMceInit = {
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 4. STATE & REFS                                                            */
-/* -------------------------------------------------------------------------- */
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const alertState = useAlertState();
 
 const isPassphraseModalOpen = ref(false)
-const selectedSendType = ref('')
+const selectedSendType = ref('qr_only')
 const passphrase = ref('')
 
 const signerInfo = computed(() => ({
@@ -508,36 +380,28 @@ const signerInfo = computed(() => ({
   label: 'Ditandatangani secara digital oleh'
 }))
 
-// Form Data State
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
 const editorContent = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
-// Date State
 const today = new Date();
 const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
 
-// Classification & Files
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
 
-// Selection/Recipients
 const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
 const selectedTertuju = ref<RecipientItem[]>([]);
 const selectedTembusan = ref<RecipientItem[]>([]);
 
-// PDF Generation
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 
-/* -------------------------------------------------------------------------- */
-/* 5. COMPUTED PROPERTIES                                                     */
-/* -------------------------------------------------------------------------- */
 const selectedKlasifikasi = computed(() =>
   klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
 );
@@ -548,9 +412,6 @@ const formattedDate = computed(() => {
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-/* -------------------------------------------------------------------------- */
-/* 6. METHODS                                                                 */
-/* -------------------------------------------------------------------------- */
 const validateAndToast = (payload: DraftPayload) => {
   const validationResult = validateDraftPayload(payload);
   if (!validationResult.isValid) {
@@ -584,12 +445,20 @@ const getBasePayload = (): DraftPayload => {
     .map((f) => f.id)
     .filter((id): id is string => !!id);
 
+  // Pisahkan ID individu dan ID Grup
+  const penerimaIndividu = selectedTertuju.value.filter(i => !i.isGroup).map(i => i.value);
+  const tembusanIndividu = selectedTembusan.value.filter(i => !i.isGroup).map(i => i.value);
+
+  const penerimaGrup = selectedTertuju.value.filter(i => i.isGroup).map(i => i.raw.id);
+  const tembusanGrup = selectedTembusan.value.filter(i => i.isGroup).map(i => i.raw.id);
+
   return {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),
-    tembusan: selectedTembusan.value.map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+    penerima: penerimaIndividu, // <-- UBAH 'tertuju' MENJADI 'penerima' DI SINI
+    tembusan: tembusanIndividu,
+    penerima_grup: penerimaGrup,
+    tembusan_grup: tembusanGrup,
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
     sifat: selectedSifat.value?.value || 'biasa',
@@ -626,7 +495,6 @@ const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
   return formData;
 };
 
-// --- Event Handlers ---
 const handleApplyTemplate = (htmlContent: string) => {
   if (tinymceEditor.value) {
     const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
@@ -680,9 +548,30 @@ const confirmKirimDokumen = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  passphrase.value = "";
-  selectedSendType.value = "digsig";
-  isPassphraseModalOpen.value = true;
+  // Cek apakah TTE (DigSig) aktif untuk Nota Dinas
+  const ndConfig = digsigConfig.value.find(c => c.jenisNaskah === 'ND');
+  const isDigsigEnabled = ndConfig?.enabled ?? false;
+
+  if (isDigsigEnabled) {
+    // Munculkan Pop-up Passphrase Langsung
+    passphrase.value = "";
+    selectedSendType.value = "digsig";
+    isPassphraseModalOpen.value = true;
+  } else {
+    // Lewati Pop-up, langsung munculkan konfirmasi
+    selectedSendType.value = "qr_only";
+    const isConfirmed = await Alert.confirm(
+      'Konfirmasi Akhir',
+      'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?',
+      'Ya, Kirim Sekarang',
+      'Periksa Lagi',
+      false
+    );
+
+    if (isConfirmed) {
+      await handleKirimDokumen();
+    }
+  }
 };
 
 const handlePassphraseSubmit = async () => {
@@ -715,7 +604,6 @@ const handlePassphraseSubmit = async () => {
   }
 };
 
-// --- CORE FUNCTION YANG DIPERBAIKI SESUAI GAMBAR ---
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
 
@@ -723,52 +611,37 @@ const handleKirimDokumen = async () => {
     loadingMessage.value = "Mengirim Nota Dinas...";
     isLoadingData.value = true;
 
-    // 1. [BARU] Fetch KTP jika metode TTE dipilih
-    // Menggunakan variable 'noktp' sesuai respon API di gambar
-    let noktpValue = '';
+
+    let nikValue = '';
 
     if (selectedSendType.value === 'digsig') {
-      try {
-        const ktpResponse = await getKtp();
-
-        // Debugging untuk melihat respon di console browser
-        console.log("Respon API KTP:", ktpResponse);
-
-        // Ambil value dari path: response.data.noktp
-        if (ktpResponse?.data?.noktp) {
-          noktpValue = ktpResponse.data.noktp;
-        } else {
-          console.warn("Field 'noktp' tidak ditemukan dalam respon");
-        }
-
-      } catch (err) {
-        console.error("Gagal mengambil data KTP:", err);
-        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
+      if (!user.value?.nik) {
+        throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
       }
+      nikValue = user.value.nik;
     }
 
-    // 2. Generate PDF Final
+
     const formDataPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(formDataPreview);
     pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
 
-    // 3. Buat FormData Utama
+
     const formData = createFormData(payload, true);
 
     console.log("Mengirim Sign Option:", selectedSendType.value);
     console.log("Mengirim Passphrase (RAW):", passphrase.value);
 
-    // 4. Append Data Tambahan
+
     formData.append('passphrase', passphrase.value);
     formData.append('sign_option', selectedSendType.value);
 
-    // [BARU] Masukkan NOKTP ke Body dengan key 'nik' (atau 'noktp' tergantung backend kirim surat)
-    // Biasanya backend TTE standar menggunakan key 'nik'
-    if (noktpValue) {
-      formData.append('nik', noktpValue);
+
+    if (nikValue) {
+      formData.append('nik', nikValue);
     }
 
-    // 5. Panggil API Kirim
+
     const result = await sendNotaDinas(formData);
 
     if (result.data.success) {
@@ -825,10 +698,8 @@ const handleSaveDraft = async () => {
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 7. LIFECYCLE HOOKS                                                         */
-/* -------------------------------------------------------------------------- */
 onMounted(async () => {
+  await fetchDigsigConfig();
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -848,6 +719,8 @@ onMounted(async () => {
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
+    const groups = await getRecipientGroups('ND');
+    recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch {
     klasifikasiStatus.value = "error";
   }
@@ -869,22 +742,84 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
+        // 1. Fungsi Mapping Individu
         const mapApiToUI = (list: any[]): RecipientItem[] => {
-          return list?.map(item => {
-            const posId = String(item.position_id || item.position || item.value);
+          if (!list || !Array.isArray(list)) return [];
+          return list.map(item => {
+            // Cek apakah item berupa object (dari master) atau hanya string ID
+            const posId = String(item.position_id || item.position || item.value || item);
             const master = items.value.find(m => m.value === posId);
+
             if (master) return master;
+
+            // Fallback jika tidak ada di master items
             return {
-              label: `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`,
-              labelJob: item.positionText || item.labelJob || '',
+              label: item.positionText ? `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}` : posId,
+              labelJob: item.positionText || item.labelJob || posId,
               value: posId,
               raw: item
             };
-          }) || [];
+          });
         };
 
-        selectedTertuju.value = mapApiToUI(d.penerima);
-        selectedTembusan.value = mapApiToUI(d.tembusan);
+        // 2. Fungsi Mapping Grup
+        const mapGroupsToUI = (groupList: any[]): RecipientItem[] => {
+          if (!groupList || !Array.isArray(groupList)) return [];
+          return groupList.map(g => {
+            // Karena API draft mungkin hanya mengembalikan ID String, kita bandingkan ID-nya
+            const gId = String(g.id || g);
+            const masterGroup = recipientGroups.value.find(mg => String(mg.id) === gId);
+
+            if (masterGroup) {
+              return {
+                label: masterGroup.nama,
+                labelJob: masterGroup.nama,
+                value: `GROUP_${masterGroup.id}`, // Harus cocok dengan format grup di komponen anak
+                isGroup: true,
+                raw: masterGroup
+              };
+            }
+            return null;
+          }).filter(Boolean) as RecipientItem[];
+        };
+
+        // ==========================================
+        // EKSEKUSI TERTUJU
+        // ==========================================
+        // 1. Petakan ID dari draft menjadi format UI
+        const loadedTertujuGrup = mapGroupsToUI(d.penerima_grup);
+        const loadedTertujuIndividu = mapApiToUI(d.penerima);
+
+        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
+        const tertujuGroupMemberIds = loadedTertujuGrup.flatMap(g =>
+          g.raw.details?.map((x: any) => String(x.position)) || []
+        );
+
+        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
+        const filteredTertujuIndividu = loadedTertujuIndividu.filter(i =>
+          !tertujuGroupMemberIds.includes(String(i.value))
+        );
+
+        selectedTertuju.value = [...loadedTertujuGrup, ...filteredTertujuIndividu];
+
+        // ==========================================
+        // EKSEKUSI TEMBUSAN
+        // ==========================================
+        // 1. Petakan ID dari draft menjadi format UI
+        const loadedTembusanGrup = mapGroupsToUI(d.tembusan_grup);
+        const loadedTembusanIndividu = mapApiToUI(d.tembusan);
+
+        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
+        const tembusanGroupMemberIds = loadedTembusanGrup.flatMap(g =>
+          g.raw.details?.map((x: any) => String(x.position)) || []
+        );
+
+        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
+        const filteredTembusanIndividu = loadedTembusanIndividu.filter(i =>
+          !tembusanGroupMemberIds.includes(String(i.value))
+        );
+
+        selectedTembusan.value = [...loadedTembusanGrup, ...filteredTembusanIndividu];
 
         if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any): UploadedFile => ({
@@ -921,10 +856,7 @@ onMounted(async () => {
 }
 
 .tox-fullscreen {
-  /* Harus lebih besar dari z-index Sidebar (93) dan Navbar (92) */
   z-index: 9999 !important;
-
-  /* Memastikan posisinya menutupi seluruh layar */
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -932,7 +864,6 @@ onMounted(async () => {
   height: 100vh !important;
 }
 
-/* Opsional: Fix untuk Shadow DOM atau popup dialog TinyMCE agar juga di atas */
 .tox-dialog-wrap,
 .tox-dropzone,
 .tox-promotions {
