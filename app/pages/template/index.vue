@@ -6,7 +6,7 @@
     <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
-          Templat
+          {{ $t("tmpl_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -17,7 +17,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         <Plus class="w-4 h-4" />
-        {{ isLoadingCreate ? "Menyimpan..." : "Tambah Templat" }}
+        {{ isLoadingCreate ? $t("tmpl_btn_menyimpan") : $t("tmpl_btn_tambah") }}
       </button>
     </div>
 
@@ -46,55 +46,14 @@
           />
           <input
             v-model="search"
-            placeholder="Cari Templat"
+            :placeholder="$t('tmpl_cari_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
 
-      <!-- LOADING STATE WITH SKELETON -->
-      <div v-if="isLoadingList" class="p-4">
-        <div class="space-y-3">
-          <!-- Header skeleton -->
-          <div class="grid grid-cols-3 gap-4 mb-2">
-            <div
-              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
-            ></div>
-            <div
-              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
-            ></div>
-            <div
-              class="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
-            ></div>
-          </div>
-
-          <!-- Rows skeleton -->
-          <div v-for="i in 5" :key="i" class="grid grid-cols-3 gap-4">
-            <div
-              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded"
-            ></div>
-            <div
-              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded"
-            ></div>
-            <div
-              class="h-12 bg-gray-100 dark:bg-gray-700/50 animate-pulse rounded flex items-center justify-center gap-2 px-4"
-            >
-              <div
-                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
-              ></div>
-              <div
-                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
-              ></div>
-              <div
-                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 animate-pulse rounded"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- TABLE -->
-      <div v-else class="overflow-x-auto">
+      <div class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
           <thead
             class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10"
@@ -105,8 +64,7 @@
                 @click="handleSort('nama_templat')"
               >
                 <div class="flex items-center gap-2">
-                  Nama Templat
-
+                  {{ $t("tmpl_col_nama") }}
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="[
@@ -124,7 +82,7 @@
                 @click="handleSort('file')"
               >
                 <div class="flex items-center gap-2">
-                  Dokumen File
+                  {{ $t("tmpl_col_file") }}
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="[
@@ -138,15 +96,67 @@
               </th>
 
               <th
-                class="text-left text-[14px] border-b border-gray-300 dark:border-gray-700 w-28"
+                class="text-center text-[14px] border-b border-gray-300 dark:border-gray-700 w-28"
               >
-                Aksi
+                {{ $t("tmpl_col_aksi") }}
               </th>
             </tr>
           </thead>
 
           <tbody>
+            <!-- ── SKELETON ROWS ── -->
             <tr
+              v-if="isLoadingList"
+              v-for="i in rowsPerPage"
+              :key="`sk-${i}`"
+              class="border-b border-gray-100 dark:border-gray-700"
+            >
+              <!-- Nama Templat — lebar bervariasi agar lebih natural -->
+              <td class="px-4 py-3.5">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${50 + (i % 4) * 10}%` }"
+                ></div>
+              </td>
+
+              <!-- Nama File -->
+              <td class="px-4 py-3.5">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${40 + (i % 3) * 12}%` }"
+                ></div>
+              </td>
+
+              <!-- Aksi — 3 tombol icon -->
+              <td class="px-4 py-3.5">
+                <div class="flex items-center justify-center gap-2">
+                  <div
+                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
+                  ></div>
+                  <div
+                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
+                  ></div>
+                  <div
+                    class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
+                  ></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- ── EMPTY STATE ── -->
+            <tr v-else-if="paginatedTemplates.length === 0">
+              <td
+                colspan="3"
+                class="text-center py-10 text-gray-400 dark:text-gray-500"
+              >
+                <Inbox class="w-10 h-10 mx-auto mb-2 opacity-20" />
+                {{ $t("tmpl_empty") }}
+              </td>
+            </tr>
+
+            <!-- ── DATA ROWS ── -->
+            <tr
+              v-else
               v-for="template in paginatedTemplates"
               :key="template.id"
               class="border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
@@ -158,42 +168,34 @@
                 {{ getFileName(template.file) }}
               </td>
 
-              <td class="p-4 flex items-center gap-4 mr-2">
-                <button
-                  @click="downloadTemplate(template)"
-                  class="text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 transition"
-                  title="Download"
-                >
-                  <Download class="w-4 h-4" />
-                </button>
+              <td class="px-4 py-2">
+                <div class="flex justify-center gap-3">
+                  <button
+                    @click="downloadTemplate(template)"
+                    class="p-2 hover:bg-sky-100 dark:hover:bg-sky-900/30 rounded-lg text-sky-600 dark:text-sky-500 transition-colors"
+                    :title="$t('tmpl_tooltip_download')"
+                  >
+                    <Download class="w-4 h-4" />
+                  </button>
 
-                <button
-                  class="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 transition"
-                  @click="openEdit(template)"
-                  title="Edit"
-                  :disabled="isLoadingUpdate"
-                >
-                  <Pencil class="w-4 h-4" />
-                </button>
+                  <button
+                    class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-500 transition-colors"
+                    @click="openEdit(template)"
+                    :title="$t('tmpl_tooltip_edit')"
+                    :disabled="isLoadingUpdate"
+                  >
+                    <Pencil class="w-4 h-4" />
+                  </button>
 
-                <button
-                  @click="openDelete(template)"
-                  class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
-                  title="Hapus"
-                  :disabled="isLoadingDelete"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </td>
-            </tr>
-
-            <tr v-if="paginatedTemplates.length === 0">
-              <td
-                colspan="3"
-                class="text-center py-10 text-gray-400 dark:text-gray-500"
-              >
-                <Inbox class="w-10 h-10 mx-auto mb-2 opacity-20" />
-                Tidak ada data ditemukan
+                  <button
+                    @click="openDelete(template)"
+                    class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
+                    :title="$t('tmpl_tooltip_hapus')"
+                    :disabled="isLoadingDelete"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -206,7 +208,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedTemplates.length }} dari {{ totalItems }} data
+          {{ $t("tmpl_menampilkan") }} {{ paginatedTemplates.length }}
+          {{ $t("dari") }} {{ totalItems }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -234,12 +237,11 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
           <!-- PAGE NUMBERS -->
           <div class="flex items-center gap-1">
-            <!-- FIRST -->
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
@@ -247,16 +249,11 @@
             >
               1
             </button>
-
-            <!-- DOTS LEFT -->
             <span
               v-if="paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- WINDOW -->
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -270,18 +267,13 @@
             >
               {{ page }}
             </button>
-
-            <!-- DOTS RIGHT -->
             <span
               v-if="
                 paginationPages[paginationPages.length - 1] < totalPages - 1
               "
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
             >
-              ...
-            </span>
-
-            <!-- LAST -->
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
@@ -302,7 +294,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -331,7 +323,7 @@
             variant="heading8b"
             class="font-semibold text-xl mb-5 mt-5 ml-7 dark:text-gray-100"
           >
-            Tambah Templat
+            {{ $t("tmpl_modal_tambah_title") }}
           </Heading>
         </template>
 
@@ -339,31 +331,31 @@
           <!-- Nama Template -->
           <div class="flex flex-col">
             <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
-              Nama Templat <span class="text-red-500">*</span>
+              {{ $t("tmpl_label_nama") }} <span class="text-red-500">*</span>
             </Heading>
-
             <input
               v-model="addData.nama_template"
               class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
-              placeholder="Masukkan nama templat"
+              :placeholder="$t('tmpl_placeholder_nama')"
             />
           </div>
 
           <!-- Upload File -->
           <div class="flex flex-col">
             <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
-              File Dokumen <span class="text-red-500">*</span>
+              {{ $t("tmpl_label_file") }} <span class="text-red-500">*</span>
             </Heading>
 
             <label
               class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
             >
               <FileCheck class="w-6 h-6 text-gray-500 dark:text-gray-400" />
-              <span class="font-medium dark:text-gray-200">Pilih File</span>
+              <span class="font-medium dark:text-gray-200">{{
+                $t("tmpl_pilih_file")
+              }}</span>
               <span class="ml-2 text-gray-500 dark:text-gray-400">
-                {{ addData.fileName || "Belum ada file dipilih" }}
+                {{ addData.fileName || $t("tmpl_belum_ada_file") }}
               </span>
-
               <input
                 type="file"
                 class="hidden"
@@ -392,8 +384,8 @@
               </div>
               <button
                 @click="clearAddFile"
-                class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
-                title="Hapus file"
+                class="p-2 text-red-500 hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 transition"
+                :title="$t('tmpl_tooltip_hapus')"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -413,7 +405,7 @@
             variant="heading9b"
             class="font-semibold text-xl mb-2 mt-5 ml-7 dark:text-gray-100"
           >
-            Edit Templat
+            {{ $t("tmpl_modal_edit_title") }}
           </Heading>
         </template>
 
@@ -424,13 +416,12 @@
               variant="heading10sb"
               class="font-semibold mb-2 dark:text-gray-200"
             >
-              Nama Templat <span class="text-red-500">*</span>
+              {{ $t("tmpl_label_nama") }} <span class="text-red-500">*</span>
             </Heading>
-
             <input
               v-model="editData.nama_template"
               class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
-              placeholder="Masukkan nama templat"
+              :placeholder="$t('tmpl_placeholder_nama')"
             />
           </div>
 
@@ -440,9 +431,9 @@
               variant="heading10sb"
               class="font-semibold mb-2 dark:text-gray-200"
             >
-              File Dokumen
+              {{ $t("tmpl_label_file") }}
               <span class="text-xs text-gray-500 dark:text-gray-400"
-                >(Opsional)</span
+                >({{ $t("tmpl_label_file_opsional") }})</span
               >
             </Heading>
 
@@ -450,13 +441,12 @@
               class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
             >
               <FileCheck class="w-6 h-6 text-gray-500 dark:text-gray-400" />
-              <span class="font-medium dark:text-gray-200"
-                >Pilih File Baru</span
-              >
+              <span class="font-medium dark:text-gray-200">{{
+                $t("tmpl_pilih_file_baru")
+              }}</span>
               <span class="ml-2 text-gray-500 dark:text-gray-400">
-                {{ editData.newFileName || "Tidak ada file baru" }}
+                {{ editData.newFileName || $t("tmpl_tidak_ada_file_baru") }}
               </span>
-
               <input type="file" class="hidden" @change="handleEditFile" />
             </label>
 
@@ -468,7 +458,7 @@
               <FileCheck class="w-6 h-6 text-gray-400 dark:text-gray-500" />
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  File saat ini:
+                  {{ $t("tmpl_file_saat_ini") }}
                 </p>
                 <p class="text-sm font-medium dark:text-gray-200">
                   {{ getFileName(editData.file) }}
@@ -487,7 +477,7 @@
                 />
                 <div>
                   <p class="text-xs text-primary-600 dark:text-primary-400">
-                    File baru:
+                    {{ $t("tmpl_file_baru") }}
                   </p>
                   <p class="text-sm font-medium dark:text-gray-200">
                     {{ editData.newFileName }}
@@ -504,7 +494,7 @@
               <button
                 @click="clearEditFile"
                 class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
-                title="Hapus file baru"
+                :title="$t('tmpl_tooltip_hapus')"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -520,10 +510,10 @@
     <ConfirmPopup
       v-model="confirmDeleteOpen"
       type="danger"
-      title="Hapus Data"
-      message="Yakin ingin menghapus data ini?"
-      confirmText="Hapus"
-      cancelText="Batal"
+      :title="$t('tmpl_popup_hapus_title')"
+      :message="$t('tmpl_popup_hapus_pesan')"
+      :confirmText="$t('tmpl_popup_hapus_confirm')"
+      :cancelText="$t('tmpl_popup_hapus_batal')"
       cancelColor="primary"
       @confirm="deleteNow"
     />
@@ -532,6 +522,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   Inbox,
   FileCheck,
@@ -548,13 +539,20 @@ import PageHeader from "~/components/PageHeader.vue";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { useTemplate } from "~/composables/useTemplate";
 import type { Template } from "~/types/template";
+
 definePageMeta({
   middleware: "auth",
 });
 
+const { t } = useI18n();
 const toast = useToast();
 
-// ✅ Composable
+// ─── Breadcrumbs (reactive to locale) ────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("tmpl_title"), to: "/admin/template" },
+]);
+
 const {
   getTemplates,
   getTemplateById,
@@ -570,7 +568,6 @@ const {
 // State
 const templates = ref<Template[]>([]);
 const search = ref("");
-
 const editModal = ref(false);
 const addModal = ref(false);
 const confirmDeleteOpen = ref(false);
@@ -590,23 +587,17 @@ const addData = ref<any>({
   fileName: "",
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Templat", to: "/admin/template" },
-];
-
-// ✅ Fetch Data dari API
+// Fetch Data
 const fetchData = async () => {
   try {
     const data = await getTemplates();
     templates.value = data;
-    console.log("✅ Templates loaded:", templates.value.length);
   } catch (error) {
     console.error("❌ Error loading templates:", error);
   }
 };
 
-// Filter & Sort - UPDATED untuk animasi yang benar
+// Sort
 const sortKey = ref("");
 const sortOrder = ref<"asc" | "desc">("asc");
 
@@ -621,18 +612,15 @@ const filteredTemplates = computed(() => {
 
 const sortedTemplates = computed(() => {
   if (!sortKey.value) return filteredTemplates.value;
-
   return [...filteredTemplates.value].sort((a, b) => {
     const A = a[sortKey.value];
     const B = b[sortKey.value];
-
     if (A < B) return sortOrder.value === "asc" ? -1 : 1;
     if (A > B) return sortOrder.value === "asc" ? 1 : -1;
     return 0;
   });
 });
 
-// ✅ Handler untuk sort dengan animasi seperti Penandatanganan
 const handleSort = (key: string) => {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -642,9 +630,7 @@ const handleSort = (key: string) => {
   }
 };
 
-// ================================
-// PAGINATION
-// ================================
+// Pagination
 const rowsPerPage = ref(10);
 const rowsChoices = [5, 10, 15, 25, 50, 100];
 const currentPage = ref(1);
@@ -655,7 +641,6 @@ const paginatedTemplates = computed(() => {
 });
 
 const totalItems = computed(() => filteredTemplates.value.length);
-
 const totalPages = computed(() =>
   Math.ceil(totalItems.value / rowsPerPage.value),
 );
@@ -663,7 +648,6 @@ const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const delta = 2;
-
   const range: number[] = [];
   for (
     let i = Math.max(1, current - delta);
@@ -679,52 +663,39 @@ watch([search, rowsPerPage], () => {
   currentPage.value = 1;
 });
 
-// ✅ OPEN ADD MODAL
+// Add
 const openAdd = () => {
-  addData.value = {
-    nama_template: "",
-    file: null,
-    fileName: "",
-  };
+  addData.value = { nama_template: "", file: null, fileName: "" };
   addModal.value = true;
 };
 
-// ✅ HANDLE ADD FILE
 const handleAddFile = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
-
   addData.value.file = file;
   addData.value.fileName = file.name;
-  console.log("📎 File selected:", file.name, formatFileSize(file.size));
 };
 
-// ✅ CLEAR ADD FILE
 const clearAddFile = () => {
   addData.value.file = null;
   addData.value.fileName = "";
 };
 
-// ✅ SAVE ADD
 const saveAdd = async () => {
   if (!addData.value.nama_template || !addData.value.file) {
     toast.add({
-      title: "Form tidak lengkap",
-      description: "Nama template dan file wajib diisi",
+      title: t("tmpl_toast_form_tidak_lengkap"),
+      description: t("tmpl_toast_nama_file_wajib"),
       color: "yellow",
     });
     return;
   }
-
   try {
-    console.log("💾 Saving new template:", addData.value.nama_template);
-
     await createTemplate({
       nama_template: addData.value.nama_template,
       file: addData.value.file,
     });
-
     addModal.value = false;
     await fetchData();
     currentPage.value = 1;
@@ -733,12 +704,10 @@ const saveAdd = async () => {
   }
 };
 
-// ✅ OPEN EDIT MODAL
+// Edit
 const openEdit = async (template: Template) => {
   try {
-    // Fetch detail template untuk memastikan data terbaru
     const detail = await getTemplateById(template.id);
-
     if (detail) {
       editData.value = {
         id: detail.id,
@@ -749,55 +718,38 @@ const openEdit = async (template: Template) => {
         newFileName: "",
       };
       editModal.value = true;
-      console.log("✏️ Editing template:", detail.nama_template);
     }
   } catch (error) {
     console.error("❌ Error opening edit modal:", error);
   }
 };
 
-// ✅ HANDLE EDIT FILE
 const handleEditFile = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
-
   editData.value.newFile = file;
   editData.value.newFileName = file.name;
-  console.log("📎 New file selected:", file.name, formatFileSize(file.size));
 };
 
-// ✅ CLEAR EDIT FILE
 const clearEditFile = () => {
   editData.value.newFile = null;
   editData.value.newFileName = "";
 };
 
-// ✅ SAVE EDIT
 const saveEdit = async () => {
   if (!editData.value.nama_template) {
     toast.add({
-      title: "Form tidak lengkap",
-      description: "Nama template wajib diisi",
+      title: t("tmpl_toast_form_tidak_lengkap"),
+      description: t("tmpl_toast_nama_wajib"),
       color: "yellow",
     });
     return;
   }
-
   try {
-    console.log("💾 Updating template:", editData.value.id);
-
-    const payload: any = {
-      nama_template: editData.value.nama_template,
-    };
-
-    // Jika ada file baru, kirim file baru
-    if (editData.value.newFile) {
-      payload.file = editData.value.newFile;
-    }
-
+    const payload: any = { nama_template: editData.value.nama_template };
+    if (editData.value.newFile) payload.file = editData.value.newFile;
     await updateTemplate(editData.value.id, payload);
-
     editModal.value = false;
     await fetchData();
   } catch (error) {
@@ -805,18 +757,15 @@ const saveEdit = async () => {
   }
 };
 
-// ✅ OPEN DELETE CONFIRMATION
+// Delete
 const openDelete = (template: Template) => {
   itemToDelete.value = template;
   confirmDeleteOpen.value = true;
 };
 
-// ✅ DELETE NOW
 const deleteNow = async () => {
   if (!itemToDelete.value) return;
-
   try {
-    console.log("🗑️ Deleting template:", itemToDelete.value.id);
     await deleteTemplate(itemToDelete.value.id);
     confirmDeleteOpen.value = false;
     await fetchData();
@@ -827,21 +776,20 @@ const deleteNow = async () => {
   }
 };
 
-// ✅ DOWNLOAD TEMPLATE
+// Download
 const downloadTemplate = (template: Template) => {
   if (template.file_url) {
-    console.log("⬇️ Downloading:", template.file_url);
     window.open(template.file_url, "_blank");
   } else {
     toast.add({
-      title: "URL tidak tersedia",
-      description: "File tidak dapat diunduh",
+      title: t("tmpl_toast_url_tidak_tersedia"),
+      description: t("tmpl_toast_tidak_bisa_unduh"),
       color: "red",
     });
   }
 };
 
-// Helper functions
+// Helpers
 const getFileName = (filePath: string): string => {
   if (!filePath) return "-";
   const parts = filePath.split("/");
@@ -856,15 +804,12 @@ const formatFileSize = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-// ✅ Load data on mount
 onMounted(async () => {
-  console.log("🚀 Template page mounted");
   await fetchData();
 });
 </script>
 
 <style scoped>
-/* Custom skeleton animation */
 @keyframes skeleton-loading {
   0% {
     background-position: -200px 0;

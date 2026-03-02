@@ -160,13 +160,20 @@ const loadData = async () => {
 
   try {
     if (jenisQuery === 'K') {
-      // === LOGIC KONSEP ===
+
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
       const rawData = response?.data || response;
 
-      // 1. Jadikan rawData sebagai array
-      const rawFlows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+      // 1. PERBAIKAN: Deteksi apakah ada array "flow" di dalam rawData
+      let rawFlows = [];
+      if (rawData && Array.isArray(rawData.flow)) {
+        rawFlows = rawData.flow; // Ambil isian dari array flow
+      } else if (Array.isArray(rawData)) {
+        rawFlows = rawData;
+      } else if (rawData) {
+        rawFlows = [rawData];
+      }
 
       // 2. Urutkan berdasarkan created_at descending (terbaru di index 0)
       const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
@@ -197,25 +204,41 @@ const loadData = async () => {
         showFinalizeActions.value = isTarget;
 
         // Mapping array ke state details
+        // Mapping array ke state details
         details.value = sortedFlows.map((flow: any, index: number) => {
-          // Ambil properti dari flow (disesuaikan dengan JSON baru)
+          // Ambil properti dari flow
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
           const catatan = flow.detail?.catatan || flow.catatan || '';
 
           return {
             id: flow.id,
-            urutan: sortedFlows.length - index, // Fallback urutan jika diperlukan UI
+            urutan: sortedFlows.length - index,
             aksi: aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
             perihal: flow.perihal || '-',
             nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
-            pengirim: flow.pengirim || {},
+
+            // --- PERUBAHAN ADA DI SINI ---
+            // 'from' untuk profil/avatar yang melakukan aksi (Pembuat Draft/Disposisi)
             from: flow.pengirim || {},
-            to: flow.penerima || [],
-            cc: flow.tembusan || [],
-            rich_content: flow.konten || '', // Konten HTML (sekarang langsung dari flow.konten)
+
+
+
+            // 'pengirim' untuk data teks Pengirim Surat/Naskah
+            pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
+
+            penerima: flow.penerima,
+
+            // 'to' untuk data teks Tertuju Surat/Naskah
+            to: flow.detail?.naskah_penerima || flow.penerima || [],
+
+            // 'cc' untuk data teks Tembusan Surat/Naskah
+            cc: flow.detail?.naskah_tembusan || flow.tembusan || [],
+            // -----------------------------
+
+            rich_content: flow.konten || '',
             catatan: catatan,
             attachments: flow.lampiran_files || [],
             pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
@@ -394,10 +417,13 @@ const handleConfirmReject = async () => {
   isRejecting.value = true;
   try {
     const payload = {
-      from_position_id: selected.value?.pengirim?.position_id,
+      // PERBAIKAN: Ambil id dari dalam object detail.naskah_pengirim
+      from_position_id: selected.value?.detail?.naskah_pengirim?.position_id || selected.value?.pengirim?.position_id,
       catatan: rejectNote.value
     };
+
     const res = await rejectKonsep(selected.value.id, payload);
+
     if (res && res.success) {
       showRejectModal.value = false;
       alert("Konsep berhasil ditolak.");
@@ -513,7 +539,7 @@ const konsepOptions = [
               <h4
                 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors">
                 {{ opt.label }}</h4>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{{ opt.desc }}</p>
+              <!-- <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{{ opt.desc }}</p> -->
             </div>
             <ChevronRight class="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors" />
           </div>

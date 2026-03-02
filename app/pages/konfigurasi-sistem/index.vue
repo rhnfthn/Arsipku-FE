@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="mb-10">
         <Heading variant="heading6b" class="text-mobile-md">
-          Konfigurasi Sistem
+          {{ $t("konfig_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -30,7 +30,7 @@
               ]"
             >
               <UIcon name="i-lucide-shield-check" class="w-4 h-4" />
-              Konfigurasi DigSig
+              {{ $t("konfig_tab_digsig") }}
             </button>
             <button
               @click="activeTab = 'pengumuman'"
@@ -42,7 +42,7 @@
               ]"
             >
               <UIcon name="i-lucide-megaphone" class="w-4 h-4" />
-              Pengumuman Pemeliharaan
+              {{ $t("konfig_tab_pengumuman") }}
             </button>
           </div>
         </div>
@@ -50,10 +50,10 @@
         <!-- ===================== TAB: DIGSIG ===================== -->
         <div v-if="activeTab === 'digsig'" class="p-6">
           <Heading variant="heading9sb" class="text-mobile-md">
-            Konfigurasi Digsig
+            {{ $t("konfig_digsig_title") }}
           </Heading>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-7 mt-1">
-            Atur pengaturan global untuk fitur tanda tangan digital
+            {{ $t("konfig_digsig_desc") }}
           </p>
 
           <div class="space-y-3">
@@ -67,11 +67,9 @@
                   {{ doc.description }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Izinkan pengguna menggunakan Digsig pada dokumen
-                  {{ doc.description }}
+                  {{ $t("konfig_digsig_izinkan") }} {{ doc.description }}
                 </p>
               </div>
-
               <button
                 type="button"
                 @click="toggleDigsig(doc.jenisNaskah)"
@@ -97,43 +95,48 @@
           <!-- Form buat pengumuman -->
           <div class="p-6 border-b border-gray-100 dark:border-gray-700">
             <Heading variant="heading9sb" class="text-mobile-md">
-              Pengumuman Pemeliharaan
+              {{ $t("konfig_pengumuman_title") }}
             </Heading>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-7 mt-1">
-              Buat pengumuman maintenance yang akan ditampilkan ke semua
-              pengguna
+              {{ $t("konfig_pengumuman_desc") }}
             </p>
             <div class="space-y-4">
+              <!-- Judul -->
               <div>
                 <label
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Judul Pengumuman <span class="text-red-500">*</span>
+                  {{ $t("konfig_form_judul") }}
+                  <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="announcementForm.judul"
-                  placeholder="Contoh: Maintenance Fitur Tulis"
+                  :placeholder="$t('konfig_form_judul_placeholder')"
                   class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-3 pr-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
+              <!-- Pesan -->
               <div>
                 <label
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Pesan Pengumuman <span class="text-red-500">*</span>
+                  {{ $t("konfig_form_pesan") }}
+                  <span class="text-red-500">*</span>
                 </label>
                 <textarea
                   v-model="announcementForm.pesan"
                   rows="3"
-                  placeholder="Tulis pesan pengumuman di sini..."
+                  :placeholder="$t('konfig_form_pesan_placeholder')"
                   class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-3 pr-3 py-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 ></textarea>
               </div>
+              <!-- Jenis -->
               <div>
                 <label
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Jenis Pengumuman <span class="text-red-500">*</span>
+                  {{ $t("konfig_form_jenis") }}
+                  <span class="text-red-500">*</span>
                 </label>
                 <div class="grid grid-cols-2 gap-3">
                   <button
@@ -145,7 +148,8 @@
                         : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300',
                     ]"
                   >
-                    <UIcon name="i-lucide-info" class="w-5 h-5" /> Info
+                    <UIcon name="i-lucide-info" class="w-5 h-5" />
+                    {{ $t("konfig_jenis_info") }}
                   </button>
                   <button
                     @click="announcementForm.jenis = 'warning'"
@@ -157,10 +161,11 @@
                     ]"
                   >
                     <UIcon name="i-lucide-triangle-alert" class="w-5 h-5" />
-                    Peringatan
+                    {{ $t("konfig_jenis_peringatan") }}
                   </button>
                 </div>
               </div>
+              <!-- Submit -->
               <div class="flex justify-end pt-1">
                 <button
                   @click="handleCreateAnnouncement"
@@ -172,7 +177,11 @@
                   class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Megaphone class="w-4 h-4" />
-                  {{ isCreatingMessage ? "Menyimpan..." : "Buat Pengumuman" }}
+                  {{
+                    isCreatingMessage
+                      ? $t("konfig_btn_menyimpan")
+                      : $t("konfig_btn_buat")
+                  }}
                 </button>
               </div>
             </div>
@@ -180,25 +189,25 @@
 
           <!-- Daftar pengumuman -->
           <div class="p-6 space-y-4">
-            <!-- Loading state -->
+            <!-- Loading -->
             <div v-if="isLoadingMessage" class="py-12 text-center">
               <UIcon
                 name="i-lucide-loader-2"
                 class="w-8 h-8 text-primary animate-spin mx-auto mb-3"
               />
               <p class="text-gray-500 dark:text-gray-400 text-sm">
-                Memuat pengumuman...
+                {{ $t("konfig_loading") }}
               </p>
             </div>
 
-            <!-- Empty state -->
+            <!-- Empty -->
             <div v-else-if="messageList.length === 0" class="py-12 text-center">
               <UIcon
                 name="i-lucide-megaphone-off"
                 class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"
               />
               <p class="text-gray-500 dark:text-gray-400 text-sm">
-                Belum ada pengumuman. Buat pengumuman baru di atas.
+                {{ $t("konfig_empty") }}
               </p>
             </div>
 
@@ -216,13 +225,12 @@
                   <p
                     class="text-sm font-semibold text-gray-800 dark:text-white"
                   >
-                    Aktifkan Pengumuman
+                    {{ $t("konfig_aktifkan_title") }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Pengumuman akan muncul di setiap halaman aplikasi
+                    {{ $t("konfig_aktifkan_desc") }}
                   </p>
                 </div>
-                <!-- Custom toggle switch -->
                 <button
                   type="button"
                   @click="handleToggleBanner(item.id)"
@@ -259,10 +267,10 @@
                       <p
                         class="text-sm font-semibold text-gray-800 dark:text-white"
                       >
-                        Preview
+                        {{ $t("konfig_preview_label") }}
                       </p>
                       <p class="text-xs text-gray-500 dark:text-gray-400">
-                        Tampilan pengumuman untuk pengguna
+                        {{ $t("konfig_preview_desc") }}
                       </p>
                     </div>
                   </div>
@@ -344,12 +352,14 @@
       </div>
     </div>
 
-    <!-- ===================== MODAL EDIT — pakai komponen Modal ===================== -->
+    <!-- MODAL EDIT -->
     <Teleport to="body">
       <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
         <template #title>
           <div class="p-3 ml-2 mt-2">
-            <h3 class="text-xl font-bold dark:text-white">Edit Pengumuman</h3>
+            <h3 class="text-xl font-bold dark:text-white">
+              {{ $t("konfig_modal_edit_title") }}
+            </h3>
           </div>
         </template>
 
@@ -358,12 +368,12 @@
             <label
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Judul Pengumuman <span class="text-red-500">*</span>
+              {{ $t("konfig_edit_judul") }} <span class="text-red-500">*</span>
             </label>
             <input
               v-model="editForm.judul"
               type="text"
-              placeholder="Judul pengumuman"
+              :placeholder="$t('konfig_edit_judul_placeholder')"
               class="mt-1 mb-2 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -371,20 +381,21 @@
             <label
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Pesan Pengumuman <span class="text-red-500">*</span>
+              {{ $t("konfig_edit_pesan") }} <span class="text-red-500">*</span>
             </label>
             <textarea
               v-model="editForm.pesan"
               rows="4"
-              placeholder="Pesan pengumuman"
+              :placeholder="$t('konfig_edit_pesan_placeholder')"
               class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white resize-none"
             ></textarea>
           </div>
           <div>
             <label
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >Jenis Pengumuman</label
             >
+              {{ $t("konfig_edit_jenis") }}
+            </label>
             <div class="grid grid-cols-2 gap-3">
               <button
                 @click="editForm.jenis = 'info'"
@@ -395,7 +406,8 @@
                     : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400',
                 ]"
               >
-                <UIcon name="i-lucide-info" class="w-4 h-4" /> Info
+                <UIcon name="i-lucide-info" class="w-4 h-4" />
+                {{ $t("konfig_jenis_info") }}
               </button>
               <button
                 @click="editForm.jenis = 'warning'"
@@ -407,7 +419,7 @@
                 ]"
               >
                 <UIcon name="i-lucide-triangle-alert" class="w-4 h-4" />
-                Peringatan
+                {{ $t("konfig_jenis_peringatan") }}
               </button>
             </div>
           </div>
@@ -415,14 +427,14 @@
       </Modal>
     </Teleport>
 
-    <!-- ===================== CONFIRM DELETE — pakai komponen ConfirmPopup ===================== -->
+    <!-- CONFIRM DELETE -->
     <ConfirmPopup
       v-model="showDeleteModal"
       type="danger"
-      title="Hapus Pengumuman?"
-      :message="`Apakah Anda yakin ingin menghapus pengumuman &quot;${messageToDelete?.title}&quot;? Tindakan ini tidak dapat dibatalkan.`"
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :title="$t('konfig_hapus_title')"
+      :message="`${deleteMessagePrefix}&quot;${messageToDelete?.title}&quot;? ${deleteMessageSuffix}`"
+      :confirm-text="$t('konfig_hapus_confirm')"
+      :cancel-text="$t('konfig_hapus_batal')"
       :is-loading="isDeletingMessage"
       @confirm="handleDeleteMessage"
       @cancel="showDeleteModal = false"
@@ -431,31 +443,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
-import { Save, Megaphone } from "lucide-vue-next";
+import { ref, reactive, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
-definePageMeta({
-  middleware: "auth",
-});
+
+definePageMeta({ middleware: "auth" });
+
+const { t } = useI18n();
+
+// ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("konfig_title"), to: "/konfigurasi-sistem" },
+]);
+
+// Computed delete message parts for ConfirmPopup interpolation
+const deleteMessagePrefix = computed(() =>
+  t("locale") === "id"
+    ? "Apakah Anda yakin ingin menghapus pengumuman "
+    : "Are you sure you want to delete announcement ",
+);
+const deleteMessageSuffix = computed(() =>
+  t("locale") === "id"
+    ? "Tindakan ini tidak dapat dibatalkan."
+    : "This action cannot be undone.",
+);
 
 const activeTab = ref("digsig");
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Konfigurasi Sistem", to: "/konfigurasi-sistem" },
-];
-
-// ==========================================
-//   DIGSIG (tidak diubah)
-// ==========================================
+// ================================
+// COMPOSABLE
+// ================================
 const {
   digsigList,
   isLoading,
   isToggling,
   fetchDigsig,
   toggleDigsig,
-
   messageList,
   isLoadingMessage,
   isCreatingMessage,
@@ -467,12 +493,10 @@ const {
   updateMessage,
   toggleBanner,
   deleteMessage,
-
   showToastSaveDigsig,
 } = useKonfigurasi();
 
 const isSavingDigsig = ref(false);
-
 const saveDigsig = async () => {
   isSavingDigsig.value = true;
   try {
@@ -488,9 +512,9 @@ onMounted(() => {
   fetchMessages(true);
 });
 
-// ==========================================
-//   PENGUMUMAN — form state
-// ==========================================
+// ================================
+// PENGUMUMAN — form state
+// ================================
 const announcementForm = reactive({
   judul: "",
   pesan: "",
@@ -516,9 +540,9 @@ const handleToggleBanner = async (id: string) => {
   await toggleBanner(id);
 };
 
-// ==========================================
-//   EDIT
-// ==========================================
+// ================================
+// EDIT
+// ================================
 const showEditModal = ref(false);
 const editTarget = ref<KonfigurasiMessageItem | null>(null);
 const editForm = reactive({
@@ -549,9 +573,9 @@ const handleSaveEdit = async () => {
   }
 };
 
-// ==========================================
-//   DELETE
-// ==========================================
+// ================================
+// DELETE
+// ================================
 const showDeleteModal = ref(false);
 const messageToDelete = ref<KonfigurasiMessageItem | null>(null);
 

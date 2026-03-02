@@ -22,7 +22,7 @@
       <img
         src="/logoAirnav.png"
         :class="logoClass"
-        class="absolute transition-all duration-1000"
+        class="absolute transition-all duration-600"
         :style="logoStyle"
       />
 
@@ -37,7 +37,7 @@
       <h1
         :class="textClass"
         class="absolute left-1/2 transform -translate-x-1/2 font-bold opacity-0 transition-all duration-1000 bg-clip-text text-transparent top-[10rem] sm:top-[14rem] md:top-[15rem] lg:top-[3rem] text-[70px] sm:text-[130px] md:text-[110px] lg:text-[170px]"
-        style="background-image: linear-gradient(to right, #457fb6, #f5faff)"
+        style="background-image: linear-gradient(to right, #2d6a9f, #8bb8d8)"
       >
         {{ $t("Arsipku") }}
       </h1>
@@ -243,7 +243,6 @@ onMounted(() => {
 
   resizeHandler = () => {
     if (textClass.value === "") {
-      // logo masih besar di tengah
       logoStyle.value = {
         top: "10%",
         left: "50%",
@@ -252,17 +251,14 @@ onMounted(() => {
         height: "auto",
       };
     } else {
-      // logo kecil di kiri/top
       logoStyle.value = getResponsiveLogoSmall();
     }
   };
   window.addEventListener("resize", resizeHandler);
 
-  // tampilkan Arsipku, logo kecil, airnav, onboarding
+  // ✅ Arsipku TIDAK di-set di sini, hanya airnav & logo kecil
   setTimeout(() => {
-    textClass.value = "opacity-100";
     airnavClass.value = "opacity-100";
-    OnboardingClass.value = "opacity-100";
     logoStyle.value = getResponsiveLogoSmall();
   }, 1000);
 
@@ -272,9 +268,12 @@ onMounted(() => {
     showPlane.value = true;
     setTimeout(() => (planeAppear.value = true), 50);
     setTimeout(() => (planeTakeoff.value = true), 50 + 1000 + 500);
+
+    // ✅ Arsipku muncul bersamaan dengan showText (setelah pesawat take off)
     setTimeout(
       () => {
         showText.value = true;
+        textClass.value = "opacity-100";
       },
       50 + 1000 + 500 + 600,
     );
@@ -282,12 +281,12 @@ onMounted(() => {
     setTimeout(
       () => {
         showOnboarding.value = true;
+        OnboardingClass.value = "opacity-100";
       },
       50 + 1000 + 800 + 800,
     );
   }, startAt);
 });
-
 onUnmounted(() => {
   if (resizeHandler) window.removeEventListener("resize", resizeHandler);
 });

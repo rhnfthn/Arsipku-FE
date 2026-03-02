@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
-          Daftar Verifikasi Penomoran
+          {{ $t("ver_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -35,7 +35,7 @@
             @click.stop="openFilterStatus = !openFilterStatus"
             class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="truncate">{{ filterStatus || "Semua" }}</span>
+            <span class="truncate">{{ currentFilterLabel }}</span>
             <svg
               :class="[
                 'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
@@ -60,17 +60,17 @@
             >
               <button
                 v-for="item in filterOptions"
-                :key="item"
+                :key="item.value"
                 type="button"
                 @click.stop="selectFilterStatus(item)"
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                  filterStatus === item
+                  filterStatus === item.value
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
                     : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                 ]"
               >
-                {{ item }}
+                {{ item.label }}
               </button>
             </div>
           </Transition>
@@ -84,31 +84,14 @@
           <input
             v-model="search"
             @input="handleSearchInput"
-            placeholder="Cari..."
+            :placeholder="$t('ver_cari_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
 
-      <!-- LOADING -->
-      <div v-if="loading" class="space-y-3 p-4">
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="w-full h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
-        ></div>
-      </div>
-
-      <!-- EMPTY -->
-      <div
-        v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
-      >
-        <p class="text-sm font-medium">Data tidak ditemukan</p>
-      </div>
-
-      <!-- TABLE -->
-      <div v-else class="overflow-x-auto">
+      <!-- TABLE BODY (skeleton / empty / data) -->
+      <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
           <thead class="bg-primary text-white text-[15px]">
             <tr>
@@ -143,7 +126,7 @@
                 class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
-                  <span>Status</span>
+                  <span>{{ $t("ver_col_status") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -159,57 +142,98 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="row in rows"
-              :key="row.id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 cursor-pointer transition"
-              @mousemove="onRowMouseMove($event, 'Klik untuk lihat detail')"
-              @mouseleave="onRowMouseLeave"
-              @click="showPreview(row)"
-            >
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
-              <td class="px-5 py-4">
-                <div class="relative group max-w-[350px]">
-                  <p
-                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
-                  >
-                    {{ row.perihal || "-" }}
-                  </p>
-                </div>
-              </td>
-              <td class="px-5 py-4">
-                <div class="relative group max-w-[300px]">
-                  <p
-                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
-                  >
-                    {{ row.penandatangan }}
-                  </p>
-                </div>
-              </td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
-              <td
-                class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+            <!-- SKELETON -->
+            <template v-if="loading">
+              <tr
+                v-for="i in rowsPerPage"
+                :key="`sk-${i}`"
+                class="border-b border-gray-200 dark:border-gray-700"
               >
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap',
-                    {
-                      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
-                        row.status === 'Menunggu Verifikasi',
-                      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
-                        row.status === 'Disetujui',
-                      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
-                        row.status === 'Ditolak',
-                    },
-                  ]"
+                <td v-for="j in headers.length" :key="j" class="px-5 py-4">
+                  <div
+                    class="h-4 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"
+                    :style="{ width: `${55 + (j % 4) * 10}%` }"
+                  ></div>
+                </td>
+                <!-- sticky status skeleton -->
+                <td
+                  class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
                 >
-                  {{ row.status }}
-                </span>
-              </td>
-            </tr>
+                  <div
+                    class="h-6 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-full"
+                  ></div>
+                </td>
+              </tr>
+            </template>
+
+            <!-- EMPTY -->
+            <template v-else-if="rows.length === 0">
+              <tr>
+                <td
+                  :colspan="headers.length + 1"
+                  class="py-20 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+                >
+                  {{ $t("ver_empty") }}
+                </td>
+              </tr>
+            </template>
+
+            <!-- DATA ROWS -->
+            <template v-else>
+              <tr
+                v-for="row in rows"
+                :key="row.id"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 cursor-pointer transition"
+                @mousemove="onRowMouseMove($event, $t('ver_tooltip_detail'))"
+                @mouseleave="onRowMouseLeave"
+                @click="showPreview(row)"
+              >
+                <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
+                <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
+                <td class="px-5 py-4">
+                  <div class="relative group max-w-[350px]">
+                    <p
+                      class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                    >
+                      {{ row.perihal || "-" }}
+                    </p>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <div class="relative group max-w-[300px]">
+                    <p
+                      class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                    >
+                      {{ row.penandatangan }}
+                    </p>
+                  </div>
+                </td>
+                <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
+                <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
+                <td class="px-5 py-4 dark:text-gray-300">
+                  {{ row.tglUsulan }}
+                </td>
+                <td
+                  class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+                >
+                  <span
+                    :class="[
+                      'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap',
+                      {
+                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
+                          row.status === 'Menunggu Verifikasi',
+                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          row.status === 'Disetujui',
+                        'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
+                          row.status === 'Ditolak',
+                      },
+                    ]"
+                  >
+                    {{ getRowStatusLabel(row.status) }}
+                  </span>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -220,7 +244,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
+          {{ $t("menampilkan") }} {{ rows.length }} {{ $t("dari") }}
+          {{ pagination.total }} {{ $t("data") }}
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -246,7 +271,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
           <div class="flex items-center gap-1">
             <button
@@ -299,7 +324,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -339,27 +364,33 @@
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs">
+              {{ $t("ver_modal_tanggal") }}
+            </p>
             <p class="mt-1 dark:text-gray-200 text-sm font-medium">
               {{ selectedRow.tanggal }}
             </p>
           </div>
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
-              Penandatangan
+              {{ $t("ver_modal_penandatangan") }}
             </p>
             <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.penandatangan }}
             </p>
           </div>
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs">
+              {{ $t("ver_modal_klasifikasi") }}
+            </p>
             <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.klasifikasi }}
             </p>
           </div>
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs">
+              {{ $t("ver_modal_jenis_naskah") }}
+            </p>
             <p class="text-sm font-medium mt-1 dark:text-gray-200">
               {{ selectedRow.jenis }}
             </p>
@@ -370,8 +401,9 @@
         <div v-if="selectedRow.file_path" class="pt-2">
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
-            >File Lampiran Pengusul</label
           >
+            {{ $t("ver_file_lampiran") }}
+          </label>
           <div
             class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg"
           >
@@ -393,7 +425,7 @@
                 {{ getFileName(selectedRow.file_path) }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                Dokumen lampiran
+                {{ $t("ver_file_dok_lampiran") }}
               </p>
             </div>
           </div>
@@ -405,7 +437,8 @@
             <label
               class="text-xs font-medium text-gray-700 dark:text-gray-300 break-words"
             >
-              Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
+              {{ $t("ver_nomor_surat") }} ({{ selectedRow?.jumlah ?? 0 }}
+              {{ $t("ver_nomor_suffix") }})
             </label>
             <label
               class="flex items-center gap-2 cursor-pointer select-none group"
@@ -432,11 +465,12 @@
                     : 'text-gray-500 dark:text-gray-400',
                 ]"
               >
-                Tolak Semua
+                {{ $t("ver_tolak_semua") }}
               </span>
             </label>
           </div>
 
+          <!-- Warning: sebagian tidak dicentang -->
           <div
             v-if="hasUnchecked && !allUnchecked"
             class="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2"
@@ -456,16 +490,17 @@
             </svg>
             <div class="text-xs text-orange-800 dark:text-orange-300">
               <p class="font-medium">
-                {{ uncheckedCount }} nomor tidak akan digenerate
+                {{ uncheckedCount }} {{ $t("ver_warning_sebagian_title") }}
               </p>
               <p class="mt-0.5 text-orange-700 dark:text-orange-400">
-                Nomor yang tidak dicentang statusnya akan tetap
-                <strong>Booking</strong>. Untuk menolak semua, gunakan toggle
-                "Tolak Semua".
+                {{ $t("ver_warning_sebagian_desc") }}
+                <strong>{{ $t("ver_warning_sebagian_booking") }}</strong
+                >. {{ $t("ver_warning_sebagian_hint") }}
               </p>
             </div>
           </div>
 
+          <!-- Warning: semua ditolak -->
           <div
             v-if="allUnchecked && validDetails.length > 0"
             class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2"
@@ -484,15 +519,17 @@
               />
             </svg>
             <div class="text-xs text-red-800 dark:text-red-300">
-              <p class="font-medium">Semua nomor akan ditolak</p>
+              <p class="font-medium">{{ $t("ver_warning_semua_title") }}</p>
               <p class="mt-0.5 text-red-700 dark:text-red-400">
-                Seluruh {{ validDetails.length }} nomor akan berstatus
-                <strong>Ditolak</strong>. Isi keterangan penolakan sebelum
-                melanjutkan.
+                {{ $t("ver_warning_semua_desc") }} {{ validDetails.length }}
+                {{ $t("ver_warning_semua_suffix") }}
+                <strong>{{ $t("ver_warning_semua_ditolak") }}</strong
+                >. {{ $t("ver_warning_semua_hint") }}
               </p>
             </div>
           </div>
 
+          <!-- Warning: ada nomor pending (tanpa ID) -->
           <div
             v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
             class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
@@ -514,15 +551,15 @@
               <p
                 class="text-sm font-medium text-yellow-800 dark:text-yellow-400"
               >
-                Peringatan
+                {{ $t("ver_warning_pending_title") }}
               </p>
               <p class="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
-                Beberapa nomor belum memiliki ID (status pending) dan tidak
-                dapat diproses.
+                {{ $t("ver_warning_pending_desc") }}
               </p>
             </div>
           </div>
 
+          <!-- Detail baris nomor -->
           <div class="space-y-3">
             <div
               v-for="(detail, idx) in selectedRow.details"
@@ -596,11 +633,12 @@
                             detail.status === 'hangus',
                         },
                       ]"
-                      >{{ getStatusLabel(detail.status) }}</span
+                      >{{ getDetailStatusLabel(detail.status) }}</span
                     >
                   </div>
                 </div>
 
+                <!-- No file -->
                 <div
                   v-if="!hasExistingFile(detail) && detail.status !== 'hangus'"
                   class="flex items-center gap-2 border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2.5"
@@ -618,11 +656,12 @@
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span class="text-xs text-yellow-700 dark:text-yellow-400"
-                    >Belum ada file diupload</span
-                  >
+                  <span class="text-xs text-yellow-700 dark:text-yellow-400">{{
+                    $t("ver_file_belum_ada")
+                  }}</span>
                 </div>
 
+                <!-- Has file -->
                 <template v-if="hasExistingFile(detail)">
                   <div
                     v-if="detail.status === 'hangus'"
@@ -651,7 +690,7 @@
                       <p
                         class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
                       >
-                        Klik untuk preview
+                        {{ $t("ver_file_klik_preview") }}
                       </p>
                     </div>
                   </div>
@@ -683,7 +722,7 @@
                       <p
                         class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
                       >
-                        Klik untuk preview
+                        {{ $t("ver_file_klik_preview") }}
                       </p>
                     </div>
                   </div>
@@ -698,18 +737,19 @@
           <label
             class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2"
           >
-            Keterangan Penolakan
+            {{ $t("ver_keterangan_tolak_label") }}
             <span class="text-red-500">*</span>
             <span
               v-if="!allUnchecked"
               class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
-              >(untuk nomor yang tidak dicentang)</span
             >
+              {{ $t("ver_keterangan_tolak_suffix") }}
+            </span>
           </label>
           <textarea
             v-model="keterangan_ditolak"
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm min-h-[120px] bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
-            placeholder="Masukkan keterangan mengapa nomor ditolak..."
+            :placeholder="$t('ver_keterangan_tolak_placeholder')"
           ></textarea>
           <p
             v-if="!keterangan_ditolak.trim() && showKeteranganWarning"
@@ -728,7 +768,7 @@
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            Keterangan penolakan wajib diisi
+            {{ $t("ver_keterangan_tolak_wajib") }}
           </p>
         </div>
       </div>
@@ -763,14 +803,14 @@
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
-            {{ isProcessing ? "Memproses..." : "Nomor Disetujui" }}
+            {{ isProcessing ? $t("ver_btn_memproses") : $t("ver_btn_setujui") }}
           </button>
           <button
             @click="confirmRejection"
             :disabled="isProcessing || !allUnchecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            Nomor Ditolak
+            {{ $t("ver_btn_tolak") }}
           </button>
         </div>
       </template>
@@ -781,7 +821,7 @@
   <Teleport to="body">
     <USlideover
       v-model:open="isOpenPreview"
-      title="Pratinjau"
+      :title="$t('ver_pratinjau')"
       side="bottom"
       :dismissible="true"
       :ui="{
@@ -807,7 +847,7 @@
               name="i-lucide-loader-2"
               class="animate-spin w-8 h-8 text-primary-500"
             />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
+            <span class="text-gray-500">{{ $t("ver_memuat_pratinjau") }}</span>
           </div>
         </div>
       </template>
@@ -817,20 +857,20 @@
   <!-- CONFIRM APPROVE -->
   <ConfirmPopup
     v-model="showConfirmApprove"
-    title="Konfirmasi Verifikasi"
+    :title="$t('ver_confirm_setujui_title')"
     :description="`Setujui ${checkedCount} nomor${uncheckedCount > 0 ? ` dan tolak ${uncheckedCount} nomor` : ''}?`"
-    confirmText="Ya, Proses"
-    cancelText="Batal"
+    :confirmText="$t('ver_confirm_setujui_ya')"
+    :cancelText="$t('ver_confirm_batal')"
     @confirm="processApproval"
   />
 
   <!-- CONFIRM REJECT -->
   <ConfirmPopup
     v-model="showConfirmReject"
-    title="Konfirmasi Penolakan"
+    :title="$t('ver_confirm_tolak_title')"
     :description="`Apakah Anda yakin ingin menolak semua ${uncheckedCount} nomor?`"
-    confirmText="Ya, Tolak"
-    cancelText="Batal"
+    :confirmText="$t('ver_confirm_tolak_ya')"
+    :cancelText="$t('ver_confirm_batal')"
     @confirm="processRejection"
   />
 
@@ -848,16 +888,17 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { useI18n } from "vue-i18n";
 import { Search, Copy, ArrowUpDown } from "lucide-vue-next";
 import Heading from "~/components/Heading.vue";
 import PageHeader from "~/components/PageHeader.vue";
 import { Modal } from "#components";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
 import { usePenomoran } from "~/composables/usePenomoran";
-definePageMeta({
-  middleware: "auth",
-});
 
+definePageMeta({ middleware: "auth" });
+
+const { t } = useI18n();
 const config = useRuntimeConfig();
 const apiBaseUrl = config.public.apiBaseUrl;
 
@@ -874,24 +915,59 @@ const {
   showToastTidakAdaNomor,
 } = usePenomoran();
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Verifikasi", to: "/penomoran/verifikasi" },
-];
+// ─── Computed breadcrumbs & headers (locale-reactive) ─────────────────────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("ver_title"), to: "/penomoran/verifikasi" },
+]);
 
-const headers = [
-  { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Tanggal", key: "tanggal", sortable: true },
-  { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penandatangan", key: "penandatangan", sortable: false },
-  { label: "Jumlah", key: "jumlah", sortable: false },
-  { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Tgl Usulan", key: "tanggal_usulan", sortable: true },
-];
+const headers = computed(() => [
+  { label: t("ver_col_jenis"), key: "jenis", sortable: true },
+  { label: t("ver_col_tanggal"), key: "tanggal", sortable: true },
+  { label: t("ver_col_perihal"), key: "perihal", sortable: false },
+  { label: t("ver_col_penandatangan"), key: "penandatangan", sortable: false },
+  { label: t("ver_col_jumlah"), key: "jumlah", sortable: false },
+  { label: t("ver_col_pengusul"), key: "pengusul", sortable: false },
+  { label: t("ver_col_tgl_usulan"), key: "tanggal_usulan", sortable: true },
+]);
 
-const filterOptions = ["Semua", "Menunggu Verifikasi", "Disetujui", "Ditolak"];
+const filterOptions = computed(() => [
+  { label: t("ver_filter_semua"), value: "Semua" },
+  { label: t("ver_filter_menunggu"), value: "Menunggu Verifikasi" },
+  { label: t("ver_filter_disetujui"), value: "Disetujui" },
+  { label: t("ver_filter_ditolak"), value: "Ditolak" },
+]);
 
-// ─── State ───────────────────────────────────────
+const currentFilterLabel = computed(
+  () =>
+    filterOptions.value.find((o) => o.value === filterStatus.value)?.label ??
+    t("ver_filter_semua"),
+);
+
+// ─── Row/detail status label helpers ─────────────────────────────────────────
+const getRowStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    "Menunggu Verifikasi": t("ver_status_menunggu"),
+    Disetujui: t("ver_status_disetujui"),
+    Ditolak: t("ver_status_ditolak"),
+  };
+  return map[status] ?? status;
+};
+
+const getDetailStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    pending: t("ver_status_detail_pending"),
+    menunggu: t("ver_status_detail_menunggu"),
+    booking: t("ver_status_detail_booking"),
+    terpakai: t("ver_status_detail_terpakai"),
+    terpakai_final: t("ver_status_detail_final"),
+    ditolak: t("ver_status_detail_ditolak"),
+    hangus: t("ver_status_detail_hangus"),
+  };
+  return map[status] ?? status;
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const rowsPerPage = ref<number>(10);
@@ -943,9 +1019,11 @@ const fetchData = async () => {
     rows.value = data.map((item: any) => {
       const tanggalDate = new Date(item.tanggal);
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
-      const createdDate = new Date(item.created_at);
-      const wib = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
-      const tglUsulan = `${String(wib.getDate()).padStart(2, "0")}/${String(wib.getMonth() + 1).padStart(2, "0")}/${String(wib.getFullYear()).slice(-2)} ${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")}`;
+      const localCreated = item.created_at
+        .replace("Z", "")
+        .replace("+00:00", "");
+      const createdDate = new Date(localCreated);
+      const tglUsulan = `${String(createdDate.getDate()).padStart(2, "0")}/${String(createdDate.getMonth() + 1).padStart(2, "0")}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, "0")}:${String(createdDate.getMinutes()).padStart(2, "0")}`;
 
       return {
         id: item.id,
@@ -1000,8 +1078,8 @@ const handleLimitChange = () => {
   fetchData();
 };
 
-const selectFilterStatus = (val: string) => {
-  filterStatus.value = val;
+const selectFilterStatus = (item: { label: string; value: string }) => {
+  filterStatus.value = item.value;
   openFilterStatus.value = false;
   currentPage.value = 1;
   fetchData();
@@ -1101,19 +1179,6 @@ const displayNomor = (detail: any) => {
   return "-";
 };
 
-const getStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    pending: "Pending",
-    menunggu: "Menunggu",
-    booking: "Booking",
-    terpakai: "Terpakai",
-    terpakai_final: "Final",
-    ditolak: "Ditolak",
-    hangus: "Hangus",
-  };
-  return map[status] || status;
-};
-
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value);
   showToastCopied(value);
@@ -1121,10 +1186,8 @@ const handleCopy = (value: string) => {
 
 const getFileName = (path: string) =>
   path ? path.split("/").pop() || path : "-";
-
 const hasExistingFile = (detail: any) =>
   !!(detail.file_name || detail.file_text || detail.file_url);
-
 const getDisplayFileName = (detail: any) => {
   if (detail.file_name) return detail.file_name;
   if (detail.file_text) return getFileName(detail.file_text);
@@ -1293,7 +1356,6 @@ watch(keterangan_ditolak, (v) => {
   if (v.trim()) showKeteranganWarning.value = false;
 });
 
-// Saat slideover dibuka, tutup modal; saat ditutup, buka kembali modal
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false;
@@ -1305,7 +1367,6 @@ watch(isOpenPreview, (open) => {
 </script>
 
 <style scoped>
-/* Animasi dropdown filter — sama dengan halaman Delegasi */
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1321,7 +1382,6 @@ watch(isOpenPreview, (open) => {
   opacity: 1;
   transform: scaleY(1) translateY(0);
 }
-
 [data-custom-dropdown] button:focus {
   outline: none;
 }

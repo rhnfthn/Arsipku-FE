@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { X, Info, TriangleAlert, CircleCheck } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import { useDigsig } from "@/composables/useDigsig";
@@ -116,6 +116,12 @@ const topOffset = computed(() => (bsreAlert.value?.isActive ? "52px" : "0px"));
 // Set ID yang sudah di-dismiss — sumber kebenaran dari localStorage
 const dismissed = ref<Set<string>>(new Set());
 
+// Snapshot showBanner state dari fetch sebelumnya
+// Digunakan untuk mendeteksi perubahan false → true (bukan sekadar "sekarang true")
+const prevShowBanner = ref<Map<string, boolean>>(new Map());
+// Flag: apakah data sudah di-load pertama kali
+const initialized = ref(false);
+
 // Baca dari localStorage saat mount
 onMounted(() => {
   try {
@@ -130,12 +136,53 @@ onMounted(() => {
   fetchMessages();
 });
 
+// Watch messageList:
+// - Load pertama (initialized=false): hanya catat snapshot, jangan hapus dismissed
+// - Setelah itu: jika showBanner berubah false→true, berarti admin aktifkan ulang
+//   → hapus dari dismissed agar banner muncul lagi
+watch(
+  messageList,
+  (items) => {
+    if (!initialized.value) {
+      // Load pertama — simpan snapshot awal, tidak hapus apapun dari dismissed
+      const snap = new Map<string, boolean>();
+      for (const item of items) {
+        snap.set(item.id, item.showBanner);
+      }
+      prevShowBanner.value = snap;
+      initialized.value = true;
+      return;
+    }
+
+    // Update berikutnya — cek apakah ada yang berubah false→true
+    let changed = false;
+    for (const item of items) {
+      const wasOn = prevShowBanner.value.get(item.id);
+      if (item.showBanner && wasOn === false && dismissed.value.has(item.id)) {
+        // Admin toggle ON kembali setelah sebelumnya OFF → hapus dari dismissed
+        dismissed.value.delete(item.id);
+        changed = true;
+      }
+      // Update snapshot
+      prevShowBanner.value.set(item.id, item.showBanner);
+    }
+
+    if (changed) {
+      dismissed.value = new Set(dismissed.value);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...dismissed.value]));
+      } catch {
+        // abaikan
+      }
+    }
+  },
+  { deep: true },
+);
+
 // Klik X → simpan ID ke localStorage secara permanen
-// Tidak ada mekanisme yang menghapus entry ini — satu-satunya cara
-// banner muncul lagi adalah jika admin membuat pengumuman BARU (ID berbeda)
+// Banner akan muncul lagi HANYA jika admin toggle off→on kembali
 const dismiss = (id: string) => {
   dismissed.value.add(id);
-  // Buat Set baru agar Vue reaktif
   dismissed.value = new Set(dismissed.value);
 
   try {
@@ -145,7 +192,7 @@ const dismiss = (id: string) => {
   }
 };
 
-// Filter: tampil hanya jika showBanner=true DAN ID belum pernah di-dismiss user
+// Filter: tampil hanya jika showBanner=true DAN ID belum di-dismiss user
 const activeMessages = computed(() =>
   messageList.value.filter((m) => m.showBanner && !dismissed.value.has(m.id)),
 );

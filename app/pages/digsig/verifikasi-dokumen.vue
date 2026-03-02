@@ -243,7 +243,7 @@
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
             >
               <td class="p-4 text-gray-900 dark:text-white">
-                {{ formatDate(doc.tanggalDokumen) }}
+                {{ formatDate(doc.createdAt) }}
               </td>
               <td class="p-4">
                 <div class="font-medium text-gray-900 dark:text-white">
@@ -1192,7 +1192,7 @@ const search = ref("");
 const currentPage = ref(1);
 const limit = ref(10);
 const rowsPerPage = ref(10);
-
+ 
 const addForm = ref({
   tanggal: "",
   klasifikasi: "",
@@ -1451,9 +1451,10 @@ const sortBy = (key: string) => {
 };
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+  if (!dateString) return "-";
 
-  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const localString = dateString.replace("Z", "").replace("+00:00", "");
+  const date = new Date(localString);
 
   return date.toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -1461,7 +1462,6 @@ const formatDate = (dateString: string) => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Jakarta",
   });
 };
 

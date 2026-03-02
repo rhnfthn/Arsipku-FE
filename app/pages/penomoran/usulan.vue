@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md">
-          Daftar Usulan Penomoran
+          {{ $t("usl_title") }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -15,7 +15,7 @@
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah
+        {{ $t("usl_btn_tambah") }}
       </button>
     </div>
 
@@ -45,7 +45,7 @@
             @click.stop="openFilterStatus = !openFilterStatus"
             class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
-            <span class="truncate">{{ filterStatus || "Semua" }}</span>
+            <span class="truncate">{{ selectedFilterLabel }}</span>
             <svg
               :class="[
                 'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
@@ -70,17 +70,17 @@
             >
               <button
                 v-for="item in filterOptions"
-                :key="item"
+                :key="item.value"
                 type="button"
-                @click.stop="selectFilterStatus(item)"
+                @click.stop="selectFilterStatus(item.value)"
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                  filterStatus === item
+                  filterStatus === item.value
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
                     : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                 ]"
               >
-                {{ item }}
+                {{ item.label }}
               </button>
             </div>
           </Transition>
@@ -94,31 +94,14 @@
           <input
             v-model="search"
             @input="handleSearchInput"
-            placeholder="Cari..."
+            :placeholder="$t('usl_cari_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
 
-      <!-- LOADING (SHIMMER) -->
-      <div v-if="loading" class="space-y-3 p-4">
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="w-full h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"
-        ></div>
-      </div>
-
-      <!-- EMPTY -->
-      <div
-        v-else-if="rows.length === 0"
-        class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400"
-      >
-        <p class="text-sm font-medium">Data tidak ditemukan</p>
-      </div>
-
-      <!-- TABLE -->
-      <div v-else class="overflow-x-auto">
+      <!-- TABLE (includes skeleton rows in tbody) -->
+      <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
           <thead class="bg-primary text-white">
             <tr>
@@ -153,7 +136,7 @@
                 class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
-                  <span>Status</span>
+                  <span>{{ $t("usl_col_status") }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -170,11 +153,79 @@
           </thead>
 
           <tbody>
+            <!-- ── SKELETON ROWS ── -->
             <tr
+              v-if="loading"
+              v-for="i in rowsPerPage"
+              :key="`sk-${i}`"
+              class="border-b border-gray-100 dark:border-gray-700"
+            >
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${50 + (i % 3) * 15}%` }"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${60 + (i % 4) * 10}%` }"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${45 + (i % 3) * 12}%` }"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-8"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  :style="{ width: `${40 + (i % 4) * 10}%` }"
+                ></div>
+              </td>
+              <td class="px-5 py-4">
+                <div
+                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"
+                ></div>
+              </td>
+              <!-- Status sticky -->
+              <td
+                class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-4 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
+              >
+                <div
+                  class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse w-28"
+                ></div>
+              </td>
+            </tr>
+
+            <!-- ── EMPTY STATE ── -->
+            <tr v-else-if="rows.length === 0">
+              <td
+                :colspan="headers.length + 1"
+                class="py-20 text-center text-gray-500 dark:text-gray-400"
+              >
+                <p class="text-sm font-medium">{{ $t("usl_empty") }}</p>
+              </td>
+            </tr>
+
+            <!-- ── DATA ROWS ── -->
+            <tr
+              v-else
               v-for="row in rows"
               :key="row.id"
               class="group hover:bg-primary-50 dark:hover:bg-primary-900/20 cursor-pointer border-b border-gray-200 dark:border-gray-700 transition"
-              @mousemove="onMouseMove($event, 'Klik untuk lihat detail')"
+              @mousemove="onMouseMove($event, $t('usl_tooltip_detail'))"
               @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
             >
@@ -219,7 +270,7 @@
                       row.status === 'Ditolak',
                   }"
                 >
-                  {{ row.status }}
+                  {{ getRowStatusLabel(row.status) }}
                 </span>
               </td>
             </tr>
@@ -233,11 +284,11 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ rows.length }} dari {{ pagination.total }} data
+          {{ $t("menampilkan") }} {{ rows.length }} {{ $t("dari") }}
+          {{ pagination.total }} {{ $t("data") }}
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Back Button -->
           <button
             @click="handlePageChange(currentPage - 1)"
             :disabled="currentPage === 1"
@@ -261,10 +312,9 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Sebelumnya
+            {{ $t("sebelumnya") }}
           </button>
 
-          <!-- Page Numbers -->
           <div class="flex items-center gap-1">
             <button
               v-if="paginationPages[0] > 1"
@@ -307,7 +357,6 @@
             </button>
           </div>
 
-          <!-- Next Button -->
           <button
             @click="handlePageChange(currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -318,7 +367,7 @@
                 : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             ]"
           >
-            Selanjutnya
+            {{ $t("selanjutnya") }}
             <svg
               class="w-4 h-4"
               fill="none"
@@ -358,21 +407,19 @@
         content: 'z-[110]',
       }"
     >
-      <!-- TITLE -->
       <template #title>
         <div class="flex justify-between items-center w-full px-5 pt-6 pb-3">
           <h2 class="text-lg font-semibold uppercase dark:text-gray-100">
-            {{ selectedRow?.jenis_naskah || "Detail" }}
+            {{ selectedRow?.jenis_naskah || $t("detail") }}
           </h2>
         </div>
       </template>
 
-      <!-- BODY -->
       <div
         v-if="selectedRow"
         class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto"
       >
-        <!-- Judul Besar -->
+        <!-- Perihal -->
         <p
           class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base"
         >
@@ -381,7 +428,9 @@
 
         <!-- Tanggal -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-          <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">
+            {{ $t("usl_detail_tanggal") }}
+          </p>
           <p class="font-medium mt-1 dark:text-gray-200">
             {{ formatDate(selectedRow.tanggal) }}
           </p>
@@ -389,7 +438,9 @@
 
         <!-- Penandatangan -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-          <p class="text-gray-500 dark:text-gray-400 text-xs">Penandatangan</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">
+            {{ $t("usl_detail_penandatangan") }}
+          </p>
           <p class="font-medium mt-1 dark:text-gray-200">
             {{ selectedRow.penandatangan || "-" }}
           </p>
@@ -397,7 +448,9 @@
 
         <!-- Klasifikasi -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-          <p class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">
+            {{ $t("usl_detail_klasifikasi") }}
+          </p>
           <p class="font-medium mt-1 dark:text-gray-200">
             {{
               selectedRow.klasifikasiDisplay || selectedRow.klasifikasi || "-"
@@ -407,18 +460,21 @@
 
         <!-- Jenis Naskah -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-          <p class="text-gray-500 dark:text-gray-400 text-xs">Jenis Naskah</p>
+          <p class="text-gray-500 dark:text-gray-400 text-xs">
+            {{ $t("usl_detail_jenis_naskah") }}
+          </p>
           <p class="font-medium mt-1 dark:text-gray-200">
             {{ selectedRow.jenis_naskah || "-" }}
           </p>
         </div>
 
-        <!-- Nomor Surat & File Upload Section -->
+        <!-- Nomor Surat -->
         <div class="mt-4">
           <label
             class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 break-words"
           >
-            Nomor Surat ({{ selectedRow?.jumlah ?? 0 }} nomor)
+            {{ $t("usl_nomor_surat") }} ({{ selectedRow?.jumlah ?? 0 }}
+            {{ $t("usl_nomor_suffix") }})
           </label>
 
           <div
@@ -456,7 +512,6 @@
                       {{ detail.nomor || selectedRow.template_nomor || "-" }}
                     </span>
 
-                    <!-- Status Badge -->
                     <span
                       v-if="detail.status"
                       :class="[
@@ -475,12 +530,11 @@
                         },
                       ]"
                     >
-                      {{ getStatusLabel(detail.status) }}
+                      {{ getDetailStatusLabel(detail.status) }}
                     </span>
                   </div>
                 </div>
 
-                <!-- ✅ Sembunyikan copy button jika hangus -->
                 <button
                   v-if="detail.nomor && detail.status !== 'hangus'"
                   @click="handleCopy(detail.nomor)"
@@ -490,9 +544,9 @@
                 </button>
               </div>
 
-              <!-- ✅ FILE SECTION -->
+              <!-- FILE SECTION -->
               <div class="mt-2">
-                <!-- ✅ File sudah ada (backend atau lokal) dan bukan hangus -->
+                <!-- File sudah ada -->
                 <div
                   v-if="detail.file_name || filesByIndex[idx]"
                   class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
@@ -527,13 +581,11 @@
                           {{
                             filesByIndex[idx]
                               ? formatFileSize(filesByIndex[idx].size)
-                              : "Klik untuk preview"
+                              : $t("usl_file_klik_preview")
                           }}
                         </p>
                       </div>
                     </div>
-
-                    <!-- Remove button hanya untuk file lokal -->
                     <button
                       v-if="filesByIndex[idx] && !detail.file_name"
                       @click="removeFile(idx)"
@@ -556,7 +608,7 @@
                   </div>
                 </div>
 
-                <!-- ✅ Upload form (belum ada file, status belum diajukan, bukan hangus) -->
+                <!-- Upload form (belum ada file, status belum diajukan) -->
                 <div
                   v-else-if="selectedRow?.status === 'Belum Diajukan'"
                   class="space-y-2"
@@ -577,20 +629,18 @@
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-
                     <div class="flex-1">
                       <span
                         class="text-gray-700 dark:text-gray-300 font-medium block"
                       >
-                        Pilih file (Opsional)
+                        {{ $t("usl_file_pilih") }}
                       </span>
                       <span
                         class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5"
                       >
-                        PDF, DOC, DOCX (Max 5MB)
+                        {{ $t("usl_file_format_hint") }}
                       </span>
                     </div>
-
                     <input
                       type="file"
                       class="hidden"
@@ -600,7 +650,7 @@
                   </label>
                 </div>
 
-                <!-- ✅ Belum ada file & tidak bisa upload & bukan hangus -->
+                <!-- Belum ada file & tidak bisa upload -->
                 <div
                   v-else
                   class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
@@ -620,7 +670,7 @@
                       />
                     </svg>
                     <span class="text-xs text-yellow-800 dark:text-yellow-400">
-                      Belum ada file diupload
+                      {{ $t("usl_file_belum_ada") }}
                     </span>
                   </div>
                 </div>
@@ -629,7 +679,7 @@
           </div>
         </div>
 
-        <!-- File upload info -->
+        <!-- Upload info banner -->
         <div
           v-if="selectedRow?.status === 'Belum Diajukan'"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2"
@@ -648,15 +698,14 @@
             />
           </svg>
           <div class="text-xs text-blue-800 dark:text-blue-300">
-            <p class="font-medium">Upload file (opsional)</p>
+            <p class="font-medium">{{ $t("usl_upload_info_title") }}</p>
             <p class="mt-1 text-blue-700 dark:text-blue-400">
-              File harus dalam format PDF, DOC, atau DOCX. Usulan tetap dapat
-              dikirim tanpa file.
+              {{ $t("usl_upload_info_desc") }}
             </p>
           </div>
         </div>
 
-        <!-- Upload Progress Indicator -->
+        <!-- Upload Progress -->
         <div
           v-if="isUploadingFiles"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
@@ -667,10 +716,10 @@
             ></div>
             <div class="flex-1">
               <p class="text-sm font-medium text-blue-900 dark:text-blue-200">
-                Mengirim usulan...
+                {{ $t("usl_mengirim_usulan") }}
               </p>
               <p class="text-xs text-blue-700 dark:text-blue-400">
-                File sedang diupload ke server
+                {{ $t("usl_file_uploading") }}
               </p>
             </div>
           </div>
@@ -688,8 +737,8 @@
             :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
             class="flex-1 px-5 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            <span v-if="isUploadingFiles">Mengirim...</span>
-            <span v-else>Kirim Usulan</span>
+            <span v-if="isUploadingFiles">{{ $t("usl_mengirim") }}</span>
+            <span v-else>{{ $t("usl_btn_kirim") }}</span>
           </button>
 
           <button
@@ -698,17 +747,17 @@
             :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
             class="flex-1 px-5 py-2 text-sm border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            Hapus Usulan
+            {{ $t("usl_btn_hapus_usulan") }}
           </button>
         </div>
       </template>
     </Modal>
   </Teleport>
 
-  <!-- ✅ PREVIEW SLIDEOVER - pakai file_url langsung (pre-signed S3) -->
+  <!-- PREVIEW SLIDEOVER -->
   <USlideover
     v-model:open="isOpenPreview"
-    title="Pratinjau"
+    :title="$t('usl_pratinjau')"
     side="bottom"
     :dismissible="true"
     :ui="{
@@ -729,13 +778,12 @@
           allowfullscreen
           class="w-full h-full rounded-lg shadow-lg border border-gray-200"
         />
-
         <div v-else class="flex flex-col items-center gap-2">
           <UIcon
             name="i-lucide-loader-2"
             class="animate-spin w-8 h-8 text-primary-500"
           />
-          <span class="text-gray-500">Memuat Pratinjau...</span>
+          <span class="text-gray-500">{{ $t("usl_memuat_pratinjau") }}</span>
         </div>
       </div>
     </template>
@@ -745,10 +793,10 @@
   <ConfirmPopup
     v-model="openConfirmSubmit"
     type="question"
-    title="Kirim Usulan?"
+    :title="$t('usl_confirm_kirim_title')"
     :message="getConfirmMessage()"
-    confirm-text="Ya, Kirim"
-    cancel-text="Batal"
+    :confirm-text="$t('usl_confirm_kirim_ya')"
+    :cancel-text="$t('usl_batal')"
     :is-loading="isLoadingBooking"
     @confirm="confirmSubmitUsulan"
     @cancel="openConfirmSubmit = false"
@@ -758,10 +806,10 @@
   <ConfirmPopup
     v-model="openConfirmDelete"
     type="danger"
-    title="Hapus Usulan?"
-    message="Usulan yang dihapus tidak dapat dikembalikan. Apakah Anda yakin?"
-    confirm-text="Ya, Hapus"
-    cancel-text="Batal"
+    :title="$t('usl_confirm_hapus_title')"
+    :message="$t('usl_confirm_hapus_pesan')"
+    :confirm-text="$t('usl_confirm_hapus_ya')"
+    :cancel-text="$t('usl_batal')"
     :is-loading="isDeletingUsulan"
     @confirm="confirmDeleteUsulan"
     @cancel="openConfirmDelete = false"
@@ -772,10 +820,7 @@
     <div
       v-if="tooltip.show"
       class="fixed z-[9999] pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-1 rounded-md shadow-lg transition-opacity"
-      :style="{
-        left: tooltip.x + 'px',
-        top: tooltip.y + 'px',
-      }"
+      :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
     >
       {{ tooltip.text }}
     </div>
@@ -784,6 +829,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { useI18n } from "vue-i18n";
 import { Search, ArrowUpDown, Plus, Copy } from "lucide-vue-next";
 import AddUsulan from "~/components/AddUsulan.vue";
 import Heading from "~/components/Heading.vue";
@@ -792,10 +838,10 @@ import { Modal } from "#components";
 import { usePenomoran } from "~/composables/usePenomoran";
 import { useAuth } from "~/composables/useAuth";
 import ConfirmPopup from "~/components/ConfirmPopup.vue";
-definePageMeta({
-  middleware: "auth",
-});
 
+definePageMeta({ middleware: "auth" });
+
+const { t } = useI18n();
 const { user, getProfile } = useAuth();
 const {
   createUsulanDraft,
@@ -811,6 +857,64 @@ const {
 const toast = useToast();
 const config = useRuntimeConfig();
 
+// ─── Breadcrumbs (reactive to locale) ────────
+const breadcrumbs = computed(() => [
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("usl_title"), to: "/penomoran/usulan" },
+]);
+
+// ─── Table headers (reactive to locale) ──────
+const headers = computed(() => [
+  { label: t("usl_col_jenis"), key: "jenis", sortable: true },
+  { label: t("usl_col_tanggal"), key: "tanggal", sortable: true },
+  { label: t("usl_col_perihal"), key: "perihal", sortable: false },
+  { label: t("usl_col_penandatangan"), key: "penandatangan", sortable: false },
+  { label: t("usl_col_jumlah"), key: "jumlah", sortable: false },
+  { label: t("usl_col_pengusul"), key: "pengusul", sortable: false },
+  { label: t("usl_col_tgl_usulan"), key: "tanggal_usulan", sortable: true },
+]);
+
+// ─── Filter options (label/value separated) ──
+const filterOptions = computed(() => [
+  { label: t("usl_filter_semua"), value: "Semua" },
+  { label: t("usl_filter_belum_diajukan"), value: "Belum Diajukan" },
+  { label: t("usl_filter_menunggu"), value: "Menunggu Verifikasi" },
+  { label: t("usl_filter_disetujui"), value: "Disetujui" },
+  { label: t("usl_filter_ditolak"), value: "Ditolak" },
+]);
+
+// Label currently selected filter (for button display)
+const selectedFilterLabel = computed(() => {
+  const found = filterOptions.value.find((o) => o.value === filterStatus.value);
+  return found?.label ?? t("usl_filter_semua");
+});
+
+// ─── Row status display label ─────────────────
+const getRowStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    "Belum Diajukan": t("usl_status_belum_diajukan"),
+    "Menunggu Verifikasi": t("usl_status_menunggu_verifikasi"),
+    Disetujui: t("usl_status_disetujui"),
+    Ditolak: t("usl_status_ditolak"),
+  };
+  return map[status] || status;
+};
+
+// ─── Detail status badge label ───────────────
+const getDetailStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    pending: t("usl_status_pending"),
+    menunggu: t("usl_status_menunggu"),
+    booking: t("usl_status_booking"),
+    terpakai: t("usl_status_terpakai"),
+    terpakai_final: t("usl_status_final"),
+    ditolak: t("usl_status_ditolak"),
+    hangus: t("usl_status_hangus"),
+  };
+  return map[status] || status;
+};
+
+// State
 const openDetail = ref(false);
 const isDeletingUsulan = ref(false);
 const isUploadingFiles = ref(false);
@@ -819,72 +923,42 @@ const rows = ref([]);
 const loading = ref<boolean>(true);
 const pagination = ref(null);
 
-// ✅ Slideover preview - pakai direct S3 URL, tidak perlu blob
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
-
-// File mapping dengan INDEX
 const filesByIndex = ref<Record<number, File>>({});
 
 const openAdd = ref<boolean>(false);
 const openConfirmDelete = ref(false);
 const openConfirmSubmit = ref(false);
 
-// Person mapping
 const personMap = ref(new Map());
-// Klasifikasi mapping untuk display
 const klasifikasiMap = ref(new Map());
 
-// Search and Pagination State
 const search = ref<string>("");
 const currentPage = ref<number>(1);
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 
-// Sorting State
 const sortBy = ref<string>("");
 const sortOrder = ref<"asc" | "desc">("desc");
-
-// Filter Status State
 const filterStatus = ref<string>("Semua");
 const openFilterStatus = ref<boolean>(false);
 
-// Debounce timeout
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /* ===========================
- * GET STATUS LABEL
- * =========================== */
-const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: "Pending",
-    menunggu: "Menunggu",
-    booking: "Booking",
-    terpakai: "Terpakai",
-    terpakai_final: "Final",
-    ditolak: "Ditolak",
-    hangus: "Hangus",
-  };
-  return statusMap[status] || status;
-};
-
-/* ===========================
  * PREVIEW FILE
- * ✅ Langsung set file_url (pre-signed S3 URL) ke iframe, tanpa fetch/blob
  * =========================== */
 const previewFile = (detail: any) => {
   const url = detail.file_url;
-
   if (!url) {
     toast.add({
-      title: "File tidak ditemukan",
-      description: "File tidak tersedia untuk ditampilkan",
+      title: t("usl_toast_file_tidak_ada_title"),
+      description: t("usl_toast_file_tidak_ada_desc"),
       color: "warning",
     });
     return;
   }
-
-  // ✅ Langsung pakai pre-signed S3 URL
   pdfUrl.value = url;
   isOpenPreview.value = true;
 };
@@ -909,8 +983,6 @@ const fetchPersonMap = async () => {
         position_text: displayText,
       });
     });
-
-    console.log("✅ Person map loaded:", personMap.value.size, "items");
   } catch (error) {
     console.error("❌ Error fetch person map:", error);
   }
@@ -921,10 +993,8 @@ const fetchPersonMap = async () => {
  * =========================== */
 const fetchData = async () => {
   loading.value = true;
-
   try {
     if (!user.value?.position) {
-      console.error("❌ User position not available");
       rows.value = [];
       pagination.value = null;
       return;
@@ -939,12 +1009,7 @@ const fetchData = async () => {
       sort_order: sortOrder.value || undefined,
     };
 
-    console.log("📤 Fetching data with params:", params);
-
     const response = await getListUsulan(String(user.value.position), params);
-
-    console.log("📥 Backend response:", response);
-
     const data = response.data || [];
     pagination.value = response.pagination || null;
 
@@ -959,28 +1024,23 @@ const fetchData = async () => {
         klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
 
       let mappedStatus = item.status || "Belum Diajukan";
-
-      if (mappedStatus === "Menunggu Verifikasi") {
-        mappedStatus = "Menunggu Verifikasi";
-      } else if (mappedStatus === "Disetujui") {
-        mappedStatus = "Disetujui";
-      } else if (mappedStatus === "Ditolak") {
-        mappedStatus = "Ditolak";
-      } else {
+      if (
+        !["Menunggu Verifikasi", "Disetujui", "Ditolak"].includes(mappedStatus)
+      ) {
         mappedStatus = "Belum Diajukan";
       }
 
       const tanggalDate = new Date(item.tanggal);
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, "0")}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, "0")}/${tanggalDate.getUTCFullYear()}`;
-
-      const createdDate = new Date(item.created_at);
-      const wibTime = new Date(createdDate.getTime() + 7 * 60 * 60 * 1000);
-
-      const day = String(wibTime.getUTCDate()).padStart(2, "0");
-      const month = String(wibTime.getUTCMonth() + 1).padStart(2, "0");
-      const year = String(wibTime.getUTCFullYear()).slice(-2);
-      const hours = String(wibTime.getUTCHours()).padStart(2, "0");
-      const minutes = String(wibTime.getUTCMinutes()).padStart(2, "0");
+      const localCreated = item.created_at
+        .replace("Z", "")
+        .replace("+00:00", "");
+      const createdDate = new Date(localCreated);
+      const day = String(createdDate.getDate()).padStart(2, "0");
+      const month = String(createdDate.getMonth() + 1).padStart(2, "0");
+      const year = String(createdDate.getFullYear()).slice(-2);
+      const hours = String(createdDate.getHours()).padStart(2, "0");
+      const minutes = String(createdDate.getMinutes()).padStart(2, "0");
 
       return {
         id: item.id,
@@ -999,9 +1059,6 @@ const fetchData = async () => {
         template_nomor: item.template_nomor || "",
       };
     });
-
-    console.log("✅ Data loaded:", rows.value.length, "rows");
-    console.log("📊 Pagination:", pagination.value);
   } catch (err) {
     console.error("❌ Gagal fetch data:", err);
     rows.value = [];
@@ -1013,7 +1070,6 @@ const fetchData = async () => {
 
 const handleSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout);
-
   searchTimeout = setTimeout(() => {
     currentPage.value = 1;
     fetchData();
@@ -1027,7 +1083,6 @@ const handleSort = (column: string) => {
     sortBy.value = column;
     sortOrder.value = "desc";
   }
-
   currentPage.value = 1;
   fetchData();
 };
@@ -1050,9 +1105,7 @@ const selectFilterStatus = (val: string) => {
   fetchData();
 };
 
-const totalPages = computed(() => {
-  return pagination.value?.totalPages || 1;
-});
+const totalPages = computed(() => pagination.value?.totalPages || 1);
 
 const paginationPages = computed(() => {
   const total = totalPages.value;
@@ -1060,9 +1113,7 @@ const paginationPages = computed(() => {
   const pages: number[] = [];
 
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     if (current <= 2) {
       pages.push(1, 2, 3, 4, 5);
@@ -1072,7 +1123,6 @@ const paginationPages = computed(() => {
       pages.push(current - 1, current, current + 1);
     }
   }
-
   return pages;
 });
 
@@ -1081,15 +1131,8 @@ const paginationPages = computed(() => {
  * =========================== */
 const openRowModal = async (row) => {
   try {
-    console.log("🔍 Opening row modal for:", row.id);
-
     const detailData = await getDetailUsulan(row.id);
-
-    if (!detailData) {
-      return;
-    }
-
-    console.log("📥 Detail data received:", detailData);
+    if (!detailData) return;
 
     const klasifikasiDisplay =
       klasifikasiMap.value.get(detailData.klasifikasi) ||
@@ -1100,8 +1143,6 @@ const openRowModal = async (row) => {
       detailData.jumlah,
       detailData.template_nomor || "",
     );
-
-    console.log("📋 Normalized details:", normalizedDetails);
 
     selectedRow.value = {
       id_usulan: detailData.id,
@@ -1118,12 +1159,8 @@ const openRowModal = async (row) => {
       details: normalizedDetails,
     };
 
-    // Reset file mapping
     filesByIndex.value = {};
-
     openDetail.value = true;
-    console.log("✅ Modal opened with status:", selectedRow.value.status);
-    console.log("📊 Total details:", selectedRow.value.details.length);
   } catch (err) {
     console.error("❌ Gagal load detail:", err);
   }
@@ -1134,10 +1171,8 @@ const openRowModal = async (row) => {
  * =========================== */
 const normalizeDetails = (details: any[], jumlah: number, template: string) => {
   const result = [];
-
   for (let i = 0; i < jumlah; i++) {
     const backendDetail = details && details[i];
-
     if (backendDetail) {
       result.push({
         id: backendDetail.id || `temp-${i + 1}`,
@@ -1158,13 +1193,6 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
       });
     }
   }
-
-  console.log("🔄 Normalized details:", {
-    input: details?.length || 0,
-    jumlah,
-    output: result.length,
-  });
-
   return result;
 };
 
@@ -1174,13 +1202,12 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
 const handleFile = (index: number, event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-
   if (!file) return;
 
   if (file.size > 5 * 1024 * 1024) {
     toast.add({
-      title: "File terlalu besar",
-      description: "Ukuran file maksimal 5MB",
+      title: t("usl_toast_file_besar_title"),
+      description: t("usl_toast_file_besar_desc"),
       color: "warning",
     });
     input.value = "";
@@ -1192,11 +1219,10 @@ const handleFile = (index: number, event: Event) => {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
-
   if (!validTypes.includes(file.type)) {
     toast.add({
-      title: "Tipe file tidak valid",
-      description: "Hanya file PDF, DOC, atau DOCX yang diperbolehkan",
+      title: t("usl_toast_tipe_invalid_title"),
+      description: t("usl_toast_tipe_invalid_desc"),
       color: "warning",
     });
     input.value = "";
@@ -1204,20 +1230,18 @@ const handleFile = (index: number, event: Event) => {
   }
 
   filesByIndex.value[index] = file;
-
   toast.add({
-    title: "File dipilih",
-    description: `File "${file.name}" siap diupload`,
+    title: t("usl_toast_file_dipilih_title"),
+    description: `"${file.name}" ${t("usl_toast_file_dipilih_desc")}`,
     color: "success",
   });
 };
 
 const removeFile = (index: number) => {
   delete filesByIndex.value[index];
-
   toast.add({
-    title: "File dihapus",
-    description: "File berhasil dihapus dari daftar upload",
+    title: t("usl_toast_file_dihapus_title"),
+    description: t("usl_toast_file_dihapus_desc"),
     color: "success",
   });
 };
@@ -1232,12 +1256,10 @@ const formatFileSize = (bytes: number) => {
 
 const handleCopy = (value: string) => {
   if (!value) return;
-
   navigator.clipboard.writeText(value);
-
   toast.add({
-    title: "Tersalin",
-    description: `Nomor surat "${value}" berhasil disalin.`,
+    title: t("usl_toast_tersalin"),
+    description: `"${value}" ${t("usl_toast_tersalin_desc")}`,
     color: "success",
   });
 };
@@ -1251,12 +1273,8 @@ function handlePreview(data: any) {
 
 const getConfirmMessage = () => {
   const fileCount = Object.keys(filesByIndex.value).length;
-
-  if (fileCount === 0) {
-    return "Apakah Anda yakin ingin mengirim usulan ini tanpa file? Usulan akan dikirim untuk diverifikasi.";
-  }
-
-  return `Apakah Anda yakin ingin mengirim usulan ini dengan ${fileCount} file? Usulan akan dikirim untuk diverifikasi.`;
+  if (fileCount === 0) return t("usl_confirm_kirim_tanpa_file");
+  return `${t("usl_confirm_kirim_tanpa_file").replace("tanpa file", `dengan ${fileCount} file`)}`;
 };
 
 /* ===========================
@@ -1264,39 +1282,31 @@ const getConfirmMessage = () => {
  * =========================== */
 const confirmSubmitUsulan = async () => {
   if (!selectedRow.value) return;
-
   isUploadingFiles.value = true;
-
   try {
     const formData = new FormData();
     let fileCount = 0;
 
     Object.keys(filesByIndex.value).forEach((indexStr) => {
-      const index = parseInt(indexStr);
-      const file = filesByIndex.value[index];
-
+      const file = filesByIndex.value[parseInt(indexStr)];
       if (file instanceof File) {
         fileCount++;
         formData.append("file", file);
         formData.append("file_name", file.name);
         formData.append("file_text", file.name);
-        console.log(`📎 Appending file at index ${index}:`, file.name);
       }
     });
 
-    console.log("📦 Total files to upload:", fileCount);
-
     await submitBooking(selectedRow.value.id_usulan, formData);
-
     openConfirmSubmit.value = false;
     openDetail.value = false;
 
     toast.add({
-      title: "Berhasil",
+      title: t("usl_toast_berhasil"),
       description:
         fileCount > 0
-          ? `Usulan dikirim dengan ${fileCount} file`
-          : "Usulan dikirim tanpa file",
+          ? `${t("usl_toast_kirim_tanpa_file").replace("tanpa file", `dengan ${fileCount} file`)}`
+          : t("usl_toast_kirim_tanpa_file"),
       color: "success",
     });
 
@@ -1305,10 +1315,9 @@ const confirmSubmitUsulan = async () => {
   } catch (e) {
     console.error("❌ Submit error:", e);
     openConfirmSubmit.value = false;
-
     toast.add({
-      title: "Gagal",
-      description: e?.response?.data?.message || "Gagal mengirim usulan",
+      title: t("usl_toast_gagal"),
+      description: e?.response?.data?.message || t("usl_toast_gagal_kirim"),
       color: "error",
     });
   } finally {
@@ -1321,28 +1330,22 @@ const confirmSubmitUsulan = async () => {
  * =========================== */
 const confirmDeleteUsulan = async () => {
   if (!selectedRow.value?.id_usulan) return;
-
-  const idToDelete = selectedRow.value.id_usulan;
   isDeletingUsulan.value = true;
-
   try {
-    await deleteUsulanUser(idToDelete);
-
+    await deleteUsulanUser(selectedRow.value.id_usulan);
     toast.add({
-      title: "Berhasil",
-      description: "Usulan berhasil dihapus",
+      title: t("usl_toast_berhasil"),
+      description: t("usl_toast_hapus_berhasil"),
       color: "success",
     });
-
     openConfirmDelete.value = false;
     openDetail.value = false;
-
     await fetchData();
   } catch (error) {
     console.error("❌ Delete gagal:", error);
     toast.add({
-      title: "Gagal",
-      description: "Gagal menghapus usulan. Silakan coba lagi.",
+      title: t("usl_toast_gagal"),
+      description: t("usl_toast_hapus_gagal"),
       color: "error",
     });
   } finally {
@@ -1357,10 +1360,7 @@ const isSubmittingUsulan = ref(false);
 const handleSubmitFromModal = async (payload: any) => {
   if (isSubmittingUsulan.value) return;
   isSubmittingUsulan.value = true;
-
   try {
-    console.log("📤 Payload diterima dari modal:", payload);
-
     if (
       !payload.tanggal ||
       !payload.jenis ||
@@ -1369,8 +1369,8 @@ const handleSubmitFromModal = async (payload: any) => {
       !payload.jumlah
     ) {
       toast.add({
-        title: "Data Tidak Lengkap",
-        description: "Pastikan semua field terisi",
+        title: t("usl_toast_data_tidak_lengkap"),
+        description: t("usl_toast_data_tidak_lengkap_desc"),
         color: "warning",
       });
       return;
@@ -1390,27 +1390,26 @@ const handleSubmitFromModal = async (payload: any) => {
       jumlah: Number(payload.jumlah),
     };
 
-    console.log("📦 Formatted payload:", formattedPayload);
-
     await createUsulanDraft(formattedPayload);
-
     toast.add({
-      title: "Berhasil",
-      description: "Usulan berhasil ditambahkan",
+      title: t("usl_toast_berhasil"),
+      description: t("usl_toast_hapus_berhasil").replace(
+        "dihapus",
+        "ditambahkan",
+      ),
       color: "success",
     });
-
     openAdd.value = false;
-
     currentPage.value = 1;
     await fetchData();
   } catch (err) {
     console.error("❌ Error submit modal:", err);
-
     toast.add({
-      title: "Gagal",
+      title: t("usl_toast_gagal"),
       description:
-        err?.response?.data?.message || err?.message || "Usulan gagal dikirim",
+        err?.response?.data?.message ||
+        err?.message ||
+        t("usl_toast_gagal_kirim"),
       color: "error",
     });
   } finally {
@@ -1420,7 +1419,8 @@ const handleSubmitFromModal = async (payload: any) => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("id-ID", {
+  const localStr = dateStr.replace("Z", "").replace("+00:00", "");
+  return new Date(localStr).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -1438,69 +1438,25 @@ function handleDocumentClick(e: MouseEvent) {
 
 onMounted(async () => {
   loading.value = true;
-
-  if (!user.value) {
-    await getProfile();
-  }
-
+  if (!user.value) await getProfile();
   await fetchData();
-
   document.addEventListener("click", handleDocumentClick);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
-
   if (searchTimeout) clearTimeout(searchTimeout);
-
-  // ✅ Tidak perlu revokeObjectURL karena pdfUrl adalah pre-signed S3 URL, bukan blob URL
   pdfUrl.value = null;
 });
 
-// ✅ Watch slideover: bersihkan URL saat ditutup (tidak perlu revoke karena bukan blob)
 watch(isOpenPreview, (open) => {
-  if (!open) {
-    pdfUrl.value = null;
-  }
+  if (!open) pdfUrl.value = null;
 });
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Usulan", to: "/penomoran/usulan" },
-];
-
-const headers = [
-  { label: "Jenis", key: "jenis", sortable: true },
-  { label: "Tanggal", key: "tanggal", sortable: true },
-  { label: "Perihal", key: "perihal", sortable: false },
-  { label: "Penandatangan", key: "penandatangan", sortable: false },
-  { label: "Jumlah", key: "jumlah", sortable: false },
-  { label: "Pengusul", key: "pengusul", sortable: false },
-  { label: "Tgl Usulan", key: "tanggal_usulan", sortable: true },
-];
-
-const filterOptions = [
-  "Semua",
-  "Belum Diajukan",
-  "Menunggu Verifikasi",
-  "Disetujui",
-  "Ditolak",
-];
-
-const tooltip = ref({
-  show: false,
-  text: "",
-  x: 0,
-  y: 0,
-});
+const tooltip = ref({ show: false, text: "", x: 0, y: 0 });
 
 const onMouseMove = (e: MouseEvent, text: string) => {
-  tooltip.value = {
-    show: true,
-    text,
-    x: e.clientX + 12,
-    y: e.clientY + 12,
-  };
+  tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 };
 };
 
 const onMouseLeave = () => {
@@ -1509,7 +1465,6 @@ const onMouseLeave = () => {
 </script>
 
 <style scoped>
-/* Animasi dropdown filter — sama dengan halaman Delegasi */
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1534,21 +1489,17 @@ const onMouseLeave = () => {
   scrollbar-width: thin;
   scrollbar-color: #4b5563 #1f2937;
 }
-
 :deep(.dark)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 :deep(.dark)::-webkit-scrollbar-track {
   background: #1f2937;
 }
-
 :deep(.dark)::-webkit-scrollbar-thumb {
   background: #4b5563;
   border-radius: 4px;
 }
-
 :deep(.dark)::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
 }

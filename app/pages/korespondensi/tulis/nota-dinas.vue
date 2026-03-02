@@ -1,39 +1,7 @@
 <template>
   <div class="relative">
 
-    <Teleport to="body">
-      <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
-
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
-          </div>
-        </div>
-
-        <div class="relative flex flex-col items-center gap-6 z-10">
-          <div class="relative flex items-center justify-center w-24 h-24">
-            <div
-              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
-              style="animation-duration: 1.5s;">
-            </div>
-            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
-              <div class="plane-float">
-                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">
-              {{ loadingMessage || 'Memproses Data' }}
-            </span>
-            <span class="text-sm text-gray-600">
-              Mohon tunggu sebentar
-            </span>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <InputLoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
 
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
@@ -85,10 +53,10 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih di Tertuju" />
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -109,36 +77,16 @@
         </div>
 
         <div class="flex flex-col py-4">
-          <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
+
+          <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
             <div
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
-
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
-                  <div class="flex items-center pb-2 mb-6">
-                    <div class="flex items-end gap-4">
-                      <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-                      <div class="flex flex-col mb-1">
-                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">
-                          AirNav Indonesia
-                        </span>
-                      </div>
-                    </div>
 
-                    <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
-                      <div class="font-bold uppercase">
-                        {{ user?.alamatInfo?.kantor }}
-                      </div>
-                      <div>
-                        {{ user?.alamatInfo?.gedung }}
-                        {{ user?.alamatInfo?.kota }}
-                      </div>
-                      <div v-html="user?.alamatInfo?.alamat"></div>
-                    </div>
-                  </div>
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
 
                   <div class="text-center mb-6 text-black">
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
@@ -146,7 +94,6 @@
                     </h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
-
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
@@ -162,8 +109,8 @@
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
                                   : `<div style='margin-left:1em;text-indent:-1em'>
-                                                                                                    ${i + 1}. ${s.labelJob || s.label}
-                                                                                                  </div>`
+                                      ${i + 1}. ${s.labelJob || s.label}
+                                    </div>`
                               )
                               .join('')
                             : '................................................'
@@ -200,7 +147,6 @@
                       <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
-
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
@@ -217,10 +163,8 @@
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
                 </div>
-
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
                   class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
-
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
@@ -238,7 +182,6 @@
                       </table>
                     </div>
                   </div>
-
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
@@ -247,7 +190,6 @@
                       </li>
                     </ol>
                   </div>
-
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
@@ -262,6 +204,7 @@
           </ClientOnly>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
         </div>
 
         <div
@@ -297,51 +240,8 @@
       </template>
     </USlideover>
 
-    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Tanda Tangan Digital (BSrE)
-          </h3>
-        </div>
-      </template>
-
-      <template #body>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Dokumen ditandatangani secara elektronik resmi (TTE). Masukkan passphrase Anda.
-        </p>
-
-        <div class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div class="flex items-start gap-4 p-4">
-            <div class="flex-shrink-0">
-              <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                <UIcon name="i-heroicons-user" class="w-6 h-6" />
-              </div>
-            </div>
-            <div class="flex flex-col">
-              <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
-              <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role }}</span>
-              <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
-            </div>
-          </div>
-
-          <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <UFormGroup label="Passphrase" required>
-              <UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda"
-                class="w-full" autofocus />
-            </UFormGroup>
-          </div>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex w-full justify-end gap-2">
-          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane"
-            :loading="isLoadingData" @click="handlePassphraseSubmit" />
-        </div>
-      </template>
-    </UModal>
+    <InputDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
+      :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
 
   </div>
 </template>
@@ -356,8 +256,6 @@ import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
-
-import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 interface RecipientItem {
   label: string;
@@ -429,20 +327,31 @@ const toggleGroup = (isChecked: boolean, group: any, type: 'tertuju' | 'tembusan
 
 // Computed ini bertugas men-disable dropdown individu/grup jika mereka tergabung dalam list lawan
 const excludeTertujuList = computed(() => {
+  // 1. Ambil semua item yang dipilih di Tembusan (Individu & Grup)
   const excluded: any[] = [...selectedTembusan.value];
+
+  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tembusan
   selectedTembusan.value.filter(i => i.isGroup).forEach(g => {
     const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
     excluded.push(...members);
   });
+
+  // 3. Tambahkan pengecekan sebaliknya: Jika ada individu di Tembusan yang merupakan anggota suatu grup,
+  // maka grup tersebut harusnya disabled di Tertuju (Logika ini sudah dicover oleh komponen anak via props excludeItems)
+
   return excluded;
 });
 
 const excludeTembusanList = computed(() => {
+  // 1. Ambil semua item yang dipilih di Tertuju (Individu & Grup)
   const excluded: any[] = [...selectedTertuju.value];
+
+  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tertuju
   selectedTertuju.value.filter(i => i.isGroup).forEach(g => {
     const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
     excluded.push(...members);
   });
+
   return excluded;
 });
 
@@ -566,7 +475,7 @@ const getBasePayload = (): DraftPayload => {
   return {
     id_naskah: editDraftId.value || null,
     pengirim: user.value?.position || "",
-    tertuju: penerimaIndividu,
+    penerima: penerimaIndividu, // <-- UBAH 'tertuju' MENJADI 'penerima' DI SINI
     tembusan: tembusanIndividu,
     penerima_grup: penerimaGrup,
     tembusan_grup: tembusanGrup,
@@ -853,7 +762,7 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-      // 1. Fungsi Mapping Individu
+        // 1. Fungsi Mapping Individu
         const mapApiToUI = (list: any[]): RecipientItem[] => {
           if (!list || !Array.isArray(list)) return [];
           return list.map(item => {
