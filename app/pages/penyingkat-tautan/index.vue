@@ -1,215 +1,10 @@
-<script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
-import { ref, computed, watch, onMounted } from 'vue'
-import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import ConfirmPopup from '@/components/ConfirmPopup.vue'
-definePageMeta({
-  middleware: 'auth'
-})
-
-const toast = useToast()
-const { copy } = useClipboard()
-const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
-  useUrl()
-
-const generateRandomString = (length = 5) => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
-
-type Payment = {
-  id?: number
-  tanggal: string
-  LUrl: string
-  SUrl: string
-  keterangan: string
-}
-
-const loading = computed(() => isLoading.value)
-const isRefreshing = ref(false)
-const search = ref('')
-
-const showAddModal = ref(false)
-
-const addForm = ref({
-  LUrl: '',
-  SUrl: '',
-  keterangan: ''
-})
-
-const saveAdd = async () => {
-  if (!addForm.value.LUrl) {
-    toast.add({
-      title: 'URL belum lengkap!',
-      color: 'warning',
-      icon: 'i-lucide-alert-triangle'
-    })
-    return
-  }
-
-  const alias = addForm.value.SUrl ? addForm.value.SUrl : generateRandomString()
-
-  try {
-    if (isEditMode.value && editItemId.value !== null) {
-      // EDIT MODE
-      await updateShortUrl({
-        id: editItemId.value,
-        url: addForm.value.LUrl,
-        keterangan: addForm.value.keterangan,
-        alias
-      })
-      toast.add({
-        title: 'URL berhasil diperbarui!',
-        color: 'success',
-        icon: 'i-lucide-circle-check'
-      })
-    } else {
-      // ADD MODE
-      await createShortUrl({
-        url: addForm.value.LUrl,
-        keterangan: addForm.value.keterangan,
-        alias
-      })
-      toast.add({
-        title: 'URL berhasil ditambahkan!',
-        color: 'success',
-        icon: 'i-lucide-circle-check'
-      })
-    }
-
-    await fetchData()
-  } catch (err: any) {
-    toast.add({
-      title: err?.response?.data?.message ?? 'Gagal menyimpan URL',
-      color: 'error',
-      icon: 'i-lucide-alert-circle'
-    })
-  } finally {
-    showAddModal.value = false
-    isEditMode.value = false
-    editIndex.value = null
-    editItemId.value = null
-    addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
-  }
-}
-
-const openAdd = () => {
-  isEditMode.value = false
-  editIndex.value = null
-  editItemId.value = null
-  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
-  showAddModal.value = true
-}
-
-const sortOrder = ref<'asc' | 'desc'>('desc')
-
-const fetchData = async () => {
-  await fetchShortUrls({
-    page: 0,
-    size: 10,
-    orderby: 'udate',
-    sortby: sortOrder.value,
-    cari: search.value
-  })
-}
-
-const toggleSort = () => {
-  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-  fetchData()
-}
-
-const sortedData = computed(() => data.value)
-
-const truncateUrl = (url: string, max = 20) => {
-  if (!url) return ''
-  return url.length > max ? url.slice(0, max) + '.....' : url
-}
-
-const isEditMode = ref(false)
-const editIndex = ref<number | null>(null)
-const editItemId = ref<number | null>(null)
-
-const openEdit = (row: Payment & { id?: number; alias?: string }, index: number) => {
-  isEditMode.value = true
-  editIndex.value = index
-  editItemId.value = row.id ?? null
-
-  addForm.value = {
-    LUrl: row.LUrl,
-    SUrl: row.alias ?? '',
-    keterangan: row.keterangan
-  }
-
-  showAddModal.value = true
-}
-
-const showDeleteConfirm = ref(false)
-const deleteIndex = ref<number | null>(null)
-
-const openDeleteConfirm = (index: number) => {
-  deleteIndex.value = index
-  showDeleteConfirm.value = true
-}
-
-const confirmDelete = async () => {
-  if (deleteIndex.value !== null) {
-    const item = data.value[deleteIndex.value]
-    try {
-      await deleteShortUrl(item.id)
-      toast.add({ title: 'URL berhasil dihapus!', color: 'success', icon: 'i-lucide-circle-check' })
-      await fetchData()
-    } catch (err: any) {
-      toast.add({
-        title: err?.response?.data?.message ?? 'Gagal menghapus URL',
-        color: 'error',
-        icon: 'i-lucide-alert-circle'
-      })
-    }
-  }
-
-  showDeleteConfirm.value = false
-  deleteIndex.value = null
-}
-
-const refreshData = async () => {
-  if (isRefreshing.value) return
-  isRefreshing.value = true
-
-  try {
-    await fetchData()
-  } catch (err) {
-    console.error('Gagal refresh data', err)
-  } finally {
-    isRefreshing.value = false
-  }
-}
-
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-watch(search, () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => fetchData(), 400)
-})
-
-onMounted(() => fetchData())
-
-const breadcrumbs = [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Penyingkat Tautan', to: '/admin/penyingkat-tautan' }
-]
-</script>
-
 <template>
   <div class="pt-5 bg-gray-50 dark:bg-gray-900">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-2">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          Penyingkat Tautan
+          {{ t('pt_title') }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -219,7 +14,7 @@ const breadcrumbs = [
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        Tambah Tautan
+        {{ t('pt_add_button') }}
       </button>
     </div>
 
@@ -228,36 +23,40 @@ const breadcrumbs = [
         <template #title>
           <div class="ml-5 mb-3 mt-3">
             <Heading variant="heading9b" class="font-semibold text-sm dark:text-white">
-              {{ isEditMode ? 'Edit Tautan' : 'Buat Tautan Baru' }}
+              {{ isEditMode ? t('pt_modal_title_edit') : t('pt_modal_title_add') }}
             </Heading>
           </div>
         </template>
 
         <div class="flex flex-col gap-1">
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Tautan Panjang<span class="text-red-500">*</span></Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">
+            {{ t('pt_label_long_url') }}<span class="text-red-500">*</span>
+          </Heading>
           <UInput
             color="primary"
-            placeholder="Masukan link yang ingin dipersingkat"
+            :placeholder="t('pt_placeholder_long_url')"
             size="lg"
             v-model="addForm.LUrl"
             class="mb-3"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200">Back Half</Heading>
+          <Heading variant="body2m" class="dark:text-gray-200">
+            {{ t('pt_label_short_url') }} <span class="text-red-500">*</span>
+          </Heading>
           <UInput
             color="primary"
-            placeholder="example favorit-link"
+            :placeholder="t('pt_placeholder_short_url')"
             size="lg"
             v-model="addForm.SUrl"
             class="mb-3"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200">Keterangan</Heading>
+          <Heading variant="body2m" class="dark:text-gray-200">
+            {{ t('pt_label_keterangan') }}
+          </Heading>
           <UInput
             color="primary"
-            placeholder="Tambahkan Keterangan"
+            :placeholder="t('pt_placeholder_keterangan')"
             size="lg"
             v-model="addForm.keterangan"
             class="mb-3"
@@ -294,7 +93,7 @@ const breadcrumbs = [
           />
           <input
             v-model="search"
-            placeholder="Cari Tautan"
+            :placeholder="t('pt_search_placeholder')"
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
@@ -304,11 +103,11 @@ const breadcrumbs = [
         <table class="min-w-full text-sm border-collapse">
           <thead class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10">
             <tr class="p-3">
-              <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
-              <th class="px-4 py-3 text-left font-semibold">Tautan Asli</th>
-              <th class="px-4 py-3 text-left font-semibold">Tautan Modifikasi</th>
-              <th class="px-4 py-3 text-left font-semibold">Keterangan</th>
-              <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_tanggal') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_original') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_modified') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_keterangan') }}</th>
+              <th class="px-4 py-3 text-center font-semibold">{{ t('pt_col_aksi') }}</th>
             </tr>
           </thead>
 
@@ -391,7 +190,7 @@ const breadcrumbs = [
                         () => {
                           copy(row.SUrl)
                           toast.add({
-                            title: 'URL berhasil disalin!',
+                            title: t('pt_toast_copied'),
                             color: 'success',
                             icon: 'i-lucide-copy'
                           })
@@ -415,7 +214,7 @@ const breadcrumbs = [
                     <button
                       class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition"
                       @click="openEdit(row, index)"
-                      title="Edit"
+                      :title="t('tit_tooltip_edit')"
                     >
                       <Pencil class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                     </button>
@@ -424,7 +223,7 @@ const breadcrumbs = [
                     <button
                       class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       @click="openDeleteConfirm(index)"
-                      title="Hapus"
+                      :title="t('popup_hapus')"
                     >
                       <Trash2 class="w-4 h-4 text-red-600 dark:text-red-400" />
                     </button>
@@ -435,7 +234,7 @@ const breadcrumbs = [
               <!-- EMPTY STATE -->
               <tr v-if="sortedData.length === 0">
                 <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                  Tidak ada data tautan
+                  {{ t('pt_empty') }}
                 </td>
               </tr>
             </template>
@@ -445,16 +244,225 @@ const breadcrumbs = [
         <ConfirmPopup
           v-model="showDeleteConfirm"
           type="danger"
-          title="Hapus Short URL?"
-          :message="`Hapus URL ${data[deleteIndex]?.SUrl}?`"
-          confirm-text="Hapus"
-          cancel-text="Batal"
+          :title="t('pt_delete_title')"
+          :message="`${t('pt_delete_title').replace('?', '')} ${data[deleteIndex]?.SUrl}?`"
+          :confirm-text="t('pt_delete_confirm')"
+          :cancel-text="t('pt_delete_cancel')"
           @confirm="confirmDelete"
         />
       </div>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
+import { ref, computed, watch, onMounted } from 'vue'
+import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil } from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
+import ConfirmPopup from '@/components/ConfirmPopup.vue'
+import { useUrl } from '~/composables/useUrl'
+import { useI18n } from 'vue-i18n'
+
+definePageMeta({
+  middleware: 'auth'
+})
+
+const { t } = useI18n()
+const toast = useToast()
+const { copy } = useClipboard()
+const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
+  useUrl()
+
+const generateRandomString = (length = 5) => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+type Payment = {
+  id?: number
+  tanggal: string
+  LUrl: string
+  SUrl: string
+  keterangan: string
+}
+
+const loading = computed(() => isLoading.value)
+const isRefreshing = ref(false)
+const search = ref('')
+
+const showAddModal = ref(false)
+
+const addForm = ref({
+  LUrl: '',
+  SUrl: '',
+  keterangan: ''
+})
+
+const saveAdd = async () => {
+  if (!addForm.value.LUrl) {
+    toast.add({
+      title: t('pt_toast_url_empty'),
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
+    })
+    return
+  }
+
+  const alias = addForm.value.SUrl ? addForm.value.SUrl : generateRandomString()
+
+  try {
+    if (isEditMode.value && editItemId.value !== null) {
+      // EDIT MODE
+      await updateShortUrl({
+        id: editItemId.value,
+        url: addForm.value.LUrl,
+        keterangan: addForm.value.keterangan,
+        alias
+      })
+      toast.add({
+        title: t('pt_toast_updated'),
+        color: 'success',
+        icon: 'i-lucide-circle-check'
+      })
+    } else {
+      // ADD MODE
+      await createShortUrl({
+        url: addForm.value.LUrl,
+        keterangan: addForm.value.keterangan,
+        alias
+      })
+      toast.add({
+        title: t('pt_toast_added'),
+        color: 'success',
+        icon: 'i-lucide-circle-check'
+      })
+    }
+
+    await fetchData()
+  } catch (err: any) {
+    toast.add({
+      title: err?.response?.data?.message ?? t('pt_toast_save_failed'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
+  } finally {
+    showAddModal.value = false
+    isEditMode.value = false
+    editIndex.value = null
+    editItemId.value = null
+    addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
+  }
+}
+
+const openAdd = () => {
+  isEditMode.value = false
+  editIndex.value = null
+  editItemId.value = null
+  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
+  showAddModal.value = true
+}
+
+const sortOrder = ref<'asc' | 'desc'>('desc')
+
+const fetchData = async () => {
+  await fetchShortUrls({
+    page: 0,
+    size: 10,
+    orderby: 'udate',
+    sortby: sortOrder.value,
+    cari: search.value
+  })
+}
+
+const toggleSort = () => {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+  fetchData()
+}
+
+const sortedData = computed(() => data.value)
+
+const truncateUrl = (url: string, max = 20) => {
+  if (!url) return ''
+  return url.length > max ? url.slice(0, max) + '.....' : url
+}
+
+const isEditMode = ref(false)
+const editIndex = ref<number | null>(null)
+const editItemId = ref<number | null>(null)
+
+const openEdit = (row: Payment & { id?: number; alias?: string }, index: number) => {
+  isEditMode.value = true
+  editIndex.value = index
+  editItemId.value = row.id ?? null
+
+  addForm.value = {
+    LUrl: row.LUrl,
+    SUrl: row.alias ?? '',
+    keterangan: row.keterangan
+  }
+
+  showAddModal.value = true
+}
+
+const showDeleteConfirm = ref(false)
+const deleteIndex = ref<number | null>(null)
+
+const openDeleteConfirm = (index: number) => {
+  deleteIndex.value = index
+  showDeleteConfirm.value = true
+}
+
+const confirmDelete = async () => {
+  if (deleteIndex.value !== null) {
+    const item = data.value[deleteIndex.value]
+    try {
+      await deleteShortUrl(item.id)
+      toast.add({ title: t('pt_toast_deleted'), color: 'success', icon: 'i-lucide-circle-check' })
+      await fetchData()
+    } catch (err: any) {
+      toast.add({
+        title: err?.response?.data?.message ?? t('pt_toast_delete_failed'),
+        color: 'error',
+        icon: 'i-lucide-alert-circle'
+      })
+    }
+  }
+
+  showDeleteConfirm.value = false
+  deleteIndex.value = null
+}
+
+const refreshData = async () => {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+
+  try {
+    await fetchData()
+  } catch (err) {
+    console.error('Gagal refresh data', err)
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => fetchData(), 400)
+})
+
+onMounted(() => fetchData())
+
+const breadcrumbs = computed(() => [
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('pt_title'), to: '/admin/penyingkat-tautan' }
+])
+</script>
 
 <style scoped>
 .animate-spin {
