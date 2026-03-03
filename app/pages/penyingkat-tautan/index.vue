@@ -1,352 +1,206 @@
 <script setup lang="ts">
-import { h, resolveComponent } from "vue";
-import type { TableColumn } from "@nuxt/ui";
-import type { Row } from "@tanstack/vue-table";
-import { useClipboard } from "@vueuse/core";
-import { ref, computed, watch } from "vue";
-import {
-  Search,
-  ArrowUpDown,
-  RotateCcw,
-  ChevronRight as ChevronRightIcon,
-  Plus,
-  Copy,
-  Trash2,
-  Pencil,
-} from "lucide-vue-next";
-import Heading from "~/components/Heading.vue";
-import ConfirmPopup from "@/components/ConfirmPopup.vue";
+import { useClipboard } from '@vueuse/core'
+import { ref, computed, watch, onMounted } from 'vue'
+import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil } from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
+import ConfirmPopup from '@/components/ConfirmPopup.vue'
 definePageMeta({
-  middleware: "auth",
-});
+  middleware: 'auth'
+})
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const toast = useToast();
-const { copy } = useClipboard();
+const toast = useToast()
+const { copy } = useClipboard()
+const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
+  useUrl()
 
 const generateRandomString = (length = 5) => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  return result;
-};
+  return result
+}
 
 type Payment = {
-  tanggal: string;
-  LUrl: string;
-  SUrl: string;
-  keterangan: string;
-};
+  id?: number
+  tanggal: string
+  LUrl: string
+  SUrl: string
+  keterangan: string
+}
 
-const data = ref<Payment[]>([
-  {
-    tanggal: "2024-03-11T15:30:00",
-    LUrl: "https://urlasli",
-    SUrl: "url.modifikasi",
-    keterangan: "Lorem Ipsum is simply dummy text",
-  },
+const loading = computed(() => isLoading.value)
+const isRefreshing = ref(false)
+const search = ref('')
 
-  {
-    tanggal: "2024-03-11T10:10:00",
-    LUrl: "https://urlasli2",
-    SUrl: "url.modifikasi.com",
-    keterangan: "Lorem Ipsum is simply dummy text of the ",
-  },
-]);
-
-const loading = ref(false);
-const isRefreshing = ref(false);
-
-const columns: TableColumn<Payment>[] = [
-  {
-    accessorKey: "tanggal",
-    header: "Tanggal",
-    cell: ({ row }) => {
-      const raw = row.getValue("tanggal");
-      const date = new Date(raw);
-
-      const datePart = date.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      const timePart = `${hours}.${minutes}`;
-
-      const finalOutput = `${datePart}, ${timePart}`;
-
-      return h(
-        "div",
-        {
-          class:
-            "whitespace-normal break-words max-w-[200px] text-black dark:text-white",
-        },
-        finalOutput,
-      );
-    },
-  },
-
-  {
-    accessorKey: "LUrl",
-    header: "Url Asli",
-    cell: ({ row }) =>
-      h(
-        "div",
-        {
-          class:
-            "whitespace-normal break-words max-w-[400px] text-black dark:text-white",
-        },
-        row.getValue("LUrl"),
-      ),
-  },
-
-  {
-    accessorKey: "SUrl",
-    header: "Url Modifikasi",
-    cell: ({ row }) =>
-      h(
-        "div",
-        {
-          class:
-            "whitespace-normal break-words max-w-[400px] text-black dark:text-white",
-        },
-        row.getValue("SUrl"),
-      ),
-  },
-  {
-    accessorKey: "keterangan",
-    header: "Keterangan",
-    cell: ({ row }) =>
-      h(
-        "div",
-        {
-          class:
-            "whitespace-normal break-words max-w-[400px] text-black dark:text-white",
-        },
-        row.getValue("keterangan"),
-      ),
-  },
-
-  {
-    id: "actions",
-    header: "Aksi",
-    cell: ({ row }) =>
-      h("div", { class: "flex items-center gap-2" }, [
-        // COPY BUTTON
-        h(
-          "button",
-          {
-            class: "p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800",
-            onClick: () => {
-              copy(row.original.SUrl);
-              toast.add({
-                title: "URL berhasil disalin!",
-                color: "success",
-                icon: "i-lucide-copy",
-              });
-            },
-          },
-          () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-copy",
-              class: "w-4 h-4 text-gray-600 dark:text-gray-300",
-            }),
-        ),
-
-        // DELETE BUTTON
-        h(
-          "button",
-          {
-            class: "p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900",
-            onClick: () => {
-              const index = data.value.indexOf(row.original);
-              data.value.splice(index, 1);
-              toast.add({
-                title: "URL berhasil dihapus!",
-                color: "error",
-                icon: "i-lucide-trash-2",
-              });
-            },
-          },
-          () =>
-            h(resolveComponent("UIcon"), {
-              name: "i-lucide-trash-2",
-              class: "w-4 h-4 text-red-600 dark:text-red-400",
-            }),
-        ),
-      ]),
-  },
-];
-
-const showAddModal = ref(false);
+const showAddModal = ref(false)
 
 const addForm = ref({
-  LUrl: "",
-  SUrl: "",
-  keterangan: "",
-});
+  LUrl: '',
+  SUrl: '',
+  keterangan: ''
+})
 
-const saveAdd = () => {
+const saveAdd = async () => {
   if (!addForm.value.LUrl) {
     toast.add({
-      title: "URL belum lengkap!",
-      color: "warning",
-      icon: "i-lucide-alert-triangle",
-    });
-    return;
+      title: 'URL belum lengkap!',
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
+    })
+    return
   }
 
-  const shortCode = addForm.value.SUrl
-    ? addForm.value.SUrl
-    : generateRandomString();
+  const alias = addForm.value.SUrl ? addForm.value.SUrl : generateRandomString()
 
-  if (isEditMode.value && editIndex.value !== null) {
-    // EDIT MODE
-    data.value[editIndex.value] = {
-      ...data.value[editIndex.value],
-      LUrl: addForm.value.LUrl,
-      SUrl: `airnav/${shortCode}`,
-      keterangan: addForm.value.keterangan,
-    };
+  try {
+    if (isEditMode.value && editItemId.value !== null) {
+      // EDIT MODE
+      await updateShortUrl({
+        id: editItemId.value,
+        url: addForm.value.LUrl,
+        keterangan: addForm.value.keterangan,
+        alias
+      })
+      toast.add({
+        title: 'URL berhasil diperbarui!',
+        color: 'success',
+        icon: 'i-lucide-circle-check'
+      })
+    } else {
+      // ADD MODE
+      await createShortUrl({
+        url: addForm.value.LUrl,
+        keterangan: addForm.value.keterangan,
+        alias
+      })
+      toast.add({
+        title: 'URL berhasil ditambahkan!',
+        color: 'success',
+        icon: 'i-lucide-circle-check'
+      })
+    }
 
+    await fetchData()
+  } catch (err: any) {
     toast.add({
-      title: "URL berhasil diperbarui!",
-      color: "success",
-      icon: "i-lucide-pencil",
-    });
-  } else {
-    // ADD MODE
-    data.value.unshift({
-      tanggal: new Date().toISOString(),
-      LUrl: addForm.value.LUrl,
-      SUrl: `airnav/${shortCode}`,
-      keterangan: addForm.value.keterangan,
-    });
-
-    toast.add({
-      title: "URL berhasil ditambahkan!",
-      color: "success",
-      icon: "i-lucide-circle-check",
-    });
+      title: err?.response?.data?.message ?? 'Gagal menyimpan URL',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
+  } finally {
+    showAddModal.value = false
+    isEditMode.value = false
+    editIndex.value = null
+    editItemId.value = null
+    addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
   }
-
-  // RESET
-  showAddModal.value = false;
-  isEditMode.value = false;
-  editIndex.value = null;
-  addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
-};
+}
 
 const openAdd = () => {
-  isEditMode.value = false;
-  editIndex.value = null;
-  addForm.value = { LUrl: "", SUrl: "", keterangan: "" };
-  showAddModal.value = true;
-};
+  isEditMode.value = false
+  editIndex.value = null
+  editItemId.value = null
+  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
+  showAddModal.value = true
+}
 
-const items = [
-  {
-    label: "Dashboard",
-    to: "/beranda",
-  },
-  {
-    label: "Penyinkat Tautan",
-    to: "/admin/penyinkat-tautan",
-  },
-] satisfies BreadcrumbItem[];
+const sortOrder = ref<'asc' | 'desc'>('desc')
 
-const sortOrder = ref<"asc" | "desc">("desc");
+const fetchData = async () => {
+  await fetchShortUrls({
+    page: 0,
+    size: 10,
+    orderby: 'udate',
+    sortby: sortOrder.value,
+    cari: search.value
+  })
+}
 
 const toggleSort = () => {
-  sortOrder.value = sortOrder.value === "desc" ? "asc" : "desc";
-};
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+  fetchData()
+}
 
-const sortedData = computed(() => {
-  return [...data.value].sort((a, b) => {
-    const timeA = new Date(a.tanggal).getTime();
-    const timeB = new Date(b.tanggal).getTime();
-
-    return sortOrder.value === "desc"
-      ? timeB - timeA // terbaru → lama
-      : timeA - timeB; // lama → terbaru
-  });
-});
+const sortedData = computed(() => data.value)
 
 const truncateUrl = (url: string, max = 20) => {
-  if (!url) return "";
-  return url.length > max ? url.slice(0, max) + "....." : url;
-};
+  if (!url) return ''
+  return url.length > max ? url.slice(0, max) + '.....' : url
+}
 
-const isEditMode = ref(false);
-const editIndex = ref<number | null>(null);
+const isEditMode = ref(false)
+const editIndex = ref<number | null>(null)
+const editItemId = ref<number | null>(null)
 
-const openEdit = (row: Payment, index: number) => {
-  isEditMode.value = true;
-  editIndex.value = index;
+const openEdit = (row: Payment & { id?: number; alias?: string }, index: number) => {
+  isEditMode.value = true
+  editIndex.value = index
+  editItemId.value = row.id ?? null
 
   addForm.value = {
     LUrl: row.LUrl,
-    SUrl: row.SUrl.replace("airnav/", ""),
-    keterangan: row.keterangan,
-  };
+    SUrl: row.alias ?? '',
+    keterangan: row.keterangan
+  }
 
-  showAddModal.value = true;
-};
+  showAddModal.value = true
+}
 
-const showDeleteConfirm = ref(false);
-const deleteIndex = ref<number | null>(null);
+const showDeleteConfirm = ref(false)
+const deleteIndex = ref<number | null>(null)
 
 const openDeleteConfirm = (index: number) => {
-  deleteIndex.value = index;
-  showDeleteConfirm.value = true;
-};
+  deleteIndex.value = index
+  showDeleteConfirm.value = true
+}
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (deleteIndex.value !== null) {
-    data.value.splice(deleteIndex.value, 1);
-
-    toast.add({
-      title: "URL berhasil dihapus!",
-      color: "error",
-      icon: "i-lucide-trash-2",
-    });
+    const item = data.value[deleteIndex.value]
+    try {
+      await deleteShortUrl(item.id)
+      toast.add({ title: 'URL berhasil dihapus!', color: 'success', icon: 'i-lucide-circle-check' })
+      await fetchData()
+    } catch (err: any) {
+      toast.add({
+        title: err?.response?.data?.message ?? 'Gagal menghapus URL',
+        color: 'error',
+        icon: 'i-lucide-alert-circle'
+      })
+    }
   }
 
-  showDeleteConfirm.value = false;
-  deleteIndex.value = null;
-};
+  showDeleteConfirm.value = false
+  deleteIndex.value = null
+}
 
 const refreshData = async () => {
-  if (isRefreshing.value) return;
-  isRefreshing.value = true;
+  if (isRefreshing.value) return
+  isRefreshing.value = true
 
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    toast.add({
-      title: "Data berhasil diperbarui!",
-      color: "success",
-      icon: "i-lucide-refresh-ccw",
-    });
-  } catch (error) {
-    console.error("Gagal refresh data", error);
+    await fetchData()
+  } catch (err) {
+    console.error('Gagal refresh data', err)
   } finally {
-    isRefreshing.value = false;
+    isRefreshing.value = false
   }
-};
+}
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => fetchData(), 400)
+})
+
+onMounted(() => fetchData())
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Penyingkat Tautan", to: "/admin/penyingkat-tautan" },
-];
+  { label: 'Beranda', to: '/beranda' },
+  { label: 'Penyingkat Tautan', to: '/admin/penyingkat-tautan' }
+]
 </script>
 
 <template>
@@ -373,22 +227,8 @@ const breadcrumbs = [
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
           <div class="ml-5 mb-3 mt-3">
-            <Heading
-              variant="heading9b"
-              class="font-semibold text-sm dark:text-white"
-            >
-              {{ isEditMode ? "Edit Tautan" : "Buat Tautan Baru" }}
-            </Heading>
-
-            <Heading
-              variant="body2"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-            >
-              {{
-                isEditMode
-                  ? "Perbarui informasi tautan"
-                  : "Masukan Tautan Panjang untuk Dipersingkat"
-              }}
+            <Heading variant="heading9b" class="font-semibold text-sm dark:text-white">
+              {{ isEditMode ? 'Edit Tautan' : 'Buat Tautan Baru' }}
             </Heading>
           </div>
         </template>
@@ -399,15 +239,13 @@ const breadcrumbs = [
           >
           <UInput
             color="primary"
-            placeholder="Http://example"
+            placeholder="Masukan link yang ingin dipersingkat"
             size="lg"
             v-model="addForm.LUrl"
             class="mb-3"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Back Half</Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">Back Half</Heading>
           <UInput
             color="primary"
             placeholder="example favorit-link"
@@ -416,9 +254,7 @@ const breadcrumbs = [
             class="mb-3"
           />
 
-          <Heading variant="body2m" class="dark:text-gray-200"
-            >Keterangan</Heading
-          >
+          <Heading variant="body2m" class="dark:text-gray-200">Keterangan</Heading>
           <UInput
             color="primary"
             placeholder="Tambahkan Keterangan"
@@ -449,10 +285,7 @@ const breadcrumbs = [
           :disabled="isRefreshing"
           title="Refresh"
         >
-          <RotateCcw
-            class="w-4 h-4"
-            :class="{ 'animate-spin': isRefreshing }"
-          />
+          <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
         <div class="relative flex-1 w-full justify-between">
@@ -469,15 +302,11 @@ const breadcrumbs = [
 
       <div class="w-full overflow-auto">
         <table class="min-w-full text-sm border-collapse">
-          <thead
-            class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10"
-          >
+          <thead class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10">
             <tr class="p-3">
               <th class="px-4 py-3 text-left font-semibold">Tanggal</th>
               <th class="px-4 py-3 text-left font-semibold">Tautan Asli</th>
-              <th class="px-4 py-3 text-left font-semibold">
-                Tautan Modifikasi
-              </th>
+              <th class="px-4 py-3 text-left font-semibold">Tautan Modifikasi</th>
               <th class="px-4 py-3 text-left font-semibold">Keterangan</th>
               <th class="px-4 py-3 text-center font-semibold">Aksi</th>
             </tr>
@@ -492,38 +321,24 @@ const breadcrumbs = [
                 class="animate-pulse border-b border-gray-200 dark:border-gray-700"
               >
                 <td class="px-3 py-2">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
                 </td>
                 <td class="px-3 py-2">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
                 </td>
                 <td class="px-3 py-2">
                   <div class="flex items-center gap-2">
-                    <div
-                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
-                    ></div>
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
                   </div>
                 </td>
                 <td class="px-3 py-2">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40"></div>
                 </td>
                 <td class="px-3 py-2">
                   <div class="flex items-center justify-center gap-2">
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"
-                    ></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
                   </div>
                 </td>
               </tr>
@@ -537,14 +352,12 @@ const breadcrumbs = [
                 class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition"
               >
                 <!-- Tanggal -->
-                <td
-                  class="px-3 py-2 whitespace-nowrap text-gray-900 dark:text-white"
-                >
+                <td class="px-3 py-2 whitespace-nowrap text-gray-900 dark:text-white">
                   {{
-                    new Date(row.tanggal).toLocaleDateString("id-ID", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
+                    new Date(row.tanggal).toLocaleDateString('id-ID', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
                     })
                   }}
                 </td>
@@ -563,37 +376,35 @@ const breadcrumbs = [
                 </td>
 
                 <!-- URL Modifikasi -->
-                <td class="px-3 py-2 max-w-[260px]">
+                <td class="px-3 py-2 max-w-[260px] whitespace-nowrap">
                   <div class="flex items-center gap-2">
                     <span
                       class="font-mono text-xs text-gray-900 dark:text-white break-all"
                       :title="row.SUrl"
                     >
-                      {{ truncateUrl(row.SUrl, 25) }}
+                      {{ row.SUrl }}
                     </span>
 
                     <button
                       class="p-1.5 rounded hover:bg-primary-300 dark:hover:bg-gray-700 transition"
                       @click="
-                        copy(row.SUrl);
-                        toast.add({
-                          title: 'URL berhasil disalin!',
-                          color: 'success',
-                          icon: 'i-lucide-copy',
-                        });
+                        () => {
+                          copy(row.SUrl)
+                          toast.add({
+                            title: 'URL berhasil disalin!',
+                            color: 'success',
+                            icon: 'i-lucide-copy'
+                          })
+                        }
                       "
                     >
-                      <Copy
-                        class="w-4 h-4 text-gray-600 hover:text-white dark:text-gray-300"
-                      />
+                      <Copy class="w-4 h-4 text-gray-600 hover:text-white dark:text-gray-300" />
                     </button>
                   </div>
                 </td>
 
                 <!-- Keterangan -->
-                <td
-                  class="px-3 py-2 max-w-[300px] text-gray-700 dark:text-gray-300"
-                >
+                <td class="px-3 py-2 max-w-[300px] text-gray-700 dark:text-gray-300">
                   {{ row.keterangan }}
                 </td>
 
@@ -606,9 +417,7 @@ const breadcrumbs = [
                       @click="openEdit(row, index)"
                       title="Edit"
                     >
-                      <Pencil
-                        class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
-                      />
+                      <Pencil class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                     </button>
 
                     <!-- DELETE -->
@@ -625,10 +434,7 @@ const breadcrumbs = [
 
               <!-- EMPTY STATE -->
               <tr v-if="sortedData.length === 0">
-                <td
-                  colspan="5"
-                  class="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                >
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                   Tidak ada data tautan
                 </td>
               </tr>

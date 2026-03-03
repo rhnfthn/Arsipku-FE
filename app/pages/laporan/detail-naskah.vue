@@ -609,6 +609,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+});
+
 //IMPORT
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from "lucide-vue-next";
