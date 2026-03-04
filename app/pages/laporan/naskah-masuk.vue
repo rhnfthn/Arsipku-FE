@@ -958,6 +958,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+});
+
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { RotateCcw, ChevronDown, ArrowUpDown, FileDown } from "lucide-vue-next";
 import { useLaporan } from "~/composables/useLaporan";

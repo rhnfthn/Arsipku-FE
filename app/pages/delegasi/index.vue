@@ -1,4 +1,7 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+});
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import {
   Search,

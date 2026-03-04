@@ -821,7 +821,7 @@ const items = [
   },
   {
     label: t("naskah_masuk"),
-    to: "/admin/naskah-dinas",
+    to: "/naskah-dinas",
   },
 ] satisfies BreadcrumbItem[];
 
