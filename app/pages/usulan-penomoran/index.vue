@@ -314,7 +314,7 @@
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">Tanggal</p>
           <p class="font-medium mt-1 dark:text-gray-200">
-            {{ formatDateTime(selectedRow.tanggal) }}
+            {{ formatDate(selectedRow.tanggal) }}
           </p>
         </div>
 
@@ -545,8 +545,16 @@
                     <button
                       v-if="!fileStates[detail.id]?.isReplacing"
                       @click="startReplacingFile(detail.id)"
-                      class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition"
+                      class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition"
                     >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                        />
+                      </svg>
                       Ganti File
                     </button>
 
@@ -715,7 +723,6 @@ definePageMeta({ middleware: 'auth' })
 
 const { user, getProfile } = useAuth()
 const {
-  createUsulanDraft,
   deleteUsulanUser,
   getListUsulanByPosition,
   getPersonWithPosition,
@@ -833,10 +840,11 @@ const fetchData = async () => {
 
       const mappedStatus = mapRowStatus(item.details || [])
 
-      const tanggalDate = new Date(item.tanggal + 'T00:00:00')
-      const formattedTanggal = `${String(tanggalDate.getDate()).padStart(2, '0')}/${String(tanggalDate.getMonth() + 1).padStart(2, '0')}/${tanggalDate.getFullYear()}`
+      const tanggalDate = new Date(item.tanggal)
+      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
+      const createdDate = new Date(localCreated)
 
-      const createdDate = new Date(item.created_at)
       const wibFormatter = new Intl.DateTimeFormat('id-ID', {
         timeZone: 'Asia/Jakarta',
         day: '2-digit',
@@ -1057,50 +1065,18 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
 }
 
 // ─── Handle Submit from Add Modal ────────────────────────────────
-const isSubmittingUsulan = ref(false)
-const handleSubmitFromModal = async (payload: any) => {
-  if (isSubmittingUsulan.value) return
-  isSubmittingUsulan.value = true
-  try {
-    const positionId =
-      typeof user.value?.position === 'object' ? user.value?.position?.id : user.value?.position
-    const formattedPayload = {
-      position_id: Number(positionId),
-      tanggal: new Date(payload.tanggal).toISOString().split('T')[0],
-      jenis: String(payload.jenis),
-      klasifikasi: String(payload.klasifikasi),
-      perihal: String(payload.perihal),
-      penandatangan: String(payload.penandatangan),
-      id_position_penandatangan: Number(payload.id_position_penandatangan),
-      jumlah: Number(payload.jumlah)
-    }
-    await createUsulanDraft(formattedPayload)
-    toast.add({ title: 'Berhasil', description: 'Usulan berhasil ditambahkan', color: 'green' })
-    openAdd.value = false
-    currentPage.value = 1
-    await fetchData()
-  } catch (err: any) {
-    toast.add({
-      title: 'Gagal',
-      description: err?.response?.data?.message || err?.message || 'Usulan gagal dikirim',
-      color: 'red'
-    })
-  } finally {
-    isSubmittingUsulan.value = false
-  }
+const handleSubmitFromModal = async (_payload: any) => {
+  // AddUsulan sudah memanggil createUsulanDraft + submitBooking secara internal
+  // di sini cukup tutup modal dan refresh tabel
+  openAdd.value = false
+  currentPage.value = 1
+  await fetchData()
 }
 
-const formatDateTime = (dateStr: string) => {
+const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
-  const parts = dateStr.split('/')
-  if (parts.length === 3) {
-    return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    })
-  }
-  return new Date(dateStr).toLocaleDateString('id-ID', {
+  const localStr = dateStr.replace('Z', '').replace('+00:00', '')
+  return new Date(localStr).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
