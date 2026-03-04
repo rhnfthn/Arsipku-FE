@@ -453,7 +453,7 @@ const userMenuUtilitas = computed(() => {
 const faqMenuUser = computed(() => [
   {
     label: 'FAQ',
-    to: '/faq',
+    to: '/faq/menu',
     icon: 'i-lucide-circle-help'
   }
 ])
