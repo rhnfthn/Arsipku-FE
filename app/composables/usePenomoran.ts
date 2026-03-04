@@ -362,6 +362,70 @@ export const usePenomoran = () => {
   };
 
   /** ===========================
+   * SUBMIT BOOKING SINGLE FILE (USER) ← ✅ BARU
+   * POST /nomor-request/:id_request/booking-single-file
+   * 1 file dipakai untuk semua nomor dalam request
+   * =========================== */
+  const submitBookingSingleFile = async (
+    id_request: string | number,
+    file: File,
+  ) => {
+    isLoadingBooking.value = true;
+
+    try {
+      console.log("📤 Submitting single-file booking for request:", id_request);
+      console.log("📄 File:", file.name, file.size, "bytes");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await api.post(
+        `/nomor-request/${id_request}/booking-single-file`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      console.log("✅ Single-file booking response:", response.data);
+
+      toast.add({
+        title: "Berhasil",
+        description:
+          response.data?.message ||
+          "Usulan berhasil dikirim dengan 1 file untuk semua nomor.",
+        color: "success",
+      });
+
+      const { user } = useAuth();
+      if (user.value?.position?.id) {
+        await getNomorRequestCountUser(user.value.position.id);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Error submit single-file booking:", error);
+      console.error("❌ Error response:", error.response?.data);
+
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal mengirim usulan single file.";
+
+      toast.add({
+        title: "Gagal",
+        description: Array.isArray(msg) ? msg.join(", ") : msg,
+        color: "error",
+      });
+
+      throw error;
+    } finally {
+      isLoadingBooking.value = false;
+    }
+  };
+
+  /** ===========================
    * GET DETAIL NOMOR BY ID (ADMIN)
    * =========================== */
   const getDetailNomor = async (id: string) => {
@@ -1231,6 +1295,7 @@ export const usePenomoran = () => {
     // USULAN FLOW (USER)
     createUsulanDraft,
     submitBooking,
+    submitBookingSingleFile, // ✅ BARU
     getListUsulanByPosition,
     deleteUsulanUser,
 

@@ -679,32 +679,6 @@
           </div>
         </div>
 
-        <!-- Upload info banner -->
-        <div
-          v-if="selectedRow?.status === 'Belum Diajukan'"
-          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2"
-        >
-          <svg
-            class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div class="text-xs text-blue-800 dark:text-blue-300">
-            <p class="font-medium">{{ $t("usl_upload_info_title") }}</p>
-            <p class="mt-1 text-blue-700 dark:text-blue-400">
-              {{ $t("usl_upload_info_desc") }}
-            </p>
-          </div>
-        </div>
-
         <!-- Upload Progress -->
         <div
           v-if="isUploadingFiles"
@@ -731,16 +705,6 @@
         <div
           class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
         >
-          <button
-            v-if="selectedRow?.status === 'Belum Diajukan'"
-            @click="openConfirmSubmit = true"
-            :disabled="isLoadingBooking || isDeletingUsulan || isUploadingFiles"
-            class="flex-1 px-5 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <span v-if="isUploadingFiles">{{ $t("usl_mengirim") }}</span>
-            <span v-else>{{ $t("usl_btn_kirim") }}</span>
-          </button>
-
           <button
             v-if="selectedRow?.status === 'Belum Diajukan'"
             @click="openConfirmDelete = true"
