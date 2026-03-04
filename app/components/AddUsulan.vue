@@ -5,11 +5,8 @@
     :hide-default-footer="true"
     size="xl"
     ><template #title>
-      <Heading
-        variant="heading9b"
-        class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100"
-      >
-        {{ $t("add_usl_title") }}
+      <Heading variant="heading9b" class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100">
+        {{ $t('add_usl_title') }}
       </Heading>
     </template>
     <!-- STEP INDICATOR -->
@@ -38,23 +35,17 @@
     <div v-if="currentStep === 1" class="space-y-4">
       <div class="p-1 flex flex-col gap-4 pb-5">
         <div class="text-xs text-gray-500 mb-2">
-          <Heading
-            variant="heading9b"
-            class="text-mobile-md dark:text-white text-black mb-1"
+          <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
             >Form Penomoran</Heading
           >
           <span>
-            Silakan masukkan data penomoran secara lengkap dan benar untuk
-            keperluan verifikasi.
+            Silakan masukkan data penomoran secara lengkap dan benar untuk keperluan verifikasi.
           </span>
         </div>
         <!-- Tanggal Surat -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium dark:text-gray-200"
-          >
-            {{ $t("add_usl_tanggal_surat") }}
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+            {{ $t('add_usl_tanggal_surat') }}
             <span class="text-red-500">*</span>
           </Heading>
           <input
@@ -67,11 +58,8 @@
 
         <!-- Klasifikasi -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium dark:text-gray-200"
-          >
-            {{ $t("add_usl_klasifikasi") }}
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+            {{ $t('add_usl_klasifikasi') }}
             <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="klasifikasiRef">
@@ -81,13 +69,11 @@
               class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :class="{
                 'text-gray-400': !form.klasifikasiDisplay,
-                'text-gray-900 dark:text-gray-200': form.klasifikasiDisplay,
+                'text-gray-900 dark:text-gray-200': form.klasifikasiDisplay
               }"
             >
-              {{ form.klasifikasiDisplay || $t("add_usl_pilih_klasifikasi") }}
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-              />
+              {{ form.klasifikasiDisplay || $t('add_usl_pilih_klasifikasi') }}
+              <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
 
             <div
@@ -116,11 +102,7 @@
                   v-if="filteredKlasifikasi.length === 0"
                   class="px-3 py-2 text-xs text-center text-gray-400"
                 >
-                  {{
-                    isLoadingKlasifikasi
-                      ? $t("add_usl_memuat")
-                      : $t("add_usl_tidak_ada_hasil")
-                  }}
+                  {{ isLoadingKlasifikasi ? $t('add_usl_memuat') : $t('add_usl_tidak_ada_hasil') }}
                 </p>
               </div>
             </div>
@@ -129,11 +111,8 @@
 
         <!-- Jenis Naskah -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium dark:text-gray-200"
-          >
-            {{ $t("add_usl_jenis_naskah") }}
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+            {{ $t('add_usl_jenis_naskah') }}
             <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="jenisRef">
@@ -142,13 +121,11 @@
               class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:text-gray-200"
               :class="{
                 'text-gray-400': !form.jenisDisplay,
-                'text-gray-900 dark:text-gray-200': form.jenisDisplay,
+                'text-gray-900 dark:text-gray-200': form.jenisDisplay
               }"
             >
-              {{ form.jenisDisplay || $t("add_usl_pilih_jenis") }}
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-              />
+              {{ form.jenisDisplay || $t('add_usl_pilih_jenis') }}
+              <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
 
             <div
@@ -176,7 +153,7 @@
                   v-if="filteredJenis.length === 0"
                   class="px-3 py-2 text-xs text-center text-gray-400"
                 >
-                  {{ $t("add_usl_tidak_ada_hasil") }}
+                  {{ $t('add_usl_tidak_ada_hasil') }}
                 </p>
               </div>
             </div>
@@ -185,11 +162,8 @@
 
         <!-- Penandatangan -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium dark:text-gray-200"
-          >
-            {{ $t("add_usl_penandatangan") }}
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+            {{ $t('add_usl_penandatangan') }}
             <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="penandatanganRef">
@@ -199,15 +173,11 @@
               class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :class="{
                 'text-gray-400': !form.penandatanganJabatan,
-                'text-gray-900 dark:text-gray-200': form.penandatanganJabatan,
+                'text-gray-900 dark:text-gray-200': form.penandatanganJabatan
               }"
             >
-              {{
-                form.penandatanganJabatan || $t("add_usl_pilih_penandatangan")
-              }}
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-              />
+              {{ form.penandatanganJabatan || $t('add_usl_pilih_penandatangan') }}
+              <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
 
             <div
@@ -236,11 +206,7 @@
                   v-if="filteredPenandatangan.length === 0"
                   class="px-3 py-2 text-xs text-center text-gray-400"
                 >
-                  {{
-                    isLoadingPositions
-                      ? $t("add_usl_memuat")
-                      : $t("add_usl_tidak_ada_hasil")
-                  }}
+                  {{ isLoadingPositions ? $t('add_usl_memuat') : $t('add_usl_tidak_ada_hasil') }}
                 </p>
               </div>
             </div>
@@ -250,7 +216,7 @@
         <!-- Perihal -->
         <div>
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t("add_usl_perihal") }} <span class="text-red-500">*</span>
+            {{ $t('add_usl_perihal') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.perihal"
@@ -265,18 +231,15 @@
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
               {{ form.perihal.length }}/100
-              {{ $t("add_usl_perihal_karakter") }}
+              {{ $t('add_usl_perihal_karakter') }}
             </p>
           </div>
         </div>
 
         <!-- Jumlah -->
         <div>
-          <Heading
-            variant="heading11m"
-            class="text-xs font-medium dark:text-gray-200"
-          >
-            {{ $t("add_usl_jumlah") }} <span class="text-red-500">*</span>
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+            {{ $t('add_usl_jumlah') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             type="number"
@@ -297,14 +260,11 @@
     <div v-if="currentStep === 2" class="space-y-6 p-1">
       <!-- Title -->
       <div class="text-xs text-gray-500 mb-5">
-        <Heading
-          variant="heading9b"
-          class="text-mobile-md dark:text-white text-black mb-1"
+        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
           >Masukkan Lampiran File</Heading
         >
         <span>
-          Silakan masukkan file penomoran secara lengkap dan benar untuk
-          keperluan verifikasi.
+          Silakan masukkan file penomoran secara lengkap dan benar untuk keperluan verifikasi.
         </span>
       </div>
 
@@ -316,18 +276,14 @@
             type="button"
             @click="isSingleFile = !isSingleFile"
             class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300"
-            :class="
-              isSingleFile ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-            "
+            :class="isSingleFile ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
           >
             <span
               class="inline-block h-4 w-4 transform rounded-full bg-white transition duration-300"
               :class="isSingleFile ? 'translate-x-6' : 'translate-x-1'"
             />
           </button>
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Single File
-          </span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300"> Single File </span>
         </div>
       </div>
 
@@ -351,10 +307,7 @@
               </div>
             </div>
 
-            <button
-              @click="removeSingleFile"
-              class="text-red-500 hover:text-red-600 transition"
-            >
+            <button @click="removeSingleFile" class="text-red-500 hover:text-red-600 transition">
               <X class="w-5 h-5" />
             </button>
           </div>
@@ -379,19 +332,14 @@
           </svg>
           <div class="flex-1">
             <span class="text-gray-700 dark:text-gray-300 font-medium block">
-              Pilih file (Opsional)
+              Pilih file <span class="text-red-500">*</span>
             </span>
             <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
               PDF, DOC, DOCX (Maks 5MB)
             </span>
           </div>
 
-          <input
-            type="file"
-            class="hidden"
-            accept=".pdf,.doc,.docx"
-            @change="handleSingleFile"
-          />
+          <input type="file" class="hidden" accept=".pdf,.doc,.docx" @change="handleSingleFile" />
         </label>
       </div>
 
@@ -413,9 +361,7 @@
                 class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
               >
                 <div class="flex items-center justify-between">
-                  <span
-                    class="text-sm font-mono text-gray-700 dark:text-gray-300"
-                  >
+                  <span class="text-sm font-mono text-gray-700 dark:text-gray-300">
                     {{ idx + 1 }}. SPR..../TN/00/LPPNPI/AUD/II/2026
                   </span>
                   <span
@@ -455,9 +401,7 @@
                       >
                         {{ filesByIndex[idx].name }}
                       </p>
-                      <p
-                        class="text-xs text-gray-600 dark:text-gray-400 mt-0.5"
-                      >
+                      <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                         {{ formatFileSize(filesByIndex[idx].size) }}
                       </p>
                     </div>
@@ -466,12 +410,7 @@
                     @click="removeFile(idx)"
                     class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                   >
-                    <svg
-                      class="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -502,15 +441,11 @@
                   />
                 </svg>
                 <div class="flex-1">
-                  <span
-                    class="text-gray-700 dark:text-gray-300 font-medium block"
-                  >
-                    {{ $t("usl_file_pilih") }}
+                  <span class="text-gray-700 dark:text-gray-300 font-medium block">
+                    {{ $t('usl_file_pilih') }} <span class="text-red-500">*</span>
                   </span>
-                  <span
-                    class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5"
-                  >
-                    {{ $t("usl_file_format_hint") }}
+                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                    {{ $t('usl_file_format_hint') }}
                   </span>
                 </div>
                 <input
@@ -529,92 +464,80 @@
     <!-- STEP 3 (PREVIEW - pindahan dari modal lama) -->
     <div v-if="currentStep === 3" class="space-y-4 p-1">
       <div class="text-xs text-gray-500 mb-3">
-        <Heading
-          variant="heading9b"
-          class="text-mobile-md dark:text-white text-black mb-1"
+        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
           >Konfirmasi Penomoran</Heading
         >
-        <span>
-          Tinjau kembali rincian penomoran Anda sebelum melakukan pengiriman
-          usulan.
-        </span>
+        <span> Tinjau kembali rincian penomoran Anda sebelum melakukan pengiriman usulan. </span>
       </div>
 
       <div class="max-h-full border border-gray-200 mb-5 rounded-lg">
         <div class="w-full px-5 py-2 text-sm">
-          <p
-            class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1"
-          >
+          <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">
             {{ formatDateTime(new Date()) }}
           </p>
           <h3 class="text-center font-bold text-base mb-5 dark:text-gray-100">
-            {{ $t("add_usl_preview_form_title") }}
+            {{ $t('add_usl_preview_form_title') }}
           </h3>
 
           <div class="grid grid-cols-[155px_1fr] gap-y-3 w-full">
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_nama")
+              $t('add_usl_preview_nama')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200">{{
-              penandatanganNama || user?.nama || "-"
+              penandatanganNama || user?.nama || '-'
             }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_jabatan")
+              $t('add_usl_preview_jabatan')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200">{{
-              form.penandatanganJabatan || "-"
+              form.penandatanganJabatan || '-'
             }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_jenis")
+              $t('add_usl_preview_jenis')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200">{{
-              form.jenisDisplay || "-"
+              form.jenisDisplay || '-'
             }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_klasifikasi")
+              $t('add_usl_preview_klasifikasi')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200">{{
-              form.klasifikasiDisplay || "-"
+              form.klasifikasiDisplay || '-'
             }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_tanggal")
+              $t('add_usl_preview_tanggal')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200">{{
-              formatDate(tanggalString) || "-"
+              formatDate(tanggalString) || '-'
             }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_perihal")
+              $t('add_usl_preview_perihal')
             }}</Heading>
-            <Heading variant="11sb" class="dark:text-gray-200">{{
-              form.perihal || "-"
-            }}</Heading>
+            <Heading variant="11sb" class="dark:text-gray-200">{{ form.perihal || '-' }}</Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_jumlah")
+              $t('add_usl_preview_jumlah')
             }}</Heading>
             <Heading variant="11sb" class="dark:text-gray-200"
-              >{{ form.jumlah || 0 }}
-              {{ $t("add_usl_preview_jumlah_suffix") }}</Heading
+              >{{ form.jumlah || 0 }} {{ $t('add_usl_preview_jumlah_suffix') }}</Heading
             >
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
-              $t("add_usl_preview_nomor")
+              $t('add_usl_preview_nomor')
             }}</Heading>
-            <div
-              class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1"
-            >
+            <div class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1">
               <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
                 <span class="text-gray-400 dark:text-gray-500">
-                  {{ String(n).padStart(2, "0") }}.
+                  {{ String(n).padStart(2, '0') }}.
                 </span>
                 <span class="tracking-widest">
-                  {{ form.jenis || "..." }}....../O/00/LPPNPI/{{
-                    form.klasifikasi || "..."
+                  {{ form.jenis || '...' }}....../O/00/LPPNPI/{{
+                    form.klasifikasi || '...'
                   }}/XII/2025
                 </span>
               </div>
@@ -624,22 +547,16 @@
 
         <div class="flex justify-between items-start px-5 pb-5 mt-8">
           <div>
-            <Heading
-              variant="10m"
-              class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
-            >
-              {{ $t("add_usl_preview_pengusul") }}
+            <Heading variant="10m" class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1">
+              {{ $t('add_usl_preview_pengusul') }}
             </Heading>
             <p class="font-semibold text-xs dark:text-gray-200">
-              {{ user?.nama || "-" }}
+              {{ user?.nama || '-' }}
             </p>
           </div>
           <div class="text-right">
-            <Heading
-              variant="10m"
-              class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1"
-            >
-              {{ $t("add_usl_preview_diusulkan") }}
+            <Heading variant="10m" class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1">
+              {{ $t('add_usl_preview_diusulkan') }}
             </Heading>
             <p class="font-semibold text-xs dark:text-gray-200">
               {{ formatDateTime(new Date()) }}
@@ -651,9 +568,7 @@
 
     <!-- FOOTER BUTTON -->
     <template #footer>
-      <div
-        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200"
-      >
+      <div class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200">
         <Button
           v-if="currentStep > 1"
           variant="secondary"
@@ -678,10 +593,7 @@
           :disabled="isSubmitting || isLoadingBooking"
           class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <span
-            v-if="isSubmitting || isLoadingBooking"
-            class="flex items-center gap-2"
-          >
+          <span v-if="isSubmitting || isLoadingBooking" class="flex items-center gap-2">
             <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
@@ -691,11 +603,7 @@
                 stroke="currentColor"
                 stroke-width="4"
               />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
             Mengirim...
           </span>
@@ -707,116 +615,130 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  onMounted,
-  computed,
-  watch,
-  onBeforeUnmount,
-  nextTick,
-} from "vue";
-import { useI18n } from "vue-i18n";
-import { ChevronDown, FileText, X } from "lucide-vue-next";
-import Heading from "~/components/Heading.vue";
-import { usePenomoran } from "~/composables/usePenomoran";
-import { useAuth } from "~/composables/useAuth";
-import { useApi } from "~/composables/useApi";
+import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ChevronDown, FileText, X } from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
+import { usePenomoran } from '~/composables/usePenomoran'
+import { useAuth } from '~/composables/useAuth'
+import { useApi } from '~/composables/useApi'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
-const emit = defineEmits(["update:modelValue", "submit", "preview"]);
+const emit = defineEmits(['update:modelValue', 'submit', 'preview'])
 
-const { t } = useI18n();
-const toast = useToast();
+const { t } = useI18n()
+const toast = useToast()
 
 const jenisOptions = [
-  { code: "PER", display: "PER - Peraturan" },
-  { code: "KEP", display: "KEP - Keputusan Direksi" },
-  { code: "INS", display: "INS - Instruksi" },
-  { code: "SPR", display: "SPR - Surat Perintah" },
-  { code: "SOP", display: "SOP - Standar Operasional Prosedur" },
-  { code: "EDR", display: "EDR - Surat Edaran" },
-  { code: "ND", display: "ND - Nota Dinas" },
-  { code: "SDI", display: "SDI - Surat Dinas Internal" },
-  { code: "DI", display: "DI - Disposisi" },
-  { code: "SDE", display: "SDE - Surat Dinas Eksternal" },
-  { code: "MOU", display: "MOU - Memorandum of Understanding" },
-  { code: "PKS", display: "PKS - Perjanjian Kerja Sama" },
-  { code: "LOA", display: "LOA - Letter of Agreement" },
-  { code: "LOCA", display: "LOCA - Letter of Coordination Agreement" },
-  { code: "PROC", display: "PROC - Kontrak Pengadaan" },
-  { code: "PJJ", display: "PJJ - Perjanjian Lainnya" },
-  { code: "ADD-PJJ", display: "ADD-PJJ - Adendum Perjanjian" },
-  { code: "ADD-PROC", display: "ADD-PROC - Kontrak Pengadaan Adendum" },
-  { code: "SPK", display: "SPK - Surat Perintah Kerja Pengadaan" },
+  { code: 'PER', display: 'PER - Peraturan' },
+  { code: 'KEP', display: 'KEP - Keputusan Direksi' },
+  { code: 'INS', display: 'INS - Instruksi' },
+  { code: 'SPR', display: 'SPR - Surat Perintah' },
+  { code: 'SOP', display: 'SOP - Standar Operasional Prosedur' },
+  { code: 'EDR', display: 'EDR - Surat Edaran' },
+  { code: 'ND', display: 'ND - Nota Dinas' },
+  { code: 'SDI', display: 'SDI - Surat Dinas Internal' },
+  { code: 'DI', display: 'DI - Disposisi' },
+  { code: 'SDE', display: 'SDE - Surat Dinas Eksternal' },
+  { code: 'MOU', display: 'MOU - Memorandum of Understanding' },
+  { code: 'PKS', display: 'PKS - Perjanjian Kerja Sama' },
+  { code: 'LOA', display: 'LOA - Letter of Agreement' },
+  { code: 'LOCA', display: 'LOCA - Letter of Coordination Agreement' },
+  { code: 'PROC', display: 'PROC - Kontrak Pengadaan' },
+  { code: 'PJJ', display: 'PJJ - Perjanjian Lainnya' },
+  { code: 'ADD-PJJ', display: 'ADD-PJJ - Adendum Perjanjian' },
+  { code: 'ADD-PROC', display: 'ADD-PROC - Kontrak Pengadaan Adendum' },
+  { code: 'SPK', display: 'SPK - Surat Perintah Kerja Pengadaan' },
   {
-    code: "ADD-SPK",
-    display: "ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan",
+    code: 'ADD-SPK',
+    display: 'ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan'
   },
-  { code: "SKU", display: "SKU - Surat Kuasa" },
-  { code: "BAC", display: "BAC - Berita Acara" },
-  { code: "UND", display: "UND - Surat Undangan" },
-  { code: "KET", display: "KET - Surat Keterangan" },
-  { code: "SPE", display: "SPE - Surat Pengantar" },
-  { code: "RPT", display: "RPT - Risalah Rapat" },
-  { code: "PEN", display: "PEN - Pengumuman" },
-  { code: "PGM", display: "PGM - Sertifikat atau Piagam" },
-  { code: "LAP", display: "LAP - Laporan" },
-];
+  { code: 'SKU', display: 'SKU - Surat Kuasa' },
+  { code: 'BAC', display: 'BAC - Berita Acara' },
+  { code: 'UND', display: 'UND - Surat Undangan' },
+  { code: 'KET', display: 'KET - Surat Keterangan' },
+  { code: 'SPE', display: 'SPE - Surat Pengantar' },
+  { code: 'RPT', display: 'RPT - Risalah Rapat' },
+  { code: 'PEN', display: 'PEN - Pengumuman' },
+  { code: 'PGM', display: 'PGM - Sertifikat atau Piagam' },
+  { code: 'LAP', display: 'LAP - Laporan' }
+]
 
 const form = ref({
   tanggal: new Date(),
-  klasifikasi: "",
-  klasifikasiDisplay: "",
-  jenis: "",
-  jenisDisplay: "",
-  penandatanganJabatan: "",
+  klasifikasi: '',
+  klasifikasiDisplay: '',
+  jenis: '',
+  jenisDisplay: '',
+  penandatanganJabatan: '',
   id_position_penandatangan: null,
-  perihal: "",
-  jumlah: 1,
-});
+  perihal: '',
+  jumlah: 1
+})
 
 //------------- STATE STEP -------------
-const currentStep = ref(1);
+const currentStep = ref(1)
 const announcementForm = ref({
-  judul: "",
-  pesan: "",
-  lampiran: null,
-});
+  judul: '',
+  pesan: '',
+  lampiran: null
+})
 function handleFileUpload(event) {
-  const file = event.target.files[0];
-  announcementForm.value.lampiran = file;
+  const file = event.target.files[0]
+  announcementForm.value.lampiran = file
 }
 const nextStep = () => {
   if (currentStep.value === 1) {
-    if (!validateStepOne()) return;
+    if (!validateStepOne()) return
   }
 
   if (currentStep.value === 2) {
     if (isSingleFile.value) {
-      // validasi nanti bisa ditambah
+      if (!singleFile.value) {
+        toast.add({
+          title: 'File wajib diunggah',
+          description: 'Silakan pilih file sebelum melanjutkan.',
+          color: 'warning'
+        })
+        return
+      }
+    } else {
+      // Setiap nomor wajib punya file
+      const missingIndexes = []
+      for (let i = 0; i < form.value.jumlah; i++) {
+        if (!(filesByIndex.value[i] instanceof File)) {
+          missingIndexes.push(i + 1)
+        }
+      }
+      if (missingIndexes.length > 0) {
+        toast.add({
+          title: 'File belum lengkap',
+          description: `Masih ada nomor yang belum memiliki file. Semua nomor wajib diunggah.`,
+          color: 'warning'
+        })
+        return
+      }
     }
   }
 
-  if (currentStep.value < 3) currentStep.value++;
-};
+  if (currentStep.value < 3) currentStep.value++
+}
 
 const prevStep = () => {
-  if (currentStep.value > 1) currentStep.value--;
-};
+  if (currentStep.value > 1) currentStep.value--
+}
 const stepClass = (step) => {
   return [
-    "w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold",
-    currentStep.value >= step
-      ? "bg-primary text-white"
-      : "bg-gray-200 text-gray-500",
-  ];
-};
+    'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
+    currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
+  ]
+}
 
 // STEP 1
 function validateStepOne() {
@@ -831,342 +753,335 @@ function validateStepOne() {
     Number(form.value.jumlah) < 1
   ) {
     toast.add({
-      title: t("add_usl_toast_tidak_lengkap_title"),
-      description: t("add_usl_toast_tidak_lengkap_desc"),
-      color: "yellow",
-    });
-    return false;
+      title: t('add_usl_toast_tidak_lengkap_title'),
+      description: t('add_usl_toast_tidak_lengkap_desc'),
+      color: 'warning'
+    })
+    return false
   }
 
-  return true;
+  return true
 }
 
 const stepCircleClass = (step) => {
   return [
-    "w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold",
-    currentStep.value >= step
-      ? "bg-primary text-white"
-      : "bg-gray-200 text-gray-500",
-  ];
-};
+    'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
+    currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
+  ]
+}
 
 const stepLineClass = (step) => {
-  return currentStep.value >= step ? "bg-primary" : "bg-gray-200";
-};
+  return currentStep.value >= step ? 'bg-primary' : 'bg-gray-200'
+}
 
 // STEP 2
-const isSingleFile = ref(false);
-const filesByIndex = ref([]);
+const isSingleFile = ref(false)
+const filesByIndex = ref([])
 
 watch(
   () => form.value.jumlah,
   (val) => {
-    filesByIndex.value = Array.from({ length: val }, () => null);
+    filesByIndex.value = Array.from({ length: val }, () => null)
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 function handleFile(idx, event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  filesByIndex.value[idx] = file;
+  const file = event.target.files[0]
+  if (!file) return
+  filesByIndex.value[idx] = file
 }
 
 function removeFile(idx) {
-  filesByIndex.value[idx] = null;
+  filesByIndex.value[idx] = null
 }
 
 function formatFileSize(size) {
-  if (!size) return "";
-  return (size / 1024 / 1024).toFixed(2) + " MB";
+  if (!size) return ''
+  return (size / 1024 / 1024).toFixed(2) + ' MB'
 }
 const nomorSuratList = computed(() => {
   return Array.from({ length: form.value.jumlah }, (_, i) => ({
     index: i + 1,
     nomor: `SPR..../TN/00/LPPNPI/AUD/II/2026`,
-    file: null,
-  }));
-});
+    file: null
+  }))
+})
 
 // SINGLE FILE
-const singleFile = ref(null);
+const singleFile = ref(null)
 
 function handleSingleFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  singleFile.value = file;
+  const file = event.target.files[0]
+  if (!file) return
+  singleFile.value = file
 }
 
 function removeSingleFile() {
-  singleFile.value = null;
+  singleFile.value = null
 }
 watch(isSingleFile, (val) => {
   if (val) {
-    filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null);
+    filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null)
   } else {
-    singleFile.value = null;
+    singleFile.value = null
   }
-});
+})
 
 // Dropdown state
-const openKlasifikasi = ref(false);
-const klasifikasiSearch = ref("");
-const klasifikasiRef = ref(null);
-const klasifikasiInput = ref(null);
+const openKlasifikasi = ref(false)
+const klasifikasiSearch = ref('')
+const klasifikasiRef = ref(null)
+const klasifikasiInput = ref(null)
 
-const openJenis = ref(false);
-const jenisSearch = ref("");
-const jenisRef = ref(null);
-const jenisInput = ref(null);
+const openJenis = ref(false)
+const jenisSearch = ref('')
+const jenisRef = ref(null)
+const jenisInput = ref(null)
 
-const openPenandatangan = ref(false);
-const penandatanganSearch = ref("");
-const penandatanganRef = ref(null);
-const penandatanganInput = ref(null);
-const penandatanganOptions = ref([]);
-const penandatanganNama = ref("");
+const openPenandatangan = ref(false)
+const penandatanganSearch = ref('')
+const penandatanganRef = ref(null)
+const penandatanganInput = ref(null)
+const penandatanganOptions = ref([])
+const penandatanganNama = ref('')
 
-const isLoadingPositions = ref(false);
-const jumlahError = ref("");
-const perihalError = ref("");
-const hasLoadedPositions = ref(false);
-const hasLoadedKlasifikasi = ref(false);
+const isLoadingPositions = ref(false)
+const jumlahError = ref('')
+const perihalError = ref('')
+const hasLoadedPositions = ref(false)
+const hasLoadedKlasifikasi = ref(false)
 
-const today = new Date();
-const todayString = today.toISOString().split("T")[0];
-const tanggalString = ref(todayString);
+const today = new Date()
+const todayString = today.toISOString().split('T')[0]
+const tanggalString = ref(todayString)
 
 const {
   getKlasifikasi,
   createUsulanDraft,
   submitBooking,
   submitBookingSingleFile,
-  isLoadingBooking,
-} = usePenomoran();
-const { user, getProfile } = useAuth();
-const { get } = useApi();
+  isLoadingBooking
+} = usePenomoran()
+const { user, getProfile } = useAuth()
+const { get } = useApi()
 
 watch(tanggalString, (newVal) => {
-  if (newVal) form.value.tanggal = new Date(newVal);
-});
+  if (newVal) form.value.tanggal = new Date(newVal)
+})
 
 const handleClickOutside = (e) => {
   if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target))
-    openKlasifikasi.value = false;
-  if (jenisRef.value && !jenisRef.value.contains(e.target))
-    openJenis.value = false;
+    openKlasifikasi.value = false
+  if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false
   if (penandatanganRef.value && !penandatanganRef.value.contains(e.target))
-    openPenandatangan.value = false;
-};
+    openPenandatangan.value = false
+}
 
 const toggleKlasifikasi = async () => {
   if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
-    await fetchKlasifikasi();
-    hasLoadedKlasifikasi.value = true;
+    await fetchKlasifikasi()
+    hasLoadedKlasifikasi.value = true
   }
-  openKlasifikasi.value = !openKlasifikasi.value;
+  openKlasifikasi.value = !openKlasifikasi.value
   if (openKlasifikasi.value) {
-    await nextTick();
-    klasifikasiInput.value?.focus();
+    await nextTick()
+    klasifikasiInput.value?.focus()
   }
-};
+}
 
 const toggleJenis = async () => {
-  openJenis.value = !openJenis.value;
+  openJenis.value = !openJenis.value
   if (openJenis.value) {
-    await nextTick();
-    jenisInput.value?.focus();
+    await nextTick()
+    jenisInput.value?.focus()
   }
-};
+}
 
 const togglePenandatangan = async () => {
   if (!openPenandatangan.value && !hasLoadedPositions.value) {
-    await fetchPositions();
-    hasLoadedPositions.value = true;
+    await fetchPositions()
+    hasLoadedPositions.value = true
   }
-  openPenandatangan.value = !openPenandatangan.value;
+  openPenandatangan.value = !openPenandatangan.value
   if (openPenandatangan.value) {
-    await nextTick();
-    penandatanganInput.value?.focus();
+    await nextTick()
+    penandatanganInput.value?.focus()
   }
-};
+}
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
+  document.addEventListener('click', handleClickOutside)
+})
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+})
 
-const klasifikasiOptions = ref([]);
-const isLoadingKlasifikasi = ref(false);
+const klasifikasiOptions = ref([])
+const isLoadingKlasifikasi = ref(false)
 
 const filteredKlasifikasi = computed(() => {
-  if (!klasifikasiSearch.value) return klasifikasiOptions.value;
+  if (!klasifikasiSearch.value) return klasifikasiOptions.value
   return klasifikasiOptions.value.filter((item) =>
-    item.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase()),
-  );
-});
+    item.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase())
+  )
+})
 
 const filteredJenis = computed(() => {
-  if (!jenisSearch.value) return jenisOptions;
+  if (!jenisSearch.value) return jenisOptions
   return jenisOptions.filter((item) =>
-    item.display.toLowerCase().includes(jenisSearch.value.toLowerCase()),
-  );
-});
+    item.display.toLowerCase().includes(jenisSearch.value.toLowerCase())
+  )
+})
 
 const filteredPenandatangan = computed(() => {
-  if (!penandatanganSearch.value) return penandatanganOptions.value;
+  if (!penandatanganSearch.value) return penandatanganOptions.value
   return penandatanganOptions.value.filter((item) =>
-    item.displayText
-      .toLowerCase()
-      .includes(penandatanganSearch.value.toLowerCase()),
-  );
-});
+    item.displayText.toLowerCase().includes(penandatanganSearch.value.toLowerCase())
+  )
+})
 
 function selectKlasifikasi(item) {
-  form.value.klasifikasi = item.code;
-  form.value.klasifikasiDisplay = item.display;
-  klasifikasiSearch.value = "";
-  openKlasifikasi.value = false;
+  form.value.klasifikasi = item.code
+  form.value.klasifikasiDisplay = item.display
+  klasifikasiSearch.value = ''
+  openKlasifikasi.value = false
 }
 
 function selectJenis(item) {
-  form.value.jenis = item.code;
-  form.value.jenisDisplay = item.display;
-  jenisSearch.value = "";
-  openJenis.value = false;
+  form.value.jenis = item.code
+  form.value.jenisDisplay = item.display
+  jenisSearch.value = ''
+  openJenis.value = false
 }
 
 function selectPenandatangan(item) {
-  form.value.penandatanganJabatan = item.displayText;
-  form.value.id_position_penandatangan = Number(item.position);
-  penandatanganNama.value = item.nama;
-  penandatanganSearch.value = "";
-  openPenandatangan.value = false;
+  form.value.penandatanganJabatan = item.displayText
+  form.value.id_position_penandatangan = Number(item.position)
+  penandatanganNama.value = item.nama
+  penandatanganSearch.value = ''
+  openPenandatangan.value = false
 }
 
 function validatePerihal() {
   if (form.value.perihal.length > 100) {
-    form.value.perihal = form.value.perihal.slice(0, 100);
-    perihalError.value = t("add_usl_valid_perihal_maks");
-    return;
+    form.value.perihal = form.value.perihal.slice(0, 100)
+    perihalError.value = t('add_usl_valid_perihal_maks')
+    return
   }
   if (form.value.perihal.length === 0) {
-    perihalError.value = t("add_usl_valid_perihal_kosong");
-    return;
+    perihalError.value = t('add_usl_valid_perihal_kosong')
+    return
   }
-  perihalError.value = "";
+  perihalError.value = ''
 }
 
 function blockInvalidNumber(e) {
-  if (["-", "+", "e", "E", "."].includes(e.key)) {
-    e.preventDefault();
-    jumlahError.value = t("add_usl_valid_jumlah_positif");
+  if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+    e.preventDefault()
+    jumlahError.value = t('add_usl_valid_jumlah_positif')
   }
 }
 
 function validateJumlah() {
-  const val = Number(form.value.jumlah);
+  const val = Number(form.value.jumlah)
 
   if (!val || isNaN(val)) {
-    jumlahError.value = t("add_usl_valid_jumlah");
-    return;
+    jumlahError.value = t('add_usl_valid_jumlah')
+    return
   }
 
   if (val < 1) {
-    jumlahError.value = t("add_usl_valid_jumlah_min");
-    form.value.jumlah = 1;
-    return;
+    jumlahError.value = t('add_usl_valid_jumlah_min')
+    form.value.jumlah = 1
+    return
   }
 
-  jumlahError.value = "";
+  jumlahError.value = ''
 }
 
 const fetchPositions = async () => {
-  isLoadingPositions.value = true;
+  isLoadingPositions.value = true
   try {
-    const response = await get("/person/with-position/all");
-    const raw = response?.data ?? response;
-    const list = Array.isArray(raw) ? raw : [];
+    const response = await get('/person/with-position/all')
+    const raw = response?.data ?? response
+    const list = Array.isArray(raw) ? raw : []
 
     penandatanganOptions.value = list.map((item) => {
-      const positionText = item.position_text || "";
-      const subAreaText = item.sub_area_text || "";
-      const displayText = subAreaText
-        ? `${positionText} - ${subAreaText}`
-        : positionText;
-      return { displayText, position: item.position, nama: item.nama };
-    });
+      const positionText = item.position_text || ''
+      const subAreaText = item.sub_area_text || ''
+      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText
+      return { displayText, position: item.position, nama: item.nama }
+    })
   } catch (err) {
-    console.error("❌ Error fetch positions:", err);
+    console.error('❌ Error fetch positions:', err)
     toast.add({
-      title: t("add_usl_toast_gagal_posisi_title"),
-      description: t("add_usl_toast_gagal_posisi_desc"),
-      color: "red",
-    });
+      title: t('add_usl_toast_gagal_posisi_title'),
+      description: t('add_usl_toast_gagal_posisi_desc'),
+      color: 'error'
+    })
   } finally {
-    isLoadingPositions.value = false;
+    isLoadingPositions.value = false
   }
-};
+}
 
 const fetchKlasifikasi = async () => {
-  isLoadingKlasifikasi.value = true;
+  isLoadingKlasifikasi.value = true
   try {
-    const response = await getKlasifikasi();
-    klasifikasiOptions.value = response;
+    const response = await getKlasifikasi()
+    klasifikasiOptions.value = response
   } catch (err) {
-    console.error("❌ Error fetch klasifikasi:", err);
+    console.error('❌ Error fetch klasifikasi:', err)
     toast.add({
-      title: t("add_usl_toast_gagal_klasifikasi_title"),
-      description: t("add_usl_toast_gagal_klasifikasi_desc"),
-      color: "yellow",
-    });
+      title: t('add_usl_toast_gagal_klasifikasi_title'),
+      description: t('add_usl_toast_gagal_klasifikasi_desc'),
+      color: 'warning'
+    })
   } finally {
-    isLoadingKlasifikasi.value = false;
+    isLoadingKlasifikasi.value = false
   }
-};
+}
 
 const resetForm = () => {
-  tanggalString.value = todayString;
+  tanggalString.value = todayString
   form.value = {
     tanggal: new Date(),
-    klasifikasi: "",
-    klasifikasiDisplay: "",
-    jenis: "",
-    jenisDisplay: "",
+    klasifikasi: '',
+    klasifikasiDisplay: '',
+    jenis: '',
+    jenisDisplay: '',
     id_position_penandatangan: null,
-    penandatanganJabatan: "",
-    perihal: "",
-    jumlah: 1,
-  };
+    penandatanganJabatan: '',
+    perihal: '',
+    jumlah: 1
+  }
 
-  klasifikasiSearch.value = "";
-  jenisSearch.value = "";
-  penandatanganSearch.value = "";
-  penandatanganNama.value = "";
-  jumlahError.value = "";
-  perihalError.value = "";
-  openKlasifikasi.value = false;
-  openJenis.value = false;
-  openPenandatangan.value = false;
-  hasLoadedPositions.value = false;
-  hasLoadedKlasifikasi.value = false;
+  klasifikasiSearch.value = ''
+  jenisSearch.value = ''
+  penandatanganSearch.value = ''
+  penandatanganNama.value = ''
+  jumlahError.value = ''
+  perihalError.value = ''
+  openKlasifikasi.value = false
+  openJenis.value = false
+  openPenandatangan.value = false
+  hasLoadedPositions.value = false
+  hasLoadedKlasifikasi.value = false
 
-  currentStep.value = 1;
-};
+  currentStep.value = 1
+}
 
 const handleClose = (value) => {
-  if (!value) resetForm();
-  emit("update:modelValue", value);
-};
+  if (!value) resetForm()
+  emit('update:modelValue', value)
+}
 
-const isSubmitting = ref(false);
+const isSubmitting = ref(false)
 
 async function submitAndClose() {
-  if (isSubmitting.value) return;
-  isSubmitting.value = true;
+  if (isSubmitting.value) return
+  isSubmitting.value = true
 
   try {
     // ── 1. Buat draft ──────────────────────────────────────────────
@@ -1178,75 +1093,72 @@ async function submitAndClose() {
       perihal: form.value.perihal,
       jumlah: Number(form.value.jumlah),
       penandatangan: form.value.penandatanganJabatan,
-      id_position_penandatangan: form.value.id_position_penandatangan,
-    };
+      id_position_penandatangan: form.value.id_position_penandatangan
+    }
 
-    const draftResponse = await createUsulanDraft(payload);
+    const draftResponse = await createUsulanDraft(payload)
 
     // ID request dari response draft
     const requestId =
       draftResponse?.id ??
       draftResponse?.request_id ??
       draftResponse?.data?.id ??
-      draftResponse?.data?.request_id;
+      draftResponse?.data?.request_id
 
-    // ── 2. Submit file jika ada & requestId tersedia ────────────────
+    // ── 2. Submit file (wajib) ──────────────────────────────────────
     if (requestId) {
-      if (isSingleFile.value && singleFile.value) {
+      if (isSingleFile.value) {
         // Mode: 1 file untuk semua nomor
-        await submitBookingSingleFile(requestId, singleFile.value);
-      } else if (!isSingleFile.value) {
-        // Mode: file per nomor — hanya kirim jika minimal 1 file dipilih
-        const hasAnyFile = filesByIndex.value.some((f) => f instanceof File);
-        if (hasAnyFile) {
-          const formData = new FormData();
-          filesByIndex.value.forEach((file) => {
-            if (file instanceof File) {
-              formData.append("file", file);
-              formData.append("file_name", file.name);
-              formData.append("file_text", file.name);
-            }
-          });
-          await submitBooking(requestId, formData);
-        }
+        await submitBookingSingleFile(requestId, singleFile.value)
+      } else {
+        // Mode: file per nomor
+        const formData = new FormData()
+        filesByIndex.value.forEach((file) => {
+          if (file instanceof File) {
+            formData.append('file', file)
+            formData.append('file_name', file.name)
+            formData.append('file_text', file.name)
+          }
+        })
+        await submitBooking(requestId, formData)
       }
     }
 
     // ── 3. Tutup modal & notify parent untuk refresh list ───────────
-    emit("submit", payload);
-    handleClose(false);
+    emit('submit', { ...payload, isSingleFile: isSingleFile.value })
+    handleClose(false)
   } catch (err) {
     // Error sudah ditangani dengan toast di composable
-    console.error("❌ submitAndClose error:", err);
+    console.error('❌ submitAndClose error:', err)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
 }
 
 onMounted(async () => {
-  if (!user.value) await getProfile();
-});
+  if (!user.value) await getProfile()
+})
 
 function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
 }
 
 function formatDateTime(date) {
-  if (!date) return "-";
+  if (!date) return '-'
   return (
-    date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+    date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
     }) +
-    " " +
-    date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
-  );
+    ' ' +
+    date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  )
 }
 </script>
 
