@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-5 bg-gray-50 dark:bg-gray-900">
+  <div class="pt-5 bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-2">
       <div>
@@ -18,6 +18,7 @@
       </button>
     </div>
 
+    <!-- MODAL ADD / EDIT -->
     <Teleport to="body">
       <Modal v-model="showAddModal" @save="saveAdd" size="xl">
         <template #title>
@@ -65,11 +66,14 @@
       </Modal>
     </Teleport>
 
-    <!-- CARD FULL HEIGHT -->
+    <!-- TABLE CARD -->
     <div
-      class="flex flex-col mt-2 w-full flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+      class="flex flex-col mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div class="flex flex-wrap gap-2 p-3 items-center dark:border-gray-700">
+      <!-- TOOLBAR -->
+      <div
+        class="flex flex-wrap gap-2 p-3 items-center border-b border-gray-200 dark:border-gray-700"
+      >
         <button
           @click="toggleSort"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"
@@ -87,7 +91,7 @@
           <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
-        <div class="relative flex-1 w-full justify-between">
+        <div class="relative flex-1 min-w-[180px]">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
@@ -99,15 +103,36 @@
         </div>
       </div>
 
-      <div class="w-full overflow-auto">
-        <table class="min-w-full text-sm border-collapse">
+      <!-- TABLE WRAPPER -->
+      <div class="w-full overflow-x-auto">
+        <table class="w-full text-sm border-collapse table-fixed">
+          <colgroup>
+            <col style="width: 110px" />
+            <!-- Tanggal -->
+            <col style="width: 25%" />
+            <!-- URL Asli -->
+            <col style="width: 22%" />
+            <!-- URL Modifikasi -->
+            <col style="width: 80px" />
+            <!-- Salin -->
+            <col />
+            <!-- Keterangan (flex) -->
+            <col style="width: 90px" />
+            <!-- Aksi -->
+          </colgroup>
+
           <thead class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10">
-            <tr class="p-3">
-              <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_tanggal') }}</th>
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">
+                {{ t('pt_col_tanggal') }}
+              </th>
               <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_original') }}</th>
               <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_modified') }}</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap"></th>
               <th class="px-4 py-3 text-left font-semibold">{{ t('pt_col_keterangan') }}</th>
-              <th class="px-4 py-3 text-center font-semibold">{{ t('pt_col_aksi') }}</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">
+                {{ t('pt_col_aksi') }}
+              </th>
             </tr>
           </thead>
 
@@ -119,22 +144,22 @@
                 :key="'skeleton-' + i"
                 class="animate-pulse border-b border-gray-200 dark:border-gray-700"
               >
-                <td class="px-3 py-2">
-                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                <td class="px-4 py-3">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
                 </td>
-                <td class="px-3 py-2">
-                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+                <td class="px-4 py-3">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
                 </td>
-                <td class="px-3 py-2">
-                  <div class="flex items-center gap-2">
-                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  </div>
+                <td class="px-4 py-3">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
                 </td>
-                <td class="px-3 py-2">
-                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40"></div>
+                <td class="px-4 py-3 text-center">
+                  <div class="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded mx-auto"></div>
                 </td>
-                <td class="px-3 py-2">
+                <td class="px-4 py-3">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                </td>
+                <td class="px-4 py-3">
                   <div class="flex items-center justify-center gap-2">
                     <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -151,7 +176,7 @@
                 class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition"
               >
                 <!-- Tanggal -->
-                <td class="px-3 py-2 whitespace-nowrap text-gray-900 dark:text-white">
+                <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white text-xs">
                   {{
                     new Date(row.tanggal).toLocaleDateString('id-ID', {
                       day: '2-digit',
@@ -162,53 +187,55 @@
                 </td>
 
                 <!-- URL Asli -->
-                <td class="px-3 py-2 max-w-[250px]">
+                <td class="px-4 py-3">
                   <a
                     :href="row.LUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-primary-600 dark:text-primary-400 underline hover:text-primary-800 dark:hover:text-primary-300 break-all transition"
+                    class="text-primary-600 dark:text-primary-400 underline hover:text-primary-800 dark:hover:text-primary-300 transition break-all line-clamp-2"
                     :title="row.LUrl"
                   >
-                    {{ truncateUrl(row.LUrl, 35) }}
+                    {{ truncateUrl(row.LUrl, 50) }}
                   </a>
                 </td>
 
                 <!-- URL Modifikasi -->
-                <td class="px-3 py-2 max-w-[260px] whitespace-nowrap">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="font-mono text-xs text-gray-900 dark:text-white break-all"
-                      :title="row.SUrl"
-                    >
-                      {{ row.SUrl }}
-                    </span>
+                <td class="px-4 py-3">
+                  <span
+                    class="font-mono text-xs text-gray-900 dark:text-white break-all"
+                    :title="row.SUrl"
+                  >
+                    {{ row.SUrl }}
+                  </span>
+                </td>
 
-                    <button
-                      class="p-1.5 rounded hover:bg-primary-300 dark:hover:bg-gray-700 transition"
-                      @click="
-                        () => {
-                          copy(row.SUrl)
-                          toast.add({
-                            title: t('pt_toast_copied'),
-                            color: 'success',
-                            icon: 'i-lucide-copy'
-                          })
-                        }
-                      "
-                    >
-                      <Copy class="w-4 h-4 text-gray-600 hover:text-white dark:text-gray-300" />
-                    </button>
-                  </div>
+                <!-- Kolom Salin (terpisah) -->
+                <td class="px-4 py-3 text-center">
+                  <button
+                    class="p-1.5 rounded hover:bg-primary-100 dark:hover:bg-gray-600 transition inline-flex items-center justify-center"
+                    :title="t('pt_toast_copied') ?? 'Salin'"
+                    @click="
+                      () => {
+                        copy(row.SUrl)
+                        toast.add({
+                          title: t('pt_toast_copied'),
+                          color: 'success',
+                          icon: 'i-lucide-copy'
+                        })
+                      }
+                    "
+                  >
+                    <Copy class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  </button>
                 </td>
 
                 <!-- Keterangan -->
-                <td class="px-3 py-2 max-w-[300px] text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm break-words">
                   {{ row.keterangan }}
                 </td>
 
-                <!-- ACTION -->
-                <td class="px-3 py-2 text-center">
+                <!-- Aksi -->
+                <td class="px-4 py-3 text-center">
                   <div class="flex items-center justify-center gap-2">
                     <!-- EDIT -->
                     <button
@@ -233,7 +260,7 @@
 
               <!-- EMPTY STATE -->
               <tr v-if="sortedData.length === 0">
-                <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                   {{ t('pt_empty') }}
                 </td>
               </tr>
@@ -241,6 +268,7 @@
           </tbody>
         </table>
 
+        <!-- CONFIRM DELETE POPUP -->
         <ConfirmPopup
           v-model="showDeleteConfirm"
           type="danger"
@@ -274,6 +302,35 @@ const { copy } = useClipboard()
 const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
   useUrl()
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Payment = {
+  id?: number
+  tanggal: string
+  LUrl: string
+  SUrl: string
+  alias?: string
+  keterangan: string
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const loading = computed(() => isLoading.value)
+const isRefreshing = ref(false)
+const search = ref('')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const showAddModal = ref(false)
+const isEditMode = ref(false)
+const editIndex = ref<number | null>(null)
+const editItemId = ref<number | null>(null)
+const showDeleteConfirm = ref(false)
+const deleteIndex = ref<number | null>(null)
+
+const addForm = ref({
+  LUrl: '',
+  SUrl: '',
+  keterangan: ''
+})
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const generateRandomString = (length = 5) => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
@@ -283,25 +340,62 @@ const generateRandomString = (length = 5) => {
   return result
 }
 
-type Payment = {
-  id?: number
-  tanggal: string
-  LUrl: string
-  SUrl: string
-  keterangan: string
+const truncateUrl = (url: string, max = 50) => {
+  if (!url) return ''
+  return url.length > max ? url.slice(0, max) + '.....' : url
 }
 
-const loading = computed(() => isLoading.value)
-const isRefreshing = ref(false)
-const search = ref('')
+// ─── Data fetching ────────────────────────────────────────────────────────────
+const fetchData = async () => {
+  await fetchShortUrls({
+    page: 0,
+    size: 10,
+    orderby: 'udate',
+    sortby: sortOrder.value,
+    cari: search.value
+  })
+}
 
-const showAddModal = ref(false)
+const toggleSort = () => {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+  fetchData()
+}
 
-const addForm = ref({
-  LUrl: '',
-  SUrl: '',
-  keterangan: ''
-})
+const refreshData = async () => {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    await fetchData()
+  } catch (err) {
+    console.error('Gagal refresh data', err)
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+// ─── Computed ─────────────────────────────────────────────────────────────────
+const sortedData = computed(() => data.value)
+
+// ─── Add / Edit ───────────────────────────────────────────────────────────────
+const openAdd = () => {
+  isEditMode.value = false
+  editIndex.value = null
+  editItemId.value = null
+  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
+  showAddModal.value = true
+}
+
+const openEdit = (row: Payment, index: number) => {
+  isEditMode.value = true
+  editIndex.value = index
+  editItemId.value = row.id ?? null
+  addForm.value = {
+    LUrl: row.LUrl,
+    SUrl: row.alias ?? '',
+    keterangan: row.keterangan
+  }
+  showAddModal.value = true
+}
 
 const saveAdd = async () => {
   if (!addForm.value.LUrl) {
@@ -317,32 +411,21 @@ const saveAdd = async () => {
 
   try {
     if (isEditMode.value && editItemId.value !== null) {
-      // EDIT MODE
       await updateShortUrl({
         id: editItemId.value,
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
         alias
       })
-      toast.add({
-        title: t('pt_toast_updated'),
-        color: 'success',
-        icon: 'i-lucide-circle-check'
-      })
+      toast.add({ title: t('pt_toast_updated'), color: 'success', icon: 'i-lucide-circle-check' })
     } else {
-      // ADD MODE
       await createShortUrl({
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
         alias
       })
-      toast.add({
-        title: t('pt_toast_added'),
-        color: 'success',
-        icon: 'i-lucide-circle-check'
-      })
+      toast.add({ title: t('pt_toast_added'), color: 'success', icon: 'i-lucide-circle-check' })
     }
-
     await fetchData()
   } catch (err: any) {
     toast.add({
@@ -359,59 +442,7 @@ const saveAdd = async () => {
   }
 }
 
-const openAdd = () => {
-  isEditMode.value = false
-  editIndex.value = null
-  editItemId.value = null
-  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
-  showAddModal.value = true
-}
-
-const sortOrder = ref<'asc' | 'desc'>('desc')
-
-const fetchData = async () => {
-  await fetchShortUrls({
-    page: 0,
-    size: 10,
-    orderby: 'udate',
-    sortby: sortOrder.value,
-    cari: search.value
-  })
-}
-
-const toggleSort = () => {
-  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-  fetchData()
-}
-
-const sortedData = computed(() => data.value)
-
-const truncateUrl = (url: string, max = 20) => {
-  if (!url) return ''
-  return url.length > max ? url.slice(0, max) + '.....' : url
-}
-
-const isEditMode = ref(false)
-const editIndex = ref<number | null>(null)
-const editItemId = ref<number | null>(null)
-
-const openEdit = (row: Payment & { id?: number; alias?: string }, index: number) => {
-  isEditMode.value = true
-  editIndex.value = index
-  editItemId.value = row.id ?? null
-
-  addForm.value = {
-    LUrl: row.LUrl,
-    SUrl: row.alias ?? '',
-    keterangan: row.keterangan
-  }
-
-  showAddModal.value = true
-}
-
-const showDeleteConfirm = ref(false)
-const deleteIndex = ref<number | null>(null)
-
+// ─── Delete ───────────────────────────────────────────────────────────────────
 const openDeleteConfirm = (index: number) => {
   deleteIndex.value = index
   showDeleteConfirm.value = true
@@ -432,35 +463,24 @@ const confirmDelete = async () => {
       })
     }
   }
-
   showDeleteConfirm.value = false
   deleteIndex.value = null
 }
 
-const refreshData = async () => {
-  if (isRefreshing.value) return
-  isRefreshing.value = true
-
-  try {
-    await fetchData()
-  } catch (err) {
-    console.error('Gagal refresh data', err)
-  } finally {
-    isRefreshing.value = false
-  }
-}
-
+// ─── Search debounce ──────────────────────────────────────────────────────────
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch(search, () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => fetchData(), 400)
 })
 
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(() => fetchData())
 
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('pt_title'), to: '/admin/penyingkat-tautan' }
+  { label: t('pt_title'), to: '/penyingkat-tautan' }
 ])
 </script>
 
