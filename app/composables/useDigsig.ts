@@ -20,6 +20,7 @@ import type {
   PenandatangananDocument,
   PenandatangananResponse,
   PenandatangananDetailResponse,
+  DigsigConfigResponse,
 } from "~/types/digsig";
 
 export const useDigsig = () => {
@@ -983,6 +984,16 @@ export const useDigsig = () => {
     });
   };
 
+  const getConfigDigsig = async (param: string): Promise<DigsigConfigResponse> => {
+    try {
+      const response = await apiGet<DigsigConfigResponse>(`/config/digsig/${param}`);
+      return response;
+    } catch (error) {
+      console.error(`[useDigsig] Gagal mengambil config digsig untuk ${param}:`, error);
+      throw error;
+    }
+  };
+
   return {
     // State
     logs,
@@ -998,6 +1009,7 @@ export const useDigsig = () => {
     jenisNaskahList,
     verifikatorList,
     userEnik,
+    getConfigDigsig,
 
     // Penandatanganan state
     penandatanganDocuments,

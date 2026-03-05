@@ -720,7 +720,7 @@ onMounted(async () => {
       <!-- RIGHT: Search + Date + Sort + Download + Pagination -->
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <!-- Search Bar (inline compact) -->
-        <div class="relative hidden lg:flex items-center">
+        <!-- <div class="relative hidden lg:flex items-center">
           <Search
             class="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none"
           />
@@ -737,7 +737,7 @@ onMounted(async () => {
           >
             <X class="w-3 h-3" />
           </button>
-        </div>
+        </div> -->
 
         <!-- Date Filter -->
         <div class="relative">
