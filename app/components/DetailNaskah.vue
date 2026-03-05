@@ -1,4 +1,4 @@
-  <script setup lang="ts">
+ <script setup lang="ts">
   import { computed } from "vue";
   import { Hash, Calendar, Paperclip, FileText, ArrowLeft, Printer, MoreHorizontal, ChevronUp, CheckCircle, XCircle, Edit3, Send, Users, Building2 } from "lucide-vue-next";
 
@@ -198,7 +198,7 @@
                 v-for="(t, ti) in (data.showAllTo ? (data.to || data.kepada) : (data.to || data.kepada).slice(0, LIMIT_DISPLAY))"
                 :key="ti" class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0">
                 <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-                  }}.</span>
+                }}.</span>
 
                 <div class="truncate min-w-0">
                   <template v-if="data.jenis === 'SDE' || data.jenis === 'sde'">
@@ -242,7 +242,7 @@
               v-for="(t, ti) in (data.showAllCc ? (data.cc || data.tembusan) : (data.cc || data.tembusan).slice(0, LIMIT_DISPLAY))"
               :key="ti" class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
               <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-                }}.</span>
+              }}.</span>
               <div class="truncate min-w-0">
                 <span class="font-medium">{{ t.position_text }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama }})</span>
@@ -387,7 +387,9 @@
               </div>
             </template>
 
-            <div v-if="data.penerima[0].position_id == userPositionId && data.aksi === 'reject'" @click="emit('edit')"
+            <!-- <div v-if="data.penerima[0].position_id == userPositionId && data.aksi === 'reject'" @click="emit('edit')" -->
+            <div v-if="data.penerima?.[0]?.position_id == userPositionId && data.aksi === 'reject'"
+              @click="emit('edit')"
               class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]">
               <Edit3 class="w-4 h-4" /><span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
 

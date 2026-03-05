@@ -1,67 +1,312 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import Editor from "@tinymce/tinymce-vue";
+
+import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
+import { Alert } from "@/composables/useAlert";
+
+const route = useRoute();
+const toast = useToast();
+const alertState = useAlertState();
+
+const { user, getProfile } = useAuth();
+const { getKlasifikasi } = useKlasifikasi();
+const { getRecipients, getRecipientGroups } = useRecipients();
+const { getDraftDetail } = useDraft();
+const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
+const { digsigConfig, fetchDigsigConfig } = useDigsig();
+
+// ── Shared composable ────────────────────────────────────────────────────────
+const {
+  // ui state
+  isLoadingData, loadingMessage, isOpenPreview,
+  // form state
+  editDraftId, subject, editorContent, tinymceEditor,
+  date, selectedKlasifikasiId, selectedSifat, existingFiles,
+  // data state
+  klasifikasiList, klasifikasiStatus, recipientGroups,
+  selectedTertuju, selectedTembusan,
+  pdfBlob, pdfUrl,
+  // constants
+  maxPerihal, sifatOptions, tinyMceInit,
+  // computed
+  selectedKlasifikasi, formattedDate, tglDb, tglDisplay,
+  excludeTertujuList, excludeTembusanList,
+  tertujuIndividu, tembusanIndividu, tertujuGrup, tembusanGrup,
+  // helpers
+  handleApplyTemplate, buildFormData,
+  mapGroupsToUI, mapApiToUI, mergeGrupDanIndividu,
+  mapLampiranFiles, setDateFromString, setSifatFromString,
+  setPdfBlob, revokePdfUrl,
+  // actions
+  confirmSaveDraft, confirmKirim,
+  toastError, toastSuccess,
+  redirectTerkirim, redirectDraf,
+} = useTulis();
+
+// ── ND-specific state ─────────────────────────────────────────────────────────
+const english = ref(false);
+const items = ref<any[]>([]);
+const isPassphraseModalOpen = ref(false);
+const selectedSendType = ref("qr_only");
+
+const breadcrumbs = [
+  { label: "Beranda", to: "/beranda" },
+  { label: "Tulis Nota Dinas", to: "#" },
+];
+
+const signerInfo = computed(() => ({
+  name: user.value?.nama || "Nama Lengkap",
+  role: user.value?.positionText || "Jabatan",
+  label: "Ditandatangani secara digital oleh",
+}));
+
+// ── Payload & validation ─────────────────────────────────────────────────────
+
+const validateAndToast = (payload: DraftPayload) => {
+  const result = validateDraftPayload(payload);
+  if (!result.isValid) {
+    const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
+    toastError("Validasi Gagal", firstError);
+    return false;
+  }
+  return true;
+};
+
+const getBasePayload = (): DraftPayload => ({
+  id_naskah: editDraftId.value || null,
+  pengirim: user.value?.position || "",
+  penerima: tertujuIndividu.value,
+  tembusan: tembusanIndividu.value,
+  penerima_grup: tertujuGrup.value,
+  tembusan_grup: tembusanGrup.value,
+  klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+  sifat: selectedSifat.value?.value || "biasa",
+  perihal: subject.value,
+  konten: String(editorContent.value || ""),
+  htmlContent: String(editorContent.value || ""),
+  english: english.value,
+  nama_tempat: user.value?.areaText || "Kantor Pusat",
+  nama_jabatan: user.value?.positionText || "",
+  nama_lengkap: user.value?.nama || "",
+  tgl: tglDb.value,
+  tanggal: tglDisplay.value,
+  lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
+});
+
+const createFormData = (payload: DraftPayload, includePdf = false) => {
+  const safeDate = payload.tanggal?.replace(/\//g, "-") || "draft";
+  return buildFormData(payload, {
+    includePdf,
+    pdfFileName: `nota_dinas_${safeDate}.pdf`,
+  });
+};
+
+// ── Handlers ─────────────────────────────────────────────────────────────────
+
+const handlePreview = async () => {
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
+  loadingMessage.value = "Memproses Pratinjau...";
+  isLoadingData.value = true;
+  try {
+    const blob = await generatePdf(createFormData(payload, false));
+    setPdfBlob(blob);
+    isOpenPreview.value = true;
+  } catch {
+    toastError("Gagal Preview");
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+const handleSaveDraft = async () => {
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
+  loadingMessage.value = "Menyimpan Draft...";
+  isLoadingData.value = true;
+  try {
+    await saveND(createFormData(payload, false), editDraftId.value);
+    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    redirectDraf();
+  } catch (e: any) {
+    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+const handleKirimDokumen = async (passphrase = "") => {
+  const payload = getBasePayload();
+  loadingMessage.value = "Mengirim Nota Dinas...";
+  isLoadingData.value = true;
+  try {
+    const blob = await generatePdf(createFormData(payload, false));
+    setPdfBlob(blob);
+
+    const fd = createFormData(payload, true);
+    fd.append("passphrase", passphrase);
+    fd.append("sign_option", selectedSendType.value);
+    if (selectedSendType.value === "digsig") {
+      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      fd.append("nik", user.value.nik);
+    }
+
+    const result = await sendNotaDinas(fd);
+    if (result.data.success) {
+      revokePdfUrl();
+      toastSuccess("Berhasil", "Nota Dinas berhasil dikirim");
+      Alert.close();
+      redirectTerkirim();
+    } else {
+      throw new Error(result.data.message || "Pengiriman gagal");
+    }
+  } catch (e: any) {
+    const msg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
+    if (msg.toLowerCase().includes("passphrase")) isPassphraseModalOpen.value = true;
+    toastError("Gagal Mengirim", msg);
+    Alert.close();
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+const handlePassphraseSubmit = async (passphrase: string) => {
+  if (selectedSendType.value === "digsig" && !passphrase) {
+    toast.add({ title: "Wajib Diisi", description: "Harap masukkan passphrase Anda", color: "warning" });
+    isPassphraseModalOpen.value = true;
+    return;
+  }
+  const msg = selectedSendType.value === "digsig"
+    ? "Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?"
+    : "Dokumen akan dikirim tanpa tanda tangan BSrE.";
+  await confirmKirim(msg, () => handleKirimDokumen(passphrase));
+};
+
+const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
+
+const handleConfirmKirim = async () => {
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
+
+  const ndConfig = digsigConfig.value.find((c: any) => c.jenisNaskah === "ND");
+  if (ndConfig?.enabled) {
+    selectedSendType.value = "digsig";
+    isPassphraseModalOpen.value = true;
+  } else {
+    selectedSendType.value = "qr_only";
+    await confirmKirim("Dokumen akan dikirim tanpa tanda tangan BSrE.", handleKirimDokumen);
+  }
+};
+
+// ── onMounted ─────────────────────────────────────────────────────────────────
+
+onMounted(async () => {
+  await fetchDigsigConfig();
+  loadingMessage.value = "Memuat...";
+  isLoadingData.value = true;
+
+  if (!user.value) await getProfile();
+
+  try {
+    klasifikasiStatus.value = "loading";
+    klasifikasiList.value = await getKlasifikasi();
+    klasifikasiStatus.value = "success";
+
+    const resRec = await getRecipients();
+    items.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
+      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+      labelJob: r.position_text || r.positionText,
+      value: String(r.position || r.position_id || r.id),
+      raw: r,
+    }));
+
+    const groups = await getRecipientGroups("ND");
+    recipientGroups.value = groups.filter((g: any) => g.aktif);
+  } catch {
+    klasifikasiStatus.value = "error";
+  }
+
+  const draftId = route.query.draft_id as string;
+  if (draftId) {
+    try {
+      editDraftId.value = draftId;
+      const res = await getDraftDetail(draftId);
+
+      if (res.success && res.data) {
+        const d = res.data;
+        subject.value = d.perihal || "";
+        editorContent.value = d.konten || "";
+        english.value = Boolean(d.english);
+
+        if (d.klasifikasi) {
+          const found = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
+          if (found) selectedKlasifikasiId.value = found.id;
+        }
+
+        selectedTertuju.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.penerima_grup),
+          mapApiToUI(d.penerima, items.value)
+        );
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.tembusan_grup),
+          mapApiToUI(d.tembusan, items.value)
+        );
+
+        existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
+        setSifatFromString(d.sifat);
+        if (d.tanggal) setDateFromString(d.tanggal);
+      }
+    } catch {
+      toastError("Gagal memuat data draft");
+    }
+  }
+
+  isLoadingData.value = false;
+});
+</script>
+
 <template>
   <div class="relative">
-
-    <InputLoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-
+    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
-    <UCard variant="soft" :ui="{
-      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
-    }">
+    <UCard variant="soft" :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
+      <!-- Skeleton loading -->
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-        <div class="pt-2">
-          <div class="flex justify-between items-center gap-4">
-            <div class="flex gap-3 sm:gap-4">
-              <USkeleton class="h-8 w-36 rounded" />
-              <USkeleton class="h-8 w-36 rounded" />
-            </div>
-            <USkeleton class="h-8 w-36 rounded" />
-          </div>
-        </div>
-        <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
-            <div class="flex-1 space-y-2 pt-1">
-              <USkeleton class="h-3 w-1/2" />
-              <USkeleton class="h-3 w-1/3" />
-            </div>
+            <div class="flex-1 space-y-2 pt-1"><USkeleton class="h-3 w-1/2" /><USkeleton class="h-3 w-1/3" /></div>
           </div>
-          <div class="space-y-3 px-4">
-            <USkeleton class="h-3 w-full" />
-            <USkeleton class="h-3 w-full" />
-            <USkeleton class="h-3 w-11/12" />
-            <USkeleton class="h-3 w-full" />
-          </div>
+          <div class="space-y-3 px-4"><USkeleton v-for="j in 4" :key="j" class="h-3 w-full" /></div>
         </div>
         <USkeleton class="h-30 w-full rounded-md" />
-        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
-          <USkeleton class="h-10 w-32 rounded-lg" />
-        </div>
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800"><USkeleton class="h-10 w-32 rounded-lg" /></div>
       </div>
 
+      <!-- Form -->
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
-          :loading="klasifikasiStatus === 'loading'" />
-
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju"
+          :items="items" :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+          :items="items" :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <!-- Perihal -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -77,21 +322,15 @@
         </div>
 
         <div class="flex flex-col py-4">
-
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div
-              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
-
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
-
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
-                      NOTA DINAS
-                    </h1>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
@@ -100,36 +339,26 @@
                         <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
-                          <span v-if="selectedTertuju.length > 5">
-                            Periksa Alamat Terlampir
-                          </span>
+                          <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
                           <span v-else v-html="selectedTertuju.length
-                            ? selectedTertuju
-                              .map((s: any, i: number) =>
+                            ? selectedTertuju.map((s: any, i: number) =>
                                 selectedTertuju.length === 1
                                   ? `<div>${s.labelJob || s.label}</div>`
-                                  : `<div style='margin-left:1em;text-indent:-1em'>
-                                      ${i + 1}. ${s.labelJob || s.label}
-                                    </div>`
-                              )
-                              .join('')
+                                  : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                              ).join('')
                             : '................................................'
-                            "></span>
+                          "></span>
                         </td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">
-                          {{ user?.positionText || 'Posisi' }}
-                        </td>
+                        <td class="text-[14px] align-top">{{ user?.positionText || 'Posisi' }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">
-                          {{ subject || "................................................" }}
-                        </td>
+                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -149,53 +378,36 @@
                   </div>
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
-                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
-                      Periksa Alamat Terlampir
-                    </div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
-                      {{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}
-                    </div>
+                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
-                      <li v-for="t in selectedTembusan" :key="t.value">
-                        {{ t.labelJob || t.label }}
-                      </li>
+                      <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
                 </div>
+
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
                   class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr>
-                          <td class="align-top pr-2">Lampiran Surat</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Nomor Surat :</td>
-                          <td>.....................................</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Tanggal Surat :</td>
-                          <td>{{ formattedDate }}</td>
-                        </tr>
+                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
+                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
+                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
                       </table>
                     </div>
                   </div>
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">
-                        {{ item.labelJob || item.label }}
-                      </li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}
-                      </li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
                     </ol>
                   </div>
                 </div>
@@ -204,695 +416,24 @@
           </ClientOnly>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
-
         </div>
 
-        <div
-          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
-            @click="handlePreview" />
+        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
         </div>
-
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{
-      content: 'h-screen max-h-screen',
-      body: 'p-0',
-      footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-    }">
-      <template #body>
-        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
-          <div v-else class="flex flex-col items-center gap-2">
-            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex gap-4 w-full">
-          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
-            class="px-8" @click="confirmSaveDraft" />
-          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
-            @click="confirmKirimDokumen" />
-        </div>
-      </template>
-    </USlideover>
+    <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
+      @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
-    <InputDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
+    <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
-
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from 'vue-router';
-import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue';
-import type { Editor as TinyMCEEditor } from 'tinymce';
-
-import type { Klasifikasi } from "~/types/klasifikasi";
-import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
-import { Alert } from "@/composables/useAlert";
-
-interface RecipientItem {
-  label: string;
-  labelJob: string;
-  value: string;
-  raw: any;
-  isGroup?: boolean;
-}
-
-interface SifatOption {
-  label: string;
-  value: string;
-}
-
-interface UploadedFile {
-  id: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-}
-
-const route = useRoute();
-const router = useRouter();
-const toast = useToast();
-
-const { user, getProfile } = useAuth();
-const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients, getRecipientGroups } = useRecipients();
-const recipientGroups = ref<any[]>([]);
-const { getDraftDetail } = useDraft();
-const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { digsigConfig, fetchDigsigConfig } = useDigsig();
-
-const isGroupSelected = (group: any, type: 'tertuju' | 'tembusan') => {
-  const targetList = type === 'tertuju' ? selectedTertuju.value : selectedTembusan.value;
-  return targetList.some(s => s.value === `GROUP_${group.id}`);
-};
-
-const toggleGroup = (isChecked: boolean, group: any, type: 'tertuju' | 'tembusan') => {
-  const groupPositions = group.details?.map((d: any) => String(d.position)) || [];
-
-  // Format objek untuk badge grup
-  const groupItem: RecipientItem = {
-    label: group.nama,
-    labelJob: group.nama,
-    value: `GROUP_${group.id}`,
-    isGroup: true,
-    raw: group
-  };
-
-  const targetList = type === 'tertuju' ? selectedTertuju : selectedTembusan;
-  const otherList = type === 'tertuju' ? selectedTembusan : selectedTertuju;
-
-  if (isChecked) {
-    // Hapus individu dari tertuju & tembusan jika mereka adalah bagian dari grup ini
-    selectedTertuju.value = selectedTertuju.value.filter(s => !groupPositions.includes(s.value));
-    selectedTembusan.value = selectedTembusan.value.filter(s => !groupPositions.includes(s.value));
-
-    // Tambahkan badge grup jika belum ada
-    if (!targetList.value.some(s => s.value === groupItem.value) &&
-      !otherList.value.some(s => s.value === groupItem.value)) {
-      targetList.value.push(groupItem);
-    }
-  } else {
-    // Hapus badge grup jika di-uncheck
-    targetList.value = targetList.value.filter(s => s.value !== groupItem.value);
-  }
-};
-
-// Computed ini bertugas men-disable dropdown individu/grup jika mereka tergabung dalam list lawan
-const excludeTertujuList = computed(() => {
-  // 1. Ambil semua item yang dipilih di Tembusan (Individu & Grup)
-  const excluded: any[] = [...selectedTembusan.value];
-
-  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tembusan
-  selectedTembusan.value.filter(i => i.isGroup).forEach(g => {
-    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
-    excluded.push(...members);
-  });
-
-  // 3. Tambahkan pengecekan sebaliknya: Jika ada individu di Tembusan yang merupakan anggota suatu grup,
-  // maka grup tersebut harusnya disabled di Tertuju (Logika ini sudah dicover oleh komponen anak via props excludeItems)
-
-  return excluded;
-});
-
-const excludeTembusanList = computed(() => {
-  // 1. Ambil semua item yang dipilih di Tertuju (Individu & Grup)
-  const excluded: any[] = [...selectedTertuju.value];
-
-  // 2. Tambahkan semua anggota individu yang berasal dari grup yang dipilih di Tertuju
-  selectedTertuju.value.filter(i => i.isGroup).forEach(g => {
-    const members = g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
-    excluded.push(...members);
-  });
-
-  return excluded;
-});
-
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Nota Dinas", to: "#" },
-];
-
-const maxPerihal = 200;
-
-const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" }
-];
-
-const tinyMceInit = {
-  base_url: '/tinymce',
-  suffix: '.min',
-  height: 400,
-  menubar: false,
-  promotion: false,
-  branding: false,
-  placeholder: 'Ketik konten disini...',
-  plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
-  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
-  setup(editor: TinyMCEEditor) {
-    tinymceEditor.value = editor;
-  }
-};
-
-const isLoadingData = ref(false);
-const loadingMessage = ref("");
-const isOpenPreview = ref(false);
-const alertState = useAlertState();
-
-const isPassphraseModalOpen = ref(false)
-const selectedSendType = ref('qr_only')
-const passphrase = ref('')
-
-const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
-}))
-
-const editDraftId = ref<string | null>(null);
-const subject = ref("");
-const editorContent = ref("");
-const english = ref(false);
-const tinymceEditor = ref<TinyMCEEditor | null>(null);
-
-const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
-
-const klasifikasiList = ref<Klasifikasi[]>([]);
-const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
-const selectedKlasifikasiId = ref<string | null>(null);
-const existingFiles = ref<UploadedFile[]>([]);
-
-const selectedSifat = ref<SifatOption | null>(null);
-const items = ref<RecipientItem[]>([]);
-const selectedTertuju = ref<RecipientItem[]>([]);
-const selectedTembusan = ref<RecipientItem[]>([]);
-
-const pdfBlob = ref<Blob | null>(null);
-const pdfUrl = ref("");
-
-const selectedKlasifikasi = computed(() =>
-  klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
-);
-
-const formattedDate = computed(() => {
-  if (!date.value) return "-";
-  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-});
-
-const validateAndToast = (payload: DraftPayload) => {
-  const validationResult = validateDraftPayload(payload);
-  if (!validationResult.isValid) {
-    const errorKeys = Object.keys(validationResult.errors || {});
-    const firstKey = errorKeys.length > 0 ? errorKeys[0] : null;
-    const firstMessage = firstKey && validationResult.errors
-      ? validationResult.errors[firstKey]
-      : "Terjadi kesalahan input";
-
-    toast.add({
-      title: 'Validasi Gagal',
-      description: firstMessage,
-      icon: 'i-heroicons-x-circle-20-solid',
-      color: 'error'
-    });
-    return false;
-  }
-  return true;
-};
-
-const getBasePayload = (): DraftPayload => {
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
-
-  const tglPreview = date.value
-    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-    : "";
-
-  const lampiranIds = existingFiles.value
-    .map((f) => f.id)
-    .filter((id): id is string => !!id);
-
-  // Pisahkan ID individu dan ID Grup
-  const penerimaIndividu = selectedTertuju.value.filter(i => !i.isGroup).map(i => i.value);
-  const tembusanIndividu = selectedTembusan.value.filter(i => !i.isGroup).map(i => i.value);
-
-  const penerimaGrup = selectedTertuju.value.filter(i => i.isGroup).map(i => i.raw.id);
-  const tembusanGrup = selectedTembusan.value.filter(i => i.isGroup).map(i => i.raw.id);
-
-  return {
-    id_naskah: editDraftId.value || null,
-    pengirim: user.value?.position || "",
-    penerima: penerimaIndividu, // <-- UBAH 'tertuju' MENJADI 'penerima' DI SINI
-    tembusan: tembusanIndividu,
-    penerima_grup: penerimaGrup,
-    tembusan_grup: tembusanGrup,
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-    sifat: selectedSifat.value?.value || 'biasa',
-    perihal: subject.value,
-    konten: String(editorContent.value || ''),
-    htmlContent: String(editorContent.value || ''),
-    english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
-    tgl: tglDb,
-    tanggal: tglPreview,
-    lampiran_temp_ids: lampiranIds,
-  };
-};
-
-const createFormData = (payload: DraftPayload, includePdf: boolean = false) => {
-  const formData = new FormData();
-
-  (Object.keys(payload) as Array<keyof DraftPayload>).forEach((key) => {
-    const value = payload[key];
-    if (Array.isArray(value)) {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
-    }
-  });
-
-  if (includePdf && pdfBlob.value) {
-    const safeDate = payload.tanggal ? payload.tanggal.replace(/\//g, '-') : 'draft';
-    formData.append("final_pdf", pdfBlob.value, `nota_dinas_${safeDate}.pdf`);
-  }
-
-  return formData;
-};
-
-const handleApplyTemplate = (htmlContent: string) => {
-  if (tinymceEditor.value) {
-    const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
-    tinymceEditor.value.setContent(cleanContent);
-    editorContent.value = tinymceEditor.value.getContent();
-  }
-};
-
-const handlePreview = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
-
-  loadingMessage.value = "Memproses Pratinjau...";
-  isLoadingData.value = true;
-
-  try {
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    const formData = createFormData(payload, false);
-    const blobResponse = await generatePdf(formData);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(pdfBlob.value);
-    isOpenPreview.value = true;
-  } catch (err) {
-    toast.add({ title: 'Gagal Preview', color: 'error' });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
-
-const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Simpan sebagai Draft?',
-    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
-    'Ya, Simpan',
-    'Batal',
-    false
-  );
-
-  if (!isConfirmed) return;
-
-  try {
-    await handleSaveDraft();
-    Alert.close();
-  } catch (error) {
-    console.error(error);
-    Alert.close();
-  }
-};
-
-const confirmKirimDokumen = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
-
-  // Cek apakah TTE (DigSig) aktif untuk Nota Dinas
-  const ndConfig = digsigConfig.value.find(c => c.jenisNaskah === 'ND');
-  const isDigsigEnabled = ndConfig?.enabled ?? false;
-
-  if (isDigsigEnabled) {
-    // Munculkan Pop-up Passphrase Langsung
-    passphrase.value = "";
-    selectedSendType.value = "digsig";
-    isPassphraseModalOpen.value = true;
-  } else {
-    // Lewati Pop-up, langsung munculkan konfirmasi
-    selectedSendType.value = "qr_only";
-    const isConfirmed = await Alert.confirm(
-      'Konfirmasi Akhir',
-      'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?',
-      'Ya, Kirim Sekarang',
-      'Periksa Lagi',
-      false
-    );
-
-    if (isConfirmed) {
-      await handleKirimDokumen();
-    }
-  }
-};
-
-const handlePassphraseSubmit = async () => {
-  if (!selectedSendType.value) {
-    toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
-    return;
-  }
-
-  if (selectedSendType.value === 'digsig' && !passphrase.value) {
-    toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
-    return;
-  }
-
-  isPassphraseModalOpen.value = false;
-
-  const confirmMessage = selectedSendType.value === 'digsig'
-    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
-
-  const isConfirmed = await Alert.confirm(
-    'Konfirmasi Akhir',
-    confirmMessage,
-    'Ya, Kirim Sekarang',
-    'Periksa Lagi',
-    false
-  );
-
-  if (isConfirmed) {
-    await handleKirimDokumen();
-  }
-};
-
-const handleKirimDokumen = async () => {
-  const payload = getBasePayload();
-
-  try {
-    loadingMessage.value = "Mengirim Nota Dinas...";
-    isLoadingData.value = true;
-
-
-    let nikValue = '';
-
-    if (selectedSendType.value === 'digsig') {
-      if (!user.value?.nik) {
-        throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
-      }
-      nikValue = user.value.nik;
-    }
-
-
-    const formDataPreview = createFormData(payload, false);
-    const blobResponse = await generatePdf(formDataPreview);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-
-
-    const formData = createFormData(payload, true);
-
-    console.log("Mengirim Sign Option:", selectedSendType.value);
-    console.log("Mengirim Passphrase (RAW):", passphrase.value);
-
-
-    formData.append('passphrase', passphrase.value);
-    formData.append('sign_option', selectedSendType.value);
-
-
-    if (nikValue) {
-      formData.append('nik', nikValue);
-    }
-
-
-    const result = await sendNotaDinas(formData);
-
-    if (result.data.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      Alert.close();
-      router.push("/korespondensi/terkirim");
-    } else {
-      throw new Error(result.data.message || 'Pengiriman gagal');
-    }
-  } catch (e: any) {
-    isLoadingData.value = false;
-    Alert.close();
-
-    console.error("Gagal mengirim:", e);
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-
-    if (errMsg.toLowerCase().includes('passphrase')) {
-      isPassphraseModalOpen.value = true;
-    }
-
-    toast.add({
-      title: 'Gagal Mengirim',
-      description: errMsg,
-      color: 'error'
-    });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
-
-const handleSaveDraft = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) return;
-
-  try {
-    loadingMessage.value = "Menyimpan Draft...";
-    isLoadingData.value = true;
-
-    const formData = createFormData(payload, false);
-    await saveND(formData, editDraftId.value);
-
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
-  } catch (e: any) {
-    console.error("Gagal simpan draft:", e);
-    toast.add({
-      title: 'Gagal',
-      description: e.response?.data?.message || 'Gagal memperbarui draft',
-      color: 'error'
-    });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
-
-onMounted(async () => {
-  await fetchDigsigConfig();
-  loadingMessage.value = "Memuat...";
-  isLoadingData.value = true;
-
-  if (!user.value) await getProfile();
-
-  try {
-    klasifikasiStatus.value = "loading";
-    klasifikasiList.value = await getKlasifikasi();
-    klasifikasiStatus.value = "success";
-
-    const resRec = await getRecipients();
-    const rawData = resRec.recipients || resRec.data || [];
-
-    items.value = rawData.map((r: any): RecipientItem => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      value: String(r.position || r.position_id || r.id),
-      raw: r,
-    }));
-    const groups = await getRecipientGroups('ND');
-    recipientGroups.value = groups.filter((g: any) => g.aktif);
-  } catch {
-    klasifikasiStatus.value = "error";
-  }
-
-  const draftId = route.query.draft_id as string;
-  if (draftId) {
-    try {
-      editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
-
-      if (resDraft.success && resDraft.data) {
-        const d = resDraft.data;
-        subject.value = d.perihal || "";
-        editorContent.value = d.konten || "";
-        english.value = Boolean(d.english);
-
-        if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
-        }
-
-        // 1. Fungsi Mapping Individu
-        const mapApiToUI = (list: any[]): RecipientItem[] => {
-          if (!list || !Array.isArray(list)) return [];
-          return list.map(item => {
-            // Cek apakah item berupa object (dari master) atau hanya string ID
-            const posId = String(item.position_id || item.position || item.value || item);
-            const master = items.value.find(m => m.value === posId);
-
-            if (master) return master;
-
-            // Fallback jika tidak ada di master items
-            return {
-              label: item.positionText ? `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}` : posId,
-              labelJob: item.positionText || item.labelJob || posId,
-              value: posId,
-              raw: item
-            };
-          });
-        };
-
-        // 2. Fungsi Mapping Grup
-        const mapGroupsToUI = (groupList: any[]): RecipientItem[] => {
-          if (!groupList || !Array.isArray(groupList)) return [];
-          return groupList.map(g => {
-            // Karena API draft mungkin hanya mengembalikan ID String, kita bandingkan ID-nya
-            const gId = String(g.id || g);
-            const masterGroup = recipientGroups.value.find(mg => String(mg.id) === gId);
-
-            if (masterGroup) {
-              return {
-                label: masterGroup.nama,
-                labelJob: masterGroup.nama,
-                value: `GROUP_${masterGroup.id}`, // Harus cocok dengan format grup di komponen anak
-                isGroup: true,
-                raw: masterGroup
-              };
-            }
-            return null;
-          }).filter(Boolean) as RecipientItem[];
-        };
-
-        // ==========================================
-        // EKSEKUSI TERTUJU
-        // ==========================================
-        // 1. Petakan ID dari draft menjadi format UI
-        const loadedTertujuGrup = mapGroupsToUI(d.penerima_grup);
-        const loadedTertujuIndividu = mapApiToUI(d.penerima);
-
-        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
-        const tertujuGroupMemberIds = loadedTertujuGrup.flatMap(g =>
-          g.raw.details?.map((x: any) => String(x.position)) || []
-        );
-
-        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
-        const filteredTertujuIndividu = loadedTertujuIndividu.filter(i =>
-          !tertujuGroupMemberIds.includes(String(i.value))
-        );
-
-        selectedTertuju.value = [...loadedTertujuGrup, ...filteredTertujuIndividu];
-
-        // ==========================================
-        // EKSEKUSI TEMBUSAN
-        // ==========================================
-        // 1. Petakan ID dari draft menjadi format UI
-        const loadedTembusanGrup = mapGroupsToUI(d.tembusan_grup);
-        const loadedTembusanIndividu = mapApiToUI(d.tembusan);
-
-        // 2. Ambil semua ID individu yang sudah ter-cover oleh grup yang dipilih
-        const tembusanGroupMemberIds = loadedTembusanGrup.flatMap(g =>
-          g.raw.details?.map((x: any) => String(x.position)) || []
-        );
-
-        // 3. Buang individu dari list jika mereka ternyata bagian dari grup yang sudah diload
-        const filteredTembusanIndividu = loadedTembusanIndividu.filter(i =>
-          !tembusanGroupMemberIds.includes(String(i.value))
-        );
-
-        selectedTembusan.value = [...loadedTembusanGrup, ...filteredTembusanIndividu];
-
-        if (d.lampiran_files && Array.isArray(d.lampiran_files)) {
-          existingFiles.value = d.lampiran_files.map((f: any): UploadedFile => ({
-            id: f.id,
-            fileName: f.fileName || f.file_name,
-            filePath: f.fileUrl || f.file_path,
-            fileSize: f.fileSize || 0
-          }));
-        }
-
-        const draftSifat = String(d.sifat || 'biasa').toLowerCase();
-        selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
-
-        if (d.tanggal) {
-          const dateParts = d.tanggal.split('-');
-          if (dateParts.length === 3) {
-            date.value = new CalendarDate(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error loading draft detail:", error);
-      toast.add({ title: 'Gagal memuat data draft', color: 'error' });
-    }
-  }
-
-  isLoadingData.value = false;
-});
-</script>
-
 <style scoped>
-:deep(.tox-tinymce) {
-  border: none !important;
-}
-
-.tox-fullscreen {
-  z-index: 9999 !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-}
-
-.tox-dialog-wrap,
-.tox-dropzone,
-.tox-promotions {
-  z-index: 10000 !important;
-}
-</style>
-
-<style scoped>
-:deep(.tox-tinymce) {
-  border: none !important;
-}
+:deep(.tox-tinymce) { border: none !important; }
+.tox-fullscreen { z-index: 9999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; }
+.tox-dialog-wrap, .tox-dropzone, .tox-promotions { z-index: 10000 !important; }
 </style>

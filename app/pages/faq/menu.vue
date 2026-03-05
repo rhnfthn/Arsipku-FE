@@ -139,6 +139,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
+definePageMeta({ middleware: 'auth' })
 
 const items = [
   { label: 'Beranda', to: '/' },

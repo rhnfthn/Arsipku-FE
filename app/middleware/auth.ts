@@ -55,6 +55,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     "/berkas",
     "/lampiran",
     "/switch",
+    "/faq/menu",
   ]
 
   if (role === "user") {
