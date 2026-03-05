@@ -20,7 +20,7 @@
     </div>
 
     <!-- CARD -->
-    <div class="bg-white border border-gray-200 dark:bg-gray-800 shadow-sm rounded-xl w-full">
+    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl w-full">
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-3 mb-4 pr-3">
         <div class="flex items-center gap-2 px-4 py-2">
@@ -112,7 +112,7 @@
       <!-- TABLE -->
       <div v-else class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm">
-          <thead class="bg-primary text-white">
+          <thead class="bg-primary dark:bg-primary-800 text-white">
             <tr>
               <th
                 v-for="col in headers"
@@ -130,7 +130,7 @@
               </th>
               <th
                 @click="sortStatus"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
+                class="sticky right-0 z-30 bg-primary dark:bg-primary-800 text-white px-5 py-3 text-left font-semibold whitespace-nowrap cursor-pointer select-none"
               >
                 <div class="flex items-center gap-1">
                   <span>Status</span>
@@ -545,16 +545,8 @@
                     <button
                       v-if="!fileStates[detail.id]?.isReplacing"
                       @click="startReplacingFile(detail.id)"
-                      class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition"
+                      class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                        />
-                      </svg>
                       Ganti File
                     </button>
 
@@ -610,7 +602,7 @@
                 >
                   <div class="flex items-start gap-3">
                     <svg
-                      class="w-5 h-5 text-primary dark:text-blue-400 flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -619,7 +611,7 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
                     <div class="flex-1 min-w-0">
