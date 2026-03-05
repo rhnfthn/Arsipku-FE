@@ -9,7 +9,7 @@
     class="h-full z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-      collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
+      collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]'
     ]"
   >
     <div
@@ -71,12 +71,8 @@
             v-if="collapsed && hoveredApp === app.id && !isMobile"
             class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
           >
-            <div
-              class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3"
-            >
-              <h3
-                class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
-              >
+            <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                 {{ app.label }}
               </h3>
             </div>
@@ -99,14 +95,10 @@
     >
       <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
-        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium"
-          >ArsipKu</span
-        >
+        <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
       </div>
 
-      <div
-        class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar"
-      >
+      <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar">
         <SidebarItem
           v-for="(item, index) in currentAppData.menus"
           :key="index"
@@ -116,9 +108,7 @@
 
         <div v-if="activeApp.includes('utama')" class="mt-6 mb-4">
           <div class="flex items-center justify-between px-7 mb-2 group">
-            <span class="text-[14px] font-bold text-gray-600 dark:text-gray-400"
-              >Label</span
-            >
+            <span class="text-[14px] font-bold text-gray-600 dark:text-gray-400">Label</span>
             <button
               @click="openCreateLabelModal"
               class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
@@ -161,30 +151,23 @@
     </div>
   </aside>
 
-  <div
-    v-if="showLabelModal"
-    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-  >
-    <div
-      class="fixed inset-0 bg-black/50 transition-opacity"
-      @click="closeLabelModal"
-    ></div>
+  <!-- MODAL ADD / EDIT LABEL -->
+  <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
 
     <div
       class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all"
     >
       <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-          {{ isEditing ? "Edit Label" : "Label baru" }}
+          {{ isEditing ? 'Edit Label' : 'Label baru' }}
         </h3>
       </div>
 
       <div class="p-6 space-y-4">
         <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Masukkan nama label {{ isEditing ? "" : "baru" }}:
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Masukkan nama label {{ isEditing ? '' : 'baru' }}:
           </label>
           <input
             v-model="labelForm.nama"
@@ -201,10 +184,7 @@
             type="checkbox"
             class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
-          <label
-            for="check-nest"
-            class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-          >
+          <label for="check-nest" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             Pilih label parent:
           </label>
         </div>
@@ -223,9 +203,7 @@
         </div>
       </div>
 
-      <div
-        class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3"
-      >
+      <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3">
         <button
           @click="closeLabelModal"
           class="px-4 py-2 text-sm font-medium text-primary-600 bg-transparent hover:bg-primary-50 rounded-md transition-colors"
@@ -237,35 +215,27 @@
           class="px-4 py-2 text-sm font-medium text-white bg-primary-400 hover:bg-primary-500 rounded-md shadow-sm transition-colors"
           :disabled="!labelForm.nama || isProcessing"
         >
-          {{ isProcessing ? "Menyimpan..." : isEditing ? "Simpan" : "Buat" }}
+          {{ isProcessing ? 'Menyimpan...' : isEditing ? 'Simpan' : 'Buat' }}
         </button>
       </div>
     </div>
   </div>
 
-  <div
-    v-if="showDeleteModal"
-    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-  >
+  <!-- MODAL CONFIRM DELETE LABEL -->
+  <div v-if="showDeleteModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div
       class="fixed inset-0 bg-black/50 transition-opacity"
       @click="showDeleteModal = false"
     ></div>
-    <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative z-10 p-6"
-    >
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative z-10 p-6">
       <div class="text-center">
         <UIcon
           name="i-heroicons-exclamation-triangle"
           class="mx-auto h-12 w-12 text-red-500 mb-4"
         />
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          Hapus Label?
-        </h3>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Hapus Label?</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Apakah Anda yakin ingin menghapus label "<strong>{{
-            labelToDelete?.nama
-          }}</strong
+          Apakah Anda yakin ingin menghapus label "<strong>{{ labelToDelete?.nama }}</strong
           >"? Tindakan ini tidak dapat dibatalkan.
         </p>
         <div class="flex justify-center gap-3">
@@ -280,7 +250,7 @@
             class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
             :disabled="isProcessing"
           >
-            {{ isProcessing ? "Menghapus..." : "Hapus" }}
+            {{ isProcessing ? 'Menghapus...' : 'Hapus' }}
           </button>
         </div>
       </div>
@@ -289,33 +259,21 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  watch,
-  onMounted,
-  onUnmounted,
-  nextTick,
-  reactive,
-} from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 
-import { useAuth } from "~/composables/useAuth";
-import { usePenomoran } from "~/composables/usePenomoran";
-import { useInboxCount } from "~/composables/useInboxCount";
-import { useLabel } from "~/composables/useLabel";
-import { buildLabelTree } from "~/utils/treeHelper";
-import SidebarLabelItem from "~/components/SidebarLabelItem.vue";
+import { useAuth } from '~/composables/useAuth'
+import { usePenomoran } from '~/composables/usePenomoran'
+import { useInboxCount } from '~/composables/useInboxCount'
+import { useLabel } from '~/composables/useLabel'
+import { buildLabelTree } from '~/utils/treeHelper'
+import SidebarLabelItem from '~/components/SidebarLabelItem.vue'
 
-const { user, getProfile } = useAuth();
-const {
-  adminCounts,
-  userCounts,
-  getNomorRequestCountAdmin,
-  getNomorRequestCountUser,
-} = usePenomoran();
+const { user, getProfile } = useAuth()
+const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
+  usePenomoran()
 
-const { unreadCount, fetchInboxCount } = useInboxCount();
+const { unreadCount, fetchInboxCount } = useInboxCount()
 
 const {
   labels,
@@ -325,557 +283,503 @@ const {
   fetchLabelCounts,
   createLabel,
   updateLabel,
-  deleteLabel,
-} = useLabel();
+  deleteLabel
+} = useLabel()
 
-const labelTree = computed(() => labels.value);
+const labelTree = computed(() => labels.value)
 
-const route = useRoute();
+const route = useRoute()
 
-const isAdminOrSuperadmin = computed(() =>
-  ["admin", "superadmin"].includes(user.value?.role),
-);
+const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role))
 
 const getPositionId = (userValue) => {
-  if (!userValue) return null;
+  if (!userValue) return null
 
-  if (userValue.position && typeof userValue.position === "object") {
-    const id = userValue.position.id;
-    return typeof id === "number"
-      ? id
-      : typeof id === "string"
-        ? Number(id)
-        : null;
+  if (userValue.position && typeof userValue.position === 'object') {
+    const id = userValue.position.id
+    return typeof id === 'number' ? id : typeof id === 'string' ? Number(id) : null
   }
 
-  if (typeof userValue.position === "number") {
-    return userValue.position;
+  if (typeof userValue.position === 'number') {
+    return userValue.position
   }
 
-  if (
-    typeof userValue.position === "string" &&
-    !isNaN(Number(userValue.position))
-  ) {
-    return Number(userValue.position);
+  if (typeof userValue.position === 'string' && !isNaN(Number(userValue.position))) {
+    return Number(userValue.position)
   }
 
-  return null;
-};
+  return null
+}
 
 const fetchCounts = async () => {
   try {
-    if (!user.value) return;
+    if (!user.value) return
 
-    const isAdmin =
-      user.value.role === "admin" || user.value.role === "superadmin";
-
-    const positionId = getPositionId(user.value);
+    const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin'
+    const positionId = getPositionId(user.value)
 
     if (isAdmin) {
-      await getNomorRequestCountAdmin();
+      await getNomorRequestCountAdmin()
     } else if (positionId && !isNaN(positionId)) {
-      await getNomorRequestCountUser(positionId);
+      await getNomorRequestCountUser(positionId)
     }
   } catch (error) {
-    console.error("❌ Error fetching counts:", error);
+    console.error('❌ Error fetching counts:', error)
   }
-};
+}
 
-let countInterval = null;
+let countInterval = null
 
 watch(
   () => user.value,
   async (newUser) => {
     if (newUser) {
-      fetchLabels();
-      fetchLabelCounts();
+      fetchLabels()
+      fetchLabelCounts()
 
-      const posId = getPositionId(newUser);
-      await fetchCounts();
+      const posId = getPositionId(newUser)
+      await fetchCounts()
 
       if (posId && !isNaN(posId)) {
-        await fetchInboxCount(posId);
+        await fetchInboxCount(posId)
       }
     }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 onMounted(async () => {
   try {
     if (!user.value) {
-      await getProfile();
+      await getProfile()
     }
-    await nextTick();
+    await nextTick()
 
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
 
     if (user.value) {
-      fetchLabels();
-      fetchLabelCounts();
+      fetchLabels()
+      fetchLabelCounts()
     }
 
     countInterval = setInterval(() => {
       if (user.value) {
-        fetchCounts();
-        fetchLabelCounts();
+        fetchCounts()
+        fetchLabelCounts()
 
-        const positionId = getPositionId(user.value);
+        const positionId = getPositionId(user.value)
         if (positionId && !isNaN(positionId)) {
-          fetchInboxCount(positionId);
+          fetchInboxCount(positionId)
         }
       }
-    }, 30000);
+    }, 30000)
   } catch (error) {
-    console.error("❌ Error in sidebar mount:", error);
+    console.error('❌ Error in sidebar mount:', error)
   }
-});
+})
 
 const props = defineProps({
-  collapsed: Boolean,
-});
-const emit = defineEmits(["update:collapsed"]);
+  collapsed: Boolean
+})
+const emit = defineEmits(['update:collapsed'])
 
-const isMobileOpen = ref(false);
-const isMobile = ref(false);
-const activeApp = ref("");
-const hoveredApp = ref(null);
+const isMobileOpen = ref(false)
+const isMobile = ref(false)
+const activeApp = ref('')
+const hoveredApp = ref(null)
 
-const hasInboxUnread = computed(() => unreadCount.value > 0);
-const { t } = useI18n();
+const hasInboxUnread = computed(() => unreadCount.value > 0)
+const { t } = useI18n()
 
-const userMenuUtama = computed(() => {
-  return [
-    {
-      label: t("beranda"),
-      to: "/beranda",
-      icon: "i-lucide-layout-dashboard",
-    },
-    tulisMenu.value,
-    {
-      label: t("kotak_masuk"),
-      to: "/korespondensi/kotak-masuk",
-      icon: "i-lucide-inbox",
-      badge: unreadCount.value > 0 ? unreadCount.value : null,
-    },
-    {
-      label: t("terkirim"),
-      to: "/korespondensi/terkirim",
-      icon: "i-lucide-send",
-    },
-    {
-      label: t("draft"),
-      to: "/korespondensi/draf",
-      icon: "i-lucide-file-text",
-    },
-  ];
-});
-
-const userMenuUtilitas = computed(() => {
-  const badgeCount = userCounts.value.belum_diajukan || 0;
-  return [
-    {
-      label: t("digsig"),
-      to: "/penandatangan",
-      icon: "i-lucide-signature",
-    },
-    {
-      label: t("short_url"),
-      to: "/penyingkat-tautan",
-      icon: "i-lucide-link",
-    },
-    { label: t("template"), to: "/template", icon: "i-lucide-copy" },
-    {
-      label: t("titelatur_inggris"),
-      to: "/titelatur",
-      icon: "i-lucide-languages",
-    },
-    {
-      label: t("usulan-penomoran"),
-      to: "/usulan-penomoran",
-      icon: "i-lucide-hash",
-      badge: badgeCount > 0 ? badgeCount : null,
-    },
-  ];
-});
+// ─── Menus ────────────────────────────────────────────────────────────────────
 
 const tulisMenu = computed(() => ({
-  label: t("tulis"),
-  to: "/korespondensi/tulis",
-  icon: "i-lucide-edit",
-  children: tulisChildrenByBod.value,
-}));
+  label: t('tulis'),
+  to: '/korespondensi/tulis',
+  icon: 'i-lucide-edit',
+  children: tulisChildrenByBod.value
+}))
 
 const tulisChildrenByBod = computed(() => {
-  const tag = user.value?.bodTag ?? "";
+  const tag = user.value?.bodTag ?? ''
   const all = [
-    { label: t("nota_dinas"), to: "/korespondensi/tulis/nota-dinas" },
-    { label: t("disposisi"), to: "/korespondensi/tulis/disposisi" },
-    {
-      label: t("surat_dinas_internal"),
-      to: "/korespondensi/tulis/surat-dinas-internal",
-    },
-    {
-      label: t("surat_dinas_eksternal"),
-      to: "/korespondensi/tulis/surat-dinas-eksternal",
-    },
-    { label: t("kajian"), to: "/korespondensi/tulis/kajian" },
-  ];
+    { label: t('nota_dinas'), to: '/korespondensi/tulis/nota-dinas' },
+    { label: t('disposisi'), to: '/korespondensi/tulis/disposisi' },
+    { label: t('surat_dinas_internal'), to: '/korespondensi/tulis/surat-dinas-internal' },
+    { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal' },
+    { label: t('kajian'), to: '/korespondensi/tulis/kajian' }
+  ]
 
-  if (tag === "BOD" || tag === "BOD-1") return all;
-  if (tag === "BOD-2" || tag === "BOD-3") {
+  if (tag === 'BOD' || tag === 'BOD-1') return all
+  if (tag === 'BOD-2' || tag === 'BOD-3') {
     return all.filter(
-      (i) =>
-        ![
-          t("surat_dinas_internal"),
-          t("surat_dinas_eksternal"),
-          t("kajian"),
-        ].includes(i.label),
-    );
+      (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
+    )
   }
-  return all.filter((i) => i.label === t("kajian"));
-});
+  return all.filter((i) => i.label === t('kajian'))
+})
 
-const adminMenuUtama = computed(() => [
-  { label: t("beranda"), to: "/beranda", icon: "i-lucide-layout-dashboard" },
+const userMenuUtama = computed(() => [
+  { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
   tulisMenu.value,
   {
-    label: t("kotak_masuk"),
-    to: "/korespondensi/kotak-masuk",
-    icon: "i-lucide-inbox",
-    badge: unreadCount.value > 0 ? unreadCount.value : null,
+    label: t('kotak_masuk'),
+    to: '/korespondensi/kotak-masuk',
+    icon: 'i-lucide-inbox',
+    badge: unreadCount.value > 0 ? unreadCount.value : null
+  },
+  { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
+])
+
+const userMenuUtilitas = computed(() => {
+  const badgeCount = userCounts.value.belum_diajukan || 0
+  return [
+    { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
+    { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
+    { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
+    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
+    {
+      label: t('usulan-penomoran'),
+      to: '/usulan-penomoran',
+      icon: 'i-lucide-hash',
+      badge: badgeCount > 0 ? badgeCount : null
+    }
+  ]
+})
+
+
+const faqMenuUser = computed(() => [
+  {
+    label: 'FAQ',
+    to: '/faq/menu',
+    icon: 'i-lucide-circle-help'
+  }
+])
+
+const faqMenuAdmin = computed(() => [
+  {
+    label: 'FAQ',
+    to: '/faq/menu',
+    icon: 'i-lucide-circle-help'
   },
   {
-    label: t("terkirim"),
-    to: "/korespondensi/terkirim",
-    icon: "i-lucide-send",
+    label: 'Manajemen FAQ',
+    to: '/faq/manajemen',
+    icon: 'i-lucide-file-question'
+  }
+])
+
+// ─── Admin Menus ──────────────────────────────────────────────────────────────
+
+const adminMenuUtama = computed(() => [
+  { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
+  tulisMenu.value,
+  {
+    label: t('kotak_masuk'),
+    to: '/korespondensi/kotak-masuk',
+    icon: 'i-lucide-inbox',
+    badge: unreadCount.value > 0 ? unreadCount.value : null
   },
-  { label: t("draft"), to: "/korespondensi/draf", icon: "i-lucide-file-text" },
-]);
+  { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
+])
 
 const adminMenuUtilitas = computed(() => {
   const menus = [
     {
-      label: t("digsig"),
-      icon: "i-lucide-signature",
+      label: t('digsig'),
+      icon: 'i-lucide-signature',
       children: [
-        { label: t("verifikasi"), to: "/digsig/verifikasi-dokumen" },
-        { label: t("sign"), to: "/digsig/penandatanganan" },
-        { label: t("check_dokumen"), to: "/digsig/cek-dokumen" },
-        { label: "Log Digsig", to: "/digsig/log-digsig" },
-      ],
+        { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen' },
+        { label: t('sign'), to: '/digsig/penandatanganan' },
+        { label: t('check_dokumen'), to: '/digsig/cek-dokumen' },
+        { label: 'Log Digsig', to: '/digsig/log-digsig' }
+      ]
     },
+    { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
+    { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
     {
-      label: t("short_url"),
-      to: "/penyingkat-tautan",
-      icon: "i-lucide-link",
-    },
-    { label: t("template"), to: "/template", icon: "i-lucide-copy" },
-    {
-      label: "Usulan Penomoran",
-      to: "/usulan-penomoran",
-      icon: "i-lucide-hash",
+      label: 'Usulan Penomoran',
+      to: '/usulan-penomoran',
+      icon: 'i-lucide-hash',
       hasNotification: false,
       onlyUser: true,
-      badge:
-        userCounts.value.belum_diajukan > 0
-          ? userCounts.value.belum_diajukan
-          : null,
-    },
-  ];
-  return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value));
-});
+      badge: userCounts.value.belum_diajukan > 0 ? userCounts.value.belum_diajukan : null
+    }
+  ]
+  return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value))
+})
 
 const adminMenuAdministrasi = computed(() => {
   const base = [
-    { label: t("delegasi"), to: "/delegasi", icon: "i-lucide-users" },
+    { label: t('delegasi'), to: '/delegasi', icon: 'i-lucide-users' },
+    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
     {
-      label: t("titelatur_inggris"),
-      to: "/titelatur",
-      icon: "i-lucide-languages",
-    },
-    {
-      label: t("penomoran"),
-      icon: "i-lucide-hash",
+      label: t('penomoran'),
+      icon: 'i-lucide-hash',
       hasNotification: false,
       children: [
         {
-          label: t("usulan"),
-          to: "/penomoran/usulan",
-          badge:
-            adminCounts.value.belum_diajukan > 0
-              ? adminCounts.value.belum_diajukan
-              : null,
+          label: t('usulan'),
+          to: '/penomoran/usulan',
+          badge: adminCounts.value.belum_diajukan > 0 ? adminCounts.value.belum_diajukan : null
         },
         {
-          label: t("ver"),
-          to: "/penomoran/verifikasi",
+          label: t('ver'),
+          to: '/penomoran/verifikasi',
           badge:
             adminCounts.value.menunggu_verifikasi > 0
               ? adminCounts.value.menunggu_verifikasi
-              : null,
+              : null
         },
-        { label: t("penomoran"), to: "/penomoran/nomor" },
-      ],
+        { label: t('penomoran'), to: '/penomoran/nomor' }
+      ]
     },
-    {
-      label: t("naskah_masuk"),
-      to: "/naskah-dinas",
-      icon: "i-lucide-file-text",
-    },
-  ];
+    { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-text' }
+  ]
 
-  if (user.value?.role === "superadmin") {
+  if (user.value?.role === 'superadmin') {
     base.push(
       {
-        label: t("master_data"),
-        icon: "i-lucide-database",
+        label: t('master_data'),
+        icon: 'i-lucide-database',
         children: [
-          {
-            label: t("akun"),
-            to: "/master/akun",
-            icon: "i-lucide-user-round",
-          },
-          { label: t("tertuju"), to: "/master/tertuju-eksternal" },
-          {
-            label: t("perusahaan"),
-            to: "/master/perusahaan",
-            icon: "i-lucide-building-2",
-          },
-          { label: t("klasifikasi"), to: "/master/klasifikasi" },
-          { label: t("jenis"), to: "/master/jenis" },
-        ],
+          { label: t('akun'), to: '/master/akun', icon: 'i-lucide-user-round' },
+          { label: t('tertuju'), to: '/master/tertuju-eksternal' },
+          { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
+          { label: t('klasifikasi'), to: '/master/klasifikasi' },
+          { label: t('jenis'), to: '/master/jenis' }
+        ]
       },
-      {
-        label: t("konfigurasi"),
-        to: "/konfigurasi-sistem",
-        icon: "i-lucide-settings-2",
-      },
-    );
+      { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
+    )
   }
 
-  return base;
-});
+  return base
+})
 
 const adminMenuLaporan = computed(() => [
-  {
-    label: t("rekap"),
-    to: "/laporan/rekap-naskah",
-    icon: "i-lucide-file-bar-chart-2",
-  },
-  {
-    label: t("detail"),
-    to: "/laporan/detail-naskah",
-    icon: "i-lucide-file-search",
-  },
-  {
-    label: t("naskah"),
-    to: "/laporan/naskah-masuk",
-    icon: "i-lucide-folder-input",
-  },
-]);
+  { label: t('rekap'), to: '/laporan/rekap-naskah', icon: 'i-lucide-file-bar-chart-2' },
+  { label: t('detail'), to: '/laporan/detail-naskah', icon: 'i-lucide-file-search' },
+  { label: t('naskah'), to: '/laporan/naskah-masuk', icon: 'i-lucide-folder-input' }
+])
 
-const hasAdministrasiNotification = computed(() => {
-  return adminCounts.value.menunggu_verifikasi > 0;
-});
+// ─── Notification flags ───────────────────────────────────────────────────────
+
+const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
 
 const hasUtilitasNotification = computed(() => {
-  if (!isAdminOrSuperadmin.value) {
-    return userCounts.value.belum_diajukan > 0;
-  }
-  return false;
-});
+  if (!isAdminOrSuperadmin.value) return userCounts.value.belum_diajukan > 0
+  return false
+})
+
+// ─── Apps (sidebar tabs) ──────────────────────────────────────────────────────
 
 const apps = computed(() => {
   if (isAdminOrSuperadmin.value) {
-    const baseApps = [
+    return [
       {
-        id: "admin-utama",
-        label: t("utama"),
-        icon: "i-heroicons-squares-2x2",
+        id: 'admin-utama',
+        label: t('utama'),
+        icon: 'i-heroicons-squares-2x2',
         menus: adminMenuUtama.value,
-        hasNotification: hasInboxUnread.value,
+        hasNotification: hasInboxUnread.value
       },
       {
-        id: "admin-utilitas",
-        label: t("utilitas"),
-        icon: "i-heroicons-briefcase",
+        id: 'admin-utilitas',
+        label: t('utilitas'),
+        icon: 'i-heroicons-briefcase',
         menus: adminMenuUtilitas.value,
-        hasNotification: false,
+        hasNotification: false
       },
-    ];
-    baseApps.push(
       {
-        id: "admin-administrasi",
-        label: t("administrasi"),
-        icon: "i-heroicons-cog-6-tooth",
+        id: 'admin-administrasi',
+        label: t('administrasi'),
+        icon: 'i-heroicons-cog-6-tooth',
         menus: adminMenuAdministrasi.value,
-        hasNotification: hasAdministrasiNotification.value,
+        hasNotification: hasAdministrasiNotification.value
       },
       {
-        id: "admin-laporan",
-        label: t("laporan"),
-        icon: "i-heroicons-presentation-chart-line",
+        id: 'admin-laporan',
+        label: t('laporan'),
+        icon: 'i-heroicons-presentation-chart-line',
         menus: adminMenuLaporan.value,
-        hasNotification: false,
+        hasNotification: false
       },
-    );
-    return baseApps;
+      {
+        id: 'admin-faq',
+        label: 'FAQ',
+        icon: 'i-lucide-circle-help',
+        menus: faqMenuAdmin.value,
+        hasNotification: false
+      }
+    ]
   }
+
+  // Role: user
   return [
     {
-      id: "user-utama",
-      label: t("utama"),
-      icon: "i-heroicons-home",
+      id: 'user-utama',
+      label: t('utama'),
+      icon: 'i-heroicons-home',
       menus: userMenuUtama.value,
-      hasNotification: hasInboxUnread.value,
+      hasNotification: hasInboxUnread.value
     },
     {
-      id: "user-utilitas",
-      label: t("utilitas"),
-      icon: "i-heroicons-squares-plus",
+      id: 'user-utilitas',
+      label: t('utilitas'),
+      icon: 'i-heroicons-squares-plus',
       menus: userMenuUtilitas.value,
-      hasNotification: hasUtilitasNotification.value,
+      hasNotification: hasUtilitasNotification.value
     },
-  ];
-});
+    {
+      id: 'user-faq',
+      label: 'FAQ',
+      icon: 'i-lucide-circle-help',
+      menus: faqMenuUser.value,
+      hasNotification: false
+    }
+  ]
+})
+
+// ─── Active app logic ─────────────────────────────────────────────────────────
 
 const setActiveApp = (appId) => {
-  activeApp.value = appId;
-};
+  activeApp.value = appId
+}
 
 const currentAppData = computed(() => {
-  return apps.value.find((app) => app.id === activeApp.value) || apps.value[0];
-});
+  return apps.value.find((app) => app.id === activeApp.value) || apps.value[0]
+})
 
 watch(
   apps,
   (newApps) => {
     if (newApps.length > 0) {
-      const exists = newApps.find((a) => a.id === activeApp.value);
+      const exists = newApps.find((a) => a.id === activeApp.value)
       if (!exists) {
-        activeApp.value = newApps[0].id;
+        activeApp.value = newApps[0].id
       }
     }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
+
+// ─── Screen / collapse ────────────────────────────────────────────────────────
 
 const checkScreenSize = () => {
-  isMobile.value = window.innerWidth < 768;
-};
+  isMobile.value = window.innerWidth < 768
+}
 
 const handleMenuClick = () => {
   if (isMobile.value) {
-    isMobileOpen.value = false;
+    isMobileOpen.value = false
   } else {
-    emit("update:collapsed", !props.collapsed);
+    emit('update:collapsed', !props.collapsed)
   }
-};
+}
 
-const closeMobile = () => (isMobileOpen.value = false);
-const openMobile = () => (isMobileOpen.value = true);
+const closeMobile = () => (isMobileOpen.value = false)
+const openMobile = () => (isMobileOpen.value = true)
 
-// ==========================================
-//        LOGIC LABEL MANAGEMENT
-// ==========================================
+// ─── Label management ─────────────────────────────────────────────────────────
 
-const showLabelModal = ref(false);
-const showDeleteModal = ref(false);
-const isEditing = ref(false);
-const isProcessing = ref(false);
-const labelToDelete = ref(null);
+const showLabelModal = ref(false)
+const showDeleteModal = ref(false)
+const isEditing = ref(false)
+const isProcessing = ref(false)
+const labelToDelete = ref(null)
 
 const labelForm = reactive({
   id: null,
-  name: "",
+  name: '',
   isNested: false,
-  parentId: "",
-});
+  parentId: ''
+})
 
 const availableParents = computed(() => {
-  if (!isEditing.value) return labels.value;
-  return labels.value.filter((l) => l.id !== labelForm.id);
-});
+  if (!isEditing.value) return labels.value
+  return labels.value.filter((l) => l.id !== labelForm.id)
+})
 
 const openCreateLabelModal = () => {
-  isEditing.value = false;
-  labelForm.id = null;
-  labelForm.nama = "";
-  labelForm.isNested = false;
-  labelForm.parentId = "";
-  showLabelModal.value = true;
-};
+  isEditing.value = false
+  labelForm.id = null
+  labelForm.nama = ''
+  labelForm.isNested = false
+  labelForm.parentId = ''
+  showLabelModal.value = true
+}
 
 const openEditLabelModal = (label) => {
-  isEditing.value = true;
-  labelForm.id = label.id;
-  labelForm.nama = label.nama;
-  labelForm.isNested = !!label.parent_id;
-  labelForm.parentId = label.parent_id || "";
-  showLabelModal.value = true;
-};
+  isEditing.value = true
+  labelForm.id = label.id
+  labelForm.nama = label.nama
+  labelForm.isNested = !!label.parent_id
+  labelForm.parentId = label.parent_id || ''
+  showLabelModal.value = true
+}
 
 const closeLabelModal = () => {
-  showLabelModal.value = false;
-  isProcessing.value = false;
-};
+  showLabelModal.value = false
+  isProcessing.value = false
+}
 
 const saveLabel = async () => {
-  if (!labelForm.nama) return;
-  isProcessing.value = true;
+  if (!labelForm.nama) return
+  isProcessing.value = true
 
   const payload = {
     nama: labelForm.nama,
-    idParent:
-      labelForm.isNested && labelForm.parentId ? labelForm.parentId : null,
-  };
+    idParent: labelForm.isNested && labelForm.parentId ? labelForm.parentId : null
+  }
 
   try {
     if (isEditing.value) {
-      await updateLabel(labelForm.id, payload);
+      await updateLabel(labelForm.id, payload)
     } else {
-      await createLabel(payload);
+      await createLabel(payload)
     }
-    await fetchLabels();
-    closeLabelModal();
+    await fetchLabels()
+    closeLabelModal()
   } catch (err) {
-    console.error("Gagal menyimpan label:", err);
+    console.error('Gagal menyimpan label:', err)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
-};
+}
 
 const openDeleteConfirm = (label) => {
-  labelToDelete.value = label;
-  showDeleteModal.value = true;
-};
+  labelToDelete.value = label
+  showDeleteModal.value = true
+}
 
 const confirmDelete = async () => {
   if (labelToDelete.value) {
-    isProcessing.value = true;
+    isProcessing.value = true
     try {
-      await deleteLabel(labelToDelete.value.id);
-      await fetchLabels();
-      showDeleteModal.value = false;
-      labelToDelete.value = null;
+      await deleteLabel(labelToDelete.value.id)
+      await fetchLabels()
+      showDeleteModal.value = false
+      labelToDelete.value = null
     } catch (err) {
-      console.error("Gagal menghapus label:", err);
+      console.error('Gagal menghapus label:', err)
     } finally {
-      isProcessing.value = false;
+      isProcessing.value = false
     }
   }
-};
+}
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onUnmounted(() => {
-  window.removeEventListener("resize", checkScreenSize);
-  if (countInterval) {
-    clearInterval(countInterval);
-  }
-});
+  window.removeEventListener('resize', checkScreenSize)
+  if (countInterval) clearInterval(countInterval)
+})
 
-defineExpose({ openMobile, closeMobile });
+defineExpose({ openMobile, closeMobile })
 </script>
 
 <style scoped>
@@ -917,7 +821,6 @@ defineExpose({ openMobile, closeMobile });
     opacity: 0;
     transform: scale(0.95) translateX(-10px);
   }
-
   to {
     opacity: 1;
     transform: scale(1) translateX(0);
