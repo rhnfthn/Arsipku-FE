@@ -96,7 +96,7 @@
       <!-- TABLE -->
       <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
-          <thead class="bg-primary dark:bg-primary-800 text-white">
+          <thead class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-0 z-10">
             <tr>
               <th
                 v-for="col in headers"

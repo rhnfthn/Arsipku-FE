@@ -287,34 +287,25 @@ const {
 } = useLabel()
 
 const labelTree = computed(() => labels.value)
-
 const route = useRoute()
 
 const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role))
 
 const getPositionId = (userValue) => {
   if (!userValue) return null
-
   if (userValue.position && typeof userValue.position === 'object') {
     const id = userValue.position.id
     return typeof id === 'number' ? id : typeof id === 'string' ? Number(id) : null
   }
-
-  if (typeof userValue.position === 'number') {
-    return userValue.position
-  }
-
-  if (typeof userValue.position === 'string' && !isNaN(Number(userValue.position))) {
+  if (typeof userValue.position === 'number') return userValue.position
+  if (typeof userValue.position === 'string' && !isNaN(Number(userValue.position)))
     return Number(userValue.position)
-  }
-
   return null
 }
 
 const fetchCounts = async () => {
   try {
     if (!user.value) return
-
     const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin'
     const positionId = getPositionId(user.value)
 
@@ -361,6 +352,12 @@ onMounted(async () => {
     if (user.value) {
       fetchLabels()
       fetchLabelCounts()
+      await fetchCounts()
+
+      const positionId = getPositionId(user.value)
+      if (positionId && !isNaN(positionId)) {
+        await fetchInboxCount(positionId)
+      }
     }
 
     countInterval = setInterval(() => {
@@ -433,8 +430,9 @@ const userMenuUtama = computed(() => [
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
+// User: badge dari userCounts.menunggu_verifikasi
 const userMenuUtilitas = computed(() => {
-  const badgeCount = userCounts.value.belum_diajukan || 0
+  const badgeCount = userCounts.value.menunggu_verifikasi || 0
   return [
     { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
@@ -449,26 +447,13 @@ const userMenuUtilitas = computed(() => {
   ]
 })
 
-
 const faqMenuUser = computed(() => [
-  {
-    label: 'FAQ',
-    to: '/faq/menu',
-    icon: 'i-lucide-circle-help'
-  }
+  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' }
 ])
 
 const faqMenuAdmin = computed(() => [
-  {
-    label: 'FAQ',
-    to: '/faq/menu',
-    icon: 'i-lucide-circle-help'
-  },
-  {
-    label: 'Manajemen FAQ',
-    to: '/faq/manajemen',
-    icon: 'i-lucide-file-question'
-  }
+  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
+  { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' }
 ])
 
 // ─── Admin Menus ──────────────────────────────────────────────────────────────
@@ -486,6 +471,7 @@ const adminMenuUtama = computed(() => [
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
+// Admin utilitas: Usulan Penomoran difilter keluar untuk admin/superadmin
 const adminMenuUtilitas = computed(() => {
   const menus = [
     {
@@ -504,9 +490,7 @@ const adminMenuUtilitas = computed(() => {
       label: 'Usulan Penomoran',
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
-      hasNotification: false,
-      onlyUser: true,
-      badge: userCounts.value.belum_diajukan > 0 ? userCounts.value.belum_diajukan : null
+      onlyUser: true
     }
   ]
   return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value))
@@ -519,20 +503,16 @@ const adminMenuAdministrasi = computed(() => {
     {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
-      hasNotification: false,
       children: [
         {
           label: t('usulan'),
-          to: '/penomoran/usulan',
-          badge: adminCounts.value.belum_diajukan > 0 ? adminCounts.value.belum_diajukan : null
+          to: '/penomoran/usulan'
         },
         {
           label: t('ver'),
           to: '/penomoran/verifikasi',
           badge:
-            adminCounts.value.menunggu_verifikasi > 0
-              ? adminCounts.value.menunggu_verifikasi
-              : null
+            adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null
         },
         { label: t('penomoran'), to: '/penomoran/nomor' }
       ]
@@ -571,11 +551,11 @@ const adminMenuLaporan = computed(() => [
 const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
 
 const hasUtilitasNotification = computed(() => {
-  if (!isAdminOrSuperadmin.value) return userCounts.value.belum_diajukan > 0
+  if (!isAdminOrSuperadmin.value) return userCounts.value.menunggu_verifikasi > 0
   return false
 })
 
-// ─── Apps (sidebar tabs) ──────────────────────────────────────────────────────
+// ─── Apps ─────────────────────────────────────────────────────────────────────
 
 const apps = computed(() => {
   if (isAdminOrSuperadmin.value) {
@@ -618,7 +598,6 @@ const apps = computed(() => {
     ]
   }
 
-  // Role: user
   return [
     {
       id: 'user-utama',
@@ -659,9 +638,7 @@ watch(
   (newApps) => {
     if (newApps.length > 0) {
       const exists = newApps.find((a) => a.id === activeApp.value)
-      if (!exists) {
-        activeApp.value = newApps[0].id
-      }
+      if (!exists) activeApp.value = newApps[0].id
     }
   },
   { immediate: true }

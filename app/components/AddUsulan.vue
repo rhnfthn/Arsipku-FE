@@ -15,17 +15,17 @@
     <div class="flex items-center justify-center gap-6 mb-2 mt-2">
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(1)">1</div>
-        <span class="text-xs">Form Penomoran</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_form') }}</span>
       </div>
       <div class="w-12 h-[2px]" :class="stepLineClass(2)" />
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(2)">2</div>
-        <span class="text-xs">Lampiran File</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_lampiran') }}</span>
       </div>
       <div class="w-12 h-[2px]" :class="stepLineClass(3)" />
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(3)">3</div>
-        <span class="text-xs">Konfirmasi</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_konfirmasi') }}</span>
       </div>
     </div>
 
@@ -34,12 +34,9 @@
       <div class="p-1 flex flex-col gap-4 pb-5">
         <div class="text-xs text-gray-500 mb-2">
           <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
-            Form Penomoran
+            {{ $t('add_usl_step_form') }}
           </Heading>
-          <span
-            >Silakan masukkan data penomoran secara lengkap dan benar untuk keperluan
-            verifikasi.</span
-          >
+          <span class="dark:text-gray-400">{{ $t('add_usl_step1_desc') }}</span>
         </div>
 
         <!-- Tanggal Surat -->
@@ -248,12 +245,9 @@
     <div v-if="currentStep === 2" class="space-y-6 p-1">
       <div class="text-xs text-gray-500 mb-5">
         <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
-          Masukkan Lampiran File
+          {{ $t('add_usl_step2_title') }}
         </Heading>
-        <span
-          >Silakan masukkan file penomoran secara lengkap dan benar untuk keperluan
-          verifikasi.</span
-        >
+        <span class="dark:text-gray-400">{{ $t('add_usl_step2_desc') }}</span>
       </div>
 
       <!-- Single File Toggle -->
@@ -270,7 +264,9 @@
               :class="isSingleFile ? 'translate-x-6' : 'translate-x-1'"
             />
           </button>
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Single File</span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ $t('add_usl_single_file_label') }}
+          </span>
         </div>
       </div>
 
@@ -313,12 +309,12 @@
             />
           </svg>
           <div class="flex-1">
-            <span class="text-gray-700 dark:text-gray-300 font-medium block"
-              >Pilih file <span class="text-red-500">*</span></span
-            >
-            <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5"
-              >PDF, DOC, DOCX (Maks 5MB)</span
-            >
+            <span class="text-gray-700 dark:text-gray-300 font-medium block">
+              {{ $t('add_usl_file_pilih_wajib') }} <span class="text-red-500">*</span>
+            </span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+              {{ $t('add_usl_file_format_hint') }}
+            </span>
           </div>
           <input type="file" class="hidden" accept=".pdf,.doc,.docx" @change="handleSingleFile" />
         </label>
@@ -326,8 +322,8 @@
 
       <!-- NOMOR SURAT LIST -->
       <div class="mt-6">
-        <label class="text-xs font-medium mb-2 block">
-          Nomor Surat ({{ form.jumlah }} Nomor)
+        <label class="text-xs font-medium mb-2 block dark:text-gray-300">
+          {{ $t('add_usl_nomor_surat_label') }} ({{ form.jumlah }} {{ $t('usl_nomor_suffix') }})
         </label>
         <div class="space-y-4">
           <div
@@ -347,7 +343,7 @@
                   <span
                     class="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
                   >
-                    Booking
+                    {{ $t('add_usl_status_booking') }}
                   </span>
                 </div>
               </div>
@@ -418,12 +414,12 @@
                   />
                 </svg>
                 <div class="flex-1">
-                  <span class="text-gray-700 dark:text-gray-300 font-medium block"
-                    >{{ $t('usl_file_pilih') }} <span class="text-red-500">*</span></span
-                  >
-                  <span class="text-xs text-gray-500 block mt-0.5">{{
-                    $t('usl_file_format_hint')
-                  }}</span>
+                  <span class="text-gray-700 dark:text-gray-300 font-medium block">
+                    {{ $t('usl_file_pilih') }} <span class="text-red-500">*</span>
+                  </span>
+                  <span class="text-xs text-gray-500 block mt-0.5">
+                    {{ $t('usl_file_format_hint') }}
+                  </span>
                 </div>
                 <input
                   type="file"
@@ -442,12 +438,12 @@
     <div v-if="currentStep === 3" class="space-y-4 p-1">
       <div class="text-xs text-gray-500 mb-3">
         <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
-          Konfirmasi Penomoran
+          {{ $t('add_usl_step3_title') }}
         </Heading>
-        <span>Tinjau kembali rincian penomoran Anda sebelum melakukan pengiriman usulan.</span>
+        <span class="dark:text-gray-400">{{ $t('add_usl_step3_desc') }}</span>
       </div>
 
-      <div class="max-h-full border border-gray-200 mb-5 rounded-lg">
+      <div class="max-h-full border border-gray-200 dark:border-gray-700 mb-5 rounded-lg">
         <div class="w-full px-5 py-2 text-sm">
           <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">
             {{ formatDateTime(new Date()) }}
@@ -500,11 +496,10 @@
             <Heading variant="10sb" class="dark:text-gray-200">{{
               $t('add_usl_preview_jumlah')
             }}</Heading>
-            <Heading variant="11sb" class="dark:text-gray-200"
-              >{{ form.jumlah || 0 }} {{ $t('add_usl_preview_jumlah_suffix') }}</Heading
-            >
+            <Heading variant="11sb" class="dark:text-gray-200">
+              {{ form.jumlah || 0 }} {{ $t('add_usl_preview_jumlah_suffix') }}
+            </Heading>
 
-            <!-- Nomor dari booking response -->
             <Heading variant="10sb" class="dark:text-gray-200">{{
               $t('add_usl_preview_nomor')
             }}</Heading>
@@ -515,7 +510,6 @@
                 >
                 <span class="tracking-widest">{{ detail.nomor || generatedNomorPreview }}</span>
               </div>
-              <!-- Fallback jika bookingDetails kosong -->
               <template v-if="!bookingDetails.length">
                 <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
                   <span class="text-gray-400 dark:text-gray-500"
@@ -547,20 +541,20 @@
 
     <!-- FOOTER BUTTON -->
     <template #footer>
-      <div class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200">
-        <!-- Step 1: Tombol batal/tutup -->
+      <div
+        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+      >
+        <!-- Step 1: Tombol Batal -->
         <Button
           v-if="currentStep === 1"
           variant="secondary"
           @click="handleCloseRequest(false)"
           class="w-full justify-between px-5 py-2 border border-gray-300 text-gray-600 text-sm rounded-md"
         >
-          Batal
+          {{ $t('add_usl_btn_batal') }}
         </Button>
 
-        <!-- Step 2 & 3: Tidak ada tombol kembali (sudah hit API) -->
-
-        <!-- Tombol Selanjutnya (step 1 → 2) -->
+        <!-- Tombol Selanjutnya step 1 → 2 -->
         <button
           v-if="currentStep === 1"
           @click="goToStep2"
@@ -583,10 +577,12 @@
             />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
-          {{ isSubmittingStep1 ? 'Menyimpan...' : 'Selanjutnya' }}
+          {{
+            isSubmittingStep1 ? $t('add_usl_btn_menyimpan_step1') : $t('add_usl_btn_selanjutnya')
+          }}
         </button>
 
-        <!-- Tombol Selanjutnya (step 2 → 3: submit file + booking) -->
+        <!-- Tombol Selanjutnya step 2 → 3 -->
         <button
           v-if="currentStep === 2"
           @click="goToStep3"
@@ -609,17 +605,17 @@
             />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
-          {{ isSubmittingStep2 ? 'Mengunggah...' : 'Selanjutnya' }}
+          {{ isSubmittingStep2 ? $t('add_usl_btn_mengunggah') : $t('add_usl_btn_selanjutnya') }}
         </button>
 
-        <!-- Step 3: Tombol Kirim (tutup saja, semua sudah ter-submit di step 2) -->
+        <!-- Step 3: Tombol Selesai -->
         <Button
           v-if="currentStep === 3"
           variant="primary"
           @click="finishAndClose"
           class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md"
         >
-          Selesai
+          {{ $t('add_usl_btn_selesai') }}
         </Button>
       </div>
     </template>
@@ -629,11 +625,11 @@
   <ConfirmPopup
     v-model="showCloseConfirm"
     type="danger"
-    title="Hapus Usulan?"
-    message="Usulan yang sudah dibuat akan dihapus permanen. Apakah Anda yakin ingin menutup?"
-    confirmText="Ya, Hapus"
-    cancelText="Batal"
-    loadingText="Menghapus..."
+    :title="$t('add_usl_confirm_hapus_title')"
+    :message="$t('add_usl_confirm_hapus_pesan')"
+    :confirmText="$t('add_usl_confirm_hapus_ya')"
+    :cancelText="$t('add_usl_confirm_hapus_batal')"
+    :loadingText="$t('add_usl_confirm_hapus_loading')"
     :isLoading="isDeletingDraft"
     @confirm="confirmCloseAndDelete"
     @cancel="showCloseConfirm = false"
@@ -657,13 +653,7 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 
 const { t } = useI18n()
 const toast = useToast()
-const {
-  getKlasifikasi,
-  submitBooking,
-  submitBookingSingleFile,
-  deleteUsulanUser,
-  isLoadingBooking
-} = usePenomoran()
+const { getKlasifikasi, deleteUsulanUser } = usePenomoran()
 const { user, getProfile } = useAuth()
 const { get, post, api } = useApi()
 
@@ -671,9 +661,7 @@ const { get, post, api } = useApi()
 const currentStep = ref(1)
 
 // ─── DRAFT/BOOKING STATE ───────────────────────────────────────
-/** ID request dari step 1 POST /nomor-request */
 const createdRequestId = ref(null)
-/** Detail booking dari step 2 response */
 const bookingDetails = ref([])
 
 const isSubmittingStep1 = ref(false)
@@ -1007,7 +995,7 @@ const stepCircleClass = (step) => [
 ]
 const stepLineClass = (step) => (currentStep.value >= step ? 'bg-primary' : 'bg-gray-200')
 
-// ─── STEP 1 → 2: POST /nomor-request ──────────────────────────
+// ─── STEP 1 → 2 ───────────────────────────────────────────────
 async function goToStep2() {
   if (!validateStepOne()) return
   isSubmittingStep1.value = true
@@ -1022,17 +1010,13 @@ async function goToStep2() {
       id_position_penandatangan: Number(form.value.id_position_penandatangan),
       jumlah: Number(form.value.jumlah)
     }
-
     const response = await post('/nomor-request', payload)
     const data = response?.data ?? response
-
     createdRequestId.value = data?.id ?? data?.request_id ?? data?.data?.id
-
     if (!createdRequestId.value) throw new Error('Request ID tidak ditemukan dari response')
-
     toast.add({
-      title: 'Berhasil',
-      description: 'Draft usulan tersimpan, silakan unggah file.',
+      title: t('add_usl_toast_draft_berhasil_title'),
+      description: t('add_usl_toast_draft_berhasil_desc'),
       color: 'success'
     })
     currentStep.value = 2
@@ -1042,9 +1026,9 @@ async function goToStep2() {
       err.response?.data?.message ||
       err.response?.data?.error ||
       err.message ||
-      'Gagal membuat usulan'
+      t('add_usl_toast_gagal_buat_desc')
     toast.add({
-      title: 'Gagal',
+      title: t('add_usl_toast_gagal_title'),
       description: Array.isArray(msg) ? msg.join(', ') : msg,
       color: 'error'
     })
@@ -1053,14 +1037,13 @@ async function goToStep2() {
   }
 }
 
-// ─── STEP 2 → 3: POST booking + file ──────────────────────────
+// ─── STEP 2 → 3 ───────────────────────────────────────────────
 async function goToStep3() {
-  // Validasi file
   if (isSingleFile.value) {
     if (!singleFile.value) {
       toast.add({
-        title: 'File wajib diunggah',
-        description: 'Silakan pilih file sebelum melanjutkan.',
+        title: t('add_usl_toast_file_wajib_title'),
+        description: t('add_usl_toast_file_wajib_desc'),
         color: 'warning'
       })
       return
@@ -1072,8 +1055,8 @@ async function goToStep3() {
     }
     if (missingIndexes.length > 0) {
       toast.add({
-        title: 'File belum lengkap',
-        description: 'Semua nomor wajib diunggah filenya.',
+        title: t('add_usl_toast_file_belum_lengkap_title'),
+        description: t('add_usl_toast_file_belum_lengkap_desc'),
         color: 'warning'
       })
       return
@@ -1083,21 +1066,16 @@ async function goToStep3() {
   isSubmittingStep2.value = true
   try {
     let responseData
-
     if (isSingleFile.value) {
-      // Single file endpoint
       const formData = new FormData()
       formData.append('file', singleFile.value)
       const res = await api.post(
         `/nomor-request/${createdRequestId.value}/booking-single-file`,
         formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        }
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       )
       responseData = res.data
     } else {
-      // Multiple files — POST /admin/nomor-request/:id/booking
       const formData = new FormData()
       filesByIndex.value.forEach((file) => {
         if (file instanceof File) {
@@ -1109,19 +1087,15 @@ async function goToStep3() {
       const res = await api.post(
         `/admin/nomor-request/${createdRequestId.value}/booking`,
         formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        }
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       )
       responseData = res.data
     }
 
-    // Simpan detail booking untuk ditampilkan di step 3
     bookingDetails.value = responseData?.data?.details ?? []
-
     toast.add({
-      title: 'Berhasil',
-      description: responseData?.message || 'File berhasil diunggah, usulan menunggu verifikasi.',
+      title: t('add_usl_toast_draft_berhasil_title'),
+      description: responseData?.message || t('add_usl_toast_file_berhasil_desc'),
       color: 'success'
     })
     currentStep.value = 3
@@ -1131,9 +1105,9 @@ async function goToStep3() {
       err.response?.data?.message ||
       err.response?.data?.error ||
       err.message ||
-      'Gagal mengunggah file'
+      t('add_usl_toast_gagal_unggah_desc')
     toast.add({
-      title: 'Gagal',
+      title: t('add_usl_toast_gagal_title'),
       description: Array.isArray(msg) ? msg.join(', ') : msg,
       color: 'error'
     })
@@ -1142,26 +1116,24 @@ async function goToStep3() {
   }
 }
 
-// ─── FINISH (Step 3) ──────────────────────────────────────────
+// ─── FINISH ───────────────────────────────────────────────────
 function finishAndClose() {
   toast.add({
-    title: 'Usulan Berhasil Dikirim',
-    description: 'Usulan penomoran Anda telah berhasil dikirim dan sedang menunggu verifikasi.',
+    title: t('add_usl_toast_kirim_berhasil_title'),
+    description: t('add_usl_toast_kirim_berhasil_desc'),
     color: 'success'
   })
   emit('submit', { requestId: createdRequestId.value, ...form.value })
   resetAndClose()
 }
 
-// ─── HANDLE CLOSE (X button / backdrop) ───────────────────────
+// ─── HANDLE CLOSE ─────────────────────────────────────────────
 function handleCloseRequest(value) {
   if (!value) {
-    // Jika sudah lewat step 1 dan ada draft, tanya konfirmasi hapus
     if (currentStep.value >= 2 && createdRequestId.value) {
       showCloseConfirm.value = true
       return
     }
-    // Step 1 atau belum ada draft, langsung tutup
     resetAndClose()
   }
 }
@@ -1176,8 +1148,8 @@ async function confirmCloseAndDelete() {
   try {
     await deleteUsulanUser(createdRequestId.value)
     toast.add({
-      title: 'Usulan dihapus',
-      description: 'Draft usulan berhasil dihapus.',
+      title: t('add_usl_toast_draft_dihapus_title'),
+      description: t('add_usl_toast_draft_dihapus_desc'),
       color: 'warning'
     })
   } catch (err) {
