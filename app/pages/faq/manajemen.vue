@@ -15,7 +15,9 @@
       </button>
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+    <div
+      class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
+    >
       <!-- Top Bar -->
       <div class="flex flex-wrap gap-4 items-center p-3">
         <select
@@ -33,7 +35,9 @@
         </button>
 
         <div class="relative flex-1 w-full px-2">
-          <Search class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Search
+            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
           <input
             v-model="filters.search"
             placeholder="Cari pertanyaan..."
@@ -41,7 +45,9 @@
           />
         </div>
 
-        <button class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors">
+        <button
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+        >
           <FileDown class="w-4 h-4" />
           Export
         </button>
@@ -69,15 +75,17 @@
                 </button>
               </div>
             </th>
-            <th class="px-4 py-3 font-semibold cursor-pointer select-none" @click="toggleSort('pertanyaan')">
-              <div class="flex items-center gap-1">
-                Pertanyaan
-              </div>
+            <th
+              class="px-4 py-3 font-semibold cursor-pointer select-none"
+              @click="toggleSort('pertanyaan')"
+            >
+              <div class="flex items-center gap-1">Pertanyaan</div>
             </th>
-            <th class="px-4 py-3 font-semibold cursor-pointer select-none" @click="toggleSort('kategori')">
-              <div class="flex items-center gap-1">
-                Kategori
-              </div>
+            <th
+              class="px-4 py-3 font-semibold cursor-pointer select-none"
+              @click="toggleSort('kategori')"
+            >
+              <div class="flex items-center gap-1">Kategori</div>
             </th>
             <th class="px-4 py-3 font-semibold">Terakhir Update</th>
             <th class="px-4 py-3 font-semibold text-center">Puas</th>
@@ -103,12 +111,18 @@
             </td>
 
             <td class="px-4 py-3">
-              <p class="font-semibold text-gray-700 dark:text-white truncate max-w-xs">{{ faq.pertanyaan }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ faq.deskripsi }}</p>
+              <p class="font-semibold text-gray-700 dark:text-white truncate max-w-xs">
+                {{ faq.pertanyaan }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                {{ faq.deskripsi }}
+              </p>
             </td>
 
             <td class="px-4 py-3">
-              <span class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ faq.kategori }}</span>
+              <span class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{
+                faq.kategori
+              }}</span>
             </td>
 
             <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -129,7 +143,9 @@
                   class="p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors group"
                   @click="openEdit(faq)"
                 >
-                  <Pencil class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600" />
+                  <Pencil
+                    class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
+                  />
                 </button>
 
                 <button
@@ -145,7 +161,9 @@
           <tr v-if="loading">
             <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
               <div class="flex justify-center">
-                <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div
+                  class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"
+                />
               </div>
             </td>
           </tr>
@@ -174,11 +192,16 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Sebelumnya
           </button>
@@ -188,9 +211,15 @@
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
               class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
-            >1</button>
+            >
+              1
+            </button>
 
-            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 dark:text-gray-500 text-sm">...</span>
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
+            >
 
             <button
               v-for="page in paginationPages"
@@ -200,17 +229,25 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
               ]"
-            >{{ page }}</button>
+            >
+              {{ page }}
+            </button>
 
-            <span v-if="paginationPages[paginationPages.length - 1] < totalPages - 1" class="px-2 text-gray-400 dark:text-gray-500 text-sm">...</span>
+            <span
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >...</span
+            >
 
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
               class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
-            >{{ totalPages }}</button>
+            >
+              {{ totalPages }}
+            </button>
           </div>
 
           <button
@@ -220,12 +257,17 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
             Selanjutnya
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -234,7 +276,7 @@
   </div>
 
   <!-- Modal Tambah / Edit -->
-  <Teleport to="body">
+  <Teleport to="body" size="xl">
     <Modal v-model="showModal" @save="saveFaq">
       <template #title>
         <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
@@ -253,7 +295,9 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Deskripsi / Jawaban</label>
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
+          >Deskripsi / Jawaban</label
+        >
         <textarea
           v-model="form.deskripsi"
           rows="4"
@@ -321,7 +365,7 @@ const { faqs, loading, fetchFaqs, fetchCategories, createFaq, updateFaq, deleteF
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 const items = [
   { label: 'Beranda', to: '/' },
-  { label: 'Manajemen FAQ', to: '/faq/manajemen' },
+  { label: 'Manajemen FAQ', to: '/faq/manajemen' }
 ]
 
 // ─── Categories (from API) ───────────────────────────────────────────────────
@@ -353,13 +397,15 @@ const currentPage = ref<number>(1)
 const selectedIds = ref<string[]>([])
 
 const isAllSelected = computed(
-  () => paginatedFaqs.value.length > 0 && paginatedFaqs.value.every(f => selectedIds.value.includes(f.id))
+  () =>
+    paginatedFaqs.value.length > 0 &&
+    paginatedFaqs.value.every((f) => selectedIds.value.includes(f.id))
 )
 
 const toggleSelectAll = (e: Event) => {
   const checked = (e.target as HTMLInputElement).checked
   if (checked) {
-    selectedIds.value = paginatedFaqs.value.map(f => f.id)
+    selectedIds.value = paginatedFaqs.value.map((f) => f.id)
   } else {
     selectedIds.value = []
   }
@@ -368,8 +414,8 @@ const toggleSelectAll = (e: Event) => {
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredFaqs = computed(() => {
   const q = filters.value.search.toLowerCase()
-  let list = faqs.value.filter(f =>
-    !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q)
+  let list = faqs.value.filter(
+    (f) => !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q)
   )
   if (sortKey.value) {
     const key = sortKey.value
@@ -381,7 +427,9 @@ const filteredFaqs = computed(() => {
   return list
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredFaqs.value.length / rowsPerPage.value)))
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredFaqs.value.length / rowsPerPage.value))
+)
 
 const paginatedFaqs = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value
@@ -404,7 +452,9 @@ const paginationPages = computed(() => {
   return pages
 })
 
-watch([() => filters.value.search, rowsPerPage], () => { currentPage.value = 1 })
+watch([() => filters.value.search, rowsPerPage], () => {
+  currentPage.value = 1
+})
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const showModal = ref(false)
@@ -414,7 +464,6 @@ const isSaving = ref(false)
 
 const showNewKategori = ref(false)
 const newKategori = ref('')
-
 
 const form = ref({ pertanyaan: '', deskripsi: '', kategori: '' })
 
@@ -433,9 +482,10 @@ const openEdit = (faq: Faq) => {
 }
 
 const saveFaq = async () => {
-  const finalKategori = showNewKategori.value && newKategori.value.trim()
-    ? newKategori.value.trim()
-    : form.value.kategori
+  const finalKategori =
+    showNewKategori.value && newKategori.value.trim()
+      ? newKategori.value.trim()
+      : form.value.kategori
 
   if (!form.value.pertanyaan || !finalKategori) {
     showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning')
@@ -447,7 +497,7 @@ const saveFaq = async () => {
     const payload = {
       pertanyaan: form.value.pertanyaan,
       deskripsi: form.value.deskripsi,
-      kategori: finalKategori,
+      kategori: finalKategori
     }
 
     if (isEditMode.value && editingId.value !== null) {
@@ -478,7 +528,7 @@ const openBulkDelete = () => {
 
 const bulkDeleteNow = async () => {
   try {
-    await Promise.all(selectedIds.value.map(id => deleteFaq(id)))
+    await Promise.all(selectedIds.value.map((id) => deleteFaq(id)))
     showToast('Berhasil', `${selectedIds.value.length} FAQ berhasil dihapus.`, 'success')
     selectedIds.value = []
     await Promise.all([fetchFaqs(), loadCategories()])
@@ -525,12 +575,21 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-const showToast = (title: string, message: string, color: 'success' | 'error' | 'warning' | 'primary' = 'success') => {
+const showToast = (
+  title: string,
+  message: string,
+  color: 'success' | 'error' | 'warning' | 'primary' = 'success'
+) => {
   toast.add({
     title,
     description: message,
     color,
-    icon: color === 'success' ? 'i-lucide-check-circle' : color === 'error' ? 'i-lucide-x-circle' : 'i-lucide-info',
+    icon:
+      color === 'success'
+        ? 'i-lucide-check-circle'
+        : color === 'error'
+          ? 'i-lucide-x-circle'
+          : 'i-lucide-info'
   })
 }
 
@@ -542,9 +601,19 @@ onMounted(async () => {
 
 <style scoped>
 * {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { border-radius: 10px; }
-::-webkit-scrollbar-thumb { border-radius: 10px; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+}
 </style>

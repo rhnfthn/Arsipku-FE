@@ -372,7 +372,7 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto">
+      <div v-if="selectedRow" class="space-y-6 text-sm px-3 pb-3 max-h-[70vh] overflow-y-auto">
         <!-- Perihal -->
         <p class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base">
           {{ selectedRow.perihal || '-' }}

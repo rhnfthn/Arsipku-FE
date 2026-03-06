@@ -376,30 +376,22 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="space-y-4 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto">
+      <div v-if="selectedRow" class="space-y-4 text-sm px-3 pb-5 max-h-[70vh] overflow-y-auto">
         <!-- Perihal -->
         <p class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base">
           {{ selectedRow.perihal || '-' }}
         </p>
 
-        <!-- Meta info grid -->
-        <div class="grid gap-0">
+        <!-- Meta info list -->
+        <div class="flex flex-col">
           <!-- Tanggal -->
-          <div class="pb-3 border-b border-gray-200 dark:border-gray-700 pr-4">
+          <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_detail_tanggal') }}</p>
             <p class="font-medium mt-1 dark:text-gray-200">{{ formatDate(selectedRow.tanggal) }}</p>
           </div>
 
-          <!-- Jumlah -->
-          <div class="pb-3 border-b border-gray-200 dark:border-gray-700 pl-4">
-            <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_col_jumlah') }}</p>
-            <p class="font-medium mt-1 dark:text-gray-200">
-              {{ selectedRow.jumlah }} {{ $t('usl_nomor_suffix') }}
-            </p>
-          </div>
-
           <!-- Penandatangan -->
-          <div class="py-3 border-b border-gray-200 dark:border-gray-700 pr-4">
+          <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_penandatangan') }}
             </p>
@@ -409,7 +401,7 @@
           </div>
 
           <!-- Klasifikasi -->
-          <div class="py-3 border-b border-gray-200 dark:border-gray-700 pl-4">
+          <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_klasifikasi') }}
             </p>
@@ -419,7 +411,7 @@
           </div>
 
           <!-- Jenis Naskah -->
-          <div class="pt-3 col-span-2">
+          <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_jenis_naskah') }}
             </p>

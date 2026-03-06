@@ -12,7 +12,7 @@
     </template>
 
     <!-- STEP INDICATOR -->
-    <div class="flex items-center justify-center gap-6 mb-2 mt-2">
+    <div class="flex items-center justify-center gap-6 mt-2">
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(1)">1</div>
         <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_form') }}</span>
@@ -215,7 +215,7 @@
             @input="validatePerihal"
             class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           />
-          <div class="flex justify-between mt-1 mb-0">
+          <div class="flex justify-between mt-1 -mb-3">
             <p v-if="perihalError" class="text-xs text-red-500">{{ perihalError }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
               {{ form.perihal.length }}/100 {{ $t('add_usl_perihal_karakter') }}

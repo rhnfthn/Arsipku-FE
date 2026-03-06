@@ -337,7 +337,7 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="px-5 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
+      <div v-if="selectedRow" class="px-3 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">

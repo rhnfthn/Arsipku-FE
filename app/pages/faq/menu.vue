@@ -1,61 +1,45 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 pt-5">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <PageHeader title="FAQ" :items="items" />
     </div>
 
     <!-- OUTER CARD -->
-    <div class="rounded-3xl overflow-hidden shadow-sm border border-gray-200">
-
+    <div class="rounded-3xl overflow-hidden shadow-sm rounded-xl border border-gray-200">
       <div
-        class="px-8 md:px-12 py-12 text-center
-               bg-gradient-to-b from-blue-200 to-white"
+        class="px-8 md:px-12 py-12 text-center bg-gradient-to-br from-primary-100 from-45% to-primary"
       >
         <div class="max-w-2xl mx-auto">
           <h2 class="text-2xl md:text-3xl font-semibold text-gray-800">
             Dapatkan bantuan
             <span
-              class="bg-gradient-to-r from-blue-600 to-indigo-600
-                     bg-clip-text text-transparent"
+              class="bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent"
             >
               apa pun
             </span>
             tentang Arsipku
           </h2>
 
-          <p class="text-gray-500 mt-3">
-            Ajukan pertanyaan. Temukan jawaban.
-          </p>
+          <p class="text-gray-500 mt-3">Ajukan pertanyaan. Temukan jawaban.</p>
 
           <div class="mt-6 relative">
-            <Search
-              class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            />
+            <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Apa masalah Anda?"
-              class="w-full pl-11 pr-4 py-3 rounded-2xl 
-                     border border-gray-200 
-                     bg-white
-                     shadow-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
-      <div class="bg-white px-8 md:px-12 py-10">
+      <div class="bg-white px-2 md:px-6 py-6">
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-
           <!-- Sidebar -->
-          <div
-            class="bg-gray-50 rounded-2xl p-5 border border-gray-200 shadow-xl space-y-3"
-          >
-            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Kategori
-            </h3>
+          <div class="bg-gray-50 rounded-2xl p-5 border border-gray-200 shadow-xl space-y-3">
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Kategori</h3>
 
             <div v-if="categories.length === 0" class="text-xs text-gray-400 italic px-2">
               Memuat kategori...
@@ -78,7 +62,9 @@
           <!-- FAQ LIST -->
           <div class="lg:col-span-3 space-y-4">
             <div v-if="loading" class="flex justify-center py-12">
-              <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div
+                class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+              />
             </div>
 
             <div v-else-if="faqs.length === 0" class="text-center text-gray-400 py-12 text-sm">
@@ -89,7 +75,7 @@
               v-else
               v-for="(faq, index) in faqs"
               :key="faq.id"
-              class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden"
+              class="bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden"
             >
               <!-- Question -->
               <button
@@ -102,11 +88,7 @@
 
                 <ChevronDown
                   class="w-5 h-5 transition-all duration-300"
-                  :class="
-                    isOpen(index)
-                      ? 'rotate-180 text-blue-600'
-                      : 'text-gray-400'
-                  "
+                  :class="isOpen(index) ? 'rotate-180 text-blue-600' : 'text-gray-400'"
                 />
               </button>
 
@@ -114,7 +96,7 @@
               <transition name="fade">
                 <div
                   v-if="isOpen(index)"
-                  class="px-6 pb-6 text-sm text-gray-600 border-t bg-gray-50"
+                  class="px-6 pb-6 text-sm text-gray-600 border-t border-gray-300 bg-gray-50"
                 >
                   <p class="mt-4 leading-relaxed">
                     {{ faq.deskripsi }}
@@ -124,7 +106,7 @@
                     <button
                       @click="handleVote(faq, 'puas')"
                       :disabled="votingId === faq.id"
-                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-100 transition disabled:opacity-50"
+                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
                     >
                       <ThumbsUp class="w-4 h-4" />
                       Puas <span class="text-xs text-gray-400">({{ faq.puas }})</span>
@@ -133,7 +115,7 @@
                     <button
                       @click="handleVote(faq, 'tidak-puas')"
                       :disabled="votingId === faq.id"
-                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-100 transition disabled:opacity-50"
+                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
                     >
                       <ThumbsDown class="w-4 h-4" />
                       Tidak Puas <span class="text-xs text-gray-400">({{ faq.tidakPuas }})</span>
@@ -143,10 +125,8 @@
               </transition>
             </div>
           </div>
-
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -162,7 +142,7 @@ const { faqs, loading, fetchFaqs, fetchCategories, votePuas, voteTidakPuas } = u
 
 const items = [
   { label: 'Beranda', to: '/' },
-  { label: 'FAQ', to: '/faq/menu' },
+  { label: 'FAQ', to: '/faq/menu' }
 ] satisfies BreadcrumbItem[]
 
 // ─── Categories ──────────────────────────────────────────────────────────────
@@ -176,7 +156,11 @@ const isOpen = (index: number) => openIndices.value.has(index)
 
 const toggle = (index: number) => {
   const s = new Set(openIndices.value)
-  if (s.has(index)) { s.delete(index) } else { s.add(index) }
+  if (s.has(index)) {
+    s.delete(index)
+  } else {
+    s.add(index)
+  }
   openIndices.value = s
 }
 
@@ -218,7 +202,7 @@ onMounted(async () => {
 })
 
 watch(selectedCategory, async (cat) => {
-  if (isSearching.value) return   // don't switch category while searching
+  if (isSearching.value) return // don't switch category while searching
   openIndices.value = new Set()
   if (cat) await fetchFaqs({ kategori: cat })
 })
