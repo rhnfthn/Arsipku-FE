@@ -10,6 +10,7 @@ import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
 import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
 import TemplateManager from "@/components/Tulis/TemplateManager.vue";
 
+import { Alert } from "@/composables/useAlert";
 import { validateSDIPayload, type SDIPayloadInput, type SDIPayload } from "~/types/sdi";
 
 const route = useRoute();
@@ -63,7 +64,7 @@ const breadcrumbs = [
 
 const validateAndToast = (payload: SDIPayloadInput) => {
   const hasTertuju =
-    (payload.tertuju?.length ?? 0) > 0 || (payload.tertuju_grup?.length ?? 0) > 0;
+    (payload.tertuju?.length ?? 0) > 0 || (payload.penerima_grup?.length ?? 0) > 0;
   if (!hasTertuju) {
     toastError("Validasi Gagal", "Penerima (Tertuju) harus dipilih minimal satu");
     return false;
@@ -84,7 +85,7 @@ const getPayload = (): SDIPayloadInput => ({
   pengirim: user.value?.position || "",
   tertuju: tertujuIndividu.value,
   tembusan: tembusanIndividu.value,
-  tertuju_grup: tertujuGrup.value,
+  penerima_grup: tertujuGrup.value,
   tembusan_grup: tembusanGrup.value,
   klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
   klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
@@ -141,6 +142,7 @@ const handleSaveDraft = async () => {
   } catch (e: any) {
     toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
   } finally {
+    Alert.close();
     isLoadingData.value = false;
   }
 };
@@ -168,6 +170,7 @@ const handleKirimDokumen = async () => {
   } catch (e: any) {
     toastError("Gagal Mengirim", e.response?.data?.message || e.message || "Gagal mengirim dokumen");
   } finally {
+    Alert.close();
     isLoadingData.value = false;
   }
 };
@@ -241,7 +244,7 @@ onMounted(async () => {
         const masterList = [...tertujuItems.value, ...tembusanItems.value];
 
         selectedTertuju.value = mergeGrupDanIndividu(
-          mapGroupsToUI(d.tertuju_grup || []),
+          mapGroupsToUI(d.penerima_grup || []),
           mapApiToUI(d.tertuju || [], masterList)
         );
         selectedTembusan.value = mergeGrupDanIndividu(

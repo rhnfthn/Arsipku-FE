@@ -938,12 +938,11 @@ const confirmSaveDraft = async () => {
 
   if (!isConfirmed) return;
 
+  Alert.close(); // Pindahkan ke sini
   try {
     await handleSaveDraft();
-    Alert.close();
   } catch (error) {
     console.error(error);
-    Alert.close();
   }
 };
 
@@ -982,6 +981,7 @@ const handlePassphraseSubmit = async () => {
   );
 
   if (isConfirmed) {
+    Alert.close(); // Tambahkan di sini agar popup langsung tertutup
     await handleKirimDokumen();
   }
 };
@@ -1073,14 +1073,12 @@ const handleKirimDokumen = async () => {
     if (result.data.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
       toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      Alert.close();
       router.push("/korespondensi/terkirim");
     } else {
       throw new Error(result.data.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
     isLoadingData.value = false;
-    Alert.close();
 
     console.error("Gagal mengirim:", e);
     let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';

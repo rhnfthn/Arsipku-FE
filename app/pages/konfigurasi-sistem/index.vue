@@ -46,7 +46,19 @@
             {{ $t("konfig_digsig_desc") }}
           </p>
 
-          <div class="space-y-3">
+          <div v-if="isLoading" class="space-y-3">
+            <div v-for="i in 5" :key="i"
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-5 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div class="space-y-2">
+                <USkeleton class="h-4 w-32 rounded" />
+                <USkeleton class="h-3 w-48 rounded" />
+              </div>
+              <USkeleton class="h-9 w-full sm:w-[380px] rounded-lg shrink-0" />
+            </div>
+          </div>
+
+          <!-- Data -->
+          <div v-else class="space-y-3">
             <div v-for="doc in digsigList" :key="doc.id"
               class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors">
               <div>
@@ -58,11 +70,11 @@
                 </p>
               </div>
 
-              <div class="flex bg-[#f3f4f6] dark:bg-gray-800 rounded-lg p-1 shrink-0">
-                <button v-for="opt in signOptions" :key="opt.value" type="button"
+              <div class="flex w-full sm:w-[380px] bg-[#f3f4f6] dark:bg-gray-800 rounded-lg p-1 shrink-0 gap-1">
+                <button v-for="opt in getAvailableOptions(doc)" :key="opt.value" type="button"
                   @click="handleChangeSignType(doc, opt.value)" :disabled="isToggling === doc.jenisNaskah" :class="[
-                    'px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-                    doc.signType === opt.value /* Pastikan field 'signType' sesuai dengan response API Anda */
+                    'flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap',
+                    isSelected(doc, opt.value)
                       ? 'bg-[#457fb6] text-white shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700'
                   ]">
@@ -78,10 +90,9 @@
             <div class="text-sm text-primary-800 dark:text-primary-200 leading-relaxed">
               <span class="font-semibold block mb-1">Informasi</span>
               <p>
-                Pada mode Digsig aktif, apabila pengguna memasukkan <em>passphrase</em> yang salah atau belum memiliki akun TTE, sistem akan
-                secara
-                otomatis menggunakan opsi tanda tangan <strong>"Semua"</strong> (gabungan TTD QR & Basah) sebagai
-                alternatif.
+                Pilih satu atau beberapa metode tanda tangan yang diizinkan untuk setiap jenis naskah. Jika mode
+                <strong>Digsig</strong> terkendala atau pengguna tidak memiliki akun TTE, pengguna tetap dapat mengirim
+                dokumen menggunakan metode lainnya.
               </p>
             </div>
           </div>
@@ -354,6 +365,7 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
+import { Alert } from "@/composables/useAlert";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 
 definePageMeta({ middleware: "auth" });
@@ -426,18 +438,110 @@ const signOptions = [
   { label: 'Digsig', value: 'digsig' },
   { label: 'TTD QR', value: 'qr' },
   { label: 'TTD Basah', value: 'basah' },
-  { label: 'Semua', value: 'semua' }
-];
+  { label: 'Semua', value: 'semua' },
+]
 
-const handleChangeSignType = async (doc: any, newValue: string) => {
-  if (isToggling.value === doc.jenisNaskah) return;
+const getAvailableOptions = (doc: any) => {
+  const jenis = String(doc.jenisNaskah || '').toUpperCase()
+  if (jenis === 'DI' || jenis === 'SDI') {
+    // Tidak ada Digsig, tapi tetap ada Semua (= qr + basah)
+    return signOptions.filter(opt => opt.value !== 'digsig')
+  }
+  return signOptions
+}
+
+const fieldMap: Record<string, keyof typeof fieldMap> = {
+  digsig: 'digsig',
+  qr: 'ttdQr',
+  basah: 'ttdBasah',
+}
+
+// Semua = ketiga field true (atau untuk DI/SDI: ttdQr & ttdBasah true)
+const isAllSelected = (doc: any) => {
+  const jenis = String(doc.jenisNaskah || '').toUpperCase()
+  if (jenis === 'DI' || jenis === 'SDI') {
+    return !!doc.ttdQr && !!doc.ttdBasah
+  }
+  return !!doc.digsig && !!doc.ttdQr && !!doc.ttdBasah
+}
+
+const isSelected = (doc: any, value: string) => {
+  if (value === 'semua') return isAllSelected(doc)
+  // Jika semua aktif, hanya tampilkan "Semua" yang highlight — yang lain tidak
+  if (isAllSelected(doc)) return false
+  const field = fieldMap[value]
+  return field ? !!doc[field] : false
+}
+
+const handleChangeSignType = async (doc: any, value: string) => {
+  if (isToggling.value === doc.jenisNaskah) return
+
+  const jenis = String(doc.jenisNaskah || '').toUpperCase()
+  const isNoDigsig = jenis === 'DI' || jenis === 'SDI'
+
+  const prev = { digsig: doc.digsig, ttdQr: doc.ttdQr, ttdBasah: doc.ttdBasah }
+
+  if (value === 'semua') {
+    const allOn = isAllSelected(doc)
+    if (!isNoDigsig) doc.digsig = !allOn
+    doc.ttdQr = !allOn
+    doc.ttdBasah = !allOn
+  } else {
+    const field = fieldMap[value]
+    if (!field) return
+
+    // Jika saat ini semua aktif, matikan semua dulu lalu aktifkan hanya yang diklik
+    if (isAllSelected(doc)) {
+      if (!isNoDigsig) doc.digsig = false
+      doc.ttdQr = false
+      doc.ttdBasah = false
+      doc[field] = true
+    } else {
+      doc[field] = !doc[field]
+    }
+  }
+
+  // Deklarasi willBeAllOn SETELAH state doc diubah
+  const willBeAllOn = isAllSelected(doc)
 
   try {
-    console.log(`Menyimpan perubahan ${doc.jenisNaskah} menjadi ${newValue}`);
+    await toggleDigsig(doc.jenisNaskah, {
+      digsig: isNoDigsig ? false : doc.digsig,
+      ttd_qr: doc.ttdQr,
+      ttd_basah: doc.ttdBasah,
+    })
+
+    // Toast sukses selalu muncul
+    useToast().add({
+      title: 'Berhasil',
+      description: `Konfigurasi tanda tangan ${doc.description} berhasil diperbarui.`,
+      color: 'success',
+    })
+
+    // Alert hanya jika semua opsi kini aktif — setelah toast
+    if (willBeAllOn) {
+      await Alert.warning(
+        'Semua Metode Aktif',
+        `Semua metode tanda tangan untuk <strong>${doc.description}</strong> kini diaktifkan. Jika passphrase salah, pengguna dapat memilih metode alternatif yang tersedia.`
+      )
+      Alert.close()
+    }
+
   } catch (error) {
-    console.error("Gagal mengubah tipe tanda tangan", error);
+    // Rollback
+    doc.digsig = prev.digsig
+    doc.ttdQr = prev.ttdQr
+    doc.ttdBasah = prev.ttdBasah
+
+    useToast().add({
+      title: 'Gagal',
+      description: `Gagal memperbarui konfigurasi tanda tangan ${doc.description}.`,
+      color: 'error',
+    })
+
+    console.error('Gagal mengubah tipe tanda tangan', error)
   }
-};
+}
 
 // ================================
 // PENGUMUMAN — form state

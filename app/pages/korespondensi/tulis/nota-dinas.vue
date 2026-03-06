@@ -15,7 +15,13 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
 const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { digsigConfig, fetchDigsigConfig } = useDigsig();
+const { getConfigDigsig } = useDigsig();
+
+const isSignMethodModalOpen = ref(false);
+const bsreDisabled = ref(false);
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
 
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
@@ -48,7 +54,6 @@ const {
 // ── ND-specific state ─────────────────────────────────────────────────────────
 const english = ref(false);
 const items = ref<any[]>([]);
-const isPassphraseModalOpen = ref(false);
 const selectedSendType = ref("qr_only");
 
 const breadcrumbs = [
@@ -138,7 +143,12 @@ const handleSaveDraft = async () => {
   }
 };
 
-const handleKirimDokumen = async (passphrase = "") => {
+const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
+  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
+    return
+  }
+
   const payload = getBasePayload();
   loadingMessage.value = "Mengirim Nota Dinas...";
   isLoadingData.value = true;
@@ -153,6 +163,9 @@ const handleKirimDokumen = async (passphrase = "") => {
       if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
       fd.append("nik", user.value.nik);
     }
+    if (selectedSendType.value === 'basah' && fileBasah) {
+      fd.append('file_ttd_basah', fileBasah)
+    }
 
     const result = await sendNotaDinas(fd);
     if (result.data.success) {
@@ -164,25 +177,21 @@ const handleKirimDokumen = async (passphrase = "") => {
       throw new Error(result.data.message || "Pengiriman gagal");
     }
   } catch (e: any) {
-    const msg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
-    if (msg.toLowerCase().includes("passphrase")) isPassphraseModalOpen.value = true;
-    toastError("Gagal Mengirim", msg);
     Alert.close();
-  } finally {
-    isLoadingData.value = false;
-  }
-};
+    const errMsg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
 
-const handlePassphraseSubmit = async (passphrase: string) => {
-  if (selectedSendType.value === "digsig" && !passphrase) {
-    toast.add({ title: "Wajib Diisi", description: "Harap masukkan passphrase Anda", color: "warning" });
-    isPassphraseModalOpen.value = true;
-    return;
+    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+      bsreDisabled.value = false
+      await nextTick()
+      isSignMethodModalOpen.value = true
+      await nextTick()
+      signMethodModalRef.value?.setPassphraseError(errMsg)
+    } else {
+      toastError("Gagal Mengirim", errMsg);
+    }
+  } finally {
+    isLoadingData.value = false
   }
-  const msg = selectedSendType.value === "digsig"
-    ? "Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?"
-    : "Dokumen akan dikirim tanpa tanda tangan BSrE.";
-  await confirmKirim(msg, () => handleKirimDokumen(passphrase));
 };
 
 const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
@@ -191,20 +200,32 @@ const handleConfirmKirim = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  const ndConfig = digsigConfig.value.find((c: any) => c.jenisNaskah === "ND");
-  if (ndConfig?.enabled) {
-    selectedSendType.value = "digsig";
-    isPassphraseModalOpen.value = true;
-  } else {
-    selectedSendType.value = "qr_only";
-    await confirmKirim("Dokumen akan dikirim tanpa tanda tangan BSrE.", handleKirimDokumen);
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false }
+  try {
+    const res = await getConfigDigsig('ND')
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    }
+  } catch {
+    // semua false jika gagal fetch
   }
+
+  bsreDisabled.value = !configData.digsig
+  qrDisabled.value = !configData.ttdQr
+  basahDisabled.value = !configData.ttdBasah
+  isSignMethodModalOpen.value = true
+};
+
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string; file?: File | null }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || '', data.file ?? undefined);
 };
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  await fetchDigsigConfig();
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -273,7 +294,8 @@ onMounted(async () => {
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
-    <UCard variant="soft" :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
+    <UCard variant="soft"
+      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <!-- Skeleton loading -->
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
@@ -281,32 +303,42 @@ onMounted(async () => {
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
-            <div class="flex-1 space-y-2 pt-1"><USkeleton class="h-3 w-1/2" /><USkeleton class="h-3 w-1/3" /></div>
+            <div class="flex-1 space-y-2 pt-1">
+              <USkeleton class="h-3 w-1/2" />
+              <USkeleton class="h-3 w-1/3" />
+            </div>
           </div>
-          <div class="space-y-3 px-4"><USkeleton v-for="j in 4" :key="j" class="h-3 w-full" /></div>
+          <div class="space-y-3 px-4">
+            <USkeleton v-for="j in 4" :key="j" class="h-3 w-full" />
+          </div>
         </div>
         <USkeleton class="h-30 w-full rounded-md" />
-        <div class="pt-6 border-t border-gray-100 dark:border-gray-800"><USkeleton class="h-10 w-32 rounded-lg" /></div>
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <USkeleton class="h-10 w-32 rounded-lg" />
+        </div>
       </div>
 
       <!-- Form -->
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju"
-          :items="items" :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
-          :items="items" :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -325,12 +357,14 @@ onMounted(async () => {
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA
+                      DINAS</h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
@@ -342,12 +376,12 @@ onMounted(async () => {
                           <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
                           <span v-else v-html="selectedTertuju.length
                             ? selectedTertuju.map((s: any, i: number) =>
-                                selectedTertuju.length === 1
-                                  ? `<div>${s.labelJob || s.label}</div>`
-                                  : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
-                              ).join('')
+                              selectedTertuju.length === 1
+                                ? `<div>${s.labelJob || s.label}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                            ).join('')
                             : '................................................'
-                          "></span>
+                            "></span>
                         </td>
                       </tr>
                       <tr>
@@ -358,7 +392,8 @@ onMounted(async () => {
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
+                        <td class="text-[14px] align-top">{{ subject ||
+                          "................................................" }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -379,7 +414,8 @@ onMounted(async () => {
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
+                      selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                     </ol>
@@ -392,9 +428,17 @@ onMounted(async () => {
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
@@ -418,8 +462,10 @@ onMounted(async () => {
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
       </div>
     </UCard>
@@ -427,13 +473,30 @@ onMounted(async () => {
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
-    <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
-      :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
+    <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
+      :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+
   </div>
 </template>
 
 <style scoped>
-:deep(.tox-tinymce) { border: none !important; }
-.tox-fullscreen { z-index: 9999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; }
-.tox-dialog-wrap, .tox-dropzone, .tox-promotions { z-index: 10000 !important; }
+:deep(.tox-tinymce) {
+  border: none !important;
+}
+
+.tox-fullscreen {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.tox-dialog-wrap,
+.tox-dropzone,
+.tox-promotions {
+  z-index: 10000 !important;
+}
 </style>

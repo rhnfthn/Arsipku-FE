@@ -1,4 +1,4 @@
-// composables/useTulisSurat.ts
+// composables/useTulis.ts
 //
 // Shared logic untuk semua halaman Tulis Surat
 // Masing-masing page hanya perlu memanggil composable ini dan menambahkan logic spesifik miliknya sendiri.

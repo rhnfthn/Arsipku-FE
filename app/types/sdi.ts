@@ -18,7 +18,7 @@ export const SDIPayloadSchema = z.object({
   tembusan: z.array(z.string()).optional().default([]),
 
   // Grup — terima string ATAU number, coerce ke string
-  tertuju_grup: groupIdArray,
+  penerima_grup: groupIdArray,
   tembusan_grup: groupIdArray,
 
   // Format YYYY-MM-DD
@@ -49,9 +49,9 @@ export const SDIPayloadSchema = z.object({
 // Grup boleh berisi number atau string karena belum di-transform
 export type SDIPayloadInput = Omit<
   z.input<typeof SDIPayloadSchema>,
-  'tertuju_grup' | 'tembusan_grup'
+  'penerima_grup' | 'tembusan_grup'
 > & {
-  tertuju_grup?: (string | number)[]
+  penerima_grup?: (string | number)[]
   tembusan_grup?: (string | number)[]
 }
 
