@@ -48,7 +48,7 @@
       <!-- TABLE BODY (skeleton / empty / data) -->
       <div class="overflow-x-auto relative">
         <table class="w-full bg-white dark:bg-gray-800 text-sm">
-          <thead class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-0 z-10">
+          <thead class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-1 z-10">
             <tr>
               <th
                 v-for="col in headers"

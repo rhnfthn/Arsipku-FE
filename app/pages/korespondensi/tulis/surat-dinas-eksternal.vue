@@ -251,6 +251,10 @@ import { Alert } from "@/composables/useAlert";
 import { useDigSign } from "@/composables/useDigSign";
 import { useSde } from "~/composables/useSde";
 
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
+
+// const Alert = useAlert(); // Initialize Alert
+
 const route = useRoute();
 const router = useRouter();
 

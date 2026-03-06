@@ -337,7 +337,7 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="px-5 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
+      <div v-if="selectedRow" class="px-3 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -552,22 +552,24 @@
                     class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                   />
                   <div
-                    class="relative flex flex-1 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
+                    class="relative flex flex-1 min-w-0 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                   >
-                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">{{
-                      idx + 1
-                    }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      {{ idx + 1 }}.
+                    </span>
+
                     <input
                       type="text"
                       :value="displayNomor(detail)"
                       :class="[
-                        'flex-1 w-full   text-sm font-mono',
+                        'flex-1 min-w-0 text-sm font-mono',
                         detail.status === 'hangus'
                           ? 'line-through text-gray-400 dark:text-gray-500'
                           : 'dark:text-gray-200'
                       ]"
                       readonly
                     />
+
                     <button
                       v-if="
                         detail.nomor && detail.status === 'terpakai' && detail.status !== 'hangus'

@@ -231,6 +231,7 @@ import Editor from '@tinymce/tinymce-vue';
 
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const route = useRoute();
 const alertState = useAlertState();

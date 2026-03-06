@@ -6,6 +6,8 @@ import Editor from "@tinymce/tinymce-vue";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
+
 const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();

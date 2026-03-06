@@ -7,39 +7,36 @@
     <Transition name="modal">
       <div
         v-if="modelValue"
-        class="relative bg-white dark:bg-gray-800 rounded-2xl p-1"
+        class="relative bg-white dark:bg-gray-800 rounded-2xl p-1 flex flex-col"
         :class="modalSizeClass"
       >
         <!-- HEADER -->
         <div
-          class="flex justify-between items-start mb-4 border-b border-gray-300 dark:border-gray-400"
+          class="flex justify-between items-start border-b border-gray-300 dark:border-gray-400 flex-shrink-0 mb-3"
         >
           <slot name="title">
-            <Heading
-              variant="heading9b"
-              class="font-semibold text-sm mb-3 mt-5 ml-5"
-            >
+            <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
               Judul Modal
             </Heading>
           </slot>
 
           <button
             @click="$emit('update:modelValue', false)"
-            class="mt-5 mr-5 text-gray-500 hover:text-gray-800"
+            class="mt-5 mr-5 text-gray-500 hover:text-gray-800 flex-shrink-0"
           >
             <X class="w-4 h-4" />
           </button>
         </div>
 
         <!-- BODY -->
-        <div class="flex flex-col gap-5 ml-5 mr-5 max-h-[67vh] overflow-y-auto">
+        <div class="flex flex-col gap-5 ml-5 mr-5 overflow-y-auto flex-1 min-h-0">
           <slot />
         </div>
 
         <!-- DEFAULT FOOTER -->
         <div
           v-if="!hideDefaultFooter"
-          class="flex justify-between border-t border-gray-300 mt-7 mb-1 gap-3 px-5 py-2"
+          class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2"
         >
           <button
             @click="$emit('update:modelValue', false)"
@@ -64,19 +61,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { X } from "lucide-vue-next";
-import Heading from "~/components/Heading.vue";
+import { computed } from 'vue'
+import { X } from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    required: true,
+    required: true
   },
 
   hideDefaultFooter: {
     type: Boolean,
-    default: false,
+    default: false
   },
 
   /**
@@ -86,29 +83,28 @@ const props = defineProps({
    */
   size: {
     type: String,
-    default: "md",
-  },
-});
+    default: 'md'
+  }
+})
 
-defineEmits(["update:modelValue", "save"]);
+defineEmits(['update:modelValue', 'save'])
 
 const modalSizeClass = computed(() => {
   switch (props.size) {
-    case "sm":
-      return "w-[360px]";
-    case "md":
-      return "w-[480px]";
-    case "lg":
-      return "w-[570px] max-h-[650px]";
-    case "xl":
-      return "w-[630px] max-w-[90vw] max-h-[690px]";
-    case "full":
-      return "w-[95vw] max-w-none";
+    case 'sm':
+      return 'w-[360px] max-h-[90vh]'
+    case 'md':
+      return 'w-[480px] max-h-[90vh]'
+    case 'lg':
+      return 'w-[570px] max-h-[90vh]'
+    case 'xl':
+      return 'w-[630px] max-w-[90vw] max-h-[90vh]'
+    case 'full':
+      return 'w-[95vw] max-w-none max-h-[90vh]'
     default:
-      // allow custom tailwind class
-      return props.size;
+      return props.size
   }
-});
+})
 </script>
 
 <style scoped>
