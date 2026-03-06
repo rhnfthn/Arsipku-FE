@@ -91,7 +91,7 @@
       <!-- TABLE BODY (skeleton / empty / data) -->
       <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
-          <thead class="bg-primary text-white text-[15px]">
+          <thead class="bg-primary dark:bg-primary-800 text-white text-[15px]">
             <tr>
               <th
                 v-for="col in headers"
@@ -121,7 +121,7 @@
               </th>
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                class="sticky right-0 z-30 bg-primary dark:bg-primary-800 text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ $t('ver_col_status') }}</span>
@@ -337,7 +337,7 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="px-5 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
+      <div v-if="selectedRow" class="px-3 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
         <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -552,22 +552,24 @@
                     class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                   />
                   <div
-                    class="relative flex flex-1 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
+                    class="relative flex flex-1 min-w-0 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                   >
-                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">{{
-                      idx + 1
-                    }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      {{ idx + 1 }}.
+                    </span>
+
                     <input
                       type="text"
                       :value="displayNomor(detail)"
                       :class="[
-                        'flex-1 w-full   text-sm font-mono',
+                        'flex-1 min-w-0 text-sm font-mono',
                         detail.status === 'hangus'
                           ? 'line-through text-gray-400 dark:text-gray-500'
                           : 'dark:text-gray-200'
                       ]"
                       readonly
                     />
+
                     <button
                       v-if="
                         detail.nomor && detail.status === 'terpakai' && detail.status !== 'hangus'
@@ -663,7 +665,7 @@
                     @click="previewFile(detail)"
                   >
                     <svg
-                      class="w-5 h-5 text-primary dark:text-blue-400 flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -672,7 +674,7 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
                     <div class="flex-1 min-w-0 ml-3">

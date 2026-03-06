@@ -1,52 +1,48 @@
 <template>
   <Modal
     :model-value="props.modelValue"
-    @update:modelValue="handleClose"
+    @update:modelValue="handleCloseRequest"
     :hide-default-footer="true"
     size="xl"
-    ><template #title>
+  >
+    <template #title>
       <Heading variant="heading9b" class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100">
         {{ $t('add_usl_title') }}
       </Heading>
     </template>
+
     <!-- STEP INDICATOR -->
-    <div class="flex items-center justify-center gap-6 mb-2 mt-2">
+    <div class="flex items-center justify-center gap-6 mt-2">
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(1)">1</div>
-        <span class="text-xs">Form Penomoran</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_form') }}</span>
       </div>
-
       <div class="w-12 h-[2px]" :class="stepLineClass(2)" />
-
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(2)">2</div>
-        <span class="text-xs">Lampiran File</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_lampiran') }}</span>
       </div>
-
       <div class="w-12 h-[2px]" :class="stepLineClass(3)" />
-
       <div class="flex items-center gap-2">
         <div :class="stepCircleClass(3)">3</div>
-        <span class="text-xs">Konfirmasi</span>
+        <span class="text-xs dark:text-gray-300">{{ $t('add_usl_step_konfirmasi') }}</span>
       </div>
     </div>
 
-    <!-- STEP 1 -->
+    <!-- ==================== STEP 1 ==================== -->
     <div v-if="currentStep === 1" class="space-y-4">
       <div class="p-1 flex flex-col gap-4 pb-5">
         <div class="text-xs text-gray-500 mb-2">
-          <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
-            >Form Penomoran</Heading
-          >
-          <span>
-            Silakan masukkan data penomoran secara lengkap dan benar untuk keperluan verifikasi.
-          </span>
+          <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
+            {{ $t('add_usl_step_form') }}
+          </Heading>
+          <span class="dark:text-gray-400">{{ $t('add_usl_step1_desc') }}</span>
         </div>
+
         <!-- Tanggal Surat -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-            {{ $t('add_usl_tanggal_surat') }}
-            <span class="text-red-500">*</span>
+            {{ $t('add_usl_tanggal_surat') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             type="date"
@@ -59,8 +55,7 @@
         <!-- Klasifikasi -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-            {{ $t('add_usl_klasifikasi') }}
-            <span class="text-red-500">*</span>
+            {{ $t('add_usl_klasifikasi') }} <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="klasifikasiRef">
             <button
@@ -75,7 +70,6 @@
               {{ form.klasifikasiDisplay || $t('add_usl_pilih_klasifikasi') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
-
             <div
               v-if="openKlasifikasi"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -112,8 +106,7 @@
         <!-- Jenis Naskah -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-            {{ $t('add_usl_jenis_naskah') }}
-            <span class="text-red-500">*</span>
+            {{ $t('add_usl_jenis_naskah') }} <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="jenisRef">
             <button
@@ -127,7 +120,6 @@
               {{ form.jenisDisplay || $t('add_usl_pilih_jenis') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
-
             <div
               v-if="openJenis"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -163,8 +155,7 @@
         <!-- Penandatangan -->
         <div>
           <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-            {{ $t('add_usl_penandatangan') }}
-            <span class="text-red-500">*</span>
+            {{ $t('add_usl_penandatangan') }} <span class="text-red-500">*</span>
           </Heading>
           <div class="relative" ref="penandatanganRef">
             <button
@@ -179,7 +170,6 @@
               {{ form.penandatanganJabatan || $t('add_usl_pilih_penandatangan') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
-
             <div
               v-if="openPenandatangan"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -225,13 +215,10 @@
             @input="validatePerihal"
             class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           />
-          <div class="flex justify-between mt-1 mb-0">
-            <p v-if="perihalError" class="text-xs text-red-500">
-              {{ perihalError }}
-            </p>
+          <div class="flex justify-between mt-1 -mb-3">
+            <p v-if="perihalError" class="text-xs text-red-500">{{ perihalError }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-              {{ form.perihal.length }}/100
-              {{ $t('add_usl_perihal_karakter') }}
+              {{ form.perihal.length }}/100 {{ $t('add_usl_perihal_karakter') }}
             </p>
           </div>
         </div>
@@ -249,29 +236,23 @@
             @input="validateJumlah"
             class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
           />
-          <p v-if="jumlahError" class="text-xs text-red-500 mt-1">
-            {{ jumlahError }}
-          </p>
+          <p v-if="jumlahError" class="text-xs text-red-500 mt-1">{{ jumlahError }}</p>
         </div>
       </div>
     </div>
 
-    <!-- STEP 2 -->
+    <!-- ==================== STEP 2 ==================== -->
     <div v-if="currentStep === 2" class="space-y-6 p-1">
-      <!-- Title -->
       <div class="text-xs text-gray-500 mb-5">
-        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
-          >Masukkan Lampiran File</Heading
-        >
-        <span>
-          Silakan masukkan file penomoran secara lengkap dan benar untuk keperluan verifikasi.
-        </span>
+        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
+          {{ $t('add_usl_step2_title') }}
+        </Heading>
+        <span class="dark:text-gray-400">{{ $t('add_usl_step2_desc') }}</span>
       </div>
 
       <!-- Single File Toggle -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <!-- Toggle -->
           <button
             type="button"
             @click="isSingleFile = !isSingleFile"
@@ -283,7 +264,9 @@
               :class="isSingleFile ? 'translate-x-6' : 'translate-x-1'"
             />
           </button>
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300"> Single File </span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ $t('add_usl_single_file_label') }}
+          </span>
         </div>
       </div>
 
@@ -296,29 +279,24 @@
           <div class="flex items-center justify-between">
             <div class="flex items-start gap-3">
               <FileText class="w-6 h-6 text-primary mt-1" />
-
               <div>
                 <p class="text-sm font-medium text-primary underline break-all">
                   {{ singleFile.name }}
                 </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ formatFileSize(singleFile.size) }}
-                </p>
+                <p class="text-xs text-gray-500 mt-1">{{ formatFileSize(singleFile.size) }}</p>
               </div>
             </div>
-
             <button @click="removeSingleFile" class="text-red-500 hover:text-red-600 transition">
               <X class="w-5 h-5" />
             </button>
           </div>
         </div>
-
         <label
           v-else
           class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-4 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
         >
           <svg
-            class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
+            class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -332,50 +310,47 @@
           </svg>
           <div class="flex-1">
             <span class="text-gray-700 dark:text-gray-300 font-medium block">
-              Pilih file <span class="text-red-500">*</span>
+              {{ $t('add_usl_file_pilih_wajib') }} <span class="text-red-500">*</span>
             </span>
             <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
-              PDF, DOC, DOCX (Maks 5MB)
+              {{ $t('add_usl_file_format_hint') }}
             </span>
           </div>
-
           <input type="file" class="hidden" accept=".pdf,.doc,.docx" @change="handleSingleFile" />
         </label>
       </div>
 
-      <!-- NOMOR SURAT -->
+      <!-- NOMOR SURAT LIST -->
       <div class="mt-6">
-        <label class="text-xs font-medium mb-2 block">
-          Nomor Surat ({{ form.jumlah }} Nomor)
+        <label class="text-xs font-medium mb-2 block dark:text-gray-300">
+          {{ $t('add_usl_nomor_surat_label') }} ({{ form.jumlah }} {{ $t('usl_nomor_suffix') }})
         </label>
-
         <div class="space-y-4">
           <div
             v-for="(_, idx) in form.jumlah"
             :key="idx"
             class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 transition"
           >
-            <!-- Inner white box: nomor + badge (sama persis seperti modal detail) -->
+            <!-- Nomor preview box -->
             <div class="flex items-center gap-2 mb-3">
               <div
                 class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
               >
                 <div class="flex items-center justify-between">
                   <span class="text-sm font-mono text-gray-700 dark:text-gray-300">
-                    {{ idx + 1 }}. SPR..../TN/00/LPPNPI/AUD/II/2026
+                    {{ idx + 1 }}. {{ generatedNomorPreview }}
                   </span>
                   <span
                     class="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
                   >
-                    Booking
+                    {{ $t('add_usl_status_booking') }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <!-- Upload per nomor HANYA jika SingleFile OFF -->
+            <!-- Upload per nomor — hanya jika SingleFile OFF -->
             <div v-if="!isSingleFile" class="mt-2">
-              <!-- File sudah dipilih -->
               <div
                 v-if="filesByIndex[idx]"
                 class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
@@ -408,7 +383,7 @@
                   </div>
                   <button
                     @click="removeFile(idx)"
-                    class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
+                    class="text-red-500 dark:text-red-400 hover:text-red-700 transition"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -421,14 +396,12 @@
                   </button>
                 </div>
               </div>
-
-              <!-- Upload area (belum ada file) -->
               <label
                 v-else
                 class="w-full flex items-center gap-3 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm hover:bg-white dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary-600 transition-all group"
               >
                 <svg
-                  class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-400 transition-colors flex-shrink-0"
+                  class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -444,7 +417,7 @@
                   <span class="text-gray-700 dark:text-gray-300 font-medium block">
                     {{ $t('usl_file_pilih') }} <span class="text-red-500">*</span>
                   </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                  <span class="text-xs text-gray-500 block mt-0.5">
                     {{ $t('usl_file_format_hint') }}
                   </span>
                 </div>
@@ -461,16 +434,16 @@
       </div>
     </div>
 
-    <!-- STEP 3 (PREVIEW - pindahan dari modal lama) -->
+    <!-- ==================== STEP 3 (KONFIRMASI) ==================== -->
     <div v-if="currentStep === 3" class="space-y-4 p-1">
       <div class="text-xs text-gray-500 mb-3">
-        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1"
-          >Konfirmasi Penomoran</Heading
-        >
-        <span> Tinjau kembali rincian penomoran Anda sebelum melakukan pengiriman usulan. </span>
+        <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
+          {{ $t('add_usl_step3_title') }}
+        </Heading>
+        <span class="dark:text-gray-400">{{ $t('add_usl_step3_desc') }}</span>
       </div>
 
-      <div class="max-h-full border border-gray-200 mb-5 rounded-lg">
+      <div class="max-h-full border border-gray-200 dark:border-gray-700 mb-5 rounded-lg">
         <div class="w-full px-5 py-2 text-sm">
           <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">
             {{ formatDateTime(new Date()) }}
@@ -523,24 +496,28 @@
             <Heading variant="10sb" class="dark:text-gray-200">{{
               $t('add_usl_preview_jumlah')
             }}</Heading>
-            <Heading variant="11sb" class="dark:text-gray-200"
-              >{{ form.jumlah || 0 }} {{ $t('add_usl_preview_jumlah_suffix') }}</Heading
-            >
+            <Heading variant="11sb" class="dark:text-gray-200">
+              {{ form.jumlah || 0 }} {{ $t('add_usl_preview_jumlah_suffix') }}
+            </Heading>
 
             <Heading variant="10sb" class="dark:text-gray-200">{{
               $t('add_usl_preview_nomor')
             }}</Heading>
             <div class="text-gray-800 dark:text-gray-200 text-xs font-mono space-y-1">
-              <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
-                <span class="text-gray-400 dark:text-gray-500">
-                  {{ String(n).padStart(2, '0') }}.
-                </span>
-                <span class="tracking-widest">
-                  {{ form.jenis || '...' }}....../O/00/LPPNPI/{{
-                    form.klasifikasi || '...'
-                  }}/XII/2025
-                </span>
+              <div v-for="(detail, n) in bookingDetails" :key="detail.id" class="flex gap-2">
+                <span class="text-gray-400 dark:text-gray-500"
+                  >{{ String(n + 1).padStart(2, '0') }}.</span
+                >
+                <span class="tracking-widest">{{ detail.nomor || generatedNomorPreview }}</span>
               </div>
+              <template v-if="!bookingDetails.length">
+                <div v-for="n in form.jumlah" :key="n" class="flex gap-2">
+                  <span class="text-gray-400 dark:text-gray-500"
+                    >{{ String(n).padStart(2, '0') }}.</span
+                  >
+                  <span class="tracking-widest">{{ generatedNomorPreview }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -550,17 +527,13 @@
             <Heading variant="10m" class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1">
               {{ $t('add_usl_preview_pengusul') }}
             </Heading>
-            <p class="font-semibold text-xs dark:text-gray-200">
-              {{ user?.nama || '-' }}
-            </p>
+            <p class="font-semibold text-xs dark:text-gray-200">{{ user?.nama || '-' }}</p>
           </div>
           <div class="text-right">
             <Heading variant="10m" class="text-gray-500 dark:text-gray-400 uppercase text-xs mb-1">
               {{ $t('add_usl_preview_diusulkan') }}
             </Heading>
-            <p class="font-semibold text-xs dark:text-gray-200">
-              {{ formatDateTime(new Date()) }}
-            </p>
+            <p class="font-semibold text-xs dark:text-gray-200">{{ formatDateTime(new Date()) }}</p>
           </div>
         </div>
       </div>
@@ -568,73 +541,212 @@
 
     <!-- FOOTER BUTTON -->
     <template #footer>
-      <div class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200">
+      <div
+        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+      >
+        <!-- Step 1: Tombol Batal -->
         <Button
-          v-if="currentStep > 1"
+          v-if="currentStep === 1"
           variant="secondary"
-          @click="currentStep--"
-          class="w-full justify-between px-5 py-2 border border-primary text-primary text-sm rounded-md"
+          @click="handleCloseRequest(false)"
+          class="w-full justify-between px-5 py-2 border border-gray-300 text-gray-600 text-sm rounded-md"
         >
-          Kembali
+          {{ $t('add_usl_btn_batal') }}
         </Button>
 
+        <!-- Tombol Selanjutnya step 1 → 2 -->
         <button
-          v-if="currentStep < 3"
-          @click="nextStep"
-          class="w-full justify-between px-5 py-2 bg-primary text-white text-sm rounded-md"
+          v-if="currentStep === 1"
+          @click="goToStep2"
+          :disabled="isSubmittingStep1"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Selanjutnya
+          <svg
+            v-if="isSubmittingStep1"
+            class="animate-spin w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          {{
+            isSubmittingStep1 ? $t('add_usl_btn_menyimpan_step1') : $t('add_usl_btn_selanjutnya')
+          }}
         </button>
 
+        <!-- Tombol Selanjutnya step 2 → 3 -->
+        <button
+          v-if="currentStep === 2"
+          @click="goToStep3"
+          :disabled="isSubmittingStep2"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <svg
+            v-if="isSubmittingStep2"
+            class="animate-spin w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          {{ isSubmittingStep2 ? $t('add_usl_btn_mengunggah') : $t('add_usl_btn_selanjutnya') }}
+        </button>
+
+        <!-- Step 3: Tombol Selesai -->
         <Button
           v-if="currentStep === 3"
           variant="primary"
-          @click="submitAndClose"
-          :disabled="isSubmitting || isLoadingBooking"
-          class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+          @click="finishAndClose"
+          class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md"
         >
-          <span v-if="isSubmitting || isLoadingBooking" class="flex items-center gap-2">
-            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
-            Mengirim...
-          </span>
-          <span v-else>Kirim</span>
+          {{ $t('add_usl_btn_selesai') }}
         </Button>
       </div>
     </template>
   </Modal>
+
+  <!-- Konfirmasi hapus draft saat menutup di step 2/3 -->
+  <ConfirmPopup
+    v-model="showCloseConfirm"
+    type="danger"
+    :title="$t('add_usl_confirm_hapus_title')"
+    :message="$t('add_usl_confirm_hapus_pesan')"
+    :confirmText="$t('add_usl_confirm_hapus_ya')"
+    :cancelText="$t('add_usl_confirm_hapus_batal')"
+    :loadingText="$t('add_usl_confirm_hapus_loading')"
+    :isLoading="isDeletingDraft"
+    @confirm="confirmCloseAndDelete"
+    @cancel="showCloseConfirm = false"
+  />
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown, FileText, X } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
+import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 
 const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  }
+  modelValue: { type: Boolean, default: false }
 })
-
-const emit = defineEmits(['update:modelValue', 'submit', 'preview'])
+const emit = defineEmits(['update:modelValue', 'submit'])
 
 const { t } = useI18n()
 const toast = useToast()
+const { getKlasifikasi, deleteUsulanUser } = usePenomoran()
+const { user, getProfile } = useAuth()
+const { get, post, api } = useApi()
 
+// ─── STEP STATE ────────────────────────────────────────────────
+const currentStep = ref(1)
+
+// ─── DRAFT/BOOKING STATE ───────────────────────────────────────
+const createdRequestId = ref(null)
+const bookingDetails = ref([])
+
+const isSubmittingStep1 = ref(false)
+const isSubmittingStep2 = ref(false)
+const isDeletingDraft = ref(false)
+const showCloseConfirm = ref(false)
+
+// ─── FORM ──────────────────────────────────────────────────────
+const today = new Date()
+const todayString = today.toISOString().split('T')[0]
+const tanggalString = ref(todayString)
+
+const form = ref({
+  tanggal: new Date(),
+  klasifikasi: '',
+  klasifikasiDisplay: '',
+  jenis: '',
+  jenisDisplay: '',
+  penandatanganJabatan: '',
+  id_position_penandatangan: null,
+  perihal: '',
+  jumlah: 1
+})
+
+const jumlahError = ref('')
+const perihalError = ref('')
+const penandatanganNama = ref('')
+
+watch(tanggalString, (val) => {
+  if (val) form.value.tanggal = new Date(val)
+})
+
+// ─── DROPDOWN: KLASIFIKASI ─────────────────────────────────────
+const openKlasifikasi = ref(false)
+const klasifikasiSearch = ref('')
+const klasifikasiRef = ref(null)
+const klasifikasiInput = ref(null)
+const klasifikasiOptions = ref([])
+const isLoadingKlasifikasi = ref(false)
+const hasLoadedKlasifikasi = ref(false)
+
+const filteredKlasifikasi = computed(() => {
+  if (!klasifikasiSearch.value) return klasifikasiOptions.value
+  return klasifikasiOptions.value.filter((i) =>
+    i.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase())
+  )
+})
+
+const toggleKlasifikasi = async () => {
+  if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
+    await fetchKlasifikasi()
+    hasLoadedKlasifikasi.value = true
+  }
+  openKlasifikasi.value = !openKlasifikasi.value
+  if (openKlasifikasi.value) {
+    await nextTick()
+    klasifikasiInput.value?.focus()
+  }
+}
+
+const selectKlasifikasi = (item) => {
+  form.value.klasifikasi = item.code
+  form.value.klasifikasiDisplay = item.display
+  klasifikasiSearch.value = ''
+  openKlasifikasi.value = false
+}
+
+const fetchKlasifikasi = async () => {
+  isLoadingKlasifikasi.value = true
+  try {
+    const response = await getKlasifikasi()
+    klasifikasiOptions.value = response
+  } catch (err) {
+    console.error('❌ Error fetch klasifikasi:', err)
+    toast.add({
+      title: t('add_usl_toast_gagal_klasifikasi_title'),
+      description: t('add_usl_toast_gagal_klasifikasi_desc'),
+      color: 'warning'
+    })
+  } finally {
+    isLoadingKlasifikasi.value = false
+  }
+}
+
+// ─── DROPDOWN: JENIS ──────────────────────────────────────────
 const jenisOptions = [
   { code: 'PER', display: 'PER - Peraturan' },
   { code: 'KEP', display: 'KEP - Keputusan Direksi' },
@@ -655,10 +767,7 @@ const jenisOptions = [
   { code: 'ADD-PJJ', display: 'ADD-PJJ - Adendum Perjanjian' },
   { code: 'ADD-PROC', display: 'ADD-PROC - Kontrak Pengadaan Adendum' },
   { code: 'SPK', display: 'SPK - Surat Perintah Kerja Pengadaan' },
-  {
-    code: 'ADD-SPK',
-    display: 'ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan'
-  },
+  { code: 'ADD-SPK', display: 'ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan' },
   { code: 'SKU', display: 'SKU - Surat Kuasa' },
   { code: 'BAC', display: 'BAC - Berita Acara' },
   { code: 'UND', display: 'UND - Surat Undangan' },
@@ -669,78 +778,120 @@ const jenisOptions = [
   { code: 'PGM', display: 'PGM - Sertifikat atau Piagam' },
   { code: 'LAP', display: 'LAP - Laporan' }
 ]
+const openJenis = ref(false)
+const jenisSearch = ref('')
+const jenisRef = ref(null)
+const jenisInput = ref(null)
 
-const form = ref({
-  tanggal: new Date(),
-  klasifikasi: '',
-  klasifikasiDisplay: '',
-  jenis: '',
-  jenisDisplay: '',
-  penandatanganJabatan: '',
-  id_position_penandatangan: null,
-  perihal: '',
-  jumlah: 1
+const filteredJenis = computed(() => {
+  if (!jenisSearch.value) return jenisOptions
+  return jenisOptions.filter((i) =>
+    i.display.toLowerCase().includes(jenisSearch.value.toLowerCase())
+  )
 })
 
-//------------- STATE STEP -------------
-const currentStep = ref(1)
-const announcementForm = ref({
-  judul: '',
-  pesan: '',
-  lampiran: null
+const toggleJenis = async () => {
+  openJenis.value = !openJenis.value
+  if (openJenis.value) {
+    await nextTick()
+    jenisInput.value?.focus()
+  }
+}
+
+const selectJenis = (item) => {
+  form.value.jenis = item.code
+  form.value.jenisDisplay = item.display
+  jenisSearch.value = ''
+  openJenis.value = false
+}
+
+// ─── DROPDOWN: PENANDATANGAN ───────────────────────────────────
+const openPenandatangan = ref(false)
+const penandatanganSearch = ref('')
+const penandatanganRef = ref(null)
+const penandatanganInput = ref(null)
+const penandatanganOptions = ref([])
+const isLoadingPositions = ref(false)
+const hasLoadedPositions = ref(false)
+
+const filteredPenandatangan = computed(() => {
+  if (!penandatanganSearch.value) return penandatanganOptions.value
+  return penandatanganOptions.value.filter((i) =>
+    i.displayText.toLowerCase().includes(penandatanganSearch.value.toLowerCase())
+  )
 })
-function handleFileUpload(event) {
-  const file = event.target.files[0]
-  announcementForm.value.lampiran = file
-}
-const nextStep = () => {
-  if (currentStep.value === 1) {
-    if (!validateStepOne()) return
+
+const togglePenandatangan = async () => {
+  if (!openPenandatangan.value && !hasLoadedPositions.value) {
+    await fetchPositions()
+    hasLoadedPositions.value = true
   }
-
-  if (currentStep.value === 2) {
-    if (isSingleFile.value) {
-      if (!singleFile.value) {
-        toast.add({
-          title: 'File wajib diunggah',
-          description: 'Silakan pilih file sebelum melanjutkan.',
-          color: 'warning'
-        })
-        return
-      }
-    } else {
-      // Setiap nomor wajib punya file
-      const missingIndexes = []
-      for (let i = 0; i < form.value.jumlah; i++) {
-        if (!(filesByIndex.value[i] instanceof File)) {
-          missingIndexes.push(i + 1)
-        }
-      }
-      if (missingIndexes.length > 0) {
-        toast.add({
-          title: 'File belum lengkap',
-          description: `Masih ada nomor yang belum memiliki file. Semua nomor wajib diunggah.`,
-          color: 'warning'
-        })
-        return
-      }
-    }
+  openPenandatangan.value = !openPenandatangan.value
+  if (openPenandatangan.value) {
+    await nextTick()
+    penandatanganInput.value?.focus()
   }
-
-  if (currentStep.value < 3) currentStep.value++
 }
 
-const prevStep = () => {
-  if (currentStep.value > 1) currentStep.value--
-}
-const stepClass = (step) => {
-  return [
-    'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
-    currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
-  ]
+const selectPenandatangan = (item) => {
+  form.value.penandatanganJabatan = item.displayText
+  form.value.id_position_penandatangan = Number(item.position)
+  penandatanganNama.value = item.nama
+  penandatanganSearch.value = ''
+  openPenandatangan.value = false
 }
 
-// STEP 1
+const fetchPositions = async () => {
+  isLoadingPositions.value = true
+  try {
+    const response = await get('/person/with-position/all')
+    const raw = response?.data ?? response
+    const list = Array.isArray(raw) ? raw : []
+    penandatanganOptions.value = list.map((item) => {
+      const positionText = item.position_text || ''
+      const subAreaText = item.sub_area_text || ''
+      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText
+      return { displayText, position: item.position, nama: item.nama }
+    })
+  } catch (err) {
+    console.error('❌ Error fetch positions:', err)
+    toast.add({
+      title: t('add_usl_toast_gagal_posisi_title'),
+      description: t('add_usl_toast_gagal_posisi_desc'),
+      color: 'error'
+    })
+  } finally {
+    isLoadingPositions.value = false
+  }
+}
+
+// ─── NOMOR PREVIEW GENERATOR ──────────────────────────────────
+const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+
+const generatedNomorPreview = computed(() => {
+  const jenis = form.value.jenis || '...'
+  const klasifikasi = form.value.klasifikasi || '...'
+  const date = tanggalString.value ? new Date(tanggalString.value) : new Date()
+  const bulan = ROMAN_MONTHS[date.getMonth()]
+  const tahun = date.getFullYear()
+  return `${jenis}..../TN/00/LPPNPI/${klasifikasi}/${bulan}/${tahun}`
+})
+
+// ─── CLICK OUTSIDE ────────────────────────────────────────────
+const handleClickOutside = (e) => {
+  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target))
+    openKlasifikasi.value = false
+  if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false
+  if (penandatanganRef.value && !penandatanganRef.value.contains(e.target))
+    openPenandatangan.value = false
+}
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  if (!user.value) getProfile()
+})
+onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+
+// ─── VALIDATION ────────────────────────────────────────────────
 function validateStepOne() {
   if (
     !form.value.tanggal ||
@@ -759,209 +910,7 @@ function validateStepOne() {
     })
     return false
   }
-
   return true
-}
-
-const stepCircleClass = (step) => {
-  return [
-    'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
-    currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
-  ]
-}
-
-const stepLineClass = (step) => {
-  return currentStep.value >= step ? 'bg-primary' : 'bg-gray-200'
-}
-
-// STEP 2
-const isSingleFile = ref(false)
-const filesByIndex = ref([])
-
-watch(
-  () => form.value.jumlah,
-  (val) => {
-    filesByIndex.value = Array.from({ length: val }, () => null)
-  },
-  { immediate: true }
-)
-
-function handleFile(idx, event) {
-  const file = event.target.files[0]
-  if (!file) return
-  filesByIndex.value[idx] = file
-}
-
-function removeFile(idx) {
-  filesByIndex.value[idx] = null
-}
-
-function formatFileSize(size) {
-  if (!size) return ''
-  return (size / 1024 / 1024).toFixed(2) + ' MB'
-}
-const nomorSuratList = computed(() => {
-  return Array.from({ length: form.value.jumlah }, (_, i) => ({
-    index: i + 1,
-    nomor: `SPR..../TN/00/LPPNPI/AUD/II/2026`,
-    file: null
-  }))
-})
-
-// SINGLE FILE
-const singleFile = ref(null)
-
-function handleSingleFile(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  singleFile.value = file
-}
-
-function removeSingleFile() {
-  singleFile.value = null
-}
-watch(isSingleFile, (val) => {
-  if (val) {
-    filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null)
-  } else {
-    singleFile.value = null
-  }
-})
-
-// Dropdown state
-const openKlasifikasi = ref(false)
-const klasifikasiSearch = ref('')
-const klasifikasiRef = ref(null)
-const klasifikasiInput = ref(null)
-
-const openJenis = ref(false)
-const jenisSearch = ref('')
-const jenisRef = ref(null)
-const jenisInput = ref(null)
-
-const openPenandatangan = ref(false)
-const penandatanganSearch = ref('')
-const penandatanganRef = ref(null)
-const penandatanganInput = ref(null)
-const penandatanganOptions = ref([])
-const penandatanganNama = ref('')
-
-const isLoadingPositions = ref(false)
-const jumlahError = ref('')
-const perihalError = ref('')
-const hasLoadedPositions = ref(false)
-const hasLoadedKlasifikasi = ref(false)
-
-const today = new Date()
-const todayString = today.toISOString().split('T')[0]
-const tanggalString = ref(todayString)
-
-const {
-  getKlasifikasi,
-  createUsulanDraft,
-  submitBooking,
-  submitBookingSingleFile,
-  isLoadingBooking
-} = usePenomoran()
-const { user, getProfile } = useAuth()
-const { get } = useApi()
-
-watch(tanggalString, (newVal) => {
-  if (newVal) form.value.tanggal = new Date(newVal)
-})
-
-const handleClickOutside = (e) => {
-  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target))
-    openKlasifikasi.value = false
-  if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false
-  if (penandatanganRef.value && !penandatanganRef.value.contains(e.target))
-    openPenandatangan.value = false
-}
-
-const toggleKlasifikasi = async () => {
-  if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
-    await fetchKlasifikasi()
-    hasLoadedKlasifikasi.value = true
-  }
-  openKlasifikasi.value = !openKlasifikasi.value
-  if (openKlasifikasi.value) {
-    await nextTick()
-    klasifikasiInput.value?.focus()
-  }
-}
-
-const toggleJenis = async () => {
-  openJenis.value = !openJenis.value
-  if (openJenis.value) {
-    await nextTick()
-    jenisInput.value?.focus()
-  }
-}
-
-const togglePenandatangan = async () => {
-  if (!openPenandatangan.value && !hasLoadedPositions.value) {
-    await fetchPositions()
-    hasLoadedPositions.value = true
-  }
-  openPenandatangan.value = !openPenandatangan.value
-  if (openPenandatangan.value) {
-    await nextTick()
-    penandatanganInput.value?.focus()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-
-const klasifikasiOptions = ref([])
-const isLoadingKlasifikasi = ref(false)
-
-const filteredKlasifikasi = computed(() => {
-  if (!klasifikasiSearch.value) return klasifikasiOptions.value
-  return klasifikasiOptions.value.filter((item) =>
-    item.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase())
-  )
-})
-
-const filteredJenis = computed(() => {
-  if (!jenisSearch.value) return jenisOptions
-  return jenisOptions.filter((item) =>
-    item.display.toLowerCase().includes(jenisSearch.value.toLowerCase())
-  )
-})
-
-const filteredPenandatangan = computed(() => {
-  if (!penandatanganSearch.value) return penandatanganOptions.value
-  return penandatanganOptions.value.filter((item) =>
-    item.displayText.toLowerCase().includes(penandatanganSearch.value.toLowerCase())
-  )
-})
-
-function selectKlasifikasi(item) {
-  form.value.klasifikasi = item.code
-  form.value.klasifikasiDisplay = item.display
-  klasifikasiSearch.value = ''
-  openKlasifikasi.value = false
-}
-
-function selectJenis(item) {
-  form.value.jenis = item.code
-  form.value.jenisDisplay = item.display
-  jenisSearch.value = ''
-  openJenis.value = false
-}
-
-function selectPenandatangan(item) {
-  form.value.penandatanganJabatan = item.displayText
-  form.value.id_position_penandatangan = Number(item.position)
-  penandatanganNama.value = item.nama
-  penandatanganSearch.value = ''
-  openPenandatangan.value = false
 }
 
 function validatePerihal() {
@@ -986,64 +935,237 @@ function blockInvalidNumber(e) {
 
 function validateJumlah() {
   const val = Number(form.value.jumlah)
-
   if (!val || isNaN(val)) {
     jumlahError.value = t('add_usl_valid_jumlah')
     return
   }
-
   if (val < 1) {
     jumlahError.value = t('add_usl_valid_jumlah_min')
     form.value.jumlah = 1
     return
   }
-
   jumlahError.value = ''
 }
 
-const fetchPositions = async () => {
-  isLoadingPositions.value = true
-  try {
-    const response = await get('/person/with-position/all')
-    const raw = response?.data ?? response
-    const list = Array.isArray(raw) ? raw : []
+// ─── FILE STATE (STEP 2) ───────────────────────────────────────
+const isSingleFile = ref(false)
+const filesByIndex = ref([])
+const singleFile = ref(null)
 
-    penandatanganOptions.value = list.map((item) => {
-      const positionText = item.position_text || ''
-      const subAreaText = item.sub_area_text || ''
-      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText
-      return { displayText, position: item.position, nama: item.nama }
-    })
-  } catch (err) {
-    console.error('❌ Error fetch positions:', err)
+watch(
+  () => form.value.jumlah,
+  (val) => {
+    filesByIndex.value = Array.from({ length: val }, () => null)
+  },
+  { immediate: true }
+)
+
+watch(isSingleFile, (val) => {
+  if (val) filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null)
+  else singleFile.value = null
+})
+
+function handleFile(idx, event) {
+  const file = event.target.files[0]
+  if (!file) return
+  filesByIndex.value = [...filesByIndex.value]
+  filesByIndex.value[idx] = file
+}
+function removeFile(idx) {
+  filesByIndex.value = [...filesByIndex.value]
+  filesByIndex.value[idx] = null
+}
+function handleSingleFile(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  singleFile.value = file
+}
+function removeSingleFile() {
+  singleFile.value = null
+}
+function formatFileSize(size) {
+  if (!size) return ''
+  return (size / 1024 / 1024).toFixed(2) + ' MB'
+}
+
+// ─── STEP CIRCLE/LINE ─────────────────────────────────────────
+const stepCircleClass = (step) => [
+  'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
+  currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
+]
+const stepLineClass = (step) => (currentStep.value >= step ? 'bg-primary' : 'bg-gray-200')
+
+// ─── STEP 1 → 2 ───────────────────────────────────────────────
+async function goToStep2() {
+  if (!validateStepOne()) return
+  isSubmittingStep1.value = true
+  try {
+    const payload = {
+      position_id: Number(user.value?.position?.id ?? user.value?.position),
+      tanggal: tanggalString.value,
+      jenis: form.value.jenis,
+      klasifikasi: form.value.klasifikasi,
+      perihal: form.value.perihal,
+      penandatangan: form.value.penandatanganJabatan,
+      id_position_penandatangan: Number(form.value.id_position_penandatangan),
+      jumlah: Number(form.value.jumlah)
+    }
+    const response = await post('/nomor-request', payload)
+    const data = response?.data ?? response
+    createdRequestId.value = data?.id ?? data?.request_id ?? data?.data?.id
+    if (!createdRequestId.value) throw new Error('Request ID tidak ditemukan dari response')
     toast.add({
-      title: t('add_usl_toast_gagal_posisi_title'),
-      description: t('add_usl_toast_gagal_posisi_desc'),
+      title: t('add_usl_toast_draft_berhasil_title'),
+      description: t('add_usl_toast_draft_berhasil_desc'),
+      color: 'success'
+    })
+    currentStep.value = 2
+  } catch (err) {
+    console.error('❌ Error create draft:', err)
+    const msg =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      t('add_usl_toast_gagal_buat_desc')
+    toast.add({
+      title: t('add_usl_toast_gagal_title'),
+      description: Array.isArray(msg) ? msg.join(', ') : msg,
       color: 'error'
     })
   } finally {
-    isLoadingPositions.value = false
+    isSubmittingStep1.value = false
   }
 }
 
-const fetchKlasifikasi = async () => {
-  isLoadingKlasifikasi.value = true
+// ─── STEP 2 → 3 ───────────────────────────────────────────────
+async function goToStep3() {
+  if (isSingleFile.value) {
+    if (!singleFile.value) {
+      toast.add({
+        title: t('add_usl_toast_file_wajib_title'),
+        description: t('add_usl_toast_file_wajib_desc'),
+        color: 'warning'
+      })
+      return
+    }
+  } else {
+    const missingIndexes = []
+    for (let i = 0; i < form.value.jumlah; i++) {
+      if (!(filesByIndex.value[i] instanceof File)) missingIndexes.push(i + 1)
+    }
+    if (missingIndexes.length > 0) {
+      toast.add({
+        title: t('add_usl_toast_file_belum_lengkap_title'),
+        description: t('add_usl_toast_file_belum_lengkap_desc'),
+        color: 'warning'
+      })
+      return
+    }
+  }
+
+  isSubmittingStep2.value = true
   try {
-    const response = await getKlasifikasi()
-    klasifikasiOptions.value = response
-  } catch (err) {
-    console.error('❌ Error fetch klasifikasi:', err)
+    let responseData
+    if (isSingleFile.value) {
+      const formData = new FormData()
+      formData.append('file', singleFile.value)
+      const res = await api.post(
+        `/nomor-request/${createdRequestId.value}/booking-single-file`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
+      responseData = res.data
+    } else {
+      const formData = new FormData()
+      filesByIndex.value.forEach((file) => {
+        if (file instanceof File) {
+          formData.append('file', file)
+          formData.append('file_name', file.name)
+          formData.append('file_text', file.name)
+        }
+      })
+      const res = await api.post(
+        `/admin/nomor-request/${createdRequestId.value}/booking`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
+      responseData = res.data
+    }
+
+    bookingDetails.value = responseData?.data?.details ?? []
     toast.add({
-      title: t('add_usl_toast_gagal_klasifikasi_title'),
-      description: t('add_usl_toast_gagal_klasifikasi_desc'),
-      color: 'warning'
+      title: t('add_usl_toast_draft_berhasil_title'),
+      description: responseData?.message || t('add_usl_toast_file_berhasil_desc'),
+      color: 'success'
+    })
+    currentStep.value = 3
+  } catch (err) {
+    console.error('❌ Error submit booking:', err)
+    const msg =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      t('add_usl_toast_gagal_unggah_desc')
+    toast.add({
+      title: t('add_usl_toast_gagal_title'),
+      description: Array.isArray(msg) ? msg.join(', ') : msg,
+      color: 'error'
     })
   } finally {
-    isLoadingKlasifikasi.value = false
+    isSubmittingStep2.value = false
   }
 }
 
-const resetForm = () => {
+// ─── FINISH ───────────────────────────────────────────────────
+function finishAndClose() {
+  toast.add({
+    title: t('add_usl_toast_kirim_berhasil_title'),
+    description: t('add_usl_toast_kirim_berhasil_desc'),
+    color: 'success'
+  })
+  emit('submit', { requestId: createdRequestId.value, ...form.value })
+  resetAndClose()
+}
+
+// ─── HANDLE CLOSE ─────────────────────────────────────────────
+function handleCloseRequest(value) {
+  if (!value) {
+    if (currentStep.value >= 2 && createdRequestId.value) {
+      showCloseConfirm.value = true
+      return
+    }
+    resetAndClose()
+  }
+}
+
+async function confirmCloseAndDelete() {
+  if (!createdRequestId.value) {
+    resetAndClose()
+    showCloseConfirm.value = false
+    return
+  }
+  isDeletingDraft.value = true
+  try {
+    await deleteUsulanUser(createdRequestId.value)
+    toast.add({
+      title: t('add_usl_toast_draft_dihapus_title'),
+      description: t('add_usl_toast_draft_dihapus_desc'),
+      color: 'warning'
+    })
+  } catch (err) {
+    console.error('❌ Error deleting draft:', err)
+  } finally {
+    isDeletingDraft.value = false
+    showCloseConfirm.value = false
+    resetAndClose()
+  }
+}
+
+// ─── RESET ────────────────────────────────────────────────────
+function resetAndClose() {
+  currentStep.value = 1
+  createdRequestId.value = null
+  bookingDetails.value = []
   tanggalString.value = todayString
   form.value = {
     tanggal: new Date(),
@@ -1056,7 +1178,6 @@ const resetForm = () => {
     perihal: '',
     jumlah: 1
   }
-
   klasifikasiSearch.value = ''
   jenisSearch.value = ''
   penandatanganSearch.value = ''
@@ -1068,77 +1189,13 @@ const resetForm = () => {
   openPenandatangan.value = false
   hasLoadedPositions.value = false
   hasLoadedKlasifikasi.value = false
-
-  currentStep.value = 1
+  isSingleFile.value = false
+  singleFile.value = null
+  filesByIndex.value = [null]
+  emit('update:modelValue', false)
 }
 
-const handleClose = (value) => {
-  if (!value) resetForm()
-  emit('update:modelValue', value)
-}
-
-const isSubmitting = ref(false)
-
-async function submitAndClose() {
-  if (isSubmitting.value) return
-  isSubmitting.value = true
-
-  try {
-    // ── 1. Buat draft ──────────────────────────────────────────────
-    const payload = {
-      position_id: Number(user.value.position),
-      tanggal: tanggalString.value,
-      jenis: form.value.jenis,
-      klasifikasi: form.value.klasifikasi,
-      perihal: form.value.perihal,
-      jumlah: Number(form.value.jumlah),
-      penandatangan: form.value.penandatanganJabatan,
-      id_position_penandatangan: form.value.id_position_penandatangan
-    }
-
-    const draftResponse = await createUsulanDraft(payload)
-
-    // ID request dari response draft
-    const requestId =
-      draftResponse?.id ??
-      draftResponse?.request_id ??
-      draftResponse?.data?.id ??
-      draftResponse?.data?.request_id
-
-    // ── 2. Submit file (wajib) ──────────────────────────────────────
-    if (requestId) {
-      if (isSingleFile.value) {
-        // Mode: 1 file untuk semua nomor
-        await submitBookingSingleFile(requestId, singleFile.value)
-      } else {
-        // Mode: file per nomor
-        const formData = new FormData()
-        filesByIndex.value.forEach((file) => {
-          if (file instanceof File) {
-            formData.append('file', file)
-            formData.append('file_name', file.name)
-            formData.append('file_text', file.name)
-          }
-        })
-        await submitBooking(requestId, formData)
-      }
-    }
-
-    // ── 3. Tutup modal & notify parent untuk refresh list ───────────
-    emit('submit', { ...payload, isSingleFile: isSingleFile.value })
-    handleClose(false)
-  } catch (err) {
-    // Error sudah ditangani dengan toast di composable
-    console.error('❌ submitAndClose error:', err)
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-onMounted(async () => {
-  if (!user.value) await getProfile()
-})
-
+// ─── FORMATTERS ───────────────────────────────────────────────
 function formatDate(dateStr) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -1147,15 +1204,10 @@ function formatDate(dateStr) {
     year: 'numeric'
   })
 }
-
 function formatDateTime(date) {
   if (!date) return '-'
   return (
-    date.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }) +
+    date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) +
     ' ' +
     date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
   )

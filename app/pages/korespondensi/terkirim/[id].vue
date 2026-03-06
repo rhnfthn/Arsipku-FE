@@ -320,14 +320,11 @@ const loadData = async () => {
             nomor: d.nomor || '-',
             tanggal: d.tanggal || d.created_at,
             pengirim: d.pengirim,
-
-            // Masukkan hasil grouping ke 'to' dan 'cc'
             to: finalPenerima,
             cc: finalTembusan,
-
             mainDisplayContentHtml: d.konten || '',
-            catatan: d.catatan,
-            disposisi: d.disposisi || d.instruksi,
+            catatan: d.detail.catatan || d.disposisi_content?.catatan || '',
+            disposisi: d.disposisi || d.instruksi || d.disposisi_content?.disposisi,
             lampiran_files: d.lampiran_files || d.attachments || [],
             final_pdf_url: d.final_pdf_url || d.file_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
@@ -423,7 +420,8 @@ const konsepOptions = [
         <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
           :show-edit="isKonsepData && index === 0 && showEditAction"
-          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :is-jenis-d-i="isJenisDI" @back="goBack"
+          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
+          :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
           @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
           @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
           @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"

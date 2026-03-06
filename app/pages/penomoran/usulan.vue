@@ -96,7 +96,7 @@
       <!-- TABLE -->
       <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
-          <thead class="bg-primary text-white">
+          <thead class="bg-primary dark:bg-primary-800 text-white text-[15px] sticky top-0 z-10">
             <tr>
               <th
                 v-for="col in headers"
@@ -126,7 +126,7 @@
               </th>
               <th
                 @click="handleSort('status')"
-                class="sticky right-0 z-30 bg-primary text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                class="sticky right-0 z-30 bg-primary dark:bg-primary-800 text-white px-5 py-3 border-l border-gray-200 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)] cursor-pointer select-none hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2">
                   <span>{{ $t('usl_col_status') }}</span>
@@ -372,7 +372,7 @@
         </div>
       </template>
 
-      <div v-if="selectedRow" class="space-y-6 text-sm px-5 pb-3 max-h-[70vh] overflow-y-auto">
+      <div v-if="selectedRow" class="space-y-6 text-sm px-3 pb-3 max-h-[70vh] overflow-y-auto">
         <!-- Perihal -->
         <p class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base">
           {{ selectedRow.perihal || '-' }}
