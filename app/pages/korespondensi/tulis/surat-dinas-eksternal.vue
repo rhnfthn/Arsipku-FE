@@ -434,6 +434,8 @@ import { useSde } from "~/composables/useSde";
 import { Alert } from "@/composables/useAlert"; // Add this import
 import { useDigSign } from "@/composables/useDigSign"; // Add this import
 
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
+
 // const Alert = useAlert(); // Initialize Alert
 
 // --- CONFIG ---

@@ -78,6 +78,7 @@
 
         <tbody>
           <tr
+            v-if="!loading"
             v-for="(faq, idx) in paginatedFaqs"
             :key="faq.id"
             class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800"
@@ -131,7 +132,14 @@
             </td>
           </tr>
 
-          <tr v-if="paginatedFaqs.length === 0">
+          <tr v-if="loading">
+            <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
+              <div class="flex justify-center">
+                <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            </td>
+          </tr>
+          <tr v-else-if="paginatedFaqs.length === 0">
             <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
               Tidak ada data FAQ ditemukan.
             </td>
@@ -246,16 +254,22 @@
 
       <div class="flex flex-col gap-2">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Kategori</label>
-        <select
-          v-model="form.kategori"
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
-        >
-          <option value="" disabled>Pilih kategori...</option>
-          <option value="AUDIT">AUDIT</option>
-          <option value="UMUM">UMUM</option>
-          <option value="TEKNIS">TEKNIS</option>
-          <option value="KEAMANAN">KEAMANAN</option>
-        </select>
+        <div class="flex gap-2">
+          <select
+            v-model="form.kategori"
+            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
+          >
+            <option value="" disabled>Pilih kategori...</option>
+            <option v-for="cat in kategoriOptions" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+          <input
+            v-if="showNewKategori"
+            v-model="newKategori"
+            type="text"
+            placeholder="Nama kategori baru..."
+            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          />
+        </div>
       </div>
     </Modal>
   </Teleport>
@@ -276,21 +290,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil } from 'lucide-vue-next'
 import Modal from '@/components/Modal.vue'
+import type { Faq } from '@/composables/useFaq'
 
 definePageMeta({ middleware: 'auth' })
 
 const toast = useToast()
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Faq {
-  id: number
-  pertanyaan: string
-  deskripsi: string
-  kategori: string
-  updatedAt: string
-  puas: number
-  tidakPuas: number
-}
+const { faqs, loading, fetchFaqs, fetchCategories, createFaq, updateFaq, deleteFaq } = useFaq()
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 const items = [
@@ -298,16 +303,11 @@ const items = [
   { label: 'Manajemen FAQ', to: '/faq/manajemen' },
 ]
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
-const faqs = ref<Faq[]>([
-  { id: 1, pertanyaan: 'Apa itu Arsipku?', deskripsi: 'DeskripsiDeskripsiDeskripsiDeskripsi DeskripsiDeskripsiDeskripsiDeskripsi', kategori: 'AUDIT', updatedAt: '2033-02-23', puas: 12309, tidakPuas: 1039102939 },
-  { id: 2, pertanyaan: 'Apa itu Arsipku?', deskripsi: 'DeskripsiDeskripsiDeskripsiDeskripsi DeskripsiDeskripsiDeskripsiDeskripsi', kategori: 'AUDIT', updatedAt: '2033-02-23', puas: 12309, tidakPuas: 1039102939 },
-  { id: 3, pertanyaan: 'Apa itu Arsipku?', deskripsi: 'DeskripsiDeskripsiDeskripsiDeskripsi DeskripsiDeskripsiDeskripsiDeskripsi', kategori: 'AUDIT', updatedAt: '2033-02-23', puas: 12309, tidakPuas: 1039102939 },
-  { id: 4, pertanyaan: 'Apa itu Arsipku?', deskripsi: 'DeskripsiDeskripsiDeskripsiDeskripsi DeskripsiDeskripsiDeskripsiDeskripsi', kategori: 'AUDIT', updatedAt: '2033-02-23', puas: 12309, tidakPuas: 1039102939 },
-  { id: 5, pertanyaan: 'Apa itu Arsipku?', deskripsi: 'DeskripsiDeskripsiDeskripsiDeskripsi DeskripsiDeskripsiDeskripsiDeskripsi', kategori: 'UMUM', updatedAt: '2033-02-23', puas: 12309, tidakPuas: 1039102939 },
-  { id: 6, pertanyaan: 'Bagaimana cara login?', deskripsi: 'Masukkan username dan password yang telah terdaftar', kategori: 'TEKNIS', updatedAt: '2033-02-22', puas: 500, tidakPuas: 10 },
-  { id: 7, pertanyaan: 'Bagaimana reset password?', deskripsi: 'Klik tautan lupa password di halaman login', kategori: 'KEAMANAN', updatedAt: '2033-02-20', puas: 800, tidakPuas: 50 },
-])
+// ─── Categories (from API) ───────────────────────────────────────────────────
+const kategoriOptions = ref<string[]>([])
+const loadCategories = async () => {
+  kategoriOptions.value = await fetchCategories()
+}
 
 // ─── Filter & Sort ────────────────────────────────────────────────────────────
 const filters = ref({ search: '' })
@@ -389,6 +389,11 @@ watch([() => filters.value.search, rowsPerPage], () => { currentPage.value = 1 }
 const showModal = ref(false)
 const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
+const isSaving = ref(false)
+
+const showNewKategori = ref(false)
+const newKategori = ref('')
+
 
 const form = ref({ pertanyaan: '', deskripsi: '', kategori: '' })
 
@@ -406,38 +411,39 @@ const openEdit = (faq: Faq) => {
   showModal.value = true
 }
 
-const saveFaq = () => {
-  if (!form.value.pertanyaan || !form.value.kategori) {
+const saveFaq = async () => {
+  const finalKategori = showNewKategori.value && newKategori.value.trim()
+    ? newKategori.value.trim()
+    : form.value.kategori
+
+  if (!form.value.pertanyaan || !finalKategori) {
     showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning')
     return
   }
 
-  if (isEditMode.value && editingId.value !== null) {
-    const idx = faqs.value.findIndex(f => f.id === editingId.value)
-    if (idx !== -1) {
-      faqs.value[idx] = {
-        ...faqs.value[idx],
-        pertanyaan: form.value.pertanyaan,
-        deskripsi: form.value.deskripsi,
-        kategori: form.value.kategori,
-        updatedAt: new Date().toISOString().split('T')[0],
-      }
-    }
-    showToast('Berhasil', 'FAQ berhasil diperbarui.', 'success')
-  } else {
-    faqs.value.unshift({
-      id: Date.now(),
+  isSaving.value = true
+  try {
+    const payload = {
       pertanyaan: form.value.pertanyaan,
       deskripsi: form.value.deskripsi,
-      kategori: form.value.kategori,
-      updatedAt: new Date().toISOString().split('T')[0],
-      puas: 0,
-      tidakPuas: 0,
-    })
-    showToast('Berhasil', 'FAQ berhasil ditambahkan.', 'success')
-  }
+      kategori: finalKategori,
+    }
 
-  showModal.value = false
+    if (isEditMode.value && editingId.value !== null) {
+      await updateFaq(editingId.value, payload)
+      showToast('Berhasil', 'FAQ berhasil diperbarui.', 'success')
+    } else {
+      await createFaq(payload)
+      showToast('Berhasil', 'FAQ berhasil ditambahkan.', 'success')
+    }
+
+    showModal.value = false
+    await Promise.all([fetchFaqs(), loadCategories()])
+  } catch {
+    showToast('Gagal', 'Terjadi kesalahan saat menyimpan FAQ.', 'error')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
@@ -449,20 +455,35 @@ const openDelete = (faq: Faq) => {
   confirmDeleteOpen.value = true
 }
 
-const deleteNow = () => {
+const deleteNow = async () => {
   if (!itemToDelete.value) return
-  faqs.value = faqs.value.filter(f => f.id !== itemToDelete.value!.id)
-  showToast('Berhasil', 'FAQ berhasil dihapus.', 'success')
-  confirmDeleteOpen.value = false
-  itemToDelete.value = null
+  try {
+    await deleteFaq(itemToDelete.value.id)
+    showToast('Berhasil', 'FAQ berhasil dihapus.', 'success')
+    await Promise.all([fetchFaqs(), loadCategories()])
+  } catch {
+    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error')
+  } finally {
+    confirmDeleteOpen.value = false
+    itemToDelete.value = null
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const refreshData = () => { currentPage.value = 1 }
+const refreshData = async () => {
+  currentPage.value = 1
+  await fetchFaqs()
+}
 
 const formatDate = (dateStr: string) => {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) {
+    const parts = dateStr.split('-')
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+    return dateStr
+  }
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 const showToast = (title: string, message: string, color: 'success' | 'error' | 'warning' | 'primary' = 'success') => {
@@ -473,6 +494,11 @@ const showToast = (title: string, message: string, color: 'success' | 'error' | 
     icon: color === 'success' ? 'i-lucide-check-circle' : color === 'error' ? 'i-lucide-x-circle' : 'i-lucide-info',
   })
 }
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  await Promise.all([fetchFaqs(), loadCategories()])
+})
 </script>
 
 <style scoped>

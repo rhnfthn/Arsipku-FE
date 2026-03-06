@@ -239,6 +239,7 @@ import { Alert } from "@/composables/useAlert";
 import { useDigSign } from "@/composables/useDigSign";
 
 const { digsigConfig, fetchDigsigConfig } = useDigsig();
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
