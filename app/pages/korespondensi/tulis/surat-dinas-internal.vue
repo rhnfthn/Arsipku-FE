@@ -12,6 +12,8 @@ import TemplateManager from "@/components/Tulis/TemplateManager.vue";
 
 import { validateSDIPayload, type SDIPayloadInput, type SDIPayload } from "~/types/sdi";
 
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
+
 const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();

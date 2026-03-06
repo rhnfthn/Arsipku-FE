@@ -354,6 +354,8 @@ import { useKajian } from "~/composables/useKajian";
 import { Alert } from "@/composables/useAlert";
 import { useDigSign } from "@/composables/useDigSign"; // Add this import
 
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
+
 // const Alert = useAlert(); // Initialize Alert
 
 const route = useRoute();
