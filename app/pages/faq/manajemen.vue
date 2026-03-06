@@ -52,12 +52,22 @@
         <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
           <tr>
             <th class="px-4 py-3 w-10">
-              <input
-                type="checkbox"
-                @change="toggleSelectAll"
-                :checked="isAllSelected"
-                class="rounded border-gray-300"
-              />
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  @change="toggleSelectAll"
+                  :checked="isAllSelected"
+                  class="rounded border-gray-300"
+                />
+                <button
+                  v-if="selectedIds.length > 0"
+                  @click="openBulkDelete"
+                  class="text-red-200 hover:text-red-400 transition-colors"
+                  title="Hapus yang dipilih"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
             </th>
             <th class="px-4 py-3 font-semibold cursor-pointer select-none" @click="toggleSort('pertanyaan')">
               <div class="flex items-center gap-1">
@@ -284,6 +294,17 @@
     cancel-text="Batal"
     @confirm="deleteNow"
   />
+
+  <!-- Confirm Bulk Delete -->
+  <ConfirmPopup
+    v-model="confirmBulkDeleteOpen"
+    type="danger"
+    title="Hapus FAQ Terpilih"
+    :message="`Apakah Anda yakin ingin menghapus ${selectedIds.length} FAQ yang dipilih? Tindakan ini tidak dapat dibatalkan.`"
+    confirm-text="Hapus Semua"
+    cancel-text="Batal"
+    @confirm="bulkDeleteNow"
+  />
 </template>
 
 <script setup lang="ts">
@@ -329,7 +350,7 @@ const rowsChoices = [5, 10, 20, 50]
 const currentPage = ref<number>(1)
 
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
 
 const isAllSelected = computed(
   () => paginatedFaqs.value.length > 0 && paginatedFaqs.value.every(f => selectedIds.value.includes(f.id))
@@ -388,7 +409,7 @@ watch([() => filters.value.search, rowsPerPage], () => { currentPage.value = 1 }
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const showModal = ref(false)
 const isEditMode = ref(false)
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const isSaving = ref(false)
 
 const showNewKategori = ref(false)
@@ -449,6 +470,24 @@ const saveFaq = async () => {
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const confirmDeleteOpen = ref(false)
 const itemToDelete = ref<Faq | null>(null)
+const confirmBulkDeleteOpen = ref(false)
+
+const openBulkDelete = () => {
+  confirmBulkDeleteOpen.value = true
+}
+
+const bulkDeleteNow = async () => {
+  try {
+    await Promise.all(selectedIds.value.map(id => deleteFaq(id)))
+    showToast('Berhasil', `${selectedIds.value.length} FAQ berhasil dihapus.`, 'success')
+    selectedIds.value = []
+    await Promise.all([fetchFaqs(), loadCategories()])
+  } catch {
+    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error')
+  } finally {
+    confirmBulkDeleteOpen.value = false
+  }
+}
 
 const openDelete = (faq: Faq) => {
   itemToDelete.value = faq

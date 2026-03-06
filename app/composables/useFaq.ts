@@ -59,12 +59,14 @@ export const useFaq = () => {
   const error = ref<string | null>(null)
 
   // ── GET ALL ──────────────────────────────────────────────────
-  const fetchFaqs = async (kategori?: string) => {
+  const fetchFaqs = async (options?: { kategori?: string; search?: string }) => {
     loading.value = true
     error.value = null
     try {
-      const params = kategori ? { params: { kategori } } : {}
-      const res = await apiGet<FaqApiResponse>('/faq', params)
+      const query: Record<string, string> = {}
+      if (options?.kategori) query.kategori = options.kategori
+      if (options?.search) query.search = options.search
+      const res = await apiGet<FaqApiResponse>('/faq', Object.keys(query).length ? { params: query } : {})
       faqs.value = res.data.map(mapFaq)
     } catch (err) {
       error.value = 'Gagal memuat data FAQ'
@@ -86,7 +88,7 @@ export const useFaq = () => {
       }
       const first = raw[0] as Record<string, string>
       const key = 'kategori' in first ? 'kategori' : 'nama'
-      return (raw as Record<string, string>[]).map((item) => item[key]).filter(Boolean)
+      return (raw as Record<string, string>[]).map((item) => item[key]).filter((x): x is string => Boolean(x))
     } catch {
       return []
     }

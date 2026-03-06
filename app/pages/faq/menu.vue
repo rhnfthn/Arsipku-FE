@@ -33,6 +33,7 @@
               class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
             />
             <input
+              v-model="searchQuery"
               type="text"
               placeholder="Apa masalah Anda?"
               class="w-full pl-11 pr-4 py-3 rounded-2xl 
@@ -102,7 +103,7 @@
                 <ChevronDown
                   class="w-5 h-5 transition-all duration-300"
                   :class="
-                    openIndex === index
+                    isOpen(index)
                       ? 'rotate-180 text-blue-600'
                       : 'text-gray-400'
                   "
@@ -112,7 +113,7 @@
               <!-- Answer -->
               <transition name="fade">
                 <div
-                  v-if="openIndex === index"
+                  v-if="isOpen(index)"
                   class="px-6 pb-6 text-sm text-gray-600 border-t bg-gray-50"
                 >
                   <p class="mt-4 leading-relaxed">
@@ -167,10 +168,44 @@ const items = [
 // ─── Categories ──────────────────────────────────────────────────────────────
 const categories = ref<string[]>([])
 const selectedCategory = ref('')
-const openIndex = ref<number | null>(null)
 
-// ─── Vote state (track per-faq optimistic update) ─────────────────────────────
-const votingId = ref<number | null>(null)
+// ─── Open indices (support multi-open when searching) ────────────────────────
+const openIndices = ref<Set<number>>(new Set())
+
+const isOpen = (index: number) => openIndices.value.has(index)
+
+const toggle = (index: number) => {
+  const s = new Set(openIndices.value)
+  if (s.has(index)) { s.delete(index) } else { s.add(index) }
+  openIndices.value = s
+}
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+const searchQuery = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+const isSearching = computed(() => searchQuery.value.trim().length > 0)
+
+watch(searchQuery, (q) => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(async () => {
+    const trimmed = q.trim()
+    if (trimmed) {
+      await fetchFaqs({ search: trimmed })
+      // Auto-open all results
+      openIndices.value = new Set(faqs.value.map((_, i) => i))
+    } else {
+      // Back to category view
+      openIndices.value = new Set()
+      if (selectedCategory.value) {
+        await fetchFaqs({ kategori: selectedCategory.value })
+      }
+    }
+  }, 350)
+})
+
+// ─── Vote state ───────────────────────────────────────────────────────────────
+const votingId = ref<string | null>(null)
 
 // ─── Load categories then load first category FAQs ───────────────────────────
 onMounted(async () => {
@@ -178,18 +213,15 @@ onMounted(async () => {
   categories.value = cats
   if (cats.length > 0) {
     selectedCategory.value = cats[0]
-    await fetchFaqs(cats[0])
+    await fetchFaqs({ kategori: cats[0] })
   }
 })
 
 watch(selectedCategory, async (cat) => {
-  openIndex.value = null
-  if (cat) await fetchFaqs(cat)
+  if (isSearching.value) return   // don't switch category while searching
+  openIndices.value = new Set()
+  if (cat) await fetchFaqs({ kategori: cat })
 })
-
-const toggle = (index: number) => {
-  openIndex.value = openIndex.value === index ? null : index
-}
 
 const handleVote = async (faq: Faq, type: 'puas' | 'tidak-puas') => {
   if (votingId.value === faq.id) return
