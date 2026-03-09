@@ -653,7 +653,7 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 
 const { t } = useI18n()
 const toast = useToast()
-const { getKlasifikasi, deleteUsulanUser } = usePenomoran()
+const { getKlasifikasi, deleteUsulanUser, submitBooking, submitBookingSingleFile } = usePenomoran()
 const { user, getProfile } = useAuth()
 const { get, post, api } = useApi()
 
@@ -1040,6 +1040,7 @@ async function goToStep2() {
 // ─── STEP 2 → 3 ───────────────────────────────────────────────
 async function goToStep3() {
   if (isSingleFile.value) {
+    // Single file: wajib ada 1 file
     if (!singleFile.value) {
       toast.add({
         title: t('add_usl_toast_file_wajib_title'),
@@ -1049,14 +1050,17 @@ async function goToStep3() {
       return
     }
   } else {
-    const missingIndexes = []
-    for (let i = 0; i < form.value.jumlah; i++) {
-      if (!(filesByIndex.value[i] instanceof File)) missingIndexes.push(i + 1)
-    }
+    // Multiple file: SETIAP nomor wajib punya file
+    const missingIndexes = filesByIndex.value
+      .map((f, i) => (!(f instanceof File) ? i + 1 : null))
+      .filter(Boolean)
+
     if (missingIndexes.length > 0) {
       toast.add({
         title: t('add_usl_toast_file_belum_lengkap_title'),
-        description: t('add_usl_toast_file_belum_lengkap_desc'),
+        description: t('add_usl_toast_file_belum_lengkap_desc', {
+          nomor: missingIndexes.join(', ')
+        }),
         color: 'warning'
       })
       return
@@ -1066,56 +1070,29 @@ async function goToStep3() {
   isSubmittingStep2.value = true
   try {
     let responseData
+
     if (isSingleFile.value) {
-      const formData = new FormData()
-      formData.append('file', singleFile.value)
-      const res = await api.post(
-        `/nomor-request/${createdRequestId.value}/booking-single-file`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
-      responseData = res.data
+      // POST /nomor-request/:id/booking-single-file
+      responseData = await submitBookingSingleFile(createdRequestId.value, singleFile.value)
     } else {
+      // POST /admin/nomor-request/:id/booking  ← isAdmin: true
       const formData = new FormData()
       filesByIndex.value.forEach((file) => {
-        if (file instanceof File) {
-          formData.append('file', file)
-          formData.append('file_name', file.name)
-          formData.append('file_text', file.name)
-        }
+        formData.append('file', file)
+        formData.append('file_name', file.name)
+        formData.append('file_text', file.name)
       })
-      const res = await api.post(
-        `/admin/nomor-request/${createdRequestId.value}/booking`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
-      responseData = res.data
+      responseData = await submitBooking(createdRequestId.value, formData, false)
     }
 
     bookingDetails.value = responseData?.data?.details ?? []
-    toast.add({
-      title: t('add_usl_toast_draft_berhasil_title'),
-      description: responseData?.message || t('add_usl_toast_file_berhasil_desc'),
-      color: 'success'
-    })
     currentStep.value = 3
-  } catch (err) {
-    console.error('❌ Error submit booking:', err)
-    const msg =
-      err.response?.data?.message ||
-      err.response?.data?.error ||
-      err.message ||
-      t('add_usl_toast_gagal_unggah_desc')
-    toast.add({
-      title: t('add_usl_toast_gagal_title'),
-      description: Array.isArray(msg) ? msg.join(', ') : msg,
-      color: 'error'
-    })
+  } catch {
+    // toast sudah ditangani di composable
   } finally {
     isSubmittingStep2.value = false
   }
 }
-
 // ─── FINISH ───────────────────────────────────────────────────
 function finishAndClose() {
   toast.add({
