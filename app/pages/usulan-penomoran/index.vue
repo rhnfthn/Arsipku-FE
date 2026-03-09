@@ -773,7 +773,8 @@ definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
 const { user, getProfile } = useAuth()
-const { getListUsulan, getDetailUsulan, getPersonWithPosition, getKlasifikasi } = usePenomoran()
+const { getListUsulanByPosition, getDetailUsulan, getPersonWithPosition, getKlasifikasi } =
+  usePenomoran()
 const toast = useToast()
 
 // ─── Breadcrumbs ─────────────────────────────────────────────────────────────
@@ -950,7 +951,7 @@ const fetchData = async () => {
       sort_order: sortOrder.value || undefined
     }
 
-    const response = await getListUsulan(String(positionId), params)
+    const response = await getListUsulanByPosition(String(positionId), params)
     const data = response.data || []
     pagination.value = response.pagination || null
 
