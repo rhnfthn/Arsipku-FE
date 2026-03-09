@@ -1,13 +1,10 @@
 <template>
   <div class="relative">
-
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-
     <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
 
-    <UCard variant="soft" :ui="{
-      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
-    }">
+    <UCard variant="soft"
+      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 4" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
@@ -52,9 +49,8 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
-              Ref. Nomor Surat
-            </span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Ref. Nomor
+              Surat</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refNumber"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
@@ -66,9 +62,8 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
-              Ref. Perihal
-            </span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Ref.
+              Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
@@ -220,74 +215,68 @@
     </UCard>
 
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
-      @save-draft="confirmSaveDraft" @send="confirmKirimDokumen" />
+      @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
-    <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
-      :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
+    <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
+      :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from "vue";
-import { useRoute, useRouter } from 'vue-router';
-import { CalendarDate } from "@internationalized/date";
+import { useRoute } from 'vue-router';
 import Editor from '@tinymce/tinymce-vue';
-import type { Editor as TinyMCEEditor } from 'tinymce';
+
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
-import { useDigSign } from "@/composables/useDigSign";
-
-const { digsigConfig, fetchDigsigConfig } = useDigsig();
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
-const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
-const router = useRouter();
-const toast = useToast();
+const alertState = useAlertState();
 
 const { user, getProfile } = useAuth();
-const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
+const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
+
+// Hanya ambil getConfigDigsig — dipanggil on-demand saat klik Kirim
+const { getConfigDigsig } = useDigsig();
+
+// ── Shared composable ────────────────────────────────────────────────────────
+const {
+  isLoadingData, loadingMessage, isOpenPreview,
+  editDraftId, editorContent, tinymceEditor,
+  date, selectedSifat, existingFiles, selectedTertuju,
+  pdfBlob, pdfUrl, sifatOptions, tinyMceInit,
+  formattedDate, tglDb, tglDisplay,
+  buildFormData, mapApiToUI, mapLampiranFiles, setDateFromString, setSifatFromString,
+  setPdfBlob, revokePdfUrl, confirmSaveDraft, confirmKirim,
+  toastError, toastSuccess, redirectTerkirim, redirectDraf
+} = useTulis();
+
+// ── Disposisi-specific state ──────────────────────────────────────────────────
+const editorContainerRef = ref<HTMLElement | null>(null);
+const selectedSendType = ref('qr_only');
+
+const isPriority = ref(false);
+const refNumber = ref("-");
+const refPerihal = ref("-");
+const recipientList = ref<any[]>([]);
+const selectedChecklist = ref<string[]>([]);
+
+// ── Sign method modal state ───────────────────────────────────────────────────
+const isSignMethodModalOpen = ref(false);
+// true  → config DI disabled  → BSrE tidak tersedia, default qr_only
+// false → config DI enabled   → semua opsi tersedia (atau setelah passphrase salah)
+const bsreDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
+const qrDisabled = ref(false)
+const basahDisabled = ref(false)
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
   { label: "Tulis Disposisi", to: "#" },
 ];
-
-const isSettingInitialData = ref(false);
-const isLoadingData = ref(false);
-const loadingMessage = ref("");
-const isOpenPreview = ref(false);
-const editDraftId = ref<string | null>(null);
-
-const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
-
-const selectedSifat = ref<any>(null);
-const isPriority = ref(false);
-const refNumber = ref("-");
-const refPerihal = ref("-");
-
-const recipientList = ref<any[]>([]);
-const selectedTertuju = ref<any[]>([]);
-const existingFiles = ref<any[]>([]);
-const selectedChecklist = ref<string[]>([]);
-
-const editorContent = ref("");
-const tinymceEditor = ref<TinyMCEEditor | null>(null);
-
-const pdfBlob = ref<Blob | null>(null);
-const pdfUrl = ref("");
-const alertState = useAlertState();
-
-const isPassphraseModalOpen = ref(false);
-const selectedSendType = ref('qr_only');
-
-const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
-}));
 
 const checklistOptions = [
   "Untuk Diketahui", "Proses Lanjut", "Koordinasikan", "Cek", "Monitor", "Evaluasi",
@@ -296,324 +285,223 @@ const checklistOptions = [
   "Tunjuk Perwakilan", "Siapkan Bahan/Materi", "Lainnya",
 ];
 
-const sifatOptions = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa", value: "biasa" }
-];
+const signerInfo = computed(() => ({
+  name: user.value?.nama || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh'
+}));
 
-const tinyMceInit = {
-  base_url: '/tinymce',
-  suffix: '.min',
-  height: 400,
-  menubar: false,
-  promotion: false,
-  branding: false,
-  placeholder: 'Ketik konten disini...',
-  plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
-  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
-  setup(editor: TinyMCEEditor) {
-    tinymceEditor.value = editor;
-  }
-};
+const showEditor = computed(() => selectedChecklist.value.includes("Lainnya"));
 
-const formattedDate = computed(() => {
-  if (!date.value) return "-";
-  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-});
-
-const showEditor = computed(() => {
-  return selectedChecklist.value.includes("Lainnya");
-});
+// ── Watchers ─────────────────────────────────────────────────────────────────
 
 watch(showEditor, async (isShown) => {
   if (isShown) {
     await nextTick();
     if (editorContainerRef.value) {
       editorContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        if (tinymceEditor.value) tinymceEditor.value.focus();
-      }, 500);
+      setTimeout(() => tinymceEditor.value?.focus(), 500);
     }
   }
 });
 
-const handlePriorityChange = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const wantToCheck = target.checked;
-
-  if (!wantToCheck) {
-    isPriority.value = false;
-    return;
-  }
-
-  target.checked = false;
-
-  const isConfirmed = await Alert.confirm(
-    'Tandai sebagai Prioritas?',
-    'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?',
-    'Ya, Prioritas',
-    'Batal',
-    false
-  );
-
-  Alert.close();
-  if (isConfirmed) {
-    isPriority.value = true;
-  }
-};
-
-const getPayload = (): DisposisiPayload => {
-  const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
-  const tglUi = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
-
-  return {
-    id_naskah: editDraftId.value || null,
-    pengirim: user.value?.position || "",
-    tertuju: selectedTertuju.value.map(i => i.value),
-    tanggal_disposisi: tglDb,
-    tanggal_ui: tglUi,
-    sifat: selectedSifat.value?.label || "Biasa",
-    ref_nomor: refNumber.value || "-",
-    ref_perihal: refPerihal.value || "-",
-    catatan: showEditor.value ? editorContent.value : "",
-    htmlContent: showEditor.value ? editorContent.value : "",
-    disposisi: selectedChecklist.value,
-    is_priority: isPriority.value,
-    lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean)
-  };
-};
-
-const createFormData = (payload: DisposisiPayload, includePdf: boolean = false) => {
-  const formData = new FormData();
-
-  Object.keys(payload).forEach((key) => {
-    const k = key as keyof DisposisiPayload;
-    if (k === 'tanggal_ui') return;
-
-    const value = payload[k];
-
-    if (k === 'is_priority') {
-      const boolValue = Boolean(value);
-      formData.append(k, boolValue ? 'true' : 'false');
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      formData.append(k, JSON.stringify(value));
-    } else if (typeof value === 'boolean') {
-      formData.append(k, value ? 'true' : 'false');
-    } else if (value !== null && value !== undefined) {
-      formData.append(k, String(value));
-    }
-  });
-
-  if (includePdf && pdfBlob.value) {
-    const safeName = (payload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20);
-    formData.append("final_pdf", pdfBlob.value, `DI_${safeName}.pdf`);
-  }
-  return formData;
-};
+// ── Payload & validation ─────────────────────────────────────────────────────
 
 const validateAndToast = (payload: DisposisiPayload) => {
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
     const firstKey = Object.keys(check.errors)[0];
-    toast.add({ title: 'Validasi Gagal', description: check.errors[firstKey], color: 'error' });
+    toastError("Validasi Gagal", check.errors[firstKey]);
     return false;
   }
   return true;
 };
 
+const getBasePayload = (): DisposisiPayload => ({
+  id_naskah: editDraftId.value || null,
+  pengirim: user.value?.position || "",
+  tertuju: selectedTertuju.value.map(i => i.value),
+  tanggal_disposisi: tglDb.value,
+  tanggal_ui: tglDisplay.value,
+  sifat: selectedSifat.value?.label || "Biasa",
+  ref_nomor: refNumber.value || "-",
+  ref_perihal: refPerihal.value || "-",
+  catatan: showEditor.value ? editorContent.value : "",
+  htmlContent: showEditor.value ? editorContent.value : "",
+  disposisi: selectedChecklist.value,
+  is_priority: isPriority.value,
+  lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean)
+});
+
+const createFormData = (payload: DisposisiPayload, includePdf = false) => {
+  const safeName = (payload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+  const formData = buildFormData(payload, {
+    includePdf,
+    skipKeys: ['tanggal_ui'],
+    pdfFileName: `DI_${safeName}.pdf`
+  });
+  return formData;
+};
+
+// ── Handlers ─────────────────────────────────────────────────────────────────
+
+const handlePriorityChange = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (!target.checked) {
+    isPriority.value = false;
+    return;
+  }
+  target.checked = false;
+  const isConfirmed = await Alert.confirm('Tandai sebagai Prioritas?', 'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?', 'Ya, Prioritas', 'Batal', false);
+  Alert.close();
+  if (isConfirmed) isPriority.value = true;
+};
+
 const handlePreview = async () => {
-  const payload = getPayload();
+  const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
   loadingMessage.value = "Memproses Pratinjau...";
   try {
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    const fd = createFormData(payload, false);
-    const blob = await generatePdf(fd);
-    pdfBlob.value = new Blob([blob], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(pdfBlob.value);
+    const blob = await generatePdf(createFormData(payload, false));
+    setPdfBlob(blob);
     isOpenPreview.value = true;
   } catch (err) {
-    toast.add({ title: 'Gagal Preview', color: 'error' });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
-
-const confirmKirimDokumen = async () => {
-  const payload = getPayload();
-  if (!validateAndToast(payload)) return;
-
-  const diConfig = digsigConfig.value.find(c => c.jenisNaskah === 'DI');
-  const isDigsigEnabled = diConfig?.enabled ?? false;
-
-  if (isDigsigEnabled) {
-    selectedSendType.value = "digsig";
-    isPassphraseModalOpen.value = true;
-  } else {
-    selectedSendType.value = "qr_only";
-    const isConfirmed = await Alert.confirm(
-      'Konfirmasi Akhir',
-      'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?',
-      'Ya, Kirim Sekarang',
-      'Periksa Lagi',
-      false
-    );
-
-    if (isConfirmed) {
-      await handleKirimDokumen();
-    }
-  }
-};
-
-const handlePassphraseSubmit = async (passphrase: string) => {
-  if (selectedSendType.value === 'digsig' && !passphrase) {
-    toast.add({
-      title: 'Wajib Diisi',
-      description: 'Harap masukkan passphrase Anda',
-      color: 'warning'
-    });
-    isPassphraseModalOpen.value = true;
-    return;
-  }
-
-  const confirmMessage = selectedSendType.value === 'digsig'
-    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
-
-  const isConfirmed = await Alert.confirm(
-    'Konfirmasi Akhir',
-    confirmMessage,
-    'Ya, Kirim Sekarang',
-    'Periksa Lagi',
-    false
-  );
-
-  if (isConfirmed) {
-    await handleKirimDokumen(passphrase);
-  }
-};
-
-const handleKirimDokumen = async (passphrase: string = '') => {
-  const payload = getPayload();
-
-  try {
-    loadingMessage.value = "Mengirim Disposisi...";
-    isLoadingData.value = true;
-
-    let nikValue = '';
-
-    if (selectedSendType.value === 'digsig') {
-      if (!user.value?.nik) {
-        throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
-      }
-      nikValue = user.value.nik;
-    }
-
-    const fdPreview = createFormData(payload, false);
-    const blobResponse = await generatePdf(fdPreview);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-
-    const fdFinal = createFormData(payload, true);
-
-    fdFinal.append('passphrase', passphrase);
-    fdFinal.append('sign_option', selectedSendType.value);
-
-    if (nikValue) {
-      fdFinal.append('nik', nikValue);
-    }
-
-    let res;
-    if (editDraftId.value) {
-      res = await sendDraft(fdFinal, editDraftId.value);
-    } else {
-      res = await sendDisposisi(fdFinal);
-    }
-
-    if (res?.success || res?.data?.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Disposisi berhasil dikirim', color: 'success' });
-      Alert.close();
-      router.push("/korespondensi/terkirim");
-    } else {
-      throw new Error(res?.data?.message || 'Pengiriman gagal');
-    }
-  } catch (e: any) {
-    isLoadingData.value = false;
-    Alert.close();
-
-    console.error("Gagal mengirim:", e);
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-
-    if (errMsg.toLowerCase().includes('passphrase')) {
-      isPassphraseModalOpen.value = true;
-    }
-
-    toast.add({
-      title: 'Gagal Mengirim',
-      description: errMsg,
-      color: 'error'
-    });
+    toastError("Gagal Preview");
   } finally {
     isLoadingData.value = false;
   }
 };
 
 const handleSaveDraft = async () => {
-  const payload = getPayload();
-  if (!validateAndToast(payload)) throw new Error("Validation failed");
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
 
+  loadingMessage.value = "Menyimpan Draft...";
+  isLoadingData.value = true;
   try {
-    loadingMessage.value = "Menyimpan Draft...";
-    isLoadingData.value = true;
-
     const fd = createFormData(payload, false);
     if (editDraftId.value) {
       await updateDraft(fd, editDraftId.value);
     } else {
-      await saveDraft(fd);
+      await saveDI(fd);
     }
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    redirectDraf();
   } catch (e: any) {
-    console.error("Gagal simpan draft:", e);
-    throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
+    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
   } finally {
     isLoadingData.value = false;
   }
 };
 
-const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Simpan sebagai Draft?',
-    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
-    'Ya, Simpan',
-    'Batal',
-    false
-  );
+// Entry point saat klik Kirim dari preview slideover
+// Tutup slideover dulu → fetch config → buka modal
+// (slideover dan modal tidak boleh terbuka bersamaan — bisa saling nutup)
+const handleConfirmKirim = async () => {
+  const payload = getBasePayload()
+  if (!validateAndToast(payload)) return
 
-  if (!isConfirmed) return;
-
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false }
   try {
-    await handleSaveDraft();
-    Alert.close();
-  } catch (error) {
-    console.error(error);
-    Alert.close();
+    const res = await getConfigDigsig('DI')
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    }
+  } catch {
+    // semua false jika gagal fetch
   }
+
+  bsreDisabled.value = !configData.digsig
+  qrDisabled.value = !configData.ttdQr
+  basahDisabled.value = !configData.ttdBasah
+  isSignMethodModalOpen.value = true
+}
+
+// Dipanggil oleh TulisSignMethodModal @submit
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string; file?: File | null }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || '', data.file ?? undefined);
 };
 
-onMounted(async () => {
-  await fetchDigsigConfig();
+const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
+  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
+    return
+  }
 
+  const basePayload = getBasePayload()
+  loadingMessage.value = 'Mengirim Disposisi...'
+  isLoadingData.value = true
+
+  try {
+    const formDataPreview = createFormData(basePayload, false)
+    const blobResponse = await generatePdf(formDataPreview)
+    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' })
+
+    const safeName = (basePayload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20)
+
+    const kirimPayload: Record<string, any> = {
+      ...basePayload,
+      sign_option: selectedSendType.value,
+      passphrase: passphrase,
+    }
+
+    if (selectedSendType.value === 'digsig') {
+      if (!user.value?.nik) throw new Error('NIK pengguna tidak ditemukan untuk TTE.')
+      kirimPayload.nik = user.value.nik
+    }
+
+    const fdFinal = buildFormData(kirimPayload, {
+      includePdf: true,
+      skipKeys: ['tanggal_ui'],
+      pdfFileName: `DI_${safeName}.pdf`
+    })
+
+    if (selectedSendType.value === 'basah' && fileBasah) {
+      fdFinal.append('file_ttd_basah', fileBasah)
+    }
+
+    const res = editDraftId.value
+      ? await sendDraft(fdFinal, editDraftId.value)
+      : await sendDisposisi(fdFinal)
+
+    if (res?.data?.success || res?.success) {
+      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
+      toastSuccess('Berhasil', 'Disposisi berhasil dikirim')
+      Alert.close()
+      redirectTerkirim()
+    } else {
+      throw new Error(res?.data?.message || 'Pengiriman gagal')
+    }
+  } catch (e: any) {
+    isLoadingData.value = false
+    Alert.close()
+
+    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen'
+
+    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+      bsreDisabled.value = false
+      isSignMethodModalOpen.value = true
+      await nextTick()
+      signMethodModalRef.value?.setPassphraseError('Passphrase yang Anda masukkan salah')
+    } else {
+      toastError('Gagal Mengirim', errMsg)
+    }
+  } finally {
+    isLoadingData.value = false
+  }
+}
+
+const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
+
+// ── onMounted ─────────────────────────────────────────────────────────────────
+
+onMounted(async () => {
+  // Tidak ada fetchDigsigConfig() di sini — config di-fetch on-demand saat klik Kirim
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -621,68 +509,37 @@ onMounted(async () => {
 
   try {
     const res = await getRecipients(user.value?.position);
-    recipientList.value = res.recipients;
+    recipientList.value = (res.recipients || []).map((r: any) => ({
+      label: r.label || r.nama,
+      labelJob: r.labelJob || r.positionText || r.position_text,
+      value: String(r.value || r.id || r.position_id),
+      raw: r
+    }));
 
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
       const resDraft = await getDraftDetail(draftId);
 
-      if (resDraft.data && resDraft.data.flow && resDraft.data.flow.length > 0) {
-        isSettingInitialData.value = true;
-
+      if (resDraft.data?.flow?.[0]) {
         const d = resDraft.data.flow[0];
-
         refNumber.value = d.ref_nomor || d.nomor || "-";
         refPerihal.value = d.ref_perihal || d.perihal || "-";
         isPriority.value = d.is_priority === true || d.is_priority === 1 || String(d.is_priority) === "1";
 
-        if (d.tanggal) {
-          const [y, m, day] = d.tanggal.split('-').map(Number);
-          date.value = new CalendarDate(y, m, day);
-        }
+        if (d.tanggal) setDateFromString(d.tanggal);
+        setSifatFromString(d.sifat);
 
         editorContent.value = d.catatan || d.htmlContent || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(editorContent.value);
 
-        if (d.disposisi) {
-          if (Array.isArray(d.disposisi)) {
-            selectedChecklist.value = d.disposisi;
-          } else if (typeof d.disposisi === 'string') {
-            selectedChecklist.value = d.disposisi.split('\n');
-          }
-        }
-
-        const foundSifat = sifatOptions.find(s => s.value.toLowerCase() === (d.sifat || '').toLowerCase());
-        selectedSifat.value = foundSifat || sifatOptions[3];
-
-        const rawPenerima = d.penerima || [];
-        selectedTertuju.value = rawPenerima.map((item: any) => {
-          const val = String(item.position_id || item.value || item.id);
-          const found = recipientList.value.find(r => r.value === val);
-          return found || {
-            value: val,
-            label: item.nama || item.label,
-            labelJob: item.position_text || item.positionText || item.labelJob
-          };
-        });
-
-        if (d.lampiran_files) {
-          existingFiles.value = d.lampiran_files.map((f: any) => ({
-            id: f.id,
-            fileName: f.file_name || f.fileName,
-            filePath: f.file_url || f.file_path || f.filePath,
-            fileSize: 0
-          }));
-        }
-
-        await nextTick();
-        isSettingInitialData.value = false;
+        selectedChecklist.value = Array.isArray(d.disposisi) ? d.disposisi : (typeof d.disposisi === 'string' ? d.disposisi.split('\n') : []);
+        selectedTertuju.value = mapApiToUI(d.penerima || [], recipientList.value);
+        existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
       }
     }
   } catch (e) {
-    console.error(e);
-    toast.add({ title: 'Gagal memuat data', color: 'error' });
+    toastError("Gagal memuat data", "Terjadi kesalahan saat memuat data dari server.");
   } finally {
     isLoadingData.value = false;
   }
