@@ -13,6 +13,7 @@
           () => {
             isEditMode = false;
             form = { persnum: '', role: '' };
+            resetPersonSearch();
             showAddModal = true;
           }
         "
@@ -295,13 +296,54 @@
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
           >Persnum</label
         >
-        <input
-          v-model="form.persnum"
-          type="text"
-          :disabled="isEditMode"
-          :placeholder="$t('ma_persnum_placeholder')"
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-        />
+        <div class="relative">
+          <input
+            v-model="personSearchQuery"
+            type="text"
+            :disabled="isEditMode"
+            :placeholder="$t('ma_persnum_placeholder')"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            @input="onPersonSearch"
+            @focus="personSuggestions.length > 0 && (showPersonSuggestions = true)"
+            @blur="hidePersonSuggestions"
+            @keydown.escape="showPersonSuggestions = false"
+            @keydown.down.prevent="highlightedIndex = Math.min(highlightedIndex + 1, personSuggestions.length - 1)"
+            @keydown.up.prevent="highlightedIndex = Math.max(highlightedIndex - 1, 0)"
+            @keydown.enter.prevent="selectPersonSuggestion(personSuggestions[highlightedIndex])"
+            autocomplete="off"
+          />
+          <div
+            v-if="isSearchingPerson"
+            class="absolute right-3 top-1/2 -translate-y-1/2"
+          >
+            <div
+              class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"
+            />
+          </div>
+          <div
+            v-if="showPersonSuggestions && personSuggestions.length > 0"
+            class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+          >
+            <div
+              v-for="(person, idx) in personSuggestions"
+              :key="person.id"
+              @mousedown.prevent="selectPersonSuggestion(person)"
+              :class="[
+                'px-4 py-2 cursor-pointer text-sm transition-colors',
+                highlightedIndex === idx
+                  ? 'bg-primary-100 dark:bg-gray-600'
+                  : 'hover:bg-primary-50 dark:hover:bg-gray-700',
+              ]"
+            >
+              <span class="font-medium text-gray-800 dark:text-white">{{
+                person.name
+              }}</span>
+              <span class="text-gray-500 dark:text-gray-400 ml-1"
+                >- {{ person.persnum }}</span
+              >
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- FIELD ROLE -->
@@ -346,6 +388,8 @@ import {
 } from "lucide-vue-next";
 import Modal from "@/components/Modal.vue";
 import { useManajemenAkun } from "@/composables/useManajemenAkun";
+import { usePerson } from "@/composables/usePerson";
+import type { PersonSuggestion } from "@/composables/usePerson";
 import { useToast } from "#imports";
 
 const { user: authUser } = useAuth();
@@ -357,6 +401,62 @@ definePageMeta({
 
 const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
   useManajemenAkun();
+const { searchPersons } = usePerson();
+
+// Person autocomplete state
+const personSearchQuery = ref('');
+const personSuggestions = ref<PersonSuggestion[]>([]);
+const showPersonSuggestions = ref(false);
+const isSearchingPerson = ref(false);
+const highlightedIndex = ref(0);
+let personSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const resetPersonSearch = () => {
+  personSearchQuery.value = '';
+  personSuggestions.value = [];
+  showPersonSuggestions.value = false;
+  highlightedIndex.value = 0;
+};
+
+const onPersonSearch = () => {
+  form.value.persnum = '';
+  highlightedIndex.value = 0;
+
+  if (personSearchTimeout) clearTimeout(personSearchTimeout);
+
+  if (!personSearchQuery.value.trim()) {
+    personSuggestions.value = [];
+    showPersonSuggestions.value = false;
+    return;
+  }
+
+  personSearchTimeout = setTimeout(async () => {
+    isSearchingPerson.value = true;
+    try {
+      const res = await searchPersons(personSearchQuery.value);
+      personSuggestions.value = res.data?.data || [];
+      showPersonSuggestions.value = personSuggestions.value.length > 0;
+    } catch {
+      personSuggestions.value = [];
+      showPersonSuggestions.value = false;
+    } finally {
+      isSearchingPerson.value = false;
+    }
+  }, 300);
+};
+
+const selectPersonSuggestion = (person: PersonSuggestion | undefined) => {
+  if (!person) return;
+  form.value.persnum = String(person.persnum);
+  personSearchQuery.value = `${person.name} - ${person.persnum}`;
+  showPersonSuggestions.value = false;
+};
+
+const hidePersonSuggestions = () => {
+  setTimeout(() => {
+    showPersonSuggestions.value = false;
+  }, 150);
+};
 
 const confirmDeleteOpen = ref(false);
 const itemToDelete = ref<any>(null);
@@ -417,6 +517,9 @@ const openEdit = (row: any) => {
     persnum: row.persnum,
     role: row.role,
   };
+  personSearchQuery.value = `${row.name} - ${row.persnum}`;
+  personSuggestions.value = [];
+  showPersonSuggestions.value = false;
   showAddModal.value = true;
 };
 
@@ -435,6 +538,7 @@ const saveAccount = async () => {
     isEditMode.value = false;
     editingUser.value = null;
     form.value = { persnum: "", role: "" };
+    resetPersonSearch();
 
     showToast(
       t("ma_tb_title"),

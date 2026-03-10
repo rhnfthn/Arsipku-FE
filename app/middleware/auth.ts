@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   if (process.server) return
 
-  const token = localStorage.getItem("token")
+  const token = localStorage.getItem('token')
 
   if (!token) {
     const { getSSORedirectUrl } = useAuth()
@@ -11,7 +11,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return navigateTo(ssoUrl, { external: true })
     }
 
-    return navigateTo("/")
+    return navigateTo('/')
   }
 
   const { user, getProfile } = useAuth()
@@ -22,51 +22,47 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const role = user.value?.role ?? null
   const path = to.path
 
-  if (role === "superadmin") return
+  if (role === 'superadmin') return
 
-  const adminForbiddenPrefixes = [
-    "/master",
-    "/master-data",
-    "/konfigurasi-sistem",
-  ]
+  const adminForbiddenPrefixes = ['/master', '/master-data', '/konfigurasi-sistem']
 
-  if (role === "admin") {
+  if (role === 'admin') {
     const forbidden = adminForbiddenPrefixes.some(
-      (prefix) => path === prefix || path.startsWith(prefix + "/")
+      (prefix) => path === prefix || path.startsWith(prefix + '/')
     )
     if (forbidden) {
-      return navigateTo("/beranda")
+      return navigateTo('/beranda')
     }
     return
   }
-
 
   const userAllowedPrefixes = [
-    "/beranda",
-    "/korespondensi",
-    "/penandatangan",
-    "/penyingkat-tautan",
-    "/template",
-    "/titelatur",
-    "/usulan-penomoran",
-    "/profil",
-    "/search",
-    "/label",
-    "/berkas",
-    "/lampiran",
-    "/switch",
-    "/faq/menu",
+    '/beranda',
+    '/korespondensi',
+    '/penandatangan',
+    '/penyingkat-tautan',
+    '/template',
+    '/titelatur',
+    '/usulan-penomoran',
+    '/profil',
+    '/search',
+    '/label',
+    '/berkas',
+    '/lampiran',
+    '/switch',
+    '/faq/menu',
+    '/persetujuan-penomoran'
   ]
 
-  if (role === "user") {
+  if (role === 'user') {
     const allowed = userAllowedPrefixes.some(
-      (prefix) => path === prefix || path.startsWith(prefix + "/")
+      (prefix) => path === prefix || path.startsWith(prefix + '/')
     )
     if (!allowed) {
-      return navigateTo("/beranda")
+      return navigateTo('/beranda')
     }
     return
   }
 
-  return navigateTo("/beranda")
+  return navigateTo('/beranda')
 })

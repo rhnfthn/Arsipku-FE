@@ -14,16 +14,42 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
+        <!-- ROWS PER PAGE -->
         <div class="flex items-center gap-2 px-4">
-          <select
-            v-model="rowsPerPage"
-            @change="handleLimitChange"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
 
         <!-- FILTER STATUS -->
@@ -34,22 +60,12 @@
             class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
             <span class="truncate">{{ currentFilterLabel }}</span>
-            <svg
+            <ChevronDown
               :class="[
                 'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0'
               ]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
           <Transition name="filter-dd">
             <div
@@ -83,12 +99,12 @@
             v-model="search"
             @input="handleSearchInput"
             :placeholder="$t('ver_cari_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
 
-      <!-- TABLE BODY (skeleton / empty / data) -->
+      <!-- TABLE -->
       <div class="overflow-x-auto">
         <table class="min-w-max bg-white dark:bg-gray-800 text-sm w-full">
           <thead class="bg-primary dark:bg-primary-800 text-white text-[15px]">
@@ -153,7 +169,6 @@
                     :style="{ width: `${55 + (j % 4) * 10}%` }"
                   ></div>
                 </td>
-                <!-- sticky status skeleton -->
                 <td
                   class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
                 >
@@ -204,9 +219,7 @@
                 </td>
                 <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
                 <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
-                <td class="px-5 py-4 dark:text-gray-300">
-                  {{ row.tglUsulan }}
-                </td>
+                <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
                 <td
                   class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
                 >
@@ -338,15 +351,10 @@
       </template>
 
       <div v-if="selectedRow" class="px-3 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
-        <!-- Detail Info -->
         <div class="space-y-4 text-base">
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-gray-500 dark:text-gray-400 text-xs">
-              {{ $t('ver_modal_tanggal') }}
-            </p>
-            <p class="mt-1 dark:text-gray-200 text-sm font-medium">
-              {{ selectedRow.tanggal }}
-            </p>
+            <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('ver_modal_tanggal') }}</p>
+            <p class="mt-1 dark:text-gray-200 text-sm font-medium">{{ selectedRow.tanggal }}</p>
           </div>
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
@@ -360,21 +368,17 @@
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('ver_modal_klasifikasi') }}
             </p>
-            <p class="text-sm font-medium mt-1 dark:text-gray-200">
-              {{ selectedRow.klasifikasi }}
-            </p>
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">{{ selectedRow.klasifikasi }}</p>
           </div>
           <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('ver_modal_jenis_naskah') }}
             </p>
-            <p class="text-sm font-medium mt-1 dark:text-gray-200">
-              {{ selectedRow.jenis }}
-            </p>
+            <p class="text-sm font-medium mt-1 dark:text-gray-200">{{ selectedRow.jenis }}</p>
           </div>
         </div>
 
-        <!-- File Lampiran Pengusul -->
+        <!-- File Lampiran -->
         <div v-if="selectedRow.file_path" class="pt-2">
           <label class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
             {{ $t('ver_file_lampiran') }}
@@ -496,7 +500,7 @@
             </div>
           </div>
 
-          <!-- Warning: ada nomor pending (tanpa ID) -->
+          <!-- Warning: ada nomor pending -->
           <div
             v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
             class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
@@ -554,10 +558,9 @@
                   <div
                     class="relative flex flex-1 min-w-0 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                   >
-                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                      {{ idx + 1 }}.
-                    </span>
-
+                    <span class="text-sm text-gray-600 dark:text-gray-400 font-medium"
+                      >{{ idx + 1 }}.</span
+                    >
                     <input
                       type="text"
                       :value="displayNomor(detail)"
@@ -569,7 +572,6 @@
                       ]"
                       readonly
                     />
-
                     <button
                       v-if="
                         detail.nomor && detail.status === 'terpakai' && detail.status !== 'hangus'
@@ -599,8 +601,9 @@
                             detail.status === 'hangus'
                         }
                       ]"
-                      >{{ getDetailStatusLabel(detail.status) }}</span
                     >
+                      {{ getDetailStatusLabel(detail.status) }}
+                    </span>
                   </div>
                 </div>
 
@@ -658,7 +661,6 @@
                       </p>
                     </div>
                   </div>
-
                   <div
                     v-else
                     class="flex items-start border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
@@ -697,14 +699,12 @@
         <!-- Keterangan Penolakan -->
         <div v-if="allUnchecked || hasUnchecked" class="pt-2">
           <label class="block text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
-            {{ $t('ver_keterangan_tolak_label') }}
-            <span class="text-red-500">*</span>
+            {{ $t('ver_keterangan_tolak_label') }} <span class="text-red-500">*</span>
             <span
               v-if="!allUnchecked"
               class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
+              >{{ $t('ver_keterangan_tolak_suffix') }}</span
             >
-              {{ $t('ver_keterangan_tolak_suffix') }}
-            </span>
           </label>
           <textarea
             v-model="keterangan_ditolak"
@@ -840,7 +840,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, Copy, ArrowUpDown } from 'lucide-vue-next'
+import { Search, Copy, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
 import { Modal } from '#components'
@@ -866,7 +866,7 @@ const {
   showToastTidakAdaNomor
 } = usePenomoran()
 
-// ─── Computed breadcrumbs & headers (locale-reactive) ─────────────────────────
+// ─── Breadcrumbs & headers ────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('ver_title'), to: '/penomoran/verifikasi' }
@@ -894,7 +894,7 @@ const currentFilterLabel = computed(
     filterOptions.value.find((o) => o.value === filterStatus.value)?.label ?? t('ver_filter_semua')
 )
 
-// ─── Row/detail status label helpers ─────────────────────────────────────────
+// ─── Status labels ────────────────────────────────────────────────────────────
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
     'Menunggu Verifikasi': t('ver_status_menunggu'),
@@ -921,7 +921,9 @@ const getDetailStatusLabel = (status: string) => {
 const isOpenPreview = ref(false)
 const pdfUrl = ref<string | null>(null)
 const rowsPerPage = ref<number>(10)
-const rowsChoices = [5, 10, 20, 50]
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
 const currentPage = ref<number>(1)
 const search = ref<string>('')
 const selectedRow = ref<any>(null)
@@ -942,9 +944,14 @@ const uncheckAll = ref(false)
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-/* ===========================
- * FETCH DATA
- * =========================== */
+// ─── Rows per page ────────────────────────────────────────────────────────────
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
+
+// ─── Fetch data ───────────────────────────────────────────────────────────────
 const fetchData = async () => {
   loading.value = true
   try {
@@ -956,23 +963,19 @@ const fetchData = async () => {
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
     }
-
     const res = await getListSubmitted(params)
     const data = res.data || []
     pagination.value = res.pagination || null
-
     if (!Array.isArray(data)) {
       rows.value = []
       return
     }
-
     rows.value = data.map((item: any) => {
       const tanggalDate = new Date(item.tanggal)
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
       const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
       const createdDate = new Date(localCreated)
       const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
-
       return {
         id: item.id,
         jenis: item.jenis,
@@ -1003,7 +1006,6 @@ const handleSearchInput = () => {
     fetchData()
   }, 500)
 }
-
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -1014,18 +1016,15 @@ const handleSort = (column: string) => {
   currentPage.value = 1
   fetchData()
 }
-
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
   fetchData()
 }
-
 const handleLimitChange = () => {
   currentPage.value = 1
   fetchData()
 }
-
 const selectFilterStatus = (item: { label: string; value: string }) => {
   filterStatus.value = item.value
   openFilterStatus.value = false
@@ -1034,7 +1033,6 @@ const selectFilterStatus = (item: { label: string; value: string }) => {
 }
 
 const totalPages = computed(() => pagination.value?.totalPages || 1)
-
 const paginationPages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
@@ -1051,9 +1049,7 @@ const paginationPages = computed(() => {
   return pages
 })
 
-/* ===========================
- * SHOW PREVIEW MODAL
- * =========================== */
+// ─── Show preview modal ───────────────────────────────────────────────────────
 const showPreview = async (row: any) => {
   try {
     const detailData = await getDetailVerifikasiRequest(row.id)
@@ -1068,9 +1064,7 @@ const showPreview = async (row: any) => {
   }
 }
 
-/* ===========================
- * TOGGLE UNCHECK ALL
- * =========================== */
+// ─── Toggle uncheck all ───────────────────────────────────────────────────────
 const toggleUncheckAll = () => {
   if (!selectedRow.value?.details) return
   selectedRow.value.details.forEach((d: any) => {
@@ -1101,9 +1095,7 @@ watch(
   { deep: true }
 )
 
-/* ===========================
- * PREVIEW FILE
- * =========================== */
+// ─── Preview file ─────────────────────────────────────────────────────────────
 const previewFile = (detail: any) => {
   const url = detail.file_url || (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null)
   if (!url) {
@@ -1114,21 +1106,17 @@ const previewFile = (detail: any) => {
   isOpenPreview.value = true
 }
 
-/* ===========================
- * HELPERS
- * =========================== */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const displayNomor = (detail: any) => {
   if (detail.status === 'terpakai' && detail.nomor) return detail.nomor
   if (detail.template_nomor) return detail.template_nomor
   if (selectedRow.value?.template_nomor) return selectedRow.value.template_nomor
   return '-'
 }
-
 const handleCopy = (value: string) => {
   navigator.clipboard.writeText(value)
   showToastCopied(value)
 }
-
 const getFileName = (path: string) => (path ? path.split('/').pop() || path : '-')
 const hasExistingFile = (detail: any) => !!(detail.file_name || detail.file_text || detail.file_url)
 const getDisplayFileName = (detail: any) => {
@@ -1138,15 +1126,12 @@ const getDisplayFileName = (detail: any) => {
   return 'File Terlampir'
 }
 
-/* ===========================
- * COMPUTED — VALIDASI
- * =========================== */
+// ─── Computed validasi ────────────────────────────────────────────────────────
 const validDetails = computed(() =>
   (selectedRow.value?.details || []).filter(
     (d: any) => d.id && d.id !== null && d.id !== 'null' && d.status !== 'hangus'
   )
 )
-
 const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked))
 const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked))
 const allUnchecked = computed(
@@ -1155,9 +1140,7 @@ const allUnchecked = computed(
 const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length)
 const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length)
 
-/* ===========================
- * CONFIRM / PROCESS APPROVAL
- * =========================== */
+// ─── Approval ─────────────────────────────────────────────────────────────────
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
     showToastNomorMinimal()
@@ -1172,7 +1155,6 @@ const confirmApproval = () => {
   showKeteranganWarning.value = false
   showConfirmApprove.value = true
 }
-
 const processApproval = async () => {
   showConfirmApprove.value = false
   if (!selectedRow.value) return
@@ -1202,9 +1184,7 @@ const processApproval = async () => {
   }
 }
 
-/* ===========================
- * CONFIRM / PROCESS REJECTION
- * =========================== */
+// ─── Rejection ────────────────────────────────────────────────────────────────
 const confirmRejection = () => {
   if (!allUnchecked.value) return
   if (!keterangan_ditolak.value.trim()) {
@@ -1216,7 +1196,6 @@ const confirmRejection = () => {
   showKeteranganWarning.value = false
   showConfirmReject.value = true
 }
-
 const processRejection = async () => {
   showConfirmReject.value = false
   if (!selectedRow.value) return
@@ -1246,25 +1225,17 @@ const processRejection = async () => {
   }
 }
 
+// ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
   for (const el of Array.from(document.querySelectorAll('[data-custom-dropdown]'))) {
     if (el.contains(target)) return
   }
   openFilterStatus.value = false
 }
 
-onMounted(async () => {
-  await fetchData()
-  document.addEventListener('click', handleDocumentClick)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-  if (searchTimeout) clearTimeout(searchTimeout)
-  pdfUrl.value = null
-})
-
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
 const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
@@ -1278,10 +1249,20 @@ const onRowMouseLeave = () => {
   tooltip.value.show = false
 }
 
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  await fetchData()
+  document.addEventListener('click', handleDocumentClick)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  pdfUrl.value = null
+})
+
 watch(keterangan_ditolak, (v) => {
   if (v.trim()) showKeteranganWarning.value = false
 })
-
 watch(isOpenPreview, (open) => {
   if (open) {
     openPreview.value = false
@@ -1293,6 +1274,21 @@ watch(isOpenPreview, (open) => {
 </script>
 
 <style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);

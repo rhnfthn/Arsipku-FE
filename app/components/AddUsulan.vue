@@ -31,7 +31,7 @@
 
     <!-- ==================== STEP 1 ==================== -->
     <div v-if="currentStep === 1" class="space-y-4">
-      <div class="p-1 flex flex-col gap-4 pb-5">
+      <div class="p-1 flex flex-col gap-3">
         <div class="text-xs text-gray-500 mb-2">
           <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
             {{ $t('add_usl_step_form') }}
@@ -225,7 +225,7 @@
 
         <!-- Jumlah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200 -mt-1">
             {{ $t('add_usl_jumlah') }} <span class="text-red-500">*</span>
           </Heading>
           <input
@@ -443,7 +443,9 @@
         <span class="dark:text-gray-400">{{ $t('add_usl_step3_desc') }}</span>
       </div>
 
-      <div class="max-h-full border border-gray-200 dark:border-gray-700 mb-5 rounded-lg">
+      <div
+        class="max-h-full bg-gray-50 border border-gray-200 dark:border-gray-700 mb-5 rounded-lg"
+      >
         <div class="w-full px-5 py-2 text-sm">
           <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">
             {{ formatDateTime(new Date()) }}
@@ -542,7 +544,7 @@
     <!-- FOOTER BUTTON -->
     <template #footer>
       <div
-        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700 mt-5"
       >
         <!-- Step 1: Tombol Batal -->
         <Button
@@ -559,7 +561,7 @@
           v-if="currentStep === 1"
           @click="goToStep2"
           :disabled="isSubmittingStep1"
-          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg
             v-if="isSubmittingStep1"
@@ -587,7 +589,7 @@
           v-if="currentStep === 2"
           @click="goToStep3"
           :disabled="isSubmittingStep2"
-          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg
             v-if="isSubmittingStep2"
@@ -613,7 +615,7 @@
           v-if="currentStep === 3"
           variant="primary"
           @click="finishAndClose"
-          class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md"
+          class="w-full justify-center px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md"
         >
           {{ $t('add_usl_btn_selesai') }}
         </Button>
@@ -653,7 +655,7 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 
 const { t } = useI18n()
 const toast = useToast()
-const { getKlasifikasi, deleteUsulanUser } = usePenomoran()
+const { getKlasifikasi, deleteUsulanUser, submitBooking, submitBookingSingleFile } = usePenomoran()
 const { user, getProfile } = useAuth()
 const { get, post, api } = useApi()
 
@@ -1040,6 +1042,7 @@ async function goToStep2() {
 // ─── STEP 2 → 3 ───────────────────────────────────────────────
 async function goToStep3() {
   if (isSingleFile.value) {
+    // Single file: wajib ada 1 file
     if (!singleFile.value) {
       toast.add({
         title: t('add_usl_toast_file_wajib_title'),
@@ -1049,14 +1052,17 @@ async function goToStep3() {
       return
     }
   } else {
-    const missingIndexes = []
-    for (let i = 0; i < form.value.jumlah; i++) {
-      if (!(filesByIndex.value[i] instanceof File)) missingIndexes.push(i + 1)
-    }
+    // Multiple file: SETIAP nomor wajib punya file
+    const missingIndexes = filesByIndex.value
+      .map((f, i) => (!(f instanceof File) ? i + 1 : null))
+      .filter(Boolean)
+
     if (missingIndexes.length > 0) {
       toast.add({
         title: t('add_usl_toast_file_belum_lengkap_title'),
-        description: t('add_usl_toast_file_belum_lengkap_desc'),
+        description: t('add_usl_toast_file_belum_lengkap_desc', {
+          nomor: missingIndexes.join(', ')
+        }),
         color: 'warning'
       })
       return
@@ -1066,56 +1072,29 @@ async function goToStep3() {
   isSubmittingStep2.value = true
   try {
     let responseData
+
     if (isSingleFile.value) {
-      const formData = new FormData()
-      formData.append('file', singleFile.value)
-      const res = await api.post(
-        `/nomor-request/${createdRequestId.value}/booking-single-file`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
-      responseData = res.data
+      // POST /nomor-request/:id/booking-single-file
+      responseData = await submitBookingSingleFile(createdRequestId.value, singleFile.value)
     } else {
+      // POST /admin/nomor-request/:id/booking  ← isAdmin: true
       const formData = new FormData()
       filesByIndex.value.forEach((file) => {
-        if (file instanceof File) {
-          formData.append('file', file)
-          formData.append('file_name', file.name)
-          formData.append('file_text', file.name)
-        }
+        formData.append('file', file)
+        formData.append('file_name', file.name)
+        formData.append('file_text', file.name)
       })
-      const res = await api.post(
-        `/admin/nomor-request/${createdRequestId.value}/booking`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
-      responseData = res.data
+      responseData = await submitBooking(createdRequestId.value, formData, false)
     }
 
     bookingDetails.value = responseData?.data?.details ?? []
-    toast.add({
-      title: t('add_usl_toast_draft_berhasil_title'),
-      description: responseData?.message || t('add_usl_toast_file_berhasil_desc'),
-      color: 'success'
-    })
     currentStep.value = 3
-  } catch (err) {
-    console.error('❌ Error submit booking:', err)
-    const msg =
-      err.response?.data?.message ||
-      err.response?.data?.error ||
-      err.message ||
-      t('add_usl_toast_gagal_unggah_desc')
-    toast.add({
-      title: t('add_usl_toast_gagal_title'),
-      description: Array.isArray(msg) ? msg.join(', ') : msg,
-      color: 'error'
-    })
+  } catch {
+    // toast sudah ditangani di composable
   } finally {
     isSubmittingStep2.value = false
   }
 }
-
 // ─── FINISH ───────────────────────────────────────────────────
 function finishAndClose() {
   toast.add({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import Modal from '~/components/Modal.vue'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
@@ -12,15 +12,11 @@ definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
 
-// ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('tit_title'), to: '/admin/titelatur' }
 ])
 
-// ================================
-// COMPOSABLE
-// ================================
 const {
   items,
   loading,
@@ -34,11 +30,14 @@ const {
 
 onMounted(async () => {
   await fetchTitelatur(true)
+  document.addEventListener('click', handleDocumentClick)
 })
 
-// ================================
-// SEARCH + SORT
-// ================================
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
+
+// ─── Search + Sort ────────────────────────────────────────────────────────────
 const search = ref('')
 const filteredItems = computed(() => {
   const s = search.value.toLowerCase()
@@ -69,14 +68,21 @@ const sortedItems = computed(() => {
   return arr
 })
 
-// ================================
-// PAGINATION
-// ================================
+// ─── Pagination ───────────────────────────────────────────────────────────────
 const currentPage = ref(1)
 const rowsPerPage = ref(10)
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
+
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  currentPage.value = 1
+}
 
 const totalItems = computed(() => filteredItems.value.length)
-const totalPages = computed(() => Math.ceil(totalItems.value / rowsPerPage.value))
+const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)))
 
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value
@@ -101,9 +107,13 @@ const paginationPages = computed(() => {
   return pages
 })
 
-// ================================
-// MODAL: EDIT
-// ================================
+// ─── Click outside ────────────────────────────────────────────────────────────
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+}
+
+// ─── Modal: Edit ──────────────────────────────────────────────────────────────
 const showEditModal = ref(false)
 const selectedItem = ref<TitelaturItem | null>(null)
 const isSavingEdit = ref(false)
@@ -151,9 +161,7 @@ const saveEdit = async () => {
   }
 }
 
-// ================================
-// MODAL: ADD
-// ================================
+// ─── Modal: Add ───────────────────────────────────────────────────────────────
 const showAddModal = ref(false)
 const isSavingAdd = ref(false)
 
@@ -195,9 +203,7 @@ const saveAdd = async () => {
   }
 }
 
-// ================================
-// POPUP DELETE
-// ================================
+// ─── Popup Delete ─────────────────────────────────────────────────────────────
 const confirmDeleteOpen = ref(false)
 const itemToDelete = ref<TitelaturItem | null>(null)
 const isDeletingItem = ref(false)
@@ -255,14 +261,41 @@ const deleteNow = async () => {
         class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
         <div class="flex items-center gap-3 flex-wrap">
-          <select
-            v-model="rowsPerPage"
-            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option v-for="n in [5, 10, 15]" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+          <!-- ROWS PER PAGE -->
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
 
           <div class="flex items-center gap-2">
             <button
@@ -300,15 +333,9 @@ const deleteNow = async () => {
         <table class="min-w-full text-left text-sm">
           <thead class="bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-semibold">
-                {{ $t('tit_col_indonesia') }}
-              </th>
-              <th class="px-4 py-3 font-semibold">
-                {{ $t('tit_col_inggris') }}
-              </th>
-              <th class="px-4 py-3 font-semibold text-center">
-                {{ $t('tit_col_aksi') }}
-              </th>
+              <th class="px-4 py-3 font-semibold">{{ $t('tit_col_indonesia') }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t('tit_col_inggris') }}</th>
+              <th class="px-4 py-3 font-semibold text-center">{{ $t('tit_col_aksi') }}</th>
             </tr>
           </thead>
 
@@ -342,9 +369,7 @@ const deleteNow = async () => {
                 :key="it.id"
                 class="border-b border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
               >
-                <td class="px-5 py-3 text-gray-900 dark:text-white">
-                  {{ it.long_text || '-' }}
-                </td>
+                <td class="px-5 py-3 text-gray-900 dark:text-white">{{ it.long_text || '-' }}</td>
                 <td class="px-5 py-3 text-gray-900 dark:text-white">
                   {{ it.long_text_en || '-' }}
                 </td>
@@ -366,7 +391,6 @@ const deleteNow = async () => {
                 </td>
               </tr>
 
-              <!-- Empty State -->
               <tr v-if="paginatedItems.length === 0">
                 <td colspan="3" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                   {{ $t('tit_empty') }}
@@ -388,7 +412,6 @@ const deleteNow = async () => {
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- BACK -->
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
@@ -410,7 +433,6 @@ const deleteNow = async () => {
             {{ $t('sebelumnya') }}
           </button>
 
-          <!-- PAGE NUMBERS -->
           <div class="flex items-center gap-1">
             <button
               v-if="paginationPages[0] > 1"
@@ -424,7 +446,6 @@ const deleteNow = async () => {
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >...</span
             >
-
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -438,13 +459,11 @@ const deleteNow = async () => {
             >
               {{ page }}
             </button>
-
             <span
               v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >...</span
             >
-
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
@@ -454,7 +473,6 @@ const deleteNow = async () => {
             </button>
           </div>
 
-          <!-- NEXT -->
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -553,3 +571,21 @@ const deleteNow = async () => {
     />
   </div>
 </template>
+
+<style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>

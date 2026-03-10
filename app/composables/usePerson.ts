@@ -1,5 +1,12 @@
 import { useApi } from "~/composables/useApi";
 
+export interface PersonSuggestion {
+  id: string;
+  persnum: number;
+  name: string;
+  gender: string;
+}
+
 export const usePerson = () => {
   const { apiGet } = useApi();
 
@@ -10,5 +17,18 @@ export const usePerson = () => {
     }>("/person");
   };
 
-  return { getPersons };
+  const searchPersons = (search: string) => {
+    return apiGet<{
+      success: boolean;
+      data: {
+        data: PersonSuggestion[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>("/person", { params: { search } });
+  };
+
+  return { getPersons, searchPersons };
 };

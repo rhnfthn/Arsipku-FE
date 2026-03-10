@@ -22,15 +22,40 @@
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
         <div class="flex items-center gap-2 px-4">
-          <select
-            v-model="limit"
-            @change="handleLimitChange"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ limit }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectLimit(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    limit === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
         <div class="relative flex-1 w-full md:w-56">
           <Search
@@ -40,7 +65,7 @@
             v-model="searchQuery"
             @input="handleSearchInput"
             :placeholder="$t('nom_cari_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400"
           />
         </div>
       </div>
@@ -393,7 +418,13 @@
               <h4 class="text-l font-semibold text-gray-900 dark:text-gray-100">
                 {{ $t('nom_nomor_surat') }}
                 <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
-                  ({{ detailData.nomor_list?.length || 0 }} {{ $t('nom_nomor_suffix') }})
+                  <!-- ✅ Single file: tampilkan jumlah dari API, bukan panjang array -->
+                  ({{
+                    detailData.is_single_file
+                      ? detailData.jumlah
+                      : detailData.nomor_list?.length || 0
+                  }}
+                  {{ $t('nom_nomor_suffix') }})
                 </span>
               </h4>
             </div>
@@ -617,9 +648,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Plus, Copy } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
 import AddUsulan from '~/components/AddUsulan.vue'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
@@ -669,7 +700,9 @@ const limit = ref<number>(10)
 const currentPage = ref<number>(1)
 const sortBy = ref<string>('')
 const sortOrder = ref<'asc' | 'desc'>('desc')
-const rowsChoices = [5, 10, 20, 50]
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref<boolean>(false)
+const rowsRef = ref<HTMLElement | null>(null)
 
 const getFileUrl = (filePath: string) => `${config.public.apiBaseUrl}/${filePath}`
 
@@ -981,6 +1014,10 @@ const openRowModal = async (row) => {
       jenis: detail.jenis || row.jenis || '-',
       klasifikasiDisplay: detail.klasifikasi || row.klasifikasi || '-',
       tanggal: detail.tanggal || row.tanggal,
+      // ✅ Single file: ambil jumlah dari API (mis. 10 untuk range nomor)
+      //    Multi file: panjang array nomor_list (jumlah cards)
+      jumlah: detail.is_single_file ? detail.jumlah : nomorList.length,
+      is_single_file: !!detail.is_single_file,
       nomor_list: nomorList
     }
   } catch (err) {
@@ -988,6 +1025,8 @@ const openRowModal = async (row) => {
     detailData.value = {
       ...row,
       klasifikasiDisplay: row.klasifikasi,
+      jumlah: row.nomor_list?.length || 0,
+      is_single_file: false,
       nomor_list: (row.nomor_list || []).map((nomor, idx) => ({
         id: `${row.id_request}-${idx}`,
         nomor: typeof nomor === 'string' ? nomor : nomor.nomor,
@@ -1025,7 +1064,26 @@ watch(isOpenPreviewFile, (open) => {
   if (!open) previewPdfUrl.value = null
 })
 
+// ─── Click outside ────────────────────────────────────────────────────────────
+const selectLimit = (n: number) => {
+  limit.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
+
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
+    showRowsDropdown.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside)
   loading.value = true
   sortBy.value = 'waktu'
   sortOrder.value = 'desc'
@@ -1049,6 +1107,21 @@ const onRowMouseLeave = () => {
 </script>
 
 <style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
 @keyframes fade-in {
   from {
     opacity: 0;
