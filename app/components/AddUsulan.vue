@@ -31,7 +31,7 @@
 
     <!-- ==================== STEP 1 ==================== -->
     <div v-if="currentStep === 1" class="space-y-4">
-      <div class="p-1 flex flex-col gap-4 pb-5">
+      <div class="p-1 flex flex-col gap-3">
         <div class="text-xs text-gray-500 mb-2">
           <Heading variant="heading9b" class="text-mobile-md dark:text-white text-black mb-1">
             {{ $t('add_usl_step_form') }}
@@ -225,7 +225,7 @@
 
         <!-- Jumlah -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200 -mt-1">
             {{ $t('add_usl_jumlah') }} <span class="text-red-500">*</span>
           </Heading>
           <input
@@ -443,7 +443,9 @@
         <span class="dark:text-gray-400">{{ $t('add_usl_step3_desc') }}</span>
       </div>
 
-      <div class="max-h-full border border-gray-200 dark:border-gray-700 mb-5 rounded-lg">
+      <div
+        class="max-h-full bg-gray-50 border border-gray-200 dark:border-gray-700 mb-5 rounded-lg"
+      >
         <div class="w-full px-5 py-2 text-sm">
           <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">
             {{ formatDateTime(new Date()) }}
@@ -542,7 +544,7 @@
     <!-- FOOTER BUTTON -->
     <template #footer>
       <div
-        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700 mt-5"
       >
         <!-- Step 1: Tombol Batal -->
         <Button
@@ -559,7 +561,7 @@
           v-if="currentStep === 1"
           @click="goToStep2"
           :disabled="isSubmittingStep1"
-          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg
             v-if="isSubmittingStep1"
@@ -587,7 +589,7 @@
           v-if="currentStep === 2"
           @click="goToStep3"
           :disabled="isSubmittingStep2"
-          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full justify-center flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg
             v-if="isSubmittingStep2"
@@ -613,7 +615,7 @@
           v-if="currentStep === 3"
           variant="primary"
           @click="finishAndClose"
-          class="w-full justify-center px-5 py-2 bg-primary text-white text-sm rounded-md"
+          class="w-full justify-center px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md"
         >
           {{ $t('add_usl_btn_selesai') }}
         </Button>
