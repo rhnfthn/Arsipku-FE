@@ -36,7 +36,7 @@
         <!-- DEFAULT FOOTER -->
         <div
           v-if="!hideDefaultFooter"
-          class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2"
+          class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2 mt-5"
         >
           <button
             @click="$emit('update:modelValue', false)"

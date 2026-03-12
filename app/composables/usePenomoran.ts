@@ -482,13 +482,39 @@ export const usePenomoran = () => {
   /** ===========================
    * GET LIST USULAN (USER - by position)
    * =========================== */
-  const getListUsulanByPosition = async (positionId: string | number) => {
+  const getListUsulanByPosition = async (
+    positionId: string | number,
+    params?: {
+      search?: string
+      page?: number
+      limit?: number
+      status?: string
+      sort_by?: string
+      sort_order?: string
+    }
+  ) => {
     isLoadingList.value = true
     try {
-      console.log('📤 Fetching usulan for position:', positionId)
-      const res = await get(`/nomor-request/${positionId}`)
+      const queryParams = new URLSearchParams()
+      if (params?.search) queryParams.append('search', params.search)
+      if (params?.page) queryParams.append('page', String(params.page))
+      if (params?.limit) queryParams.append('limit', String(params.limit))
+      if (params?.status && params.status !== 'Semua') queryParams.append('status', params.status)
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by)
+      if (params?.sort_order) queryParams.append('sort_order', params.sort_order)
+
+      const queryString = queryParams.toString()
+      const endpoint = `/nomor-request/${positionId}${queryString ? `?${queryString}` : ''}`
+
+      console.log('📤 Fetching usulan for position:', positionId, 'with params:', params)
+
+      const res = await get(endpoint)
       console.log('✅ Usulan data received:', res)
-      return res.data ?? res
+
+      return {
+        data: res.data ?? [],
+        pagination: res.pagination ?? null
+      }
     } catch (e: any) {
       console.error('❌ Error ambil list usulan:', e)
       toast.add({
@@ -496,7 +522,7 @@ export const usePenomoran = () => {
         description: e.message || 'Gagal mengambil daftar usulan',
         color: 'error'
       })
-      return []
+      return { data: [], pagination: null }
     } finally {
       isLoadingList.value = false
     }

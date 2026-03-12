@@ -389,6 +389,7 @@
   "usl_filter_menunggu": "Awaiting Verification",
   "usl_filter_disetujui": "Approved",
   "usl_filter_ditolak": "Rejected",
+  "usl_filter_final": "Finale",
   "usl_cari_placeholder": "Search...",
   "usl_empty": "No data found",
   "usl_col_jenis": "Type",

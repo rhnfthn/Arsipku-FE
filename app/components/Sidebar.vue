@@ -51,7 +51,6 @@
                   : 'text-gray-600 dark:text-gray-400'
               "
             />
-
             <div
               v-if="app.hasNotification"
               class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white dark:border-gray-950 shadow-md z-10 animate-pulse"
@@ -126,7 +125,6 @@
                 :key="n"
               />
             </div>
-
             <div v-else>
               <SidebarLabelItem
                 v-for="rootLabel in labelTree"
@@ -138,7 +136,6 @@
                 @delete="openDeleteConfirm"
               />
             </div>
-
             <div
               v-if="!isLoadingLabels && labels.length === 0"
               class="px-7 py-2 text-xs text-gray-400 italic"
@@ -154,7 +151,6 @@
   <!-- MODAL ADD / EDIT LABEL -->
   <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
-
     <div
       class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all"
     >
@@ -163,7 +159,6 @@
           {{ isEditing ? 'Edit Label' : 'Label baru' }}
         </h3>
       </div>
-
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -176,7 +171,6 @@
             placeholder="Contoh: Penting"
           />
         </div>
-
         <div class="flex items-center gap-2">
           <input
             v-model="labelForm.isNested"
@@ -188,7 +182,6 @@
             Pilih label parent:
           </label>
         </div>
-
         <div>
           <select
             v-model="labelForm.parentId"
@@ -202,7 +195,6 @@
           </select>
         </div>
       </div>
-
       <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex justify-end gap-3">
         <button
           @click="closeLabelModal"
@@ -272,9 +264,7 @@ import SidebarLabelItem from '~/components/SidebarLabelItem.vue'
 const { user, getProfile } = useAuth()
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran()
-
 const { unreadCount, fetchInboxCount } = useInboxCount()
-
 const {
   labels,
   labelCounts,
@@ -288,8 +278,19 @@ const {
 
 const labelTree = computed(() => labels.value)
 const route = useRoute()
+const { t } = useI18n()
+
+// ─── Role helpers ─────────────────────────────────────────────────────────────
 
 const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role))
+
+// ✅ Manajerial BOD: semua user dengan bodTag BOD / BOD-1 / BOD-2 / BOD-3
+const isBODManajerial = computed(() => {
+  const tag = user.value?.bodTag ?? ''
+  return ['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag)
+})
+
+// ─── Position ID helper ───────────────────────────────────────────────────────
 
 const getPositionId = (userValue) => {
   if (!userValue) return null
@@ -303,12 +304,13 @@ const getPositionId = (userValue) => {
   return null
 }
 
+// ─── Count fetching ───────────────────────────────────────────────────────────
+
 const fetchCounts = async () => {
   try {
     if (!user.value) return
     const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin'
     const positionId = getPositionId(user.value)
-
     if (isAdmin) {
       await getNomorRequestCountAdmin()
     } else if (positionId && !isNaN(positionId)) {
@@ -327,13 +329,9 @@ watch(
     if (newUser) {
       fetchLabels()
       fetchLabelCounts()
-
       const posId = getPositionId(newUser)
       await fetchCounts()
-
-      if (posId && !isNaN(posId)) {
-        await fetchInboxCount(posId)
-      }
+      if (posId && !isNaN(posId)) await fetchInboxCount(posId)
     }
   },
   { immediate: true }
@@ -341,34 +339,23 @@ watch(
 
 onMounted(async () => {
   try {
-    if (!user.value) {
-      await getProfile()
-    }
+    if (!user.value) await getProfile()
     await nextTick()
-
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
-
     if (user.value) {
       fetchLabels()
       fetchLabelCounts()
       await fetchCounts()
-
       const positionId = getPositionId(user.value)
-      if (positionId && !isNaN(positionId)) {
-        await fetchInboxCount(positionId)
-      }
+      if (positionId && !isNaN(positionId)) await fetchInboxCount(positionId)
     }
-
     countInterval = setInterval(() => {
       if (user.value) {
         fetchCounts()
         fetchLabelCounts()
-
         const positionId = getPositionId(user.value)
-        if (positionId && !isNaN(positionId)) {
-          fetchInboxCount(positionId)
-        }
+        if (positionId && !isNaN(positionId)) fetchInboxCount(positionId)
       }
     }, 30000)
   } catch (error) {
@@ -376,9 +363,9 @@ onMounted(async () => {
   }
 })
 
-const props = defineProps({
-  collapsed: Boolean
-})
+// ─── Props / emits ────────────────────────────────────────────────────────────
+
+const props = defineProps({ collapsed: Boolean })
 const emit = defineEmits(['update:collapsed'])
 
 const isMobileOpen = ref(false)
@@ -387,16 +374,8 @@ const activeApp = ref('')
 const hoveredApp = ref(null)
 
 const hasInboxUnread = computed(() => unreadCount.value > 0)
-const { t } = useI18n()
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
-
-const tulisMenu = computed(() => ({
-  label: t('tulis'),
-  to: '/korespondensi/tulis',
-  icon: 'i-lucide-edit',
-  children: tulisChildrenByBod.value
-}))
 
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? ''
@@ -407,7 +386,6 @@ const tulisChildrenByBod = computed(() => {
     { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal' },
     { label: t('kajian'), to: '/korespondensi/tulis/kajian' }
   ]
-
   if (tag === 'BOD' || tag === 'BOD-1') return all
   if (tag === 'BOD-2' || tag === 'BOD-3') {
     return all.filter(
@@ -416,6 +394,13 @@ const tulisChildrenByBod = computed(() => {
   }
   return all.filter((i) => i.label === t('kajian'))
 })
+
+const tulisMenu = computed(() => ({
+  label: t('tulis'),
+  to: '/korespondensi/tulis',
+  icon: 'i-lucide-edit',
+  children: tulisChildrenByBod.value
+}))
 
 const userMenuUtama = computed(() => [
   { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
@@ -431,21 +416,42 @@ const userMenuUtama = computed(() => [
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
-// User: badge dari userCounts.menunggu_verifikasi
 const userMenuUtilitas = computed(() => {
   const badgeCount = userCounts.value.menunggu_verifikasi || 0
-  return [
+
+  const menus = [
     { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
-    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
-    {
-      label: t('usulan-penomoran'),
+    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' }
+  ]
+
+  if (isBODManajerial.value) {
+    menus.push({
+      label: t('penomoran') || 'Penomoran',
+      icon: 'i-lucide-hash',
+      children: [
+        {
+          label: t('usulan') || 'Usulan',
+          to: '/usulan-penomoran',
+          badge: badgeCount > 0 ? badgeCount : null
+        },
+        {
+          label: t('Persetujuan') || 'Persetujuan',
+          to: '/persetujuan-penomoran'
+        }
+      ]
+    })
+  } else {
+    menus.push({
+      label: t('usulan-penomoran') || 'Usulan Penomoran',
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
       badge: badgeCount > 0 ? badgeCount : null
-    }
-  ]
+    })
+  }
+
+  return menus
 })
 
 const faqMenuUser = computed(() => [
@@ -457,7 +463,7 @@ const faqMenuAdmin = computed(() => [
   { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' }
 ])
 
-// ─── Admin Menus ──────────────────────────────────────────────────────────────
+// ─── Admin menus ──────────────────────────────────────────────────────────────
 
 const adminMenuUtama = computed(() => [
   { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
@@ -473,7 +479,6 @@ const adminMenuUtama = computed(() => [
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
-// Admin utilitas: Usulan Penomoran difilter keluar untuk admin/superadmin
 const adminMenuUtilitas = computed(() => {
   const menus = [
     {
@@ -488,12 +493,7 @@ const adminMenuUtilitas = computed(() => {
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
-    {
-      label: 'Usulan Penomoran',
-      to: '/usulan-penomoran',
-      icon: 'i-lucide-hash',
-      onlyUser: true
-    }
+    { label: 'Usulan Penomoran', to: '/usulan-penomoran', icon: 'i-lucide-hash', onlyUser: true }
   ]
   return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value))
 })
@@ -506,10 +506,7 @@ const adminMenuAdministrasi = computed(() => {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
       children: [
-        {
-          label: t('usulan'),
-          to: '/penomoran/usulan'
-        },
+        { label: t('usulan'), to: '/penomoran/usulan' },
         {
           label: t('ver'),
           to: '/penomoran/verifikasi',
@@ -521,7 +518,6 @@ const adminMenuAdministrasi = computed(() => {
     },
     { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-text' }
   ]
-
   if (user.value?.role === 'superadmin') {
     base.push(
       {
@@ -538,7 +534,6 @@ const adminMenuAdministrasi = computed(() => {
       { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
     )
   }
-
   return base
 })
 
@@ -551,7 +546,6 @@ const adminMenuLaporan = computed(() => [
 // ─── Notification flags ───────────────────────────────────────────────────────
 
 const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
-
 const hasUtilitasNotification = computed(() => {
   if (!isAdminOrSuperadmin.value) return userCounts.value.menunggu_verifikasi > 0
   return false
@@ -625,7 +619,7 @@ const apps = computed(() => {
   ]
 })
 
-// ─── Active app logic ─────────────────────────────────────────────────────────
+// ─── Active app ───────────────────────────────────────────────────────────────
 
 const setActiveApp = (appId) => {
   activeApp.value = appId
@@ -709,12 +703,10 @@ const closeLabelModal = () => {
 const saveLabel = async () => {
   if (!labelForm.nama) return
   isProcessing.value = true
-
   const payload = {
     nama: labelForm.nama,
     idParent: labelForm.isNested && labelForm.parentId ? labelForm.parentId : null
   }
-
   try {
     if (isEditing.value) {
       await updateLabel(labelForm.id, payload)
@@ -736,18 +728,17 @@ const openDeleteConfirm = (label) => {
 }
 
 const confirmDelete = async () => {
-  if (labelToDelete.value) {
-    isProcessing.value = true
-    try {
-      await deleteLabel(labelToDelete.value.id)
-      await fetchLabels()
-      showDeleteModal.value = false
-      labelToDelete.value = null
-    } catch (err) {
-      console.error('Gagal menghapus label:', err)
-    } finally {
-      isProcessing.value = false
-    }
+  if (!labelToDelete.value) return
+  isProcessing.value = true
+  try {
+    await deleteLabel(labelToDelete.value.id)
+    await fetchLabels()
+    showDeleteModal.value = false
+    labelToDelete.value = null
+  } catch (err) {
+    console.error('Gagal menghapus label:', err)
+  } finally {
+    isProcessing.value = false
   }
 }
 
@@ -766,35 +757,28 @@ defineExpose({ openMobile, closeMobile })
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
 }
-
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.3);
   border-radius: 20px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.5);
 }
-
 :is(.dark .custom-scrollbar)::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.15);
 }
-
 :is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.25);
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -805,7 +789,6 @@ defineExpose({ openMobile, closeMobile })
     transform: scale(1) translateX(0);
   }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }

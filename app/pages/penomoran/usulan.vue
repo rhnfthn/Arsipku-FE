@@ -21,14 +21,42 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
+        <!-- ROWS PER PAGE -->
         <div class="flex items-center gap-2 px-4">
-          <select
-            v-model="rowsPerPage"
-            @change="handleLimitChange"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">{{ n }}</option>
-          </select>
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
 
         <!-- FILTER STATUS -->
@@ -39,22 +67,12 @@
             class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
           >
             <span class="truncate">{{ selectedFilterLabel }}</span>
-            <svg
+            <ChevronDown
               :class="[
                 'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
                 openFilterStatus ? 'rotate-180' : 'rotate-0'
               ]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
           <Transition name="filter-dd">
             <div
@@ -88,7 +106,7 @@
             v-model="search"
             @input="handleSearchInput"
             :placeholder="$t('usl_cari_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -294,7 +312,7 @@
             <button
               v-if="paginationPages[0] > 1"
               @click="handlePageChange(1)"
-              class="w-10 h-10 flex items-center justify-center text-sm rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary transition-all"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary transition-all"
             >
               1
             </button>
@@ -354,9 +372,7 @@
     </div>
   </div>
 
-  <!-- ====================================================
-       MODAL DETAIL — tampilan ikut dari data (single/multi)
-       ==================================================== -->
+  <!-- MODAL DETAIL -->
   <Teleport to="body">
     <Modal
       v-model="openDetail"
@@ -373,34 +389,26 @@
       </template>
 
       <div v-if="selectedRow" class="space-y-6 text-sm px-3 pb-3 max-h-[70vh] overflow-y-auto">
-        <!-- Perihal -->
         <p class="text-gray-900 dark:text-gray-100 font-semibold leading-relaxed text-base">
           {{ selectedRow.perihal || '-' }}
         </p>
 
-        <!-- Tanggal -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_detail_tanggal') }}</p>
           <p class="font-medium mt-1 dark:text-gray-200">{{ formatDate(selectedRow.tanggal) }}</p>
         </div>
-
-        <!-- Penandatangan -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">
             {{ $t('usl_detail_penandatangan') }}
           </p>
           <p class="font-medium mt-1 dark:text-gray-200">{{ selectedRow.penandatangan || '-' }}</p>
         </div>
-
-        <!-- Klasifikasi -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_detail_klasifikasi') }}</p>
           <p class="font-medium mt-1 dark:text-gray-200">
             {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi || '-' }}
           </p>
         </div>
-
-        <!-- Jenis Naskah -->
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">
             {{ $t('usl_detail_jenis_naskah') }}
@@ -408,20 +416,15 @@
           <p class="font-medium mt-1 dark:text-gray-200">{{ selectedRow.jenis_naskah || '-' }}</p>
         </div>
 
-        <!-- ── NOMOR SURAT ── -->
+        <!-- NOMOR SURAT -->
         <div class="mt-4">
           <label class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3 block">
             {{ $t('usl_nomor_surat') }} ({{ selectedRow?.jumlah ?? 0 }}
             {{ $t('usl_nomor_suffix') }})
           </label>
 
-          <!-- ═══════════════════════════════════════════
-               SINGLE FILE MODE
-               Semua nomor pakai 1 file yang sama
-               Deteksi: semua detail.file_text identik
-               ═══════════════════════════════════════════ -->
+          <!-- SINGLE FILE MODE -->
           <div v-if="isSingleFileMode" class="space-y-3">
-            <!-- File bersama di atas -->
             <div
               v-if="sharedFile"
               class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
@@ -453,29 +456,13 @@
                 </div>
               </div>
             </div>
-
-            <!-- Belum ada file -->
             <div
               v-else
               class="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg px-4 py-4 text-center"
             >
-              <svg
-                class="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('usl_file_belum_ada') }}</p>
             </div>
 
-            <!-- List nomor tanpa area file per-nomor -->
             <div
               v-for="(detail, idx) in selectedRow.details"
               :key="detail.id || idx"
@@ -523,10 +510,7 @@
             </div>
           </div>
 
-          <!-- ═══════════════════════════════════════════
-               MULTI FILE MODE
-               Setiap nomor punya file masing-masing
-               ═══════════════════════════════════════════ -->
+          <!-- MULTI FILE MODE -->
           <div v-else class="space-y-4">
             <div
               v-for="(detail, idx) in selectedRow.details"
@@ -538,7 +522,6 @@
                   : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
               ]"
             >
-              <!-- Nomor + badge -->
               <div class="flex items-center gap-2 mb-3">
                 <div
                   class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
@@ -574,7 +557,6 @@
                 </button>
               </div>
 
-              <!-- File per nomor -->
               <div
                 v-if="detail.file_name"
                 class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
@@ -606,8 +588,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Tidak ada file -->
               <div
                 v-else
                 class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
@@ -637,9 +617,9 @@
       </div>
 
       <template #footer>
-        <div class="flex w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <!-- Footer kosong / bisa ditambahkan aksi lain -->
-        </div>
+        <div
+          class="flex w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        ></div>
       </template>
     </Modal>
   </Teleport>
@@ -684,7 +664,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Plus, Copy } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
 import AddUsulan from '~/components/AddUsulan.vue'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
@@ -697,10 +677,9 @@ definePageMeta({ middleware: 'auth' })
 const { t } = useI18n()
 const { user, getProfile } = useAuth()
 const { getListUsulan, getDetailUsulan, getPersonWithPosition, getKlasifikasi } = usePenomoran()
-
 const toast = useToast()
 
-// ─── Breadcrumbs ─────────────────────────────────────────────────
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('usl_title'), to: '/penomoran/usulan' }
@@ -723,11 +702,10 @@ const filterOptions = computed(() => [
   { label: t('usl_filter_ditolak'), value: 'Ditolak' }
 ])
 
-const selectedFilterLabel = computed(() => {
-  return (
+const selectedFilterLabel = computed(
+  () =>
     filterOptions.value.find((o) => o.value === filterStatus.value)?.label ?? t('usl_filter_semua')
-  )
-})
+)
 
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -758,7 +736,7 @@ const detailStatusClass = (status: string) => ({
     status === 'terpakai_final'
 })
 
-// ─── State ───────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 const openDetail = ref(false)
 const selectedRow = ref<any>(null)
 const rows = ref<any[]>([])
@@ -775,7 +753,9 @@ const klasifikasiMap = ref(new Map())
 const search = ref('')
 const currentPage = ref(1)
 const rowsPerPage = ref(10)
-const rowsChoices = [5, 10, 20, 50]
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
 const sortBy = ref('')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const filterStatus = ref('Semua')
@@ -783,29 +763,22 @@ const openFilterStatus = ref(false)
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-/* ===========================
- * DETEKSI SINGLE / MULTI FILE
- * Single: semua detail berbagi file_text yang sama (dan ada isinya)
- * =========================== */
+// ─── Single / Multi file ──────────────────────────────────────────────────────
 const isSingleFileMode = computed(() => {
   const details = selectedRow.value?.details
   if (!details || details.length < 1) return false
-  // Kalau hanya 1 nomor, tampilkan sebagai single jika ada file
   if (details.length === 1) return !!details[0]?.file_text
   const firstFile = details[0]?.file_text
   if (!firstFile) return false
   return details.every((d: any) => d.file_text === firstFile)
 })
 
-// File bersama untuk ditampilkan di single mode
 const sharedFile = computed(() => {
   if (!isSingleFileMode.value) return null
   return selectedRow.value?.details?.find((d: any) => d.file_name) ?? null
 })
 
-/* ===========================
- * PREVIEW FILE
- * =========================== */
+// ─── Preview ──────────────────────────────────────────────────────────────────
 const previewFile = (detail: any) => {
   if (!detail?.file_url) {
     toast.add({
@@ -819,17 +792,22 @@ const previewFile = (detail: any) => {
   isOpenPreview.value = true
 }
 
-/* ===========================
- * FETCH PERSON MAP
- * =========================== */
+// ─── Rows per page ────────────────────────────────────────────────────────────
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
+
+// ─── Fetch helpers ────────────────────────────────────────────────────────────
 const fetchPersonMap = async () => {
   try {
     const response = await getPersonWithPosition()
     const list = Array.isArray(response) ? response : (response.data ?? [])
     list.forEach((item: any) => {
-      const positionText = item.position_text || ''
-      const subAreaText = item.sub_area_text || ''
-      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText
+      const displayText = item.sub_area_text
+        ? `${item.position_text} - ${item.sub_area_text}`
+        : item.position_text || ''
       personMap.value.set(item.persnum, { nama: item.nama, position_text: displayText })
     })
   } catch (e) {
@@ -837,23 +815,15 @@ const fetchPersonMap = async () => {
   }
 }
 
-/* ===========================
- * FETCH KLASIFIKASI MAP
- * =========================== */
 const fetchKlasifikasiMap = async () => {
   try {
     const list = await getKlasifikasi()
-    list.forEach((item: any) => {
-      klasifikasiMap.value.set(item.code, item.display)
-    })
+    list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display))
   } catch (e) {
     console.error('❌ Error fetch klasifikasi map:', e)
   }
 }
 
-/* ===========================
- * FETCH DATA
- * =========================== */
 const fetchData = async () => {
   loading.value = true
   try {
@@ -862,7 +832,6 @@ const fetchData = async () => {
       pagination.value = null
       return
     }
-
     const params = {
       search: search.value || undefined,
       page: currentPage.value,
@@ -871,30 +840,23 @@ const fetchData = async () => {
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
     }
-
     const response = await getListUsulan(String(user.value.position), params)
     const data = response.data || []
     pagination.value = response.pagination || null
-
     if (!Array.isArray(data)) {
       rows.value = []
       return
     }
-
     rows.value = data.map((item: any) => {
       const pengusulInfo = personMap.value.get(item.persnum) || {}
       const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
-
       let mappedStatus = item.status || 'Menunggu Verifikasi'
-      if (!['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].includes(mappedStatus)) {
+      if (!['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].includes(mappedStatus))
         mappedStatus = 'Menunggu Verifikasi'
-      }
-
       const tanggalDate = new Date(item.tanggal)
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
       const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
       const createdDate = new Date(localCreated)
-
       return {
         id: item.id,
         jenis: item.jenis,
@@ -920,6 +882,7 @@ const fetchData = async () => {
   }
 }
 
+// ─── Pagination / sort / filter ───────────────────────────────────────────────
 const handleSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
@@ -927,7 +890,6 @@ const handleSearchInput = () => {
     fetchData()
   }, 500)
 }
-
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -938,18 +900,15 @@ const handleSort = (column: string) => {
   currentPage.value = 1
   fetchData()
 }
-
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
   fetchData()
 }
-
 const handleLimitChange = () => {
   currentPage.value = 1
   fetchData()
 }
-
 const selectFilterStatus = (val: string) => {
   filterStatus.value = val
   openFilterStatus.value = false
@@ -958,7 +917,6 @@ const selectFilterStatus = (val: string) => {
 }
 
 const totalPages = computed(() => pagination.value?.totalPages || 1)
-
 const paginationPages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
@@ -975,23 +933,18 @@ const paginationPages = computed(() => {
   return pages
 })
 
-/* ===========================
- * OPEN ROW MODAL
- * =========================== */
+// ─── Open row modal ───────────────────────────────────────────────────────────
 const openRowModal = async (row: any) => {
   try {
     const detailData = await getDetailUsulan(row.id)
     if (!detailData) return
-
     const klasifikasiDisplay =
       klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi
-
     const normalizedDetails = normalizeDetails(
       detailData.details || [],
       detailData.jumlah,
       detailData.template_nomor || ''
     )
-
     selectedRow.value = {
       id_usulan: detailData.id,
       jenis: detailData.jenis,
@@ -1006,7 +959,6 @@ const openRowModal = async (row: any) => {
       template_nomor: detailData.template_nomor || '',
       details: normalizedDetails
     }
-
     openDetail.value = true
   } catch (err) {
     console.error('❌ Gagal load detail:', err)
@@ -1040,9 +992,6 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
   return result
 }
 
-/* ===========================
- * COPY
- * =========================== */
 const handleCopy = (value: string) => {
   if (!value) return
   navigator.clipboard.writeText(value)
@@ -1053,10 +1002,6 @@ const handleCopy = (value: string) => {
   })
 }
 
-/* ===========================
- * HANDLE SUBMIT FROM ADD MODAL
- * AddUsulan sudah handle create+booking — parent cukup refresh
- * =========================== */
 const handleSubmitFromModal = async () => {
   openAdd.value = false
   currentPage.value = 1
@@ -1065,16 +1010,17 @@ const handleSubmitFromModal = async () => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
-  const localStr = dateStr.replace('Z', '').replace('+00:00', '')
-  return new Date(localStr).toLocaleDateString('id-ID', {
+  return new Date(dateStr.replace('Z', '').replace('+00:00', '')).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
   })
 }
 
+// ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
   const dropdownEls = document.querySelectorAll('[data-custom-dropdown]')
   for (const el of Array.from(dropdownEls)) {
     if (el.contains(target)) return
@@ -1082,24 +1028,7 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false
 }
 
-onMounted(async () => {
-  loading.value = true
-  if (!user.value) await getProfile()
-  await Promise.all([fetchPersonMap(), fetchKlasifikasiMap()])
-  await fetchData()
-  document.addEventListener('click', handleDocumentClick)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-  if (searchTimeout) clearTimeout(searchTimeout)
-  pdfUrl.value = null
-})
-
-watch(isOpenPreview, (open) => {
-  if (!open) pdfUrl.value = null
-})
-
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
 const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 }
@@ -1107,9 +1036,41 @@ const onMouseMove = (e: MouseEvent, text: string) => {
 const onMouseLeave = () => {
   tooltip.value.show = false
 }
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  loading.value = true
+  if (!user.value) await getProfile()
+  await Promise.all([fetchPersonMap(), fetchKlasifikasiMap()])
+  await fetchData()
+  document.addEventListener('click', handleDocumentClick)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  pdfUrl.value = null
+})
+watch(isOpenPreview, (open) => {
+  if (!open) pdfUrl.value = null
+})
 </script>
 
 <style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);

@@ -23,13 +23,40 @@
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
         <!-- ROWS PER PAGE -->
         <div class="flex items-center gap-2 px-4">
-          <select
-            v-model="rowsPerPage"
-            @change="handleLimitChange"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">{{ n }}</option>
-          </select>
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
 
         <!-- FILTER STATUS -->
@@ -257,11 +284,12 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="rows.length > 0 && pagination"
+        v-if="rows.length > 0 && totalPages >= 1"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t('menampilkan') }} {{ rows.length }} {{ $t('dari') }} {{ pagination.total }}
+          {{ $t('menampilkan') }} {{ rows.length }} {{ $t('dari') }}
+          {{ isLocalFilter ? localFilteredRows.length : (pagination?.total ?? 0) }}
           {{ $t('data') }}
         </div>
         <div class="flex items-center gap-2">
@@ -365,14 +393,6 @@
           <h2 class="text-lg font-semibold uppercase dark:text-gray-100">
             {{ selectedRow?.jenis_naskah || $t('detail') }}
           </h2>
-          <!-- Status badge di header -->
-          <!-- <span
-            v-if="selectedRow?.status"
-            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-            :class="rowStatusClass(selectedRow.status)"
-          >
-            {{ getRowStatusLabel(selectedRow.status) }}
-          </span> -->
         </div>
       </template>
 
@@ -384,13 +404,10 @@
 
         <!-- Meta info list -->
         <div class="flex flex-col">
-          <!-- Tanggal -->
           <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_detail_tanggal') }}</p>
             <p class="font-medium mt-1 dark:text-gray-200">{{ formatDate(selectedRow.tanggal) }}</p>
           </div>
-
-          <!-- Penandatangan -->
           <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_penandatangan') }}
@@ -399,8 +416,6 @@
               {{ selectedRow.penandatangan || '-' }}
             </p>
           </div>
-
-          <!-- Klasifikasi -->
           <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_klasifikasi') }}
@@ -409,8 +424,6 @@
               {{ selectedRow.klasifikasiDisplay || selectedRow.klasifikasi || '-' }}
             </p>
           </div>
-
-          <!-- Jenis Naskah -->
           <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ $t('usl_detail_jenis_naskah') }}
@@ -439,10 +452,8 @@
           </div>
 
           <template v-else>
-            <!-- ═══ SINGLE FILE MODE ═══
-                 Semua nomor berbagi 1 file yang sama -->
+            <!-- ═══ SINGLE FILE MODE ═══ -->
             <div v-if="isSingleFileMode" class="space-y-3">
-              <!-- File bersama -->
               <div
                 v-if="sharedFile"
                 class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
@@ -474,8 +485,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Belum ada file -->
               <div
                 v-else
                 class="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg px-4 py-6 text-center"
@@ -498,7 +507,6 @@
                 </p>
               </div>
 
-              <!-- List nomor (tanpa area file per-nomor) -->
               <div
                 v-for="(detail, idx) in selectedRow.details"
                 :key="detail.id || idx"
@@ -545,8 +553,7 @@
               </div>
             </div>
 
-            <!-- ═══ MULTI FILE MODE ═══
-                 Setiap nomor punya file masing-masing -->
+            <!-- ═══ MULTI FILE MODE ═══ -->
             <div v-else class="space-y-4">
               <div
                 v-for="(detail, idx) in selectedRow.details"
@@ -593,7 +600,7 @@
                   </button>
                 </div>
 
-                <!-- File per nomor — hangus -->
+                <!-- hangus -->
                 <template v-if="detail.status === 'hangus'">
                   <div
                     v-if="detail.file_name || detail.file_url"
@@ -646,75 +653,148 @@
                   </div>
                 </template>
 
-                <!-- File per nomor — ada file -->
-                <div
-                  v-else-if="detail.file_name || detail.file_url"
-                  class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
-                  @click="previewFile(detail)"
-                >
-                  <div class="flex items-center gap-3">
-                    <svg
-                      class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <div>
-                      <p
-                        class="text-sm font-medium text-primary dark:text-blue-400 underline break-all"
+                <!-- ═══ FILE AREA (non-hangus) ═══ -->
+                <template v-else>
+                  <!-- Ada file & tidak sedang replace -->
+                  <div
+                    v-if="
+                      (detail.file_name || detail.file_url) && !fileStates[detail.id]?.isReplacing
+                    "
+                    class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
+                    @click="previewFile(detail)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <svg
+                        class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {{ detail.file_name }}
-                      </p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {{ $t('usl_file_klik_preview') }}
-                      </p>
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <div>
+                        <p
+                          class="text-sm font-medium text-primary dark:text-blue-400 underline break-all"
+                        >
+                          {{ detail.file_name }}
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {{ $t('usl_file_klik_preview') }}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Tidak ada file -->
-                <div
-                  v-else
-                  class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
-                >
-                  <div class="flex items-center gap-2">
-                    <svg
-                      class="w-4 h-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    <span class="text-xs text-yellow-800 dark:text-yellow-400">{{
-                      $t('usl_file_belum_ada')
-                    }}</span>
+                  <!-- Tidak ada file & tidak sedang replace -->
+                  <div
+                    v-else-if="
+                      !detail.file_name && !detail.file_url && !fileStates[detail.id]?.isReplacing
+                    "
+                    class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3"
+                  >
+                    <div class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <span class="text-xs text-yellow-800 dark:text-yellow-400">{{
+                        $t('usl_file_belum_ada')
+                      }}</span>
+                    </div>
                   </div>
-                </div>
+
+                  <!-- File input saat isReplacing -->
+                  <div
+                    v-if="fileStates[detail.id]?.isReplacing"
+                    class="border border-dashed border-primary/40 dark:border-primary/30 rounded-md p-3 bg-blue-50/50 dark:bg-blue-900/10 mt-2"
+                  >
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                      {{
+                        detail.file_name
+                          ? $t('nom_file_pilih_pengganti')
+                          : $t('nom_file_pilih_upload')
+                      }}
+                    </p>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      @change="handleFileSelect(detail.id, $event)"
+                      class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
+                    />
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                      {{ $t('nom_file_max_size') }}
+                    </p>
+                  </div>
+
+                  <!-- Action buttons -->
+                  <div class="flex gap-2 mt-3">
+                    <!-- Ganti File button (ada file, status terpakai/terpakai_final, tidak sedang replace) -->
+                    <button
+                      v-if="
+                        (detail.file_name || detail.file_url) &&
+                        (detail.status === 'terpakai' || detail.status === 'terpakai_final') &&
+                        !fileStates[detail.id]?.isReplacing
+                      "
+                      @click.stop="startReplacingFile(detail.id)"
+                      class="flex-1 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition text-sm font-medium"
+                    >
+                      {{ $t('nom_btn_ganti_file') }}
+                    </button>
+
+                    <!-- Simpan & Batal saat isReplacing -->
+                    <template v-if="fileStates[detail.id]?.isReplacing">
+                      <button
+                        @click.stop="saveFile(detail)"
+                        :disabled="
+                          !fileStates[detail.id]?.file || fileStates[detail.id]?.isUploading
+                        "
+                        :class="[
+                          'flex-1 px-4 py-2 rounded-lg transition text-sm font-medium',
+                          !fileStates[detail.id]?.file || fileStates[detail.id]?.isUploading
+                            ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        ]"
+                      >
+                        {{
+                          fileStates[detail.id]?.isUploading
+                            ? $t('nom_btn_uploading')
+                            : $t('nom_btn_simpan_file')
+                        }}
+                      </button>
+                      <button
+                        @click.stop="cancelReplacing(detail.id)"
+                        :disabled="fileStates[detail.id]?.isUploading"
+                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition disabled:opacity-50 text-sm font-medium"
+                      >
+                        {{ $t('nom_btn_batal') }}
+                      </button>
+                    </template>
+                  </div>
+                </template>
               </div>
-              <!-- end v-for item -->
             </div>
-            <!-- end multi file mode wrapper --> </template
-          ><!-- end v-else loadingDetail -->
+          </template>
         </div>
       </div>
 
       <template #footer>
-        <div class="flex w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <!-- footer kosong, bisa ditambah aksi jika diperlukan -->
-        </div>
+        <div
+          class="flex w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        ></div>
       </template>
     </Modal>
   </Teleport>
@@ -761,7 +841,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Plus, Copy } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
 import AddUsulan from '~/components/AddUsulan.vue'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
@@ -773,7 +853,13 @@ definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
 const { user, getProfile } = useAuth()
-const { getListUsulan, getDetailUsulan, getPersonWithPosition, getKlasifikasi } = usePenomoran()
+const {
+  getListUsulanByPosition,
+  getDetailUsulan,
+  getPersonWithPosition,
+  getKlasifikasi,
+  updateNomorFile // ✅ tambah untuk ganti file
+} = usePenomoran()
 const toast = useToast()
 
 // ─── Breadcrumbs ─────────────────────────────────────────────────────────────
@@ -798,6 +884,7 @@ const filterOptions = computed(() => [
   { label: t('usl_filter_semua'), value: 'Semua' },
   { label: t('usl_filter_menunggu'), value: 'Menunggu Verifikasi' },
   { label: t('usl_filter_disetujui'), value: 'Disetujui' },
+  { label: t('usl_filter_final'), value: 'Final' },
   { label: t('usl_filter_ditolak'), value: 'Ditolak' }
 ])
 
@@ -811,10 +898,12 @@ const rowStatusClass = (status: string) => ({
   'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
     status === 'Menunggu Verifikasi',
   'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': status === 'Disetujui',
+  'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': status === 'Final',
   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': status === 'Ditolak',
   'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': ![
     'Menunggu Verifikasi',
     'Disetujui',
+    'Final',
     'Ditolak'
   ].includes(status)
 })
@@ -823,6 +912,7 @@ const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
     'Menunggu Verifikasi': t('usl_status_menunggu_verifikasi'),
     Disetujui: t('usl_status_disetujui'),
+    Final: t('usl_status_final'),
     Ditolak: t('usl_status_ditolak')
   }
   return map[status] || status
@@ -853,6 +943,7 @@ const openDetail = ref(false)
 const loadingDetail = ref(false)
 const selectedRow = ref<any>(null)
 const rows = ref<any[]>([])
+const allMappedRows = ref<any[]>([])
 const loading = ref(true)
 const pagination = ref<any>(null)
 
@@ -866,13 +957,57 @@ const klasifikasiMap = ref(new Map())
 const search = ref('')
 const currentPage = ref(1)
 const rowsPerPage = ref(10)
-const rowsChoices = [5, 10, 20, 50]
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
 const sortBy = ref('')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const filterStatus = ref('Semua')
 const openFilterStatus = ref(false)
 
+// ✅ State untuk file replace per detail
+const fileStates = ref<
+  Record<string, { isReplacing: boolean; isUploading: boolean; file: File | null }>
+>({})
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// ─── Local filter mode ────────────────────────────────────────────────────────
+const isLocalFilter = computed(() => filterStatus.value !== 'Semua')
+
+const localFilteredRows = computed(() => {
+  if (!isLocalFilter.value) return allMappedRows.value
+  return allMappedRows.value.filter((row) => row.status === filterStatus.value)
+})
+
+const localTotalPages = computed(() =>
+  Math.max(1, Math.ceil(localFilteredRows.value.length / rowsPerPage.value))
+)
+
+const localPaginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage.value
+  return localFilteredRows.value.slice(start, start + rowsPerPage.value)
+})
+
+const totalPages = computed(() =>
+  isLocalFilter.value ? localTotalPages.value : pagination.value?.totalPages || 1
+)
+
+const paginationPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages: number[] = []
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5)
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total)
+  } else {
+    pages.push(current - 1, current, current + 1)
+  }
+  return pages
+})
 
 // ─── Single vs Multi file mode ────────────────────────────────────────────────
 const isSingleFileMode = computed(() => {
@@ -901,6 +1036,140 @@ const previewFile = (detail: any) => {
   }
   pdfUrl.value = detail.file_url
   isOpenPreview.value = true
+}
+
+// ─── File replace actions ─────────────────────────────────────────────────────
+const startReplacingFile = (detailId: string) => {
+  fileStates.value[detailId] = {
+    isReplacing: true,
+    isUploading: false,
+    file: null
+  }
+}
+
+const handleFileSelect = (detailId: string, event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  const MAX_SIZE = 5 * 1024 * 1024 // 5MB untuk user
+  if (file.size > MAX_SIZE) {
+    toast.add({
+      title: t('usl_file_terlalu_besar_title') || 'File terlalu besar',
+      description: t('usl_file_terlalu_besar_desc') || 'Ukuran file maksimal 5MB',
+      color: 'warning'
+    })
+    return
+  }
+
+  if (fileStates.value[detailId]) {
+    fileStates.value[detailId].file = file
+  }
+}
+
+const saveFile = async (detail: any) => {
+  const detailId = detail.id
+  const state = fileStates.value[detailId]
+  if (!state?.file) {
+    toast.add({
+      title: t('usl_pilih_file_title') || 'Pilih file',
+      description: t('usl_pilih_file_desc') || 'Silakan pilih file terlebih dahulu',
+      color: 'warning'
+    })
+    return
+  }
+
+  state.isUploading = true
+  try {
+    // ✅ Pakai endpoint yang sama dengan halaman nomor: updateNomorFile
+    const result = await updateNomorFile(detailId, state.file)
+
+    // ✅ Gunakan splice agar Vue mendeteksi perubahan dan preview langsung bisa muncul
+    const details = selectedRow.value?.details
+    if (details) {
+      const idx = details.findIndex((d: any) => d.id === detailId)
+      if (idx !== -1) {
+        const updatedDetail = {
+          ...details[idx],
+          file_name: result?.file_name || state.file.name,
+          file_text: result?.file_text || details[idx].file_text || null,
+          file_url: result?.file_url || details[idx].file_url || null,
+          status: result?.status || 'terpakai_final'
+        }
+        // splice memaksa Vue reaktif mendeteksi perubahan array
+        details.splice(idx, 1, updatedDetail)
+      }
+    }
+
+    // Update status di baris tabel juga
+    const allDetails = selectedRow.value?.details || []
+    const activeStatuses = allDetails
+      .filter((d: any) => d.status !== 'hangus')
+      .map((d: any) => d.status)
+    const allFinal =
+      activeStatuses.length > 0 && activeStatuses.every((s: string) => s === 'terpakai_final')
+
+    if (allFinal) {
+      const tableRow = rows.value.find((r) => r.id === selectedRow.value?.id_usulan)
+      if (tableRow) tableRow.status = 'Final'
+    }
+
+    delete fileStates.value[detailId]
+  } catch (error: any) {
+    console.error('❌ Error save file usulan:', error)
+  } finally {
+    if (fileStates.value[detailId]) {
+      fileStates.value[detailId].isUploading = false
+    }
+  }
+}
+
+const cancelReplacing = (detailId: string) => {
+  delete fileStates.value[detailId]
+}
+
+// ─── Derive status dari details ───────────────────────────────────────────────
+const deriveStatusFromDetails = (details: any[]): string => {
+  if (!details || details.length === 0) return 'Menunggu Verifikasi'
+
+  const activeDetails = details.filter((d) => d.status !== 'hangus')
+  if (activeDetails.length === 0) return 'Ditolak'
+
+  const statuses = activeDetails.map((d) => d.status)
+
+  if (statuses.every((s) => s === 'terpakai_final')) return 'Final'
+  if (statuses.some((s) => s === 'terpakai' || s === 'terpakai_final')) return 'Disetujui'
+  if (statuses.every((s) => s === 'ditolak')) return 'Ditolak'
+
+  return 'Menunggu Verifikasi'
+}
+
+// ─── Map item ─────────────────────────────────────────────────────────────────
+const mapItem = (item: any) => {
+  const pengusulInfo = personMap.value.get(item.persnum) || {}
+  const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
+  const mappedStatus = deriveStatusFromDetails(item.details || [])
+
+  const tanggalDate = new Date(item.tanggal)
+  const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+
+  const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
+  const createdDate = new Date(localCreated)
+  const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
+
+  return {
+    id: item.id,
+    jenis: item.jenis,
+    tanggal: formattedTanggal,
+    perihal: item.perihal || '-',
+    jumlah: item.jumlah,
+    penandatangan: item.penandatangan || '-',
+    klasifikasi: item.klasifikasi || '-',
+    klasifikasiDisplay,
+    pengusul: pengusulInfo.nama || item.nama || user.value?.nama || '-',
+    tglUsulan,
+    status: mappedStatus,
+    template_nomor: item.template_nomor || ''
+  }
 }
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -934,6 +1203,7 @@ const fetchData = async () => {
   try {
     if (!user.value?.position) {
       rows.value = []
+      allMappedRows.value = []
       pagination.value = null
       return
     }
@@ -943,56 +1213,36 @@ const fetchData = async () => {
 
     const params = {
       search: search.value || undefined,
-      page: currentPage.value,
-      limit: rowsPerPage.value,
-      status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
+      page: isLocalFilter.value ? 1 : currentPage.value,
+      limit: isLocalFilter.value ? 9999 : rowsPerPage.value,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
     }
 
-    const response = await getListUsulan(String(positionId), params)
+    const response = await getListUsulanByPosition(String(positionId), params)
     const data = response.data || []
-    pagination.value = response.pagination || null
 
     if (!Array.isArray(data)) {
       rows.value = []
+      allMappedRows.value = []
+      pagination.value = null
       return
     }
 
-    rows.value = data.map((item: any) => {
-      const pengusulInfo = personMap.value.get(item.persnum) || {}
-      const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
+    const mapped = data.map(mapItem)
+    allMappedRows.value = mapped
 
-      let mappedStatus = item.status || 'Menunggu Verifikasi'
-      if (!['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].includes(mappedStatus)) {
-        mappedStatus = 'Menunggu Verifikasi'
-      }
-
-      const tanggalDate = new Date(item.tanggal)
-      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
-
-      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
-      const createdDate = new Date(localCreated)
-      const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
-
-      return {
-        id: item.id,
-        jenis: item.jenis,
-        tanggal: formattedTanggal,
-        perihal: item.perihal || '-',
-        jumlah: item.jumlah,
-        penandatangan: item.penandatangan || '-',
-        klasifikasi: item.klasifikasi || '-',
-        klasifikasiDisplay,
-        pengusul: pengusulInfo.nama || item.nama || user.value?.nama || '-',
-        tglUsulan,
-        status: mappedStatus,
-        template_nomor: item.template_nomor || ''
-      }
-    })
+    if (isLocalFilter.value) {
+      pagination.value = null
+      rows.value = localPaginatedRows.value
+    } else {
+      pagination.value = response.pagination || null
+      rows.value = mapped
+    }
   } catch (err) {
     console.error('❌ Gagal fetch data:', err)
     rows.value = []
+    allMappedRows.value = []
     pagination.value = null
   } finally {
     loading.value = false
@@ -1001,7 +1251,9 @@ const fetchData = async () => {
 
 // ─── Open row modal ───────────────────────────────────────────────────────────
 const openRowModal = async (row: any) => {
-  // Set data dasar dulu agar modal langsung terbuka
+  // Reset fileStates setiap buka modal baru
+  fileStates.value = {}
+
   selectedRow.value = {
     id_usulan: row.id,
     jenis: row.jenis,
@@ -1036,6 +1288,10 @@ const openRowModal = async (row: any) => {
       klasifikasiDisplay,
       status: detailData.status || row.status,
       template_nomor: detailData.template_nomor || '',
+      // ✅ Untuk single file: jumlah dari API (mis. 10 nomor range)
+      //    Untuk multi file: tetap dari jumlah detail cards
+      jumlah: detailData.is_single_file ? detailData.jumlah : normalizedDetails.length,
+      is_single_file: !!detailData.is_single_file,
       details: normalizedDetails
     }
   } catch (err) {
@@ -1113,12 +1369,20 @@ const handleSort = (column: string) => {
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
-  fetchData()
+  if (isLocalFilter.value) {
+    rows.value = localPaginatedRows.value
+  } else {
+    fetchData()
+  }
 }
 
 const handleLimitChange = () => {
   currentPage.value = 1
-  fetchData()
+  if (isLocalFilter.value) {
+    rows.value = localPaginatedRows.value
+  } else {
+    fetchData()
+  }
 }
 
 const selectFilterStatus = (val: string) => {
@@ -1128,22 +1392,10 @@ const selectFilterStatus = (val: string) => {
   fetchData()
 }
 
-const totalPages = computed(() => pagination.value?.totalPages || 1)
-
-const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages: number[] = []
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
-  } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
-  } else {
-    pages.push(current - 1, current, current + 1)
+watch(localPaginatedRows, (newRows) => {
+  if (isLocalFilter.value) {
+    rows.value = newRows
   }
-  return pages
 })
 
 // ─── Date formatter ───────────────────────────────────────────────────────────
@@ -1158,10 +1410,20 @@ const formatDate = (dateStr: string) => {
 }
 
 // ─── Dropdown close on outside click ─────────────────────────────────────────
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
+
 function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
+    showRowsDropdown.value = false
+  }
   const dropdowns = document.querySelectorAll('[data-custom-dropdown]')
   for (const el of Array.from(dropdowns)) {
-    if (el.contains(e.target as HTMLElement)) return
+    if (el.contains(target)) return
   }
   openFilterStatus.value = false
 }
@@ -1197,11 +1459,27 @@ watch(openDetail, (open) => {
   if (!open) {
     selectedRow.value = null
     loadingDetail.value = false
+    fileStates.value = {} // ✅ reset saat modal tutup
   }
 })
 </script>
 
 <style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);

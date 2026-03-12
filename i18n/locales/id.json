@@ -262,6 +262,7 @@
   "usl_filter_menunggu": "Menunggu Verifikasi",
   "usl_filter_disetujui": "Disetujui",
   "usl_filter_ditolak": "Ditolak",
+  "usl_filter_final": "Final",
   "usl_cari_placeholder": "Cari...",
   "usl_empty": "Data tidak ditemukan",
   "usl_col_jenis": "Jenis",
@@ -931,5 +932,7 @@
   "pt_delete_title": "Hapus Short URL?",
   "pt_delete_confirm": "Hapus",
   "pt_delete_cancel": "Batal",
-  "pt_search_placeholder": "Cari Tautan"
+  "pt_search_placeholder": "Cari Tautan",
+
+  "pernom_title": "Daftar Persetujuan Penomoran"
 }
