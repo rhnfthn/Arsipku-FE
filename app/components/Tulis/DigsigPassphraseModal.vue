@@ -174,8 +174,8 @@
         </div>
 
         <!-- ── Option 2: QR ────────────────────────────────────────────── -->
-        <div v-if="!hideQr || showAllOptions" class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden"
-          :class="selectedMethod === 'qr_only'
+        <div v-if="!hideQr || showAllOptions"
+          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'qr_only'
             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
           @click="selectMethod('qr_only')">
@@ -205,8 +205,8 @@
         </div>
 
         <!-- ── Option 3: Tanda Tangan Basah ───────────────────────────── -->
-        <div v-if="!hideBasah || showAllOptions" class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden"
-          :class="selectedMethod === 'basah'
+        <div v-if="!hideBasah || showAllOptions"
+          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'basah'
             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
           @click="selectMethod('basah')">
@@ -225,31 +225,35 @@
             </div>
           </div>
           <div v-if="selectedMethod === 'basah'" class="mx-4 mb-4">
-            <div
-              class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-5 flex flex-col items-center gap-2 bg-white dark:bg-gray-800 cursor-pointer hover:border-primary-400 transition-colors"
-              @click.stop="triggerFileUpload" @dragover.prevent @drop.prevent="handleFileDrop">
-              <UIcon name="i-heroicons-document-arrow-up" class="w-8 h-8 text-primary-400" />
-              <div class="text-center">
-                <p class="text-sm text-black font-medium">Unggah Scan Tanda Tangan Basah</p>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  Mohon cetak dokumen terlebih dahulu, tanda tangani secara basah, lalu scan dan unggah kembali.
-                </p>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">FORMAT: PDF, DOC, DOCX, Maks 5 MB</p>
+            <div class="rounded-xl border border-primary-200 dark:border-primary-800 overflow-hidden">
+              <!-- Header -->
+              <div class="flex items-center gap-2 px-4 py-2.5 bg-primary-500 dark:bg-primary-700">
+                <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-white shrink-0" />
+                <p class="text-xs font-semibold text-white">Alur Tanda Tangan Basah</p>
               </div>
-              <input ref="fileInputRef" type="file" class="hidden" accept=".pdf,.doc,.docx"
-                @change="handleFileChange" />
-            </div>
-            <div v-if="uploadedFile"
-              class="mt-2 flex items-center gap-2 p-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700">
-              <UIcon name="i-heroicons-document-check" class="w-4 h-4 text-green-500 shrink-0" />
-              <span class="text-xs text-green-700 dark:text-green-400 truncate flex-1">{{ uploadedFile.name }}</span>
-              <button @click.stop="uploadedFile = null" class="text-gray-400 hover:text-red-500">
-                <UIcon name="i-heroicons-x-mark" class="w-3.5 h-3.5" />
-              </button>
+              <!-- Steps -->
+              <div class="px-4 py-3 bg-primary-50 dark:bg-primary-900/20 space-y-2">
+                <div class="flex items-start gap-2.5">
+                  <span
+                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Tekan <strong>Kirim</strong> — dokumen masuk ke
+                    halaman <strong>Tertunda</strong> dengan status <em>pending</em> (belum terkirim).</p>
+                </div>
+                <div class="flex items-start gap-2.5">
+                  <span
+                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Cetak dokumen, tanda tangani secara basah, lalu
+                    scan dan unggah kembali.</p>
+                </div>
+                <div class="flex items-start gap-2.5">
+                  <span
+                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Setelah file diunggah, dokumen dapat dikirim.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </template>
 

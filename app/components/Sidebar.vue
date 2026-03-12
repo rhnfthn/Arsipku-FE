@@ -427,6 +427,7 @@ const userMenuUtama = computed(() => [
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
@@ -468,6 +469,7 @@ const adminMenuUtama = computed(() => [
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 

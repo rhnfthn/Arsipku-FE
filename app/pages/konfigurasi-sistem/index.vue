@@ -441,12 +441,7 @@ const signOptions = [
   { label: 'Semua', value: 'semua' },
 ]
 
-const getAvailableOptions = (doc: any) => {
-  const jenis = String(doc.jenisNaskah || '').toUpperCase()
-  if (jenis === 'DI' || jenis === 'SDI') {
-    // Tidak ada Digsig, tapi tetap ada Semua (= qr + basah)
-    return signOptions.filter(opt => opt.value !== 'digsig')
-  }
+const getAvailableOptions = (_doc: any) => {
   return signOptions
 }
 
@@ -456,12 +451,7 @@ const fieldMap: Record<string, keyof typeof fieldMap> = {
   basah: 'ttdBasah',
 }
 
-// Semua = ketiga field true (atau untuk DI/SDI: ttdQr & ttdBasah true)
 const isAllSelected = (doc: any) => {
-  const jenis = String(doc.jenisNaskah || '').toUpperCase()
-  if (jenis === 'DI' || jenis === 'SDI') {
-    return !!doc.ttdQr && !!doc.ttdBasah
-  }
   return !!doc.digsig && !!doc.ttdQr && !!doc.ttdBasah
 }
 
@@ -476,23 +466,19 @@ const isSelected = (doc: any, value: string) => {
 const handleChangeSignType = async (doc: any, value: string) => {
   if (isToggling.value === doc.jenisNaskah) return
 
-  const jenis = String(doc.jenisNaskah || '').toUpperCase()
-  const isNoDigsig = jenis === 'DI' || jenis === 'SDI'
-
   const prev = { digsig: doc.digsig, ttdQr: doc.ttdQr, ttdBasah: doc.ttdBasah }
 
   if (value === 'semua') {
     const allOn = isAllSelected(doc)
-    if (!isNoDigsig) doc.digsig = !allOn
+    doc.digsig = !allOn
     doc.ttdQr = !allOn
     doc.ttdBasah = !allOn
   } else {
     const field = fieldMap[value]
     if (!field) return
 
-    // Jika saat ini semua aktif, matikan semua dulu lalu aktifkan hanya yang diklik
     if (isAllSelected(doc)) {
-      if (!isNoDigsig) doc.digsig = false
+      doc.digsig = false
       doc.ttdQr = false
       doc.ttdBasah = false
       doc[field] = true
@@ -501,34 +487,30 @@ const handleChangeSignType = async (doc: any, value: string) => {
     }
   }
 
-  // Deklarasi willBeAllOn SETELAH state doc diubah
   const willBeAllOn = isAllSelected(doc)
 
   try {
     await toggleDigsig(doc.jenisNaskah, {
-      digsig: isNoDigsig ? false : doc.digsig,
+      digsig: doc.digsig,
       ttd_qr: doc.ttdQr,
       ttd_basah: doc.ttdBasah,
     })
 
-    // Toast sukses selalu muncul
     useToast().add({
       title: 'Berhasil',
       description: `Konfigurasi tanda tangan ${doc.description} berhasil diperbarui.`,
       color: 'success',
     })
 
-    // Alert hanya jika semua opsi kini aktif — setelah toast
     if (willBeAllOn) {
       await Alert.warning(
         'Semua Metode Aktif',
-        `Semua metode tanda tangan untuk <strong>${doc.description}</strong> kini diaktifkan. Jika passphrase salah, pengguna dapat memilih metode alternatif yang tersedia.`
+        `Semua metode tanda tangan untuk <strong>${doc.description}</strong> kini diaktifkan.`
       )
       Alert.close()
     }
 
   } catch (error) {
-    // Rollback
     doc.digsig = prev.digsig
     doc.ttdQr = prev.ttdQr
     doc.ttdBasah = prev.ttdBasah
@@ -538,8 +520,6 @@ const handleChangeSignType = async (doc: any, value: string) => {
       description: `Gagal memperbarui konfigurasi tanda tangan ${doc.description}.`,
       color: 'error',
     })
-
-    console.error('Gagal mengubah tipe tanda tangan', error)
   }
 }
 
