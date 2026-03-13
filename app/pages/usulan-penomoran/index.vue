@@ -434,10 +434,34 @@
 
         <!-- ── NOMOR SURAT ── -->
         <div class="mt-2">
-          <label class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3 block">
-            {{ $t('usl_nomor_surat') }} ({{ selectedRow?.jumlah ?? 0 }}
-            {{ $t('usl_nomor_suffix') }})
-          </label>
+          <div class="flex items-center justify-between mb-3">
+            <label class="text-xs font-medium text-gray-700 dark:text-gray-300 break-words">
+              {{ $t('usl_nomor_surat') }} ({{ selectedRow?.jumlah ?? 0 }}
+              {{ $t('usl_nomor_suffix') }})
+            </label>
+            <!-- Badge single file -->
+            <span
+              v-if="selectedRow.is_single_file"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full"
+            >
+              <svg
+                class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-xs text-blue-700 dark:text-blue-400 font-medium">
+                {{ $t('ver_single_file_label') }}
+              </span>
+            </span>
+          </div>
 
           <!-- Loading detail -->
           <div v-if="loadingDetail" class="space-y-3">
@@ -454,6 +478,7 @@
           <template v-else>
             <!-- ═══ SINGLE FILE MODE ═══ -->
             <div v-if="isSingleFileMode" class="space-y-3">
+              <!-- Shared file block -->
               <div
                 v-if="sharedFile"
                 class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
@@ -507,48 +532,53 @@
                 </p>
               </div>
 
+              <!-- ✅ GANTI: 1 outer card berisi semua nomor sebagai baris -->
               <div
-                v-for="(detail, idx) in selectedRow.details"
-                :key="detail.id || idx"
-                :class="[
-                  'border rounded-lg p-3 transition',
-                  detail.status === 'hangus'
-                    ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
-                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
-                ]"
+                class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
               >
-                <div class="flex items-center gap-2">
+                <div class="space-y-2">
                   <div
-                    class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
+                    v-for="(detail, idx) in selectedRow.details"
+                    :key="detail.id || idx"
+                    :class="[
+                      'flex items-center gap-2 rounded-md px-3 py-2 border',
+                      detail.status === 'hangus'
+                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                    ]"
                   >
-                    <div class="flex items-center justify-between">
-                      <span
-                        :class="[
-                          'text-sm font-mono',
-                          detail.status === 'hangus'
-                            ? 'line-through text-gray-400 dark:text-gray-500'
-                            : 'text-gray-700 dark:text-gray-300'
-                        ]"
-                      >
-                        {{ idx + 1 }}. {{ detail.nomor || selectedRow.template_nomor || '-' }}
-                      </span>
-                      <span
-                        v-if="detail.status"
-                        class="px-2 py-1 rounded-lg text-xs font-medium"
-                        :class="detailStatusClass(detail.status)"
-                      >
-                        {{ getDetailStatusLabel(detail.status) }}
-                      </span>
-                    </div>
+                    <span
+                      class="text-sm text-gray-500 dark:text-gray-400 font-medium flex-shrink-0"
+                    >
+                      {{ idx + 1 }}.
+                    </span>
+                    <span
+                      :class="[
+                        'flex-1 min-w-0 text-sm font-mono',
+                        detail.status === 'hangus'
+                          ? 'line-through text-gray-400 dark:text-gray-500'
+                          : 'text-gray-700 dark:text-gray-200'
+                      ]"
+                    >
+                      {{ detail.nomor || selectedRow.template_nomor || '-' }}
+                    </span>
+                    <!-- Copy button hanya jika sudah ada nomor -->
+                    <button
+                      v-if="detail.nomor && detail.status !== 'hangus'"
+                      @click="handleCopy(detail.nomor)"
+                      class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex-shrink-0"
+                      :title="$t('usl_toast_tersalin')"
+                    >
+                      <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                    </button>
+                    <span
+                      v-if="detail.status"
+                      class="px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0"
+                      :class="detailStatusClass(detail.status)"
+                    >
+                      {{ getDetailStatusLabel(detail.status) }}
+                    </span>
                   </div>
-                  <button
-                    v-if="detail.nomor && detail.status !== 'hangus'"
-                    @click="handleCopy(detail.nomor)"
-                    class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-                    :title="$t('usl_toast_tersalin')"
-                  >
-                    <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -742,7 +772,7 @@
 
                   <!-- Action buttons -->
                   <div class="flex gap-2 mt-3">
-                    <!-- Ganti File button (ada file, status terpakai/terpakai_final, tidak sedang replace) -->
+                    <!-- Ganti File button -->
                     <button
                       v-if="
                         (detail.file_name || detail.file_url) &&
@@ -858,7 +888,7 @@ const {
   getDetailUsulan,
   getPersonWithPosition,
   getKlasifikasi,
-  updateNomorFile // ✅ tambah untuk ganti file
+  updateNomorFile
 } = usePenomoran()
 const toast = useToast()
 
@@ -882,6 +912,7 @@ const headers = computed(() => [
 // ─── Filter options ───────────────────────────────────────────────────────────
 const filterOptions = computed(() => [
   { label: t('usl_filter_semua'), value: 'Semua' },
+  { label: t('usl_filter_belum_diajukan'), value: 'Draft' },
   { label: t('usl_filter_menunggu'), value: 'Menunggu Verifikasi' },
   { label: t('usl_filter_disetujui'), value: 'Disetujui' },
   { label: t('usl_filter_final'), value: 'Final' },
@@ -895,12 +926,14 @@ const selectedFilterLabel = computed(
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const rowStatusClass = (status: string) => ({
+  'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400': status === 'Draft',
   'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
     status === 'Menunggu Verifikasi',
   'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': status === 'Disetujui',
   'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': status === 'Final',
   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': status === 'Ditolak',
   'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': ![
+    'Draft',
     'Menunggu Verifikasi',
     'Disetujui',
     'Final',
@@ -910,6 +943,7 @@ const rowStatusClass = (status: string) => ({
 
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
+    'Belum Diajukan': t('usl_status_belum_diajukan'),
     'Menunggu Verifikasi': t('usl_status_menunggu_verifikasi'),
     Disetujui: t('usl_status_disetujui'),
     Final: t('usl_status_final'),
@@ -920,6 +954,7 @@ const getRowStatusLabel = (status: string) => {
 
 const getDetailStatusLabel = (status: string) => {
   const map: Record<string, string> = {
+    draft: t('usl_status_draft'),
     booking: t('usl_status_booking'),
     terpakai: t('usl_status_terpakai'),
     terpakai_final: t('usl_status_final'),
@@ -930,6 +965,7 @@ const getDetailStatusLabel = (status: string) => {
 }
 
 const detailStatusClass = (status: string) => ({
+  'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400': status === 'draft',
   'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': status === 'booking',
   'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': status === 'terpakai',
   'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
@@ -965,7 +1001,6 @@ const sortOrder = ref<'asc' | 'desc'>('desc')
 const filterStatus = ref('Semua')
 const openFilterStatus = ref(false)
 
-// ✅ State untuk file replace per detail
 const fileStates = ref<
   Record<string, { isReplacing: boolean; isUploading: boolean; file: File | null }>
 >({})
@@ -1010,18 +1045,21 @@ const paginationPages = computed(() => {
 })
 
 // ─── Single vs Multi file mode ────────────────────────────────────────────────
-const isSingleFileMode = computed(() => {
-  const details = selectedRow.value?.details
-  if (!details || details.length < 1) return false
-  if (details.length === 1) return !!details[0]?.file_text
-  const firstFile = details[0]?.file_text
-  if (!firstFile) return false
-  return details.every((d: any) => d.file_text === firstFile)
-})
+const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file)
 
 const sharedFile = computed(() => {
   if (!isSingleFileMode.value) return null
   return selectedRow.value?.details?.find((d: any) => d.file_name) ?? null
+})
+
+// Detail pertama non-hangus — representasi 1 card di single file mode
+const singleFileRepresentativeDetail = computed(() => {
+  if (!isSingleFileMode.value) return null
+  return (
+    selectedRow.value?.details?.find((d: any) => d.status !== 'hangus') ??
+    selectedRow.value?.details?.[0] ??
+    null
+  )
 })
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
@@ -1040,18 +1078,13 @@ const previewFile = (detail: any) => {
 
 // ─── File replace actions ─────────────────────────────────────────────────────
 const startReplacingFile = (detailId: string) => {
-  fileStates.value[detailId] = {
-    isReplacing: true,
-    isUploading: false,
-    file: null
-  }
+  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null }
 }
 
 const handleFileSelect = (detailId: string, event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
-
-  const MAX_SIZE = 5 * 1024 * 1024 // 5MB untuk user
+  const MAX_SIZE = 5 * 1024 * 1024
   if (file.size > MAX_SIZE) {
     toast.add({
       title: t('usl_file_terlalu_besar_title') || 'File terlalu besar',
@@ -1060,7 +1093,6 @@ const handleFileSelect = (detailId: string, event: Event) => {
     })
     return
   }
-
   if (fileStates.value[detailId]) {
     fileStates.value[detailId].file = file
   }
@@ -1077,42 +1109,33 @@ const saveFile = async (detail: any) => {
     })
     return
   }
-
   state.isUploading = true
   try {
-    // ✅ Pakai endpoint yang sama dengan halaman nomor: updateNomorFile
     const result = await updateNomorFile(detailId, state.file)
-
-    // ✅ Gunakan splice agar Vue mendeteksi perubahan dan preview langsung bisa muncul
     const details = selectedRow.value?.details
     if (details) {
       const idx = details.findIndex((d: any) => d.id === detailId)
       if (idx !== -1) {
-        const updatedDetail = {
+        details.splice(idx, 1, {
           ...details[idx],
           file_name: result?.file_name || state.file.name,
           file_text: result?.file_text || details[idx].file_text || null,
           file_url: result?.file_url || details[idx].file_url || null,
           status: result?.status || 'terpakai_final'
-        }
-        // splice memaksa Vue reaktif mendeteksi perubahan array
-        details.splice(idx, 1, updatedDetail)
+        })
       }
     }
-
-    // Update status di baris tabel juga
     const allDetails = selectedRow.value?.details || []
     const activeStatuses = allDetails
       .filter((d: any) => d.status !== 'hangus')
       .map((d: any) => d.status)
-    const allFinal =
-      activeStatuses.length > 0 && activeStatuses.every((s: string) => s === 'terpakai_final')
-
-    if (allFinal) {
+    if (activeStatuses.length > 0 && activeStatuses.every((s: string) => s === 'terpakai_final')) {
       const tableRow = rows.value.find((r) => r.id === selectedRow.value?.id_usulan)
       if (tableRow) tableRow.status = 'Final'
+      const allRow = allMappedRows.value.find((r) => r.id === selectedRow.value?.id_usulan)
+      if (allRow) allRow.status = 'Final'
+      selectedRow.value.status = 'Final'
     }
-
     delete fileStates.value[detailId]
   } catch (error: any) {
     console.error('❌ Error save file usulan:', error)
@@ -1129,24 +1152,66 @@ const cancelReplacing = (detailId: string) => {
 
 // ─── Derive status dari details ───────────────────────────────────────────────
 const deriveStatusFromDetails = (details: any[]): string => {
-  if (!details || details.length === 0) return 'Menunggu Verifikasi'
-
+  if (!details || details.length === 0) return 'Belum Diajukan'
   const activeDetails = details.filter((d) => d.status !== 'hangus')
   if (activeDetails.length === 0) return 'Ditolak'
-
   const statuses = activeDetails.map((d) => d.status)
-
+  if (statuses.every((s) => s === 'draft')) return 'Draft'
   if (statuses.every((s) => s === 'terpakai_final')) return 'Final'
   if (statuses.some((s) => s === 'terpakai' || s === 'terpakai_final')) return 'Disetujui'
   if (statuses.every((s) => s === 'ditolak')) return 'Ditolak'
-
   return 'Menunggu Verifikasi'
+}
+
+// ─── normalizeDetails ─────────────────────────────────────────────────────────
+const normalizeDetails = (
+  details: any[],
+  jumlah: number,
+  template: string,
+  isSingleFile: boolean = false
+) => {
+  const sharedFileInfo =
+    isSingleFile && details[0]
+      ? {
+          file_name: details[0].file_name || null,
+          file_url: details[0].file_url || null,
+          file_text: details[0].file_text || null
+        }
+      : null
+
+  const result = []
+  for (let i = 0; i < jumlah; i++) {
+    const d = details[i]
+    result.push(
+      d
+        ? {
+            id: d.id || `temp-${i + 1}`,
+            nomor: d.nomor || null,
+            status: d.status || 'draft',
+            file_name: d.file_name || null,
+            file_url: d.file_url || null,
+            file_text: d.file_text || null
+          }
+        : {
+            id: `temp-${i + 1}`,
+            nomor: null,
+            status: 'draft',
+            file_name: sharedFileInfo?.file_name || null,
+            file_url: sharedFileInfo?.file_url || null,
+            file_text: sharedFileInfo?.file_text || null
+          }
+    )
+  }
+  return result
 }
 
 // ─── Map item ─────────────────────────────────────────────────────────────────
 const mapItem = (item: any) => {
   const pengusulInfo = personMap.value.get(item.persnum) || {}
   const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
+
+  // Hanya hitung status dari detail yang benar-benar ada di response list
+  // (bukan dari detail yang di-pad secara virtual)
   const mappedStatus = deriveStatusFromDetails(item.details || [])
 
   const tanggalDate = new Date(item.tanggal)
@@ -1251,7 +1316,6 @@ const fetchData = async () => {
 
 // ─── Open row modal ───────────────────────────────────────────────────────────
 const openRowModal = async (row: any) => {
-  // Reset fileStates setiap buka modal baru
   fileStates.value = {}
 
   selectedRow.value = {
@@ -1266,6 +1330,7 @@ const openRowModal = async (row: any) => {
     klasifikasiDisplay: row.klasifikasiDisplay,
     status: row.status,
     template_nomor: row.template_nomor || '',
+    is_single_file: false,
     details: []
   }
   openDetail.value = true
@@ -1277,10 +1342,14 @@ const openRowModal = async (row: any) => {
 
     const klasifikasiDisplay =
       klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi
-    const normalizedDetails = normalizeDetails(
+
+    const isSingleFile = !!detailData.is_single_file
+
+    const normalized = normalizeDetails(
       detailData.details || [],
       detailData.jumlah,
-      detailData.template_nomor || ''
+      detailData.template_nomor || '',
+      isSingleFile
     )
 
     selectedRow.value = {
@@ -1288,44 +1357,26 @@ const openRowModal = async (row: any) => {
       klasifikasiDisplay,
       status: detailData.status || row.status,
       template_nomor: detailData.template_nomor || '',
-      // ✅ Untuk single file: jumlah dari API (mis. 10 nomor range)
-      //    Untuk multi file: tetap dari jumlah detail cards
-      jumlah: detailData.is_single_file ? detailData.jumlah : normalizedDetails.length,
-      is_single_file: !!detailData.is_single_file,
-      details: normalizedDetails
+      jumlah: detailData.jumlah,
+      is_single_file: isSingleFile,
+      details: normalized
     }
+
+    // ─── BUG FIX: Sync status tabel dari detail API ───────────────────────────
+    const derivedStatus = deriveStatusFromDetails(normalized)
+    const tableRow = rows.value.find((r) => r.id === row.id)
+    if (tableRow) tableRow.status = derivedStatus
+    const allRow = allMappedRows.value.find((r) => r.id === row.id)
+    if (allRow) allRow.status = derivedStatus
+
+    // Sync juga ke selectedRow supaya badge di modal ikut update
+    selectedRow.value.status = derivedStatus
+    // ─────────────────────────────────────────────────────────────────────────
   } catch (err) {
     console.error('❌ Gagal load detail:', err)
   } finally {
     loadingDetail.value = false
   }
-}
-
-const normalizeDetails = (details: any[], jumlah: number, template: string) => {
-  const result = []
-  for (let i = 0; i < jumlah; i++) {
-    const d = details[i]
-    result.push(
-      d
-        ? {
-            id: d.id || `temp-${i + 1}`,
-            nomor: d.nomor || null,
-            status: d.status || 'booking',
-            file_name: d.file_name || null,
-            file_url: d.file_url || null,
-            file_text: d.file_text || null
-          }
-        : {
-            id: `temp-${i + 1}`,
-            nomor: null,
-            status: 'booking',
-            file_name: null,
-            file_url: null,
-            file_text: null
-          }
-    )
-  }
-  return result
 }
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
@@ -1459,7 +1510,7 @@ watch(openDetail, (open) => {
   if (!open) {
     selectedRow.value = null
     loadingDetail.value = false
-    fileStates.value = {} // ✅ reset saat modal tutup
+    fileStates.value = {}
   }
 })
 </script>

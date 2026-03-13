@@ -437,7 +437,11 @@ const userMenuUtilitas = computed(() => {
         },
         {
           label: t('Persetujuan') || 'Persetujuan',
-          to: '/persetujuan-penomoran'
+          to: '/persetujuan-penomoran',
+          badge:
+            (userCounts.value.menunggu_persetujuan ?? 0) > 0
+              ? userCounts.value.menunggu_persetujuan
+              : null
         }
       ]
     })
@@ -545,10 +549,13 @@ const adminMenuLaporan = computed(() => [
 
 const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
 const hasUtilitasNotification = computed(() => {
-  if (!isAdminOrSuperadmin.value) return userCounts.value.menunggu_verifikasi > 0
+  if (!isAdminOrSuperadmin.value) {
+    return (
+      userCounts.value.menunggu_verifikasi > 0 || (userCounts.value.menunggu_persetujuan ?? 0) > 0
+    )
+  }
   return false
 })
-
 // ─── Apps ─────────────────────────────────────────────────────────────────────
 
 const apps = computed(() => {

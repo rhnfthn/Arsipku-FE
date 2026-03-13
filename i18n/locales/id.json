@@ -257,7 +257,7 @@
   "usl_title": "Daftar Usulan Penomoran",
   "usl_btn_tambah": "Tambah",
   "usl_filter_semua": "Semua",
-  "usl_filter_belum_diajukan": "Belum Diajukan",
+  "usl_filter_belum_diajukan": "Draft",
   "usl_filter_menunggu": "Menunggu Verifikasi",
   "usl_filter_disetujui": "Disetujui",
   "usl_filter_ditolak": "Ditolak",
@@ -349,7 +349,7 @@
   "add_usl_file_format_hint": "PDF, DOC, DOCX (Maks 5MB)",
   "add_usl_nomor_surat_label": "Nomor Surat",
   "add_usl_status_booking": "Booking",
-
+  "ver_single_file_label": "Single File",
   "add_usl_btn_batal": "Batal",
   "add_usl_btn_selanjutnya": "Selanjutnya",
   "add_usl_btn_menyimpan_step1": "Menyimpan...",
@@ -481,6 +481,7 @@
   "ver_confirm_batal": "Batal",
   "ver_pratinjau": "Pratinjau",
   "ver_memuat_pratinjau": "Memuat Pratinjau...",
+  "ver_status_detail_draft": "Draft",
   "ver_status_detail_booking": "Booking",
   "ver_status_detail_terpakai": "Terpakai",
   "ver_status_detail_final": "Final",
@@ -933,5 +934,6 @@
   "pt_delete_cancel": "Batal",
   "pt_search_placeholder": "Cari Tautan",
 
-  "pernom_title": "Daftar Persetujuan Penomoran"
+  "pernom_title": "Daftar Persetujuan Penomoran",
+  "usl_status_draft": "Draft"
 }
