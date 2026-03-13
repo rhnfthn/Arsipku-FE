@@ -33,8 +33,8 @@ export const usePenomoran = () => {
   })
 
   const userCounts = ref({
-    position_id: null as number | null,
     menunggu_verifikasi: 0,
+    menunggu_persetujuan: 0,
     disetujui: 0,
     ditolak: 0,
     belum_diajukan: 0,
@@ -111,20 +111,20 @@ export const usePenomoran = () => {
 
       const endpoint = `/nomor-request-count/${numericPositionId}`
       const res = await get(endpoint)
-
+      userCounts.value = res.data
       console.log('📥 User count response:', res)
 
       if (res?.success && res?.data) {
         userCounts.value = {
           position_id: res.data.position_id ?? numericPositionId,
           menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
+
+          menunggu_persetujuan: res.data.menunggu_persetujuan ?? 0,
           disetujui: res.data.disetujui ?? 0,
           ditolak: res.data.ditolak ?? 0,
           belum_diajukan: res.data.belum_diajukan ?? 0,
           total: res.data.total ?? 0
         }
-
-        console.log('✅ User counts updated:', userCounts.value)
       }
 
       return userCounts.value
@@ -870,9 +870,6 @@ export const usePenomoran = () => {
         detail_ids: validIds
       })
 
-      // ✅ Hapus toast di sini — toast sudah ditangani di processApproval
-      // toast.add({ title: "Berhasil", ... }) ← HAPUS
-
       await getNomorRequestCountAdmin()
 
       return response
@@ -1163,6 +1160,129 @@ export const usePenomoran = () => {
     }
   }
 
+  // ============================================================
+  // ✅ NEW: PENANDATANGAN APPROVAL FLOW
+  // ============================================================
+
+  /** ===========================
+   * GET LIST PENDING APPROVAL (PENANDATANGAN)
+   * endpoint: GET /nomor-request/pending-approval
+   * =========================== */
+  const getListPendingApproval = async (params?: {
+    search?: string
+    page?: number
+    limit?: number
+    sort_by?: string
+    sort_order?: string
+  }) => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.search) queryParams.append('search', params.search)
+      if (params?.page) queryParams.append('page', String(params.page))
+      if (params?.limit) queryParams.append('limit', String(params.limit))
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by)
+      if (params?.sort_order) queryParams.append('sort_order', params.sort_order)
+
+      const queryString = queryParams.toString()
+      const endpoint = `/nomor-request/pending-approval${queryString ? `?${queryString}` : ''}`
+
+      console.log('📤 Fetching pending approval list with params:', params)
+      console.log('📍 Full endpoint:', endpoint)
+
+      const res = await get(endpoint)
+      console.log('✅ Pending approval data received:', res)
+
+      return {
+        data: res.data ?? [],
+        pagination: res.pagination ?? null
+      }
+    } catch (e: any) {
+      console.error('❌ Error ambil list pending approval:', e)
+      toast.add({
+        title: 'Gagal fetch data',
+        description: e.message || 'Gagal mengambil daftar usulan menunggu persetujuan',
+        color: 'error'
+      })
+      return { data: [], pagination: null }
+    }
+  }
+
+  /** ===========================
+   * APPROVE PENANDATANGAN
+   * endpoint: POST /nomor-request/:id_request/approve-penandatangan
+   * =========================== */
+  const approvePenandatangan = async (requestId: string, detailIds?: string[]) => {
+    try {
+      if (!requestId) throw new Error('Request ID tidak boleh kosong')
+
+      console.log('📤 Approve penandatangan for request:', requestId, 'detail_ids:', detailIds)
+
+      const body = detailIds && detailIds.length > 0 ? { detail_ids: detailIds } : {}
+      const response = await post(`/nomor-request/${requestId}/approve-penandatangan`, body)
+
+      console.log('✅ Approve penandatangan response:', response)
+
+      toast.add({
+        title: 'Berhasil',
+        description:
+          response?.message ||
+          `${response?.data?.approved_count ?? 0} usulan berhasil disetujui dan siap diverifikasi admin`,
+        color: 'success'
+      })
+
+      return response
+    } catch (e: any) {
+      console.error('❌ Error approve penandatangan:', e)
+      const errorMsg =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        'Gagal menyetujui usulan'
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
+      throw e
+    }
+  }
+
+  /** ===========================
+   * REJECT PENANDATANGAN
+   * endpoint: POST /nomor-request/:id_request/reject-penandatangan
+   * Body: { keterangan: string }
+   * =========================== */
+  const rejectPenandatangan = async (
+    requestId: string,
+    keterangan: string,
+    detailIds?: string[]
+  ) => {
+    try {
+      if (!requestId) throw new Error('Request ID tidak boleh kosong')
+      if (!keterangan?.trim()) throw new Error('Keterangan penolakan harus diisi')
+
+      console.log('📤 Reject penandatangan for request:', requestId)
+
+      const body: Record<string, any> = { keterangan }
+      if (detailIds && detailIds.length > 0) body.detail_ids = detailIds
+
+      const response = await post(`/nomor-request/${requestId}/reject-penandatangan`, body)
+
+      console.log('✅ Reject penandatangan response:', response)
+
+      toast.add({
+        title: 'Ditolak',
+        description:
+          response?.message || `${response?.data?.rejected_count ?? 0} usulan berhasil ditolak`,
+        color: 'error'
+      })
+
+      return response
+    } catch (e: any) {
+      console.error('❌ Error reject penandatangan:', e)
+      const errorMsg =
+        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menolak usulan'
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
+      throw e
+    }
+  }
+
   /* ===========================
    * TOAST HELPERS — UI LEVEL
    * Dipindah dari component agar semua toast terpusat di composable
@@ -1300,8 +1420,8 @@ export const usePenomoran = () => {
     // USULAN FLOW (USER)
     createUsulanDraft,
     submitBooking,
-    submitBookingSingleFile, // ✅ BARU
-    updateNomorFile, // ✅ BARU: ganti file nomor terpakai → final
+    submitBookingSingleFile,
+    updateNomorFile,
     getListUsulanByPosition,
     deleteUsulanUser,
 
@@ -1317,6 +1437,11 @@ export const usePenomoran = () => {
     rejectNomorRequest,
     uploadDetailFile,
     hangusDetailNomor,
+
+    // ✅ NEW: PENANDATANGAN APPROVAL FLOW
+    getListPendingApproval,
+    approvePenandatangan,
+    rejectPenandatangan,
 
     // PENOMORAN FINAL (ADMIN)
     createPenomoranFinal,

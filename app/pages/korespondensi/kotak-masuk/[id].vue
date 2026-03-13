@@ -213,6 +213,7 @@ const loadData = async () => {
           return {
             id: flow.id,
             urutan: sortedFlows.length - index,
+            sifat: flow,
             aksi: aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
@@ -223,8 +224,6 @@ const loadData = async () => {
             // --- PERUBAHAN ADA DI SINI ---
             // 'from' untuk profil/avatar yang melakukan aksi (Pembuat Draft/Disposisi)
             from: flow.pengirim || {},
-
-
 
             // 'pengirim' untuk data teks Pengirim Surat/Naskah
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
@@ -307,6 +306,8 @@ const loadData = async () => {
 
           return {
             id: item.id,
+            ttd: item.ttd,
+            sifat: item.sifat,
             aksi: item.status || 'read',
             jenis: item.jenis || inboxData.jenis || 'SM',
             jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
@@ -447,9 +448,9 @@ const handleEditKonsep = () => {
 
 // HANDLER ROUTING YANG BARU UNTUK 4 TOMBOL
 const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/nota-dinas', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
-const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
-const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
-const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
+const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
+const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
+const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
 const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
 
 // Preview Handlers

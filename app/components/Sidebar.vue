@@ -412,6 +412,7 @@ const userMenuUtama = computed(() => [
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
@@ -437,7 +438,11 @@ const userMenuUtilitas = computed(() => {
         },
         {
           label: t('Persetujuan') || 'Persetujuan',
-          to: '/persetujuan-penomoran'
+          to: '/persetujuan-penomoran',
+          badge:
+            (userCounts.value.menunggu_persetujuan ?? 0) > 0
+              ? userCounts.value.menunggu_persetujuan
+              : null
         }
       ]
     })
@@ -474,6 +479,7 @@ const adminMenuUtama = computed(() => [
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
+  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
 ])
 
@@ -545,10 +551,13 @@ const adminMenuLaporan = computed(() => [
 
 const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
 const hasUtilitasNotification = computed(() => {
-  if (!isAdminOrSuperadmin.value) return userCounts.value.menunggu_verifikasi > 0
+  if (!isAdminOrSuperadmin.value) {
+    return (
+      userCounts.value.menunggu_verifikasi > 0 || (userCounts.value.menunggu_persetujuan ?? 0) > 0
+    )
+  }
   return false
 })
-
 // ─── Apps ─────────────────────────────────────────────────────────────────────
 
 const apps = computed(() => {

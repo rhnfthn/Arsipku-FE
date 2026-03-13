@@ -313,6 +313,9 @@ const loadData = async () => {
 
           return {
             id: d.id,
+            ttd: item.ttd,
+            sifat: item.sifat,
+            dikirim_oleh: item.dikirim_oleh,
             aksi: d.status || 'read',
             jenis: d.jenis || 'SM',
             jenis_label: d.jenis_label || 'SURAT MASUK',
@@ -327,6 +330,7 @@ const loadData = async () => {
             disposisi: d.disposisi || d.instruksi || d.disposisi_content?.disposisi,
             lampiran_files: d.lampiran_files || d.attachments || [],
             final_pdf_url: d.final_pdf_url || d.file_url,
+            dikirim_oleh: d.dikirim_oleh || null,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
