@@ -46,16 +46,16 @@
             </div>
             <button
               v-for="cat in categories"
-              :key="cat"
-              @click="selectedCategory = cat"
+              :key="cat.id"
+              @click="selectedCategoryId = cat.id"
               :class="[
-                'w-full text-left px-4 py-2 rounded-xl text-sm transition',
-                selectedCategory === cat
+                'w-full text-left px-4 py-2 rounded-xl text-sm transition capitalize',
+                selectedCategoryId === cat.id
                   ? 'bg-blue-100 text-blue-600 font-medium'
                   : 'hover:bg-gray-100 text-gray-600'
               ]"
             >
-              {{ cat }}
+              {{ cat.nama }}
             </button>
           </div>
 
@@ -132,9 +132,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
-import type { Faq } from '@/composables/useFaq'
+import type { Faq, FaqKategori } from '@/composables/useFaq'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -146,8 +146,8 @@ const items = [
 ] satisfies BreadcrumbItem[]
 
 // ─── Categories ──────────────────────────────────────────────────────────────
-const categories = ref<string[]>([])
-const selectedCategory = ref('')
+const categories = ref<FaqKategori[]>([])
+const selectedCategoryId = ref('')
 
 // ─── Open indices (support multi-open when searching) ────────────────────────
 const openIndices = ref<Set<number>>(new Set())
@@ -181,8 +181,8 @@ watch(searchQuery, (q) => {
     } else {
       // Back to category view
       openIndices.value = new Set()
-      if (selectedCategory.value) {
-        await fetchFaqs({ kategori: selectedCategory.value })
+      if (selectedCategoryId.value) {
+        await fetchFaqs({ kategoriId: selectedCategoryId.value })
       }
     }
   }, 350)
@@ -195,16 +195,17 @@ const votingId = ref<string | null>(null)
 onMounted(async () => {
   const cats = await fetchCategories()
   categories.value = cats
-  if (cats.length > 0) {
-    selectedCategory.value = cats[0]
-    await fetchFaqs({ kategori: cats[0] })
+  const first = cats[0]
+  if (first) {
+    selectedCategoryId.value = first.id
+    await fetchFaqs({ kategoriId: first.id })
   }
 })
 
-watch(selectedCategory, async (cat) => {
+watch(selectedCategoryId, async (catId) => {
   if (isSearching.value) return // don't switch category while searching
   openIndices.value = new Set()
-  if (cat) await fetchFaqs({ kategori: cat })
+  if (catId) await fetchFaqs({ kategoriId: catId })
 })
 
 const handleVote = async (faq: Faq, type: 'puas' | 'tidak-puas') => {

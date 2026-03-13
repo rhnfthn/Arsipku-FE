@@ -545,82 +545,45 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <!-- Person Dropdown -->
-          <div class="person-dropdown-container mt-4">
+          <!-- Person Search -->
+          <div class="mt-4">
             <Heading variant="heading11m" class="text-xs">
               {{ $t("stu_form_nama_anggota") }}
               <span class="text-red-500">*</span>
             </Heading>
 
             <div class="relative mt-1">
-              <button
-                type="button"
-                @click="togglePersonDropdown"
-                class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <span
-                  :class="
-                    formMember.personId ? 'text-gray-900' : 'text-gray-400'
-                  "
-                >
-                  {{ getSelectedPersonText() || $t("stu_form_pilih_anggota") }}
-                </span>
-                <ChevronDown class="w-4 h-4 text-gray-400" />
-              </button>
-
+              <input
+                v-model="personSearchQuery"
+                type="text"
+                :placeholder="$t('stu_form_cari_anggota')"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                @input="onPersonSearch"
+                @focus="personSuggestions.length > 0 && (showPersonSuggestions = true)"
+                @blur="hidePersonSuggestions"
+                @keydown.escape="showPersonSuggestions = false"
+                autocomplete="off"
+              />
               <div
-                v-if="showPersonDropdown"
-                class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
-                @click.stop
+                v-if="isSearchingPerson"
+                class="absolute right-3 top-1/2 -translate-y-1/2"
               >
-                <div class="p-2 border-b border-gray-200">
-                  <div class="relative">
-                    <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      v-model="personSearchQuery"
-                      @input="filterPersons"
-                      :placeholder="$t('stu_form_cari_anggota')"
-                      class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      @click.stop
-                    />
-                  </div>
-                </div>
-
-                <!-- Loading State -->
-                <div v-if="loadingPersons" class="p-4 text-center">
-                  <div
-                    class="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto"
-                  ></div>
-                  <p class="text-sm text-gray-500 mt-2">
-                    {{ $t("stu_form_memuat_anggota") }}
-                  </p>
-                </div>
-
-                <!-- Options List -->
-                <div v-else class="max-h-64 overflow-y-auto">
-                  <div
-                    v-for="p in filteredPersons"
-                    :key="p.id"
-                    @click="selectPerson(p)"
-                    :class="[
-                      'px-3 py-2 cursor-pointer hover:bg-primary-50 transition-colors',
-                      formMember.personId === p.id
-                        ? 'bg-primary-100 font-medium'
-                        : '',
-                    ]"
-                  >
-                    <p class="text-sm font-medium">{{ p.name }}</p>
-                    <p class="text-xs text-gray-500">PN: {{ p.persnum }}</p>
-                  </div>
-
-                  <div
-                    v-if="filteredPersons.length === 0"
-                    class="px-3 py-4 text-center text-gray-500 text-sm"
-                  >
-                    {{ $t("stu_form_anggota_not_found") }}
-                  </div>
+                <div
+                  class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"
+                />
+              </div>
+              <div
+                v-if="showPersonSuggestions && personSuggestions.length > 0"
+                class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+              >
+                <div
+                  v-for="person in personSuggestions"
+                  :key="person.id"
+                  @mousedown.prevent="selectPersonSuggestion(person)"
+                  class="px-4 py-2 cursor-pointer text-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <span class="font-medium text-gray-800 dark:text-white">{{ person.name }}</span>
+                  <span class="text-gray-500 dark:text-gray-400 ml-1">- {{ person.persnum }}</span>
                 </div>
               </div>
             </div>
@@ -869,7 +832,7 @@ import { usePerson } from "~/composables/usePerson";
 const { t } = useI18n();
 
 // ─── Composables ─────────────────────────────────────────────────────────────
-const { getPersons } = usePerson();
+const { searchPersons } = usePerson();
 
 const {
   getCompanyTree,
@@ -923,9 +886,14 @@ const loadingExpand = ref(false);
 const subAreaSearchQuery = ref("");
 const personSearchQuery = ref("");
 const filteredSubAreas = ref<any[]>([]);
-const filteredPersons = ref<any[]>([]);
 const showSubAreaDropdown = ref(false);
-const showPersonDropdown = ref(false);
+
+// Person search-as-you-type state
+const personSuggestions = ref<any[]>([]);
+const isSearchingPerson = ref(false);
+const showPersonSuggestions = ref(false);
+const selectedPersonForMember = ref<any>(null);
+let personSearchTimeout: any = null;
 
 // Modals
 const showAddUnitModal = ref(false);
@@ -969,9 +937,6 @@ const organizationTree = ref<any[]>([]);
 const subAreaOptions = ref<any[]>([]);
 const loadingSubArea = ref(false);
 const parentHasChief = ref(false);
-const personOptions = ref<any[]>([]);
-const loadingPersons = ref(false);
-const personsLoaded = ref(false);
 const selectedParentNode = ref<any>(null);
 
 const chiefOptions = [
@@ -1038,11 +1003,6 @@ const handleClickOutside = (event: MouseEvent) => {
   if (showSubAreaDropdown.value) {
     const isClickInside = target.closest(".sub-area-dropdown-container");
     if (!isClickInside) showSubAreaDropdown.value = false;
-  }
-
-  if (showPersonDropdown.value) {
-    const isClickInside = target.closest(".person-dropdown-container");
-    if (!isClickInside) showPersonDropdown.value = false;
   }
 };
 
@@ -1325,6 +1285,19 @@ const mapCompanyTree = async (nodes: any[], level = 0): Promise<any[]> => {
   const result = [];
   for (const node of nodes) {
     if (isExpired(node.endDate)) {
+      // Cascade: hapus posisi dan anggota di bawah organisasi ini dulu
+      try {
+        const posRes = await getPositionsByOrganization(String(node.organization));
+        for (const pos of posRes.data) {
+          try {
+            const personRes = await getPersonsByPosition(pos.position);
+            for (const p of personRes.data) {
+              await deletePerson(p.id_relation_sp);
+            }
+          } catch {}
+          await deletePosition(pos.id);
+        }
+      } catch {}
       await deleteOrganization(node.id);
       continue;
     }
@@ -1388,6 +1361,13 @@ const loadPositions = async (node: any) => {
   const validPositions: any[] = [];
   for (const pos of res.data) {
     if (isExpired(pos.end_date)) {
+      // Cascade: hapus anggota di bawah posisi ini dulu
+      try {
+        const personRes = await getPersonsByPosition(pos.position);
+        for (const p of personRes.data) {
+          await deletePerson(p.id_relation_sp);
+        }
+      } catch {}
       await deletePosition(pos.id);
       continue;
     }
@@ -1421,21 +1401,6 @@ const loadPersons = async (node: any) => {
   }
 };
 
-const loadPersonsIfNeeded = async () => {
-  if (personsLoaded.value || loadingPersons.value) return;
-  try {
-    loadingPersons.value = true;
-    const res = await getPersons();
-    personOptions.value = res.data || [];
-    filteredPersons.value = res.data || [];
-    personsLoaded.value = true;
-  } catch (err) {
-    console.error("❌ gagal load person:", err);
-  } finally {
-    loadingPersons.value = false;
-  }
-};
-
 const sortPositionsByBod = (positions: any[]) =>
   [...positions].sort((a, b) => {
     const aOrder = bodOrder[a.bodTag ?? ""] ?? 99;
@@ -1466,12 +1431,41 @@ const getSelectedSubAreaText = () => {
     : "";
 };
 
-const getSelectedPersonText = () => {
-  if (!formMember.value.personId) return "";
-  const selected = personOptions.value.find(
-    (p) => p.id === formMember.value.personId,
-  );
-  return selected ? `${selected.name} (PN: ${selected.persnum})` : "";
+const onPersonSearch = () => {
+  selectedPersonForMember.value = null;
+  formMember.value.personId = "";
+  if (personSearchTimeout) clearTimeout(personSearchTimeout);
+  if (!personSearchQuery.value.trim()) {
+    personSuggestions.value = [];
+    showPersonSuggestions.value = false;
+    return;
+  }
+  personSearchTimeout = setTimeout(async () => {
+    isSearchingPerson.value = true;
+    try {
+      const res = await searchPersons(personSearchQuery.value);
+      personSuggestions.value = res.data?.data || [];
+      showPersonSuggestions.value = personSuggestions.value.length > 0;
+    } catch {
+      personSuggestions.value = [];
+      showPersonSuggestions.value = false;
+    } finally {
+      isSearchingPerson.value = false;
+    }
+  }, 300);
+};
+
+const selectPersonSuggestion = (person: any) => {
+  selectedPersonForMember.value = person;
+  formMember.value.personId = person.id;
+  personSearchQuery.value = `${person.name} - ${person.persnum}`;
+  showPersonSuggestions.value = false;
+};
+
+const hidePersonSuggestions = () => {
+  setTimeout(() => {
+    showPersonSuggestions.value = false;
+  }, 150);
 };
 
 const filterSubAreas = () => {
@@ -1493,30 +1487,7 @@ const selectSubArea = (sub: any) => {
   subAreaSearchQuery.value = "";
 };
 
-const filterPersons = () => {
-  const query = personSearchQuery.value.toLowerCase().trim();
-  filteredPersons.value = !query
-    ? personOptions.value
-    : personOptions.value.filter(
-        (person) =>
-          (person.name || "").toLowerCase().includes(query) ||
-          String(person.persnum || "")
-            .toLowerCase()
-            .includes(query),
-      );
-};
 
-const selectPerson = (person: any) => {
-  formMember.value.personId = person.id;
-  formMember.value.nama = person.name;
-  showPersonDropdown.value = false;
-  personSearchQuery.value = "";
-};
-
-const togglePersonDropdown = async () => {
-  showPersonDropdown.value = !showPersonDropdown.value;
-  if (showPersonDropdown.value) await loadPersonsIfNeeded();
-};
 
 // ─── Form resets ──────────────────────────────────────────────────────────────
 const resetUnitForm = () => {
@@ -1548,6 +1519,9 @@ const resetPositionForm = () => {
 const resetMemberForm = () => {
   formMember.value = { personId: "", nama: "", mulai: "", berakhir: "" };
   personSearchQuery.value = "";
+  personSuggestions.value = [];
+  showPersonSuggestions.value = false;
+  selectedPersonForMember.value = null;
 };
 
 // ─── Node interaction ─────────────────────────────────────────────────────────
@@ -1775,9 +1749,7 @@ const handleSavePosition = async () => {
 const handleSaveMember = async () => {
   try {
     if (!company.value?.kode || !selectedParentNode.value) return;
-    const selectedPerson = personOptions.value.find(
-      (p) => p.id === formMember.value.personId,
-    );
+    const selectedPerson = selectedPersonForMember.value;
     if (!selectedPerson) return;
 
     const payload = {

@@ -18,35 +18,67 @@
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
-      <div class="flex flex-wrap gap-4 items-center p-3">
-        <!-- Rows per page -->
-        <select
-          v-model="rowsPerPage"
-          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option v-for="n in rowsChoices" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
+      <div class="flex flex-wrap gap-2 items-center p-3">
+        <!-- Rows per page (custom dropdown) -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openRowsDropdown = !openRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ rowsPerPage }}</span>
+            <ChevronDown
+            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="rowsPerPage = n; openRowsDropdown = false"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  rowsPerPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Refresh -->
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
-        <div class="relative flex-1 w-full px-2">
+
+        <!-- Search -->
+        <div class="relative flex-1 min-w-40">
           <Search
-            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
             :placeholder="$t('cari')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
 
+        <!-- Export -->
         <button
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -387,16 +419,39 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-vue-next";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
 import { useAuth } from "~/composables/useAuth";
 import Modal from "@/components/Modal.vue";
 import ConfirmPopup from "@/components/ConfirmPopup.vue";
+import { useToast } from "#imports";
 
 definePageMeta({
   middleware: "auth",
 });
 
 const { t } = useI18n();
+
+const toast = useToast();
+
+const showToast = (
+  title: string,
+  message: string,
+  color: 'success' | 'error' | 'warning' | 'primary' = 'success',
+) => {
+  toast.add({
+    title,
+    description: message,
+    color,
+    icon:
+      color === 'success'
+        ? 'i-lucide-check-circle'
+        : color === 'error'
+          ? 'i-lucide-x-circle'
+          : 'i-lucide-info',
+  });
+};
 
 const items = computed(() => [
   { label: t("beranda"), to: "/beranda" },
@@ -443,6 +498,7 @@ const editId = ref<string | null>(null);
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
+const openRowsDropdown = ref(false);
 
 // Sorting
 const sortColumn = ref<string>("nama");
@@ -451,23 +507,30 @@ const sortKey = ref("");
 const sortOrder = ref("asc");
 
 const handleSave = async () => {
-  if (editId.value) {
-    await updateTertujuEksternal(editId.value, {
-      nama: form.value.nama,
-      alamat: form.value.alamat,
-      telepon: form.value.telephone,
-      aktif: form.value.aktif,
-    });
-  } else {
-    await createTertujuEksternal({
-      id_position_pembuat: user.value.position,
-      company: "MN",
-      area: "Regional 1",
-      nama: form.value.nama,
-      alamat: form.value.alamat,
-      telepon: form.value.telephone,
-      aktif: form.value.aktif,
-    });
+  try {
+    if (editId.value) {
+      await updateTertujuEksternal(editId.value, {
+        nama: form.value.nama,
+        alamat: form.value.alamat,
+        telepon: form.value.telephone,
+        aktif: form.value.aktif,
+      });
+      showToast(t('te_berhasil') || 'Berhasil', t('te_success_edit') || 'Data berhasil diperbarui.', 'success');
+    } else {
+      await createTertujuEksternal({
+        id_position_pembuat: user.value.position,
+        company: "MN",
+        area: "Regional 1",
+        nama: form.value.nama,
+        alamat: form.value.alamat,
+        telepon: form.value.telephone,
+        aktif: form.value.aktif,
+      });
+      showToast(t('te_berhasil') || 'Berhasil', t('te_success_add') || 'Data berhasil ditambahkan.', 'success');
+    }
+  } catch (err: any) {
+    console.error('Gagal menyimpan data:', err?.response?.data || err);
+    showToast(t('te_gagal') || 'Gagal', t('te_err_save') || 'Gagal menyimpan data.', 'error');
   }
 
   showModal.value = false;
@@ -497,9 +560,11 @@ const confirmDelete = async () => {
   try {
     isDeleting.value = true;
     await deleteTertujuEksternal(deleteTargetId.value);
+    showToast(t('te_berhasil') || 'Berhasil', t('te_success_delete') || 'Data berhasil dihapus.', 'success');
     showConfirmDelete.value = false;
   } catch (err: any) {
     console.error("Gagal menghapus data:", err?.response?.data || err);
+    showToast(t('te_gagal') || 'Gagal', t('te_err_delete') || 'Gagal menghapus data.', 'error');
   } finally {
     isDeleting.value = false;
     deleteTargetId.value = null;
@@ -613,6 +678,31 @@ const refreshData = async () => {
   currentPage.value = 1;
   await fetchTertujuEksternal();
 };
+
+const onExport = () => {
+  const data = sortedData.value.map((item, idx) => ({
+    No: idx + 1,
+    [t('te_nama')]: item.nama,
+    [t('te_alamat')]: item.alamat,
+    [t('te_telepon')]: item.telepon || '-',
+    Status: item.aktif ? t('te_aktif') : t('te_tidak_aktif'),
+    [t('te_pengusul')]: item.nama_pembuat || '-',
+  }));
+
+  if (data.length === 0) {
+    showToast(t('te_gagal') || 'Info', 'Tidak ada data untuk diekspor.', 'warning');
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 40 }, { wch: 18 }, { wch: 12 }, { wch: 25 }];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('tertuju'));
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `tertuju_eksternal_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  showToast(t('te_berhasil') || 'Berhasil', 'Export berhasil.', 'success');
+};
 </script>
 
 <style scoped>
@@ -621,6 +711,16 @@ const refreshData = async () => {
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .sort-animate {

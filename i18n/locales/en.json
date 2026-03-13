@@ -99,7 +99,7 @@
   "ma_pop_desc": "This account will be set as a user",
   "ma_modal_add": "Add Account",
   "ma_modal_edit": "Edit Account Role",
-  "ma_persnum_placeholder": "Enter persnum",
+  "ma_persnum_placeholder": "Enter name/persnum",
   "ma_role_placeholder": "Select role",
   "ma_val_title": "Validation failed",
   "ma_val_desc": "Persnum and role are required",

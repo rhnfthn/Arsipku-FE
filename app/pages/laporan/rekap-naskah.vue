@@ -665,7 +665,7 @@ const getStatusClass = (status: string) => {
     return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300";
   if (status === "booking")
     return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300";
-  return "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+  return "bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-300";
 };
 
 //STATE

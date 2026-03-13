@@ -501,7 +501,7 @@
                         item.statusRaw === 'terpakai_final',
                       'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300':
                         item.statusRaw === 'booking',
-                      'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300':
+                      'bg-red-300 dark:bg-red-700 text-red-700 dark:text-red-300':
                         item.statusRaw === 'hangus',
                     }"
                   >
