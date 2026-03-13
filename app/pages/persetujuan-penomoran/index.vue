@@ -15,13 +15,41 @@
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
         <div class="flex items-center gap-2 px-4">
-          <select
-            v-model="rowsPerPage"
-            @change="handleLimitChange"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">{{ n }}</option>
-          </select>
+          <!-- ROWS PER PAGE -->
+          <div class="relative" ref="rowsRef">
+            <button
+              type="button"
+              @click.stop="showRowsDropdown = !showRowsDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': showRowsDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
 
         <!-- SEARCH -->
@@ -33,7 +61,7 @@
             v-model="search"
             @input="handleSearchInput"
             :placeholder="$t('ver_cari_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
       </div>
@@ -285,7 +313,6 @@
 
         <!-- ── NOMOR SURAT ── -->
         <div>
-          <!-- Header -->
           <div class="flex items-center justify-between mb-3">
             <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ $t('ver_nomor_surat') }} ({{ selectedRow?.jumlah ?? 0 }}
@@ -449,7 +476,7 @@
 
           <!-- ── NOMOR CARDS ── -->
           <div class="space-y-3">
-            <!-- SINGLE FILE: 1 outer card, baris per nomor di dalam -->
+            <!-- SINGLE FILE -->
             <template v-if="selectedRow.is_single_file">
               <div
                 class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
@@ -502,7 +529,7 @@
               </div>
             </template>
 
-            <!-- MULTI FILE: card terpisah per nomor -->
+            <!-- MULTI FILE -->
             <template v-else>
               <div
                 v-for="(detail, idx) in validDetails"
@@ -516,7 +543,6 @@
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
                 ]"
               >
-                <!-- Checkbox + nomor -->
                 <div class="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -561,7 +587,6 @@
                   </div>
                 </div>
 
-                <!-- hangus -->
                 <template v-if="detail.status === 'hangus'">
                   <div
                     class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-md p-3"
@@ -585,7 +610,6 @@
                   </div>
                 </template>
 
-                <!-- File per-nomor -->
                 <template v-else>
                   <div
                     v-if="detail.file_url || detail.file_name"
@@ -651,8 +675,9 @@
             <span
               v-if="!allUnchecked"
               class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
-              >{{ $t('ver_keterangan_tolak_suffix') }}</span
             >
+              {{ $t('ver_keterangan_tolak_suffix') }}
+            </span>
           </label>
           <textarea
             ref="keteranganRef"
@@ -690,10 +715,6 @@
 
       <template #footer>
         <div class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <!--
-            SETUJUI — aktif kalau ada yang checked.
-            Kalau ada yang di-uncheck, processApproval juga reject sekaligus.
-          -->
           <button
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
@@ -727,10 +748,6 @@
             }}</span>
           </button>
 
-          <!--
-            TOLAK SEMUA — hanya aktif kalau allUnchecked.
-            Kalau mixed (sebagian checked), cukup gunakan tombol Setujui.
-          -->
           <button
             @click="confirmRejection"
             :disabled="isProcessing || !allUnchecked"
@@ -835,7 +852,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown } from 'lucide-vue-next'
+import { Search, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
 import { Modal } from '#components'
@@ -894,7 +911,9 @@ const openModal = ref(false)
 const isOpenPreview = ref(false)
 const pdfUrl = ref<string | null>(null)
 const rowsPerPage = ref<number>(10)
-const rowsChoices = [5, 10, 20, 50]
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
 const currentPage = ref<number>(1)
 const search = ref<string>('')
 const selectedRow = ref<any>(null)
@@ -914,8 +933,21 @@ const uncheckAll = ref(false)
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-// ─── validDetails: semua detail non-hangus, dengan `checked` langsung di objek ──
-// (pola sama persis dengan halaman verifikasi)
+// ─── Rows per page ────────────────────────────────────────────────────────────
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  currentPage.value = 1
+  fetchData()
+}
+
+// ─── Click outside ────────────────────────────────────────────────────────────
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+}
+
+// ─── validDetails ─────────────────────────────────────────────────────────────
 const validDetails = computed<any[]>(() =>
   (selectedRow.value?.details ?? []).filter((d: any) => d.status !== 'hangus')
 )
@@ -933,7 +965,6 @@ const sharedFileDetail = computed(() => {
   return (selectedRow.value?.details ?? []).find((d: any) => d.file_name || d.file_url) ?? null
 })
 
-// Toggle "Tolak Semua" — unceklis / ceklis ulang semua validDetails
 const toggleUncheckAll = () => {
   if (!selectedRow.value?.details) return
   validDetails.value.forEach((d: any) => {
@@ -941,7 +972,6 @@ const toggleUncheckAll = () => {
   })
 }
 
-// Sync toggle ketika checkbox individual diubah manual
 watch(
   () => selectedRow.value?.details,
   (details) => {
@@ -993,7 +1023,7 @@ const fetchData = async () => {
               status: d.status || 'draft',
               file_name: d.file_name || null,
               file_url: d.file_url || null,
-              checked: d.status !== 'hangus' // default semua centang
+              checked: d.status !== 'hangus'
             }))
           : []
       }
@@ -1026,10 +1056,6 @@ const handlePageChange = (page: number) => {
   currentPage.value = page
   fetchData()
 }
-const handleLimitChange = () => {
-  currentPage.value = 1
-  fetchData()
-}
 
 const totalPages = computed(() => pagination.value?.totalPages || 1)
 const paginationPages = computed(() => {
@@ -1046,7 +1072,6 @@ const paginationPages = computed(() => {
 
 // ─── Show modal ───────────────────────────────────────────────────────────────
 const showModal = (row: any) => {
-  // Clone details dengan `checked = true` untuk semua non-hangus
   const detailsWithChecked = (row.details ?? []).map((d: any) => ({
     ...d,
     checked: d.status !== 'hangus'
@@ -1080,42 +1105,25 @@ const validateKeterangan = async (): Promise<boolean> => {
   return false
 }
 
-// ─── APPROVE (+ mixed kalau ada yg di-uncheck) ───────────────────────────────
+// ─── Approve ──────────────────────────────────────────────────────────────────
 const confirmApproval = async () => {
-  console.log('confirmApproval called', {
-    hasAnyChecked: hasAnyChecked.value,
-    hasUnchecked: hasUnchecked.value,
-    allUnchecked: allUnchecked.value,
-    keterangan: keterangan_ditolak.value,
-    checkedCount: checkedCount.value,
-    uncheckedCount: uncheckedCount.value
-  })
   if (!hasAnyChecked.value) return
   const valid = await validateKeterangan()
-  console.log('validateKeterangan result:', valid)
   if (!valid) return
   showConfirmApprove.value = true
-  console.log('showConfirmApprove set to true')
 }
 
 const processApproval = async () => {
-  console.log('processApproval called')
   showConfirmApprove.value = false
   if (!selectedRow.value) return
-
   const rejectedIds = validDetails.value.filter((d: any) => !d.checked).map((d: any) => d.id)
-
   isProcessing.value = true
   processingAction.value = 'approve'
   try {
-    // Reject dulu yang di-uncheck
     if (rejectedIds.length > 0 && keterangan_ditolak.value.trim()) {
       await rejectPenandatangan(selectedRow.value.id, keterangan_ditolak.value, rejectedIds)
     }
-
-    // Approve tanpa detail_ids — backend approve semua yang masih draft
-    await approvePenandatangan(selectedRow.value.id) // ← tanpa approvedIds
-
+    await approvePenandatangan(selectedRow.value.id)
     openModal.value = false
     await fetchData()
   } catch (e) {
@@ -1126,7 +1134,7 @@ const processApproval = async () => {
   }
 }
 
-// ─── TOLAK SEMUA ─────────────────────────────────────────────────────────────
+// ─── Tolak semua ──────────────────────────────────────────────────────────────
 const confirmRejection = async () => {
   if (!allUnchecked.value) return
   const valid = await validateKeterangan()
@@ -1175,10 +1183,12 @@ watch(isOpenPreview, (open) => {
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchData()
+  document.addEventListener('click', handleDocumentClick)
 })
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
   pdfUrl.value = null
+  document.removeEventListener('click', handleDocumentClick)
 })
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
@@ -1195,3 +1205,21 @@ const onRowMouseLeave = () => {
   tooltip.value.show = false
 }
 </script>
+
+<style scoped>
+.rows-dd-enter-active,
+.rows-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.rows-dd-enter-from,
+.rows-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.rows-dd-enter-to,
+.rows-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>
