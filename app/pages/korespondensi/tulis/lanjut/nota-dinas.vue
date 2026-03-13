@@ -27,9 +27,10 @@
     </Teleport>
 
     <PageHeader title="Tulis Lanjut Nota Dinas" :items="breadcrumbs" />
-<!-- {{refData?.[0]?.final_pdf_url}} -->
+    <!-- {{refData?.[0]?.final_pdf_url}} -->
     <div v-if="refData" class="mb-4 mt-6">
-      <div class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
+      <div
+        class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
           class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
           <div class="flex items-center py-2 gap-3">
@@ -51,7 +52,7 @@
 
         <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
           <div v-if="refPdfUrl" class="w-full">
-             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[500px] border-none"
+            <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[500px] border-none"
               title="Preview Surat Referensi"></iframe>
           </div>
           <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
@@ -62,7 +63,8 @@
       </div>
     </div>
 
-    <UCard variant="soft" :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
+    <UCard variant="soft"
+      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
@@ -74,17 +76,21 @@
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'" />
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -103,7 +109,8 @@
           <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <div class="flex items-center pb-2 mb-6">
@@ -120,7 +127,8 @@
                     </div>
                   </div>
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA
+                      DINAS</h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
@@ -130,7 +138,8 @@
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else v-html="selectedTertuju.length ? selectedTertuju.map((s: any, i: number) => selectedTertuju.length === 1 ? `<div>${s.labelJob || s.label}</div>` : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`).join('') : '................................................'"></span>
+                          <span v-else
+                            v-html="selectedTertuju.length ? selectedTertuju.map((s: any, i: number) => selectedTertuju.length === 1 ? `<div>${s.labelJob || s.label}</div>` : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`).join('') : '................................................'"></span>
                         </td>
                       </tr>
                       <tr>
@@ -141,7 +150,8 @@
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
+                        <td class="text-[14px] align-top">{{ subject ||
+                          "................................................" }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -162,7 +172,8 @@
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
+                      selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                     </ol>
@@ -176,121 +187,79 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{ content: 'h-screen max-h-screen', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
-      <template #body>
-        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
-          <div v-else class="flex flex-col items-center gap-2">
-            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex gap-4 w-full">
-          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8" @click="confirmSaveDraft" />
-          <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold" @click="confirmKirimDokumen" />
-        </div>
-      </template>
-    </USlideover>
+    <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
+      @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
-    <UModal v-model:open="isPassphraseModalOpen" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</h3>
-        </div>
-      </template>
-      <template #body>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Tentukan metode tanda tangan yang akan digunakan sebelum dokumen dikirim.</p>
-        <div class="space-y-4">
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'digsig' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="digsig" v-model="selectedSendType" class="mt-1" />
-            <div class="flex flex-col flex-1">
-              <span class="font-medium text-gray-900 dark:text-white">Tanda Tangan Digital (BSrE)</span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">Dokumen ditandatangani secara elektronik resmi (TTE).</span>
-              <div v-if="selectedSendType === 'digsig'" class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <div class="flex items-start gap-4 p-4">
-                  <div class="flex-shrink-0">
-                    <div class="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white"><UIcon name="i-heroicons-user" class="w-6 h-6" /></div>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-xs text-gray-500 mb-0.5">{{ signerInfo.label }}</span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 leading-tight mb-0.5">{{ signerInfo.role }}</span>
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">{{ signerInfo.name }}</span>
-                  </div>
-                </div>
-                <div class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div @click.stop><UFormGroup label="Passphrase" required><UInput type="password" v-model="passphrase" size="lg" placeholder="Masukkan passphrase TTE Anda" class="w-full" autofocus /></UFormGroup></div>
-                </div>
-              </div>
-            </div>
-          </label>
-          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition" :class="selectedSendType === 'qr_only' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-            <input type="radio" name="send_type" value="qr_only" v-model="selectedSendType" class="mt-1" />
-            <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">Kirim Tanpa Tanda Tangan</span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">Dokumen dikirim tanpa proses tanda tangan digital.</span>
-            </div>
-          </label>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex w-full justify-end gap-2">
-          <UButton label="Batal" color="secondary" size="lg" variant="ghost" @click="isPassphraseModalOpen = false" />
-          <UButton label="Lanjutkan" color="primary" size="lg" icon="i-heroicons-paper-airplane" :loading="isLoadingData" @click="handlePassphraseSubmit" />
-        </div>
-      </template>
-    </UModal>
+    <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
+      :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from 'vue-router';
-import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue';
-import type { Editor as TinyMCEEditor } from 'tinymce';
-import { Hash, Calendar, Tag } from "lucide-vue-next";
+import { useRoute } from "vue-router";
+import Editor from "@tinymce/tinymce-vue";
 
-// Components
-import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TemplateManager from '@/components/Tulis/TemplateManager.vue';
-
-// Types & Validation
-import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
-
-// Composables
-import { useDigSign } from "@/composables/useDigSign";
 import { useInbox } from "@/composables/useInbox";
 
-// Interfaces
-interface RecipientItem { label: string; labelJob: string; value: string; raw: any; }
-interface SifatOption { label: string; value: string; }
-interface UploadedFile { id: string; fileName: string; filePath: string; fileSize: number; }
+definePageMeta({ middleware: ["auth"] });
 
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
+const alertState = useAlertState();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients } = useRecipients();
-const { isLoadingDraft, getDraftDetail } = useDraft();
+const { getRecipients, getRecipientGroups } = useRecipients();
+const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND } = useNotaDinas();
-const { getKtp } = useDigSign();
-
-// PENTING: Destructure composable
+const { getConfigDigsig } = useDigsig();
 const { fetchInboxDetail } = useInbox();
+
+const isSignMethodModalOpen = ref(false);
+const bsreDisabled = ref(false);
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
+
+const {
+  isLoadingData, loadingMessage, isOpenPreview,
+  editDraftId, subject, editorContent, tinymceEditor,
+  date, selectedKlasifikasiId, selectedSifat, existingFiles,
+  klasifikasiList, klasifikasiStatus,
+  selectedTertuju, selectedTembusan,
+  recipientGroups,
+  pdfBlob, pdfUrl,
+  maxPerihal, sifatOptions, tinyMceInit,
+  selectedKlasifikasi, formattedDate, tglDb, tglDisplay,
+  excludeTertujuList, excludeTembusanList,
+  tertujuIndividu, tembusanIndividu, tertujuGrup, tembusanGrup,
+  handleApplyTemplate, buildFormData,
+  mapApiToUI, mergeGrupDanIndividu, mapGroupsToUI,
+  mapLampiranFiles, setDateFromString, setSifatFromString,
+  setPdfBlob, revokePdfUrl,
+  confirmSaveDraft,
+  toastError, toastSuccess,
+  redirectTerkirim, redirectDraf,
+} = useTulis();
+
+// ── Lanjut-ND specific state ──────────────────────────────────────────────────
+const items = ref<any[]>([]);
+const selectedSendType = ref("qr_only");
+const refData = ref<any>(null);
+const isRefExpanded = ref(true);
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -298,152 +267,76 @@ const breadcrumbs = [
   { label: "Tulis Lanjut Nota Dinas", to: "#" },
 ];
 
-const maxPerihal = 200;
-const tinyMceInit = {
-  base_url: '/tinymce',
-  suffix: '.min',
-  height: 400,
-  menubar: false,
-  promotion: false,
-  branding: false,
-  placeholder: 'Ketik konten disini...',
-  plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
-  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
-  setup(editor: TinyMCEEditor) { tinymceEditor.value = editor; }
-};
-
-const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" }
-];
-
-// STATE
-const isLoadingData = ref(false);
-const loadingMessage = ref("");
-const isOpenPreview = ref(false);
-const alertState = useAlertState();
-const isPassphraseModalOpen = ref(false);
-const selectedSendType = ref('');
-const passphrase = ref('');
-const refData = ref<any>(null);
-const isRefExpanded = ref(true);
-const editDraftId = ref<string | null>(null);
-const subject = ref("");
-const editorContent = ref("");
-const english = ref(false);
-const tinymceEditor = ref<TinyMCEEditor | null>(null);
-const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
-const klasifikasiList = ref<Klasifikasi[]>([]);
-const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
-const selectedKlasifikasiId = ref<string | null>(null);
-const existingFiles = ref<UploadedFile[]>([]);
-const selectedSifat = ref<SifatOption | null>(null);
-const items = ref<RecipientItem[]>([]);
-const selectedTertuju = ref<RecipientItem[]>([]);
-const selectedTembusan = ref<RecipientItem[]>([]);
-const pdfBlob = ref<Blob | null>(null);
-const pdfUrl = ref("");
-
-// COMPUTED PROPERTIES
 const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
+  name: user.value?.nama || "Nama Lengkap",
+  role: user.value?.positionText || "Jabatan",
+  label: "Ditandatangani secara digital oleh",
 }));
 
-const selectedKlasifikasi = computed(() => klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value));
-
-const formattedDate = computed(() => {
-  if (!date.value) return "-";
-  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+const refPdfUrl = computed(() => {
+  if (!refData.value?.length) return "";
+  const item = refData.value[0];
+  if (item.final_pdf_url) return item.final_pdf_url;
+  if (item.lampiran_files?.length) {
+    const f = item.lampiran_files[0];
+    return f.file_url || f.file_path || f.url || "";
+  }
+  return "";
 });
 
 const formatDateRef = (dateString: string) => {
   if (!dateString) return "-";
-  try { return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return dateString; }
+  try {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric", month: "short", year: "numeric",
+    });
+  } catch { return dateString; }
 };
 
-// LOGIKA PDF URL
-const refPdfUrl = computed(() => {
-  if (!refData.value || refData.value.length === 0) return '';
+// ── Payload ───────────────────────────────────────────────────────────────────
 
-  const item = refData.value[0];
-
-  if (item.final_pdf_url) return item.final_pdf_url;
-
-  if (item.lampiran_files && item.lampiran_files.length > 0) {
-    const file = item.lampiran_files[0];
-    return file.file_url || file.file_path || file.url || '';
-  }
-
-  return '';
-});
-
-// METHODS
 const validateAndToast = (payload: DraftPayload) => {
-  const validationResult = validateDraftPayload(payload);
-  if (!validationResult.isValid) {
-    const errorKeys = Object.keys(validationResult.errors || {});
-    const firstKey = errorKeys.length > 0 ? errorKeys[0] : null;
-    toast.add({ title: 'Validasi Gagal', description: firstKey ? validationResult.errors![firstKey] : "Terjadi kesalahan input", icon: 'i-heroicons-x-circle-20-solid', color: 'error' });
+  const result = validateDraftPayload(payload);
+  if (!result.isValid) {
+    const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
+    toastError("Validasi Gagal", firstError);
     return false;
   }
   return true;
 };
 
-const getBasePayload = () => {
-  const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
-  const tglPreview = date.value ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}` : "";
-  const lampiranIds = existingFiles.value.map((f) => f.id).filter((id): id is string => !!id);
+const getBasePayload = (): DraftPayload => ({
+  id_naskah: editDraftId.value || null,
+  id_referensi_naskah: (route.query.ref_id as string) || null, // ← tetap ada
+  pengirim: user.value?.position || "",
+  penerima: tertujuIndividu.value,
+  tembusan: tembusanIndividu.value,
+  penerima_grup: tertujuGrup.value,
+  tembusan_grup: tembusanGrup.value,
+  klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+  sifat: selectedSifat.value?.value || "biasa",
+  perihal: subject.value,
+  konten: String(editorContent.value || ""),
+  htmlContent: String(editorContent.value || ""),
+  english: false,
+  nama_tempat: user.value?.areaText || "Kantor Pusat",
+  nama_jabatan: user.value?.positionText || "",
+  nama_lengkap: user.value?.nama || "",
+  tgl: tglDb.value,
+  tanggal: tglDisplay.value,
+  lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
+});
 
-  return {
-    id_naskah: editDraftId.value || null,
-    id_referensi_naskah: (route.query.ref_id as string) || null,
-    pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),
-    tembusan: selectedTembusan.value.map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-    sifat: selectedSifat.value?.value || 'biasa',
-    perihal: subject.value,
-    konten: String(editorContent.value || ''),
-    htmlContent: String(editorContent.value || ''),
-    english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
-    tgl: tglDb,
-    tanggal: tglPreview,
-    lampiran_temp_ids: lampiranIds,
-  };
-};
-
-const createFormData = (payload: any, includePdf: boolean = false) => {
-  const formData = new FormData();
-  Object.keys(payload).forEach((key) => {
-    const value = payload[key];
-    if (Array.isArray(value)) formData.append(key, JSON.stringify(value));
-    else if (value !== null && value !== undefined) formData.append(key, String(value));
+const createFormData = (payload: DraftPayload, includePdf = false) => {
+  const safeDate = payload.tanggal?.replace(/\//g, "-") || "draft";
+  return buildFormData(payload, {
+    includePdf,
+    pdfFileName: `nota_dinas_${safeDate}.pdf`,
   });
-  if (includePdf && pdfBlob.value) {
-    const safeDate = payload.tanggal ? payload.tanggal.replace(/\//g, '-') : 'draft';
-    formData.append("final_pdf", pdfBlob.value, `nota_dinas_${safeDate}.pdf`);
-  }
-  return formData;
 };
 
-const handleApplyTemplate = (htmlContent: string) => {
-  if (tinymceEditor.value) {
-    tinymceEditor.value.setContent(htmlContent.trim().replace(/>\s+</g, '><'));
-    editorContent.value = tinymceEditor.value.getContent();
-  }
-};
+// ── Handlers ──────────────────────────────────────────────────────────────────
 
 const handlePreview = async () => {
   const payload = getBasePayload();
@@ -451,164 +344,185 @@ const handlePreview = async () => {
   loadingMessage.value = "Memproses Pratinjau...";
   isLoadingData.value = true;
   try {
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    const formData = createFormData(payload, false);
-    const blobResponse = await generatePdf(formData);
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(pdfBlob.value);
+    const blob = await generatePdf(createFormData(payload, false));
+    setPdfBlob(blob);
     isOpenPreview.value = true;
-  } catch (err) {
-    toast.add({ title: 'Gagal Preview', color: 'error' });
-  } finally { isLoadingData.value = false; }
-};
-
-const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm('Simpan sebagai Draft?', 'Dokumen akan disimpan ke folder draft.', 'Ya, Simpan', 'Batal', false);
-  if (isConfirmed) try { await handleSaveDraft(); Alert.close(); } catch (error) { console.error(error); Alert.close(); }
+  } catch {
+    toastError("Gagal Preview");
+  } finally {
+    isLoadingData.value = false;
+  }
 };
 
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
+  loadingMessage.value = "Menyimpan Draft...";
+  isLoadingData.value = true;
   try {
-    loadingMessage.value = "Menyimpan Draft...";
-    isLoadingData.value = true;
-    const formData = createFormData(payload, false);
-    await saveND(formData, editDraftId.value);
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    await saveND(createFormData(payload, false), editDraftId.value);
+    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    redirectDraf();
   } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e.response?.data?.message || 'Gagal memperbarui draft', color: 'error' });
-  } finally { isLoadingData.value = false; }
+    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
+  } finally {
+    isLoadingData.value = false;
+  }
 };
 
-const confirmKirimDokumen = async () => {
+const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
+
+const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
+  if (selectedSendType.value === "digsig" && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError("Harap masukkan passphrase Anda");
+    return;
+  }
+
+  const payload = getBasePayload();
+  loadingMessage.value = "Mengirim Nota Dinas...";
+  isLoadingData.value = true;
+  try {
+    const blob = await generatePdf(createFormData(payload, false));
+    setPdfBlob(blob);
+
+    const fd = createFormData(payload, true);
+    fd.append("passphrase", passphrase);
+    fd.append("sign_option", selectedSendType.value);
+
+    if (selectedSendType.value === "digsig") {
+      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      fd.append("nik", user.value.nik);
+    }
+
+    if (selectedSendType.value === "basah" && fileBasah) {
+      fd.append("file_ttd_basah", fileBasah);
+    }
+
+    const result = await sendNotaDinas(fd);
+    if (result.data.success) {
+      revokePdfUrl();
+      toastSuccess("Berhasil", "Nota Dinas berhasil dikirim");
+      Alert.close();
+      redirectTerkirim();
+    } else {
+      throw new Error(result.data.message || "Pengiriman gagal");
+    }
+  } catch (e: any) {
+    Alert.close();
+    const errMsg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
+    if (errMsg.toLowerCase().includes("passphrase") || errMsg.toLowerCase().includes("salah")) {
+      bsreDisabled.value = false;
+      await nextTick();
+      isSignMethodModalOpen.value = true;
+      await nextTick();
+      signMethodModalRef.value?.setPassphraseError(errMsg);
+    } else {
+      toastError("Gagal Mengirim", errMsg);
+    }
+  } finally {
+    isLoadingData.value = false;
+  }
+};
+
+const handleConfirmKirim = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
-  passphrase.value = "";
-  selectedSendType.value = "digsig";
-  isPassphraseModalOpen.value = true;
-};
 
-const handlePassphraseSubmit = async () => {
-  if (!selectedSendType.value) { toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' }); return; }
-  if (selectedSendType.value === 'digsig' && !passphrase.value) { toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' }); return; }
-  isPassphraseModalOpen.value = false;
-  if (await Alert.confirm('Konfirmasi Akhir', 'Kirim dokumen sekarang?', 'Ya, Kirim', 'Periksa Lagi', false)) await handleKirimDokumen();
-};
-
-const handleKirimDokumen = async () => {
-  const payload = getBasePayload();
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false };
   try {
-    loadingMessage.value = "Mengirim Nota Dinas...";
-    isLoadingData.value = true;
-    let noktpValue = '';
-    if (selectedSendType.value === 'digsig') {
-      try {
-        const ktpResponse = await getKtp();
-        if (ktpResponse?.data?.noktp) noktpValue = ktpResponse.data.noktp;
-      } catch (err) { console.error(err); throw new Error("Gagal mengambil data KTP"); }
-    }
-    const blobResponse = await generatePdf(createFormData(payload, false));
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' });
-    const formData = createFormData(payload, true);
-    formData.append('passphrase', passphrase.value);
-    formData.append('sign_option', selectedSendType.value);
-    if (noktpValue) formData.append('nik', noktpValue);
-    const result = await sendNotaDinas(formData);
-    if (result.data.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Nota Dinas berhasil dikirim', color: 'success' });
-      Alert.close();
-      router.push("/korespondensi/terkirim");
-    } else { throw new Error(result.data.message || 'Pengiriman gagal'); }
-  } catch (e: any) {
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-    if (errMsg.toLowerCase().includes('passphrase')) isPassphraseModalOpen.value = true;
-    toast.add({ title: 'Gagal Mengirim', description: errMsg, color: 'error' });
-  } finally { isLoadingData.value = false; Alert.close(); }
+    const res = await getConfigDigsig("ND");
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    };
+  } catch { /* semua false jika gagal fetch */ }
+
+  bsreDisabled.value = !configData.digsig;
+  qrDisabled.value = !configData.ttdQr;
+  basahDisabled.value = !configData.ttdBasah;
+  isSignMethodModalOpen.value = true;
 };
 
-// LIFECYCLE ONMOUNTED
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string; file?: File | null }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || "", data.file ?? undefined);
+};
+
+// ── onMounted ─────────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
 
-  // --- LOGIC FETCH REFERENSI ---
   const refId = route.query.ref_id as string;
   const refJenis = route.query.ref_jenis as string;
-
-  // Debug Log: Cek apakah ID terbaca dari URL
-  console.log("OnMounted - Params dari URL:", { refId, refJenis });
-
   if (refId) {
     try {
-      // Pastikan useInbox sudah diimport dan fetchInboxDetail dipanggil
-      console.log("Memanggil fetchInboxDetail...");
-
       const result = await fetchInboxDetail(refId, refJenis);
-
-      // Debug Log: Cek hasil API
-      console.log("Hasil fetchInboxDetail:", result);
-
       if (result) {
-        refData.value = result;
+        // Normalisasi: pastikan selalu array
+        refData.value = Array.isArray(result) ? result : [result];
       } else {
-        console.warn("API mengembalikan null/undefined");
-        toast.add({ title: 'Info', description: 'Data referensi tidak ditemukan', color: 'gray' });
+        toast.add({ title: "Info", description: "Data referensi tidak ditemukan", color: "gray" });
       }
-    } catch (error) {
-      console.error("Error Fetch Inbox Detail:", error);
-      toast.add({ title: 'Error', description: 'Gagal memuat data referensi', color: 'error' });
+    } catch {
+      toast.add({ title: "Error", description: "Gagal memuat data referensi", color: "error" });
     }
   }
 
-  // --- INIT DATA LAINNYA ---
   try {
     klasifikasiStatus.value = "loading";
     klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
+
     const resRec = await getRecipients();
-    const rawData = resRec.recipients || resRec.data || [];
-    items.value = rawData.map((r: any) => ({
+    items.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
-  } catch { klasifikasiStatus.value = "error"; }
+
+    const groups = await getRecipientGroups("ND");
+    recipientGroups.value = groups.filter((g: any) => g.aktif);
+  } catch {
+    klasifikasiStatus.value = "error";
+  }
 
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
-      if (resDraft.success && resDraft.data) {
-        const d = resDraft.data;
+      const res = await getDraftDetail(draftId);
+      if (res.success && res.data) {
+        const d = res.data;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
-        english.value = Boolean(d.english);
+
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+          const found = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
+          if (found) selectedKlasifikasiId.value = found.id;
         }
-        const mapApiToUI = (list: any[]) => list?.map(item => {
-          const posId = String(item.position_id || item.position || item.value);
-          const master = items.value.find(m => m.value === posId);
-          return master || { label: `${item.persnum} - ${item.positionText}`, labelJob: item.positionText, value: posId, raw: item };
-        }) || [];
-        selectedTertuju.value = mapApiToUI(d.penerima);
-        selectedTembusan.value = mapApiToUI(d.tembusan);
-        if (d.lampiran_files) existingFiles.value = d.lampiran_files.map((f: any) => ({ id: f.id, fileName: f.fileName || f.file_name, filePath: f.fileUrl || f.file_path, fileSize: f.fileSize || 0 }));
-        selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat).toLowerCase()) || sifatOptions[3];
-        if (d.tanggal) {
-          const p = d.tanggal.split('-');
-          if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
-        }
+
+        selectedTertuju.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.penerima_grup),
+          mapApiToUI(d.penerima, items.value)
+        );
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.tembusan_grup),
+          mapApiToUI(d.tembusan, items.value)
+        );
+
+        existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
+        setSifatFromString(d.sifat);
+        if (d.tanggal) setDateFromString(d.tanggal);
       }
-    } catch (e) { console.error(e); }
+    } catch {
+      toastError("Gagal memuat data draft");
+    }
   }
 
   isLoadingData.value = false;

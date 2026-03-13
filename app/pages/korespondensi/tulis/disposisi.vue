@@ -438,9 +438,8 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
   isLoadingData.value = true
 
   try {
-    const formDataPreview = createFormData(basePayload, false)
-    const blobResponse = await generatePdf(formDataPreview)
-    pdfBlob.value = new Blob([blobResponse], { type: 'application/pdf' })
+    const blob = await generatePdf(createFormData(basePayload, false))
+    setPdfBlob(blob)
 
     const safeName = (basePayload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20)
 
@@ -470,7 +469,7 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
       : await sendDisposisi(fdFinal)
 
     if (res?.data?.success || res?.success) {
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
+      revokePdfUrl()
       toastSuccess('Berhasil', 'Disposisi berhasil dikirim')
       Alert.close()
       redirectTerkirim()
@@ -478,16 +477,15 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
       throw new Error(res?.data?.message || 'Pengiriman gagal')
     }
   } catch (e: any) {
-    isLoadingData.value = false
     Alert.close()
-
     const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen'
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
       bsreDisabled.value = false
+      await nextTick()
       isSignMethodModalOpen.value = true
       await nextTick()
-      signMethodModalRef.value?.setPassphraseError('Passphrase yang Anda masukkan salah')
+      signMethodModalRef.value?.setPassphraseError(errMsg)
     } else {
       toastError('Gagal Mengirim', errMsg)
     }
