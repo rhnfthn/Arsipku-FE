@@ -27,27 +27,20 @@ const signMethodModalRef = ref<any>(null);
 
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
-  // ui state
   isLoadingData, loadingMessage, isOpenPreview,
-  // form state
   editDraftId, subject, editorContent, tinymceEditor,
   date, selectedKlasifikasiId, selectedSifat, existingFiles,
-  // data state
   klasifikasiList, klasifikasiStatus, recipientGroups,
   selectedTertuju, selectedTembusan,
   pdfBlob, pdfUrl,
-  // constants
   maxPerihal, sifatOptions, tinyMceInit,
-  // computed
   selectedKlasifikasi, formattedDate, tglDb, tglDisplay,
   excludeTertujuList, excludeTembusanList,
   tertujuIndividu, tembusanIndividu, tertujuGrup, tembusanGrup,
-  // helpers
   handleApplyTemplate, buildFormData,
   mapGroupsToUI, mapApiToUI, mergeGrupDanIndividu,
   mapLampiranFiles, setDateFromString, setSifatFromString,
   setPdfBlob, revokePdfUrl,
-  // actions
   confirmSaveDraft, confirmKirim,
   toastError, toastSuccess,
   redirectTerkirim, redirectDraf,
@@ -145,7 +138,7 @@ const handleSaveDraft = async () => {
   }
 };
 
-const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
+const handleKirimDokumen = async (passphrase = '') => {
   if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
     signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
     return
@@ -159,14 +152,12 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
     setPdfBlob(blob);
 
     const fd = createFormData(payload, true);
-    fd.append("passphrase", passphrase);
     fd.append("sign_option", selectedSendType.value);
-    if (selectedSendType.value === "digsig") {
+
+    if (selectedSendType.value === 'digsig') {
+      fd.append("passphrase", passphrase);
       if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
       fd.append("nik", user.value.nik);
-    }
-    if (selectedSendType.value === 'basah' && fileBasah) {
-      fd.append('file_ttd_basah', fileBasah)
     }
 
     const result = await sendNotaDinas(fd);
@@ -174,7 +165,14 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
       revokePdfUrl();
       toastSuccess("Berhasil", "Nota Dinas berhasil dikirim");
       Alert.close();
-      redirectTerkirim();
+
+      if (selectedSendType.value === 'ttd_basah') {
+        const naskahId = result.data?.data?.id || result.data?.id;
+        console.log("naskahId:", naskahId, "| result:", result);
+        navigateTo(`/korespondensi/tertunda/${naskahId}?jenis=ND`);
+      } else {
+        redirectTerkirim();
+      }
     } else {
       throw new Error(result.data.message || "Pengiriman gagal");
     }
@@ -220,9 +218,9 @@ const handleConfirmKirim = async () => {
   isSignMethodModalOpen.value = true
 };
 
-const handleSignMethodSubmit = async (data: { method: string; passphrase?: string; file?: File | null }) => {
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string }) => {
   selectedSendType.value = data.method;
-  await handleKirimDokumen(data.passphrase || '', data.file ?? undefined);
+  await handleKirimDokumen(data.passphrase || '');
 };
 
 // ── onMounted ─────────────────────────────────────────────────────────────────

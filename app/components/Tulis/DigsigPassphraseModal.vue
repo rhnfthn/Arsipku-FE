@@ -5,7 +5,6 @@
     <template #header>
       <div v-if="showLupaPassphrase" class="flex items-center justify-between w-full">
         <div class="flex items-center gap-2">
-          <!-- <UIcon name="i-heroicons-key" class="w-5 h-5 text-primary-500" /> -->
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</h3>
         </div>
         <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
@@ -67,16 +66,6 @@
       <div v-else class="space-y-3">
 
         <!-- ── Option 1: BSrE ──────────────────────────────────────────── -->
-        <!--
-          TODO: Integrasi endpoint cek BSrE trouble (misal GET /digsig/log/bsre-health atau bsre-alert)
-          Saat bsreDisabled=true (dari config) ATAU bsreTrouble=true (dari endpoint health):
-            - Tampilkan state "Kendala Layanan" sesuai desain (lihat screenshot kolom kiri)
-          Saat ini bsreTrouble state di-comment dulu sampai endpoint tersedia.
-        -->
-
-        <!-- bsreDisabled=true → config DI off → BSrE tidak aktif, radio disabled, tidak ada expanded -->
-        <!-- bsreDisabled=false → config DI on → BSrE aktif, bisa diklik, expanded passphrase input -->
-
         <div v-if="!hideBsre" class="rounded-xl border-2 transition-all duration-200 overflow-hidden" :class="bsreDisabled
           ? 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
           : selectedMethod === 'digsig'
@@ -85,7 +74,6 @@
           @click="!bsreDisabled && selectMethod('digsig')">
 
           <div class="flex items-start gap-3 p-4">
-            <!-- Radio button — disabled appearance when bsreDisabled -->
             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0" :class="!bsreDisabled && selectedMethod === 'digsig'
               ? 'border-primary-500'
               : 'border-gray-300'">
@@ -101,11 +89,9 @@
             </div>
           </div>
 
-          <!-- BSrE expanded: passphrase input (hanya muncul jika config on & dipilih) -->
           <div v-if="!bsreDisabled && selectedMethod === 'digsig'" class="mx-4 mb-4">
             <div
               class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-              <!-- Signer card -->
               <div class="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700">
                 <img src="/logoAirnav.png" alt="Logo" class="h-8 w-auto object-contain"
                   onerror="this.style.display='none'" />
@@ -115,7 +101,6 @@
                   <div class="text-sm font-bold text-gray-900 dark:text-white">{{ signerInfo.name }}</div>
                 </div>
               </div>
-              <!-- Passphrase input -->
               <div class="p-3">
                 <div class="relative">
                   <input :type="showPassword ? 'text' : 'password'" v-model="localPassphrase"
@@ -131,7 +116,6 @@
                     <UIcon :name="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" class="w-4 h-4" />
                   </button>
                 </div>
-                <!-- Error: passphrase salah dari API -->
                 <div v-if="passphraseError" class="flex items-center gap-1 mt-1.5">
                   <UIcon name="i-heroicons-x-circle" class="w-3.5 h-3.5 text-red-500 shrink-0" />
                   <p class="text-xs text-red-500">{{ passphraseError }}</p>
@@ -150,27 +134,6 @@
               </div>
             </div>
           </div>
-
-          <!--
-          TODO: BSrE Trouble state — aktifkan saat endpoint bsre-health/bsre-alert sudah diintegrasikan
-          <div v-if="bsreTrouble" class="mx-4 mb-4">
-            <div class="rounded-lg border border-red-200 dark:border-red-700 bg-white dark:bg-gray-800 p-3">
-              <p class="text-sm font-semibold text-gray-900 dark:text-white mb-0.5">
-                BSrE <span class="font-bold">tidak dapat digunakan saat ini.</span>
-              </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Silakan gunakan metode tanpa tanda tangan.
-              </p>
-              <div class="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
-                <UIcon name="i-heroicons-x-circle" class="w-4 h-4 text-red-500 shrink-0" />
-                <div>
-                  <div class="text-xs font-semibold text-red-700 dark:text-red-400">Tanda Tangan Digital (BSrE)</div>
-                  <div class="text-xs text-red-500 dark:text-red-400">Tidak tersedia sementara</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          -->
         </div>
 
         <!-- ── Option 2: QR ────────────────────────────────────────────── -->
@@ -206,14 +169,14 @@
 
         <!-- ── Option 3: Tanda Tangan Basah ───────────────────────────── -->
         <div v-if="!hideBasah || showAllOptions"
-          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'basah'
+          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'ttd_basah'
             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
-          @click="selectMethod('basah')">
+          @click="selectMethod('ttd_basah')">
           <div class="flex items-start gap-3 p-4">
             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
-              :class="selectedMethod === 'basah' ? 'border-primary-500' : 'border-gray-300'">
-              <div v-if="selectedMethod === 'basah'" class="w-2 h-2 rounded-full bg-primary-500" />
+              :class="selectedMethod === 'ttd_basah' ? 'border-primary-500' : 'border-gray-300'">
+              <div v-if="selectedMethod === 'ttd_basah'" class="w-2 h-2 rounded-full bg-primary-500" />
             </div>
             <div class="flex-1">
               <div class="font-semibold text-sm text-gray-900 dark:text-white">
@@ -224,36 +187,38 @@
               </div>
             </div>
           </div>
-          <div v-if="selectedMethod === 'basah'" class="mx-4 mb-4">
+          <div v-if="selectedMethod === 'ttd_basah'" class="mx-4 mb-4">
             <div class="rounded-xl border border-primary-200 dark:border-primary-800 overflow-hidden">
-              <!-- Header -->
               <div class="flex items-center gap-2 px-4 py-2.5 bg-primary-500 dark:bg-primary-700">
                 <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-white shrink-0" />
                 <p class="text-xs font-semibold text-white">Alur Tanda Tangan Basah</p>
               </div>
-              <!-- Steps -->
               <div class="px-4 py-3 bg-primary-50 dark:bg-primary-900/20 space-y-2">
                 <div class="flex items-start gap-2.5">
                   <span
                     class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Tekan <strong>Kirim</strong> — dokumen masuk ke
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Tekan <strong>Kirim</strong> — dokumen masuk
+                    ke
                     halaman <strong>Tertunda</strong> dengan status <em>pending</em> (belum terkirim).</p>
                 </div>
                 <div class="flex items-start gap-2.5">
                   <span
                     class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Cetak dokumen, tanda tangani secara basah, lalu
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Cetak dokumen, tanda tangani secara basah,
+                    lalu
                     scan dan unggah kembali.</p>
                 </div>
                 <div class="flex items-start gap-2.5">
                   <span
                     class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Setelah file diunggah, dokumen dapat dikirim.</p>
+                  <p class="text-xs text-primary-700 dark:text-primary-300">Setelah file diunggah, dokumen dapat
+                    dikirim.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </template>
 
@@ -284,13 +249,13 @@ const props = defineProps<{
   isLoading: boolean
   bsreDisabled?: boolean
   hideBsre?: boolean
-  hideQr?: boolean      // ← tambah
-  hideBasah?: boolean   // ← tambah
+  hideQr?: boolean
+  hideBasah?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  'submit': [payload: { method: string; passphrase?: string; file?: File | null }]
+  'submit': [payload: { method: string; passphrase?: string }]
   'cancel': []
 }>()
 
@@ -300,13 +265,11 @@ const isOpen = computed({
 })
 
 const showAllOptions = ref(false)
-const selectedMethod = ref<'digsig' | 'qr_only' | 'basah'>('digsig')
+const selectedMethod = ref<'digsig' | 'qr_only' | 'ttd_basah'>('digsig')
 const localPassphrase = ref('')
 const passphraseError = ref('')
 const showPassword = ref(false)
 const showLupaPassphrase = ref(false)
-const uploadedFile = ref<File | null>(null)
-const fileInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => props.open, (val) => {
   if (val) {
@@ -314,30 +277,17 @@ watch(() => props.open, (val) => {
     passphraseError.value = ''
     showPassword.value = false
     showLupaPassphrase.value = false
-    uploadedFile.value = null
-    showAllOptions.value = false  // ← tambah
+    showAllOptions.value = false
 
     if (!props.hideBsre) selectedMethod.value = 'digsig'
     else if (!props.hideQr) selectedMethod.value = 'qr_only'
-    else if (!props.hideBasah) selectedMethod.value = 'basah'
+    else if (!props.hideBasah) selectedMethod.value = 'ttd_basah'
   }
 })
 
-const selectMethod = (method: 'digsig' | 'qr_only' | 'basah') => {
+const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah') => {
   selectedMethod.value = method
   passphraseError.value = ''
-}
-
-const triggerFileUpload = () => fileInputRef.value?.click()
-
-const handleFileChange = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) uploadedFile.value = file
-}
-
-const handleFileDrop = (e: DragEvent) => {
-  const file = e.dataTransfer?.files?.[0]
-  if (file) uploadedFile.value = file
 }
 
 const handleCancel = () => {
@@ -352,32 +302,17 @@ const handleSubmit = async () => {
       return
     }
     emit('submit', { method: 'digsig', passphrase: localPassphrase.value })
-  }
-  else if (selectedMethod.value === 'qr_only') {
+  } else if (selectedMethod.value === 'qr_only') {
     emit('submit', { method: 'qr_only' })
-  }
-  else if (selectedMethod.value === 'basah') {
-    if (!uploadedFile.value) {
-      await Alert.warning(
-        'Dokumen Belum Diunggah',
-        'Unggah scan dokumen yang sudah ditandatangani basah terlebih dahulu.'
-      )
-      Alert.close()
-      return
-    }
-    emit('submit', { method: 'basah', file: uploadedFile.value })
+  } else if (selectedMethod.value === 'ttd_basah') {
+    // Langsung emit tanpa validasi file — dokumen masuk tertunda, upload dilakukan di halaman tertunda
+    emit('submit', { method: 'ttd_basah' })
   }
 }
 
-/**
- * Dipanggil parent saat API return error passphrase.
- * Modal tetap terbuka, error ditampilkan di input, passphrase di-reset.
- * User bisa retry BSrE atau ganti ke QR/Basah.
- */
 defineExpose({
   setPassphraseError: (msg: string) => {
     passphraseError.value = msg
-    // selectedMethod.value = 'digsig'
     localPassphrase.value = ''
   }
 })

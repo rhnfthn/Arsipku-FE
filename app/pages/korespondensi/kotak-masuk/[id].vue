@@ -213,6 +213,7 @@ const loadData = async () => {
           return {
             id: flow.id,
             urutan: sortedFlows.length - index,
+            sifat: flow,
             aksi: aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
@@ -223,8 +224,6 @@ const loadData = async () => {
             // --- PERUBAHAN ADA DI SINI ---
             // 'from' untuk profil/avatar yang melakukan aksi (Pembuat Draft/Disposisi)
             from: flow.pengirim || {},
-
-
 
             // 'pengirim' untuk data teks Pengirim Surat/Naskah
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
@@ -307,6 +306,8 @@ const loadData = async () => {
 
           return {
             id: item.id,
+            ttd: item.ttd,
+            sifat: item.sifat,
             aksi: item.status || 'read',
             jenis: item.jenis || inboxData.jenis || 'SM',
             jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',

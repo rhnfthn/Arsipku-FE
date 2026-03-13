@@ -329,6 +329,7 @@ export function useInbox() {
 
         return {
           id: d.id,
+          ttd: d.label_ttd,
           jenis: d.jenis,
           jenis_label: d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,
           nomor: d.nomor,

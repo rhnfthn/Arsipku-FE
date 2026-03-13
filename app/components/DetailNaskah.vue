@@ -147,11 +147,28 @@ const hasAccess = (codes: string[]) => {
           </div>
           <span class="opacity-40">•</span>
           <div
-            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600">
-            {{ data.aksi === 'kirim_disposisi' ? 'DISPOSISI' : (data.aksi === 'create' ? 'KONSEP' : (data.jenis_label
-              ||
-              data.aksi)) }}
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-300 dark:bg-primary-600">
+            {{ data.sifat }}
           </div>
+          <span class="opacity-40">•</span>
+          <div
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600">
+            {{ data.aksi === 'kirim_disposisi' ?
+              'DISPOSISI' : (data.aksi === 'create' ?
+                'KONSEP' : (data.jenis_label || data.aksi)) }}
+          </div>
+          <span class="opacity-40" v-if="data.ttd">•</span>
+          <div v-if="data.ttd"
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-amber-500">
+            {{ data.ttd }}
+          </div>
+        </div>
+        <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-3 gap-1" v-if="data?.dikirim_oleh">
+          <span>Dikirim oleh :</span>
+          <span class="font-medium text-gray-700 dark:text-gray-300">
+            {{ data.dikirim_oleh.position_text }}
+          </span>
+          <span class="text-gray-400 dark:text-gray-500">({{ data.dikirim_oleh.nama }})</span>
         </div>
       </div>
     </div>
