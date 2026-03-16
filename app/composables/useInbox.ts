@@ -25,7 +25,7 @@ export interface InboxParams {
   search?: string;
   start_date?: string; // YYYY-MM-DD
   end_date?: string; // YYYY-MM-DD
-  preset?: string; // 7_hari | 30_hari | 60_hari | 1_tahun | semua
+  // preset?: string; // 7_hari | 30_hari | 60_hari | 1_tahun | semua
   // ✅ Filter tambahan dari API docs
   favorite?: boolean; // true | false
   tinjut?: string; // sudah_tinjut | belum_tinjut
@@ -83,9 +83,9 @@ export function useInbox() {
       }
 
       // Date preset
-      if (params.preset) {
-        query.append("preset", params.preset);
-      }
+      // if (params.preset) {
+      //   query.append("preset", params.preset);
+      // }
 
       // Custom date range
       if (params.start_date) query.append("start_date", params.start_date);
