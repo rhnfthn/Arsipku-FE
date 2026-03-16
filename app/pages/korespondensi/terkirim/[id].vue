@@ -253,6 +253,7 @@ const loadData = async () => {
 
           return {
             id: flowId,
+            sifat: flow.sifat,
             urutan: sortedFlows.length - index,
             aksi: aksi,
             jenis: flow.jenis || 'K',

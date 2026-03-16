@@ -213,7 +213,7 @@ const loadData = async () => {
           return {
             id: flow.id,
             urutan: sortedFlows.length - index,
-            sifat: flow,
+            sifat: flow.sifat,
             aksi: aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
@@ -475,8 +475,8 @@ const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file
 // Options Data
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600' },
-  { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
-  { type: 'SDE', label: 'Surat Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600' }
+  { type: 'SDI', label: 'Surat Dinas Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
+  { type: 'SDE', label: 'Surat Dinas Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600' }
 ];
 </script>
 

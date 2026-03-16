@@ -54,6 +54,18 @@ const formatDate = (v: string) => v ? new Date(v).toLocaleDateString("id-ID", { 
 const formatDisposisiInline = (v: any) => Array.isArray(v) ? v.join(', ') : String(v || '').replace(/(\r\n|\n|\r)/gm, ", ");
 const getFlowInitials = (n: string) => n ? n.trim().split(" ").slice(0, 2).map((x: string) => x[0].toUpperCase()).join("") : "?";
 
+// --- AKSI BADGE (tambahan) ---
+const aksiConfig: Record<string, { label: string; color: string }> = {
+  create:  { label: 'BUAT KONSEP', color: 'bg-blue-500' },
+  forward: { label: 'REVISI',      color: 'bg-amber-500' },
+  reject:  { label: 'DITOLAK',     color: 'bg-red-500' },
+};
+
+const aksiBadge = computed(() => {
+  const aksi = props.data?.aksi as string;
+  return aksiConfig[aksi] ?? null; // null = badge tidak ditampilkan
+});
+
 // --- IFRAME LOGIC ---
 const handleFlowIframeLoad = (e: Event, flow: any) => {
   const iframe = e.target as HTMLIFrameElement;
@@ -157,6 +169,15 @@ const hasAccess = (codes: string[]) => {
               'DISPOSISI' : (data.aksi === 'create' ?
                 'KONSEP' : (data.jenis_label || data.aksi)) }}
           </div>
+          <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
+          <template v-if="aksiBadge">
+            <span class="opacity-40">•</span>
+            <div
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
+              :class="aksiBadge.color">
+              {{ aksiBadge.label }}
+            </div>
+          </template>
           <span class="opacity-40" v-if="data.ttd">•</span>
           <div v-if="data.ttd"
             class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-amber-500">
