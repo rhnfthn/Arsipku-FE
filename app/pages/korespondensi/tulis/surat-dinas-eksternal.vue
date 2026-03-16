@@ -2,173 +2,69 @@
   <div class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
 
-    <PageHeader title="Lanjut Konsep Surat Dinas Eksternal" :items="breadcrumbs" />
+    <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
 
-    <!-- Referensi Surat Asal -->
-    <div v-if="refData" class="mb-4 mt-6">
-      <div
-        class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
-        <div @click="isRefExpanded = !isRefExpanded"
-          class="flex items-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
-          <div class="flex items-center py-2 gap-3">
-            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-10 h-10 flex items-center justify-center">
-              <UIcon name="i-lucide-mail" class="w-5 h-5" />
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                Klik untuk melihat/menyembunyikan detail surat referensi
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <NuxtLink v-if="refData.id && refData.jenis"
-              :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank" @click.stop
-              class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
-              Buka Tab Baru
-              <UIcon name="i-lucide-external-link" class="w-3 h-3" />
-            </NuxtLink>
-            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
-              :class="{ 'rotate-180': isRefExpanded }" />
-          </div>
-        </div>
+    <UCard variant="soft" :ui="{
+      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
+    }">
 
-        <div v-show="isRefExpanded">
-          <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-3 break-words">
-              {{ refData.perihal || '(Tidak ada perihal)' }}
-            </h2>
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <div class="flex items-center gap-1 shrink-0">
-                <Hash class="w-3.5 h-3.5" />
-                <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">{{ refData.nomor || '-' }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div class="flex items-center gap-1 shrink-0">
-                <Calendar class="w-3.5 h-3.5" />
-                <span>{{ formatDateRef(refData.tanggal) }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
-                :class="getCategoryStyle(refData.jenis_label)">
-                <Tag class="w-3 h-3" />
-                {{ refData.jenis_label }}
-              </div>
-            </div>
-          </div>
-
-          <div class="p-5 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-700">
-            <div class="flex items-start gap-4">
-              <UAvatar size="md" class="bg-primary-500 text-white font-semibold flex items-center justify-center shrink-0">
-                {{ refSenderInitials }}
-              </UAvatar>
-              <div class="flex-1 min-w-0 space-y-4">
-                <div>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white block">{{ refData.pengirim_jabatan }}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{{ refData.pengirim_nama }}</span>
-                </div>
-                <div class="grid grid-cols-1 gap-4 text-xs">
-                  <div class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Kepada</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(k, idx) in refData.kepada" :key="idx" class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ k.nama }}</span>
-                      </div>
-                      <span v-if="!refData.kepada || !refData.kepada.length" class="text-gray-400 italic">-</span>
-                    </div>
-                  </div>
-                  <div v-if="refData.tembusan && refData.tembusan.length > 0" class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Tembusan</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(t, idx) in refData.tembusan" :key="idx" class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ t.nama }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="refData.disposisi" class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Disposisi</div>
-                    <div class="text-gray-800 dark:text-gray-200 font-medium">{{ formatDisposisiInline(refData.disposisi) }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="refData.catatan" class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm" v-html="refData.catatan"></div>
-          </div>
-
-          <div v-if="refPdfUrl" class="w-full">
-            <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[400px] border-none"
-              title="Preview Surat Referensi"></iframe>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center h-[200px] text-gray-500 gap-2 bg-gray-50 dark:bg-gray-900">
-            <UIcon name="i-lucide-file-x" class="w-10 h-10 opacity-30" />
-            <span class="text-sm font-medium">Dokumen PDF tidak tersedia untuk ditampilkan.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <UCard variant="soft"
-      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
-
-      <!-- Skeleton -->
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-      </div>
 
-      <!-- Form -->
-      <div v-else class="flex-1 overflow-y-auto space-y-1">
-
-        <!-- Pesan -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-          <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Pesan</span>
-            <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="message"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Pesan" />
+        <div class="pt-2">
+          <div class="flex justify-between items-center gap-4">
+            <div class="flex gap-3 sm:gap-4">
+              <USkeleton class="h-8 w-36 rounded" />
+              <USkeleton class="h-8 w-36 rounded" />
             </div>
+            <USkeleton class="h-8 w-36 rounded" />
           </div>
         </div>
 
-        <TulisInputPengirim v-model="selectedSender" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems" />
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+          <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <USkeleton class="h-12 w-12 rounded-full" />
+            <div class="flex-1 space-y-2 pt-1">
+              <USkeleton class="h-3 w-1/2" />
+              <USkeleton class="h-3 w-1/3" />
+            </div>
+          </div>
+          <div class="space-y-3 px-4">
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-11/12" />
+            <USkeleton class="h-3 w-full" />
+          </div>
+        </div>
+
+        <USkeleton class="h-30 w-full rounded-md" />
+
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <USkeleton class="h-10 w-32 rounded-lg" />
+        </div>
+      </div>
+
+      <div v-else class="flex-1 overflow-y-auto space-y-1">
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
+
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
-
-        <!-- Tertuju: Penerima Eksternal -->
-        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
-            :placeholder="isSenderSelected ? 'Pilih Tujuan Eksternal' : 'Pilih pengirim terlebih dahulu'"
-            :items="externalItems" :disabled="!isSenderSelected"
-            disabled-message="Sudah dipilih di Tembusan" />
-        </div>
-
-        <!-- Tembusan: Penerima Internal -->
-        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
-            :placeholder="isSenderSelected ? 'Pilih Tembusan Internal' : 'Pilih pengirim terlebih dahulu'"
-            :items="internalItems" :disabled="!isSenderSelected"
-            disabled-message="Sudah dipilih di Tertuju" />
-        </div>
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <!-- Perihal -->
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tujuan Eksternal" :items="externalItems" />
+
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="internalItems" />
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal Surat" />
+                placeholder="Ketik Perihal" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -177,18 +73,19 @@
           </div>
         </div>
 
-        <!-- Lampiran text -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+            <div class="flex items-center flex-1 w-full gap-2">
+              <input type="text" v-model="lampiranText" readonly tabindex="-1"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+                placeholder="Otomatis terisi saat upload file..." />
+            </div>
           </div>
         </div>
 
         <div class="flex flex-col py-4">
-          <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
+          <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
             <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
@@ -209,7 +106,7 @@
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText?.replace('Kantor', '') || 'Tangerang' }}, {{ formattedDate }}</div>
+                  <div>{{ user?.areaText?.replace('Kantor', '') || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -234,7 +131,9 @@
                         <tr>
                           <td class="align-top">Perihal</td>
                           <td class="align-top">:</td>
-                          <td class="align-top font-bold text-justify">{{ subject || "................................................" }}</td>
+                          <td class="align-top font-bold text-justify">
+                            {{ subject || "................................................" }}
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -245,22 +144,27 @@
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</div>
                       </div>
-                      <div v-else>................................................</div>
+                      <div v-else>
+                        <div>................................................</div>
+                      </div>
                     </div>
                     <div class="mb-1">Di Tempat</div>
                   </div>
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <Editor api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit" />
+                  <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                  <div v-if="!editorContent" class="absolute top-0 left-10 text-gray-400 pointer-events-none italic z-0 mt-2">
+                    Ketik isi surat di sini...
+                  </div>
                 </div>
 
                 <div class="flex justify-end mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
-                      <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
+                      <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ selectedSender?.raw?.persnum_person_text || user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 
@@ -268,15 +172,12 @@
                   <div class="font-bold underline mb-1">Tembusan :</div>
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.raw?.area_text ? ' - ' + t.raw.area_text : '' }}
-                    </li>
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " + t.raw.area_text : "") }}</li>
                   </ol>
                   <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
-                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5" class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
@@ -295,9 +196,7 @@
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}{{ item.raw?.area_text ? ' - ' + item.raw.area_text : '' }}
-                      </li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}</li>
                     </ol>
                   </div>
                 </div>
@@ -305,6 +204,14 @@
               </div>
             </div>
           </ClientOnly>
+
+          <div class="flex items-center py-3 mt-2 gap-2">
+            <input type="checkbox" id="check_english" v-model="isEnglish"
+              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
+            <label for="check_english" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+              Aktifkan Format Bahasa Inggris
+            </label>
+          </div>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
@@ -316,665 +223,356 @@
     </UCard>
 
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
-      @save-draft="confirmSaveDraft" @send="handleKirimDokumen" />
+      @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
+
+    <TulisDigsigPassphraseModal
+      v-model:open="isPassphraseModalOpen"
+      :signer-info="signerInfo"
+      :is-loading="isLoadingData"
+      :hide-bsre="bsreDisabled"
+      :hide-qr="qrDisabled"
+      :hide-basah="basahDisabled"
+      ref="signMethodModalRef"
+      @submit="handleSignMethodSubmit" />
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-import { Hash, Calendar, Tag } from "lucide-vue-next";
-import type { Klasifikasi } from "~/types/klasifikasi";
+
+// --- COMPONENTS ---
+import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
+import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
+import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
+import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
+import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
+import TemplateManager from '@/components/Tulis/TemplateManager.vue';
+
+// --- TYPES & COMPOSABLES ---
 import { Alert } from "@/composables/useAlert";
+import { useSde } from "~/composables/useSde";
 
-// --- Interfaces ---
-interface RecipientItem {
-  label: string;
-  labelJob: string;
-  value: string;
-  raw: any;
-}
-
-interface SifatOption {
-  label: string;
-  value: string;
-}
-
-interface UploadedFile {
-  id: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-}
-
-// --- Composables ---
-const { createKonsep, getSendersById, previewPdf, forwardKonsep } = useKonsep();
-const { getExternalRecipients, saveDraft: saveSDE } = useSde();
-const { getRecipients } = useRecipients();
-const { user, getProfile } = useAuth();
-const { getKlasifikasi } = useKlasifikasi();
-const { getDraftDetail } = useDraft();
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const route = useRoute();
 const router = useRouter();
-const toast = useToast();
+
+const { user, getProfile } = useAuth();
+const { getKlasifikasi } = useKlasifikasi();
+const { getConfigDigsig } = useDigsig();
+const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
+
+// ── Shared composable ────────────────────────────────────────────────────────
+const {
+  isLoadingData, loadingMessage, isOpenPreview,
+  editDraftId, subject, editorContent, tinymceEditor,
+  date, selectedKlasifikasiId, selectedSifat, existingFiles,
+  klasifikasiList, klasifikasiStatus,
+  selectedTertuju, selectedTembusan,
+  pdfBlob, pdfUrl,
+  maxPerihal, sifatOptions, tinyMceInit,
+  selectedKlasifikasi, formattedDate, tglDb, tglDisplay,
+  handleApplyTemplate, buildFormData, mapLampiranFiles, setDateFromString, setSifatFromString,
+  setPdfBlob, revokePdfUrl, confirmSaveDraft, confirmKirim,
+  toastError, toastSuccess, redirectTerkirim, redirectDraf,
+} = useTulis();
+
 const alertState = useAlertState();
 
-// --- State ---
-const isLoadingData = ref(false);
-const detail = ref<any>(null);
-const loadingMessage = ref("");
-const isOpenPreview = ref(false);
-const editDraftId = ref<string | null>(null);
-const message = ref("");
-const subject = ref("");
-const editorContent = ref("");
+// --- SDE SPECIFIC STATE ---
 const lampiranText = ref("");
-const english = ref(false);
-const tinymceEditor = ref<TinyMCEEditor | null>(null);
-const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
-const klasifikasiList = ref<Klasifikasi[]>([]);
-const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
-const selectedKlasifikasiId = ref<string | null>(null);
-const existingFiles = ref<UploadedFile[]>([]);
-const selectedSifat = ref<SifatOption | null>(null);
+const isEnglish = ref(false);
 
-// SDE: dua list terpisah
-const externalItems = ref<RecipientItem[]>([]);  // untuk Tertuju
-const internalItems = ref<RecipientItem[]>([]);  // untuk Tembusan
-const senderItems = ref<RecipientItem[]>([]);
+const externalItems = ref<any[]>([]);
+const internalItems = ref<any[]>([]);
 
-const selectedSender = ref<RecipientItem | undefined>();
-const selectedTertuju = ref<RecipientItem[]>([]);   // eksternal
-const selectedTembusan = ref<RecipientItem[]>([]);  // internal
-const pdfBlob = ref<Blob | null>(null);
-const pdfUrl = ref("");
-const refData = ref<any>(null);
-const isRefExpanded = ref(true);
-const maxPerihal = 200;
+const isPassphraseModalOpen = ref(false);
+const selectedSendType = ref('digsig');
 
-const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" },
+const bsreDisabled = ref(false);
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
+
+const breadcrumbs = [
+  { label: "Beranda", to: "/beranda" },
+  { label: "Tulis Surat Dinas Eksternal", to: "#" },
 ];
 
-// --- Helpers ---
-const formatDateRef = (value?: string) => {
-  if (!value) return "-";
-  try {
-    return new Date(value).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-  } catch { return value; }
-};
+const signerInfo = computed(() => ({
+  name: user.value?.nama || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh'
+}));
 
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
-  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
-  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
-};
-
-const formatDisposisiInline = (val: any) => {
-  if (!val) return '';
-  if (Array.isArray(val)) return val.join(', ');
-  return String(val).replace(/(\r\n|\n|\r)/gm, ", ");
-};
-
-// --- Computed ---
-const isSenderSelected = computed(() => !!selectedSender.value);
-
-const refSenderInitials = computed(() => {
-  if (!refData.value) return "?";
-  const name = refData.value.pengirim_nama || refData.value.pengirim?.nama;
-  if (!name) return "?";
-  return name.trim().split(" ").filter(Boolean).slice(0, 2).map((n: string) => n.charAt(0).toUpperCase()).join("");
-});
-
-const refPdfUrl = computed(() => {
-  if (!refData.value) return '';
-  if (refData.value.final_pdf_url) return refData.value.final_pdf_url;
-  if (refData.value.lampiran_files?.length > 0) {
-    return refData.value.lampiran_files[0].file_url || refData.value.lampiran_files[0].file_path;
-  }
-  return '';
-});
-
-const selectedKlasifikasi = computed(() =>
-  klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
-);
-
-const formattedDate = computed(() => {
-  if (!date.value) return "-";
-  const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-});
-
-const breadcrumbs = computed(() => {
-  const refId = route.query.ref_id as string;
-  const refJenis = route.query.ref_jenis as string;
-  const detailLink = refId ? `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis || 'surat'}` : '#';
-  return [
-    { label: "Beranda", to: "/beranda" },
-    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
-    { label: "Detail Surat", to: detailLink, class: !refId ? 'opacity-50 cursor-default' : '' },
-    { label: "Lanjut Konsep Surat Dinas Eksternal", to: "#" },
-  ];
-});
-
-// --- Editor Config ---
-const tinyMceInit = {
-  base_url: '/tinymce',
-  suffix: '.min',
-  height: 400,
-  menubar: false,
-  promotion: false,
-  branding: false,
-  placeholder: 'Ketik konten disini...',
-  plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
-  content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
-  setup(editor: TinyMCEEditor) {
-    tinymceEditor.value = editor;
-    editor.on('change keyup input', () => {
-      editorContent.value = editor.getContent();
-    });
-  },
-};
-
-// --- Methods ---
-const fetchSenderList = async (posId: string | number) => {
-  try {
-    const res = await getSendersById(posId);
-    if (res.success && Array.isArray(res.data)) {
-      senderItems.value = res.data.map((r: any) => ({
-        label: `${r.persnum_person_text} - ${r.position_text}`,
-        labelJob: r.position_text,
-        value: String(r.position),
-        raw: r,
-      }));
-      if (senderItems.value.length === 1 && !selectedSender.value) {
-        selectedSender.value = senderItems.value[0];
-      }
-    }
-  } catch (e) {
-    console.error("Gagal memuat list pengirim", e);
-  }
-};
-
-const validateAndToast = (payload: any): boolean => {
-  if (!payload.perihal?.trim()) {
-    toast.add({ title: 'Validasi Gagal', description: 'Perihal wajib diisi', color: 'error' });
-    return false;
-  }
-  if (!payload.penerima || payload.penerima.length === 0) {
-    toast.add({ title: 'Validasi Gagal', description: 'Tertuju (penerima eksternal) wajib dipilih', color: 'error' });
-    return false;
-  }
-  return true;
-};
-
-const getBasePayload = () => {
-  const currentSender = selectedSender.value || {} as any;
-  const senderRaw = currentSender.raw || {};
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
+// --- METHODS: PAYLOAD & VALIDATION ---
+const getPayload = () => {
   return {
     id_naskah: editDraftId.value || null,
-    pengirim: currentSender.value || user.value?.position || "",
-    penerima: selectedTertuju.value.map(i => i.value),       // eksternal
-    tembusan: selectedTembusan.value.map(i => i.value),      // internal
+    pengirim: user.value?.position || "",
+    penerima: selectedTertuju.value.map(item => item.value),
+    english: isEnglish.value || false,
+    tembusan: selectedTembusan.value.map(i => i.value),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
     lampiran: lampiranText.value,
-    konten: String(editorContent.value || ''),
-    english: english.value,
-    nama_tempat: senderRaw.area_text || user.value?.areaText || "Tangerang",
-    nama_jabatan: senderRaw.position_text || currentSender.labelJob || user.value?.positionText || "",
-    nama_lengkap: senderRaw.persnum_person_text || user.value?.nama || "",
-    tgl: tglDb,
-    tanggal: formattedDate.value,
-    lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean),
-    catatan: message.value || '',
+    konten: editorContent.value,
+    htmlContent: editorContent.value,
+    nama_tempat: user.value?.areaText || "Tangerang",
+    nama_jabatan: user.value?.positionText || "",
+    nama_lengkap: user.value?.nama || "",
+    tgl: tglDb.value,
+    tanggal: tglDisplay.value,
+    lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)
   };
 };
 
-const createFormData = (payload: any) => {
+const createFormData = (payload: any, includePdf: boolean = false) => {
   const formData = new FormData();
   Object.keys(payload).forEach((key) => {
+    if (key === 'tanggal') return;
     const value = payload[key];
-    if (Array.isArray(value)) {
+    if (key === 'penerima' || key === 'tembusan' || key === 'lampiran_temp_ids') {
       formData.append(key, JSON.stringify(value));
     } else if (value !== null && value !== undefined) {
       formData.append(key, String(value));
     }
   });
-  return formData;
-};
 
-const prepareKonsepFormData = () => {
-  const formData = new FormData();
-  const signerInfo = selectedSender.value || {} as any;
-  const signerRaw = signerInfo.raw || {};
-  const creatorId = user.value?.position || '';
-  const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
-  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
-
-  formData.append('jenis', 'SDE');
-  formData.append('id_disposisi_referensi', refData.value?.id || '');
-  formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', signerInfo.value || '');
-  formData.append('pengirim_position_id', signerInfo.value || '');
-  // SDE: penerima = eksternal (by id), tembusan = internal (by position id)
-  formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
-  formData.append('tembusan_position_ids', JSON.stringify(selectedTembusan.value.map(i => i.value)));
-  formData.append('tgl', tglDb);
-  formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
-  formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
-  formData.append('sifat', selectedSifat.value?.value || 'biasa');
-  formData.append('perihal', subject.value);
-  formData.append('lampiran', lampiranText.value);
-  formData.append('konten', editorContent.value);
-  formData.append('english', String(english.value));
-  formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
-  formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
-  formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
-  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
-  formData.append('catatan', message.value || '-');
-  return formData;
-};
-
-const handleApplyTemplate = (htmlContent: string) => {
-  if (tinymceEditor.value) {
-    const cleanContent = htmlContent.trim().replace(/>\s+</g, '><');
-    tinymceEditor.value.setContent(cleanContent);
-    editorContent.value = tinymceEditor.value.getContent();
+  if (includePdf && pdfBlob.value) {
+    const judul = payload.perihal || 'dokumen_sde';
+    const safeName = judul.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+    formData.append("final_pdf", pdfBlob.value, `SDE_${safeName}.pdf`);
   }
+  return formData;
 };
 
+const validateAndToast = (payload: any) => {
+  if (!payload.perihal || payload.perihal.trim() === '') {
+    toastError('Gagal', 'Perihal surat wajib diisi');
+    return false;
+  }
+  if (!payload.penerima || payload.penerima.length === 0) {
+    toastError('Gagal', 'Penerima (Tertuju) wajib dipilih');
+    return false;
+  }
+  const rawHtml = payload.konten || "";
+  const textOnly = rawHtml.replace(/<[^>]*>/g, '').trim();
+  const hasImage = rawHtml.includes('<img');
+
+  if (!textOnly && !hasImage) {
+    toastError('Konten Kosong', 'Mohon isi badan surat terlebih dahulu.');
+    return false;
+  }
+  return true;
+};
+
+// --- ACTIONS ---
 const handlePreview = async () => {
-  if (!subject.value || !selectedSender.value) {
-    toast.add({ title: 'Data Belum Lengkap', description: 'Harap isi Pengirim dan Perihal', color: 'warning' });
-    return;
-  }
-  loadingMessage.value = "Memproses Pratinjau PDF...";
-  isLoadingData.value = true;
-  try {
-    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    const formData = prepareKonsepFormData();
-    const blobResponse = await previewPdf(formData);
-    if (blobResponse) {
-      pdfBlob.value = blobResponse;
-      pdfUrl.value = URL.createObjectURL(blobResponse);
-      isOpenPreview.value = true;
-    } else {
-      throw new Error("Gagal generate PDF");
-    }
-  } catch {
-    toast.add({ title: 'Gagal Preview', description: 'Terjadi kesalahan saat memuat preview', color: 'error' });
-  } finally {
-    isLoadingData.value = false;
-  }
-};
-
-// Kirim langsung tanpa sign option / passphrase modal
-const handleKirimDokumen = async () => {
-  const payload = getBasePayload();
+  const payload = getPayload();
   if (!validateAndToast(payload)) return;
 
-  const isRevision = route.query.action === 'edit';
-
-  const isConfirmed = await Alert.confirm(
-    isRevision ? 'Kirim Perbaikan?' : 'Kirim Konsep?',
-    isRevision ? 'Perbaikan konsep akan dikirim.' : 'Konsep Surat Dinas Eksternal akan dikirim.',
-    'Ya, Kirim', 'Batal', false
-  );
-  if (!isConfirmed) return;
-
-  loadingMessage.value = isRevision ? "Mengirim Perbaikan..." : "Membuat Konsep Surat Dinas Eksternal...";
   isLoadingData.value = true;
-
+  loadingMessage.value = "Memproses Pratinjau...";
   try {
-    let result;
-
-    if (isRevision) {
-      const formData = new FormData();
-      const currentSender = selectedSender.value || {} as any;
-      const signerRaw = currentSender.raw || {};
-      const tglDb = date.value
-        ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-        : "";
-      const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
-
-      formData.append('jenis', 'SDE');
-      formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', currentSender.value || '');
-      formData.append('pengirim_position_id', currentSender.value || '');
-      formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
-      formData.append('tembusan_position_ids', JSON.stringify(selectedTembusan.value.map(i => i.value)));
-      formData.append('tgl', tglDb);
-      formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
-      formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
-      formData.append('sifat', selectedSifat.value?.value || 'biasa');
-      formData.append('perihal', subject.value);
-      formData.append('lampiran', lampiranText.value);
-      formData.append('konten', editorContent.value);
-      formData.append('english', String(english.value));
-      formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
-      formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
-      formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
-      formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
-      formData.append('catatan', message.value || '-');
-      formData.append('lampiran_count', existingFiles.value.length > 0 ? '1' : '0');
-
-      const dataWrapper = detail.value?.data || detail.value;
-      const konsepId = dataWrapper?.konsep?.id;
-      if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
-
-      result = await forwardKonsep(konsepId, formData);
-    } else {
-      const formData = prepareKonsepFormData();
-      result = await createKonsep(formData);
-    }
-
-    if (result.success) {
-      toast.add({
-        title: 'Berhasil',
-        description: isRevision ? 'Perbaikan berhasil dikirim' : 'Konsep Surat Dinas Eksternal berhasil dibuat',
-        color: 'success',
-      });
-      if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      isOpenPreview.value = false;
-      router.push("/korespondensi/terkirim");
-    } else {
-      throw new Error(result.message || 'Gagal memproses dokumen');
-    }
-  } catch (e: any) {
-    console.error("Error Kirim:", e);
-    toast.add({ title: 'Gagal', description: e.response?.data?.message || e.message || 'Terjadi kesalahan saat mengirim', color: 'error' });
+    const fd = createFormData(payload, false);
+    const blob = await generatePdf(fd);
+    setPdfBlob(blob);
+    isOpenPreview.value = true;
+  } catch (err) {
+    toastError('Gagal membuat preview');
   } finally {
     isLoadingData.value = false;
-    Alert.close();
   }
 };
 
-const handleSaveDraft = async () => {
-  const payload = getBasePayload();
-  if (!validateAndToast(payload)) throw new Error("Validation failed");
+const handleSaveDraftAction = async () => {
+  Alert.close();
+
+  const payload = getPayload();
+  if (!validateAndToast(payload)) return;
 
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
+
   try {
-    const formData = createFormData(payload);
-    await saveSDE(formData, editDraftId.value);
-    toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    const fd = createFormData(payload, false);
+    let res = editDraftId.value ? await updateDraft(fd, editDraftId.value) : await saveDraft(fd);
+
+    if (res?.success) {
+      toastSuccess('Berhasil', 'Draft berhasil disimpan');
+      if (res.data?.id) editDraftId.value = res.data.id;
+      redirectDraf();
+    } else {
+      throw new Error(res?.data?.message || 'Gagal menyimpan draft');
+    }
   } catch (e: any) {
-    console.error("Gagal simpan draft:", e);
-    throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
+    toastError('Gagal', e.response?.data?.message || 'Gagal memperbarui draft');
   } finally {
     isLoadingData.value = false;
   }
 };
 
-const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Simpan sebagai Draft?',
-    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
-    'Ya, Simpan', 'Batal', false
-  );
-  if (!isConfirmed) return;
+const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraftAction);
+
+const handleKirimDokumen = async (passphrase = '') => {
+  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
+    return;
+  }
+
+  Alert.close();
+
+  const payload = getPayload();
+  loadingMessage.value = "Mengirim Surat Dinas Eksternal...";
+  isLoadingData.value = true;
+
   try {
-    await handleSaveDraft();
+    const fdPreview = createFormData(payload, false);
+    const blobResponse = await generatePdf(fdPreview);
+    setPdfBlob(blobResponse);
+
+    const fdFinal = createFormData(payload, true);
+    fdFinal.append('sign_option', selectedSendType.value);
+
+    if (selectedSendType.value === 'digsig') {
+      fdFinal.append('passphrase', passphrase);
+      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk verifikasi TTE.");
+      fdFinal.append('nik', user.value.nik);
+    }
+
+    const res = await sendSDE(fdFinal);
+
+    if (res?.success || res?.data?.success) {
+      revokePdfUrl();
+      toastSuccess('Berhasil', 'Surat Dinas Eksternal terkirim');
+      Alert.close();
+      redirectTerkirim();
+    } else {
+      throw new Error(res?.data?.message || res?.message || 'Pengiriman gagal');
+    }
+  } catch (e: any) {
     Alert.close();
-  } catch { Alert.close(); }
+    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+
+    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+      bsreDisabled.value = false;
+      await nextTick();
+      isPassphraseModalOpen.value = true;
+      await nextTick();
+      signMethodModalRef.value?.setPassphraseError(errMsg);
+    } else {
+      toastError('Gagal Mengirim', errMsg);
+    }
+  } finally {
+    isLoadingData.value = false;
+  }
 };
 
-// --- Watchers ---
-watch(editorContent, (newVal) => {
-  if (tinymceEditor.value && newVal && tinymceEditor.value.getContent() !== newVal) {
-    tinymceEditor.value.setContent(newVal);
+const handleConfirmKirim = async () => {
+  const payload = getPayload();
+  if (!validateAndToast(payload)) return;
+
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false };
+  try {
+    const res = await getConfigDigsig('SDE');
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    };
+  } catch {
+    // semua false jika gagal fetch
   }
-});
 
-watch(selectedSender, async (newVal, oldVal) => {
-  if (newVal?.value !== oldVal?.value) {
-    selectedTertuju.value = [];
-    selectedTembusan.value = [];
-  }
-}, { deep: true });
+  bsreDisabled.value = !configData.digsig;
+  qrDisabled.value = !configData.ttdQr;
+  basahDisabled.value = !configData.ttdBasah;
+  isPassphraseModalOpen.value = true;
+};
 
-watch(existingFiles, (files) => {
-  lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
-}, { deep: true, immediate: true });
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || '');
+};
 
-// --- Lifecycle ---
+// --- LIFECYCLE ---
 onMounted(async () => {
-  const queryAction = route.query.action as string;
-  const refId = route.query.ref_id as string;
-  const refJenis = route.query.ref_jenis as string;
-  const draftId = route.query.draft_id as string;
-
+  isLoadingData.value = true;
+  loadingMessage.value = "Memuat...";
   if (!user.value) await getProfile();
 
   try {
     klasifikasiStatus.value = "loading";
     const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(user.value?.position),
-      getExternalRecipients(),
+      getRecipientInfo(user.value?.position),
+      getExternalRecipients()
     ]);
 
     klasifikasiList.value = klasRes;
-    klasifikasiStatus.value = "success";
 
-    // Mapping external items (Tertuju)
     if (externalRecRes?.success && Array.isArray(externalRecRes.data)) {
       externalItems.value = externalRecRes.data.map((item: any) => ({
         label: item.nama,
-        labelJob: item.nama,
         value: item.id,
         raw: item,
       }));
     }
 
-    // Mapping internal items (Tembusan) — dari useRecipients normalizeRecipients
-    internalItems.value = (internalRecRes.recipients || []).map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
+    const rawRec = internalRecRes.rawRecipients || [];
+    const mapInternalItems = (list: any[]) => list.map((r: any) => ({
+      label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),
-      raw: r,
+      raw: r
     }));
-  } catch {
-    klasifikasiStatus.value = "error";
-  }
 
-  // Load sender list
-  if (user.value?.position) await fetchSenderList(user.value.position);
-
-  // A. EDIT MODE
-  if (queryAction === 'edit' && refId) {
-    loadingMessage.value = "Memuat data konsep...";
-    isLoadingData.value = true;
-    try {
-      const result = await fetchKonsepDetail(refId);
-      if (result) {
-        const unwrappedData = result.data || result;
-        detail.value = unwrappedData;
-        editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
-        subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";
-        lampiranText.value = unwrappedData.lampiran || "";
-
-        if (unwrappedData.flow && Array.isArray(unwrappedData.flow)) {
-          const createFlow = unwrappedData.flow.find((f: any) => f.aksi === 'create');
-          if (createFlow?.catatan) message.value = createFlow.catatan;
-        }
-
-        const tglStr = unwrappedData.tanggal || unwrappedData.naskah?.tanggal;
-        if (tglStr) {
-          const tglParts = new Date(tglStr);
-          date.value = new CalendarDate(tglParts.getFullYear(), tglParts.getMonth() + 1, tglParts.getDate());
-        }
-
-        const sifatStr = unwrappedData.sifat || unwrappedData.naskah?.sifat;
-        if (sifatStr) selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
-
-        const klasCode = unwrappedData.naskah?.klasifikasi;
-        if (klasCode) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === klasCode);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
-        }
-
-        editorContent.value = unwrappedData.konten || unwrappedData.naskah?.konten || "";
-
-        // Pengirim
-        if (unwrappedData.pengirim) {
-          const posId = String(unwrappedData.pengirim.position_id || unwrappedData.pengirim.position || '');
-          const senderMatch = senderItems.value.find(s => s.value === posId);
-          selectedSender.value = senderMatch || {
-            label: `${unwrappedData.pengirim.nama || ''} - ${unwrappedData.pengirim.position_text || ''}`,
-            labelJob: unwrappedData.pengirim.position_text || '',
-            value: posId,
-            raw: unwrappedData.pengirim,
-          };
-        }
-
-        // Tertuju: restore dari penerima eksternal
-        if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
-          selectedTertuju.value = unwrappedData.kepada.map((p: any) => ({
-            label: p.nama || p.label || '',
-            labelJob: p.nama || p.label || '',
-            value: String(p.id || p.value || ''),
-            raw: p,
-          }));
-        }
-
-        // Tembusan: restore dari internal
-        if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
-          selectedTembusan.value = unwrappedData.tembusan.map((t: any) => {
-            const posId = String(t.position || t.position_id || t.id || '');
-            return internalItems.value.find(i => i.value === posId) || {
-              label: `${t.nama || ''} - ${t.position_text || ''}`,
-              labelJob: t.position_text || '',
-              value: posId,
-              raw: t,
-            };
-          });
-        }
-
-        if (unwrappedData.lampiran_files && Array.isArray(unwrappedData.lampiran_files)) {
-          existingFiles.value = unwrappedData.lampiran_files.map((f: any) => ({
-            id: f.id, fileName: f.filename || f.file_name || 'File',
-            filePath: f.url || f.file_path || '', fileSize: f.size || 0,
-          }));
-        }
-
-        const flows = unwrappedData.flow || [];
-        if (flows.length > 0) {
-          const originFlow = flows[0];
-          if (originFlow.naskah || originFlow.pdf_snapshot) {
-            refData.value = {
-              id: originFlow.naskah?.id || 'ref-flow',
-              nomor: originFlow.naskah?.nomor || '-',
-              tanggal: originFlow.naskah?.tanggal || originFlow.tanggal,
-              perihal: originFlow.naskah?.perihal || '',
-              jenis: originFlow.naskah?.jenis || 'Naskah',
-              jenis_label: originFlow.naskah?.jenis || 'Naskah',
-              pengirim_nama: originFlow.naskah?.pengirim?.nama || '-',
-              pengirim_jabatan: originFlow.naskah?.pengirim?.position_text || '-',
-              kepada: originFlow.naskah?.penerima || [],
-              tembusan: originFlow.naskah?.tembusan || [],
-              catatan: originFlow.catatan || '',
-              final_pdf_url: originFlow.naskah?.final_pdf || originFlow.pdf_snapshot || null,
-              lampiran_files: originFlow.naskah?.lampiran_files || [],
-            };
-          }
-        }
-      } else {
-        toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
-      }
-    } catch (e) {
-      console.error("Error fetching edit data:", e);
-      toast.add({ title: 'Error', description: 'Gagal memuat data edit', color: 'error' });
-    } finally {
-      isLoadingData.value = false;
+    let flatRecipients: any[] = [];
+    if (Array.isArray(rawRec)) {
+      flatRecipients = rawRec;
+    } else {
+      Object.values(rawRec).forEach((arr: any) => flatRecipients.push(...arr));
     }
-  }
+    internalItems.value = mapInternalItems(flatRecipients);
 
-  // B. REPLY / DISPOSISI
-  else if (refId && refJenis) {
-    loadingMessage.value = "Memuat data referensi...";
-    isLoadingData.value = true;
-    try {
-      const result = await fetchInboxDetail(refId, refJenis);
-      if (result) {
-        const rawData = result.data || result;
-        const rawFlow = rawData.raw?.flow?.length > 0 ? rawData.raw.flow[0] : rawData;
-        refData.value = {
-          id: rawFlow.id,
-          nomor: rawFlow.nomor || '-',
-          tanggal: rawFlow.tanggal,
-          perihal: rawFlow.perihal,
-          jenis: rawFlow.jenis,
-          jenis_label: rawFlow.jenis === 'DI' ? 'DISPOSISI' : (rawFlow.jenis || 'SURAT'),
-          pengirim_nama: rawFlow.pengirim?.nama || rawFlow.pengirim?.name || '-',
-          pengirim_jabatan: rawFlow.pengirim?.positionText || rawFlow.pengirim?.position_text || '-',
-          kepada: rawFlow.penerima || [],
-          tembusan: rawFlow.tembusan || [],
-          catatan: rawFlow.catatan,
-          disposisi: rawFlow.disposisi,
-          final_pdf_url: rawFlow.final_pdf_url || rawFlow.final_pdf || null,
-          lampiran_files: rawFlow.lampiran_files || [],
-        };
-      }
-    } catch (e) { console.error(e); }
-    isLoadingData.value = false;
-  }
+    klasifikasiStatus.value = "success";
 
-  // C. DRAFT
-  else if (draftId) {
-    loadingMessage.value = "Memuat draft...";
-    isLoadingData.value = true;
-    try {
+    const draftId = route.query.draft_id as string;
+    if (draftId) {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      loadingMessage.value = "Memuat draft...";
+
+      const resDraft = await getSDEDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
+
         subject.value = d.perihal || "";
-        editorContent.value = d.konten || "";
         lampiranText.value = d.lampiran || "";
-        message.value = d.catatan || "";
-        english.value = Boolean(d.english);
+        editorContent.value = d.konten || "";
+        isEnglish.value = Boolean(d.english);
+        if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+          const found = klasifikasiList.value.find(k => k.klasifikasi === d.klasifikasi);
+          if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        // Tertuju: eksternal
         if (d.penerima && Array.isArray(d.penerima)) {
           selectedTertuju.value = d.penerima.map((item: any) => ({
-            label: item.nama || item.label || '',
-            labelJob: item.nama || item.label || '',
-            value: String(item.id || item.value || ''),
-            raw: item,
+            label: item.nama,
+            value: item.id,
+            raw: item
           }));
         }
 
-        // Tembusan: internal
         if (d.tembusan && Array.isArray(d.tembusan)) {
           const tembusanIds = d.tembusan.map((t: any) =>
             typeof t === 'object' ? String(t.position || t.position_id || t.id || t.value) : String(t)
@@ -984,32 +582,42 @@ onMounted(async () => {
           );
         }
 
-        if (Array.isArray(d.lampiran_files)) {
-          existingFiles.value = d.lampiran_files.map((f: any) => ({
-            id: f.id, fileName: f.fileName || f.file_name,
-            filePath: f.fileUrl || f.file_path, fileSize: f.fileSize || 0,
-          }));
-        }
-        selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
-        if (d.tgl || d.tanggal) {
-          const tglStr = d.tgl || d.tanggal;
-          const p = tglStr.split('-');
-          if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
-        }
+        existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
+        setSifatFromString(d.sifat);
+        if (d.tgl) setDateFromString(d.tgl);
       }
-    } catch (e) { console.error(e); }
-    isLoadingData.value = false;
-  }
+    }
 
-  // D. NEW
-  else {
+  } catch (e) {
+    toastError('Gagal memuat data awal');
+  } finally {
     isLoadingData.value = false;
   }
 });
+
+watch(existingFiles, (newFiles) => {
+  const jumlah = newFiles ? newFiles.length : 0;
+  lampiranText.value = jumlah > 0 ? `${jumlah} Lampiran` : "0 Lampiran";
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>
-:deep(.tox-tinymce) { border: none !important; }
-.tox-fullscreen { z-index: 9999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; }
-.tox-dialog-wrap, .tox-dropzone, .tox-promotions { z-index: 10000 !important; }
+:deep(.tox-tinymce) {
+  border: none !important;
+}
+
+.tox-fullscreen {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.tox-dialog-wrap,
+.tox-dropzone,
+.tox-promotions {
+  z-index: 10000 !important;
+}
 </style>

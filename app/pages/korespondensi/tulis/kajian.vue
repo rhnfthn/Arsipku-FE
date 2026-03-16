@@ -477,8 +477,9 @@ const createFormData = (payload: KajianPayload, includePdf: boolean) => {
     const k = key as keyof KajianPayload;
     const val = payload[k];
 
-    if (k === 'penerima_position_ids' || k === 'lampiran_temp_ids') {
-      fd.append(k, JSON.stringify(val));
+    // Semua array field harus di-serialize sebagai JSON
+    if (k === 'penerima' || k === 'lampiran_temp_ids') {
+      fd.append(k, JSON.stringify(val ?? []));
     } else if (val !== undefined && val !== null) {
       fd.append(k, String(val));
     }
