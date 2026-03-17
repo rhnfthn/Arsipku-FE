@@ -417,8 +417,7 @@ const userMenuUtama = computed(() => [
 ])
 
 const userMenuUtilitas = computed(() => {
-  const badgeCount = userCounts.value.menunggu_verifikasi || 0
-
+  const badgeCount = userCounts.value.belum_diajukan || 0
   const menus = [
     { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },

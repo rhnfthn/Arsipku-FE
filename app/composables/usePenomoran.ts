@@ -118,7 +118,6 @@ export const usePenomoran = () => {
         userCounts.value = {
           position_id: res.data.position_id ?? numericPositionId,
           menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
-
           menunggu_persetujuan: res.data.menunggu_persetujuan ?? 0,
           disetujui: res.data.disetujui ?? 0,
           ditolak: res.data.ditolak ?? 0,

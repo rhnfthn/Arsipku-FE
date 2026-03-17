@@ -549,17 +549,27 @@
 
           <!-- ─── NOMOR CARDS ─────────────────────────────────────────────── -->
           <div class="space-y-3">
-            <!-- ══ SINGLE FILE: file card sekali di atas, lalu 1 card berisi semua nomor ══ -->
+            <!-- ══ SINGLE FILE: file card di atas + compact nomor list bawah ══ -->
             <template v-if="selectedRow.is_single_file">
-              <!-- File card (tampil sekali) -->
-              <template v-if="selectedRow.details && selectedRow.details.length > 0">
-                <template v-if="hasExistingFile(selectedRow.details[0])">
+              <!-- ── Shared file card (same layout as nomor page) ── -->
+              <div
+                class="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
+              >
+                <!-- File preview row — click to open -->
+                <div
+                  v-if="
+                    selectedRow.details &&
+                    selectedRow.details.length > 0 &&
+                    hasExistingFile(selectedRow.details[0])
+                  "
+                  class="flex items-start gap-3 p-4 cursor-pointer bg-blue-50/60 dark:bg-blue-900/10 hover:bg-blue-100/60 dark:hover:bg-blue-900/20 transition border-b border-blue-100 dark:border-blue-900/30"
+                  @click="previewFile(selectedRow.details[0])"
+                >
                   <div
-                    class="flex items-start border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
-                    @click="previewFile(selectedRow.details[0])"
+                    class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40"
                   >
                     <svg
-                      class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
+                      class="w-5 h-5 text-primary dark:text-blue-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -571,117 +581,113 @@
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    <div class="flex-1 min-w-0 ml-3">
-                      <p
-                        class="text-sm font-medium text-primary dark:text-blue-400 underline truncate"
-                      >
-                        {{ getDisplayFileName(selectedRow.details[0]) }}
-                      </p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {{ $t('ver_file_klik_preview') }}
-                      </p>
-                    </div>
                   </div>
-                </template>
-                <template v-else>
-                  <div
-                    class="flex items-center gap-2 border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2.5"
-                  >
-                    <svg
-                      class="w-4 h-4 text-yellow-500 dark:text-yellow-400 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-sm font-semibold text-primary dark:text-blue-400 underline truncate"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    <span class="text-xs text-yellow-700 dark:text-yellow-400">
-                      {{ $t('ver_file_belum_ada') }}
-                    </span>
+                      {{ getDisplayFileName(selectedRow.details[0]) }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{ $t('ver_file_klik_preview') }} · Berlaku untuk semua nomor
+                    </p>
                   </div>
-                </template>
-              </template>
+                </div>
 
-              <!-- 1 outer card berisi semua nomor sebagai baris -->
+                <!-- No file yet -->
+                <div v-else class="p-4 border-b border-gray-100 dark:border-gray-700">
+                  <p class="text-sm text-gray-400 dark:text-gray-500 italic text-center py-1">
+                    {{ $t('ver_file_belum_ada') }}
+                  </p>
+                </div>
+              </div>
+              <!-- ── end shared file card ── -->
+
+              <!-- ── Compact nomor list with checkboxes (preserved) ── -->
               <div
-                class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
+                v-if="selectedRow.details && selectedRow.details.length > 0"
+                class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
               >
-                <div class="space-y-2">
-                  <div
-                    v-for="(detail, idx) in selectedRow.details"
-                    :key="detail.id || idx"
+                <div
+                  v-for="(detail, idx) in selectedRow.details"
+                  :key="detail.id || idx"
+                  :class="[
+                    'flex items-center gap-3 px-4 py-3 transition',
+                    idx < selectedRow.details.length - 1
+                      ? 'border-b border-gray-100 dark:border-gray-700'
+                      : '',
+                    detail.status === 'hangus'
+                      ? 'bg-gray-50 dark:bg-gray-800/50 opacity-60'
+                      : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/30'
+                  ]"
+                >
+                  <!-- Checkbox (preserved) -->
+                  <input
+                    type="checkbox"
+                    v-model="detail.checked"
+                    :disabled="
+                      detail.status === 'terpakai' ||
+                      detail.status === 'ditolak' ||
+                      detail.status === 'hangus' ||
+                      isProcessing
+                    "
+                    class="w-4 h-4 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
+                  />
+
+                  <!-- Index -->
+                  <span
+                    class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
+                  >
+                    {{ idx + 1 }}.
+                  </span>
+
+                  <!-- Nomor -->
+                  <span
                     :class="[
-                      'flex items-center gap-2 rounded-md px-3 py-2 border',
+                      'flex-1 font-mono text-sm',
                       detail.status === 'hangus'
-                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                        ? 'line-through text-gray-400 dark:text-gray-500'
+                        : 'text-gray-800 dark:text-gray-200'
                     ]"
                   >
-                    <input
-                      type="checkbox"
-                      v-model="detail.checked"
-                      :disabled="
-                        detail.status === 'terpakai' ||
-                        detail.status === 'ditolak' ||
-                        detail.status === 'hangus' ||
-                        isProcessing
-                      "
-                      class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
-                    />
-                    <span
-                      class="text-sm text-gray-600 dark:text-gray-400 font-medium flex-shrink-0"
-                    >
-                      {{ idx + 1 }}.
-                    </span>
-                    <input
-                      type="text"
-                      :value="displayNomor(detail)"
-                      :class="[
-                        'flex-1 min-w-0 text-sm font-mono bg-transparent border-none outline-none',
-                        detail.status === 'hangus'
-                          ? 'line-through text-gray-400 dark:text-gray-500'
-                          : 'dark:text-gray-200'
-                      ]"
-                      readonly
-                    />
-                    <button
-                      v-if="
-                        detail.nomor && detail.status === 'terpakai' && detail.status !== 'hangus'
-                      "
-                      @click="handleCopy(detail.nomor)"
-                      class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition flex items-center justify-center flex-shrink-0"
-                    >
-                      <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </button>
-                    <div v-else class="w-[36px] flex-shrink-0"></div>
-                    <span
-                      v-if="detail.status"
-                      :class="[
-                        'px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0',
-                        {
-                          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
-                            detail.status === 'pending' ||
-                            detail.status === 'menunggu' ||
-                            detail.status === 'booking',
-                          'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-primary-400':
-                            detail.status === 'terpakai',
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
-                            detail.status === 'terpakai_final',
-                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
-                            detail.status === 'ditolak',
-                          'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400':
-                            detail.status === 'hangus'
-                        }
-                      ]"
-                    >
-                      {{ getDetailStatusLabel(detail.status) }}
-                    </span>
-                  </div>
+                    {{ displayNomor(detail) }}
+                  </span>
+
+                  <!-- Copy button -->
+                  <button
+                    v-if="
+                      detail.nomor && detail.status === 'terpakai' && detail.status !== 'hangus'
+                    "
+                    @click="handleCopy(detail.nomor)"
+                    class="p-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition flex-shrink-0"
+                  >
+                    <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  <div v-else class="w-[30px] flex-shrink-0"></div>
+
+                  <!-- Status badge -->
+                  <span
+                    v-if="detail.status"
+                    :class="[
+                      'px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0',
+                      {
+                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400':
+                          detail.status === 'pending' ||
+                          detail.status === 'menunggu' ||
+                          detail.status === 'booking',
+                        'bg-blue-100 dark:bg-blue-900/30 text-primary-800 dark:text-primary-400':
+                          detail.status === 'terpakai',
+                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
+                          detail.status === 'terpakai_final',
+                        'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
+                          detail.status === 'ditolak',
+                        'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400':
+                          detail.status === 'hangus'
+                      }
+                    ]"
+                  >
+                    {{ getDetailStatusLabel(detail.status) }}
+                  </span>
                 </div>
               </div>
             </template>
