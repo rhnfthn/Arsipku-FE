@@ -7,6 +7,7 @@ export interface Account {
   email: string | null
   role: string
   status: string
+  positionText: string
 }
 
 export const useManajemenAkun = () => {
@@ -29,7 +30,8 @@ export const useManajemenAkun = () => {
         name: u.name,
         email: u.email ?? null,
         role: u.role,
-        status: u.status
+        status: u.status,
+        positionText: u.position_text || ''
       }))
 
     } catch (err: any) {

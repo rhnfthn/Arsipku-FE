@@ -22,39 +22,67 @@
       class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Toolbar -->
-      <div class="flex flex-wrap gap-4 items-center p-3 justify-between">
-        <div class="flex items-center gap-3">
-          <!-- Rows per page -->
-          <select
-            v-model="perPage"
-            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option v-for="n in rowsChoices" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
+      <div class="flex flex-wrap gap-2 items-center p-3">
+        <!-- Rows per page (custom dropdown) -->
+        <div class="relative">
           <button
-            @click="fetchJenis()"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
-            title="Refresh"
+            type="button"
+            @click="openRowsDropdown = !openRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
           >
-            <RotateCcw class="w-4 h-4" />
+            <span>{{ perPage }}</span>
+            <ChevronDown
+              class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsDropdown }"
+            />
           </button>
-          <!-- Search -->
-          <div class="relative flex-1 w-full md:w-200">
-            <Search
-              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <input
-              v-model="search"
-              :placeholder="t('je_cari_placeholder')"
-              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
-            />
-          </div>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="perPage = n; openRowsDropdown = false; currentPage = 1"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  perPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
         </div>
 
+        <!-- Refresh -->
         <button
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+          @click="fetchJenis()"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
+          title="Refresh"
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+
+        <!-- Search -->
+        <div class="relative flex-1 min-w-40">
+          <Search
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
+          <input
+            v-model="search"
+            :placeholder="t('je_cari_placeholder')"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+          />
+        </div>
+
+        <!-- Export -->
+        <button
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
           @click="onExport"
         >
           <FileDown class="w-4 h-4" />
@@ -874,6 +902,7 @@ const jenisList = ref<JenisItem[]>([]);
 const currentPage = ref(1);
 const perPage = ref(10);
 const rowsChoices = [5, 10, 20, 50];
+const openRowsDropdown = ref(false);
 const sortColumn = ref<string>("jenis");
 const sortDirection = ref<"asc" | "desc">("asc");
 
@@ -1289,6 +1318,16 @@ const onExport = () => {
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 ::-webkit-scrollbar {

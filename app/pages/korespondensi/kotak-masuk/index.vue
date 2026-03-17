@@ -74,10 +74,9 @@ const currentPage = ref(1);
 // Date Filter State
 const showDateMenu = ref(false);
 const activeDateLabel = ref("30 Hari");
-const startDate = ref(new Date());
-const endDate = ref(new Date());
-const openStart = ref(false);
-const openEnd = ref(false);
+// ✅ Gunakan string YYYY-MM-DD langsung, tidak perlu Date object
+const startDateInput = ref(new Date().toISOString().split('T')[0]);
+const endDateInput = ref(new Date().toISOString().split('T')[0]);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
 
 // Bulk Action State
@@ -131,18 +130,8 @@ const formatShortDate = (dateString: string | null) => {
   const day = date.getUTCDate();
 
   const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "Mei",
-    "Jun",
-    "Jul",
-    "Agu",
-    "Sep",
-    "Okt",
-    "Nov",
-    "Des",
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
   ];
   const month = monthNames[date.getUTCMonth()];
   const year = date.getUTCFullYear();
@@ -190,7 +179,7 @@ const getCategoryLabel = (cat: string) => {
   return "K";
 };
 
-// --- CORE LOGIC: refreshData dengan mapping semua filter → API params ---
+// --- CORE LOGIC ---
 const refreshData = async () => {
   if (isLoading.value && pending.value) return;
   isLoading.value = true;
@@ -207,29 +196,37 @@ const refreshData = async () => {
       params.jenis = activeTab.value;
     }
 
-    // Date preset atau custom range
+    // ✅ Date filter — selalu pakai start_date & end_date, tidak pakai preset
+    const today = new Date();
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+
     if (activeDateLabel.value === "Custom") {
-      params.start_date = startDate.value.toISOString().split("T")[0];
-      params.end_date = endDate.value.toISOString().split("T")[0];
+      // ✅ Baca langsung dari startDateInput / endDateInput (sudah string YYYY-MM-DD)
+      params.start_date = startDateInput.value;
+      params.end_date = endDateInput.value;
     } else if (activeDateLabel.value !== "Semua") {
-      const presetMap: Record<string, string> = {
-        "7 Hari": "7_hari",
-        "30 Hari": "30_hari",
-        "60 Hari": "60_hari",
-        "1 Tahun": "1_tahun",
+      const daysMap: Record<string, number> = {
+        "7 Hari": 7,
+        "30 Hari": 30,
+        "60 Hari": 60,
+        "1 Tahun": 365,
       };
-      if (presetMap[activeDateLabel.value]) {
-        params.preset = presetMap[activeDateLabel.value];
+      const days = daysMap[activeDateLabel.value];
+      if (days) {
+        const from = new Date(today);
+        from.setDate(today.getDate() - days);
+        params.start_date = toDateStr(from);
+        params.end_date = toDateStr(today);
       }
     }
+    // Jika "Semua" → tidak kirim start_date / end_date
 
     // Sort
     if (activeSortLabel.value === "Terlama") {
       params.sort = "asc";
     }
-    // default "desc" untuk Terbaru (tidak perlu dikirim jika default backend)
 
-    // ✅ Mapping activeFilterType → param API yang tepat
+    // Mapping activeFilterType → param API
     switch (activeFilterType.value) {
       case "Sudah Dibaca":
         params.status_baca = "terbaca";
@@ -258,7 +255,6 @@ const refreshData = async () => {
       case "Prioritas":
         params.priority = true;
         break;
-      // "Semua" = tidak ada filter tambahan
     }
 
     await fetchInbox(params);
@@ -315,8 +311,6 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   }
 };
 
-// ✅ displayItems tidak lagi melakukan filter Prioritas di frontend
-// Semua filter sudah delegasikan ke backend via params API
 const displayItems = computed(() => items.value || []);
 
 // --- UI ACTIONS ---
@@ -334,6 +328,7 @@ const selectDateFilter = (opt: string) => {
   refreshData();
 };
 
+// ✅ applyCustomDate: set label jadi Custom lalu langsung refresh
 const applyCustomDate = () => {
   activeDateLabel.value = "Custom";
   showDateMenu.value = false;
@@ -402,14 +397,10 @@ const handleToggleFlag = async (
 
     if (type === "favorit") {
       item.isStarred = !item.isStarred;
-      description = item.isStarred
-        ? "Ditambahkan ke Favorit"
-        : "Dihapus dari Favorit";
+      description = item.isStarred ? "Ditambahkan ke Favorit" : "Dihapus dari Favorit";
     } else if (type === "tindak_lanjut") {
       item.isTinjut = !item.isTinjut;
-      description = item.isTinjut
-        ? "Ditandai tindak lanjut"
-        : "Tindak lanjut selesai";
+      description = item.isTinjut ? "Ditandai tindak lanjut" : "Tindak lanjut selesai";
     } else if (type === "note") {
       item.isNote = !item.isNote;
       description = item.isNote ? "Note ditandai" : "Tanda note dihapus";
@@ -418,11 +409,8 @@ const handleToggleFlag = async (
       description = item.isLocked ? "Pesan dikunci" : "Kunci pesan dibuka";
     } else if (type === "arsip") {
       item.isArsip = !item.isArsip;
-      description = item.isArsip
-        ? "Pesan diarsipkan"
-        : "Pesan dikembalikan dari arsip";
+      description = item.isArsip ? "Pesan diarsipkan" : "Pesan dikembalikan dari arsip";
 
-      // Hapus dari tampilan jika filter tidak cocok
       const currentFilterIsArsip = activeFilterType.value === "Arsip";
       if (!currentFilterIsArsip && item.isArsip === true) {
         items.value = items.value.filter((i) => i.id !== mail.id);
@@ -432,20 +420,11 @@ const handleToggleFlag = async (
       }
     }
 
-    toast.add({
-      title: "Berhasil",
-      description,
-      color: "success",
-      timeout: 2000,
-    });
+    toast.add({ title: "Berhasil", description, color: "success", timeout: 2000 });
     await toggleFlag(item, type);
   } catch (error) {
     console.error(error);
-    toast.add({
-      title: "Gagal",
-      description: "Gagal memperbarui status.",
-      color: "error",
-    });
+    toast.add({ title: "Gagal", description: "Gagal memperbarui status.", color: "error" });
     refreshData();
   }
 };
@@ -464,11 +443,7 @@ const handleBulkExecute = async () => {
     showDeleteModal.value = false;
     await refreshData();
   } catch (error) {
-    toast.add({
-      title: "Gagal",
-      description: "Terjadi kesalahan.",
-      color: "error",
-    });
+    toast.add({ title: "Gagal", description: "Terjadi kesalahan.", color: "error" });
   } finally {
     isDeleting.value = false;
   }
@@ -481,9 +456,7 @@ const openLabelAssignModal = () => {
 const downloadExcel = () => {
   if (displayItems.value.length === 0) return;
   const totalTerbaca = displayItems.value.filter((mail) => mail.isRead).length;
-  const totalBelumDibaca = displayItems.value.filter(
-    (mail) => !mail.isRead,
-  ).length;
+  const totalBelumDibaca = displayItems.value.filter((mail) => !mail.isRead).length;
 
   const tableData = displayItems.value.map((mail, index) => ({
     No: index + 1,
@@ -530,22 +503,18 @@ const actionLabel = computed(() =>
 const paginationInfo = computed(() => {
   if (pagination.value.total === 0) return "0-0 Dari 0";
   const start = (pagination.value.page - 1) * pagination.value.limit + 1;
-  const end = Math.min(
-    start + pagination.value.limit - 1,
-    pagination.value.total,
-  );
+  const end = Math.min(start + pagination.value.limit - 1, pagination.value.total);
   return `${start}-${end} Dari ${pagination.value.total}`;
 });
 
-// Active filter badge label untuk UI
 const activeFilterBadge = computed(() => {
   if (activeFilterType.value !== "Semua") return activeFilterType.value;
   if (activeDateLabel.value !== "30 Hari") return activeDateLabel.value;
   return null;
 });
 
-// Watchers
-// ✅ Tambah activeDateLabel ke watcher
+// ✅ Single watcher — tidak duplikat, activeDateLabel tidak perlu di-watch
+// karena selectDateFilter & applyCustomDate sudah memanggil refreshData() langsung
 watch([activeTab, itemsPerPage, activeFilterType], () => {
   currentPage.value = 1;
   refreshData();
@@ -570,126 +539,70 @@ onMounted(async () => {
 <template>
   <PageHeader title="Kotak Masuk" :items="breadcrumbs" />
   <div
-    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
-  >
+    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors">
     <!-- ══════════════════════════════════════════════════════
          TOOLBAR BAR
     ══════════════════════════════════════════════════════ -->
     <div
-      class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors"
-    >
+      class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors">
       <!-- LEFT: Checkbox + Filter + Refresh + Bulk Actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
         <!-- Select All Checkbox -->
-        <div
-          class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
-          @click="toggleSelectAll"
-        >
+        <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
+          @click="toggleSelectAll">
           <div
             class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
             :class="{
               'bg-primary border-primary': isAllSelected,
-              'group-hover:border-gray-600 dark:group-hover:border-gray-300':
-                !isAllSelected,
-            }"
-          >
-            <Check
-              v-if="isAllSelected"
-              class="w-3 h-3 text-white"
-              stroke-width="3"
-            />
+              'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected,
+            }">
+            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
           </div>
         </div>
 
         <!-- Filter Dropdown -->
         <div class="relative">
-          <button
-            @click="showFilterMenu = !showFilterMenu"
+          <button @click="showFilterMenu = !showFilterMenu"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
-            :class="{
-              'bg-gray-100 dark:bg-gray-700 text-neutral-900 dark:text-gray-200':
-                showFilterMenu,
-            }"
-            title="Opsi Filter"
-          >
+            :class="{ 'bg-gray-100 dark:bg-gray-700 text-neutral-900 dark:text-gray-200': showFilterMenu }"
+            title="Opsi Filter">
             <MoreVertical class="w-4 h-4" />
-            <span
-              v-if="activeFilterType !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
-            >
+            <span v-if="activeFilterType !== 'Semua'"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800">
             </span>
           </button>
-          <div
-            v-if="showFilterMenu"
-            @click="showFilterMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showFilterMenu"
-            class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in filterMenuOptions"
-              :key="opt.value"
-              @click="applyFilter(opt.value)"
-              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between group transition-colors"
-            >
-              <span
-                :class="
-                  activeFilterType === opt.value
-                    ? 'font-semibold text-primary'
-                    : ''
-                "
-              >
+          <div v-if="showFilterMenu" @click="showFilterMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showFilterMenu"
+            class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
+              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between group transition-colors">
+              <span :class="activeFilterType === opt.value ? 'font-semibold text-primary' : ''">
                 {{ opt.label }}
               </span>
-              <Check
-                v-if="activeFilterType === opt.value"
-                class="w-3.5 h-3.5 text-primary"
-              />
+              <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
             </button>
           </div>
         </div>
 
         <!-- Refresh -->
-        <button
-          @click="refreshData"
+        <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          title="Muat Ulang"
-        >
-          <RotateCw
-            class="w-4 h-4"
-            :class="{ 'animate-spin': pending || isLoading }"
-          />
+          title="Muat Ulang">
+          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending || isLoading }" />
         </button>
 
         <!-- Bulk Actions (tampil saat ada item dipilih) -->
         <template v-if="selectedIds.size > 0">
-          <div
-            class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"
-          ></div>
-          <div
-            class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200"
-          >
-            <button
-              @click="confirmAction('delete')"
-              class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded transition-colors"
-              title="Hapus"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
-            <button
-              @click="confirmAction('archive')"
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
+          <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
+            <button @click="confirmAction('archive')"
               class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
-              title="Arsipkan"
-            >
+              title="Arsipkan">
               <Archive class="w-4 h-4" />
             </button>
-            <button
-              @click="openLabelAssignModal"
+            <button @click="openLabelAssignModal"
               class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary rounded transition-colors"
-              title="Label"
-            >
+              title="Label">
               <Tag class="w-4 h-4" />
             </button>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">
@@ -700,17 +613,11 @@ onMounted(async () => {
 
         <!-- Active Filter Badge -->
         <template v-if="activeFilterType !== 'Semua' && selectedIds.size === 0">
-          <div
-            class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"
-          ></div>
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
           <span
-            class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200"
-          >
+            class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200">
             {{ activeFilterType }}
-            <button
-              @click="applyFilter('Semua')"
-              class="hover:text-primary-800 ml-0.5"
-            >
+            <button @click="applyFilter('Semua')" class="hover:text-primary-800 ml-0.5">
               <X class="w-3 h-3" />
             </button>
           </span>
@@ -719,177 +626,61 @@ onMounted(async () => {
 
       <!-- RIGHT: Search + Date + Sort + Download + Pagination -->
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
-        <!-- Search Bar (inline compact) -->
-        <!-- <div class="relative hidden lg:flex items-center">
-          <Search
-            class="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none"
-          />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Cari perihal, nomor..."
-            class="w-44 xl:w-56 pl-8 pr-3 py-1.5 text-[12px] bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all focus:w-64"
-          />
-          <button
-            v-if="searchQuery"
-            @click="searchQuery = ''"
-            class="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
-            <X class="w-3 h-3" />
-          </button>
-        </div> -->
 
         <!-- Date Filter -->
         <div class="relative">
-          <button
-            @click="showDateMenu = !showDateMenu"
-            title="Periode Data"
-            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
-          >
+          <button @click="showDateMenu = !showDateMenu" title="Periode Data"
+            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
             <History class="w-4 h-4 shrink-0" />
-            <span
-              v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
-            >
+            <span v-if="activeDateLabel !== 'Semua'"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800">
             </span>
           </button>
-          <div
-            v-if="showDateMenu"
-            @click="showDateMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
 
-          <div
-            v-if="showDateMenu"
-            class="absolute top-full right-0 mt-1 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex"
-          >
+          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+
+          <div v-if="showDateMenu"
+            class="absolute top-full right-0 mt-2 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden flex animate-in fade-in slide-in-from-top-2 duration-150">
+
             <!-- Custom Date Range -->
-            <div
-              class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30"
-            >
+            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
-                class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between"
-              >
-                <span>Pilih Tanggal</span>
+                class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
+                <span>Rentang Tanggal</span>
                 <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
 
               <div class="space-y-4">
                 <div>
-                  <label
-                    class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                  >
-                    Mulai Tanggal
-                  </label>
-                  <ClientOnly>
-                    <UPopover
-                      v-model:open="openStart"
-                      :content="{ placement: 'bottom-start' }"
-                    >
-                      <UButton
-                        color="white"
-                        variant="outline"
-                        block
-                        class="justify-start"
-                      >
-                        <div class="flex items-center gap-2 w-full">
-                          <span
-                            class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200"
-                          >
-                            {{
-                              startDate
-                                ? startDate.toLocaleDateString("id-ID")
-                                : "Pilih tanggal"
-                            }}
-                          </span>
-                          <CalendarIcon
-                            class="w-4 h-4 text-gray-400 shrink-0"
-                          />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar
-                            v-model="startDate"
-                            @close="openStart = false"
-                          />
-                        </div>
-                      </template>
-                    </UPopover>
-                  </ClientOnly>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
+                  <!-- ✅ input type="date" langsung bind ke startDateInput (string) -->
+                  <input type="date" v-model="startDateInput"
+                    class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-primary-500 outline-none dark:text-gray-200" />
                 </div>
 
                 <div>
-                  <label
-                    class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                  >
-                    Sampai Tanggal
-                  </label>
-                  <ClientOnly>
-                    <UPopover
-                      v-model:open="openEnd"
-                      :content="{ placement: 'bottom-start' }"
-                    >
-                      <UButton
-                        color="white"
-                        variant="outline"
-                        block
-                        class="justify-start"
-                      >
-                        <div class="flex items-center gap-2 w-full">
-                          <span
-                            class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200"
-                          >
-                            {{
-                              endDate
-                                ? endDate.toLocaleDateString("id-ID")
-                                : "Pilih tanggal"
-                            }}
-                          </span>
-                          <CalendarIcon
-                            class="w-4 h-4 text-gray-400 shrink-0"
-                          />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar
-                            v-model="endDate"
-                            @close="openEnd = false"
-                          />
-                        </div>
-                      </template>
-                    </UPopover>
-                  </ClientOnly>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
+                  <!-- ✅ input type="date" langsung bind ke endDateInput (string) -->
+                  <input type="date" v-model="endDateInput"
+                    class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-primary-500 outline-none dark:text-gray-200" />
                 </div>
 
-                <button
-                  @click="applyCustomDate"
-                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2 rounded-md hover:bg-primary-600 transition-colors shadow-sm"
-                >
-                  Terapkan Range
+                <button @click="applyCustomDate"
+                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
+                  Terapkan Filter
                 </button>
               </div>
             </div>
 
             <!-- Preset Options -->
-            <div class="w-5/12 py-2 overflow-y-auto max-h-[300px]">
-              <div
-                class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
-              >
+            <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
+              <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Preset
               </div>
-              <button
-                v-for="opt in dateOptions"
-                :key="opt"
-                @click="selectDateFilter(opt)"
-                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors"
-              >
+              <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
+                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors">
                 <span>{{ opt }}</span>
-                <Check
-                  v-if="activeDateLabel === opt && !isCustomDate"
-                  class="w-3.5 h-3.5 text-primary"
-                />
+                <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
           </div>
@@ -897,103 +688,62 @@ onMounted(async () => {
 
         <!-- Sort -->
         <div class="relative">
-          <button
-            @click="showSortMenu = !showSortMenu"
+          <button @click="showSortMenu = !showSortMenu"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-            title="Urutkan"
-          >
+            title="Urutkan">
             <ArrowUpDown class="w-4 h-4" />
           </button>
-          <div
-            v-if="showSortMenu"
-            @click="showSortMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showSortMenu"
-            class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in sortOptions"
-              :key="opt"
-              @click="selectSortOption(opt)"
-              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between transition-colors"
-            >
+          <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showSortMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
+              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between transition-colors">
               <span>{{ opt }}</span>
-              <Check
-                v-if="activeSortLabel === opt"
-                class="w-3 h-3 text-primary"
-              />
+              <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
         </div>
 
         <!-- Download Excel -->
-        <button
-          @click="downloadExcel"
+        <button @click="downloadExcel"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          title="Download Excel"
-        >
+          title="Download Excel">
           <Download class="w-3.5 h-3.5" />
         </button>
 
-        <div
-          class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"
-        ></div>
+        <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
         <!-- Page Size + Pagination -->
         <div class="flex items-center gap-1">
           <div class="relative">
-            <button
-              @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1"
-            >
+            <button @click="showPageMenu = !showPageMenu"
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1">
               <Layers class="w-4 h-4" />
             </button>
-            <div
-              v-if="showPageMenu"
-              @click="showPageMenu = false"
-              class="fixed inset-0 z-40 bg-transparent"
-            ></div>
-            <div
-              v-if="showPageMenu"
-              class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100"
-            >
-              <button
-                v-for="size in pageOptions"
-                :key="size"
-                @click="selectPageSize(size)"
+            <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+            <div v-if="showPageMenu"
+              class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary transition-colors"
-                :class="{
-                  'text-primary font-semibold bg-gray-50 dark:bg-gray-700':
-                    itemsPerPage === size,
-                }"
-              >
+                :class="{ 'text-primary font-semibold bg-gray-50 dark:bg-gray-700': itemsPerPage === size }">
                 {{ size }} Item
               </button>
             </div>
           </div>
 
-          <div
-            class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]"
-          >
+          <div class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]">
             <span
-              class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400"
-            >
+              class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">
               {{ paginationInfo }}
             </span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
-              @click="prevPage"
-              :disabled="currentPage === 1"
-            >
+              @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-            >
+              @click="nextPage" :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
           </div>
@@ -1006,36 +756,24 @@ onMounted(async () => {
     ══════════════════════════════════════════════════════ -->
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div
-        class="flex flex-col bg-white dark:bg-gray-800 transition-all duration-300 border-r border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-hidden flex-1 w-full"
-      >
+        class="flex flex-col bg-white dark:bg-gray-800 transition-all duration-300 border-r border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-hidden flex-1 w-full">
         <!-- Tab Bar -->
         <div
-          class="py-1.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 sticky top-0 z-10 w-full overflow-hidden"
-        >
+          class="py-1.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full py-1">
-            <UButton
-              v-for="tab in tabs"
-              :key="tab.value"
-              @click="activeTab = tab.value"
-              color="primary"
+            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
-              :class="
-                activeTab === tab.value
-                  ? 'bg-primary-400 text-white border-primary-400'
-                  : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-              "
-            >
+              :class="activeTab === tab.value
+                ? 'bg-primary-400 text-white border-primary-400'
+                : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+              ">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
-              <span
-                v-if="getTabCount(tab.value) > 0"
-                class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                :class="
-                  activeTab === tab.value
-                    ? 'bg-white text-primary-500'
-                    : 'bg-primary-50 text-primary-500 dark:bg-primary-900/50 dark:text-primary-300'
-                "
-              >
+              <span v-if="getTabCount(tab.value) > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                :class="activeTab === tab.value
+                  ? 'bg-white text-primary-500'
+                  : 'bg-primary-50 text-primary-500 dark:bg-primary-900/50 dark:text-primary-300'
+                ">
                 {{ getTabCount(tab.value) }}
               </span>
             </UButton>
@@ -1043,51 +781,29 @@ onMounted(async () => {
         </div>
 
         <!-- Search Bar (mobile) -->
-        <div
-          class="lg:hidden px-3 py-2 border-b border-gray-100 dark:border-gray-700 shrink-0"
-        >
+        <div class="lg:hidden px-3 py-2 border-b border-gray-100 dark:border-gray-700 shrink-0">
           <div class="relative flex items-center">
-            <Search
-              class="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none"
-            />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari perihal, nomor..."
-              class="w-full pl-8 pr-8 py-1.5 text-[13px] bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all"
-            />
-            <button
-              v-if="searchQuery"
-              @click="searchQuery = ''"
-              class="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
+            <Search class="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <input v-model="searchQuery" type="text" placeholder="Cari perihal, nomor..."
+              class="w-full pl-8 pr-8 py-1.5 text-[13px] bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all" />
+            <button v-if="searchQuery" @click="searchQuery = ''"
+              class="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
               <X class="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         <!-- Empty State -->
-        <div
-          v-if="displayItems.length === 0 && !pending && !isLoading"
-          class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-gray-500 w-full"
-        >
-          <div
-            class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4"
-          >
+        <div v-if="displayItems.length === 0 && !pending && !isLoading"
+          class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-gray-500 w-full">
+          <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
             <Inbox class="w-8 h-8 opacity-50" />
           </div>
-          <span class="text-sm font-medium text-gray-500 dark:text-gray-400"
-            >Tidak ada data</span
-          >
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tidak ada data</span>
           <span class="text-xs text-gray-400 dark:text-gray-500 mt-1">
             <template v-if="activeFilterType !== 'Semua'">
               Filter "{{ activeFilterType }}" tidak menghasilkan data.
-              <button
-                @click="applyFilter('Semua')"
-                class="text-primary hover:underline ml-1"
-              >
-                Reset filter
-              </button>
+              <button @click="applyFilter('Semua')" class="text-primary hover:underline ml-1">Reset filter</button>
             </template>
             <template v-else>Kotak masuk kosong.</template>
           </span>
@@ -1098,57 +814,28 @@ onMounted(async () => {
           <div class="w-full min-w-full md:min-w-[800px]">
             <!-- Skeleton Loading -->
             <div v-if="pending || isLoading" class="w-full">
-              <div
-                v-for="n in itemsPerPage > 10 ? 10 : itemsPerPage"
-                :key="n"
-                class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]"
-              >
+              <div v-for="n in itemsPerPage > 10 ? 10 : itemsPerPage" :key="n"
+                class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
                 <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
-                  <div
-                    class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                  ></div>
-                  <div
-                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
-                  ></div>
-                  <div
-                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
-                  ></div>
-                  <div
-                    class="md:hidden h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-2"
-                  ></div>
+                  <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div class="md:hidden h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-2"></div>
                 </div>
-                <div
-                  class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4"
-                >
-                  <div
-                    class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0"
-                  >
-                    <div
-                      class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                    <div
-                      class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"
-                    ></div>
+                <div class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4">
+                  <div class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0">
+                    <div class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
                   </div>
                   <div class="flex-1 flex flex-wrap items-center gap-2 w-full">
-                    <div
-                      class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                    <div
-                      class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
+                    <div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                   </div>
                   <div class="hidden md:flex shrink-0 w-[50px] justify-start">
-                    <div
-                      class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
-                    ></div>
+                    <div class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                   </div>
-                  <div
-                    class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0"
-                  >
-                    <div
-                      class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"
-                    ></div>
+                  <div class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0">
+                    <div class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"></div>
                   </div>
                 </div>
               </div>
@@ -1156,107 +843,57 @@ onMounted(async () => {
 
             <!-- Mail Items -->
             <div v-else class="w-full">
-              <div
-                v-for="mail in displayItems"
-                :key="mail.id"
-                @click="selectMail(mail)"
+              <div v-for="mail in displayItems" :key="mail.id" @click="selectMail(mail)"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority
                     ? 'bg-red-50/60 dark:bg-red-900/20 hover:bg-red-100/60 dark:hover:bg-red-900/30 border-l-4 border-l-red-500 pl-3'
                     : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 border-l-4 border-l-transparent pl-4',
-                ]"
-              >
+                ]">
                 <!-- Left controls -->
-                <div
-                  class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto"
-                  @click.stop
-                >
-                  <!-- Checkbox -->
+                <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
                   <div
                     class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 dark:border-gray-600 rounded-sm flex items-center justify-center transition-colors"
-                    :class="
-                      selectedIds.has(mail.id)
-                        ? 'bg-primary border-primary'
-                        : 'bg-white dark:bg-gray-800'
-                    "
-                    @click="toggleSelection(mail.id)"
-                  >
-                    <Check
-                      v-if="selectedIds.has(mail.id)"
-                      class="w-3 h-3 text-white"
-                    />
+                    :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white dark:bg-gray-800'"
+                    @click="toggleSelection(mail.id)">
+                    <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
 
-                  <!-- Favorite Star -->
-                  <Star
-                    class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
-                    :class="
-                      mail.isStarred
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-neutral-300 dark:text-gray-600'
-                    "
-                    @click.stop="handleToggleFlag(mail, 'favorit')"
-                  />
+                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
+                    :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-gray-600'"
+                    @click.stop="handleToggleFlag(mail, 'favorit')" />
 
-                  <!-- Tindak Lanjut Tag -->
-                  <Tag
-                    class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
-                    :class="
-                      mail.isTinjut
-                        ? 'text-primary-500 fill-primary-500'
-                        : 'text-neutral-300 dark:text-gray-600'
-                    "
-                    @click.stop="handleToggleFlag(mail, 'tindak_lanjut')"
-                  />
+                  <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
+                    :class="mail.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-neutral-300 dark:text-gray-600'"
+                    @click.stop="handleToggleFlag(mail, 'tindak_lanjut')" />
 
-                  <!-- Category badge (mobile only) -->
                   <span
                     class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    :class="getCategoryStyle(mail.category)"
-                  >
+                    :class="getCategoryStyle(mail.category)">
                     {{ getCategoryLabel(mail.category) }}
                   </span>
                 </div>
 
                 <!-- Content -->
-                <div
-                  class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full"
-                >
-                  <!-- Sender Info -->
-                  <div
-                    class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0"
-                  >
-                    <div
-                      v-if="!mail.isRead"
-                      class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
-                      title="Belum Dibaca"
-                    ></div>
+                <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
+                  <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
+                    <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
+                      title="Belum Dibaca"></div>
 
                     <div class="flex flex-col min-w-0">
-                      <UTooltip
-                        :text="mail.fullRecipients"
-                        :ui="{
-                          content: 'h-auto py-2 px-3',
-                          text: 'whitespace-pre-line text-left',
-                        }"
-                        class="min-w-0 truncate"
-                      >
+                      <UTooltip :text="mail.fullRecipients"
+                        :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-pre-line text-left' }"
+                        class="min-w-0 truncate">
                         <span
-                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-white shrink-0 font-semibold cursor-help"
-                        >
+                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-white shrink-0 font-semibold cursor-help">
                           {{ mail.from }}
                         </span>
                       </UTooltip>
 
-                      <div
-                        class="text-[11px] text-neutral-400 dark:text-gray-500 flex items-center gap-2 mt-0.5"
-                      >
+                      <div class="text-[11px] text-neutral-400 dark:text-gray-500 flex items-center gap-2 mt-0.5">
                         <span class="font-mono truncate">{{ mail.nomor }}</span>
-                        <span
-                          v-if="mail.is_priority"
-                          class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 transition-colors"
-                        >
+                        <span v-if="mail.is_priority"
+                          class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 transition-colors">
                           <AlertTriangle class="w-3 h-3" />
                           PRIORITAS
                         </span>
@@ -1264,50 +901,29 @@ onMounted(async () => {
                     </div>
                   </div>
 
-                  <!-- Subject + Labels -->
-                  <div
-                    class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0"
-                  >
-                    <div
-                      v-if="mail.labels && mail.labels.length > 0"
-                      class="flex flex-wrap gap-1 shrink-0"
-                    >
-                      <span
-                        v-for="lbl in mail.labels"
-                        :key="lbl"
-                        :title="lbl"
-                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help"
-                      >
+                  <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                    <div v-if="mail.labels && mail.labels.length > 0" class="flex flex-wrap gap-1 shrink-0">
+                      <span v-for="lbl in mail.labels" :key="lbl" :title="lbl"
+                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
                         {{ lbl }}
                       </span>
                     </div>
-                    <div
-                      class="text-[13px] text-neutral-900 dark:text-white truncate flex-1 min-w-[120px]"
-                      :class="!mail.isRead ? 'font-bold' : 'font-normal'"
-                    >
+                    <div class="text-[13px] text-neutral-900 dark:text-white truncate flex-1 min-w-[120px]"
+                      :class="!mail.isRead ? 'font-bold' : 'font-normal'">
                       {{ mail.subject }}
                     </div>
                   </div>
 
-                  <!-- Category badge (desktop) -->
-                  <div
-                    class="hidden md:flex shrink-0 w-[50px] justify-start items-center"
-                  >
+                  <div class="hidden md:flex shrink-0 w-[50px] justify-start items-center">
                     <span
                       class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
-                      :class="getCategoryStyle(mail.category)"
-                    >
+                      :class="getCategoryStyle(mail.category)">
                       {{ getCategoryLabel(mail.category) }}
                     </span>
                   </div>
 
-                  <!-- Date -->
-                  <div
-                    class="shrink-0 pt-0.5 w-full md:w-[130px] md:text-right text-left md:pe-2 mt-1 md:mt-0"
-                  >
-                    <span
-                      class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap"
-                    >
+                  <div class="shrink-0 pt-0.5 w-full md:w-[130px] md:text-right text-left md:pe-2 mt-1 md:mt-0">
+                    <span class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap">
                       {{ formatShortDate(mail.raw?.created_at) }}
                     </span>
                   </div>
@@ -1315,39 +931,22 @@ onMounted(async () => {
 
                 <!-- Hover Quick Actions -->
                 <div
-                  class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
-                >
+                  class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
                   <div class="flex items-center gap-2 p-1">
-                    <StickyNote
-                      class="w-4 h-4 transition-colors hover:text-orange-500 cursor-pointer"
-                      :class="
-                        mail.isNote
-                          ? 'text-orange-600 fill-orange-100'
-                          : 'text-neutral-300 dark:text-gray-600'
-                      "
-                      @click.stop="handleToggleFlag(mail, 'note')"
-                    />
+                    <StickyNote class="w-4 h-4 transition-colors hover:text-orange-500 cursor-pointer"
+                      :class="mail.isNote ? 'text-orange-600 fill-orange-100' : 'text-neutral-300 dark:text-gray-600'"
+                      @click.stop="handleToggleFlag(mail, 'note')" />
 
-                    <Lock
-                      v-if="mail.isLocked"
+                    <Lock v-if="mail.isLocked"
                       class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 cursor-pointer"
-                      @click.stop="handleToggleFlag(mail, 'lock')"
-                    />
-                    <LockOpen
-                      v-else
+                      @click.stop="handleToggleFlag(mail, 'lock')" />
+                    <LockOpen v-else
                       class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 cursor-pointer"
-                      @click.stop="handleToggleFlag(mail, 'lock')"
-                    />
+                      @click.stop="handleToggleFlag(mail, 'lock')" />
 
-                    <Archive
-                      class="w-4 h-4 transition-colors hover:text-green-600 cursor-pointer"
-                      :class="
-                        mail.isArsip
-                          ? 'text-green-700 fill-green-100'
-                          : 'text-neutral-300 dark:text-gray-600'
-                      "
-                      @click.stop="handleToggleFlag(mail, 'arsip')"
-                    />
+                    <Archive class="w-4 h-4 transition-colors hover:text-green-600 cursor-pointer"
+                      :class="mail.isArsip ? 'text-green-700 fill-green-100' : 'text-neutral-300 dark:text-gray-600'"
+                      @click.stop="handleToggleFlag(mail, 'arsip')" />
                   </div>
                 </div>
               </div>
@@ -1361,77 +960,39 @@ onMounted(async () => {
          MODALS
     ══════════════════════════════════════════════════════ -->
 
-    <!-- Label Assign Modal -->
-    <LabelAssignModal
-      v-model="showLabelAssignModal"
-      :selected-ids="selectedIds"
-      source="inbox"
-      @assign="assignLabelToSelected"
-      @success="selectedIds.clear()"
-    />
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" source="inbox"
+      @assign="assignLabelToSelected" @success="selectedIds.clear()" />
 
-    <!-- Delete / Archive Confirm Modal -->
     <Teleport to="body">
-      <div
-        v-if="showDeleteModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-      >
+      <div v-if="showDeleteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 transition-colors"
-        >
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 transition-colors">
           <div class="p-5 text-center">
-            <div
-              class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
-              :class="
-                currentBulkAction === 'delete'
-                  ? 'bg-red-100 dark:bg-red-900/30'
-                  : 'bg-blue-100 dark:bg-blue-900/30'
-              "
-            >
-              <AlertTriangle
-                class="w-6 h-6"
-                :class="
-                  currentBulkAction === 'delete'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-blue-600 dark:text-blue-400'
-                "
-              />
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              :class="currentBulkAction === 'delete' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'">
+              <AlertTriangle class="w-6 h-6"
+                :class="currentBulkAction === 'delete' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'" />
             </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-              {{ modalTitle }}
-            </h3>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{{ modalTitle }}</h3>
             <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">
               <div v-if="selectedIds.size === 1 && firstSelectedItem">
                 Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br />
-                <span class="font-semibold text-gray-700 dark:text-gray-200"
-                  >"{{ firstSelectedItem.subject }}"</span
-                >?
+                <span class="font-semibold text-gray-700 dark:text-gray-200">"{{ firstSelectedItem.subject }}"</span>?
               </div>
               <div v-else>
                 Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br />
-                <span class="font-bold text-gray-800 dark:text-gray-200"
-                  >{{ selectedIds.size }} item terpilih</span
-                >?
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
               </div>
             </div>
             <div class="flex gap-3 justify-center">
-              <button
-                @click="showDeleteModal = false"
-                :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-              >
+              <button @click="showDeleteModal = false" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
                 Batal
               </button>
-              <button
-                @click="handleBulkExecute"
-                :disabled="isDeleting"
+              <button @click="handleBulkExecute" :disabled="isDeleting"
                 class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="
-                  currentBulkAction === 'delete'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-primary hover:bg-primary-600'
-                "
-              >
+                :class="currentBulkAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary-600'">
                 <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
                 {{ isDeleting ? "Memproses..." : actionLabel }}
               </button>
@@ -1454,6 +1015,7 @@ onMounted(async () => {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

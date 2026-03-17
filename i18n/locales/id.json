@@ -637,7 +637,7 @@
   "ma_pop_desc": "Akun ini akan diatur sebagai pengguna",
   "ma_modal_add": "Tambah Akun",
   "ma_modal_edit": "Edit Role Akun",
-  "ma_persnum_placeholder": "Masukkan persnum",
+  "ma_persnum_placeholder": "Masukkan nama/persnum",
   "ma_role_placeholder": "Pilih role",
   "ma_val_title": "Validasi gagal",
   "ma_val_desc": "Persnum dan role wajib diisi",

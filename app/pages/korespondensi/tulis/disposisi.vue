@@ -239,7 +239,6 @@ const alertState = useAlertState();
 const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 
-// Hanya ambil getConfigDigsig — dipanggil on-demand saat klik Kirim
 const { getConfigDigsig } = useDigsig();
 
 // ── Shared composable ────────────────────────────────────────────────────────
@@ -264,14 +263,11 @@ const refPerihal = ref("-");
 const recipientList = ref<any[]>([]);
 const selectedChecklist = ref<string[]>([]);
 
-// ── Sign method modal state ───────────────────────────────────────────────────
 const isSignMethodModalOpen = ref(false);
-// true  → config DI disabled  → BSrE tidak tersedia, default qr_only
-// false → config DI enabled   → semua opsi tersedia (atau setelah passphrase salah)
 const bsreDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
-const qrDisabled = ref(false)
-const basahDisabled = ref(false)
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -335,12 +331,11 @@ const getBasePayload = (): DisposisiPayload => ({
 
 const createFormData = (payload: DisposisiPayload, includePdf = false) => {
   const safeName = (payload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20);
-  const formData = buildFormData(payload, {
+  return buildFormData(payload, {
     includePdf,
     skipKeys: ['tanggal_ui'],
     pdfFileName: `DI_${safeName}.pdf`
   });
-  return formData;
 };
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
@@ -396,32 +391,28 @@ const handleSaveDraft = async () => {
   }
 };
 
-// Entry point saat klik Kirim dari preview slideover
-// Tutup slideover dulu → fetch config → buka modal
-// (slideover dan modal tidak boleh terbuka bersamaan — bisa saling nutup)
 const handleConfirmKirim = async () => {
-  const payload = getBasePayload()
-  if (!validateAndToast(payload)) return
+  const payload = getBasePayload();
+  if (!validateAndToast(payload)) return;
 
-  let configData = { digsig: false, ttdQr: false, ttdBasah: false }
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false };
   try {
-    const res = await getConfigDigsig('DI')
+    const res = await getConfigDigsig('DI');
     configData = {
       digsig: res?.data?.digsig ?? false,
       ttdQr: res?.data?.ttdQr ?? false,
       ttdBasah: res?.data?.ttdBasah ?? false,
-    }
+    };
   } catch {
     // semua false jika gagal fetch
   }
 
-  bsreDisabled.value = !configData.digsig
-  qrDisabled.value = !configData.ttdQr
-  basahDisabled.value = !configData.ttdBasah
-  isSignMethodModalOpen.value = true
-}
+  bsreDisabled.value = !configData.digsig;
+  qrDisabled.value = !configData.ttdQr;
+  basahDisabled.value = !configData.ttdBasah;
+  isSignMethodModalOpen.value = true;
+};
 
-// Dipanggil oleh TulisSignMethodModal @submit
 const handleSignMethodSubmit = async (data: { method: string; passphrase?: string; file?: File | null }) => {
   selectedSendType.value = data.method;
   await handleKirimDokumen(data.passphrase || '', data.file ?? undefined);
@@ -429,77 +420,83 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
   if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
-    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
-    return
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
+    return;
   }
 
-  const basePayload = getBasePayload()
-  loadingMessage.value = 'Mengirim Disposisi...'
-  isLoadingData.value = true
+  const basePayload = getBasePayload();
+  loadingMessage.value = 'Mengirim Disposisi...';
+  isLoadingData.value = true;
 
   try {
-    const blob = await generatePdf(createFormData(basePayload, false))
-    setPdfBlob(blob)
+    const blob = await generatePdf(createFormData(basePayload, false));
+    setPdfBlob(blob);
 
-    const safeName = (basePayload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20)
+    const safeName = (basePayload.ref_perihal || 'disposisi').replace(/[^a-z0-9]/gi, '_').substring(0, 20);
 
     const kirimPayload: Record<string, any> = {
       ...basePayload,
       sign_option: selectedSendType.value,
       passphrase: passphrase,
-    }
+    };
 
     if (selectedSendType.value === 'digsig') {
-      if (!user.value?.nik) throw new Error('NIK pengguna tidak ditemukan untuk TTE.')
-      kirimPayload.nik = user.value.nik
+      if (!user.value?.nik) throw new Error('NIK pengguna tidak ditemukan untuk TTE.');
+      kirimPayload.nik = user.value.nik;
     }
 
     const fdFinal = buildFormData(kirimPayload, {
       includePdf: true,
       skipKeys: ['tanggal_ui'],
       pdfFileName: `DI_${safeName}.pdf`
-    })
+    });
 
-    if (selectedSendType.value === 'basah' && fileBasah) {
-      fdFinal.append('file_ttd_basah', fileBasah)
+    if (selectedSendType.value === 'ttd_basah' && fileBasah) {
+      fdFinal.append('file_ttd_basah', fileBasah);
     }
 
     const res = editDraftId.value
       ? await sendDraft(fdFinal, editDraftId.value)
-      : await sendDisposisi(fdFinal)
+      : await sendDisposisi(fdFinal);
 
     if (res?.data?.success || res?.success) {
-      revokePdfUrl()
-      toastSuccess('Berhasil', 'Disposisi berhasil dikirim')
-      Alert.close()
-      redirectTerkirim()
+      revokePdfUrl();
+      toastSuccess('Berhasil', 'Disposisi berhasil dikirim');
+      Alert.close();
+
+      // Sama seperti tulis ND — ttd_basah redirect ke tertunda, selainnya ke terkirim
+      if (selectedSendType.value === 'ttd_basah') {
+        const naskahId = res?.data?.data?.id || res?.data?.id || res?.id;
+        navigateTo(`/korespondensi/tertunda/${naskahId}?jenis=DI`);
+      } else {
+        redirectTerkirim();
+      }
     } else {
-      throw new Error(res?.data?.message || 'Pengiriman gagal')
+      throw new Error(res?.data?.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
-    Alert.close()
-    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen'
+    Alert.close();
+    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
-      bsreDisabled.value = false
-      await nextTick()
-      isSignMethodModalOpen.value = true
-      await nextTick()
-      signMethodModalRef.value?.setPassphraseError(errMsg)
+      bsreDisabled.value = false;
+      await nextTick();
+      isSignMethodModalOpen.value = true;
+      await nextTick();
+      signMethodModalRef.value?.setPassphraseError(errMsg);
     } else {
-      toastError('Gagal Mengirim', errMsg)
+      toastError('Gagal Mengirim', errMsg);
     }
   } finally {
-    isLoadingData.value = false
+    isLoadingData.value = false;
   }
-}
+};
 
 const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  // Tidak ada fetchDigsigConfig() di sini — config di-fetch on-demand saat klik Kirim
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 

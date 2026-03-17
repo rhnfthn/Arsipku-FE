@@ -13,7 +13,7 @@
         :disabled="loading"
         @click="onResetCompany"
       >
-        Kembali ke Perusahaan Default
+        Perusahaan Default
       </button>
     </div>
 

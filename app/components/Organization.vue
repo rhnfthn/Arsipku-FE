@@ -29,7 +29,7 @@
             : '',
           highlightNodeId === node.id
             ? 'ring-4 ring-blue-500 dark:ring-blue-400 shadow-2xl animate-pulse'
-            : '',
+            : ''
         ]"
       >
         <!-- Expand/Collapse button -->
@@ -38,10 +38,7 @@
           @click="$emit('toggleNode', node)"
           class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors z-10 flex-shrink-0"
         >
-          <ChevronDown
-            v-if="expandedNodes[node.id]"
-            class="w-4 h-4 dark:text-gray-300"
-          />
+          <ChevronDown v-if="expandedNodes[node.id]" class="w-4 h-4 dark:text-gray-300" />
           <ChevronRight v-else class="w-4 h-4 dark:text-gray-300" />
         </button>
         <div v-else class="w-6 flex-shrink-0"></div>
@@ -55,13 +52,21 @@
         <!-- Content with search highlight -->
         <div class="flex-1 min-w-0">
           <template v-if="node.type !== 'member'">
-            <span
-              :class="['text-sm', getNodeConfig().textColor]"
-              v-html="highlightText(node.name)"
-            ></span>
-            <div
-              class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white"
-            >
+            <div class="flex items-center gap-2">
+              <span
+                :class="['text-sm', getNodeConfig().textColor]"
+                v-html="highlightText(node.name)"
+              ></span>
+
+              <!-- BOD badge -->
+              <span
+                v-if="node.type === 'position' && node.bodTag"
+                class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-700/20 dark:text-red-200"
+              >
+                {{ node.bodTag }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white">
               <span>{{ formatDate(node.startDate) }}</span>
               <span>–</span>
               <span>{{ formatDate(node.endDate) }}</span>
@@ -75,13 +80,9 @@
                 v-html="highlightText(node.name)"
               ></span>
               <span class="text-sm text-black dark:text-white">-</span>
-              <span class="text-sm text-black dark:text-white">{{
-                node.persnum
-              }}</span>
+              <span class="text-sm text-black dark:text-white">{{ node.persnum }}</span>
             </div>
-            <div
-              class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white"
-            >
+            <div class="flex items-center gap-1 mt-0.5 text-xs text-black dark:text-white">
               <span>{{ formatDate(node.startDate) }}</span>
               <span>–</span>
               <span>{{ formatDate(node.endDate) }}</span>
@@ -89,16 +90,9 @@
           </template>
 
           <!-- Search highlight badge -->
-          <div
-            v-if="isSearchHighlighted"
-            class="flex items-center gap-1 mt-1.5"
-          >
-            <div
-              class="w-2 h-2 bg-yellow-400 dark:bg-yellow-500 rounded-full animate-pulse"
-            ></div>
-            <span
-              class="text-xs text-yellow-700 dark:text-yellow-400 font-medium"
-            >
+          <div v-if="isSearchHighlighted" class="flex items-center gap-1 mt-1.5">
+            <div class="w-2 h-2 bg-yellow-400 dark:bg-yellow-500 rounded-full animate-pulse"></div>
+            <span class="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
               {{ getSearchResultLabel() }}
             </span>
           </div>
@@ -152,10 +146,7 @@
     </div>
 
     <!-- Children -->
-    <div
-      v-if="expandedNodes[node.id] && hasChildren"
-      class="ml-9 space-y-2 relative"
-    >
+    <div v-if="expandedNodes[node.id] && hasChildren" class="ml-9 space-y-2 relative">
       <Organization
         v-for="(child, idx) in node.children"
         :key="child.id"
@@ -180,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 import {
   ChevronDown,
   ChevronRight,
@@ -191,215 +182,207 @@ import {
   Pencil,
   Trash2,
   Building2,
-  Building,
-} from "lucide-vue-next";
+  Building
+} from 'lucide-vue-next'
 
 const props = defineProps({
   node: {
     type: Object,
-    required: true,
+    required: true
   },
   level: {
     type: Number,
-    default: 0,
+    default: 0
   },
   isLast: {
     type: Boolean,
-    default: false,
+    default: false
   },
   expandedNodes: {
     type: Object,
-    required: true,
+    required: true
   },
   hoveredNode: {
     type: [String, null],
-    default: null,
+    default: null
   },
   searchQuery: {
     type: String,
-    default: "",
+    default: ''
   },
   searchResults: {
     type: Object,
-    default: () => ({}),
+    default: () => ({})
   },
   highlightNodeId: {
     type: [String, null],
-    default: null,
-  },
-});
+    default: null
+  }
+})
 
 defineEmits([
-  "toggleNode",
-  "setHovered",
-  "openEdit",
-  "openDelete",
-  "openAddUnit",
-  "openAddPosition",
-  "openAddMember",
-]);
+  'toggleNode',
+  'setHovered',
+  'openEdit',
+  'openDelete',
+  'openAddUnit',
+  'openAddPosition',
+  'openAddMember'
+])
 
 const hasChildren = computed(() => {
-  if (props.node.type === "unit" || props.node.type === "direktorat") {
-    return true;
+  if (props.node.type === 'unit' || props.node.type === 'direktorat') {
+    return true
   }
 
-  if (props.node.type === "position") {
-    return true;
+  if (props.node.type === 'position') {
+    return true
   }
 
-  return !!props.node.children?.length;
-});
+  return !!props.node.children?.length
+})
 
 const isSearchHighlighted = computed(() => {
-  if (!props.searchQuery) return false;
+  if (!props.searchQuery) return false
 
   // Check if this node is in search results
   if (props.searchResults && props.searchResults[props.node.id]) {
-    return true;
+    return true
   }
 
   // Fallback: text matching
-  const query = props.searchQuery.toLowerCase();
-  const nodeName = (props.node.name || "").toLowerCase();
-  const nodeShortText = (props.node.shortText || "").toLowerCase();
-  const nodeLongText = (props.node.longText || "").toLowerCase();
+  const query = props.searchQuery.toLowerCase()
+  const nodeName = (props.node.name || '').toLowerCase()
+  const nodeShortText = (props.node.shortText || '').toLowerCase()
+  const nodeLongText = (props.node.longText || '').toLowerCase()
 
-  return (
-    nodeName.includes(query) ||
-    nodeShortText.includes(query) ||
-    nodeLongText.includes(query)
-  );
-});
+  return nodeName.includes(query) || nodeShortText.includes(query) || nodeLongText.includes(query)
+})
 
 const getSearchResultLabel = () => {
   if (!props.searchResults || !props.searchResults[props.node.id]) {
-    return "Hasil pencarian";
+    return 'Hasil pencarian'
   }
 
-  const resultType = props.searchResults[props.node.id];
+  const resultType = props.searchResults[props.node.id]
 
   switch (resultType) {
-    case "organization":
-      return "📁 Unit ditemukan";
-    case "position":
-      return "👤 Posisi ditemukan";
-    case "person":
-      return "👥 Anggota ditemukan";
+    case 'organization':
+      return '📁 Unit ditemukan'
+    case 'position':
+      return '👤 Posisi ditemukan'
+    case 'person':
+      return '👥 Anggota ditemukan'
     default:
-      return "Hasil pencarian";
+      return 'Hasil pencarian'
   }
-};
+}
 
 const highlightText = (text: string) => {
-  if (!props.searchQuery || !text) return text;
+  if (!props.searchQuery || !text) return text
 
-  const query = props.searchQuery;
-  const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+  const query = props.searchQuery
+  const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi')
 
   return text.replace(
     regex,
-    '<mark class="bg-yellow-200 dark:bg-yellow-600 px-1 rounded font-semibold">$1</mark>',
-  );
-};
+    '<mark class="bg-yellow-200 dark:bg-yellow-600 px-1 rounded font-semibold">$1</mark>'
+  )
+}
 
 const escapeRegExp = (string: string) => {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 const getNodeConfig = () => {
   switch (props.node.type) {
-    case "direktorat":
+    case 'direktorat':
       return {
         bgColor:
-          "bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/30",
-        borderColor: "border-l-4 border-primary-600 dark:border-primary-500",
-        textColor: "text-primary-900 dark:text-primary-100 font-semibold",
-        iconColor: "text-primary-700 dark:text-primary-400",
+          'bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/30',
+        borderColor: 'border-l-4 border-primary-600 dark:border-primary-500',
+        textColor: 'text-primary-900 dark:text-primary-100 font-semibold',
+        iconColor: 'text-primary-700 dark:text-primary-400',
         icon: Building2,
         canAddPosition: true,
         canAddUnit: true,
         canAddMember: false,
         hideEdit: false,
-        hideDelete: false,
-      };
-    case "position":
-      const isChief = !!props.node.bodTag;
+        hideDelete: false
+      }
+    case 'position':
+      const isChief = !!props.node.bodTag
       return {
         bgColor: isChief
-          ? "bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30"
-          : "bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30",
+          ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+          : 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30',
         borderColor: isChief
-          ? "border-l-4 border-red-600 dark:border-red-500"
-          : "border-l-4 border-orange-600 dark:border-orange-500",
+          ? 'border-l-4 border-red-600 dark:border-red-500'
+          : 'border-l-4 border-orange-600 dark:border-orange-500',
         textColor:
-          "font-semibold " +
-          (isChief
-            ? "text-red-900 dark:text-red-100"
-            : "text-orange-900 dark:text-orange-100"),
+          'font-semibold ' +
+          (isChief ? 'text-red-900 dark:text-red-100' : 'text-orange-900 dark:text-orange-100'),
         iconColor: isChief
-          ? "text-red-700 dark:text-red-400"
-          : "text-orange-700 dark:text-orange-400",
+          ? 'text-red-700 dark:text-red-400'
+          : 'text-orange-700 dark:text-orange-400',
         icon: isChief ? UserStar : User,
         canAddPosition: false,
         canAddUnit: false,
         canAddMember: true,
         hideEdit: false,
-        hideDelete: false,
-      };
+        hideDelete: false
+      }
 
-    case "unit":
+    case 'unit':
       return {
         bgColor:
-          "bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/30",
-        borderColor: "border-l-4 border-primary-500 dark:border-primary-400",
-        textColor: "text-primary-900 dark:text-primary-100 font-medium",
-        iconColor: "text-primary-700 dark:text-primary-400",
+          'bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/30',
+        borderColor: 'border-l-4 border-primary-500 dark:border-primary-400',
+        textColor: 'text-primary-900 dark:text-primary-100 font-medium',
+        iconColor: 'text-primary-700 dark:text-primary-400',
         icon: Building,
         canAddPosition: true,
         canAddUnit: true,
         canAddMember: false,
         hideEdit: false,
-        hideDelete: false,
-      };
-    case "member":
+        hideDelete: false
+      }
+    case 'member':
       return {
-        bgColor:
-          "bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-700",
-        borderColor: "border-l-4 border-gray-500 dark:border-gray-400",
-        textColor: "text-black dark:text-white font-medium",
-        iconColor: "text-gray-600 dark:text-gray-400",
+        bgColor: 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-700',
+        borderColor: 'border-l-4 border-gray-500 dark:border-gray-400',
+        textColor: 'text-black dark:text-white font-medium',
+        iconColor: 'text-gray-600 dark:text-gray-400',
         icon: User,
         canAddPosition: false,
         canAddUnit: false,
         canAddMember: false,
         hideEdit: false,
-        hideDelete: false,
-      };
+        hideDelete: false
+      }
     default:
       return {
-        bgColor:
-          "bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600",
-        borderColor: "border-l-4 border-gray-400 dark:border-gray-500",
-        textColor: "text-gray-900 dark:text-gray-100 font-medium",
-        iconColor: "text-gray-700 dark:text-gray-400",
+        bgColor: 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600',
+        borderColor: 'border-l-4 border-gray-400 dark:border-gray-500',
+        textColor: 'text-gray-900 dark:text-gray-100 font-medium',
+        iconColor: 'text-gray-700 dark:text-gray-400',
         icon: Building,
         canAddPosition: false,
         canAddUnit: false,
         canAddMember: false,
         hideEdit: false,
-        hideDelete: false,
-      };
+        hideDelete: false
+      }
   }
-};
+}
 
 const formatDate = (date: string) => {
-  if (!date) return "-";
-  const d = new Date(date);
-  return d.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
+  if (!date) return '-'
+  const d = new Date(date)
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
+}
 </script>

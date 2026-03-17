@@ -28,35 +28,67 @@
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
-      <div class="flex flex-wrap gap-4 items-center p-3">
-        <!-- Rows per page -->
-        <select
-          v-model="rowsPerPage"
-          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option v-for="n in rowsChoices" :key="n" :value="n">
-            {{ n }}
-          </option>
-        </select>
+      <div class="flex flex-wrap gap-2 items-center p-3">
+        <!-- Rows per page (custom dropdown) -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openRowsDropdown = !openRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ rowsPerPage }}</span>
+            <ChevronDown
+            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="rowsPerPage = n; openRowsDropdown = false"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  rowsPerPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Refresh -->
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
-        <div class="relative flex-1 w-full px-2">
+
+        <!-- Search -->
+        <div class="relative flex-1 min-w-40">
           <Search
-            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
             :placeholder="t('cari')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
 
+        <!-- Export -->
         <button
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -98,10 +130,10 @@
 
                 <div>
                   <p class="font-semibold text-gray-700 dark:text-white">
-                    {{ user.persnum }}
+                    {{ user.name }} - {{ user.persnum }}
                   </p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">
-                    {{ user.name }}
+                    {{ user.positionText || '-' }}
                   </p>
                 </div>
               </div>
@@ -294,7 +326,7 @@
       <!-- FIELD PERSNUM -->
       <div class="flex flex-col gap-2">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
-          >Persnum</label
+          >Nama/Persnum</label
         >
         <div class="relative">
           <input
@@ -346,6 +378,14 @@
         </div>
       </div>
 
+      <!-- JABATAN display (read-only, shown after person selected) -->
+      <div
+        v-if="selectedPersonJabatan"
+        class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-md px-3 py-1.5 border border-gray-200 dark:border-gray-600"
+      >
+        <span class="font-semibold">Jabatan: </span>{{ selectedPersonJabatan }}
+      </div>
+
       <!-- FIELD ROLE -->
       <div class="flex flex-col gap-2">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
@@ -385,7 +425,10 @@ import {
   Search,
   Plus,
   Pencil,
+  ChevronDown,
 } from "lucide-vue-next";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import Modal from "@/components/Modal.vue";
 import { useManajemenAkun } from "@/composables/useManajemenAkun";
 import { usePerson } from "@/composables/usePerson";
@@ -416,6 +459,7 @@ const resetPersonSearch = () => {
   personSuggestions.value = [];
   showPersonSuggestions.value = false;
   highlightedIndex.value = 0;
+  selectedPersonJabatan.value = '';
 };
 
 const onPersonSearch = () => {
@@ -449,6 +493,7 @@ const selectPersonSuggestion = (person: PersonSuggestion | undefined) => {
   if (!person) return;
   form.value.persnum = String(person.persnum);
   personSearchQuery.value = `${person.name} - ${person.persnum}`;
+  selectedPersonJabatan.value = person.position_text || '';
   showPersonSuggestions.value = false;
 };
 
@@ -470,7 +515,7 @@ const openDelete = (row: any) => {
 
 const items = computed(() => [
   { label: t("beranda"), to: "/" },
-  { label: t("ma"), to: "/admin/master/akun" },
+  { label: t("ma"), to: "/master/akun" },
 ]);
 
 const filters = ref({
@@ -482,6 +527,9 @@ const filters = ref({
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
+const openRowsDropdown = ref(false);
+
+const selectedPersonJabatan = ref('');
 
 const getInitials = (name: string) => {
   if (!name) return "";
@@ -518,6 +566,7 @@ const openEdit = (row: any) => {
     role: row.role,
   };
   personSearchQuery.value = `${row.name} - ${row.persnum}`;
+  selectedPersonJabatan.value = row.positionText || '';
   personSuggestions.value = [];
   showPersonSuggestions.value = false;
   showAddModal.value = true;
@@ -583,7 +632,7 @@ onMounted(() => {
 const filteredUsers = computed(() => {
   const searchText = filters.value.search.toLowerCase();
 
-  return accounts.value.filter((user) => {
+  const result = accounts.value.filter((user) => {
     const userRole = (user.role || "").toLowerCase();
 
     const matchesSearch =
@@ -596,6 +645,14 @@ const filteredUsers = computed(() => {
       !filters.value.role || userRole === filters.value.role.toLowerCase();
 
     return matchesSearch && matchesRole;
+  });
+
+  return result.sort((a, b) => {
+    const aIsMe = a.persnum === authUser.value?.persnum;
+    const bIsMe = b.persnum === authUser.value?.persnum;
+    if (aIsMe) return -1;
+    if (bIsMe) return 1;
+    return a.name.localeCompare(b.name, 'id');
   });
 });
 
@@ -644,6 +701,31 @@ const getRoleColor = (role: string) =>
     ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
     : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
 
+const onExport = () => {
+  const data = filteredUsers.value.map((user, idx) => ({
+    No: idx + 1,
+    [t('namauser')]: user.name,
+    Persnum: user.persnum,
+    Email: user.email || '-',
+    Role: user.role,
+    Jabatan: user.positionText || '-',
+  }));
+
+  if (data.length === 0) {
+    showToast(t('ma_err_title'), 'Tidak ada data untuk diekspor.', 'warning');
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 30 }];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen Akun');
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `manajemen_akun_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  showToast(t('ma_tb_title'), 'Export berhasil.', 'success');
+};
+
 const showToast = (
   title: string,
   message: string,
@@ -669,6 +751,16 @@ const showToast = (
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* Scrollbar styling */

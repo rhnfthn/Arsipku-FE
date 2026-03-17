@@ -24,6 +24,14 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 
+const { getConfigDigsig } = useDigsig();
+const isSignMethodModalOpen = ref(false);
+const bsreDisabled = ref(false);
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
+const selectedSendType = ref("qr_only");
+
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
   // ui state
@@ -47,7 +55,7 @@ const {
   mapLampiranFiles, setDateFromString, setSifatFromString,
   setPdfBlob, revokePdfUrl,
   // actions
-  confirmSaveDraft, confirmKirim,
+  confirmSaveDraft,
   toastError, toastSuccess,
   redirectTerkirim, redirectDraf,
 } = useTulis();
@@ -149,7 +157,12 @@ const handleSaveDraft = async () => {
   }
 };
 
-const handleKirimDokumen = async () => {
+const handleKirimDokumen = async (passphrase = '') => {
+  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
+    return
+  }
+
   const payload = getPayload();
   loadingMessage.value = "Mengirim Surat Dinas Internal...";
   isLoadingData.value = true;
@@ -158,6 +171,14 @@ const handleKirimDokumen = async () => {
     setPdfBlob(blob);
 
     const fd = createFormData(payload, true);
+    fd.append("sign_option", selectedSendType.value);
+
+    if (selectedSendType.value === 'digsig') {
+      fd.append("passphrase", passphrase);
+      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      fd.append("nik", user.value.nik);
+    }
+
     const res = editDraftId.value
       ? await sendDraft(fd, editDraftId.value)
       : await sendSDI(fd);
@@ -165,25 +186,69 @@ const handleKirimDokumen = async () => {
     if (res?.success || res?.data?.success) {
       revokePdfUrl();
       toastSuccess("Berhasil", "Surat Dinas Internal berhasil dikirim");
-      redirectTerkirim();
+      Alert.close();
+
+      if (selectedSendType.value === 'ttd_basah') {
+        const naskahId = res.data?.data?.id || res.data?.id;
+        navigateTo(`/korespondensi/tertunda/${naskahId}?jenis=SDI`);
+      } else {
+        redirectTerkirim();
+      }
     } else {
       throw new Error(res?.data?.message || "Pengiriman gagal");
     }
   } catch (e: any) {
-    toastError("Gagal Mengirim", e.response?.data?.message || e.message || "Gagal mengirim dokumen");
-  } finally {
     Alert.close();
-    isLoadingData.value = false;
+    const errMsg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
+
+    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+      bsreDisabled.value = false
+      await nextTick()
+      isSignMethodModalOpen.value = true
+      await nextTick()
+      signMethodModalRef.value?.setPassphraseError(errMsg)
+    } else {
+      toastError("Gagal Mengirim", errMsg);
+    }
+  } finally {
+    isLoadingData.value = false
   }
 };
-
-const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 const handleConfirmKirim = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
-  await confirmKirim("Dokumen akan dikirim.", handleKirimDokumen);
+
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false }
+  try {
+    const res = await getConfigDigsig('SDI')
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    }
+  } catch {
+    // semua false jika gagal fetch
+  }
+
+  bsreDisabled.value = !configData.digsig
+  qrDisabled.value = !configData.ttdQr
+  basahDisabled.value = !configData.ttdBasah
+  isSignMethodModalOpen.value = true
 };
+
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || '');
+};
+
+const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
+
+// const handleConfirmKirim = async () => {
+//   const payload = getPayload();
+//   if (!validateAndToast(payload)) return;
+//   await confirmKirim("Dokumen akan dikirim.", handleKirimDokumen);
+// };
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
@@ -483,6 +548,12 @@ watch(
 
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
+
+    <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
+      :signer-info="{ name: user?.nama || 'Nama Lengkap', role: user?.positionText || 'Jabatan', label: 'Ditandatangani secara digital oleh' }"
+      :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+
   </div>
 </template>
 

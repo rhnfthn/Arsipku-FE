@@ -5,6 +5,7 @@ export interface PersonSuggestion {
   persnum: number;
   name: string;
   gender: string;
+  position_text?: string;
 }
 
 export const usePerson = () => {
@@ -13,7 +14,13 @@ export const usePerson = () => {
   const getPersons = () => {
     return apiGet<{
       success: boolean;
-      data: any[];
+      data: {
+        data: PersonSuggestion[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
     }>("/person");
   };
 

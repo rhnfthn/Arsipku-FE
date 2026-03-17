@@ -47,7 +47,7 @@ const isTerkirim = computed(() => {
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: isTerkirim.value ? "Surat Keluar" : "Kotak Masuk", to: isTerkirim.value ? "/korespondensi/surat-keluar" : "/korespondensi/kotak-masuk" },
+  { label: isTerkirim.value ? "Surat Keluar" : "Kotak Masuk", to: isTerkirim.value ? "/korespondensi/terkirim" : "/korespondensi/kotak-masuk" },
   { label: "Detail Surat", to: "#" },
 ];
 
@@ -253,6 +253,7 @@ const loadData = async () => {
 
           return {
             id: flowId,
+            sifat: flow.sifat,
             urutan: sortedFlows.length - index,
             aksi: aksi,
             jenis: flow.jenis || 'K',
@@ -313,6 +314,9 @@ const loadData = async () => {
 
           return {
             id: d.id,
+            ttd: item.ttd,
+            sifat: item.sifat,
+            dikirim_oleh: d.dikirim_oleh || null,  // ← hanya satu
             aksi: d.status || 'read',
             jenis: d.jenis || 'SM',
             jenis_label: d.jenis_label || 'SURAT MASUK',
@@ -323,7 +327,7 @@ const loadData = async () => {
             to: finalPenerima,
             cc: finalTembusan,
             mainDisplayContentHtml: d.konten || '',
-            catatan: d.detail.catatan || d.disposisi_content?.catatan || '',
+            catatan: d.detail?.catatan || d.disposisi_content?.catatan || '',  // ← optional chaining
             disposisi: d.disposisi || d.instruksi || d.disposisi_content?.disposisi,
             lampiran_files: d.lampiran_files || d.attachments || [],
             final_pdf_url: d.final_pdf_url || d.file_url,

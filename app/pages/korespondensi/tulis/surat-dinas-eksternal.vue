@@ -225,14 +225,21 @@
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
-    <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
-      :is-loading="isLoadingData" @submit="handlePassphraseSubmit" />
+    <TulisDigsigPassphraseModal
+      v-model:open="isPassphraseModalOpen"
+      :signer-info="signerInfo"
+      :is-loading="isLoadingData"
+      :hide-bsre="bsreDisabled"
+      :hide-qr="qrDisabled"
+      :hide-basah="basahDisabled"
+      ref="signMethodModalRef"
+      @submit="handleSignMethodSubmit" />
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import Editor from '@tinymce/tinymce-vue';
@@ -248,18 +255,16 @@ import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 // --- TYPES & COMPOSABLES ---
 import { Alert } from "@/composables/useAlert";
-import { useDigSign } from "@/composables/useDigSign";
 import { useSde } from "~/composables/useSde";
 
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
-
-// const Alert = useAlert(); // Initialize Alert
 
 const route = useRoute();
 const router = useRouter();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
+const { getConfigDigsig } = useDigsig();
 const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 
 // ── Shared composable ────────────────────────────────────────────────────────
@@ -283,11 +288,16 @@ const alertState = useAlertState();
 const lampiranText = ref("");
 const isEnglish = ref(false);
 
-const externalItems = ref<any[]>([]); // Data dropdown Tertuju
-const internalItems = ref<any[]>([]); // Data dropdown Tembusan
+const externalItems = ref<any[]>([]);
+const internalItems = ref<any[]>([]);
 
 const isPassphraseModalOpen = ref(false);
 const selectedSendType = ref('digsig');
+
+const bsreDisabled = ref(false);
+const qrDisabled = ref(false);
+const basahDisabled = ref(false);
+const signMethodModalRef = ref<any>(null);
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -384,7 +394,7 @@ const handlePreview = async () => {
 };
 
 const handleSaveDraftAction = async () => {
-  Alert.close(); // BUG FIX: Memaksa Pop-Up Konfirmasi Tertutup segera!
+  Alert.close();
 
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
@@ -412,49 +422,55 @@ const handleSaveDraftAction = async () => {
 
 const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraftAction);
 
-const handleKirimDokumen = async (passphraseValue: string = '') => {
-  Alert.close(); // BUG FIX: Memaksa Pop-Up Konfirmasi Tertutup segera!
+const handleKirimDokumen = async (passphrase = '') => {
+  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
+    return;
+  }
+
+  Alert.close();
 
   const payload = getPayload();
   loadingMessage.value = "Mengirim Surat Dinas Eksternal...";
   isLoadingData.value = true;
 
   try {
-    let nikValue = '';
-    if (selectedSendType.value === 'digsig') {
-      const { getKtp } = useDigSign();
-      const ktpResponse = await getKtp();
-      if (ktpResponse?.data?.noktp) {
-        nikValue = ktpResponse.data.noktp;
-      } else {
-        throw new Error("Gagal mengambil data KTP untuk verifikasi TTE");
-      }
-    }
-
     const fdPreview = createFormData(payload, false);
     const blobResponse = await generatePdf(fdPreview);
     setPdfBlob(blobResponse);
 
     const fdFinal = createFormData(payload, true);
-    fdFinal.append('passphrase', passphraseValue);
     fdFinal.append('sign_option', selectedSendType.value);
-    if (nikValue) fdFinal.append('nik', nikValue);
+
+    if (selectedSendType.value === 'digsig') {
+      fdFinal.append('passphrase', passphrase);
+      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk verifikasi TTE.");
+      fdFinal.append('nik', user.value.nik);
+    }
 
     const res = await sendSDE(fdFinal);
 
     if (res?.success || res?.data?.success) {
       revokePdfUrl();
       toastSuccess('Berhasil', 'Surat Dinas Eksternal terkirim');
+      Alert.close();
       redirectTerkirim();
     } else {
       throw new Error(res?.data?.message || res?.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
-    let errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
-    if (errMsg.toLowerCase().includes('passphrase')) {
-       isPassphraseModalOpen.value = true;
+    Alert.close();
+    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+
+    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+      bsreDisabled.value = false;
+      await nextTick();
+      isPassphraseModalOpen.value = true;
+      await nextTick();
+      signMethodModalRef.value?.setPassphraseError(errMsg);
+    } else {
+      toastError('Gagal Mengirim', errMsg);
     }
-    toastError('Gagal Mengirim', errMsg);
   } finally {
     isLoadingData.value = false;
   }
@@ -464,24 +480,27 @@ const handleConfirmKirim = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
 
-  selectedSendType.value = "digsig";
+  let configData = { digsig: false, ttdQr: false, ttdBasah: false };
+  try {
+    const res = await getConfigDigsig('SDE');
+    configData = {
+      digsig: res?.data?.digsig ?? false,
+      ttdQr: res?.data?.ttdQr ?? false,
+      ttdBasah: res?.data?.ttdBasah ?? false,
+    };
+  } catch {
+    // semua false jika gagal fetch
+  }
+
+  bsreDisabled.value = !configData.digsig;
+  qrDisabled.value = !configData.ttdQr;
+  basahDisabled.value = !configData.ttdBasah;
   isPassphraseModalOpen.value = true;
 };
 
-const handlePassphraseSubmit = async (passphraseValue: string) => {
-  if (selectedSendType.value === 'digsig' && !passphraseValue) {
-    toastError('Wajib Diisi', 'Harap masukkan passphrase Anda');
-    isPassphraseModalOpen.value = true;
-    return;
-  }
-
-  isPassphraseModalOpen.value = false;
-
-  const confirmMessage = selectedSendType.value === 'digsig'
-    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim tanpa tanda tangan BSrE. Lanjutkan?';
-
-  await confirmKirim(confirmMessage, () => handleKirimDokumen(passphraseValue));
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string }) => {
+  selectedSendType.value = data.method;
+  await handleKirimDokumen(data.passphrase || '');
 };
 
 // --- LIFECYCLE ---

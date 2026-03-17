@@ -19,34 +19,119 @@
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
-      <div class="flex flex-wrap gap-4 items-center p-3">
-        <select
-          v-model="rowsPerPage"
-          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option v-for="n in rowsChoices" :key="n" :value="n">{{ n }}</option>
-        </select>
+      <div class="flex flex-wrap gap-2 items-center p-3">
+        <!-- Rows per page (custom dropdown) -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openRowsDropdown = !openRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ rowsPerPage }}</span>
+            <ChevronDown
+            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="rowsPerPage = n; openRowsDropdown = false"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  rowsPerPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
 
+        <!-- Refresh -->
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition-colors"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
         >
           <RotateCcw class="w-4 h-4" />
         </button>
 
-        <div class="relative flex-1 w-full px-2">
+        <!-- Filter Kategori -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openKategoriFilter = !openKategoriFilter"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[120px] justify-between hover:border-primary transition-all"
+          >
+            <span class="truncate text-xs">{{
+              selectedFilterKategoriId
+                ? (kategoriOptions.find((k) => k.id === selectedFilterKategoriId)?.nama ?? 'Semua')
+                : 'Semua'
+            }}</span>
+            <ChevronDown
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openKategoriFilter }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openKategoriFilter"
+              class="absolute z-30 mt-1 min-w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+            >
+              <button
+                type="button"
+                @click="selectedFilterKategoriId = ''; openKategoriFilter = false"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
+                  !selectedFilterKategoriId
+                    ? 'bg-primary/5 text-primary font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                Semua
+              </button>
+              <button
+                v-for="cat in kategoriOptions"
+                :key="cat.id"
+                type="button"
+                @click="selectedFilterKategoriId = cat.id; openKategoriFilter = false"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors capitalize',
+                  selectedFilterKategoriId === cat.id
+                    ? 'bg-primary/5 text-primary font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                {{ cat.nama }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Search -->
+        <div class="relative flex-1 min-w-40">
           <Search
-            class="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="filters.search"
             placeholder="Cari pertanyaan..."
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
 
+        <!-- Export -->
         <button
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors"
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -308,21 +393,103 @@
 
       <div class="flex flex-col gap-2">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Kategori</label>
-        <div class="flex gap-2">
-          <select
-            v-model="form.kategori"
-            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
+        <!-- Custom fake select dropdown -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openKategoriDropdown = !openKategoriDropdown"
+            class="w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-left rounded-md flex items-center justify-between hover:border-primary transition-all"
           >
-            <option value="" disabled>Pilih kategori...</option>
-            <option v-for="cat in kategoriOptions" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
+            <span :class="form.kategoriId ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-500'">
+              {{ kategoriOptions.find(k => k.id === form.kategoriId)?.nama || 'Pilih kategori...' }}
+            </span>
+            <ChevronDown
+            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openKategoriDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openKategoriDropdown"
+              class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+            >
+              <div
+                v-for="cat in kategoriOptions"
+                :key="cat.id"
+                :class="[
+                  'group relative flex items-center border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  form.kategoriId === cat.id
+                    ? 'bg-primary/5'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
+              >
+                <button
+                  type="button"
+                  @click="form.kategoriId = cat.id; openKategoriDropdown = false; showNewKategori = false"
+                  :class="[
+                    'flex-1 text-left px-4 py-2.5 text-sm capitalize',
+                    form.kategoriId === cat.id
+                      ? 'text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white',
+                  ]"
+                >
+                  {{ cat.nama }}
+                </button>
+                <button
+                  type="button"
+                  @click.stop="deleteKategoriItem(cat)"
+                  class="opacity-0 group-hover:opacity-100 p-1.5 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all"
+                  title="Hapus kategori"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <button
+                type="button"
+                @click="showNewKategori = true; openKategoriDropdown = false"
+                class="w-full text-left px-4 py-2.5 text-sm text-primary dark:text-primary-400 hover:bg-primary/5 transition-colors font-medium flex items-center gap-2"
+              >
+                <Plus class="w-3.5 h-3.5" />
+                Lainnya...
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- New kategori input form (shown when Lainnya is selected) -->
+        <div
+          v-if="showNewKategori"
+          class="space-y-2 p-3 border border-primary/30 rounded-lg bg-primary/5 dark:bg-primary-900/20"
+        >
           <input
-            v-if="showNewKategori"
             v-model="newKategori"
             type="text"
             placeholder="Nama kategori baru..."
-            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
+          <input
+            v-model="newKategoriDeskripsi"
+            type="text"
+            placeholder="Deskripsi (opsional)..."
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          />
+          <div class="flex gap-2">
+            <button
+              type="button"
+              @click="saveNewKategori"
+              :disabled="isSavingKategori"
+              class="flex-1 bg-primary text-white px-3 py-1.5 rounded-md text-sm hover:bg-primary-700 transition-colors disabled:opacity-50"
+            >
+              {{ isSavingKategori ? 'Menyimpan...' : 'Tambah' }}
+            </button>
+            <button
+              type="button"
+              @click="showNewKategori = false; newKategori = ''; newKategoriDeskripsi = ''"
+              class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-md text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Batal
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
@@ -353,14 +520,16 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil } from 'lucide-vue-next'
+import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 import Modal from '@/components/Modal.vue'
-import type { Faq } from '@/composables/useFaq'
+import type { Faq, FaqKategori } from '@/composables/useFaq'
 
 definePageMeta({ middleware: 'auth' })
 
 const toast = useToast()
-const { faqs, loading, fetchFaqs, fetchCategories, createFaq, updateFaq, deleteFaq } = useFaq()
+const { faqs, loading, fetchFaqs, fetchCategories, createFaq, updateFaq, deleteFaq, createKategori, deleteKategori } = useFaq()
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 const items = [
@@ -369,7 +538,7 @@ const items = [
 ]
 
 // ─── Categories (from API) ───────────────────────────────────────────────────
-const kategoriOptions = ref<string[]>([])
+const kategoriOptions = ref<FaqKategori[]>([])
 const loadCategories = async () => {
   kategoriOptions.value = await fetchCategories()
 }
@@ -392,7 +561,10 @@ const toggleSort = (key: 'pertanyaan' | 'kategori') => {
 const rowsPerPage = ref<number>(10)
 const rowsChoices = [5, 10, 20, 50]
 const currentPage = ref<number>(1)
-
+const openRowsDropdown = ref(false)
+const openKategoriDropdown = ref(false)
+const openKategoriFilter = ref(false)
+const selectedFilterKategoriId = ref('')
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
 const selectedIds = ref<string[]>([])
 
@@ -414,9 +586,15 @@ const toggleSelectAll = (e: Event) => {
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredFaqs = computed(() => {
   const q = filters.value.search.toLowerCase()
-  let list = faqs.value.filter(
-    (f) => !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q)
-  )
+  const selectedKat = selectedFilterKategoriId.value
+    ? kategoriOptions.value.find((k) => k.id === selectedFilterKategoriId.value)
+    : null
+  let list = faqs.value.filter((f) => {
+    const matchSearch = !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q)
+    const matchKategori =
+      !selectedKat || f.kategoriId === selectedKat.id || f.kategori === selectedKat.nama
+    return matchSearch && matchKategori
+  })
   if (sortKey.value) {
     const key = sortKey.value
     list = [...list].sort((a, b) => {
@@ -452,7 +630,7 @@ const paginationPages = computed(() => {
   return pages
 })
 
-watch([() => filters.value.search, rowsPerPage], () => {
+watch([() => filters.value.search, rowsPerPage, selectedFilterKategoriId], () => {
   currentPage.value = 1
 })
 
@@ -464,30 +642,50 @@ const isSaving = ref(false)
 
 const showNewKategori = ref(false)
 const newKategori = ref('')
+const newKategoriDeskripsi = ref('')
+const isSavingKategori = ref(false)
 
-const form = ref({ pertanyaan: '', deskripsi: '', kategori: '' })
+const saveNewKategori = async () => {
+  if (!newKategori.value.trim()) return
+  isSavingKategori.value = true
+  try {
+    const created = await createKategori({ nama: newKategori.value.trim(), deskripsi: newKategoriDeskripsi.value.trim() || undefined })
+    await loadCategories()
+    // Use the returned ID, or find by name as fallback
+    const match = kategoriOptions.value.find(k => k.nama === newKategori.value.trim())
+    form.value.kategoriId = match?.id ?? created.id
+    showNewKategori.value = false
+    newKategori.value = ''
+    newKategoriDeskripsi.value = ''
+    showToast('Berhasil', 'Kategori berhasil ditambahkan.', 'success')
+  } catch {
+    showToast('Gagal', 'Gagal menambahkan kategori.', 'error')
+  } finally {
+    isSavingKategori.value = false
+  }
+}
+
+const form = ref({ pertanyaan: '', deskripsi: '', kategoriId: '' })
 
 const openAdd = () => {
   isEditMode.value = false
   editingId.value = null
-  form.value = { pertanyaan: '', deskripsi: '', kategori: '' }
+  form.value = { pertanyaan: '', deskripsi: '', kategoriId: '' }
   showModal.value = true
 }
 
 const openEdit = (faq: Faq) => {
   isEditMode.value = true
   editingId.value = faq.id
-  form.value = { pertanyaan: faq.pertanyaan, deskripsi: faq.deskripsi, kategori: faq.kategori }
+  const matchingKat = faq.kategoriId
+    ? kategoriOptions.value.find((k) => k.id === faq.kategoriId)
+    : kategoriOptions.value.find((k) => k.nama === faq.kategori)
+  form.value = { pertanyaan: faq.pertanyaan, deskripsi: faq.deskripsi, kategoriId: matchingKat?.id ?? '' }
   showModal.value = true
 }
 
 const saveFaq = async () => {
-  const finalKategori =
-    showNewKategori.value && newKategori.value.trim()
-      ? newKategori.value.trim()
-      : form.value.kategori
-
-  if (!form.value.pertanyaan || !finalKategori) {
+  if (!form.value.pertanyaan || !form.value.kategoriId) {
     showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning')
     return
   }
@@ -497,7 +695,7 @@ const saveFaq = async () => {
     const payload = {
       pertanyaan: form.value.pertanyaan,
       deskripsi: form.value.deskripsi,
-      kategori: finalKategori
+      kategoriId: form.value.kategoriId
     }
 
     if (isEditMode.value && editingId.value !== null) {
@@ -514,6 +712,24 @@ const saveFaq = async () => {
     showToast('Gagal', 'Terjadi kesalahan saat menyimpan FAQ.', 'error')
   } finally {
     isSaving.value = false
+  }
+}
+
+// ─── Delete Kategori ──────────────────────────────────────────────────────────
+const deleteKategoriItem = async (kat: FaqKategori) => {
+  const hasFaqs = faqs.value.some((f) => f.kategoriId === kat.id || f.kategori === kat.nama)
+  if (hasFaqs) {
+    showToast('Tidak Dapat Dihapus', `Kategori "${kat.nama}" masih digunakan oleh FAQ.`, 'error')
+    return
+  }
+  try {
+    await deleteKategori(kat.id)
+    await loadCategories()
+    if (form.value.kategoriId === kat.id) form.value.kategoriId = ''
+    if (selectedFilterKategoriId.value === kat.id) selectedFilterKategoriId.value = ''
+    showToast('Berhasil', `Kategori "${kat.nama}" berhasil dihapus.`, 'success')
+  } catch {
+    showToast('Gagal', 'Gagal menghapus kategori.', 'error')
   }
 }
 
@@ -563,7 +779,31 @@ const refreshData = async () => {
   currentPage.value = 1
   await fetchFaqs()
 }
+const onExport = () => {
+  const data = filteredFaqs.value.map((faq, idx) => ({
+    No: idx + 1,
+    Pertanyaan: faq.pertanyaan,
+    'Deskripsi/Jawaban': faq.deskripsi,
+    Kategori: faq.kategori,
+    'Terakhir Update': formatDate(faq.updatedAt),
+    Puas: faq.puas,
+    'Tidak Puas': faq.tidakPuas,
+  }))
 
+  if (data.length === 0) {
+    showToast('Info', 'Tidak ada data untuk diekspor.', 'warning')
+    return
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data)
+  worksheet['!cols'] = [{ wch: 5 }, { wch: 50 }, { wch: 60 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 10 }]
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen FAQ')
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  showToast('Berhasil', 'Export berhasil.', 'success')
+}
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
@@ -606,6 +846,17 @@ onMounted(async () => {
     border-color 0.2s ease,
     color 0.2s ease;
 }
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
