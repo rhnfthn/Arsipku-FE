@@ -557,7 +557,7 @@ const handleConfirmKirim = async () => {
 
   let configData = { digsig: false, ttdQr: false, ttdBasah: false };
   try {
-    const res = await getConfigDigsig('KAJIAN');
+    const res = await getConfigDigsig('KA');
     configData = {
       digsig: res?.data?.digsig ?? false,
       ttdQr: res?.data?.ttdQr ?? false,
