@@ -10,9 +10,7 @@
         <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
       </button>
 
-      <h1
-        class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white md:hidden"
-      >
+      <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white md:hidden">
         ArsipKu
       </h1>
 
@@ -59,23 +57,18 @@
         :ui="{
           content: 'w-72 dark:bg-gray-900 dark:ring-gray-800',
           item: 'px-4 py-3',
-          itemLabel: 'text-sm',
+          itemLabel: 'text-sm'
         }"
       >
         <div class="flex items-center gap-2.5 cursor-pointer group pl-2">
-          <div
-            class="hidden md:flex flex-col items-end text-right justify-center gap-0.5"
-          >
+          <div class="hidden md:flex flex-col items-end text-right justify-center gap-0.5">
             <span
               class="text-sm font-semibold leading-none text-gray-900 dark:text-gray-100 truncate max-w-[200px]"
             >
               {{ user?.nama }}
             </span>
 
-            <UTooltip
-              :text="user?.positionText"
-              :popper="{ placement: 'bottom-end' }"
-            >
+            <UTooltip :text="user?.positionText" :popper="{ placement: 'bottom-end' }">
               <div class="flex items-center justify-end gap-1.5 leading-none">
                 <UBadge
                   size="xs"
@@ -83,9 +76,7 @@
                   color="primary"
                   class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize leading-none"
                 >
-                  <span v-if="positionStatusLabel"
-                    >{{ positionStatusLabel }} /</span
-                  >
+                  <span v-if="positionStatusLabel">{{ positionStatusLabel }} /</span>
                   {{ user?.role }}
                 </UBadge>
 
@@ -121,9 +112,7 @@
         <template #delegation-item="{ item }">
           <div class="flex flex-col w-full min-w-0 gap-0.5 py-1">
             <div class="flex items-center justify-between w-full gap-3">
-              <span
-                class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate"
-              >
+              <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {{ item.uiName }}
               </span>
 
@@ -137,17 +126,13 @@
               </UBadge>
             </div>
 
-            <div
-              class="flex items-center justify-between tracking-tight w-full gap-3"
-            >
+            <div class="flex items-center justify-between tracking-tight w-full gap-3">
               <span
                 class="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-normal break-words leading-snug"
               >
                 {{ item.uiPosition }}
                 <span class="mx-0.5 opacity-50">•</span>
-                <span class="text-gray-400 dark:text-gray-500">{{
-                  item.uiCompany
-                }}</span>
+                <span class="text-gray-400 dark:text-gray-500">{{ item.uiCompany }}</span>
               </span>
 
               <UIcon
@@ -161,9 +146,7 @@
 
         <template #theme-label>
           <div class="flex items-center justify-between w-full px-3">
-            <span class="text-sm text-gray-700 dark:text-gray-200"
-              >Tampilan</span
-            >
+            <span class="text-sm text-gray-700 dark:text-gray-200">Tampilan</span>
             <div
               class="flex items-center p-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
             >
@@ -225,17 +208,11 @@
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div
-        v-if="isSearchModalOpen"
-        class="fixed inset-0 z-[9999] overflow-y-auto"
-      >
+      <div v-if="isSearchModalOpen" class="fixed inset-0 z-[9999] overflow-y-auto">
         <!-- BACKDROP BLUR -->
         <div
           class="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md"
-          @click="
-            isSearchModalOpen = false;
-            resetAdvancedFilters();
-          "
+          @click="((isSearchModalOpen = false), resetAdvancedFilters())"
         />
 
         <!-- MODAL CONTAINER -->
@@ -261,24 +238,16 @@
                   <div
                     class="flex items-center justify-center shrink-0 p-2.5 rounded-xl bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400"
                   >
-                    <UIcon
-                      name="i-heroicons-magnifying-glass"
-                      class="w-5 h-5"
-                    />
+                    <UIcon name="i-heroicons-magnifying-glass" class="w-5 h-5" />
                   </div>
 
-                  <h3
-                    class="text-lg font-semibold text-gray-900 dark:text-white"
-                  >
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                     Pencarian Surat
                   </h3>
                 </div>
 
                 <button
-                  @click="
-                    isSearchModalOpen = false;
-                    resetAdvancedFilters();
-                  "
+                  @click="((isSearchModalOpen = false), resetAdvancedFilters())"
                   class="flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
                 >
                   <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
@@ -303,10 +272,7 @@
                         <div
                           class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                         >
-                          <UIcon
-                            name="i-heroicons-hashtag"
-                            class="w-5 h-5 text-gray-400"
-                          />
+                          <UIcon name="i-heroicons-hashtag" class="w-5 h-5 text-gray-400" />
                         </div>
                         <input
                           type="text"
@@ -327,10 +293,7 @@
                         <div
                           class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                         >
-                          <UIcon
-                            name="i-heroicons-document-text"
-                            class="w-5 h-5 text-gray-400"
-                          />
+                          <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-gray-400" />
                         </div>
                         <input
                           type="text"
@@ -377,9 +340,7 @@
                           class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500"
                         />
                         <div
-                          v-if="
-                            showPengirimPopover && filteredPengirim.length > 0
-                          "
+                          v-if="showPengirimPopover && filteredPengirim.length > 0"
                           class="absolute z-[10000] w-full mt-1 max-h-60 overflow-y-auto p-1 bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 rounded-lg"
                         >
                           <div
@@ -390,21 +351,11 @@
                           >
                             <span
                               class="text-sm font-semibold text-gray-900 dark:text-white"
-                              v-html="
-                                highlightText(
-                                  item.nama,
-                                  advancedFilters.pengirim,
-                                )
-                              "
+                              v-html="highlightText(item.nama, advancedFilters.pengirim)"
                             ></span>
                             <span
                               class="text-xs text-gray-500 dark:text-gray-400"
-                              v-html="
-                                highlightText(
-                                  item.jabatan,
-                                  advancedFilters.pengirim,
-                                )
-                              "
+                              v-html="highlightText(item.jabatan, advancedFilters.pengirim)"
                             ></span>
                           </div>
                         </div>
@@ -423,8 +374,14 @@
                           class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                         >
                           <UIcon
+                            v-if="!isPenerimaLoading"
                             name="i-heroicons-user-group"
                             class="w-5 h-5 text-gray-400"
+                          />
+                          <UIcon
+                            v-else
+                            name="i-heroicons-arrow-path"
+                            class="w-4 h-4 text-primary-400 animate-spin"
                           />
                         </div>
                         <input
@@ -437,9 +394,7 @@
                           class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500"
                         />
                         <div
-                          v-if="
-                            showPenerimaPopover && filteredPenerima.length > 0
-                          "
+                          v-if="showPenerimaPopover && filteredPenerima.length > 0"
                           class="absolute z-[10000] w-full mt-1 max-h-60 overflow-y-auto p-1 bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 rounded-lg"
                         >
                           <div
@@ -450,21 +405,11 @@
                           >
                             <span
                               class="text-sm font-semibold text-gray-900 dark:text-white"
-                              v-html="
-                                highlightText(
-                                  item.nama,
-                                  advancedFilters.penerima,
-                                )
-                              "
+                              v-html="highlightText(item.nama, advancedFilters.penerima)"
                             ></span>
                             <span
                               class="text-xs text-gray-500 dark:text-gray-400"
-                              v-html="
-                                highlightText(
-                                  item.jabatan,
-                                  advancedFilters.penerima,
-                                )
-                              "
+                              v-html="highlightText(item.jabatan, advancedFilters.penerima)"
                             ></span>
                           </div>
                         </div>
@@ -474,9 +419,7 @@
 
                   <!-- JENIS SURAT -->
                   <div>
-                    <label
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
-                    >
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Jenis Surat
                     </label>
                     <div class="flex flex-wrap gap-2.5">
@@ -492,7 +435,7 @@
                           getCategoryStyle(opt.value),
                           advancedFilters.jenis === opt.value
                             ? 'ring-2 ring-offset-1 ring-gray-400 opacity-100 font-bold shadow-sm'
-                            : 'opacity-90 hover:opacity-100 hover:shadow-sm',
+                            : 'opacity-90 hover:opacity-100 hover:shadow-sm'
                         ]"
                       >
                         {{ opt.label }}
@@ -543,7 +486,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.sifat === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                               ]"
                             >
                               {{ opt.label }}
@@ -594,7 +537,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.status === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                               ]"
                             >
                               {{ opt.label }}
@@ -648,7 +591,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.hasAttachment === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                               ]"
                             >
                               {{ opt.label }}
@@ -669,19 +612,14 @@
                         class="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
                       >
                         <span>Semua</span>
-                        <UIcon
-                          name="i-heroicons-chevron-down"
-                          class="w-4 h-4 text-gray-300"
-                        />
+                        <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-gray-300" />
                       </div>
                     </div>
                   </div>
 
                   <!-- RENTANG TANGGAL -->
                   <div>
-                    <label
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
-                    >
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Rentang Tanggal
                     </label>
                     <div class="grid grid-cols-2 gap-4 items-center">
@@ -728,10 +666,7 @@
 
                 <div class="flex gap-3">
                   <button
-                    @click="
-                      isSearchModalOpen = false;
-                      resetAdvancedFilters();
-                    "
+                    @click="((isSearchModalOpen = false), resetAdvancedFilters())"
                     class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     Batal
@@ -740,10 +675,7 @@
                     @click="handleAdvancedSearch"
                     class="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 shadow-sm transition-colors"
                   >
-                    <UIcon
-                      name="i-heroicons-magnifying-glass"
-                      class="w-4 h-4"
-                    />
+                    <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4" />
                     Terapkan
                   </button>
                 </div>
@@ -771,549 +703,536 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, reactive } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useDark } from "@vueuse/core";
-import type { DropdownMenuItem } from "#ui/types";
+import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useDark } from '@vueuse/core'
+import type { DropdownMenuItem } from '#ui/types'
 
 // --- INIT COMPOSABLES ---
-const { user, getProfile, logout } = useAuth();
-const { getAvailableRoles, switchRole } = useDelegasi();
-const toast = useToast();
-const route = useRoute();
-const router = useRouter();
+const { user, getProfile, logout } = useAuth()
+const { getAvailableRoles, switchRole } = useDelegasi()
+const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
 // --- STATE ---
-const isSearchModalOpen = ref(false);
-const showLogoutPopup = ref(false);
-const isLoggingOut = ref(false);
-const search = ref("");
-const delegationRoles = ref<any[]>([]);
-const switchingMessage = ref("");
+const isSearchModalOpen = ref(false)
+const showLogoutPopup = ref(false)
+const isLoggingOut = ref(false)
+const search = ref('')
+const delegationRoles = ref<any[]>([])
+const switchingMessage = ref('')
 
 // --- QUICK SEARCH ---
-const quickSearch = ref("");
+const quickSearch = ref('')
 
 const handleQuickSearch = () => {
-  if (!quickSearch.value.trim()) return;
+  if (!quickSearch.value.trim()) return
   navigateTo({
-    path: "/search",
+    path: '/search',
     query: {
       page: 1,
       limit: 20,
-      sortBy: "tanggal",
-      sortOrder: "DESC",
-      perihal: quickSearch.value.trim(),
-    },
-  });
-  quickSearch.value = "";
-};
+      sortBy: 'tanggal',
+      sortOrder: 'DESC',
+      perihal: quickSearch.value.trim()
+    }
+  })
+  quickSearch.value = ''
+}
 const advancedFilters = reactive({
-  nomorSurat: "",
-  perihal: "",
-  pengirim: "",
-  penerima: "",
-  hasWords: "",
-  doesntHave: "",
-  dateFrom: "",
-  dateTo: "",
+  nomorSurat: '',
+  perihal: '',
+  pengirim: '',
+  penerima: '',
+  hasWords: '',
+  doesntHave: '',
+  dateFrom: '',
+  dateTo: '',
   jenis: null,
   sifat: null,
   status: null,
-  hasAttachment: "Semua",
-});
+  hasAttachment: 'Semua'
+})
 
 const jenisOptions = [
-  { label: "Semua", value: null },
-  { label: "Nota Dinas (ND)", value: "ND" },
-  { label: "Surat Dinas Internal (SDI)", value: "SDI" },
-  { label: "Surat Dinas Eksternal (SDE)", value: "SDE" },
-  { label: "Disposisi (DI)", value: "DI" },
-  { label: "Kajian (KA)", value: "KA" },
-  { label: "Konsep (K)", value: "K" },
-];
+  { label: 'Semua', value: null },
+  { label: 'Nota Dinas (ND)', value: 'ND' },
+  { label: 'Surat Dinas Internal (SDI)', value: 'SDI' },
+  { label: 'Surat Dinas Eksternal (SDE)', value: 'SDE' },
+  { label: 'Disposisi (DI)', value: 'DI' },
+  { label: 'Kajian (KA)', value: 'KA' },
+  { label: 'Konsep (K)', value: 'K' }
+]
 
 // "Semua" sudah ada di index-0 masing-masing, tidak perlu duplikat di template
 const sifatOptions = [
-  { label: "Semua", value: null },
-  { label: "Biasa", value: "biasa" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Sangat Rahasia", value: "sangat_rahasia" },
-  { label: "Terbuka", value: "terbuka" },
-];
+  { label: 'Semua', value: null },
+  { label: 'Biasa', value: 'biasa' },
+  { label: 'Terbatas', value: 'terbatas' },
+  { label: 'Rahasia', value: 'rahasia' },
+  { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
+  { label: 'Terbuka', value: 'terbuka' }
+]
 
 const statusOptions = [
-  { label: "Semua", value: null },
-  { label: "Draf", value: "draf" },
-  { label: "Final", value: "final" },
-  { label: "Final TTE", value: "final_tte" },
-];
+  { label: 'Semua', value: null },
+  { label: 'Draf', value: 'draf' },
+  { label: 'Final', value: 'final' },
+  { label: 'Final TTE', value: 'final_tte' }
+]
 
 const attachmentOptions = [
-  { label: "Semua", value: "Semua" },
-  { label: "Ya", value: true },
-  { label: "Tidak", value: false },
-];
+  { label: 'Semua', value: 'Semua' },
+  { label: 'Ya', value: true },
+  { label: 'Tidak', value: false }
+]
 
 // --- CUSTOM DROPDOWN STATE ---
-const openSifat = ref(false);
-const openStatus = ref(false);
-const openLampiran = ref(false);
+const openSifat = ref(false)
+const openStatus = ref(false)
+const openLampiran = ref(false)
 
 const sifatLabel = computed(
-  () =>
-    sifatOptions.find((s) => s.value === advancedFilters.sifat)?.label ??
-    "Semua",
-);
+  () => sifatOptions.find((s) => s.value === advancedFilters.sifat)?.label ?? 'Semua'
+)
 const statusLabel = computed(
-  () =>
-    statusOptions.find((s) => s.value === advancedFilters.status)?.label ??
-    "Semua",
-);
+  () => statusOptions.find((s) => s.value === advancedFilters.status)?.label ?? 'Semua'
+)
 const lampiranLabel = computed(() => {
-  if (
-    advancedFilters.hasAttachment === "Semua" ||
-    advancedFilters.hasAttachment === null
-  )
-    return "Semua";
-  return (
-    attachmentOptions.find((a) => a.value === advancedFilters.hasAttachment)
-      ?.label ?? "Semua"
-  );
-});
+  if (advancedFilters.hasAttachment === 'Semua' || advancedFilters.hasAttachment === null)
+    return 'Semua'
+  return attachmentOptions.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? 'Semua'
+})
 
 function toggleSifat() {
-  openSifat.value = !openSifat.value;
-  openStatus.value = false;
-  openLampiran.value = false;
+  openSifat.value = !openSifat.value
+  openStatus.value = false
+  openLampiran.value = false
 }
 function toggleStatus() {
-  openStatus.value = !openStatus.value;
-  openSifat.value = false;
-  openLampiran.value = false;
+  openStatus.value = !openStatus.value
+  openSifat.value = false
+  openLampiran.value = false
 }
 function toggleLampiran() {
-  openLampiran.value = !openLampiran.value;
-  openSifat.value = false;
-  openStatus.value = false;
+  openLampiran.value = !openLampiran.value
+  openSifat.value = false
+  openStatus.value = false
 }
 function selectSifat(val: any) {
-  advancedFilters.sifat = val;
-  openSifat.value = false;
+  advancedFilters.sifat = val
+  openSifat.value = false
 }
 function selectStatus(val: any) {
-  advancedFilters.status = val;
-  openStatus.value = false;
+  advancedFilters.status = val
+  openStatus.value = false
 }
 function selectLampiran(val: any) {
-  advancedFilters.hasAttachment = val;
-  openLampiran.value = false;
+  advancedFilters.hasAttachment = val
+  openLampiran.value = false
 }
 
 // Tutup semua dropdown saat modal ditutup
 watch(isSearchModalOpen, (val) => {
   if (!val) {
-    openSifat.value = false;
-    openStatus.value = false;
-    openLampiran.value = false;
+    openSifat.value = false
+    openStatus.value = false
+    openLampiran.value = false
   }
-});
+})
 
 // --- AUTOCOMPLETE PENGIRIM / PENERIMA ---
 interface UserSuggestion {
-  nama: string;
-  jabatan: string;
+  nama: string
+  jabatan: string
 }
 
 const {
   suggestions: pengirimSuggestions,
   isSuggestionsLoading: isPengirimLoading,
-  fetchSuggestions,
-} = useSearch();
+  fetchSuggestions: fetchPengirimSuggestions
+} = useSearch()
 
-const filteredPengirim = computed(() => pengirimSuggestions.value);
-const filteredPenerima = ref<UserSuggestion[]>([]); // penerima tetap kosong untuk sekarang
-const showPengirimPopover = ref(false);
-const showPenerimaPopover = ref(false);
+const {
+  suggestions: penerimasuggestions,
+  isSuggestionsLoading: isPenerimaLoading,
+  fetchSuggestions: fetchPenerimaSuggestions
+} = useSearch()
+
+// AFTER
+const filteredPengirim = computed(() => pengirimSuggestions.value)
+const filteredPenerima = computed(() => penerimasuggestions.value)
+const showPengirimPopover = ref(false)
+const showPenerimaPopover = ref(false)
 
 // Debounce timer
-let pengirimTimer: ReturnType<typeof setTimeout> | null = null;
+// AFTER
+let pengirimTimer: ReturnType<typeof setTimeout> | null = null
+let penerimaTimer: ReturnType<typeof setTimeout> | null = null
 
 const handlePengirimInput = () => {
-  if (pengirimTimer) clearTimeout(pengirimTimer);
+  if (pengirimTimer) clearTimeout(pengirimTimer)
   if (!advancedFilters.pengirim.trim()) {
-    pengirimSuggestions.value = [];
-    showPengirimPopover.value = false;
-    return;
+    pengirimSuggestions.value = []
+    showPengirimPopover.value = false
+    return
   }
   pengirimTimer = setTimeout(async () => {
-    await fetchSuggestions(advancedFilters.pengirim, "pengirim");
-    showPengirimPopover.value = pengirimSuggestions.value.length > 0;
-  }, 300);
-};
+    await fetchPengirimSuggestions(advancedFilters.pengirim, 'pengirim')
+    showPengirimPopover.value = pengirimSuggestions.value.length > 0
+  }, 300)
+}
 
 const handlePengirimFocus = () => {
-  if (advancedFilters.pengirim.trim().length >= 2) {
-    showPengirimPopover.value = pengirimSuggestions.value.length > 0;
-  }
-};
-
+  if (advancedFilters.pengirim.trim().length >= 2)
+    showPengirimPopover.value = pengirimSuggestions.value.length > 0
+}
 const selectPengirim = (nama: string) => {
-  advancedFilters.pengirim = nama;
-  pengirimSuggestions.value = [];
-  showPengirimPopover.value = false;
-};
-
+  advancedFilters.pengirim = nama
+  pengirimSuggestions.value = []
+  showPengirimPopover.value = false
+}
 const handlePengirimBlur = () => {
   setTimeout(() => {
-    showPengirimPopover.value = false;
-  }, 200);
-};
+    showPengirimPopover.value = false
+  }, 200)
+}
 
-// Penerima — handlers tetap ada tapi kosong (bisa dikembangkan nanti)
-const handlePenerimaInput = () => {};
-const handlePenerimaFocus = () => {};
-const handlePenerimaBlur = () => {};
+// Penerima — sekarang terisi penuh
+const handlePenerimaInput = () => {
+  if (penerimaTimer) clearTimeout(penerimaTimer)
+  if (!advancedFilters.penerima.trim()) {
+    penerimasuggestions.value = []
+    showPenerimaPopover.value = false
+    return
+  }
+  penerimaTimer = setTimeout(async () => {
+    await fetchPenerimaSuggestions(advancedFilters.penerima, 'penerima')
+    showPenerimaPopover.value = penerimasuggestions.value.length > 0
+  }, 300)
+}
+
+const handlePenerimaFocus = () => {
+  if (advancedFilters.penerima.trim().length >= 2)
+    showPenerimaPopover.value = penerimasuggestions.value.length > 0
+}
 const selectPenerima = (nama: string) => {
-  advancedFilters.penerima = nama;
-  showPenerimaPopover.value = false;
-};
-
+  advancedFilters.penerima = nama
+  penerimasuggestions.value = []
+  showPenerimaPopover.value = false
+}
+const handlePenerimaBlur = () => {
+  setTimeout(() => {
+    showPenerimaPopover.value = false
+  }, 200)
+}
 const highlightText = (text: string, query: string) => {
-  if (!query) return text;
-  const q = query.trim();
-  const regex = new RegExp(`(${q})`, "gi");
+  if (!query) return text
+  const q = query.trim()
+  const regex = new RegExp(`(${q})`, 'gi')
   return text.replace(
     regex,
-    '<span class="text-primary-600 dark:text-primary-400 font-bold">$1</span>',
-  );
-};
+    '<span class="text-primary-600 dark:text-primary-400 font-bold">$1</span>'
+  )
+}
 
 // --- USER / DELEGATION ---
 const positionStatusLabel = computed(() => {
-  const u = user.value;
-  if (!u) return null;
-  if (u.position_status) return u.position_status;
+  const u = user.value
+  if (!u) return null
+  if (u.position_status) return u.position_status
   if (u.delegations && u.delegations.length > 0) {
-    return u.delegations[0].delegated_role?.position_status;
+    return u.delegations[0].delegated_role?.position_status
   }
-  return null;
-});
+  return null
+})
 
 const getStoredOriginalRole = () =>
-  process.client ? localStorage.getItem("arsipku_original_position") : null;
-const originalRoleLabel = ref(getStoredOriginalRole() || "Posisi Utama");
-const activeDelegationId = ref<string | null>(null);
+  process.client ? localStorage.getItem('arsipku_original_position') : null
+const originalRoleLabel = ref(getStoredOriginalRole() || 'Posisi Utama')
+const activeDelegationId = ref<string | null>(null)
 
 const initActiveState = () => {
   if (process.client) {
-    activeDelegationId.value = localStorage.getItem(
-      "arsipku_active_delegation_id",
-    );
+    activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id')
   }
-};
+}
 
 const fetchDelegationRoles = async () => {
-  if (!user.value) return;
+  if (!user.value) return
   try {
-    const roles = await getAvailableRoles();
-    delegationRoles.value = roles || [];
+    const roles = await getAvailableRoles()
+    delegationRoles.value = roles || []
   } catch (e) {
-    console.error("Error fetch roles", e);
+    console.error('Error fetch roles', e)
   }
-};
+}
 
 watch(
   user,
   (newUser) => {
     if (newUser) {
-      fetchDelegationRoles();
+      fetchDelegationRoles()
       if (!activeDelegationId.value) {
-        originalRoleLabel.value = newUser.positionText;
-        if (process.client)
-          localStorage.setItem(
-            "arsipku_original_position",
-            newUser.positionText,
-          );
+        originalRoleLabel.value = newUser.positionText
+        if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText)
       } else if (process.client) {
-        const stored = localStorage.getItem("arsipku_original_position");
-        if (stored) originalRoleLabel.value = stored;
+        const stored = localStorage.getItem('arsipku_original_position')
+        if (stored) originalRoleLabel.value = stored
       }
     }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
-const isSwitching = ref(false);
+const isSwitching = ref(false)
 
-const handleSwitchRole = async (target: {
-  type: "delegasi" | "reset";
-  id?: string;
-}) => {
-  if (isSwitching.value) return;
+const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: string }) => {
+  if (isSwitching.value) return
   switchingMessage.value =
-    target.type === "delegasi"
-      ? "Mengalihkan ke Akun Delegasi..."
-      : "Kembali ke Akun Utama...";
-  isSwitching.value = true;
+    target.type === 'delegasi' ? 'Mengalihkan ke Akun Delegasi...' : 'Kembali ke Akun Utama...'
+  isSwitching.value = true
   try {
     const payload =
-      target.type === "delegasi" && target.id
+      target.type === 'delegasi' && target.id
         ? { delegasiId: target.id }
-        : { resetToOriginal: true };
-    const res = await switchRole(payload);
+        : { resetToOriginal: true }
+    const res = await switchRole(payload)
     if (res?.success) {
-      if (target.type === "delegasi" && target.id) {
-        localStorage.setItem("arsipku_active_delegation_id", target.id);
+      if (target.type === 'delegasi' && target.id) {
+        localStorage.setItem('arsipku_active_delegation_id', target.id)
         if (res.data?.user?.role)
-          localStorage.setItem(
-            "arsipku_active_delegation_role",
-            res.data.user.role,
-          );
+          localStorage.setItem('arsipku_active_delegation_role', res.data.user.role)
       } else {
-        localStorage.removeItem("arsipku_active_delegation_id");
-        localStorage.removeItem("arsipku_active_delegation_role");
+        localStorage.removeItem('arsipku_active_delegation_id')
+        localStorage.removeItem('arsipku_active_delegation_role')
       }
-      localStorage.setItem(
-        "switch_role_message",
-        res.message || "Berhasil mengganti role.",
-      );
-      window.location.reload();
+      localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.')
+      window.location.reload()
     } else {
-      isSwitching.value = false;
+      isSwitching.value = false
     }
   } catch (error) {
-    console.error("Gagal ganti role:", error);
+    console.error('Gagal ganti role:', error)
     toast.add({
-      title: "Gagal",
-      description: "Gagal mengganti role.",
-      color: "red",
-    });
-    isSwitching.value = false;
+      title: 'Gagal',
+      description: 'Gagal mengganti role.',
+      color: 'red'
+    })
+    isSwitching.value = false
   }
-};
+}
 
 const confirmLogout = async () => {
   if (process.client) {
-    localStorage.removeItem("arsipku_original_position");
-    localStorage.removeItem("arsipku_active_delegation_id");
-    localStorage.removeItem("arsipku_active_delegation_role");
+    localStorage.removeItem('arsipku_original_position')
+    localStorage.removeItem('arsipku_active_delegation_id')
+    localStorage.removeItem('arsipku_active_delegation_role')
   }
-  isLoggingOut.value = true;
-  await logout();
-  isLoggingOut.value = false;
-  showLogoutPopup.value = false;
-  navigateTo("/");
-};
+  isLoggingOut.value = true
+  await logout()
+  isLoggingOut.value = false
+  showLogoutPopup.value = false
+  navigateTo('/')
+}
 
 // --- SEARCH ---
 const searchConfig = computed(() => ({
   show: true,
-  placeholder: "Cari surat...",
-  key: "",
-}));
+  placeholder: 'Cari surat...',
+  key: ''
+}))
 
 const openSearchModal = () => {
-  isSearchModalOpen.value = true;
-};
+  isSearchModalOpen.value = true
+}
 
 const handleAdvancedSearch = () => {
   const queryParams: any = {
     page: 1,
     limit: 20,
-    sortBy: "tanggal",
-    sortOrder: "DESC",
-  };
-
-  if (search.value) queryParams.keyword = search.value;
-  if (advancedFilters.nomorSurat)
-    queryParams.nomor = advancedFilters.nomorSurat;
-  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal;
-  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis;
-  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat;
-  if (advancedFilters.status) queryParams.status = advancedFilters.status;
-  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim;
-  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima;
-  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom;
-  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo;
-  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords;
-  if (advancedFilters.doesntHave)
-    queryParams.doesntHave = advancedFilters.doesntHave;
-  if (
-    advancedFilters.hasAttachment !== "Semua" &&
-    advancedFilters.hasAttachment !== null
-  ) {
-    queryParams.hasAttachment = advancedFilters.hasAttachment;
+    sortBy: 'tanggal',
+    sortOrder: 'DESC'
   }
 
-  isSearchModalOpen.value = false;
-  navigateTo({ path: "/search", query: queryParams });
-};
+  if (search.value) queryParams.keyword = search.value
+  if (advancedFilters.nomorSurat) queryParams.nomor = advancedFilters.nomorSurat
+  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal
+  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis
+  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat
+  if (advancedFilters.status) queryParams.status = advancedFilters.status
+  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim
+  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima
+  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom
+  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo
+  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords
+  if (advancedFilters.doesntHave) queryParams.doesntHave = advancedFilters.doesntHave
+  if (advancedFilters.hasAttachment !== 'Semua' && advancedFilters.hasAttachment !== null) {
+    queryParams.hasAttachment = advancedFilters.hasAttachment
+  }
+
+  isSearchModalOpen.value = false
+  navigateTo({ path: '/search', query: queryParams })
+}
 
 const resetAdvancedFilters = () => {
-  advancedFilters.nomorSurat = "";
-  advancedFilters.perihal = "";
-  advancedFilters.pengirim = "";
-  advancedFilters.penerima = "";
-  advancedFilters.hasWords = "";
-  advancedFilters.doesntHave = "";
-  advancedFilters.dateFrom = "";
-  advancedFilters.dateTo = "";
-  advancedFilters.jenis = null;
-  advancedFilters.sifat = null;
-  advancedFilters.status = null;
-  advancedFilters.hasAttachment = "Semua";
-  search.value = "";
-  quickSearch.value = "";
-  openSifat.value = false;
-  openStatus.value = false;
-  openLampiran.value = false;
-  filteredPengirim.value = [];
-  filteredPenerima.value = [];
-  pengirimSuggestions.value = [];
-  showPengirimPopover.value = false;
-  showPenerimaPopover.value = false;
-};
+  advancedFilters.nomorSurat = ''
+  advancedFilters.perihal = ''
+  advancedFilters.pengirim = ''
+  advancedFilters.penerima = ''
+  advancedFilters.hasWords = ''
+  advancedFilters.doesntHave = ''
+  advancedFilters.dateFrom = ''
+  advancedFilters.dateTo = ''
+  advancedFilters.jenis = null
+  advancedFilters.sifat = null
+  advancedFilters.status = null
+  advancedFilters.hasAttachment = 'Semua'
+  search.value = ''
+  quickSearch.value = ''
+  openSifat.value = false
+  openStatus.value = false
+  openLampiran.value = false
+  pengirimSuggestions.value = []
+  penerimasuggestions.value = []
+  pengirimSuggestions.value = []
+  penerimasuggestions.value = []
+  showPengirimPopover.value = false
+  showPenerimaPopover.value = false
+}
 
 const handleReset = () => {
-  search.value = "";
-  router.push({ path: "/beranda", query: {} });
-};
+  search.value = ''
+  router.push({ path: '/beranda', query: {} })
+}
 
 // --- THEME & LOCALE ---
-const isDark = useDark();
+const isDark = useDark()
 const locales = [
-  { code: "id", name: "ID" },
-  { code: "en", name: "EN" },
-];
-const { locale, setLocale } = useI18n();
-const currentLocale = locale;
+  { code: 'id', name: 'ID' },
+  { code: 'en', name: 'EN' }
+]
+const { locale, setLocale } = useI18n()
+const currentLocale = locale
 
 const changeLocale = (code: string) => {
-  setLocale(code);
+  setLocale(code)
   if (process.client) {
-    localStorage.setItem("arsipku_locale", code);
+    localStorage.setItem('arsipku_locale', code)
   }
-};
+}
 
 // --- MENU ITEMS ---
-const itemClass = "text-sm truncate transition-colors cursor-pointer";
+const itemClass = 'text-sm truncate transition-colors cursor-pointer'
 
 const menuItems = computed<DropdownMenuItem[][]>(() => {
-  const currentId = activeDelegationId.value;
-  const isMainAccountActive = !currentId;
-  const hasDelegationData =
-    delegationRoles.value && delegationRoles.value.length > 0;
+  const currentId = activeDelegationId.value
+  const isMainAccountActive = !currentId
+  const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0
 
   const mainAccountItem = {
-    uiName: user.value?.nama || "User",
+    uiName: user.value?.nama || 'User',
     uiBadge: user.value?.role,
     uiPosition: originalRoleLabel.value,
     uiCompany: user.value?.companyText,
     label: originalRoleLabel.value,
-    slot: "delegation-item",
+    slot: 'delegation-item',
     isActive: isMainAccountActive,
     disabled: !hasDelegationData,
-    click: hasDelegationData
-      ? () => handleSwitchRole({ type: "reset" })
-      : undefined,
-    onSelect: hasDelegationData
-      ? () => handleSwitchRole({ type: "reset" })
-      : undefined,
-  };
+    click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
+    onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
+  }
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
-    const details = role.delegated_role || {};
+    const details = role.delegated_role || {}
     return {
-      uiName: details.name || "Nama Tidak Tersedia",
-      uiBadge: details.position_status_label || "Delegasi",
-      uiPosition: details.position_text || "Jabatan Tidak Tersedia",
+      uiName: details.name || 'Nama Tidak Tersedia',
+      uiBadge: details.position_status_label || 'Delegasi',
+      uiPosition: details.position_text || 'Jabatan Tidak Tersedia',
       uiCompany: details.company_text,
-      label: details.position_text || "Delegasi",
-      slot: "delegation-item",
+      label: details.position_text || 'Delegasi',
+      slot: 'delegation-item',
       isActive: currentId === role.id,
-      click: () => handleSwitchRole({ type: "delegasi", id: role.id }),
-      onSelect: () => handleSwitchRole({ type: "delegasi", id: role.id }),
-    };
-  });
+      click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
+      onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
+    }
+  })
 
   return [
     [mainAccountItem, ...delegasiItems],
     [
       {
-        label: "Pindah Perusahaan",
+        label: 'Pindah Perusahaan',
         class: itemClass,
         onSelect: () => {
-          navigateTo("/switch");
-        },
+          navigateTo('/switch')
+        }
       },
-      { label: "Setting Notif Email", class: itemClass },
-      { label: "Visualisasi Digsig (Visible)", class: itemClass },
-      { label: "Setting Temporary File", class: itemClass },
+      { label: 'Setting Notif Email', class: itemClass },
+      { label: 'Visualisasi Digsig (Visible)', class: itemClass },
+      { label: 'Setting Temporary File', class: itemClass }
     ],
-    [{ slot: "theme-label", type: "label" }],
-    [{ slot: "lang-label", type: "label" }],
+    [{ slot: 'theme-label', type: 'label' }],
+    [{ slot: 'lang-label', type: 'label' }],
     [
       {
-        label: "Keluar",
-        class: "text-sm text-error",
-        onSelect: () => openLogoutPopup(),
-      },
-    ],
-  ];
-});
+        label: 'Keluar',
+        class: 'text-sm text-error',
+        onSelect: () => openLogoutPopup()
+      }
+    ]
+  ]
+})
 
 // --- LIFECYCLE ---
 onMounted(() => {
   if (process.client) {
-    initActiveState();
+    initActiveState()
 
-    const savedLocale = localStorage.getItem("arsipku_locale");
-    if (savedLocale && ["id", "en"].includes(savedLocale)) {
-      setLocale(savedLocale);
+    const savedLocale = localStorage.getItem('arsipku_locale')
+    if (savedLocale && ['id', 'en'].includes(savedLocale)) {
+      setLocale(savedLocale)
     }
 
-    const successMsg = localStorage.getItem("switch_role_message");
+    const successMsg = localStorage.getItem('switch_role_message')
     if (successMsg) {
       toast.add({
-        title: "Berhasil",
+        title: 'Berhasil',
         description: successMsg,
-        icon: "i-heroicons-check-circle",
-        color: "green",
-      });
-      localStorage.removeItem("switch_role_message");
+        icon: 'i-heroicons-check-circle',
+        color: 'green'
+      })
+      localStorage.removeItem('switch_role_message')
     }
   }
-  if (!user.value) getProfile();
-});
+  if (!user.value) getProfile()
+})
 
 const openLogoutPopup = () => {
-  showLogoutPopup.value = true;
-};
+  showLogoutPopup.value = true
+}
 
 const getInitials = (name: string) => {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return (
-    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
-  ).toUpperCase();
-};
+  if (!name) return ''
+  const parts = name.trim().split(' ')
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+}
 
-defineEmits(["open-mobile-sidebar"]);
+defineEmits(['open-mobile-sidebar'])
 
 const getCategoryStyle = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c))
-    return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300";
-  if (["DI", "DISPOSISI"].includes(c))
-    return "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300";
-  if (["SDI", "INTERNAL", "SURAT DINAS INTERNAL"].includes(c))
-    return "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300";
-  if (["SDE", "SURAT DINAS EKSTERNAL"].includes(c))
-    return "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300";
-  if (["KAJIAN", "KA"].includes(c))
-    return "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300";
-};
+  const c = (cat || '').toUpperCase()
+  if (['ND', 'NOTA DINAS'].includes(c))
+    return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300'
+  if (['DI', 'DISPOSISI'].includes(c))
+    return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
+  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
+    return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300'
+  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
+    return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300'
+  if (['KAJIAN', 'KA'].includes(c))
+    return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300'
+  return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+}
 </script>
