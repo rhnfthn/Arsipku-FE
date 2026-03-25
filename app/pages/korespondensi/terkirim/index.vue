@@ -70,12 +70,20 @@ const currentPage = ref(1);
 
 // Date Filter State
 const showDateMenu = ref(false);
-const activeDateLabel = ref("30 Hari Terakhir");
-const startDate = ref(new Date());
-const endDate = ref(new Date());
-const openStart = ref(false);
-const openEnd = ref(false);
+const activeDateLabel = ref("Semua");
+const startDateInput = ref(new Date().toISOString().split('T')[0]);
+const endDateInput = ref(new Date().toISOString().split('T')[0]);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
+
+const openStartDate = ref(false);
+const openEndDate = ref(false);
+
+import { parseDate, today, getLocalTimeZone } from '@internationalized/date';
+const startDateCal = ref(parseDate(startDateInput.value));
+const endDateCal = ref(parseDate(endDateInput.value));
+
+watch(startDateCal, (val) => { if (val) startDateInput.value = val.toString(); });
+watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
 // Bulk Action State
 const showDeleteModal = ref(false);
@@ -127,20 +135,13 @@ const filterMenuOptions = [
   { label: "Arsip", value: "Arsip" },
 ];
 
-const dateOptions = [
-  "Hari ini",
-  "7 Hari Terakhir",
-  "30 Hari Terakhir",
-  "Bulan Ini",
-  "Tahun Ini",
-  "Semua",
-];
+const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Naskah Terkirim", to: "#" },
+  { label: "Terkirim", to: "#" },
 ];
 
 // --- HELPERS UI ---
@@ -220,39 +221,35 @@ const refreshData = async () => {
     if (activeFilterType.value === "Belum Dibaca")
       statusBacaParam = "belum_terbaca";
 
-    let startStr = undefined;
-    let endStr = undefined;
-    const now = new Date();
-    let calculatedStart = new Date();
+    const today = new Date();
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
 
-    if (activeDateLabel.value === "Custom") {
-      if (startDate.value && endDate.value) {
-        startStr = formatDateForApi(startDate.value);
-        endStr = formatDateForApi(endDate.value);
-      }
-    } else if (activeDateLabel.value !== "Semua") {
-      endStr = formatDateForApi(now);
-      if (activeDateLabel.value === "Hari ini") calculatedStart = now;
-      else if (activeDateLabel.value === "7 Hari Terakhir")
-        calculatedStart.setDate(now.getDate() - 7);
-      else if (activeDateLabel.value === "30 Hari Terakhir")
-        calculatedStart.setDate(now.getDate() - 30);
-      else if (activeDateLabel.value === "Bulan Ini")
-        calculatedStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      else if (activeDateLabel.value === "Tahun Ini")
-        calculatedStart = new Date(now.getFullYear(), 0, 1);
-      startStr = formatDateForApi(calculatedStart);
-    }
-
-    const params = {
+    const params: Record<string, any> = {
       page: currentPage.value,
       limit: itemsPerPage.value,
       jenis: jenisParam,
       status_baca: statusBacaParam,
       search: searchQuery.value || undefined,
-      start_date: startStr,
-      end_date: endStr,
     };
+
+    if (activeDateLabel.value === "Custom") {
+      params.start_date = startDateInput.value;
+      params.end_date = endDateInput.value;
+    } else if (activeDateLabel.value !== "Semua") {
+      const daysMap: Record<string, number> = {
+        "7 Hari": 7,
+        "30 Hari": 30,
+        "60 Hari": 60,
+        "1 Tahun": 365,
+      };
+      const days = daysMap[activeDateLabel.value];
+      if (days) {
+        const from = new Date(today);
+        from.setDate(today.getDate() - days);
+        params.start_date = toDateStr(from);
+        params.end_date = toDateStr(today);
+      }
+    }
 
     await fetchSentBox(params);
   } catch (err) {
@@ -303,15 +300,15 @@ const openReaderModal = (mail: any) => {
       position: p.position_text || p.jabatan,
       date: p.read_time
         ? new Date(p.read_time).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }) +
-          " " +
-          new Date(p.read_time).toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }) +
+        " " +
+        new Date(p.read_time).toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "-",
       initial: p.nama?.substring(0, 1) || "?",
       bg: "bg-blue-500",
@@ -510,350 +507,203 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PageHeader title="Naskah Terkirim" :items="breadcrumbs" />
+  <PageHeader title="Terkirim" :items="breadcrumbs" />
   <div
-    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue"
-  >
+    class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <div
-      class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors"
-    >
+      class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors">
       <div class="flex items-center gap-1 shrink-0 relative">
-        <div
-          class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
-          @click="toggleSelectAll"
-        >
+        <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
+          @click="toggleSelectAll">
           <div
             class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
             :class="{
               'bg-primary border-primary': isAllSelected,
               'group-hover:border-gray-600 dark:group-hover:border-gray-300':
                 !isAllSelected,
-            }"
-          >
-            <Check
-              v-if="isAllSelected"
-              class="w-3 h-3 text-white"
-              stroke-width="3"
-            />
+            }">
+            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
           </div>
         </div>
         <div class="relative">
-          <button
-            @click="showFilterMenu = !showFilterMenu"
+          <button @click="showFilterMenu = !showFilterMenu"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
             :class="{
               'bg-gray-100 dark:bg-gray-800 text-neutral-900 dark:text-gray-200':
                 showFilterMenu,
-            }"
-          >
+            }">
             <MoreVertical class="w-4 h-4" />
-            <span
-              v-if="activeFilterType !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"
-            ></span>
+            <span v-if="activeFilterType !== 'Semua'"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"></span>
           </button>
-          <div
-            v-if="showFilterMenu"
-            @click="showFilterMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showFilterMenu"
-            class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in filterMenuOptions"
-              :key="opt.value"
-              @click="applyFilter(opt.value)"
-              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between group transition-colors"
-            >
-              <span
-                :class="
-                  activeFilterType === opt.value
-                    ? 'font-semibold text-primary'
-                    : ''
-                "
-                >{{ opt.label }}</span
-              >
-              <Check
-                v-if="activeFilterType === opt.value"
-                class="w-3.5 h-3.5 text-primary"
-              />
+          <div v-if="showFilterMenu" @click="showFilterMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showFilterMenu"
+            class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
+              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between group transition-colors">
+              <span :class="activeFilterType === opt.value
+                ? 'font-semibold text-primary'
+                : ''
+                ">{{ opt.label }}</span>
+              <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
             </button>
           </div>
         </div>
-        <button
-          @click="refreshData"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-        >
+        <button @click="refreshData"
+          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
           <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending }" />
         </button>
         <template v-if="selectedIds.size > 0">
-          <div
-            class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"
-          ></div>
-          <div
-            class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200"
-          >
-            <button
-              @click="confirmAction('delete')"
-              class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded transition-colors"
-            >
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block"></div>
+          <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
+            <button @click="confirmAction('delete')"
+              class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-error rounded transition-colors">
               <Trash2 class="w-4 h-4" />
             </button>
-            <button
-              @click="confirmAction('archive')"
-              class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
-            >
+            <button @click="confirmAction('archive')"
+              class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors">
               <Archive class="w-4 h-4" />
             </button>
-            <button
-              @click="openLabelAssignModal"
-              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
-            >
+            <button @click="openLabelAssignModal"
+              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors">
               <Tag class="w-4 h-4" />
             </button>
-            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2"
-              >{{ selectedIds.size }} dipilih</span
-            >
+            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
           </div>
         </template>
       </div>
 
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <div class="relative">
-          <button
-            @click="showDateMenu = !showDateMenu"
-            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
-          >
+          <button @click="showDateMenu = !showDateMenu" title="Periode Data"
+            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
             <History class="w-4 h-4 shrink-0" />
-            <span
-              v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"
-            ></span>
+            <span v-if="activeDateLabel !== 'Semua'"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"></span>
           </button>
-          <div
-            v-if="showDateMenu"
-            @click="showDateMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showDateMenu"
-            class="absolute top-full right-0 mt-1 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex"
-          >
-            <div
-              class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800"
-            >
+
+          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+
+          <div v-if="showDateMenu"
+            class="absolute top-full right-0 mt-2 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden flex animate-in fade-in slide-in-from-top-2 duration-150">
+            <!-- Custom Date Range -->
+            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
-                class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between"
-              >
-                <span>Pilih Tanggal</span>
-                <Check
-                  v-if="activeDateLabel === 'Custom'"
-                  class="w-3.5 h-3.5 text-primary"
-                />
+                class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
+                <span>Rentang Tanggal</span>
+                <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
+
               <div class="space-y-4">
                 <div>
-                  <label
-                    class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                    >Mulai</label
-                  >
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
                   <ClientOnly>
-                    <UPopover
-                      v-model:open="openStart"
-                      :content="{ placement: 'bottom-start' }"
-                    >
-                      <UButton
-                        color="white"
-                        variant="outline"
-                        block
-                        class="justify-start"
-                      >
-                        <div class="flex items-center gap-2 w-full">
-                          <span
-                            class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200"
-                            >{{
-                              startDate
-                                ? startDate.toLocaleDateString("id-ID")
-                                : "Pilih"
-                            }}</span
-                          >
-                          <CalendarIcon
-                            class="w-4 h-4 text-gray-400 shrink-0"
-                          />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar
-                            v-model="startDate"
-                            @close="openStart = false"
-                          />
-                        </div>
+                    <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openStartDate = true">
+                        <UInputDate locale="id-ID" v-model="startDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="startDateCal" class="p-2" @update:model-value="openStartDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
+
                 <div>
-                  <label
-                    class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                    >Sampai</label
-                  >
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
                   <ClientOnly>
-                    <UPopover
-                      v-model:open="openEnd"
-                      :content="{ placement: 'bottom-start' }"
-                    >
-                      <UButton
-                        color="white"
-                        variant="outline"
-                        block
-                        class="justify-start"
-                      >
-                        <div class="flex items-center gap-2 w-full">
-                          <span
-                            class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200"
-                            >{{
-                              endDate
-                                ? endDate.toLocaleDateString("id-ID")
-                                : "Pilih"
-                            }}</span
-                          >
-                          <CalendarIcon
-                            class="w-4 h-4 text-gray-400 shrink-0"
-                          />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar
-                            v-model="endDate"
-                            @close="openEnd = false"
-                          />
-                        </div>
+                    <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openEndDate = true">
+                        <UInputDate locale="id-ID" v-model="endDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="endDateCal" class="p-2" @update:model-value="openEndDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
-                <button
-                  @click="applyCustomDate"
-                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2 rounded-md hover:bg-primary-600 transition-colors shadow-sm"
-                >
-                  Terapkan Range
+
+                <button @click="applyCustomDate"
+                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
+                  Terapkan Filter
                 </button>
               </div>
             </div>
-            <div class="w-5/12 py-2 overflow-y-auto max-h-[300px]">
-              <div
-                class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
-              >
+
+            <!-- Preset Options -->
+            <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
+              <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Preset
               </div>
-              <button
-                v-for="opt in dateOptions"
-                :key="opt"
-                @click="selectDateFilter(opt)"
-                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors"
-              >
+              <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
+                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors">
                 <span>{{ opt }}</span>
-                <Check
-                  v-if="activeDateLabel === opt && !isCustomDate"
-                  class="w-3.5 h-3.5 text-primary"
-                />
+                <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
           </div>
         </div>
         <div class="relative">
-          <button
-            @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          >
+          <button @click="showSortMenu = !showSortMenu"
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
             <ArrowUpDown class="w-4 h-4" />
           </button>
-          <div
-            v-if="showSortMenu"
-            @click="showSortMenu = false"
-            class="fixed inset-0 z-40 bg-transparent"
-          ></div>
-          <div
-            v-if="showSortMenu"
-            class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <button
-              v-for="opt in sortOptions"
-              :key="opt"
-              @click="selectSortOption(opt)"
-              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
-            >
+          <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showSortMenu"
+            class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
+              class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between">
               <span>{{ opt }}</span>
-              <Check
-                v-if="activeSortLabel === opt"
-                class="w-3 h-3 text-primary"
-              />
+              <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
         </div>
-        <button
-          @click="downloadExcel"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-        >
+        <button @click="downloadExcel"
+          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
           <Download class="w-3.5 h-3.5" />
         </button>
-        <div
-          class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"
-        ></div>
+        <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
         <div class="flex items-center gap-1">
           <div class="relative">
-            <button
-              @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1"
-            >
+            <button @click="showPageMenu = !showPageMenu"
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1">
               <Layers class="w-4 h-4" />
             </button>
-            <div
-              v-if="showPageMenu"
-              @click="showPageMenu = false"
-              class="fixed inset-0 z-40 bg-transparent"
-            ></div>
-            <div
-              v-if="showPageMenu"
-              class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100"
-            >
-              <button
-                v-for="size in pageOptions"
-                :key="size"
-                @click="selectPageSize(size)"
+            <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+            <div v-if="showPageMenu"
+              class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary transition-colors"
                 :class="{
                   'text-primary font-semibold bg-gray-50 dark:bg-gray-700':
                     itemsPerPage === size,
-                }"
-              >
+                }">
                 {{ size }} Item
               </button>
             </div>
           </div>
-          <div
-            class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]"
-          >
+          <div class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]">
             <span
-              class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400"
-              >{{ paginationInfo }}</span
-            >
+              class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">{{
+                paginationInfo }}</span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              @click="prevPage"
-              :disabled="currentPage === 1"
-            >
+              @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-            >
+              @click="nextPage" :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
           </div>
@@ -863,35 +713,23 @@ onMounted(async () => {
 
     <div class="flex-1 flex overflow-hidden relative w-full">
       <div
-        class="flex flex-col bg-white dark:bg-gray-800 transition-all duration-300 border-r border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-hidden flex-1 w-full"
-      >
+        class="flex flex-col bg-white dark:bg-gray-800 transition-all duration-300 border-r border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-hidden flex-1 w-full">
         <div
-          class="py-1.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 sticky top-0 z-10 w-full overflow-hidden"
-        >
+          class="py-1.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full py-1">
-            <UButton
-              v-for="tab in tabs"
-              :key="tab.value"
-              @click="activeTab = tab.value"
-              color="primary"
+            <UButton v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value" color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
-              :class="
-                activeTab === tab.value
-                  ? 'bg-primary dark:bg-primary-600 text-white border-primary dark:border-primary-600'
-                  : 'bg-white dark:bg-gray-800 text-primary dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-              "
-            >
+              :class="activeTab === tab.value
+                ? 'bg-primary dark:bg-primary-600 text-white border-primary dark:border-primary-600'
+                : 'bg-white dark:bg-gray-800 text-primary dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                ">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
-              <span
-                v-if="getTabCount(tab.value) > 0"
-                class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                :class="
-                  activeTab === tab.value
-                    ? 'bg-white text-primary'
-                    : 'bg-primary-50 dark:bg-primary-900/50 text-primary dark:text-primary-300'
-                "
-              >
+              <span v-if="getTabCount(tab.value) > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                :class="activeTab === tab.value
+                  ? 'bg-white text-primary'
+                  : 'bg-primary-50 dark:bg-primary-900/50 text-primary dark:text-primary-300'
+                  ">
                 {{ getTabCount(tab.value) }}
               </span>
             </UButton>
@@ -900,181 +738,108 @@ onMounted(async () => {
 
         <div class="w-full overflow-x-auto pb-2">
           <div class="w-full min-w-full md:min-w-[800px]">
-            <div
-              v-if="items.length === 0 && !pending"
-              class="flex flex-col items-center justify-center py-10 text-neutral-400 dark:text-gray-500 w-full"
-            >
+            <div v-if="items.length === 0 && !pending"
+              class="flex flex-col items-center justify-center py-10 text-neutral-400 dark:text-gray-500 w-full">
               <Inbox class="w-12 h-12 mb-2 opacity-50" />
               <span class="text-sm">Tidak ada data</span>
             </div>
 
             <div v-else-if="pending" class="w-full">
-              <div
-                v-for="n in 10"
-                :key="n"
-                class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]"
-              >
+              <div v-for="n in 10" :key="n"
+                class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
                 <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
-                  <div
-                    class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                  ></div>
-                  <div
-                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
-                  ></div>
-                  <div
-                    class="md:hidden h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-2"
-                  ></div>
+                  <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div class="md:hidden h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-2"></div>
                 </div>
 
-                <div
-                  class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4"
-                >
-                  <div
-                    class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0"
-                  >
-                    <div
-                      class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                    <div
-                      class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"
-                    ></div>
+                <div class="flex-1 w-full flex flex-col md:flex-row md:items-center md:gap-4">
+                  <div class="md:w-44 lg:w-52 shrink-0 flex flex-col gap-1.5 mb-1 md:mb-0">
+                    <div class="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-2.5 w-1/2 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
                   </div>
                   <div class="flex-1 flex flex-wrap items-center gap-2 w-full">
-                    <div
-                      class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                    <div
-                      class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
+                    <div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="h-3 w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                   </div>
                   <div class="hidden md:flex shrink-0 w-[50px] justify-start">
-                    <div
-                      class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
-                    ></div>
+                    <div class="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                   </div>
-                  <div
-                    class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0"
-                  >
-                    <div
-                      class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"
-                    ></div>
+                  <div class="shrink-0 w-full md:w-[130px] md:text-right mt-1 md:mt-0">
+                    <div class="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse md:ml-auto"></div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div v-else class="w-full">
-              <div
-                v-for="mail in items"
-                :key="mail.id"
-                @click="selectMail(mail)"
-                class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50 dark:hover:bg-gray-800/50"
-              >
-                <div
-                  class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto"
-                  @click.stop
-                >
+              <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
+                class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
                   <div
                     class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 dark:border-gray-600 rounded-sm flex items-center justify-center transition-colors"
-                    :class="
-                      selectedIds.has(mail.id)
-                        ? 'bg-primary border-primary'
-                        : 'bg-white dark:bg-gray-800'
-                    "
-                    @click="toggleSelection(mail.id)"
-                  >
-                    <Check
-                      v-if="selectedIds.has(mail.id)"
-                      class="w-3 h-3 text-white"
-                    />
+                    :class="selectedIds.has(mail.id)
+                      ? 'bg-primary border-primary'
+                      : 'bg-white dark:bg-gray-800'
+                      " @click="toggleSelection(mail.id)">
+                    <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
 
-                  <Star
-                    class="w-4 h-4 transition-colors hover:text-yellow-400"
-                    :class="
-                      mail.isStarred
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-neutral-300 dark:text-gray-600'
-                    "
-                  />
+                  <Star class="w-4 h-4 transition-colors hover:text-yellow-400" :class="mail.isStarred
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-neutral-300 dark:text-gray-600'
+                    " />
 
                   <span
                     class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    :class="getCategoryStyle(mail.category)"
-                  >
+                    :class="getCategoryStyle(mail.category)">
                     {{ getCategoryLabel(mail.category) }}
                   </span>
                 </div>
 
-                <div
-                  class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full"
-                >
-                  <div
-                    class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0"
-                  >
+                <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
+                  <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <div class="flex flex-col min-w-0">
-                      <UTooltip
-                        :text="mail.fullRecipients"
-                        :ui="{
-                          content: 'h-auto py-2 px-3',
-                          text: 'whitespace-pre-line text-left',
-                        }"
-                        class="min-w-0 truncate"
-                      >
+                      <UTooltip :text="mail.fullRecipients" :ui="{
+                        content: 'h-auto py-2 px-3',
+                        text: 'whitespace-pre-line text-left',
+                      }" class="min-w-0 truncate">
                         <span
-                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold cursor-help"
-                        >
+                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold cursor-help">
                           {{ mail.from }}
                         </span>
                       </UTooltip>
-                      <div
-                        class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 truncate"
-                      >
+                      <div class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 truncate">
                         {{ mail.body }}
                       </div>
                     </div>
                   </div>
 
-                  <div
-                    class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0"
-                  >
-                    <div
-                      v-if="mail.labels && mail.labels.length > 0"
-                      class="flex flex-wrap gap-1 shrink-0"
-                    >
-                      <span
-                        v-for="lbl in mail.labels"
-                        :key="lbl"
-                        :title="lbl"
-                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help"
-                      >
+                  <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                    <div v-if="mail.labels && mail.labels.length > 0" class="flex flex-wrap gap-1 shrink-0">
+                      <span v-for="lbl in mail.labels" :key="lbl" :title="lbl"
+                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
                         {{ lbl }}
                       </span>
                     </div>
                     <div
-                      class="text-[13px] text-neutral-900 dark:text-gray-100 truncate flex-1 min-w-[120px] font-normal"
-                    >
+                      class="text-[13px] text-neutral-900 dark:text-gray-100 truncate flex-1 min-w-[120px] font-normal">
                       {{ mail.subject }}
                     </div>
                   </div>
 
-                  <div
-                    class="hidden md:flex shrink-0 w-[50px] justify-start items-center"
-                  >
+                  <div class="hidden md:flex shrink-0 w-[50px] justify-start items-center">
                     <span
                       class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
-                      :class="getCategoryStyle(mail.category)"
-                    >
+                      :class="getCategoryStyle(mail.category)">
                       {{ getCategoryLabel(mail.category) }}
                     </span>
                   </div>
 
                   <div
-                    class="shrink-0 w-full md:w-[160px] flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-0 pt-0.5"
-                  >
+                    class="shrink-0 w-full md:w-[160px] flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-0 pt-0.5">
                     <span
-                      class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap order-1"
-                    >
+                      class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap order-1">
                       {{ formatShortDate(mail.fullDate) }}
                     </span>
 
@@ -1084,17 +849,11 @@ onMounted(async () => {
                         mail.category === 'SDE'
                           ? 'cursor-not-allowed opacity-50'
                           : 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700',
-                      ]"
-                      @click.stop="
+                      ]" @click.stop="
                         mail.category !== 'SDE' && openReaderModal(mail)
-                      "
-                    >
-                      <Eye
-                        class="w-3.5 h-3.5 text-primary dark:text-primary-400"
-                      />
-                      <span
-                        class="text-[12px] font-medium text-primary dark:text-primary-400"
-                      >
+                        ">
+                      <Eye class="w-3.5 h-3.5 text-primary dark:text-primary-400" />
+                      <span class="text-[12px] font-medium text-primary dark:text-primary-400">
                         {{
                           mail.category === "SDE" ? "-" : mail.viewCount || 0
                         }}
@@ -1109,37 +868,25 @@ onMounted(async () => {
       </div>
     </div>
 
-    <LabelAssignModal
-      v-model="showLabelAssignModal"
-      :selected-ids="selectedIds"
-      source="sent"
-      @assign="assignLabelToSelected"
-      @success="selectedIds.clear()"
-    />
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" source="sent"
+      @assign="assignLabelToSelected" @success="selectedIds.clear()" />
 
     <Teleport to="body">
-      <div
-        v-if="showReaderModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px] z-[999]"
-      >
+      <div v-if="showReaderModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px] z-[999]">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700"
-        >
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
           <div class="flex items-start justify-between p-5 pb-2">
             <div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                 Status Pembaca Pesan
               </h3>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1"
-              >
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                 {{ currentReaderData.subject }}
               </p>
             </div>
-            <button
-              @click="showReaderModal = false"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 transition-colors"
-            >
+            <button @click="showReaderModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 transition-colors">
               <X class="w-5 h-5" />
             </button>
           </div>
@@ -1147,29 +894,19 @@ onMounted(async () => {
             <div class="mb-4">
               <div class="flex items-center gap-2 mb-3">
                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                <span
-                  class="text-[15px] font-medium text-gray-800 dark:text-gray-200"
-                  >Sudah Membaca ({{ currentReaderData.readList.length }})</span
-                >
+                <span class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Sudah Membaca ({{
+                  currentReaderData.readList.length }})</span>
               </div>
               <div class="space-y-2">
-                <div
-                  v-for="(reader, idx) in currentReaderData.readList"
-                  :key="idx"
-                  class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800"
-                >
+                <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
+                  class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
                   <div class="flex items-center gap-3">
-                    <UAvatar
-                      size="md"
-                      :ui="{ background: reader.bg }"
-                      class="text-white font-semibold flex items-center justify-center shrink-0"
-                    >
+                    <UAvatar size="md" :ui="{ background: reader.bg }"
+                      class="text-white font-semibold flex items-center justify-center shrink-0">
                       {{ getInitials(reader.name) }}
                     </UAvatar>
                     <div>
-                      <div
-                        class="text-sm font-semibold text-gray-900 dark:text-gray-200"
-                      >
+                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">
                         {{ reader.position }}
                       </div>
                       <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -1187,31 +924,20 @@ onMounted(async () => {
             <div>
               <div class="flex items-center gap-2 mb-3">
                 <div class="w-2 h-2 rounded-full bg-gray-400"></div>
-                <span
-                  class="text-[15px] font-medium text-gray-800 dark:text-gray-200"
-                  >Belum Membaca ({{
-                    currentReaderData.unreadList.length
-                  }})</span
-                >
+                <span class="text-[15px] font-medium text-gray-800 dark:text-gray-200">Belum Membaca ({{
+                  currentReaderData.unreadList.length
+                  }})</span>
               </div>
               <div class="space-y-2">
-                <div
-                  v-for="(reader, idx) in currentReaderData.unreadList"
-                  :key="idx"
-                  class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
-                >
+                <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
+                  class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                   <div class="flex items-center gap-3">
-                    <UAvatar
-                      size="md"
-                      :ui="{ background: reader.bg }"
-                      class="text-white font-semibold flex items-center justify-center shrink-0"
-                    >
+                    <UAvatar size="md" :ui="{ background: reader.bg }"
+                      class="text-white font-semibold flex items-center justify-center shrink-0">
                       {{ getInitials(reader.name) }}
                     </UAvatar>
                     <div>
-                      <div
-                        class="text-sm font-semibold text-gray-900 dark:text-gray-200"
-                      >
+                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">
                         {{ reader.position }}
                       </div>
                       <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -1225,10 +951,8 @@ onMounted(async () => {
             </div>
           </div>
           <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-            <button
-              @click="showReaderModal = false"
-              class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
+            <button @click="showReaderModal = false"
+              class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               Tutup
             </button>
           </div>
@@ -1237,30 +961,19 @@ onMounted(async () => {
     </Teleport>
 
     <Teleport to="body">
-      <div
-        v-if="showDeleteModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-      >
+      <div v-if="showDeleteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
         <div
-          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700"
-        >
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
           <div class="p-5 text-center">
-            <div
-              class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
-              :class="
-                currentBulkAction === 'delete'
-                  ? 'bg-red-100 dark:bg-red-900/30'
-                  : 'bg-blue-100 dark:bg-blue-900/30'
-              "
-            >
-              <AlertTriangle
-                class="w-6 h-6"
-                :class="
-                  currentBulkAction === 'delete'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-blue-600 dark:text-blue-400'
-                "
-              />
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" :class="currentBulkAction === 'delete'
+              ? 'bg-red-100 dark:bg-red-900/30'
+              : 'bg-blue-100 dark:bg-blue-900/30'
+              ">
+              <AlertTriangle class="w-6 h-6" :class="currentBulkAction === 'delete'
+                ? 'text-red-600 dark:text-red-400'
+                : 'text-blue-600 dark:text-blue-400'
+                " />
             </div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
               {{ modalTitle }}
@@ -1268,35 +981,24 @@ onMounted(async () => {
             <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">
               <div v-if="selectedIds.size === 1 && firstSelectedItem">
                 Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br />
-                <span class="font-semibold text-gray-700 dark:text-gray-200"
-                  >"{{ firstSelectedItem.subject }}"</span
-                >?
+                <span class="font-semibold text-gray-700 dark:text-gray-200">"{{ firstSelectedItem.subject }}"</span>?
               </div>
               <div v-else>
                 Apakah Anda yakin ingin {{ actionLabel.toLowerCase() }} <br />
-                <span class="font-bold text-gray-800 dark:text-gray-200"
-                  >{{ selectedIds.size }} item terpilih</span
-                >?
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
               </div>
             </div>
             <div class="flex gap-3 justify-center">
-              <button
-                @click="showDeleteModal = false"
-                :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-              >
+              <button @click="showDeleteModal = false" :disabled="isDeleting"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
                 Batal
               </button>
-              <button
-                @click="handleBulkExecute"
-                :disabled="isDeleting"
+              <button @click="handleBulkExecute" :disabled="isDeleting"
                 class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="
-                  currentBulkAction === 'delete'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-primary hover:bg-primary-600'
-                "
-              >
+                :class="currentBulkAction === 'delete'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-primary hover:bg-primary-600'
+                  ">
                 <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
                 {{ isDeleting ? "Memproses..." : actionLabel }}
               </button>

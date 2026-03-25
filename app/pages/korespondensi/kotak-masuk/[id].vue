@@ -117,7 +117,7 @@ const allowedActions = computed(() => {
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: isTerkirim.value ? "Surat Keluar" : "Kotak Masuk", to: isTerkirim.value ? "/korespondensi/surat-keluar" : "/korespondensi/kotak-masuk" },
+  { label: isTerkirim.value ? "Terkirim" : "Kotak Masuk", to: isTerkirim.value ? "/korespondensi/surat-keluar" : "/korespondensi/kotak-masuk" },
   { label: "Detail Surat", to: "#" },
 ];
 

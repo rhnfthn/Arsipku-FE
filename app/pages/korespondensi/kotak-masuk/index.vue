@@ -73,8 +73,7 @@ const currentPage = ref(1);
 
 // Date Filter State
 const showDateMenu = ref(false);
-const activeDateLabel = ref("30 Hari");
-// ✅ Gunakan string YYYY-MM-DD langsung, tidak perlu Date object
+const activeDateLabel = ref("Semua");
 const startDateInput = ref(new Date().toISOString().split('T')[0]);
 const endDateInput = ref(new Date().toISOString().split('T')[0]);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
@@ -108,6 +107,26 @@ const filterMenuOptions = [
   { label: "Sudah Dibaca", value: "Sudah Dibaca" },
   { label: "Belum Dibaca", value: "Belum Dibaca" },
 ];
+
+// Calendar Popover State
+const openStartDate = ref(false)
+const openEndDate = ref(false)
+
+// CalendarDate object untuk UCalendar (Nuxt UI v3 pakai @internationalized/date)
+import { parseDate, today, getLocalTimeZone } from '@internationalized/date'
+
+const todayDate = today(getLocalTimeZone())
+
+// Sync dua arah: UCalendar ↔ startDateInput (string YYYY-MM-DD)
+const startDateCal = ref(parseDate(startDateInput.value))
+const endDateCal = ref(parseDate(endDateInput.value))
+
+watch(startDateCal, (val) => {
+  if (val) startDateInput.value = val.toString()
+})
+watch(endDateCal, (val) => {
+  if (val) endDateInput.value = val.toString()
+})
 
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
@@ -653,16 +672,40 @@ onMounted(async () => {
               <div class="space-y-4">
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
-                  <!-- ✅ input type="date" langsung bind ke startDateInput (string) -->
-                  <input type="date" v-model="startDateInput"
-                    class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-primary-500 outline-none dark:text-gray-200" />
+                  <ClientOnly>
+                    <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openStartDate = true">
+                        <UInputDate locale="id-ID" v-model="startDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="startDateCal" class="p-2" @update:model-value="openStartDate = false" />
+                      </template>
+                    </UPopover>
+                  </ClientOnly>
                 </div>
 
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
-                  <!-- ✅ input type="date" langsung bind ke endDateInput (string) -->
-                  <input type="date" v-model="endDateInput"
-                    class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-primary-500 outline-none dark:text-gray-200" />
+                  <ClientOnly>
+                    <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openEndDate = true">
+                        <UInputDate locale="id-ID" v-model="endDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="endDateCal" class="p-2" @update:model-value="openEndDate = false" />
+                      </template>
+                    </UPopover>
+                  </ClientOnly>
                 </div>
 
                 <button @click="applyCustomDate"
@@ -766,14 +809,14 @@ onMounted(async () => {
               :class="activeTab === tab.value
                 ? 'bg-primary-400 text-white border-primary-400'
                 : 'bg-white dark:bg-gray-800 text-primary-500 dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-              ">
+                ">
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.label }}
               <span v-if="getTabCount(tab.value) > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
                 :class="activeTab === tab.value
                   ? 'bg-white text-primary-500'
                   : 'bg-primary-50 text-primary-500 dark:bg-primary-900/50 dark:text-primary-300'
-                ">
+                  ">
                 {{ getTabCount(tab.value) }}
               </span>
             </UButton>
@@ -878,7 +921,8 @@ onMounted(async () => {
                 <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center md:gap-4 w-full">
                   <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <div v-if="!mail.isRead" class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
-                      title="Belum Dibaca"></div>
+                      title="Belum Dibaca">
+                    </div>
 
                     <div class="flex flex-col min-w-0">
                       <UTooltip :text="mail.fullRecipients"
