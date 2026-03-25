@@ -145,9 +145,7 @@
                 <td class="px-5 py-4">{{ row.jabatan }}</td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[250px]">
-                    <p class="whitespace-normal break-words line-clamp-3">
-                      {{ row.perihal }}
-                    </p>
+                    <p class="whitespace-normal break-words line-clamp-3">{{ row.perihal }}</p>
                   </div>
                 </td>
                 <td class="px-5 py-4">
@@ -158,17 +156,14 @@
                         {{ nomor }}
                       </div>
                       <div v-if="row.nomor_list.length > 3" class="text-primary font-medium">
-                        +{{ row.nomor_list.length - 3 }}
-                        {{ $t('nom_nomor_lainnya') }}
+                        +{{ row.nomor_list.length - 3 }} {{ $t('nom_nomor_lainnya') }}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[300px]">
-                    <p class="whitespace-normal break-words line-clamp-3">
-                      {{ row.pengusul }}
-                    </p>
+                    <p class="whitespace-normal break-words line-clamp-3">{{ row.pengusul }}</p>
                   </div>
                 </td>
                 <td class="px-5 py-4">{{ row.waktu }}</td>
@@ -188,6 +183,7 @@
           {{ pagination.total }} {{ $t('data') }}
         </div>
         <div class="flex items-center gap-2">
+          <!-- Prev -->
           <button
             @click="goToPage((pagination.current_page || pagination.page) - 1)"
             :disabled="(pagination.current_page || pagination.page) === 1"
@@ -208,19 +204,27 @@
             </svg>
             {{ $t('sebelumnya') }}
           </button>
+
           <div class="flex items-center gap-1">
             <button
               v-if="paginationPages.length > 0 && paginationPages[0] > 1"
               @click="goToPage(1)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                (pagination.current_page || pagination.page) === 1
+                  ? 'bg-primary dark:bg-primary-700 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400'
+              ]"
             >
               1
             </button>
+
             <span
               v-if="paginationPages.length > 0 && paginationPages[0] > 2"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >...</span
             >
+
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -234,6 +238,7 @@
             >
               {{ page }}
             </button>
+
             <span
               v-if="
                 paginationPages.length > 0 &&
@@ -243,6 +248,7 @@
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >...</span
             >
+
             <button
               v-if="
                 paginationPages.length > 0 &&
@@ -250,11 +256,19 @@
                   (pagination.total_pages || pagination.totalPages)
               "
               @click="goToPage(pagination.total_pages || pagination.totalPages)"
-              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400 transition-all dark:text-gray-200"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                (pagination.current_page || pagination.page) ===
+                (pagination.total_pages || pagination.totalPages)
+                  ? 'bg-primary dark:bg-primary-700 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary dark:hover:text-primary-400'
+              ]"
             >
               {{ pagination.total_pages || pagination.totalPages }}
             </button>
           </div>
+
+          <!-- Next -->
           <button
             @click="goToPage((pagination.current_page || pagination.page) + 1)"
             :disabled="
@@ -379,9 +393,7 @@
             </div>
 
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
-              <p class="text-gray-500 dark:text-gray-400 text-xs">
-                {{ $t('nom_modal_tanggal') }}
-              </p>
+              <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('nom_modal_tanggal') }}</p>
               <p class="font-medium mt-1 dark:text-gray-200">
                 {{ formatTanggalWIB(detailData.tanggal) }}
               </p>
@@ -390,9 +402,7 @@
               <p class="text-gray-500 dark:text-gray-400 text-xs">
                 {{ $t('nom_modal_penandatangan') }}
               </p>
-              <p class="font-medium mt-1 dark:text-gray-200">
-                {{ detailData.jabatan }}
-              </p>
+              <p class="font-medium mt-1 dark:text-gray-200">{{ detailData.jabatan }}</p>
             </div>
             <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
               <p class="text-gray-500 dark:text-gray-400 text-xs">
@@ -406,19 +416,21 @@
               <p class="text-gray-500 dark:text-gray-400 text-xs">
                 {{ $t('nom_modal_jenis_naskah') }}
               </p>
-              <p class="font-medium mt-1 dark:text-gray-200">
-                {{ detailData.jenis }}
-              </p>
+              <p class="font-medium mt-1 dark:text-gray-200">{{ detailData.jenis }}</p>
             </div>
           </div>
 
-          <!-- NOMOR SURAT SECTION -->
+          <!-- ============================================================ -->
+          <!-- NOMOR SURAT SECTION                                           -->
+          <!-- ============================================================ -->
           <div class="pt-6">
+            <!-- Header row -->
             <div class="flex items-center justify-between mb-4">
-              <h4 class="text-l font-semibold text-gray-900 dark:text-gray-100">
+              <h4
+                class="text-l font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+              >
                 {{ $t('nom_nomor_surat') }}
                 <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
-                  <!-- ✅ Single file: tampilkan jumlah dari API, bukan panjang array -->
                   ({{
                     detailData.is_single_file
                       ? detailData.jumlah
@@ -427,116 +439,121 @@
                   {{ $t('nom_nomor_suffix') }})
                 </span>
               </h4>
+              <!-- Single File badge -->
+              <span
+                v-if="detailData.is_single_file"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 bg-primary/5 text-primary dark:text-primary-300 dark:bg-primary/10 dark:border-primary/20"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"
+                  />
+                </svg>
+                Single File
+              </span>
             </div>
 
-            <div v-if="detailData.nomor_list && detailData.nomor_list.length > 0" class="space-y-4">
+            <!-- ============================================================ -->
+            <!-- MODE: SINGLE FILE                                             -->
+            <!-- ============================================================ -->
+            <template v-if="detailData.is_single_file">
+              <!-- Shared file card -->
               <div
-                v-for="(item, idx) in detailData.nomor_list"
-                :key="item.id || `nomor-${idx}`"
-                :class="[
-                  'border rounded-lg p-4 hover:shadow-md transition',
-                  item.status === 'hangus'
-                    ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
-                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
-                ]"
+                class="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
               >
-                <!-- Nomor + Status + Copy -->
-                <div class="flex items-center gap-3 mb-3">
-                  <div
-                    class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-4 py-2"
-                  >
-                    <div class="flex justify-between items-center">
-                      <span
-                        :class="[
-                          'font-mono text-sm',
-                          item.status === 'hangus'
-                            ? 'line-through text-gray-400'
-                            : 'dark:text-gray-200'
-                        ]"
-                      >
-                        {{ idx + 1 }}. {{ item.nomor }}
-                      </span>
-                      <span
-                        :class="[
-                          'px-3 py-1 rounded-full text-xs font-medium',
-                          getStatusClass(item)
-                        ]"
-                      >
-                        {{ getStatusLabel(item) }}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    v-if="item.status !== 'hangus'"
-                    @click="handleCopy(item.nomor)"
-                    class="p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <Copy class="w-4 h-4 dark:text-gray-300" />
-                  </button>
-                </div>
-
-                <!-- File preview -->
+                <!-- File preview — selalu tampil jika ada file (termasuk saat semua hangus) -->
                 <div
-                  v-if="item.file_name && !fileStates[item.id]?.isReplacing"
+                  v-if="singleFileData.file_name && !singleFileState.isReplacing"
                   :class="[
-                    'flex items-start border rounded-md p-3 transition',
-                    item.status === 'hangus'
-                      ? 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 opacity-70'
-                      : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                    'flex items-start gap-3 p-4 cursor-pointer transition border-b',
+                    allNomorHangus
+                      ? 'bg-gray-50/80 dark:bg-gray-800/60 hover:bg-gray-100/80 dark:hover:bg-gray-700/40 border-gray-200 dark:border-gray-700 opacity-80'
+                      : 'bg-blue-50/60 dark:bg-blue-900/10 hover:bg-blue-100/60 dark:hover:bg-blue-900/20 border-blue-100 dark:border-blue-900/30'
                   ]"
-                  @click="previewFile(item)"
+                  @click="previewSharedFile"
                 >
-                  <svg
-                    class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <div
+                    :class="[
+                      'flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg',
+                      allNomorHangus
+                        ? 'bg-gray-200 dark:bg-gray-700'
+                        : 'bg-blue-100 dark:bg-blue-900/40'
+                    ]"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <div class="flex-1 min-w-0 ml-3">
+                    <svg
+                      :class="[
+                        'w-5 h-5',
+                        allNomorHangus
+                          ? 'text-gray-400 dark:text-gray-500'
+                          : 'text-primary dark:text-blue-400'
+                      ]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
                     <p
                       :class="[
-                        'text-sm font-medium truncate',
-                        item.status === 'hangus'
-                          ? 'text-gray-500 dark:text-gray-400 underline'
-                          : 'text-primary dark:text-blue-400 underline'
+                        'text-sm font-semibold underline truncate',
+                        allNomorHangus
+                          ? 'text-gray-500 dark:text-gray-400 line-through'
+                          : 'text-primary dark:text-blue-400'
                       ]"
                     >
-                      {{ item.file_name }}
+                      {{ singleFileData.file_name }}
                     </p>
-                    <p
-                      class="text-xs mt-0.5"
-                      :class="
-                        item.status === 'hangus'
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : 'text-gray-500 dark:text-gray-400'
-                      "
-                    >
-                      {{ $t('nom_file_klik_preview') }}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{ $t('nom_file_klik_preview') }} ·
+                      <span
+                        :class="allNomorHangus ? 'text-red-500 dark:text-red-400 font-medium' : ''"
+                      >
+                        {{
+                          allNomorHangus ? 'Semua nomor telah hangus' : 'Berlaku untuk semua nomor'
+                        }}
+                      </span>
                     </p>
                   </div>
                 </div>
 
-                <!-- Upload/replace input -->
+                <!-- No file yet placeholder — hanya tampil jika belum ada file DAN belum hangus semua -->
                 <div
-                  v-if="fileStates[item.id]?.isReplacing"
-                  class="border border-dashed border-primary/40 dark:border-primary/30 rounded-md p-3 bg-blue-50/50 dark:bg-blue-900/10"
+                  v-else-if="
+                    !singleFileData.file_name && !singleFileState.isReplacing && !allNomorHangus
+                  "
+                  class="p-4 border-b border-gray-100 dark:border-gray-700"
+                >
+                  <p class="text-sm text-gray-400 dark:text-gray-500 italic text-center py-1">
+                    Belum ada file yang diupload
+                  </p>
+                </div>
+
+                <!-- File input (shown when isReplacing) -->
+                <div
+                  v-if="singleFileState.isReplacing"
+                  class="p-4 border-b border-dashed border-primary/40 dark:border-primary/30 bg-blue-50/50 dark:bg-blue-900/10"
                 >
                   <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
                     {{
-                      item.file_name ? $t('nom_file_pilih_pengganti') : $t('nom_file_pilih_upload')
+                      singleFileData.file_name
+                        ? $t('nom_file_pilih_pengganti')
+                        : $t('nom_file_pilih_upload')
                     }}
                   </p>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"
-                    @change="handleFileSelect(item.id, $event)"
+                    @change="handleSingleFileSelect"
                     class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
                   />
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
@@ -544,78 +561,306 @@
                   </p>
                 </div>
 
-                <!-- Action buttons -->
-                <div class="flex gap-2 mt-3">
-                  <!-- Upload button -->
+                <!-- ── Action buttons ── -->
+                <!-- Hidden entirely when all nomor are hangus -->
+                <div v-if="!allNomorHangus" class="flex gap-2 p-3">
+                  <!-- State A: no file, idle → Upload File -->
                   <button
-                    v-if="
-                      !item.file_name &&
-                      item.status !== 'hangus' &&
-                      (item.status === 'terpakai' || item.status === 'booking') &&
-                      !fileStates[item.id]?.isReplacing
-                    "
-                    @click="startUploadFile(item.id)"
-                    class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm"
+                    v-if="!singleFileData.file_name && !singleFileState.isReplacing"
+                    @click="singleFileState.isReplacing = true"
+                    class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
                   >
                     {{ $t('nom_btn_upload_file') }}
                   </button>
 
-                  <!-- Ganti File button -->
-                  <button
-                    v-if="
-                      item.file_name &&
-                      item.status !== 'hangus' &&
-                      (item.status === 'terpakai' || item.status === 'terpakai_final') &&
-                      !fileStates[item.id]?.isReplacing
-                    "
-                    @click="startReplacingFile(item.id)"
-                    class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm"
-                  >
-                    {{ $t('nom_btn_ganti_file') }}
-                  </button>
-
-                  <!-- Simpan & Batal (saat isReplacing) -->
-                  <template v-if="fileStates[item.id]?.isReplacing">
+                  <!-- State B: file exists, idle → [Ganti File] [Batal/hangus] -->
+                  <template v-if="singleFileData.file_name && !singleFileState.isReplacing">
                     <button
-                      @click="saveFile(item.id)"
-                      :disabled="!fileStates[item.id]?.file || fileStates[item.id]?.isUploading"
-                      :class="[
-                        'flex-1 px-4 py-2 rounded-lg transition text-sm',
-                        !fileStates[item.id]?.file || fileStates[item.id]?.isUploading
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      ]"
+                      @click="singleFileState.isReplacing = true"
+                      class="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm font-medium"
                     >
-                      {{
-                        fileStates[item.id]?.isUploading
-                          ? $t('nom_btn_uploading')
-                          : $t('nom_btn_simpan_file')
-                      }}
+                      {{ $t('nom_btn_ganti_file') }}
                     </button>
+                    <!-- Batal = hangus semua nomor aktif -->
                     <button
-                      @click="cancelReplacing(item.id)"
-                      :disabled="fileStates[item.id]?.isUploading"
-                      class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm"
+                      @click="confirmHangusSharedFile"
+                      class="flex-1 px-3 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition text-sm font-medium"
                     >
                       {{ $t('nom_btn_batal') }}
                     </button>
                   </template>
 
-                  <!-- Hangus button -->
-                  <button
-                    v-if="
-                      item.status !== 'hangus' &&
-                      (item.status === 'terpakai' || item.status === 'terpakai_final') &&
-                      !fileStates[item.id]?.isReplacing
-                    "
-                    @click.stop="confirmHangusNomor(item.id)"
-                    class="flex-1 px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition text-sm"
-                  >
-                    {{ $t('nom_btn_hangus') }}
-                  </button>
+                  <!-- State C: isReplacing → [Simpan File] [Batal cancel] -->
+                  <template v-if="singleFileState.isReplacing">
+                    <button
+                      @click="saveSingleFile"
+                      :disabled="!singleFileState.file || singleFileState.isUploading"
+                      :class="[
+                        'flex-1 px-4 py-2 rounded-lg transition text-sm font-medium',
+                        !singleFileState.file || singleFileState.isUploading
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      ]"
+                    >
+                      {{
+                        singleFileState.isUploading
+                          ? $t('nom_btn_uploading')
+                          : $t('nom_btn_simpan_file')
+                      }}
+                    </button>
+                    <button
+                      @click="
+                        ((singleFileState.isReplacing = false), (singleFileState.file = null))
+                      "
+                      :disabled="singleFileState.isUploading"
+                      class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 text-sm font-medium"
+                    >
+                      {{ $t('nom_btn_batal') }}
+                    </button>
+                  </template>
                 </div>
               </div>
-            </div>
+
+              <!-- Compact nomor list -->
+              <div
+                v-if="detailData.nomor_list && detailData.nomor_list.length > 0"
+                class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+              >
+                <div
+                  v-for="(item, idx) in detailData.nomor_list"
+                  :key="item.id || `nomor-${idx}`"
+                  :class="[
+                    'flex items-center gap-3 px-4 py-3 transition',
+                    idx < detailData.nomor_list.length - 1
+                      ? 'border-b border-gray-100 dark:border-gray-700'
+                      : '',
+                    item.status === 'hangus'
+                      ? 'bg-gray-50 dark:bg-gray-800/50 opacity-60'
+                      : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/30'
+                  ]"
+                >
+                  <span
+                    class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
+                  >
+                    {{ idx + 1 }}.
+                  </span>
+                  <span
+                    :class="[
+                      'flex-1 font-mono text-sm',
+                      item.status === 'hangus'
+                        ? 'line-through text-gray-400'
+                        : 'text-gray-800 dark:text-gray-200'
+                    ]"
+                  >
+                    {{ item.nomor }}
+                  </span>
+                  <button
+                    v-if="item.status !== 'hangus'"
+                    @click="handleCopy(item.nomor)"
+                    class="p-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition flex-shrink-0"
+                  >
+                    <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-300" />
+                  </button>
+                  <span
+                    :class="[
+                      'px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0',
+                      getStatusClass(item)
+                    ]"
+                  >
+                    {{ getStatusLabel(item) }}
+                  </span>
+                </div>
+              </div>
+            </template>
+            <!-- ── end single file ── -->
+
+            <!-- ============================================================ -->
+            <!-- MODE: MULTI FILE (original per-nomor cards)                  -->
+            <!-- ============================================================ -->
+            <template v-else>
+              <div
+                v-if="detailData.nomor_list && detailData.nomor_list.length > 0"
+                class="space-y-4"
+              >
+                <div
+                  v-for="(item, idx) in detailData.nomor_list"
+                  :key="item.id || `nomor-${idx}`"
+                  :class="[
+                    'border rounded-lg p-4 hover:shadow-md transition',
+                    item.status === 'hangus'
+                      ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
+                  ]"
+                >
+                  <div class="flex items-center gap-3 mb-3">
+                    <div
+                      class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-4 py-2"
+                    >
+                      <div class="flex justify-between items-center">
+                        <span
+                          :class="[
+                            'font-mono text-sm',
+                            item.status === 'hangus'
+                              ? 'line-through text-gray-400'
+                              : 'dark:text-gray-200'
+                          ]"
+                        >
+                          {{ idx + 1 }}. {{ item.nomor }}
+                        </span>
+                        <span
+                          :class="[
+                            'px-3 py-1 rounded-full text-xs font-medium',
+                            getStatusClass(item)
+                          ]"
+                        >
+                          {{ getStatusLabel(item) }}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      v-if="item.status !== 'hangus'"
+                      @click="handleCopy(item.nomor)"
+                      class="p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <Copy class="w-4 h-4 dark:text-gray-300" />
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="item.file_name && !fileStates[item.id]?.isReplacing"
+                    :class="[
+                      'flex items-start border rounded-md p-3 transition',
+                      item.status === 'hangus'
+                        ? 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 opacity-70'
+                        : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                    ]"
+                    @click="previewFile(item)"
+                  >
+                    <svg
+                      class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <div class="flex-1 min-w-0 ml-3">
+                      <p
+                        :class="[
+                          'text-sm font-medium truncate',
+                          item.status === 'hangus'
+                            ? 'text-gray-500 dark:text-gray-400 underline'
+                            : 'text-primary dark:text-blue-400 underline'
+                        ]"
+                      >
+                        {{ item.file_name }}
+                      </p>
+                      <p
+                        :class="[
+                          'text-xs mt-0.5',
+                          item.status === 'hangus'
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : 'text-gray-500 dark:text-gray-400'
+                        ]"
+                      >
+                        {{ $t('nom_file_klik_preview') }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="fileStates[item.id]?.isReplacing"
+                    class="border border-dashed border-primary/40 dark:border-primary/30 rounded-md p-3 bg-blue-50/50 dark:bg-blue-900/10"
+                  >
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                      {{
+                        item.file_name
+                          ? $t('nom_file_pilih_pengganti')
+                          : $t('nom_file_pilih_upload')
+                      }}
+                    </p>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      @change="handleFileSelect(item.id, $event)"
+                      class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
+                    />
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                      {{ $t('nom_file_max_size') }}
+                    </p>
+                  </div>
+
+                  <div class="flex gap-2 mt-3">
+                    <button
+                      v-if="
+                        !item.file_name &&
+                        item.status !== 'hangus' &&
+                        (item.status === 'terpakai' || item.status === 'booking') &&
+                        !fileStates[item.id]?.isReplacing
+                      "
+                      @click="startUploadFile(item.id)"
+                      class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm"
+                    >
+                      {{ $t('nom_btn_upload_file') }}
+                    </button>
+                    <button
+                      v-if="
+                        item.file_name &&
+                        item.status !== 'hangus' &&
+                        (item.status === 'terpakai' || item.status === 'terpakai_final') &&
+                        !fileStates[item.id]?.isReplacing
+                      "
+                      @click="startReplacingFile(item.id)"
+                      class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm"
+                    >
+                      {{ $t('nom_btn_ganti_file') }}
+                    </button>
+                    <template v-if="fileStates[item.id]?.isReplacing">
+                      <button
+                        @click="saveFile(item.id)"
+                        :disabled="!fileStates[item.id]?.file || fileStates[item.id]?.isUploading"
+                        :class="[
+                          'flex-1 px-4 py-2 rounded-lg transition text-sm',
+                          !fileStates[item.id]?.file || fileStates[item.id]?.isUploading
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        ]"
+                      >
+                        {{
+                          fileStates[item.id]?.isUploading
+                            ? $t('nom_btn_uploading')
+                            : $t('nom_btn_simpan_file')
+                        }}
+                      </button>
+                      <button
+                        @click="cancelReplacing(item.id)"
+                        :disabled="fileStates[item.id]?.isUploading"
+                        class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm"
+                      >
+                        {{ $t('nom_btn_batal') }}
+                      </button>
+                    </template>
+                    <button
+                      v-if="
+                        item.status !== 'hangus' &&
+                        (item.status === 'terpakai' || item.status === 'terpakai_final') &&
+                        !fileStates[item.id]?.isReplacing
+                      "
+                      @click.stop="confirmHangusNomor(item.id)"
+                      class="flex-1 px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition text-sm"
+                    >
+                      {{ $t('nom_btn_hangus') }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <!-- ── end multi file ── -->
           </div>
         </template>
       </div>
@@ -648,7 +893,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
 import AddUsulan from '~/components/AddUsulan.vue'
@@ -690,7 +935,10 @@ const selectedRow = ref(null)
 const detailData = ref(null)
 const rows = ref<any[]>([])
 const pagination = ref<any>(null)
-const selectedDetailId = ref<string | null>(null)
+
+// ✅ Array untuk menampung semua id yang akan di-hangus (single atau multi)
+const selectedDetailIds = ref<string[]>([])
+
 const fileStates = ref<Record<string, any>>({})
 const isEditingTitle = ref(false)
 const editedTitle = ref('')
@@ -706,12 +954,139 @@ const rowsRef = ref<HTMLElement | null>(null)
 
 const getFileUrl = (filePath: string) => `${config.public.apiBaseUrl}/${filePath}`
 
-// ─── Computed breadcrumbs & headers (locale-reactive) ─────────────────────────
+// ─── Single-file mode state ───────────────────────────────────────────────────
+const singleFileData = reactive({
+  file_name: null as string | null,
+  file_url: null as string | null,
+  file_text: null as string | null
+})
+const singleFileState = reactive({
+  isReplacing: false,
+  isUploading: false,
+  file: null as File | null
+})
+
+const resetSingleFile = () => {
+  singleFileData.file_name = null
+  singleFileData.file_url = null
+  singleFileData.file_text = null
+  singleFileState.isReplacing = false
+  singleFileState.isUploading = false
+  singleFileState.file = null
+}
+
+// ─── Computed: apakah SEMUA nomor sudah hangus (single file mode) ─────────────
+const allNomorHangus = computed(() => {
+  if (!detailData.value?.is_single_file) return false
+  const list = detailData.value?.nomor_list ?? []
+  return list.length > 0 && list.every((n: any) => n.status === 'hangus')
+})
+
+const handleSingleFileSelect = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) {
+    showToastFileTooLargeAdmin()
+    return
+  }
+  singleFileState.file = file
+}
+
+const saveSingleFile = async () => {
+  if (!singleFileState.file) {
+    showToastPilihFile()
+    return
+  }
+  // Cari nomor pertama yang belum hangus sebagai target upload
+  const firstActiveItem = detailData.value?.nomor_list?.find((n: any) => n.status !== 'hangus')
+  if (!firstActiveItem) return
+
+  singleFileState.isUploading = true
+  try {
+    const result = await uploadDetailFile(firstActiveItem.id, singleFileState.file)
+    singleFileData.file_name = result?.file_name || singleFileState.file.name
+    singleFileData.file_url = result?.file_url || null
+    singleFileData.file_text = result?.file_text || null
+
+    // Mirror onto all nomor items that are not hangus
+    detailData.value.nomor_list.forEach((n: any) => {
+      if (n.status !== 'hangus') {
+        n.file_name = singleFileData.file_name
+        n.file_text = singleFileData.file_text
+        n.file_url = singleFileData.file_url
+        n.status = result?.status || 'terpakai_final'
+      }
+    })
+
+    singleFileState.isReplacing = false
+    singleFileState.file = null
+  } catch (err) {
+    console.error('❌ saveSingleFile error:', err)
+  } finally {
+    singleFileState.isUploading = false
+  }
+}
+
+const previewSharedFile = () => {
+  const url =
+    singleFileData.file_url ||
+    (singleFileData.file_text ? getFileUrl(singleFileData.file_text) : null)
+  if (!url) {
+    showToastFileNotFound()
+    return
+  }
+  previewPdfUrl.value = url
+  isOpenPreviewFile.value = true
+}
+
+// ─── Hangus ────────────────────────────────────────────────────────────────────
+
+// Single file: hangus semua nomor yang masih aktif
+const confirmHangusSharedFile = () => {
+  const activeItems = detailData.value?.nomor_list?.filter((n: any) => n.status !== 'hangus')
+  if (!activeItems?.length) return
+  selectedDetailIds.value = activeItems.map((n: any) => n.id)
+  openConfirmHangus.value = true
+}
+
+// Multi file: hangus 1 nomor
+const confirmHangusNomor = (detailId: string) => {
+  selectedDetailIds.value = [detailId]
+  openConfirmHangus.value = true
+}
+
+const executeHangusNomor = async () => {
+  if (!selectedDetailIds.value?.length) return
+  isHangusing.value = true
+  try {
+    // Hit endpoint hangus untuk setiap id secara paralel
+    await Promise.all(selectedDetailIds.value.map((id) => hangusDetailNomor(id)))
+
+    // Update status lokal
+    selectedDetailIds.value.forEach((id) => {
+      const target = detailData.value?.nomor_list?.find((n: any) => n.id === id)
+      if (target) target.status = 'hangus'
+    })
+
+    // Jika single file dan semua sudah hangus → reset shared file card
+    if (detailData.value?.is_single_file) {
+      resetSingleFile()
+    }
+
+    openConfirmHangus.value = false
+    selectedDetailIds.value = []
+  } catch (error: any) {
+    console.error('❌ Error hangus nomor:', error)
+  } finally {
+    isHangusing.value = false
+  }
+}
+
+// ─── Computed breadcrumbs & headers ──────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('nom_title'), to: '/penomoran/nomor' }
 ])
-
 const headers = computed(() => [
   { label: t('nom_col_jenis'), key: 'jenis', sortable: true },
   { label: t('nom_col_penandatangan'), key: 'jabatan', sortable: false },
@@ -728,7 +1103,6 @@ const getStatusLabel = (item: any): string => {
   if (item.status === 'terpakai') return t('nom_status_terpakai')
   return t('nom_status_booking')
 }
-
 const getStatusClass = (item: any): string => {
   if (item.status === 'hangus') return 'bg-red-100 text-red-800'
   if (item.status === 'terpakai_final') return 'bg-green-100 text-green-800'
@@ -754,7 +1128,6 @@ function formatWaktuWIB(dateStr: string) {
 // ─── Preview file ─────────────────────────────────────────────────────────────
 const isOpenPreviewFile = ref(false)
 const previewPdfUrl = ref<string | null>(null)
-
 const previewFile = async (item: any) => {
   const fileUrl = item.file_url || (item.file_text ? getFileUrl(item.file_text) : null)
   if (!fileUrl) {
@@ -771,20 +1144,12 @@ const previewFile = async (item: any) => {
   }
 }
 
-// ─── File actions ──────────────────────────────────────────────────────────────
+// ─── Multi-file actions ────────────────────────────────────────────────────────
 const startUploadFile = (detailId: string) => {
-  fileStates.value[detailId] = {
-    isReplacing: true,
-    isUploading: false,
-    file: null
-  }
+  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null }
 }
 const startReplacingFile = (detailId: string) => {
-  fileStates.value[detailId] = {
-    isReplacing: true,
-    isUploading: false,
-    file: null
-  }
+  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null }
 }
 const handleFileSelect = (detailId: string, event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -821,27 +1186,6 @@ const saveFile = async (detailId: string) => {
 }
 const cancelReplacing = (detailId: string) => {
   delete fileStates.value[detailId]
-}
-
-// ─── Hangus ────────────────────────────────────────────────────────────────────
-const confirmHangusNomor = (detailId: string) => {
-  selectedDetailId.value = detailId
-  openConfirmHangus.value = true
-}
-const executeHangusNomor = async () => {
-  if (!selectedDetailId.value) return
-  isHangusing.value = true
-  try {
-    await hangusDetailNomor(selectedDetailId.value)
-    const target = detailData.value?.nomor_list?.find((n: any) => n.id === selectedDetailId.value)
-    if (target) target.status = 'hangus'
-    openConfirmHangus.value = false
-    selectedDetailId.value = null
-  } catch (error: any) {
-    console.error('❌ Error hangus nomor:', error)
-  } finally {
-    isHangusing.value = false
-  }
 }
 
 // ─── Edit title ────────────────────────────────────────────────────────────────
@@ -888,7 +1232,6 @@ const handleLimitChange = () => {
   currentPage.value = 1
   fetchData()
 }
-
 let searchTimeout: any = null
 const handleSearchInput = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
@@ -897,7 +1240,6 @@ const handleSearchInput = () => {
     fetchData()
   }, 500)
 }
-
 const goToPage = (page: number) => {
   if (!pagination.value) return
   const totalPages = pagination.value.total_pages || pagination.value.totalPages || 1
@@ -910,14 +1252,12 @@ const goToPage = (page: number) => {
 const paginationStart = computed(() => {
   if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0
   const page = pagination.value.current_page || pagination.value.page || 1
-  const perPage = pagination.value.limit || limit.value || 10
-  return (page - 1) * perPage + 1
+  return (page - 1) * (pagination.value.limit || limit.value || 10) + 1
 })
 const paginationEnd = computed(() => {
   if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0
   const page = pagination.value.current_page || pagination.value.page || 1
-  const perPage = pagination.value.limit || limit.value || 10
-  return Math.min(page * perPage, pagination.value.total)
+  return Math.min(page * (pagination.value.limit || limit.value || 10), pagination.value.total)
 })
 const paginationPages = computed(() => {
   if (!pagination.value) return []
@@ -928,8 +1268,8 @@ const paginationPages = computed(() => {
   if (total <= 9) {
     for (let i = 1; i <= total; i++) pages.push(i)
   } else {
-    let start = Math.max(2, current - 3)
-    let end = Math.min(total - 1, current + 3)
+    let start = Math.max(2, current - 3),
+      end = Math.min(total - 1, current + 3)
     if (current <= 4) end = 7
     if (current >= total - 3) start = total - 6
     for (let i = start; i <= end; i++) pages.push(i)
@@ -971,7 +1311,6 @@ const fetchData = async () => {
       params.sort_by = sortBy.value
       params.sort_order = sortOrder.value
     }
-
     const response = await getListNomor(params)
     if (response?.data && Array.isArray(response.data)) {
       rows.value = groupDuplicateRows(response.data)
@@ -995,7 +1334,7 @@ const openRowModal = async (row) => {
   loadingDetail.value = true
   detailData.value = null
   fileStates.value = {}
-
+  resetSingleFile()
   try {
     const detail = await getDetailNomor(row.id_request)
     if (!detail) throw new Error('Detail tidak ditemukan')
@@ -1014,11 +1353,18 @@ const openRowModal = async (row) => {
       jenis: detail.jenis || row.jenis || '-',
       klasifikasiDisplay: detail.klasifikasi || row.klasifikasi || '-',
       tanggal: detail.tanggal || row.tanggal,
-      // ✅ Single file: ambil jumlah dari API (mis. 10 untuk range nomor)
-      //    Multi file: panjang array nomor_list (jumlah cards)
       jumlah: detail.is_single_file ? detail.jumlah : nomorList.length,
       is_single_file: !!detail.is_single_file,
       nomor_list: nomorList
+    }
+    // Populate shared file for single-file mode
+    // Cari dari nomor yang masih aktif (belum hangus) dulu, kalau semua hangus pakai nomor pertama
+    const activeNomor = nomorList.find((n) => n.status !== 'hangus')
+    const sourceNomor = activeNomor || nomorList[0]
+    if (detail.is_single_file && sourceNomor?.file_name) {
+      singleFileData.file_name = sourceNomor.file_name
+      singleFileData.file_url = sourceNomor.file_url
+      singleFileData.file_text = sourceNomor.file_text
     }
   } catch (err) {
     console.error('❌ Error loading detail:', err)
@@ -1059,29 +1405,22 @@ watch(refreshTrigger, () => {
   fetchData()
   if (openPreview.value && selectedRow.value) openRowModal(selectedRow.value)
 })
-
 watch(isOpenPreviewFile, (open) => {
   if (!open) previewPdfUrl.value = null
 })
 
-// ─── Click outside ────────────────────────────────────────────────────────────
 const selectLimit = (n: number) => {
   limit.value = n
   showRowsDropdown.value = false
   handleLimitChange()
 }
-
 const handleClickOutside = (e: MouseEvent) => {
-  const target = e.target as HTMLElement
-  if (rowsRef.value && !rowsRef.value.contains(target)) {
+  if (rowsRef.value && !rowsRef.value.contains(e.target as HTMLElement))
     showRowsDropdown.value = false
-  }
 }
-
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
-
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   loading.value = true
@@ -1091,7 +1430,6 @@ onMounted(async () => {
   loading.value = false
 })
 
-// ─── Tooltip ───────────────────────────────────────────────────────────────────
 const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {

@@ -476,31 +476,40 @@
           </div>
 
           <template v-else>
+            <!-- Single file section replacement only — paste over the existing ═══ SINGLE FILE MODE ═══ block in your usulan page -->
+
             <!-- ═══ SINGLE FILE MODE ═══ -->
             <div v-if="isSingleFileMode" class="space-y-3">
-              <!-- Ada file & tidak sedang replace → tampil preview -->
+              <!-- Shared file card (matches nomor page layout) -->
               <div
-                v-if="sharedFile && !singleFileState.isReplacing"
-                class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
-                @click="previewFile(sharedFile)"
+                class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
               >
-                <div class="flex items-center gap-3">
-                  <svg
-                    class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <!-- File preview row — click to open -->
+                <div
+                  v-if="sharedFile && !singleFileState.isReplacing"
+                  class="flex items-start gap-3 p-4 cursor-pointer bg-blue-50/60 dark:bg-blue-900/10 hover:bg-blue-100/60 dark:hover:bg-blue-900/20 transition border-b border-blue-100 dark:border-blue-900/30"
+                  @click="previewFile(sharedFile)"
+                >
+                  <div
+                    class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <div>
+                    <svg
+                      class="w-5 h-5 text-primary dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
                     <p
-                      class="text-sm font-medium text-primary dark:text-blue-400 underline break-all"
+                      class="text-sm font-semibold text-primary dark:text-blue-400 underline truncate"
                     >
                       {{ sharedFile.file_name }}
                     </p>
@@ -509,156 +518,151 @@
                     </p>
                   </div>
                 </div>
-              </div>
 
-              <!-- Belum ada file & tidak sedang replace -->
-              <div
-                v-else-if="!sharedFile && !singleFileState.isReplacing"
-                class="border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg px-4 py-5 text-center"
-              >
-                <svg
-                  class="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <!-- No file yet placeholder -->
+                <div
+                  v-else-if="!sharedFile && !singleFileState.isReplacing"
+                  class="p-4 border-b border-gray-100 dark:border-gray-700"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  <p class="text-sm text-gray-400 dark:text-gray-500 italic text-center py-1">
+                    {{ $t('usl_file_belum_ada') }}
+                  </p>
+                </div>
+
+                <!-- File input (shown when isReplacing) -->
+                <div
+                  v-if="singleFileState.isReplacing"
+                  class="p-4 border-b border-dashed border-primary/40 dark:border-primary/30 bg-blue-50/50 dark:bg-blue-900/10"
+                >
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                    {{ sharedFile ? $t('nom_file_pilih_pengganti') : $t('nom_file_pilih_upload') }}
+                    <span class="text-gray-400 ml-1">— {{ $t('usl_file_berlaku_semua') }}</span>
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    @change="handleSingleFileSelect"
+                    class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
                   />
-                </svg>
-                <p class="text-xs text-gray-400 dark:text-gray-500">
-                  {{ $t('usl_file_belum_ada') }}
-                </p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                    {{ $t('usl_file_max_size') }}
+                  </p>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex gap-2 p-3">
+                  <!-- State A: no file, idle → Upload File -->
+                  <button
+                    v-if="canUploadSingleFile && !sharedFile && !singleFileState.isReplacing"
+                    @click.stop="startReplacingSingleFile"
+                    class="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
+                  >
+                    {{ $t('nom_btn_upload_file') }}
+                  </button>
+
+                  <!-- State B: file exists, idle → Ganti File only (no Batal/hangus in usulan) -->
+                  <button
+                    v-if="canUploadSingleFile && sharedFile && !singleFileState.isReplacing"
+                    @click.stop="startReplacingSingleFile"
+                    class="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm font-medium"
+                  >
+                    {{ $t('nom_btn_ganti_file') }}
+                  </button>
+
+                  <!-- State C: isReplacing → Simpan File + Batal (cancel only, not hangus) -->
+                  <template v-if="singleFileState.isReplacing">
+                    <button
+                      @click.stop="saveSingleFile"
+                      :disabled="!singleFileState.file || singleFileState.isUploading"
+                      :class="[
+                        'flex-1 px-4 py-2 rounded-lg transition text-sm font-medium',
+                        !singleFileState.file || singleFileState.isUploading
+                          ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      ]"
+                    >
+                      <span
+                        v-if="singleFileState.isUploading"
+                        class="flex items-center justify-center gap-2"
+                      >
+                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
+                          <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        {{ $t('nom_btn_uploading') }}
+                      </span>
+                      <span v-else>{{ $t('nom_btn_simpan_file') }}</span>
+                    </button>
+                    <button
+                      @click.stop="cancelReplacingSingleFile"
+                      :disabled="singleFileState.isUploading"
+                      class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 text-sm font-medium"
+                    >
+                      {{ $t('nom_btn_batal') }}
+                    </button>
+                  </template>
+                </div>
               </div>
 
-              <!-- File input saat isReplacing -->
+              <!-- Compact nomor list (matches nomor page style) -->
               <div
-                v-if="singleFileState.isReplacing"
-                class="border border-dashed border-primary/40 dark:border-primary/30 rounded-lg p-3 bg-blue-50/50 dark:bg-blue-900/10"
+                v-if="selectedRow.details && selectedRow.details.length > 0"
+                class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
               >
-                <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
-                  {{ sharedFile ? $t('nom_file_pilih_pengganti') : $t('nom_file_pilih_upload') }}
-                  <span class="text-gray-400 ml-1">— {{ $t('usl_file_berlaku_semua') }}</span>
-                </p>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  @change="handleSingleFileSelect"
-                  class="block w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 dark:text-gray-200 cursor-pointer"
-                />
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                  {{ $t('usl_file_max_size') }}
-                </p>
-              </div>
-
-              <!-- Tombol Upload / Ganti File (hanya jika status terpakai/final) -->
-              <div v-if="canUploadSingleFile && !singleFileState.isReplacing" class="flex gap-2">
-                <button
-                  @click.stop="startReplacingSingleFile"
+                <div
+                  v-for="(detail, idx) in selectedRow.details"
+                  :key="detail.id || idx"
                   :class="[
-                    'flex-1 px-3 py-2 text-sm font-medium rounded-lg transition flex items-center justify-center gap-2',
-                    sharedFile
-                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                      : 'bg-primary hover:bg-primary-700 text-white'
-                  ]"
-                >
-                  {{ sharedFile ? $t('nom_btn_ganti_file') : $t('nom_btn_upload_file') }}
-                </button>
-              </div>
-
-              <!-- Simpan & Batal (single file) -->
-              <div v-if="singleFileState.isReplacing" class="flex gap-2">
-                <button
-                  @click.stop="saveSingleFile"
-                  :disabled="!singleFileState.file || singleFileState.isUploading"
-                  :class="[
-                    'flex-1 px-4 py-2 rounded-lg transition text-sm font-medium',
-                    !singleFileState.file || singleFileState.isUploading
-                      ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
+                    'flex items-center gap-3 px-4 py-3 transition',
+                    idx < selectedRow.details.length - 1
+                      ? 'border-b border-gray-100 dark:border-gray-700'
+                      : '',
+                    detail.status === 'hangus'
+                      ? 'bg-gray-50 dark:bg-gray-800/50 opacity-60'
+                      : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/30'
                   ]"
                 >
                   <span
-                    v-if="singleFileState.isUploading"
-                    class="flex items-center justify-center gap-2"
+                    class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
                   >
-                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      />
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    {{ $t('nom_btn_uploading') }}
+                    {{ idx + 1 }}.
                   </span>
-                  <span v-else>{{ $t('nom_btn_simpan_file') }}</span>
-                </button>
-                <button
-                  @click.stop="cancelReplacingSingleFile"
-                  :disabled="singleFileState.isUploading"
-                  class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition disabled:opacity-50 text-sm font-medium"
-                >
-                  {{ $t('nom_btn_batal') }}
-                </button>
-              </div>
-
-              <!-- Nomor cards (baris dalam 1 outer block) -->
-              <div
-                class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
-              >
-                <div class="space-y-2">
-                  <div
-                    v-for="(detail, idx) in selectedRow.details"
-                    :key="detail.id || idx"
+                  <span
                     :class="[
-                      'flex items-center gap-2 rounded-md px-3 py-2 border',
+                      'flex-1 font-mono text-sm',
                       detail.status === 'hangus'
-                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                        ? 'line-through text-gray-400 dark:text-gray-500'
+                        : 'text-gray-800 dark:text-gray-200'
                     ]"
                   >
-                    <span
-                      class="text-sm text-gray-500 dark:text-gray-400 font-medium flex-shrink-0"
-                    >
-                      {{ idx + 1 }}.
-                    </span>
-                    <span
-                      :class="[
-                        'flex-1 min-w-0 text-sm font-mono',
-                        detail.status === 'hangus'
-                          ? 'line-through text-gray-400 dark:text-gray-500'
-                          : 'text-gray-700 dark:text-gray-200'
-                      ]"
-                    >
-                      {{ detail.nomor || selectedRow.template_nomor || '-' }}
-                    </span>
-                    <button
-                      v-if="detail.nomor && detail.status !== 'hangus'"
-                      @click="handleCopy(detail.nomor)"
-                      class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex-shrink-0"
-                      :title="$t('usl_toast_tersalin')"
-                    >
-                      <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                    </button>
-                    <span
-                      v-if="detail.status"
-                      class="px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0"
-                      :class="detailStatusClass(detail.status)"
-                    >
-                      {{ getDetailStatusLabel(detail.status) }}
-                    </span>
-                  </div>
+                    {{ detail.nomor || selectedRow.template_nomor || '-' }}
+                  </span>
+                  <button
+                    v-if="detail.nomor && detail.status !== 'hangus'"
+                    @click="handleCopy(detail.nomor)"
+                    class="p-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition flex-shrink-0"
+                    :title="$t('usl_toast_tersalin')"
+                  >
+                    <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  <span
+                    v-if="detail.status"
+                    class="px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0"
+                    :class="detailStatusClass(detail.status)"
+                  >
+                    {{ getDetailStatusLabel(detail.status) }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -990,7 +994,8 @@ const {
   getDetailUsulan,
   getPersonWithPosition,
   getKlasifikasi,
-  updateNomorFile // ✅ tambah untuk ganti file
+  updateNomorFile,
+  userCounts
 } = usePenomoran()
 const toast = useToast()
 
@@ -1000,6 +1005,20 @@ const breadcrumbs = computed(() => [
   { label: t('usl_title'), to: '/usulan-penomoran' }
 ])
 
+const updateDraftCount = async () => {
+  if (!user.value?.position) return
+  const positionId =
+    typeof user.value.position === 'object' ? user.value.position.id : user.value.position
+  try {
+    const res = await getListUsulanByPosition(String(positionId), { limit: 9999 })
+    userCounts.value.belum_diajukan = (res.data || []).filter((item: any) => {
+      const active = (item.details || []).filter((d: any) => d.status !== 'hangus')
+      return active.length > 0 && active.every((d: any) => d.status === 'draft')
+    }).length
+  } catch (e) {
+    console.error('❌ Error update draft count:', e)
+  }
+}
 // ─── Table headers ────────────────────────────────────────────────────────────
 const headers = computed(() => [
   { label: t('usl_col_jenis'), key: 'jenis', sortable: true },
@@ -1454,6 +1473,7 @@ const fetchData = async () => {
 
     const mapped = data.map(mapItem)
     allMappedRows.value = mapped
+    updateDraftCount()
 
     if (isLocalFilter.value) {
       pagination.value = null
