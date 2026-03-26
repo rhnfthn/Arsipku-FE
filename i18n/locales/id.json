@@ -278,6 +278,8 @@
   "usl_status_menunggu_verifikasi": "Menunggu Verifikasi",
   "usl_status_disetujui": "Disetujui",
   "usl_status_ditolak": "Ditolak",
+  "usl_status_draft": "Draf",
+  "usl_filter_draft": "Draf",
   "usl_detail_tanggal": "Tanggal",
   "usl_detail_penandatangan": "Penandatangan",
   "usl_detail_klasifikasi": "Klasifikasi",

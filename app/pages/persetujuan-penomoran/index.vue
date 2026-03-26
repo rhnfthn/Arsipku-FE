@@ -866,8 +866,11 @@ const {
   getListPendingApproval,
   approvePenandatangan,
   rejectPenandatangan,
+  approvePenandatanganBulk,
   showToastFileNotFound,
-  showToastKeteranganRequired
+  showToastKeteranganRequired,
+  showToastApprovalSuccess,
+  showToastTidakAdaNomor
 } = usePenomoran()
 
 const breadcrumbs = computed(() => [
@@ -949,7 +952,9 @@ function handleDocumentClick(e: MouseEvent) {
 
 // ─── validDetails ─────────────────────────────────────────────────────────────
 const validDetails = computed<any[]>(() =>
-  (selectedRow.value?.details ?? []).filter((d: any) => d.status !== 'hangus')
+  (selectedRow.value?.details ?? []).filter(
+    (d: any) => d.id && d.id !== null && d.id !== 'null' && d.status !== 'hangus'
+  )
 )
 
 const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked))
@@ -1108,22 +1113,48 @@ const validateKeterangan = async (): Promise<boolean> => {
 // ─── Approve ──────────────────────────────────────────────────────────────────
 const confirmApproval = async () => {
   if (!hasAnyChecked.value) return
-  const valid = await validateKeterangan()
-  if (!valid) return
+
+  if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
+    showKeteranganWarning.value = true
+    showToastKeteranganRequired(uncheckedCount.value)
+    await nextTick()
+    keteranganRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    keteranganRef.value?.focus()
+    return
+  }
+
+  showKeteranganWarning.value = false
   showConfirmApprove.value = true
 }
 
 const processApproval = async () => {
   showConfirmApprove.value = false
   if (!selectedRow.value) return
-  const rejectedIds = validDetails.value.filter((d: any) => !d.checked).map((d: any) => d.id)
+
+  const approvedDetails = validDetails.value.filter((d: any) => d.checked)
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
+
+  if (approvedDetails.length === 0) {
+    showToastTidakAdaNomor('disetujui')
+    return
+  }
+
   isProcessing.value = true
   processingAction.value = 'approve'
   try {
-    if (rejectedIds.length > 0 && keterangan_ditolak.value.trim()) {
-      await rejectPenandatangan(selectedRow.value.id, keterangan_ditolak.value, rejectedIds)
+    // 1. Approve yang dicentang
+    await approvePenandatanganBulk(approvedDetails.map((d: any) => d.id))
+
+    // 2. Reject yang tidak dicentang (jika ada + keterangan terisi)
+    if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
+      await rejectPenandatangan(
+        selectedRow.value.id,
+        keterangan_ditolak.value,
+        rejectedDetails.map((d: any) => d.id)
+      )
     }
-    await approvePenandatangan(selectedRow.value.id)
+
+    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length)
     openModal.value = false
     await fetchData()
   } catch (e) {
@@ -1133,7 +1164,6 @@ const processApproval = async () => {
     processingAction.value = null
   }
 }
-
 // ─── Tolak semua ──────────────────────────────────────────────────────────────
 const confirmRejection = async () => {
   if (!allUnchecked.value) return
@@ -1144,16 +1174,29 @@ const confirmRejection = async () => {
 
 const processRejection = async () => {
   showConfirmReject.value = false
-  if (!selectedRow.value || !keterangan_ditolak.value.trim()) {
+  if (!selectedRow.value) return
+
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
+
+  if (rejectedDetails.length === 0) {
+    showToastTidakAdaNomor('ditolak')
+    return
+  }
+
+  if (!keterangan_ditolak.value.trim()) {
     showKeteranganWarning.value = true
     showToastKeteranganRequired()
     return
   }
-  const rejectedIds = validDetails.value.map((d: any) => d.id)
+
   isProcessing.value = true
   processingAction.value = 'reject'
   try {
-    await rejectPenandatangan(selectedRow.value.id, keterangan_ditolak.value, rejectedIds)
+    await rejectPenandatangan(
+      selectedRow.value.id,
+      keterangan_ditolak.value,
+      rejectedDetails.map((d: any) => d.id)
+    )
     openModal.value = false
     await fetchData()
   } catch (e) {
