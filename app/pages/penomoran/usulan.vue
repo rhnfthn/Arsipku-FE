@@ -263,11 +263,8 @@
                       row.status === 'Disetujui',
                     'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400':
                       row.status === 'Ditolak',
-                    'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': ![
-                      'Menunggu Verifikasi',
-                      'Disetujui',
-                      'Ditolak'
-                    ].includes(row.status)
+                    'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300':
+                      row.status === 'Draft'
                   }"
                 >
                   {{ getRowStatusLabel(row.status) }}
@@ -425,35 +422,96 @@
 
           <!-- SINGLE FILE MODE -->
           <div v-if="isSingleFileMode" class="space-y-3">
+            <!-- Shared file card -->
             <div
-              v-if="sharedFile"
-              class="border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 cursor-pointer hover:opacity-80 transition"
-              @click="previewFile(sharedFile)"
+              class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 mb-3"
             >
-              <div class="flex items-center gap-3">
-                <svg
-                  class="w-6 h-6 text-primary dark:text-blue-400 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div
+                v-if="sharedFile"
+                class="flex items-start gap-3 p-4 cursor-pointer bg-blue-50/60 dark:bg-blue-900/10 hover:bg-blue-100/60 dark:hover:bg-blue-900/20 transition border-b border-blue-100 dark:border-blue-900/30"
+                @click="previewFile(sharedFile)"
+              >
+                <div
+                  class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <div>
+                  <svg
+                    class="w-5 h-5 text-primary dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
                   <p
-                    class="text-sm font-medium text-primary dark:text-blue-400 underline break-all"
+                    class="text-sm font-semibold text-primary dark:text-blue-400 underline truncate"
                   >
                     {{ sharedFile.file_name }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {{ $t('usl_file_klik_preview') }} · Berlaku untuk semua nomor
+                    {{ $t('usl_file_klik_preview') }} · {{ $t('usl_file_berlaku_semua') }}
                   </p>
                 </div>
+              </div>
+              <div v-else class="p-4 border-b border-gray-100 dark:border-gray-700">
+                <p class="text-sm text-gray-400 dark:text-gray-500 italic text-center py-1">
+                  {{ $t('usl_file_belum_ada') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Compact nomor list -->
+            <div
+              v-if="selectedRow.nomor_list && selectedRow.nomor_list.length > 0"
+              class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+            >
+              <div
+                v-for="(item, idx) in selectedRow.nomor_list"
+                :key="item.id || `nomor-${idx}`"
+                :class="[
+                  'flex items-center gap-3 px-4 py-3 transition',
+                  idx < selectedRow.nomor_list.length - 1
+                    ? 'border-b border-gray-100 dark:border-gray-700'
+                    : '',
+                  item.status === 'hangus'
+                    ? 'bg-gray-50 dark:bg-gray-800/50 opacity-60'
+                    : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/30'
+                ]"
+              >
+                <span class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0">
+                  {{ idx + 1 }}.
+                </span>
+                <span
+                  :class="[
+                    'flex-1 font-mono text-sm',
+                    item.status === 'hangus'
+                      ? 'line-through text-gray-400 dark:text-gray-500'
+                      : 'text-gray-800 dark:text-gray-200'
+                  ]"
+                >
+                  {{ item.nomor || selectedRow.template_nomor || '-' }}
+                </span>
+                <button
+                  v-if="item.status !== 'hangus'"
+                  @click="handleCopy(item.nomor)"
+                  class="p-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition flex-shrink-0"
+                >
+                  <Copy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-300" />
+                </button>
+                <span
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0',
+                    getStatusClass(item)
+                  ]"
+                >
+                  {{ getStatusLabel(item) }}
+                </span>
               </div>
             </div>
             <div
@@ -463,7 +521,7 @@
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('usl_file_belum_ada') }}</p>
             </div>
 
-            <div
+            <!-- <div
               v-for="(detail, idx) in selectedRow.details"
               :key="detail.id || idx"
               :class="[
@@ -507,7 +565,7 @@
                   <Copy class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
-            </div>
+            </div> -->
           </div>
 
           <!-- MULTI FILE MODE -->
@@ -697,6 +755,7 @@ const headers = computed(() => [
 
 const filterOptions = computed(() => [
   { label: t('usl_filter_semua'), value: 'Semua' },
+  { label: t('usl_filter_draft'), value: 'Draft' },
   { label: t('usl_filter_menunggu'), value: 'Menunggu Verifikasi' },
   { label: t('usl_filter_disetujui'), value: 'Disetujui' },
   { label: t('usl_filter_ditolak'), value: 'Ditolak' }
@@ -711,7 +770,8 @@ const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
     'Menunggu Verifikasi': t('usl_status_menunggu_verifikasi'),
     Disetujui: t('usl_status_disetujui'),
-    Ditolak: t('usl_status_ditolak')
+    Ditolak: t('usl_status_ditolak'),
+    Draft: t('usl_status_draft')
   }
   return map[status] || status
 }
@@ -735,7 +795,25 @@ const detailStatusClass = (status: string) => ({
   'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
     status === 'terpakai_final'
 })
+const getStatusLabel = (item: any): string => {
+  if (item.status === 'hangus') return t('nom_status_hangus')
+  if (item.status === 'terpakai_final') return t('nom_status_final')
+  if (item.status === 'terpakai') return t('nom_status_terpakai')
+  if (item.status === 'draft') return t('usl_status_draft')
+  return t('nom_status_booking')
+}
 
+const getStatusClass = (item: any): string => {
+  if (item.status === 'hangus')
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+  if (item.status === 'terpakai_final')
+    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+  if (item.status === 'terpakai')
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+  if (item.status === 'draft')
+    return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+}
 // ─── State ────────────────────────────────────────────────────────────────────
 const openDetail = ref(false)
 const selectedRow = ref<any>(null)
@@ -764,18 +842,11 @@ const openFilterStatus = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ─── Single / Multi file ──────────────────────────────────────────────────────
-const isSingleFileMode = computed(() => {
-  const details = selectedRow.value?.details
-  if (!details || details.length < 1) return false
-  if (details.length === 1) return !!details[0]?.file_text
-  const firstFile = details[0]?.file_text
-  if (!firstFile) return false
-  return details.every((d: any) => d.file_text === firstFile)
-})
+const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file)
 
 const sharedFile = computed(() => {
   if (!isSingleFileMode.value) return null
-  return selectedRow.value?.details?.find((d: any) => d.file_name) ?? null
+  return selectedRow.value?.nomor_list?.find((n: any) => n.file_name) ?? null
 })
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
@@ -850,9 +921,7 @@ const fetchData = async () => {
     rows.value = data.map((item: any) => {
       const pengusulInfo = personMap.value.get(item.persnum) || {}
       const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
-      let mappedStatus = item.status || 'Menunggu Verifikasi'
-      if (!['Menunggu Verifikasi', 'Disetujui', 'Ditolak'].includes(mappedStatus))
-        mappedStatus = 'Menunggu Verifikasi'
+      const mappedStatus = item.status || 'Draft'
       const tanggalDate = new Date(item.tanggal)
       const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
       const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
@@ -952,12 +1021,14 @@ const openRowModal = async (row: any) => {
       tanggal: detailData.tanggal,
       perihal: detailData.perihal || '-',
       jumlah: detailData.jumlah,
+      is_single_file: !!detailData.is_single_file,
       penandatangan: detailData.penandatangan || '-',
       klasifikasi: detailData.klasifikasi || '-',
       klasifikasiDisplay,
       status: detailData.status || row.status,
       template_nomor: detailData.template_nomor || '',
-      details: normalizedDetails
+      details: normalizedDetails,
+      nomor_list: normalizedDetails
     }
     openDetail.value = true
   } catch (err) {

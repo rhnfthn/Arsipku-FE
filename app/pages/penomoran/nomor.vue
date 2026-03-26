@@ -442,7 +442,7 @@
               <!-- Single File badge -->
               <span
                 v-if="detailData.is_single_file"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 bg-primary/5 text-primary dark:text-primary-300 dark:bg-primary/10 dark:border-primary/20"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-primary/30 bg-primary/5 text-blue-700 dark:text-blue-400 dark:bg-primary/10 dark:border-primary/20"
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -816,7 +816,7 @@
                         !fileStates[item.id]?.isReplacing
                       "
                       @click="startReplacingFile(item.id)"
-                      class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm"
+                      class="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm"
                     >
                       {{ $t('nom_btn_ganti_file') }}
                     </button>

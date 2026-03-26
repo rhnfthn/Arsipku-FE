@@ -29,6 +29,7 @@ export const usePenomoran = () => {
     disetujui: 0,
     ditolak: 0,
     belum_diajukan: 0,
+    draft: 0,
     total: 0
   })
 
@@ -79,6 +80,7 @@ export const usePenomoran = () => {
           disetujui: res.data.disetujui ?? 0,
           ditolak: res.data.ditolak ?? 0,
           belum_diajukan: res.data.belum_diajukan ?? 0,
+          draft: res.data.draft ?? 0,
           total: res.data.total ?? 0
         }
       }
@@ -122,6 +124,7 @@ export const usePenomoran = () => {
           disetujui: res.data.disetujui ?? 0,
           ditolak: res.data.ditolak ?? 0,
           belum_diajukan: res.data.belum_diajukan ?? 0,
+          draft: res.data.draft ?? 0,
           total: res.data.total ?? 0
         }
       }
@@ -1210,28 +1213,69 @@ export const usePenomoran = () => {
    * APPROVE PENANDATANGAN
    * endpoint: POST /nomor-request/:id_request/approve-penandatangan
    * =========================== */
-  const approvePenandatangan = async (requestId: string, detailIds?: string[]) => {
+  // const approvePenandatangan = async (
+  //   requestId: string,
+  //   approvedIds: string[],
+  //   rejectedIds: string[] = [],
+  //   keterangan: string = ''
+  // ) => {
+  //   try {
+  //     if (!requestId) throw new Error('Request ID tidak boleh kosong')
+
+  //     const body: Record<string, any> = {
+  //       detail_ids: approvedIds
+  //     }
+
+  //     if (rejectedIds.length > 0) {
+  //       body.rejected_ids = rejectedIds
+  //       body.keterangan_ditolak = keterangan
+  //     }
+
+  //     const response = await post(`/nomor-request/${requestId}/approve-penandatangan`, body)
+
+  //     toast.add({
+  //       title: 'Berhasil',
+  //       description:
+  //         response?.message ||
+  //         `${approvedIds.length} disetujui${rejectedIds.length > 0 ? `, ${rejectedIds.length} ditolak` : ''}`,
+  //       color: 'success'
+  //     })
+
+  //     return response
+  //   } catch (e: any) {
+  //     console.error('❌ Error approve penandatangan:', e)
+  //     const errorMsg =
+  //       e.response?.data?.message ||
+  //       e.response?.data?.error ||
+  //       e.message ||
+  //       'Gagal menyetujui usulan'
+  //     toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
+  //     throw e
+  //   }
+  // }
+
+  /** ===========================
+   * APPROVE PENANDATANGAN BULK
+   * endpoint: POST /nomor-request/approve-penandatangan-bulk
+   * =========================== */
+  const approvePenandatanganBulk = async (detailIds: string[]) => {
     try {
-      if (!requestId) throw new Error('Request ID tidak boleh kosong')
+      if (!detailIds || detailIds.length === 0) throw new Error('Detail IDs tidak boleh kosong')
 
-      console.log('📤 Approve penandatangan for request:', requestId, 'detail_ids:', detailIds)
-
-      const body = detailIds && detailIds.length > 0 ? { detail_ids: detailIds } : {}
-      const response = await post(`/nomor-request/${requestId}/approve-penandatangan`, body)
-
-      console.log('✅ Approve penandatangan response:', response)
+      const response = await post('/nomor-request/approve-penandatangan-bulk', {
+        detail_ids: detailIds
+      })
 
       toast.add({
         title: 'Berhasil',
         description:
-          response?.message ||
-          `${response?.data?.approved_count ?? 0} usulan berhasil disetujui dan siap diverifikasi admin`,
+          response?.message || `${response?.data?.success_count ?? 0} nomor berhasil disetujui`,
         color: 'success'
       })
 
       return response
     } catch (e: any) {
-      console.error('❌ Error approve penandatangan:', e)
+      console.error('❌ Error approve penandatangan bulk:', e)
       const errorMsg =
         e.response?.data?.message ||
         e.response?.data?.error ||
@@ -1241,7 +1285,6 @@ export const usePenomoran = () => {
       throw e
     }
   }
-
   /** ===========================
    * REJECT PENANDATANGAN
    * endpoint: POST /nomor-request/:id_request/reject-penandatangan
@@ -1437,9 +1480,10 @@ export const usePenomoran = () => {
     uploadDetailFile,
     hangusDetailNomor,
 
-    // ✅ NEW: PENANDATANGAN APPROVAL FLOW
+    //  PENANDATANGAN APPROVAL FLOW
     getListPendingApproval,
-    approvePenandatangan,
+    // approvePenandatangan,
+    approvePenandatanganBulk,
     rejectPenandatangan,
 
     // PENOMORAN FINAL (ADMIN)
