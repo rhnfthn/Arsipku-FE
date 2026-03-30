@@ -470,9 +470,19 @@ const handleChangeSignType = async (doc: any, value: string) => {
 
   if (value === 'semua') {
     const allOn = isAllSelected(doc)
-    doc.digsig = !allOn
-    doc.ttdQr = !allOn
-    doc.ttdBasah = !allOn
+    // ✅ Jika semua sudah aktif, tolak — tidak boleh unselect semua
+    if (allOn) {
+      useToast().add({
+        title: 'Tidak Diizinkan',
+        description: 'Minimal satu metode tanda tangan harus aktif.',
+        color: 'warning',
+      })
+      return
+    }
+    // Jika belum semua aktif, aktifkan semua
+    doc.digsig = true
+    doc.ttdQr = true
+    doc.ttdBasah = true
   } else {
     const field = fieldMap[value]
     if (!field) return
