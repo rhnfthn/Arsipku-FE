@@ -33,6 +33,8 @@ import * as XLSX from "xlsx";
 import { useSirkulasi } from "~/composables/useTerkirim";
 import { useLabel } from "~/composables/useLabel";
 
+definePageMeta({ middleware: "auth" });
+
 const { user, getProfile } = useAuth();
 const toast = useToast();
 

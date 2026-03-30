@@ -419,6 +419,8 @@ import { useInbox } from "@/composables/useInbox";
 import { useRecipients } from "@/composables/useRecipients";
 import { useKonsep } from "@/composables/useKonsep"; // Pastikan import ini ada
 
+definePageMeta({ middleware: "auth" });
+
 /* -------------------------------------------------------------------------- */
 /* 2. LOCAL TYPES                                                             */
 /* -------------------------------------------------------------------------- */
