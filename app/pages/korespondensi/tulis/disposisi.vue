@@ -302,12 +302,12 @@ watch(showEditor, async (isShown) => {
 });
 
 // ── Payload & validation ─────────────────────────────────────────────────────
-
 const validateAndToast = (payload: DisposisiPayload) => {
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
     const firstKey = Object.keys(check.errors)[0];
-    toastError("Validasi Gagal", check.errors[firstKey]);
+    const message = firstKey ? check.errors[firstKey] : "Mohon lengkapi semua field yang wajib diisi.";
+    toastError("Validasi Gagal", message);
     return false;
   }
   return true;
@@ -354,6 +354,7 @@ const handlePriorityChange = async (e: Event) => {
 
 const handlePreview = async () => {
   const payload = getBasePayload();
+  console.log("payload:", payload); // cek di console
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
