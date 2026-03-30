@@ -433,7 +433,7 @@ const userMenuUtilitas = computed(() => {
         {
           label: t('usulan') || 'Usulan',
           to: '/usulan-penomoran',
-          badge: badgeCount > 0 ? badgeCount : null
+          badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
         },
         {
           label: t('Persetujuan') || 'Persetujuan',
@@ -450,7 +450,7 @@ const userMenuUtilitas = computed(() => {
       label: t('usulan-penomoran') || 'Usulan Penomoran',
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
-      badge: badgeCount > 0 ? badgeCount : null
+      badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
     })
   }
 
@@ -509,7 +509,11 @@ const adminMenuAdministrasi = computed(() => {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
       children: [
-        { label: t('usulan'), to: '/penomoran/usulan' },
+        {
+          label: t('usulan'),
+          to: '/penomoran/usulan',
+          badge: adminCounts.value.draft > 0 ? adminCounts.value.draft : null
+        },
         {
           label: t('ver'),
           to: '/penomoran/verifikasi',

@@ -421,7 +421,7 @@
               <!-- Badge Single File -->
               <span
                 v-if="selectedRow.is_single_file"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-primary/30 bg-primary/5 text-primary dark:text-primary-400"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-primary/30 bg-primary/5 text-blue-700 dark:text-blue-400"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path

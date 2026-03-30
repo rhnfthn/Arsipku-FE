@@ -405,6 +405,8 @@
   "usl_status_menunggu_verifikasi": "Awaiting Verification",
   "usl_status_disetujui": "Approved",
   "usl_status_ditolak": "Rejected",
+  "usl_status_draft": "Draft",
+  "usl_filter_draft": "Draft",
   "usl_detail_tanggal": "Date",
   "usl_detail_penandatangan": "Signatory",
   "usl_detail_klasifikasi": "Classification",
