@@ -288,6 +288,15 @@ const addNaskahToLabel = async (naskahId: string, labelId: string) => {
   return await _addNaskahToLabel(naskahId, labelId, "inbox");
 };
 
+const selectedNaskahIds = computed(() => {
+  const result = new Set<string>();
+  selectedIds.value.forEach((sirkulasiId) => {
+    const mailItem = items.value.find((e) => e.id === sirkulasiId);
+    if (mailItem?.naskahId) result.add(mailItem.naskahId);
+  });
+  return result;
+});
+
 const assignLabelToSelected = async (labelId: string, labelName: string) => {
   if (selectedIds.value.size === 0) return;
   isLabelProcessing.value = true;
@@ -295,9 +304,7 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
   try {
     const promises = Array.from(selectedIds.value)
       .map((selectedId) => {
-        const mailItem = items.value.find(
-          (e) => e.id === selectedId || e.naskahId === selectedId,
-        );
+        const mailItem = items.value.find((e) => e.id === selectedId);
         const realNaskahId = mailItem?.naskahId;
         if (!realNaskahId) {
           console.warn(`Naskah ID tidak ditemukan untuk item: ${selectedId}`);
@@ -1004,8 +1011,8 @@ onMounted(async () => {
          MODALS
     ══════════════════════════════════════════════════════ -->
 
-    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedIds" source="inbox"
-      @assign="assignLabelToSelected" @success="selectedIds.clear()" />
+    <LabelAssignModal v-model="showLabelAssignModal" :selected-ids="selectedNaskahIds" source="inbox"
+      @success="selectedIds.clear()" />
 
     <Teleport to="body">
       <div v-if="showDeleteModal"
