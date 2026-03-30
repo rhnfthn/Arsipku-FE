@@ -24,6 +24,8 @@ import {
 import { useDraft } from "@/composables/useDraft";
 import { useLabel } from "~/composables/useLabel";
 
+definePageMeta({ middleware: "auth" });
+
 const {
   items,
   pagination,

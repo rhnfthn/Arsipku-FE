@@ -34,6 +34,8 @@ import * as XLSX from "xlsx";
 import { useInbox } from "~/composables/useInbox";
 import { useLabel } from "~/composables/useLabel";
 
+definePageMeta({ middleware: "auth" });
+
 const { user, getProfile } = useAuth();
 const toast = useToast();
 

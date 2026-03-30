@@ -269,6 +269,8 @@ import type { Editor as TinyMCEEditor } from 'tinymce';
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
 
+definePageMeta({ middleware: "auth" });
+
 const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();

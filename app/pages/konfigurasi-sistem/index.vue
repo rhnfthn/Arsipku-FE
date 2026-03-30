@@ -483,6 +483,15 @@ const handleChangeSignType = async (doc: any, value: string) => {
       doc.ttdBasah = false
       doc[field] = true
     } else {
+      const activeCount = [doc.digsig, doc.ttdQr, doc.ttdBasah].filter(Boolean).length
+      if (activeCount <= 1 && doc[field]) {
+        useToast().add({
+          title: 'Tidak Diizinkan',
+          description: 'Minimal satu metode tanda tangan harus aktif.',
+          color: 'warning',
+        })
+        return
+      }
       doc[field] = !doc[field]
     }
   }

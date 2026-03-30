@@ -331,6 +331,8 @@ import { Hash, Calendar, Tag } from "lucide-vue-next";
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { Alert } from "@/composables/useAlert";
 
+definePageMeta({ middleware: "auth" });
+
 // --- Interfaces ---
 interface RecipientItem {
   label: string;

@@ -251,7 +251,6 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 // };
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
-
 onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
@@ -260,68 +259,92 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, recRes, groupsRes]: [any, any, any] = await Promise.all([
-      getKlasifikasi(),
-      getRecipients(),
-      getRecipientGroups("SDI").catch(() => []),
-    ]);
-
-    klasifikasiList.value = klasRes ?? [];
+    klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
-    recipientGroups.value = Array.isArray(groupsRes)
-      ? groupsRes.filter((g: any) => g.aktif)
-      : [];
 
-    const rawRec: any[] = recRes?.recipients ?? recRes?.data ?? [];
-    const allMapped = rawRec.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+    const resRec = await getRecipients();
+    console.log("resRec keys:", Object.keys(resRec));
+    console.log("resRec sample:", JSON.stringify(
+      (resRec.recipients || resRec.data || [])[0], null, 2
+    ));
+
+    tertujuItems.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
+      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),
-      group: r.group,
       raw: r,
     }));
+    tembusanItems.value = tertujuItems.value;
 
-    tertujuItems.value = allMapped.filter((i) => i.group === "REKAN");
-    tembusanItems.value = allMapped.filter((i) => i.group === "REKAN" || i.group === "TEMBUSAN");
-  } catch (e) {
-    console.error(e);
+    console.log("tertujuItems[0]:", JSON.stringify(tertujuItems.value[0], null, 2));
+
+    // draft loading
+    const res = await getSDIDetail(draftId);
+    if (res.success && res.data) {
+      console.log("d.penerima[0]:", JSON.stringify(res.data.penerima?.[0], null, 2));
+      console.log("d.tembusan[0]:", JSON.stringify(res.data.tembusan?.[0], null, 2));
+    }
+
+    const groups = await getRecipientGroups("SDI");
+    recipientGroups.value = groups.filter((g: any) => g.aktif);
+  } catch {
     klasifikasiStatus.value = "error";
   }
 
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
-      loadingMessage.value = "Memuat data draft...";
       editDraftId.value = draftId;
       const res = await getSDIDetail(draftId);
 
       if (res.success && res.data) {
         const d = res.data;
+
+        console.log("d.penerima:", JSON.stringify(d.penerima?.slice(0, 2), null, 2));
+        console.log("tertujuItems sample:", JSON.stringify(tertujuItems.value?.slice(0, 2), null, 2));
+
         subject.value = d.perihal || "";
         lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
         if (tinymceEditor.value) tinymceEditor.value.setContent(d.konten || "");
 
         if (d.klasifikasi) {
-          const found = klasifikasiList.value.find((k) => k.klasifikasi === d.klasifikasi);
+          const found = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        const masterList = [...tertujuItems.value, ...tembusanItems.value];
+        // ✅ Match berdasarkan persnum karena format ID berbeda antara API detail vs API list
+        const buildSelected = (apiArr: any[]) => {
+          return (apiArr || []).map((item) => {
+            const found = tertujuItems.value.find(
+              (m) => String(m.raw.persnum_person) === String(item.persnum)
+            );
+            if (found) return found; // ✅ pakai object dari tertujuItems langsung — format sudah benar
+
+            // fallback jika tidak ketemu
+            return {
+              label: `${item.persnum} - () ${item.positionText || ""}`,
+              labelJob: item.positionText || "",
+              organization: item.organizationText || "",
+              value: String(item.persnum),
+              raw: item,
+            };
+          }).filter(Boolean);
+        };
 
         selectedTertuju.value = mergeGrupDanIndividu(
-          mapGroupsToUI(d.penerima_grup || []),
-          mapApiToUI(d.tertuju || [], masterList)
+          mapGroupsToUI(d.penerima_grup),
+          buildSelected(d.penerima || [])
         );
         selectedTembusan.value = mergeGrupDanIndividu(
-          mapGroupsToUI(d.tembusan_grup || []),
-          mapApiToUI(d.tembusan || [], masterList)
+          mapGroupsToUI(d.tembusan_grup),
+          buildSelected(d.tembusan || [])
         );
 
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
         setSifatFromString(d.sifat);
-        if (d.tgl) setDateFromString(d.tgl);
+        if (d.tgl || d.tanggal) setDateFromString(d.tgl || d.tanggal);
       }
     } catch {
       toastError("Gagal memuat data draft");
@@ -476,7 +499,7 @@ watch(
                   <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
-                <div class="flex justify-end mt-12 text-black px-10">
+                <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>

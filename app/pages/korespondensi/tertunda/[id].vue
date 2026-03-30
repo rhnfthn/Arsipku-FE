@@ -7,6 +7,8 @@ import {
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
 
+definePageMeta({ middleware: "auth" });
+
 // --- SETUP ---
 const route = useRoute();
 const router = useRouter();

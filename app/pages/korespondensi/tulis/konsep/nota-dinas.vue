@@ -216,6 +216,8 @@ import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 
+definePageMeta({ middleware: "auth" });
+
 // --- Interfaces ---
 interface RecipientItem {
   label: string;

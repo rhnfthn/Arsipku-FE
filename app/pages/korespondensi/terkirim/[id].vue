@@ -10,6 +10,8 @@ import {
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
 import DetailNaskah from '@/components/DetailNaskah.vue';
 
+definePageMeta({ middleware: "auth" });
+
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();

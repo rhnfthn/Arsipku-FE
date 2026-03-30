@@ -9,6 +9,8 @@ import {
 // Import Component Baru
 import DetailNaskah from '@/components/DetailNaskah.vue';
 
+definePageMeta({ middleware: "auth" });
+
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
