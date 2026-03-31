@@ -100,7 +100,7 @@ const hasAccess = (codes: string[]) => {
 </script>
 
 <template>
-  <div
+  <div v-if="data.aksi !== 'pending'"
     class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md relative transition-colors">
 
     <div>
