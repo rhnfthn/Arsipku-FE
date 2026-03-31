@@ -48,9 +48,9 @@ export const useKonsep = () => {
   };
 
   // Actions
-  const finalizeKonsep = async (id: string, formData: FormData) => {
-    return await apiPost(`/KONSEP/finalize/${id}`, formData);
-  };
+const finalizeKonsep = async (id: string, formData: FormData) => {
+  return await apiPost(`/KONSEP/finalize/${id}`, formData);
+};
 
   const forwardKonsep = async (id: string, formData: FormData) => {
     return await apiPost(`/KONSEP/forward/${id}`, formData);

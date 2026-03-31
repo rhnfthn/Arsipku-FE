@@ -14,12 +14,27 @@
         </div>
       </div>
     </template>
+
     <template #footer>
       <div class="flex gap-4 w-full">
-        <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
-          @click="emit('save-draft')" />
-        <UButton label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
-          @click="emit('send')" />
+        <UButton
+          v-if="showSaveDraft"
+          label="Draft"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          icon="i-heroicons-document-text"
+          class="px-8"
+          @click="emit('save-draft')"
+        />
+        <UButton
+          label="Kirim"
+          color="primary"
+          size="lg"
+          icon="i-heroicons-paper-airplane"
+          class="px-8 font-bold"
+          @click="emit('send')"
+        />
       </div>
     </template>
   </USlideover>
@@ -29,11 +44,14 @@
 import { computed } from 'vue';
 
 // --- PROPS ---
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean;
   pdfUrl: string | null;
   alertIsOpen?: boolean;
-}>();
+  showSaveDraft?: boolean;
+}>(), {
+  showSaveDraft: true
+});
 
 // --- EMITS ---
 const emit = defineEmits<{
@@ -43,7 +61,6 @@ const emit = defineEmits<{
 }>();
 
 // --- STATE SYNC ---
-// Ini menjembatani v-model dari induk ke USlideover di dalam anak
 const internalIsOpen = computed({
   get: () => props.open,
   set: (value) => emit('update:open', value)
