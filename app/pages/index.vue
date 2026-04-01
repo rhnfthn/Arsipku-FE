@@ -1,8 +1,10 @@
 <template>
-  <div :class="[
-    'bg-base page-container relative h-screen w-full overflow-hidden',
-    loaded ? 'page-loaded' : ''
-  ]">
+  <div
+    :class="[
+      'bg-base page-container relative h-screen w-full overflow-hidden',
+      loaded ? 'page-loaded' : ''
+    ]"
+  >
     <!-- Background Animasi: Tech Grid & Menara ATC -->
     <div class="fixed inset-0 z-0 tech-grid pointer-events-none">
       <div class="absolute top-17 right-10 w-64 md:right-20 md:w-96">
@@ -14,61 +16,94 @@
     <canvas class="fixed inset-0 z-[1] pointer-events-none" id="aircraftCanvas"></canvas>
 
     <div class="bg-leftGlow absolute top-0 left-0 h-full w-1/3"></div>
-    <div class="bg-middleGlow absolute top-1/2 left-1/2 h-full w-1/2 -translate-x-1/2 -translate-y-1/2 transform"></div>
+    <div
+      class="bg-middleGlow absolute top-1/2 left-1/2 h-full w-1/2 -translate-x-1/2 -translate-y-1/2 transform"
+    ></div>
     <div class="bg-rightGlow absolute top-0 right-0 h-full w-1/3"></div>
 
     <div class="relative z-20 flex h-full w-full items-center justify-center">
-      <img src="~/assets/logoAirnav.png" :class="logoClass" class="absolute transition-all duration-1000"
-        :style="logoStyle" />
+      <img
+        src="~/assets/logoAirnav.png"
+        :class="logoClass"
+        class="absolute transition-all duration-1000"
+        :style="logoStyle"
+      />
 
       <p
-        class="absolute top-[33rem] left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-[170px] font-bold text-[#e3f1ff] opacity-100 sm:top-[30rem] sm:text-[200px] md:top-[40rem] md:text-[260px] lg:top-[33rem] lg:text-[350px]">
+        class="absolute top-[33rem] left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-[170px] font-bold text-[#e3f1ff] opacity-100 sm:top-[30rem] sm:text-[200px] md:top-[40rem] md:text-[260px] lg:top-[33rem] lg:text-[350px]"
+      >
         13
       </p>
 
-      <h1 :class="textClass"
+      <h1
+        :class="textClass"
         class="absolute top-[10rem] left-1/2 -translate-x-1/2 transform bg-clip-text text-[34px] font-bold text-transparent opacity-0 transition-all duration-1000 sm:top-[18rem] sm:text-[90px] md:top-[15rem] md:text-[80px] lg:top-[6.5rem] lg:text-[110px]"
-        style="background-image: linear-gradient(135deg, #2b5b8a 0%, #457fb6 40%, #8caede 100%)">
-        {{ $t("Arsipku") }}
+        style="background-image: linear-gradient(135deg, #2b5b8a 0%, #457fb6 40%, #8caede 100%)"
+      >
+        {{ $t('Arsipku') }}
       </h1>
 
-      <div :class="airnavClass"
-        class="absolute top-5 right-10 flex flex-col items-end opacity-0 transition-opacity duration-1000">
+      <div
+        :class="airnavClass"
+        class="absolute top-5 right-10 flex flex-col items-end opacity-0 transition-opacity duration-1000"
+      >
         <h2 class="text-xl font-bold text-[#457FB6]">Airnav Indonesia</h2>
         <div class="mt-2 flex gap-2">
-          <button v-for="locale in locales" :key="locale.code" @click="setLocale(locale.code)"
-            class="mt-1 inline-flex items-center justify-center rounded-md bg-white/70 px-5 py-2 text-sm font-semibold text-[#457FB6] transition-all duration-200 hover:bg-white sm:px-2 sm:py-0.5 md:px-3 md:py-1">
+          <button
+            v-for="locale in locales"
+            :key="locale.code"
+            @click="setLocale(locale.code)"
+            class="mt-1 inline-flex items-center justify-center rounded-md bg-white/70 px-5 py-2 text-sm font-semibold text-[#457FB6] transition-all duration-200 hover:bg-white sm:px-2 sm:py-0.5 md:px-3 md:py-1"
+          >
             {{ locale.name }}
           </button>
         </div>
       </div>
 
-      <img v-if="showPlane" src="~/assets/Pesawat.png"
+      <img
+        v-if="showPlane"
+        src="~/assets/Pesawat.png"
         class="plane-base absolute w-[320px] sm:w-[500px] md:w-[550px] lg:w-[700px]"
-        :class="{ 'plane-appear': planeAppear, 'plane-takeoff': planeTakeoff }" alt="Pesawat" />
+        :class="{ 'plane-appear': planeAppear, 'plane-takeoff': planeTakeoff }"
+        alt="Pesawat"
+      />
 
-      <div v-if="showText"
-        class="fade-slide-up absolute top-[14rem] left-1/2 w-[90%] max-w-md -translate-x-1/2 transform text-center opacity-0 sm:top-[21rem] sm:w-auto sm:max-w-xl md:top-[21rem] md:max-w-2xl lg:top-[16.5rem]">
-        <p class="mb-6 text-sm leading-snug font-regular text-[#7D7D80] sm:text-base md:text-[16px]">
+      <div
+        v-if="showText"
+        class="fade-slide-up absolute top-[14rem] left-1/2 w-[90%] max-w-md -translate-x-1/2 transform text-center opacity-0 sm:top-[21rem] sm:w-auto sm:max-w-xl md:top-[21rem] md:max-w-2xl lg:top-[16.5rem]"
+      >
+        <p
+          class="mb-6 text-sm leading-snug font-regular text-[#7D7D80] sm:text-base md:text-[16px]"
+        >
           {{ $t('title') }}
         </p>
 
-        <UButton @click="redirectToSSO" external target="_self" rel="noreferrer"
-          class="items-center gap-1 rounded-full bg-[#457FB6] px-5 py-1.5 text-sm text-white transition hover:bg-[#35629B] sm:px-6 sm:py-2 sm:text-base md:px-6 md:py-3 md:text-[16px]">
+        <UButton
+          @click="redirectToSSO"
+          external
+          target="_self"
+          rel="noreferrer"
+          class="items-center gap-1 rounded-full bg-[#457FB6] px-5 py-1.5 text-sm text-white transition hover:bg-[#35629B] sm:px-6 sm:py-2 sm:text-base md:px-6 md:py-3 md:text-[16px]"
+        >
           <span>{{ $t('Masuk') }}</span>
           <ArrowRight class="h-4 w-6 sm:h-5 sm:w-8" />
         </UButton>
       </div>
 
-      <div v-if="showOnboarding" :class="[OnboardingClass, 'fade-slide-up']" :style="OnboardingStyle"
-        class="absolute bottom-6 left-1/2 w-[90%] max-w-5xl -translate-x-1/2 transform lg:bottom-12">
+      <div
+        v-if="showOnboarding"
+        :class="[OnboardingClass, 'fade-slide-up']"
+        :style="OnboardingStyle"
+        class="absolute bottom-6 left-1/2 w-[90%] max-w-5xl -translate-x-1/2 transform lg:bottom-12"
+      >
         <div
           class="flex flex-col items-center justify-between gap-6 rounded-[1.5rem] bg-white/40 px-8 py-6 shadow-[0_10px_40px_-10px_rgba(31,38,135,0.2)] border border-white/50 md:flex-row md:items-center md:gap-10 md:px-12 md:py-8 lg:h-[140px]"
-          style="backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+          style="backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px)"
+        >
           <!-- Left: Title -->
           <div class="shrink-0 text-center md:text-left">
             <h3 class="text-2xl font-bold leading-tight text-slate-900 md:text-3xl drop-shadow-sm">
-              Airnav<br />{{ $t("Arsipku") }}.
+              Airnav<br />{{ $t('Arsipku') }}.
             </h3>
           </div>
 
@@ -82,15 +117,18 @@
           <!-- Right: Icons -->
           <div class="flex shrink-0 items-center gap-4">
             <div
-              class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100/80 text-blue-700 transition-transform hover:scale-105">
+              class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100/80 text-blue-700 transition-transform hover:scale-105"
+            >
               <Headset class="h-6 w-6" />
             </div>
             <div
-              class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100/80 text-purple-700 transition-transform hover:scale-105">
+              class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100/80 text-purple-700 transition-transform hover:scale-105"
+            >
               <Plane class="h-6 w-6" />
             </div>
             <div
-              class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100/80 text-green-700 transition-transform hover:scale-105">
+              class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100/80 text-green-700 transition-transform hover:scale-105"
+            >
               <Settings class="h-6 w-6" />
             </div>
           </div>
@@ -113,18 +151,36 @@ const locales = [
   { code: 'en', name: 'EN' }
 ]
 
-const { getSSORedirectUrl } = useAuth();
+const { getSSORedirectUrl, getProfile } = useAuth()
 
 const redirectToSSO = async () => {
-  const url = await getSSORedirectUrl();
+  // Check if user is already logged in
+  const token = localStorage.getItem('token') || useCookie('token').value
 
-  if (!url) {
-    console.error("URL SSO tidak ditemukan");
-    return;
+  if (token) {
+    try {
+      // Validate token by fetching profile
+      const profile = await getProfile()
+      if (profile) {
+        // User is already logged in, redirect to dashboard
+        return navigateTo('/beranda')
+      }
+    } catch (error) {
+      // Token invalid, continue to SSO
+      console.log('Token invalid, redirecting to SSO')
+    }
   }
 
-  navigateTo(url, { external: true });
-};
+  // Not logged in or token invalid, redirect to SSO
+  const url = await getSSORedirectUrl()
+
+  if (!url) {
+    console.error('URL SSO tidak ditemukan')
+    return
+  }
+
+  navigateTo(url, { external: true })
+}
 
 const config = useRuntimeConfig()
 const apiBaseUrl = config.public.apiBaseUrl

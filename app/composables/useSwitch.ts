@@ -12,6 +12,10 @@ export interface SwitchCompany {
 
 export const useSwitch = () => {
   const { apiGet, apiPost } = useApi();
+  const tokenCookie = useCookie<string | null>("token", {
+    sameSite: "lax",
+    path: "/",
+  });
 
   const loading = ref(false);
   const switchingId = ref<string | null>(null);
@@ -48,6 +52,7 @@ const switchCompany = async (relationSpId: string) => {
 
     if (res?.data?.accessToken) {
       localStorage.setItem("token", res.data.accessToken);
+      tokenCookie.value = res.data.accessToken;
     }
 
     return res;
@@ -63,6 +68,7 @@ const resetCompany = async () => {
 
     if (res?.data?.accessToken) {
       localStorage.setItem("token", res.data.accessToken);
+      tokenCookie.value = res.data.accessToken;
     }
 
     return res;

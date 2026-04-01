@@ -28,7 +28,7 @@
       <div class="flex flex-col gap-4 w-full items-center">
         <div
           v-for="app in apps"
-          :key="app.id"
+          :key="`${isAdminOrSuperadmin ? 'admin' : 'user'}-${app.id}`"
           @click="setActiveApp(app.id)"
           @mouseenter="hoveredApp = app.id"
           @mouseleave="hoveredApp = null"
@@ -43,6 +43,7 @@
             "
           >
             <UIcon
+              :key="app.icon"
               :name="app.icon"
               class="w-6 h-6 transition-colors"
               :class="
@@ -569,21 +570,21 @@ const apps = computed(() => {
       {
         id: 'admin-utama',
         label: t('utama'),
-        icon: 'i-heroicons-squares-2x2',
+        icon: 'i-heroicons-home',
         menus: adminMenuUtama.value,
         hasNotification: hasInboxUnread.value
       },
       {
         id: 'admin-utilitas',
         label: t('utilitas'),
-        icon: 'i-heroicons-briefcase',
+        icon: 'i-heroicons-squares-plus',
         menus: adminMenuUtilitas.value,
         hasNotification: false
       },
       {
         id: 'admin-administrasi',
         label: t('administrasi'),
-        icon: 'i-heroicons-cog-6-tooth',
+        icon: 'i-lucide-settings',
         menus: adminMenuAdministrasi.value,
         hasNotification: hasAdministrasiNotification.value
       },
@@ -643,11 +644,67 @@ watch(
   apps,
   (newApps) => {
     if (newApps.length > 0) {
-      const exists = newApps.find((a) => a.id === activeApp.value)
-      if (!exists) activeApp.value = newApps[0].id
+      // Try to determine active app from current route
+      const path = route.path
+      let matchedAppId = ''
+
+      for (const app of newApps) {
+        if (app.menus && Array.isArray(app.menus)) {
+          for (const menu of app.menus) {
+            if (menu.to && path.startsWith(menu.to)) {
+              matchedAppId = app.id
+              break
+            }
+            // Check children menus
+            if (menu.children && Array.isArray(menu.children)) {
+              for (const child of menu.children) {
+                if (child.to && path.startsWith(child.to)) {
+                  matchedAppId = app.id
+                  break
+                }
+              }
+            }
+          }
+          if (matchedAppId) break
+        }
+      }
+
+      if (matchedAppId) {
+        activeApp.value = matchedAppId
+      } else {
+        const exists = newApps.find((a) => a.id === activeApp.value)
+        if (!exists) activeApp.value = newApps[0].id
+      }
     }
   },
   { immediate: true }
+)
+
+// Update active app when route changes
+watch(
+  () => route.path,
+  (path) => {
+    if (!apps.value || apps.value.length === 0) return
+
+    for (const app of apps.value) {
+      if (app.menus && Array.isArray(app.menus)) {
+        for (const menu of app.menus) {
+          if (menu.to && path.startsWith(menu.to)) {
+            activeApp.value = app.id
+            return
+          }
+          if (menu.children && Array.isArray(menu.children)) {
+            for (const child of menu.children) {
+              if (child.to && path.startsWith(child.to)) {
+                activeApp.value = app.id
+                return
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 )
 
 // ─── Screen / collapse ────────────────────────────────────────────────────────

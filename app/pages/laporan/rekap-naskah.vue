@@ -2,7 +2,7 @@
   <div class="flex items-center justify-between pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-        {{ $t("rn_title") }}
+        {{ $t('rn_title') }}
       </Heading>
       <PageHeader :items="breadcrumbs" />
     </div>
@@ -12,7 +12,7 @@
       class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
     >
       <FileDown class="w-4 h-4" />
-      {{ $t("export") }}
+      {{ $t('export') }}
     </button>
   </div>
 
@@ -53,15 +53,12 @@
                 v-for="n in rowsChoices"
                 :key="n"
                 type="button"
-                @click="
-                  rowsPerPage = n;
-                  openDropdown = null;
-                "
+                @click="selectRows(n)"
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   rowsPerPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ n }}
@@ -76,28 +73,15 @@
             @click="toggle('type')"
             class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
           >
-            <span
-              v-if="!selectedType"
-              class="text-black dark:text-white truncate text-sm flex-1"
-            >
-              {{ $t("semua_jenis") }}
+            <span v-if="!selectedType" class="text-black dark:text-white truncate text-sm flex-1">
+              {{ $t('semua_jenis') }}
             </span>
-            <div
-              v-else
-              class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-            >
+            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
               <span
                 class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
               >
-                {{
-                  jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text
-                }}
-                <button
-                  @click.stop="selectJenis(null)"
-                  class="hover:text-red-500"
-                >
-                  ✕
-                </button>
+                {{ jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text }}
+                <button @click.stop="selectJenis(null)" class="hover:text-red-500">✕</button>
               </span>
             </div>
             <ChevronDown
@@ -131,7 +115,7 @@
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                   "
                 >
-                  {{ $t("semua_jenis") }}
+                  {{ $t('semua_jenis') }}
                 </button>
                 <button
                   v-for="item in filteredJenisOptions"
@@ -151,93 +135,7 @@
                   v-if="filteredJenisOptions.length === 0"
                   class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
                 >
-                  {{ $t("tidak_ditemukan") }}
-                </div>
-              </div>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- LOKASI FILTER -->
-        <div class="relative w-[160px] shrink-0">
-          <div
-            @click="toggle('lokasi')"
-            class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
-          >
-            <span
-              v-if="!selectedArea"
-              class="text-black dark:text-white truncate text-sm flex-1"
-            >
-              {{ $t("semua_lokasi") }}
-            </span>
-            <div
-              v-else
-              class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-            >
-              <span
-                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-              >
-                {{ areaOptions.find((a) => a.value === selectedArea)?.label }}
-                <button
-                  @click.stop="selectLokasi(null)"
-                  class="hover:text-red-500"
-                >
-                  ✕
-                </button>
-              </span>
-            </div>
-            <ChevronDown
-              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
-              :class="{ 'rotate-180': openDropdown === 'lokasi' }"
-            />
-          </div>
-          <Transition name="filter-dd">
-            <div
-              v-if="openDropdown === 'lokasi'"
-              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
-            >
-              <!-- Search input inside dropdown -->
-              <div class="mb-1">
-                <input
-                  v-model="lokasiSearch"
-                  @click.stop
-                  type="text"
-                  :placeholder="$t('cari')"
-                  class="h-7 w-full rounded-lg px-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div class="flex flex-col gap-1 max-h-48 overflow-y-auto">
-                <button
-                  @mousedown.prevent
-                  @click="selectLokasi(null)"
-                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                  :class="
-                    !selectedArea
-                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                  "
-                >
-                  {{ $t("semua_lokasi") }}
-                </button>
-                <button
-                  v-for="item in filteredLokasiOptions"
-                  :key="item.value"
-                  @mousedown.prevent
-                  @click="selectLokasi(item)"
-                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                  :class="
-                    selectedArea === item.value
-                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                  "
-                >
-                  {{ item.label }}
-                </button>
-                <div
-                  v-if="filteredLokasiOptions.length === 0"
-                  class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
-                >
-                  {{ $t("tidak_ditemukan") }}
+                  {{ $t('tidak_ditemukan') }}
                 </div>
               </div>
             </div>
@@ -254,24 +152,16 @@
               v-if="!selectedStatuses.length"
               class="text-black dark:text-white truncate text-sm flex-1"
             >
-              {{ $t("semua_status") }}
+              {{ $t('semua_status') }}
             </span>
-            <div
-              v-else
-              class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-            >
+            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
               <span
                 v-for="status in selectedStatuses"
                 :key="status"
                 class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
               >
                 {{ statusOptions.find((s) => s.value === status)?.label }}
-                <button
-                  @click.stop="removeStatus(status)"
-                  class="hover:text-red-500"
-                >
-                  ✕
-                </button>
+                <button @click.stop="removeStatus(status)" class="hover:text-red-500">✕</button>
               </span>
             </div>
             <ChevronDown
@@ -314,22 +204,14 @@
               v-if="!selectedMonth"
               class="text-gray-black dark:text-white truncate text-sm flex-1"
             >
-              {{ $t("semua_bulan") }}
+              {{ $t('semua_bulan') }}
             </span>
-            <div
-              v-else
-              class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-            >
+            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
               <span
                 class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
               >
                 {{ selectedMonthLabel }}
-                <button
-                  @click.stop="selectedMonth = ''"
-                  class="hover:text-red-500"
-                >
-                  ✕
-                </button>
+                <button @click.stop="selectedMonth = ''" class="hover:text-red-500">✕</button>
               </span>
             </div>
             <ChevronDown
@@ -345,10 +227,7 @@
               <div class="flex flex-col gap-1 max-h-60 overflow-y-auto">
                 <button
                   @mousedown.prevent
-                  @click="
-                    selectedMonth = '';
-                    openDropdown = null;
-                  "
+                  @click="selectMonth('')"
                   class="px-3 py-2 text-left text-sm rounded-md transition-colors"
                   :class="
                     !selectedMonth
@@ -356,16 +235,13 @@
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                   "
                 >
-                  {{ $t("semua_bulan") }}
+                  {{ $t('semua_bulan') }}
                 </button>
                 <button
                   v-for="bulan in monthOptions"
                   :key="bulan.value"
                   @mousedown.prevent
-                  @click="
-                    selectedMonth = bulan.value;
-                    openDropdown = null;
-                  "
+                  @click="selectMonth(bulan.value)"
                   class="px-3 py-2 text-left text-sm rounded-md transition-colors"
                   :class="
                     selectedMonth === bulan.value
@@ -389,12 +265,10 @@
             <span
               class="flex-1 truncate text-sm"
               :class="
-                selectedYear
-                  ? 'text-gray-700 dark:text-white'
-                  : 'text-gray-400 dark:text-white'
+                selectedYear ? 'text-gray-700 dark:text-white' : 'text-gray-400 dark:text-white'
               "
             >
-              {{ selectedYear || $t("semua_tahun") }}
+              {{ selectedYear || $t('semua_tahun') }}
             </span>
             <ChevronDown
               class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -411,10 +285,7 @@
                   v-for="tahun in yearOptions"
                   :key="tahun"
                   @mousedown.prevent
-                  @click="
-                    selectedYear = tahun;
-                    openDropdown = null;
-                  "
+                  @click="selectYear(tahun)"
                   class="px-3 py-2 text-left text-sm rounded-md transition-colors"
                   :class="
                     selectedYear === tahun
@@ -440,7 +311,7 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm w-[350px] text-start"
               >
-                {{ $t("naskah_tbl") }}
+                {{ $t('naskah_tbl') }}
               </th>
               <template v-if="!selectedMonth">
                 <th
@@ -461,12 +332,12 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm"
               >
-                {{ $t("jumlah") }}
+                {{ $t('jumlah') }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-primary-500 dark:border-b-primary-700 font-semibold text-sm sticky right-0 z-20 bg-primary-400 dark:bg-primary-700 min-w-[140px]"
               >
-                {{ $t("sign_status") }}
+                {{ $t('sign_status') }}
               </th>
             </tr>
           </thead>
@@ -487,11 +358,8 @@
 
             <!-- EMPTY -->
             <tr v-else-if="!filteredTableData.length">
-              <td
-                :colspan="tableColCount"
-                class="py-8 text-gray-400 dark:text-gray-500 text-sm"
-              >
-                {{ $t("tidak_ada_data") }}
+              <td :colspan="tableColCount" class="py-8 text-gray-400 dark:text-gray-500 text-sm">
+                {{ $t('tidak_ada_data') }}
               </td>
             </tr>
 
@@ -514,18 +382,16 @@
                   :key="bulan.value"
                   class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
                 >
-                  {{ row[bulan.value] || "-" }}
+                  {{ row[bulan.value] || '-' }}
                 </td>
               </template>
               <template v-else>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row[selectedMonth] || "-" }}
+                  {{ row[selectedMonth] || '-' }}
                 </td>
               </template>
 
-              <td
-                class="px-4 py-3 font-bold text-sm text-gray-900 dark:text-gray-100"
-              >
+              <td class="px-4 py-3 font-bold text-sm text-gray-900 dark:text-gray-100">
                 {{ row.jumlah }}
               </td>
 
@@ -551,8 +417,8 @@
       class="flex items-center justify-between px-4 py-4 border-t border-gray-100 dark:border-gray-700"
     >
       <div class="text-xs text-gray-600 dark:text-gray-400">
-        {{ $t("menampilkan") }} {{ paginatedTableData.length }} {{ $t("dari") }}
-        {{ totalItems }} {{ $t("data") }}
+        {{ $t('menampilkan') }} {{ paginatedTableData.length }} {{ $t('dari') }} {{ totalItems }}
+        {{ $t('data') }}
       </div>
 
       <div class="flex items-center gap-2">
@@ -564,10 +430,10 @@
             'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
             currentPage === 1
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
           ]"
         >
-          {{ $t("sebelumnya") }}
+          {{ $t('sebelumnya') }}
         </button>
 
         <!-- PAGE NUMBERS -->
@@ -580,10 +446,7 @@
             1
           </button>
 
-          <span
-            v-if="paginationPages[0] > 2"
-            class="px-2 text-gray-400 dark:text-gray-500"
-          >
+          <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 dark:text-gray-500">
             ...
           </span>
 
@@ -595,7 +458,7 @@
               'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium',
               currentPage === page
                 ? 'bg-primary text-white'
-                : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300',
+                : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
             ]"
           >
             {{ page }}
@@ -625,10 +488,10 @@
             'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
             currentPage === totalPages
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+              : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
           ]"
         >
-          {{ $t("selanjutnya") }}
+          {{ $t('selanjutnya') }}
         </button>
       </div>
     </div>
@@ -637,185 +500,174 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: "auth",
-});
+  middleware: 'auth'
+})
 
 //IMPORT
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { FileDown, RotateCcw, ChevronDown, Languages } from "lucide-vue-next";
-import { useToast } from "#imports";
-import { useLaporan } from "~/composables/useLaporan";
-import * as XLSX from "xlsx";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next'
+import { useToast } from '#imports'
+import { useLaporan } from '~/composables/useLaporan'
+import * as XLSX from 'xlsx'
 
 //COMPOSABLE
-const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
-const toast = useToast();
-const { t, locale, availableLocales, setLocale } = useI18n();
+const { getRekapNaskah, getAreaList, getJenisList } = useLaporan()
+const toast = useToast()
+const { t, locale, availableLocales, setLocale } = useI18n()
 
 //CONST UTIL
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("rekap"), to: "/laporan/rekap-naskah" },
-]);
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('rekap'), to: '/laporan/rekap-naskah' }
+])
 
 const getStatusClass = (status: string) => {
-  if (status === "terpakai")
-    return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300";
-  if (status === "terpakai_final")
-    return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300";
-  if (status === "booking")
-    return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300";
-  return "bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-300";
-};
+  if (status === 'terpakai')
+    return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
+  if (status === 'terpakai_final')
+    return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
+  if (status === 'booking')
+    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
+  return 'bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-300'
+}
 
 //STATE
-const selectedYear = ref<number | null>(new Date().getFullYear());
-const selectedMonth = ref("");
-const selectedType = ref("");
-const selectedArea = ref("");
-const selectedStatuses = ref<string[]>([]);
+const selectedYear = ref<number | null>(new Date().getFullYear())
+const selectedMonth = ref('')
+const selectedType = ref('')
+const selectedArea = ref('')
+const selectedStatuses = ref<string[]>([])
 
-const openDropdown = ref<null | string>(null);
-const lokasiSearch = ref("");
-const jenisSearch = ref("");
-const showLangDropdown = ref(false);
+const openDropdown = ref<null | string>(null)
+const jenisSearch = ref('')
+const showLangDropdown = ref(false)
 
-const currentPage = ref(1);
-const rowsPerPage = ref(10);
-const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref(1)
+const rowsPerPage = ref(10)
+const rowsChoices = [5, 10, 20, 50]
 
-const rekapData = ref<any[]>([]);
-const areaOptions = ref<{ label: string; value: string }[]>([]);
-const jenisOptions = ref<any[]>([]);
-const loading = ref(false);
+const rekapData = ref<any[]>([])
+const areaOptions = ref<{ label: string; value: string }[]>([])
+const jenisOptions = ref<any[]>([])
+const loading = ref(false)
 
 //LANGUAGE SWITCH
 const switchLocale = async (lang: string) => {
-  await setLocale(lang);
-  showLangDropdown.value = false;
-};
+  await setLocale(lang)
+  showLangDropdown.value = false
+}
 
 //COMPUTED
 const yearOptions = computed(() => {
-  const y = new Date().getFullYear();
-  return [y, y - 1, y - 2];
-});
+  const y = new Date().getFullYear()
+  return [y, y - 1, y - 2]
+})
 
 const monthOptions = computed(() => [
-  { label: t("jan"), value: "januari" },
-  { label: t("feb"), value: "februari" },
-  { label: t("mar"), value: "maret" },
-  { label: t("apr"), value: "april" },
-  { label: t("mei"), value: "mei" },
-  { label: t("juni"), value: "juni" },
-  { label: t("juli"), value: "juli" },
-  { label: t("agu"), value: "agustus" },
-  { label: t("sep"), value: "september" },
-  { label: t("okt"), value: "oktober" },
-  { label: t("nov"), value: "november" },
-  { label: t("des"), value: "desember" },
-]);
+  { label: t('jan'), value: 'januari' },
+  { label: t('feb'), value: 'februari' },
+  { label: t('mar'), value: 'maret' },
+  { label: t('apr'), value: 'april' },
+  { label: t('mei'), value: 'mei' },
+  { label: t('juni'), value: 'juni' },
+  { label: t('juli'), value: 'juli' },
+  { label: t('agu'), value: 'agustus' },
+  { label: t('sep'), value: 'september' },
+  { label: t('okt'), value: 'oktober' },
+  { label: t('nov'), value: 'november' },
+  { label: t('des'), value: 'desember' }
+])
 
 const statusOptions = computed(() => [
-  { label: t("nom_status_final"), value: "terpakai_final" },
-  { label: t("nom_status_terpakai"), value: "terpakai" },
-  { label: t("nom_status_hangus"), value: "hangus" },
-  { label: t("nom_status_booking"), value: "booking" },
-]);
+  { label: t('nom_status_final'), value: 'terpakai_final' },
+  { label: t('nom_status_terpakai'), value: 'terpakai' },
+  { label: t('nom_status_hangus'), value: 'hangus' },
+  { label: t('nom_status_booking'), value: 'booking' }
+])
 
 const selectedMonthLabel = computed(
-  () =>
-    monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ??
-    "",
-);
+  () => monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ?? ''
+)
 
 //FILTERING
 const filteredJenisOptions = computed(() => {
-  if (!jenisSearch.value) return jenisOptions.value;
+  if (!jenisSearch.value) return jenisOptions.value
   return jenisOptions.value.filter((item) =>
-    item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase()),
-  );
-});
-
-const filteredLokasiOptions = computed(() => {
-  if (!lokasiSearch.value) return areaOptions.value;
-  return areaOptions.value.filter((item) =>
-    item.label.toLowerCase().includes(lokasiSearch.value.toLowerCase()),
-  );
-});
+    item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase())
+  )
+})
 
 const filteredTableData = computed(() => {
-  let data = [...rekapData.value];
+  let data = [...rekapData.value]
 
   if (selectedStatuses.value.length) {
-    data = data.filter((row) => selectedStatuses.value.includes(row.status));
+    data = data.filter((row) => selectedStatuses.value.includes(row.status))
   }
 
   if (selectedType.value) {
-    const jenisText = jenisOptions.value.find(
-      (j) => j.jenis === selectedType.value,
-    )?.jenis_text;
-    data = data.filter((row) => row.naskah === jenisText);
+    const jenisText = jenisOptions.value.find((j) => j.jenis === selectedType.value)?.jenis_text
+    data = data.filter((row) => row.naskah === jenisText)
   }
 
-  return data;
-});
+  return data
+})
 
 //PAGINATION
-const totalItems = computed(() => filteredTableData.value.length);
-const totalPages = computed(() =>
-  Math.ceil(totalItems.value / rowsPerPage.value),
-);
+const totalItems = computed(() => filteredTableData.value.length)
+const totalPages = computed(() => Math.ceil(totalItems.value / rowsPerPage.value))
 const paginatedTableData = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return filteredTableData.value.slice(start, start + rowsPerPage.value);
-});
+  const start = (currentPage.value - 1) * rowsPerPage.value
+  return filteredTableData.value.slice(start, start + rowsPerPage.value)
+})
 const paginationPages = computed(() => {
-  const windowSize = 5;
-  const pages: number[] = [];
-  let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2));
-  let end = start + windowSize - 1;
+  const windowSize = 5
+  const pages: number[] = []
+  let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2))
+  let end = start + windowSize - 1
   if (end > totalPages.value) {
-    end = totalPages.value;
-    start = Math.max(1, end - windowSize + 1);
+    end = totalPages.value
+    start = Math.max(1, end - windowSize + 1)
   }
-  for (let i = start; i <= end; i++) pages.push(i);
-  return pages;
-});
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
 //WATCH
-watch(rowsPerPage, () => (currentPage.value = 1));
+watch(rowsPerPage, () => {
+  currentPage.value = 1
+})
 watch(
   [selectedYear, selectedArea, selectedStatuses, selectedType, selectedMonth],
-  () => (currentPage.value = 1),
-  { deep: true },
-);
+  () => {
+    currentPage.value = 1
+  },
+  { deep: true }
+)
 watch(selectedType, (val) => {
   if (!val) {
-    jenisSearch.value = "";
-    return;
+    jenisSearch.value = ''
+    return
   }
-  const found = jenisOptions.value.find((j) => j.jenis === val);
-  if (found) jenisSearch.value = found.jenis_text;
-});
+  const found = jenisOptions.value.find((j) => j.jenis === val)
+  if (found) jenisSearch.value = found.jenis_text
+})
 // Re-fetch when year changes
 watch(selectedYear, () => {
-  if (selectedYear.value) fetchRekap();
-});
+  if (selectedYear.value) fetchRekap()
+})
 
 //API FETCH
 const fetchRekap = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const params: any = {
-      tahun: selectedYear.value ?? new Date().getFullYear(),
-    };
-    if (selectedArea.value) params.area = selectedArea.value;
-    if (selectedStatuses.value.length === 1)
-      params.status = selectedStatuses.value[0];
-    if (selectedType.value) params.jenis = selectedType.value;
+      tahun: selectedYear.value ?? new Date().getFullYear()
+    }
+    if (selectedArea.value) params.area = selectedArea.value
+    if (selectedStatuses.value.length === 1) params.status = selectedStatuses.value[0]
+    if (selectedType.value) params.jenis = selectedType.value
 
-    const res = await getRekapNaskah(params);
+    const res = await getRekapNaskah(params)
     rekapData.value = res.data.rekap.map((item: any, idx: number) => ({
       id: idx,
       naskah: item.jenis_text,
@@ -832,161 +684,166 @@ const fetchRekap = async () => {
       oktober: item.okt,
       november: item.nov,
       desember: item.des,
-      jumlah: item.total,
-    }));
+      jumlah: item.total
+    }))
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const fetchArea = async () => {
-  const res = await getAreaList();
-  const raw = res?.data?.data || res?.data || [];
+  const res = await getAreaList()
+  const raw = res?.data?.data || res?.data || []
   areaOptions.value = raw.map((item: any) => ({
     label: item.longText,
-    value: item.area,
-  }));
-};
+    value: item.area
+  }))
+}
 
 const fetchJenis = async () => {
-  const res = await getJenisList();
-  jenisOptions.value = res.data;
-};
+  const res = await getJenisList()
+  jenisOptions.value = res.data
+}
 
 //SELECT HANDLER
 const selectJenis = (item: any | null) => {
   if (!item) {
-    selectedType.value = "";
-    jenisSearch.value = "";
+    selectedType.value = ''
+    jenisSearch.value = ''
   } else {
-    selectedType.value = item.jenis;
-    jenisSearch.value = item.jenis_text;
+    selectedType.value = item.jenis
+    jenisSearch.value = item.jenis_text
   }
-  openDropdown.value = null;
-};
-
-const selectLokasi = (item: { label: string; value: string } | null) => {
-  if (!item) {
-    selectedArea.value = "";
-    lokasiSearch.value = "";
-  } else {
-    selectedArea.value = item.value;
-    lokasiSearch.value = item.label;
-  }
-  openDropdown.value = null;
-};
+  openDropdown.value = null
+}
 
 const toggleStatus = (status: string) => {
   if (selectedStatuses.value.includes(status)) {
-    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
+    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status)
   } else {
-    selectedStatuses.value.push(status);
+    selectedStatuses.value.push(status)
   }
-};
+}
 
 const removeStatus = (status: string) => {
-  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
-};
+  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status)
+}
 
 const toggle = (key: string) => {
-  openDropdown.value = openDropdown.value === key ? null : key;
-};
+  openDropdown.value = openDropdown.value === key ? null : key
+}
+
+// ─── Inline multi-statement handler replacements ──────────────────────────────
+
+const selectRows = (n: number) => {
+  rowsPerPage.value = n
+  openDropdown.value = null
+}
+
+const selectMonth = (val: string) => {
+  selectedMonth.value = val
+  openDropdown.value = null
+}
+
+const selectYear = (val: number) => {
+  selectedYear.value = val
+  openDropdown.value = null
+}
 
 //EXPORT
 const exportExcel = () => {
   if (!filteredTableData.value.length) {
     toast.add({
-      title: t("export_dibatalkan"),
-      description: t("export_data_kosong"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
-    });
-    return;
+      title: t('export_dibatalkan'),
+      description: t('export_data_kosong'),
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
+    })
+    return
   }
 
   try {
-    const rows: any[] = [];
+    const rows: any[] = []
     filteredTableData.value.forEach((row) => {
-      const baseRow: any = { [t("naskah_tbl")]: row.naskah };
+      const baseRow: any = { [t('naskah_tbl')]: row.naskah }
       if (selectedMonth.value) {
-        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
+        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0
       } else {
         monthOptions.value.forEach((b) => {
-          baseRow[b.label] = row[b.value] ?? 0;
-        });
+          baseRow[b.label] = row[b.value] ?? 0
+        })
       }
-      baseRow[t("jumlah")] = row.jumlah;
-      baseRow[t("sign_status")] = formatStatusLabel(row.status);
-      rows.push(baseRow);
-    });
+      baseRow[t('jumlah')] = row.jumlah
+      baseRow[t('sign_status')] = formatStatusLabel(row.status)
+      rows.push(baseRow)
+    })
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, t("rekap"));
-    const fileName = `rekap-naskah-${selectedYear.value ?? new Date().getFullYear()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, t('rekap'))
+    const fileName = `rekap-naskah-${selectedYear.value ?? new Date().getFullYear()}.xlsx`
+    XLSX.writeFile(wb, fileName)
 
     toast.add({
-      title: t("export_berhasil"),
-      description: t("export_file_berhasil"),
-      color: "success",
-      icon: "i-lucide-file-check",
-    });
+      title: t('export_berhasil'),
+      description: t('export_file_berhasil'),
+      color: 'success',
+      icon: 'i-lucide-file-check'
+    })
   } catch (error) {
-    console.error(error);
+    console.error(error)
     toast.add({
-      title: t("export_gagal"),
-      description: t("export_error"),
-      color: "error",
-      icon: "i-lucide-x-circle",
-    });
+      title: t('export_gagal'),
+      description: t('export_error'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    })
   }
-};
+}
 
 //LIFECYCLE
 const handleClickOutside = (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (!target.closest(".relative")) {
-    openDropdown.value = null;
-    showLangDropdown.value = false;
+  const target = e.target as HTMLElement
+  if (!target.closest('.relative')) {
+    openDropdown.value = null
+    showLangDropdown.value = false
   }
-};
+}
 
 onMounted(() => {
-  fetchRekap();
-  fetchArea();
-  fetchJenis();
-  document.addEventListener("click", handleClickOutside);
-});
+  fetchRekap()
+  fetchArea()
+  fetchJenis()
+  document.addEventListener('click', handleClickOutside)
+})
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+})
 
 //UI HELPER
 const refreshData = async () => {
-  selectedMonth.value = "";
-  selectedType.value = "";
-  jenisSearch.value = "";
-  selectedStatuses.value = [];
-  selectedArea.value = "";
-  lokasiSearch.value = "";
-  selectedYear.value = new Date().getFullYear();
-  await fetchRekap();
-};
+  selectedMonth.value = ''
+  selectedType.value = ''
+  jenisSearch.value = ''
+  selectedStatuses.value = []
+  selectedArea.value = ''
+  selectedYear.value = new Date().getFullYear()
+  await fetchRekap()
+}
 
 const tableColCount = computed(() => {
-  if (selectedMonth.value) return 4;
-  return 1 + monthOptions.value.length + 2;
-});
+  if (selectedMonth.value) return 4
+  return 1 + monthOptions.value.length + 2
+})
 
-const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6));
+const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6))
 
 const formatStatusLabel = (status: string) => {
-  if (!status) return "-";
-  const found = statusOptions.value.find((s) => s.value === status);
-  return found?.label ?? status;
-};
+  if (!status) return '-'
+  const found = statusOptions.value.find((s) => s.value === status)
+  return found?.label ?? status
+}
 </script>
 
 <style scoped>

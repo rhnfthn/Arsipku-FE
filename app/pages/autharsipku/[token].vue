@@ -12,9 +12,7 @@
         v-if="visible"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px]"
       >
-        <div
-          class="absolute inset-0 flex items-center justify-center pointer-events-none"
-        >
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent"
           ></div>
@@ -31,21 +29,14 @@
               class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10"
             >
               <div class="plane-float">
-                <UIcon
-                  name="i-lucide-plane"
-                  class="w-8 h-8 text-[#175fa4] -rotate-45"
-                />
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#175fa4] -rotate-45" />
               </div>
             </div>
           </div>
 
           <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">
-              Memverifikasi Akses
-            </span>
-            <span class="text-sm text-gray-600">
-              Mohon tunggu sebentar...
-            </span>
+            <span class="text-gray-900 font-semibold text-lg"> Memverifikasi Akses </span>
+            <span class="text-sm text-gray-600"> Mohon tunggu sebentar... </span>
           </div>
         </div>
       </div>
@@ -54,66 +45,72 @@
 </template>
 
 <script setup>
-import { useRoute, navigateTo } from "#imports";
+import { useRoute, navigateTo } from '#imports'
 
-const { verifyToken } = useAuth();
-const route = useRoute();
+const { verifyToken } = useAuth()
+const route = useRoute()
+const tokenCookie = useCookie('token', { sameSite: 'lax', path: '/' })
+const sessionCookie = useCookie('sessionId', { sameSite: 'lax', path: '/' })
+const roleCookie = useCookie('auth_role', { sameSite: 'lax', path: '/' })
 
-const visible = ref(true);
+const visible = ref(true)
 
 onMounted(async () => {
-  const token = route.params.token;
-  console.log("ROUTE FULL:", route.fullPath);
-  console.log("TOKEN:", token);
+  const token = route.params.token
+  console.log('ROUTE FULL:', route.fullPath)
+  console.log('TOKEN:', token)
 
   if (!token) {
-    await delayWithFade();
-    return navigateTo("/");
+    await delayWithFade()
+    return navigateTo('/')
   }
 
   try {
-    const result = await verifyToken(token);
+    const result = await verifyToken(token)
 
-    console.log("VERIFY RESULT:", result);
+    console.log('VERIFY RESULT:', result)
 
-    await delayWithFade();
+    await delayWithFade()
 
     if (result?.success) {
-      const accessToken = result?.data?.accessToken;
-      const sessionId = result?.data?.sessionId;
-      const role = result?.data?.user?.role;
+      const accessToken = result?.data?.accessToken
+      const sessionId = result?.data?.sessionId
+      const role = result?.data?.user?.role
 
       if (!accessToken || !sessionId) {
-        console.error("Token/sessionId missing from API response:", result);
-        return navigateTo("/");
+        console.error('Token/sessionId missing from API response:', result)
+        return navigateTo('/')
       }
 
       // Simpan token
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("sessionId", sessionId);
+      localStorage.setItem('token', accessToken)
+      localStorage.setItem('sessionId', sessionId)
+      tokenCookie.value = accessToken
+      sessionCookie.value = sessionId
+      roleCookie.value = role || null
 
       // Routing Dinamis
-      if (["admin", "superadmin", "user"].includes(role)) {
-        return navigateTo("/beranda");
+      if (['admin', 'superadmin', 'user'].includes(role)) {
+        return navigateTo('/beranda')
       }
 
       // fallback
-      return navigateTo("/");
+      return navigateTo('/')
     }
   } catch (error) {
-    console.error("Verify token gagal:", error);
-    await delayWithFade();
-    return navigateTo("/login");
+    console.error('Verify token gagal:', error)
+    await delayWithFade()
+    return navigateTo('/login')
   }
-});
+})
 
 function delayWithFade() {
   return new Promise((resolve) => {
     setTimeout(() => {
-      visible.value = false;
-      setTimeout(resolve, 300);
-    }, 3000);
-  });
+      visible.value = false
+      setTimeout(resolve, 300)
+    }, 3000)
+  })
 }
 </script>
 
