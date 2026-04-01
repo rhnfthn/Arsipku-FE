@@ -483,7 +483,7 @@ const konsepOptions = [
 </script>
 
 <template>
-  <PageHeader title="Detail Naskah" :items="breadcrumbs" />
+  <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
   <div class="w-full flex flex-col gap-6 pt-4">
 

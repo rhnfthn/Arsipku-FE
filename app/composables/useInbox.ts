@@ -16,7 +16,7 @@ const formatDateTime = (value: string | null | undefined) => {
   }).format(date);
 };
 
-// ✅ Interface lengkap sesuai dokumentasi API
+// Interface lengkap sesuai dokumentasi API
 export interface InboxParams {
   page?: number;
   limit?: number;
@@ -26,7 +26,7 @@ export interface InboxParams {
   start_date?: string; // YYYY-MM-DD
   end_date?: string; // YYYY-MM-DD
   // preset?: string; // 7_hari | 30_hari | 60_hari | 1_tahun | semua
-  // ✅ Filter tambahan dari API docs
+  // Filter tambahan dari API docs
   favorite?: boolean; // true | false
   tinjut?: string; // sudah_tinjut | belum_tinjut
   lock?: boolean; // true | false
@@ -94,7 +94,7 @@ export function useInbox() {
       // Sort
       if (params.sort) query.append("sort", params.sort);
 
-      // ✅ Filter flags — hanya dikirim jika terdefinisi (boolean)
+      // Filter flags — hanya dikirim jika terdefinisi (boolean)
       if (params.favorite !== undefined) {
         query.append("favorite", String(params.favorite));
       }
