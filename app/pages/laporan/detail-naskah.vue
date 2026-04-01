@@ -80,34 +80,11 @@
               @click="toggle('jenis')"
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
-              <span
-                v-if="!filters.jenis"
-                class="text-black dark:text-white truncate text-sm flex-1"
-              >
-                {{ $t("semua_jenis") }}
+              <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                {{
+                  jenisOptions.find((j) => j.jenis === filters.jenis)?.jenis_text || $t("semua_jenis")
+                }}
               </span>
-              <div
-                v-else
-                class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-              >
-                <span
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                >
-                  {{
-                    jenisOptions.find((j) => j.jenis === filters.jenis)
-                      ?.jenis_text ?? filters.jenis
-                  }}
-                  <button
-                    @click.stop="
-                      filters.jenis = '';
-                      jenisKeyword = '';
-                    "
-                    class="hover:text-red-500"
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                 :class="{ 'rotate-180': openDropdown === 'jenis' }"
@@ -179,34 +156,11 @@
               @click="toggle('lokasi')"
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
-              <span
-                v-if="!filters.lokasi"
-                class="text-black dark:text-white truncate text-sm flex-1"
-              >
-                {{ $t("semua_lokasi") }}
+              <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                {{
+                  areaOptions.find((a) => a.kode === filters.lokasi)?.nama || $t("semua_lokasi")
+                }}
               </span>
-              <div
-                v-else
-                class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-              >
-                <span
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                >
-                  {{
-                    areaOptions.find((a) => a.kode === filters.lokasi)?.nama ??
-                    filters.lokasi
-                  }}
-                  <button
-                    @click.stop="
-                      filters.lokasi = '';
-                      lokasiKeyword = '';
-                    "
-                    class="hover:text-red-500"
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                 :class="{ 'rotate-180': openDropdown === 'lokasi' }"
@@ -278,30 +232,9 @@
               @click="toggle('status')"
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
-              <span
-                v-if="!selectedStatuses.length"
-                class="text-black dark:text-white truncate flex-1 text-sm"
-              >
-                {{ $t("semua_status") }}
+              <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                {{ statusOptions.find(s => s.value === selectedStatus)?.label || $t("semua_status") }}
               </span>
-              <div
-                v-else
-                class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-              >
-                <span
-                  v-for="status in selectedStatuses"
-                  :key="status"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                >
-                  {{ statusOptions.find((s) => s.value === status)?.label }}
-                  <button
-                    @click.stop="removeStatus(status)"
-                    class="hover:text-red-500 dark:hover:text-red-400"
-                  >
-                    ✕
-                  </button>
-                </span>
-              </div>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': openDropdown === 'status' }"
@@ -314,13 +247,31 @@
               >
                 <div class="flex flex-col gap-1">
                   <button
+                    @mousedown.prevent
+                    @click="
+                      selectedStatus = '';
+                      openDropdown = null;
+                    "
+                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                    :class="
+                      !selectedStatus
+                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                    "
+                  >
+                    {{ $t("semua_status") }}
+                  </button>
+                  <button
                     v-for="status in statusOptions"
                     :key="status.value"
                     @mousedown.prevent
-                    @click="toggleStatus(status.value)"
+                    @click="
+                      selectedStatus = status.value;
+                      openDropdown = null;
+                    "
                     class="px-3 py-2 text-left text-sm rounded-md transition-colors"
                     :class="
-                      selectedStatuses.includes(status.value)
+                      selectedStatus === status.value
                         ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                     "
@@ -647,7 +598,7 @@ const jenisKeyword = ref("");
 const lokasiKeyword = ref("");
 
 const openDropdown = ref<null | string>(null);
-const selectedStatuses = ref<string[]>([]);
+const selectedStatus = ref("");
 
 const currentYear = new Date().getFullYear();
 const tahunMin = ref<number | null>(null);
@@ -674,18 +625,6 @@ const toggle = (key: string) => {
   openDropdown.value = openDropdown.value === key ? null : key;
 };
 
-const toggleStatus = (status: string) => {
-  if (selectedStatuses.value.includes(status)) {
-    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
-  } else {
-    selectedStatuses.value.push(status);
-  }
-};
-
-const removeStatus = (status: string) => {
-  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status);
-};
-
 //OUTSIDE HANDLER
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
@@ -697,9 +636,9 @@ const handleClickOutside = (e: MouseEvent) => {
 //FILTERING
 const filteredData = computed(() => {
   let result = [...rawData.value];
-  if (selectedStatuses.value.length) {
+  if (selectedStatus.value) {
     result = result.filter((item) =>
-      selectedStatuses.value.includes(item.statusRaw),
+      item.statusRaw === selectedStatus.value,
     );
   }
   return result;
@@ -926,7 +865,7 @@ const refreshData = async () => {
     };
     jenisKeyword.value = "";
     lokasiKeyword.value = "";
-    selectedStatuses.value = [];
+    selectedStatus.value = "";
     openDropdown.value = null;
     currentPage.value = 1;
     await fetchDetailNaskah();
@@ -950,7 +889,7 @@ onBeforeUnmount(() => {
 });
 
 //WATCH
-watch(selectedStatuses, () => {
+watch(selectedStatus, () => {
   currentPage.value = 1;
 });
 watch(
