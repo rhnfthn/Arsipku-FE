@@ -74,25 +74,56 @@ const validateAndToast = (payload: DraftPayload) => {
   return true;
 };
 
+// const getBasePayload = (): DraftPayload => ({
+//   id_naskah: editDraftId.value || null,
+//   pengirim: user.value?.position || "",
+//   penerima: tertujuIndividu.value,
+//   tembusan: tembusanIndividu.value,
+//   penerima_grup: tertujuGrup.value,
+//   tembusan_grup: tembusanGrup.value,
+//   klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
+//   klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+//   sifat: selectedSifat.value?.value || "biasa",
+//   perihal: subject.value,
+//   konten: String(editorContent.value || ""),
+//   htmlContent: String(editorContent.value || ""),
+//   english: english.value,
+//   nama_tempat: user.value?.areaText || "Kantor Pusat",
+//   nama_jabatan: user.value?.positionText || "",
+//   nama_lengkap: user.value?.nama || "",
+//   tgl: tglDb.value,
+//   tanggal: tglDisplay.value,
+//   lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
+// });
+
 const getBasePayload = (): DraftPayload => ({
-  id_naskah: editDraftId.value || null,
+  id_naskah: editDraftId.value || null, // Ini aman karena di schema ada .nullable()
   pengirim: user.value?.position || "",
-  penerima: tertujuIndividu.value,
-  tembusan: tembusanIndividu.value,
-  penerima_grup: tertujuGrup.value,
-  tembusan_grup: tembusanGrup.value,
-  klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+  penerima: tertujuIndividu.value || [],
+  tembusan: tembusanIndividu.value || [],
+  penerima_grup: tertujuGrup.value || [],
+  tembusan_grup: tembusanGrup.value || [],
+
+  // PASTIKAN pakai || "" BUKAN || null
+  klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
+  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
+
   sifat: selectedSifat.value?.value || "biasa",
-  perihal: subject.value,
+
+  // TAMBAHKAN || "" DI SINI (Sering jadi penyebab error null)
+  perihal: subject.value || "",
   konten: String(editorContent.value || ""),
   htmlContent: String(editorContent.value || ""),
-  english: english.value,
+  english: english.value || false,
+
   nama_tempat: user.value?.areaText || "Kantor Pusat",
   nama_jabatan: user.value?.positionText || "",
   nama_lengkap: user.value?.nama || "",
-  tgl: tglDb.value,
-  tanggal: tglDisplay.value,
+
+  // TAMBAHKAN || "" DI SINI (Tgl & Tanggal sering bernilai null dari datepicker)
+  tgl: tglDb.value || "",
+  tanggal: tglDisplay.value || "",
+
   lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
 });
 
