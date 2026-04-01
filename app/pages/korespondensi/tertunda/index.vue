@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  Send,
+  FilePen,
 } from "lucide-vue-next";
 import * as XLSX from "xlsx";
 import { useTertunda } from "~/composables/useTertunda";
@@ -69,14 +71,15 @@ const breadcrumbs = [
 ];
 
 // --- CONFIGURATION ---
+
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
   { label: "Nota Dinas", value: "ND", icon: FileText },
+  { label: "Disposisi", value: "DI", icon: Send },
   { label: "Internal", value: "SDI", icon: Building },
   { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Kajian", value: "KA", icon: BookOpen },
 ];
-
 const dateOptions = [
   "Hari ini",
   "7 Hari Terakhir",

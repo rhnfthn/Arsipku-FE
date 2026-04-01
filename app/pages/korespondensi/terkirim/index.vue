@@ -118,10 +118,25 @@ const formatShortDate = (dateString: string | null) => {
   return `${day} ${month} ${date.getUTCFullYear()} ${time}`;
 };
 
+const jenisAliasMap: Record<string, string[]> = {
+  "ALL": [],
+  "ND":  ["ND", "nd", "Nota Dinas", "NOTA DINAS"],
+  "DI":  ["DI", "di", "Disposisi",  "DISPOSISI"],
+  "SDI": ["SDI", "sdi", "Internal", "INTERNAL"],
+  "SDE": ["SDE", "sde", "External", "EXTERNAL", "Eksternal"],
+  "KO":  ["KO", "ko", "Konsep",    "KONSEP"],
+  "KA":  ["KA", "ka", "Kajian",    "KAJIAN"],
+};
+
 const getTabCount = (tabValue: string) => {
-  if (!summary.value?.total_per_jenis) return 0;
+  if (!summary.value) return 0;
   if (tabValue === "ALL") return summary.value.total_semua || 0;
-  return summary.value.total_per_jenis[tabValue] || 0;
+  const counts = summary.value.total_per_jenis || {};
+  const aliases = jenisAliasMap[tabValue] || [tabValue];
+  for (const alias of aliases) {
+    if (counts[alias]) return counts[alias];
+  }
+  return 0;
 };
 
 const getCategoryStyle = (cat: string) => {
