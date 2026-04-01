@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          {{ $t("dn_title") }}
+          {{ $t('dn_title') }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -13,7 +13,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
       >
         <FileDown class="w-4 h-4" />
-        {{ $t("export") }}
+        {{ $t('export') }}
       </button>
     </div>
 
@@ -29,10 +29,7 @@
             class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 disabled:opacity-50"
             :disabled="isRefreshing"
           >
-            <RotateCcw
-              class="w-4 h-4"
-              :class="{ 'animate-spin': isRefreshing }"
-            />
+            <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
           </button>
 
           <!-- ROWS PER PAGE -->
@@ -65,7 +62,7 @@
                     'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                     rowsPerPage === n
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   {{ n }}
@@ -82,7 +79,8 @@
             >
               <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
                 {{
-                  jenisOptions.find((j) => j.jenis === filters.jenis)?.jenis_text || $t("semua_jenis")
+                  jenisOptions.find((j) => j.jenis === filters.jenis)?.jenis_text ||
+                  $t('semua_jenis')
                 }}
               </span>
               <ChevronDown
@@ -119,7 +117,7 @@
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                     "
                   >
-                    {{ $t("semua_jenis") }}
+                    {{ $t('semua_jenis') }}
                   </button>
                   <button
                     v-for="jenis in filteredJenisOptions"
@@ -143,7 +141,7 @@
                     v-if="filteredJenisOptions.length === 0"
                     class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
                   >
-                    {{ $t("tidak_ditemukan") }}
+                    {{ $t('tidak_ditemukan') }}
                   </div>
                 </div>
               </div>
@@ -157,9 +155,7 @@
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
               <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
-                {{
-                  areaOptions.find((a) => a.kode === filters.lokasi)?.nama || $t("semua_lokasi")
-                }}
+                {{ areaOptions.find((a) => a.kode === filters.lokasi)?.nama || $t('semua_lokasi') }}
               </span>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -195,7 +191,7 @@
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                     "
                   >
-                    {{ $t("semua_lokasi") }}
+                    {{ $t('semua_lokasi') }}
                   </button>
                   <button
                     v-for="area in filteredAreaOptions"
@@ -219,7 +215,7 @@
                     v-if="filteredAreaOptions.length === 0"
                     class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
                   >
-                    {{ $t("tidak_ditemukan") }}
+                    {{ $t('tidak_ditemukan') }}
                   </div>
                 </div>
               </div>
@@ -233,7 +229,9 @@
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
               <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
-                {{ statusOptions.find(s => s.value === selectedStatus)?.label || $t("semua_status") }}
+                {{
+                  statusOptions.find((s) => s.value === selectedStatus)?.label || $t('semua_status')
+                }}
               </span>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
@@ -259,7 +257,7 @@
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                     "
                   >
-                    {{ $t("semua_status") }}
+                    {{ $t('semua_status') }}
                   </button>
                   <button
                     v-for="status in statusOptions"
@@ -292,12 +290,10 @@
               <span
                 class="flex-1 truncate text-sm"
                 :class="
-                  filters.tahun
-                    ? 'text-gray-700 dark:text-white'
-                    : 'text-gray-400 dark:text-white'
+                  filters.tahun ? 'text-gray-700 dark:text-white' : 'text-gray-400 dark:text-white'
                 "
               >
-                {{ filters.tahun || $t("semua_tahun") }}
+                {{ filters.tahun || $t('semua_tahun') }}
               </span>
               <ChevronDown
                 class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -338,40 +334,36 @@
         <table class="min-w-max border-collapse text-sm w-full">
           <thead class="text-left bg-primary dark:bg-primary-700 text-white">
             <tr>
-              <th class="px-4 py-3 font-semibold">{{ $t("nomor") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t('nomor') }}</th>
               <th
                 @click="handleSort('tanggal')"
                 class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
               >
                 <div class="flex items-center gap-2">
-                  <span>{{ $t("tanggal") }}</span>
+                  <span>{{ $t('tanggal') }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-200"
                     :class="[
                       sortKey === 'tanggal' ? 'opacity-100' : 'opacity-40',
-                      sortKey === 'tanggal' && sortOrder === 'desc'
-                        ? 'rotate-180'
-                        : '',
+                      sortKey === 'tanggal' && sortOrder === 'desc' ? 'rotate-180' : ''
                     ]"
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 font-semibold">{{ $t("perihal") }}</th>
-              <th class="px-4 py-3 font-semibold">{{ $t("jabatan") }}</th>
-              <th class="px-4 py-3 font-semibold">{{ $t("lokasi") }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t('perihal') }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t('jabatan') }}</th>
+              <th class="px-4 py-3 font-semibold">{{ $t('lokasi') }}</th>
               <th
                 @click="handleSort('status')"
                 class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-600 select-none"
               >
                 <div class="flex items-center gap-2">
-                  <span>{{ $t("sign_status") }}</span>
+                  <span>{{ $t('sign_status') }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-200"
                     :class="[
                       sortKey === 'status' ? 'opacity-100' : 'opacity-40',
-                      sortKey === 'status' && sortOrder === 'desc'
-                        ? 'rotate-180'
-                        : '',
+                      sortKey === 'status' && sortOrder === 'desc' ? 'rotate-180' : ''
                     ]"
                   />
                 </div>
@@ -388,34 +380,22 @@
                 class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition-colors animate-pulse"
               >
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-20"
-                  ></div>
+                  <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-20"></div>
                 </td>
               </tr>
             </template>
@@ -453,7 +433,7 @@
                       'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300':
                         item.statusRaw === 'booking',
                       'bg-red-300 dark:bg-red-700 text-red-700 dark:text-red-300':
-                        item.statusRaw === 'hangus',
+                        item.statusRaw === 'hangus'
                     }"
                   >
                     {{ formatStatusLabel(item.statusRaw) }}
@@ -467,7 +447,7 @@
                   colspan="6"
                   class="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500 italic"
                 >
-                  {{ $t("tidak_ada_data") }}
+                  {{ $t('tidak_ada_data') }}
                 </td>
               </tr>
             </template>
@@ -481,8 +461,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t("menampilkan") }} {{ paginatedNaskah.length }} {{ $t("dari") }}
-          {{ totalItems }} {{ $t("data") }}
+          {{ $t('menampilkan') }} {{ paginatedNaskah.length }} {{ $t('dari') }} {{ totalItems }}
+          {{ $t('data') }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -493,10 +473,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
-            {{ $t("sebelumnya") }}
+            {{ $t('sebelumnya') }}
           </button>
 
           <div class="flex items-center gap-1">
@@ -507,9 +487,7 @@
             >
               1
             </button>
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 dark:text-gray-500"
+            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 dark:text-gray-500"
               >...</span
             >
             <button
@@ -520,15 +498,13 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary dark:bg-primary-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300',
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
               ]"
             >
               {{ page }}
             </button>
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500"
               >...</span
             >
@@ -548,10 +524,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
-            {{ $t("selanjutnya") }}
+            {{ $t('selanjutnya') }}
           </button>
         </div>
       </div>
@@ -561,16 +537,16 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 //IMPORT
-import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
-import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from "lucide-vue-next";
-import { useToast } from "#imports";
-import { useLaporan } from "~/composables/useLaporan";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
+import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from 'lucide-vue-next';
+import { useToast } from '#imports';
+import { useLaporan } from '~/composables/useLaporan';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 //GLOBAL UTIL
 const toast = useToast();
@@ -578,15 +554,15 @@ const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
 
 //SORT
-const sortKey = ref("");
-const sortOrder = ref("asc");
+const sortKey = ref('');
+const sortOrder = ref('asc');
 
 function handleSort(key) {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortKey.value = key;
-    sortOrder.value = "asc";
+    sortOrder.value = 'asc';
   }
 }
 
@@ -594,11 +570,11 @@ function handleSort(key) {
 const loading = ref(false);
 const isRefreshing = ref(false);
 
-const jenisKeyword = ref("");
-const lokasiKeyword = ref("");
+const jenisKeyword = ref('');
+const lokasiKeyword = ref('');
 
 const openDropdown = ref<null | string>(null);
-const selectedStatus = ref("");
+const selectedStatus = ref('');
 
 const currentYear = new Date().getFullYear();
 const tahunMin = ref<number | null>(null);
@@ -613,11 +589,11 @@ const jenisOptions = ref<{ jenis: string; jenis_text: string }[]>([]);
 
 //FILTER STATE
 const filters = ref({
-  jenis: "",
-  lokasi: "",
+  jenis: '',
+  lokasi: '',
   status: [] as string[],
   tahun: currentYear,
-  search: "",
+  search: ''
 });
 
 //DROPDOWN HANDLER
@@ -628,7 +604,7 @@ const toggle = (key: string) => {
 //OUTSIDE HANDLER
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  if (!target.closest(".relative")) {
+  if (!target.closest('.relative')) {
     openDropdown.value = null;
   }
 };
@@ -637,9 +613,7 @@ const handleClickOutside = (e: MouseEvent) => {
 const filteredData = computed(() => {
   let result = [...rawData.value];
   if (selectedStatus.value) {
-    result = result.filter((item) =>
-      item.statusRaw === selectedStatus.value,
-    );
+    result = result.filter((item) => item.statusRaw === selectedStatus.value);
   }
   return result;
 });
@@ -647,14 +621,14 @@ const filteredData = computed(() => {
 const filteredJenisOptions = computed(() => {
   if (!jenisKeyword.value) return jenisOptions.value;
   return jenisOptions.value.filter((j) =>
-    j.jenis_text.toLowerCase().includes(jenisKeyword.value.toLowerCase()),
+    j.jenis_text.toLowerCase().includes(jenisKeyword.value.toLowerCase())
   );
 });
 
 const filteredAreaOptions = computed(() => {
   if (!lokasiKeyword.value) return areaOptions.value;
   return areaOptions.value.filter((a) =>
-    a.nama.toLowerCase().includes(lokasiKeyword.value.toLowerCase()),
+    a.nama.toLowerCase().includes(lokasiKeyword.value.toLowerCase())
   );
 });
 
@@ -700,10 +674,8 @@ const sortedData = computed(() => {
   let data = [...filteredData.value];
   if (!sortKey.value) return data;
   data.sort((a, b) => {
-    if (sortKey.value === "tanggal") {
-      return (
-        new Date(a.tanggalRaw).getTime() - new Date(b.tanggalRaw).getTime()
-      );
+    if (sortKey.value === 'tanggal') {
+      return new Date(a.tanggalRaw).getTime() - new Date(b.tanggalRaw).getTime();
     }
     let valA = a[sortKey.value];
     let valB = b[sortKey.value];
@@ -711,7 +683,7 @@ const sortedData = computed(() => {
     if (valA > valB) return 1;
     return 0;
   });
-  if (sortOrder.value === "desc") data.reverse();
+  if (sortOrder.value === 'desc') data.reverse();
   return data;
 });
 
@@ -722,7 +694,7 @@ const fetchDetailNaskah = async () => {
     const params: any = {
       tahun: Number(filters.value.tahun),
       page: currentPage.value,
-      limit: rowsPerPage.value,
+      limit: rowsPerPage.value
     };
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
@@ -737,13 +709,13 @@ const fetchDetailNaskah = async () => {
       nomor: item.nomor,
       tanggalRaw: item.tanggal,
       tanggal: formatTanggal(item.tanggal),
-      perihal: item.perihal ?? "-",
+      perihal: item.perihal ?? '-',
       jabatan: item.jabatan,
       lokasi: item.lokasi,
       status: formatStatusLabel(item.status),
       statusRaw: item.status,
       jenis: item.jenis,
-      jenis_text: item.jenis_text,
+      jenis_text: item.jenis_text
     }));
   } finally {
     loading.value = false;
@@ -755,10 +727,10 @@ const fetchAreaList = async () => {
     const res = await getAreaList();
     areaOptions.value = res.data.map((item: any) => ({
       kode: item.area,
-      nama: item.longText,
+      nama: item.longText
     }));
   } catch (err) {
-    console.error("Gagal ambil area", err);
+    console.error('Gagal ambil area', err);
   }
 };
 
@@ -767,7 +739,7 @@ const fetchJenis = async () => {
     const res = await getJenisList();
     jenisOptions.value = res.data;
   } catch (err) {
-    console.error("Gagal ambil jenis", err);
+    console.error('Gagal ambil jenis', err);
   }
 };
 
@@ -781,21 +753,21 @@ const fetchTahunRange = async () => {
 
 //HELPER
 const formatTanggal = (date: string) => {
-  if (!date) return "-";
+  if (!date) return '-';
   const d = new Date(date);
-  return d.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
 };
 
 const formatStatusLabel = (status: string) => {
-  if (!status) return "-";
-  if (status === "terpakai_final") return t("nom_status_final");
-  if (status === "terpakai") return t("nom_status_terpakai");
-  if (status === "booking") return t("nom_status_booking");
-  if (status === "hangus") return t("nom_status_hangus");
+  if (!status) return '-';
+  if (status === 'terpakai_final') return t('nom_status_final');
+  if (status === 'terpakai') return t('nom_status_terpakai');
+  if (status === 'booking') return t('nom_status_booking');
+  if (status === 'hangus') return t('nom_status_hangus');
   return status;
 };
 
@@ -803,10 +775,10 @@ const formatStatusLabel = (status: string) => {
 const exportExcel = () => {
   if (!filteredData.value.length) {
     toast.add({
-      title: t("export_dibatalkan"),
-      description: t("export_tidak_ada"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
+      title: t('export_dibatalkan'),
+      description: t('export_tidak_ada'),
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
     });
     return;
   }
@@ -818,36 +790,36 @@ const exportExcel = () => {
     Perihal: item.perihal,
     Jabatan: item.jabatan,
     Lokasi: item.lokasi,
-    Status: formatStatusLabel(item.statusRaw ?? item.status),
+    Status: formatStatusLabel(item.statusRaw ?? item.status)
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
-  worksheet["!cols"] = [
+  worksheet['!cols'] = [
     { wch: 5 },
     { wch: 20 },
     { wch: 12 },
     { wch: 40 },
     { wch: 25 },
     { wch: 20 },
-    { wch: 15 },
+    { wch: 15 }
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Naskah");
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Naskah');
 
-  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
   saveAs(blob, `detail-naskah-${today}.xlsx`);
 
   toast.add({
-    title: t("export_berhasil"),
-    description: t("export_file_berhasil"),
-    color: "success",
-    icon: "i-lucide-file-check",
+    title: t('export_berhasil'),
+    description: t('export_file_berhasil'),
+    color: 'success',
+    icon: 'i-lucide-file-check'
   });
 };
 
@@ -857,20 +829,20 @@ const refreshData = async () => {
   isRefreshing.value = true;
   try {
     filters.value = {
-      jenis: "",
-      lokasi: "",
+      jenis: '',
+      lokasi: '',
       status: [],
       tahun: currentYear,
-      search: "",
+      search: ''
     };
-    jenisKeyword.value = "";
-    lokasiKeyword.value = "";
-    selectedStatus.value = "";
+    jenisKeyword.value = '';
+    lokasiKeyword.value = '';
+    selectedStatus.value = '';
     openDropdown.value = null;
     currentPage.value = 1;
     await fetchDetailNaskah();
   } catch (err) {
-    console.error("Gagal refresh data", err);
+    console.error('Gagal refresh data', err);
   } finally {
     isRefreshing.value = false;
   }
@@ -878,14 +850,14 @@ const refreshData = async () => {
 
 //LIFECYCLE
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
+  document.addEventListener('click', handleClickOutside);
   fetchDetailNaskah();
   fetchAreaList();
   fetchJenis();
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
+  document.removeEventListener('click', handleClickOutside);
 });
 
 //WATCH
@@ -897,7 +869,7 @@ watch(
   () => {
     currentPage.value = 1;
     fetchDetailNaskah();
-  },
+  }
 );
 watch([currentPage, rowsPerPage], () => {
   fetchDetailNaskah();
@@ -905,15 +877,15 @@ watch([currentPage, rowsPerPage], () => {
 
 //DATA STATIS
 const statusOptions = computed(() => [
-  { label: t("nom_status_final"), value: "terpakai_final" },
-  { label: t("nom_status_terpakai"), value: "terpakai" },
-  { label: t("nom_status_booking"), value: "booking" },
-  { label: t("nom_status_hangus"), value: "hangus" },
+  { label: t('nom_status_final'), value: 'terpakai_final' },
+  { label: t('nom_status_terpakai'), value: 'terpakai' },
+  { label: t('nom_status_booking'), value: 'booking' },
+  { label: t('nom_status_hangus'), value: 'hangus' }
 ]);
 
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("detail"), to: "/laporan/detail-naskah" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('detail'), to: '/laporan/detail-naskah' }
 ]);
 </script>
 

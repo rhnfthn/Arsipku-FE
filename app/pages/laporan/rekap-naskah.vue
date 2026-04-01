@@ -74,7 +74,9 @@
             class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
           >
             <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
-              {{ jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text || $t('semua_jenis') }}
+              {{
+                jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text || $t('semua_jenis')
+              }}
             </span>
             <ChevronDown
               class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
@@ -134,62 +136,64 @@
           </Transition>
         </div>
 
-          <!-- STATUS FILTER -->
-          <div class="relative w-[180px] shrink-0">
-            <div
-              @click="toggle('status')"
-              class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
-            >
-              <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
-                {{ statusOptions.find(s => s.value === selectedStatus)?.label || $t('semua_status') }}
-              </span>
-              <ChevronDown
-                class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
-                :class="{ 'rotate-180': openDropdown === 'status' }"
-              />
-            </div>
-            <Transition name="filter-dd">
-              <div
-                v-if="openDropdown === 'status'"
-                class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
-              >
-                <div class="flex flex-col gap-1">
-                  <button
-                    @mousedown.prevent
-                    @click="
-                      selectedStatus = '';
-                      openDropdown = null;
-                    "
-                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                    :class="
-                      !selectedStatus
-                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                    "
-                  >
-                    {{ $t('semua_status') }}
-                  </button>
-                  <button
-                    v-for="status in statusOptions"
-                    :key="status.value"
-                    @mousedown.prevent
-                    @click="
-                      selectedStatus = status.value;
-                      openDropdown = null;
-                    "
-                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                    :class="
-                      selectedStatus === status.value
-                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                    "
-                  >
-                    {{ status.label }}
-                  </button>
-                </div>
-              </div>
-            </Transition>
+        <!-- STATUS FILTER -->
+        <div class="relative w-[180px] shrink-0">
+          <div
+            @click="toggle('status')"
+            class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
+          >
+            <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+              {{
+                statusOptions.find((s) => s.value === selectedStatus)?.label || $t('semua_status')
+              }}
+            </span>
+            <ChevronDown
+              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'status' }"
+            />
           </div>
+          <Transition name="filter-dd">
+            <div
+              v-if="openDropdown === 'status'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+            >
+              <div class="flex flex-col gap-1">
+                <button
+                  @mousedown.prevent
+                  @click="
+                    selectedStatus = '';
+                    openDropdown = null;
+                  "
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    !selectedStatus
+                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                  "
+                >
+                  {{ $t('semua_status') }}
+                </button>
+                <button
+                  v-for="status in statusOptions"
+                  :key="status.value"
+                  @mousedown.prevent
+                  @click="
+                    selectedStatus = status.value;
+                    openDropdown = null;
+                  "
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    selectedStatus === status.value
+                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                  "
+                >
+                  {{ status.label }}
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
 
         <!-- BULAN -->
         <div class="relative w-[150px] shrink-0">
@@ -487,67 +491,67 @@
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth'
-})
+});
 
 //IMPORT
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next'
-import { useToast } from '#imports'
-import { useLaporan } from '~/composables/useLaporan'
-import * as XLSX from 'xlsx'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next';
+import { useToast } from '#imports';
+import { useLaporan } from '~/composables/useLaporan';
+import * as XLSX from 'xlsx';
 
 //COMPOSABLE
-const { getRekapNaskah, getAreaList, getJenisList } = useLaporan()
-const toast = useToast()
-const { t, locale, availableLocales, setLocale } = useI18n()
+const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
+const toast = useToast();
+const { t, locale, availableLocales, setLocale } = useI18n();
 
 //CONST UTIL
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('rekap'), to: '/laporan/rekap-naskah' }
-])
+]);
 
 const getStatusClass = (status: string) => {
   if (status === 'terpakai')
-    return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
+    return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300';
   if (status === 'terpakai_final')
-    return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
+    return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300';
   if (status === 'booking')
-    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
-  return 'bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-300'
-}
+    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300';
+  return 'bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-300';
+};
 
 //STATE
-const selectedYear = ref<number | null>(new Date().getFullYear())
-const selectedMonth = ref('')
-const selectedType = ref('')
-const selectedArea = ref('')
-const selectedStatus = ref('')
+const selectedYear = ref<number | null>(new Date().getFullYear());
+const selectedMonth = ref('');
+const selectedType = ref('');
+const selectedArea = ref('');
+const selectedStatus = ref('');
 
-const openDropdown = ref<null | string>(null)
-const jenisSearch = ref('')
-const showLangDropdown = ref(false)
+const openDropdown = ref<null | string>(null);
+const jenisSearch = ref('');
+const showLangDropdown = ref(false);
 
-const currentPage = ref(1)
-const rowsPerPage = ref(10)
-const rowsChoices = [5, 10, 20, 50]
+const currentPage = ref(1);
+const rowsPerPage = ref(10);
+const rowsChoices = [5, 10, 20, 50];
 
-const rekapData = ref<any[]>([])
-const areaOptions = ref<{ label: string; value: string }[]>([])
-const jenisOptions = ref<any[]>([])
-const loading = ref(false)
+const rekapData = ref<any[]>([]);
+const areaOptions = ref<{ label: string; value: string }[]>([]);
+const jenisOptions = ref<any[]>([]);
+const loading = ref(false);
 
 //LANGUAGE SWITCH
 const switchLocale = async (lang: string) => {
-  await setLocale(lang)
-  showLangDropdown.value = false
-}
+  await setLocale(lang);
+  showLangDropdown.value = false;
+};
 
 //COMPUTED
 const yearOptions = computed(() => {
-  const y = new Date().getFullYear()
-  return [y, y - 1, y - 2]
-})
+  const y = new Date().getFullYear();
+  return [y, y - 1, y - 2];
+});
 
 const monthOptions = computed(() => [
   { label: t('jan'), value: 'januari' },
@@ -562,98 +566,98 @@ const monthOptions = computed(() => [
   { label: t('okt'), value: 'oktober' },
   { label: t('nov'), value: 'november' },
   { label: t('des'), value: 'desember' }
-])
+]);
 
 const statusOptions = computed(() => [
   { label: t('nom_status_final'), value: 'terpakai_final' },
   { label: t('nom_status_terpakai'), value: 'terpakai' },
   { label: t('nom_status_hangus'), value: 'hangus' },
   { label: t('nom_status_booking'), value: 'booking' }
-])
+]);
 
 const selectedMonthLabel = computed(
   () => monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ?? ''
-)
+);
 
 //FILTERING
 const filteredJenisOptions = computed(() => {
-  if (!jenisSearch.value) return jenisOptions.value
+  if (!jenisSearch.value) return jenisOptions.value;
   return jenisOptions.value.filter((item) =>
     item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase())
-  )
-})
+  );
+});
 
 const filteredTableData = computed(() => {
-  let data = [...rekapData.value]
+  let data = [...rekapData.value];
 
   if (selectedStatus.value) {
-    data = data.filter((row) => row.status === selectedStatus.value)
+    data = data.filter((row) => row.status === selectedStatus.value);
   }
 
   if (selectedType.value) {
-    const jenisText = jenisOptions.value.find((j) => j.jenis === selectedType.value)?.jenis_text
-    data = data.filter((row) => row.naskah === jenisText)
+    const jenisText = jenisOptions.value.find((j) => j.jenis === selectedType.value)?.jenis_text;
+    data = data.filter((row) => row.naskah === jenisText);
   }
 
-  return data
-})
+  return data;
+});
 
 //PAGINATION
-const totalItems = computed(() => filteredTableData.value.length)
-const totalPages = computed(() => Math.ceil(totalItems.value / rowsPerPage.value))
+const totalItems = computed(() => filteredTableData.value.length);
+const totalPages = computed(() => Math.ceil(totalItems.value / rowsPerPage.value));
 const paginatedTableData = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return filteredTableData.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredTableData.value.slice(start, start + rowsPerPage.value);
+});
 const paginationPages = computed(() => {
-  const windowSize = 5
-  const pages: number[] = []
-  let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2))
-  let end = start + windowSize - 1
+  const windowSize = 5;
+  const pages: number[] = [];
+  let start = Math.max(1, currentPage.value - Math.floor(windowSize / 2));
+  let end = start + windowSize - 1;
   if (end > totalPages.value) {
-    end = totalPages.value
-    start = Math.max(1, end - windowSize + 1)
+    end = totalPages.value;
+    start = Math.max(1, end - windowSize + 1);
   }
-  for (let i = start; i <= end; i++) pages.push(i)
-  return pages
-})
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
 
 //WATCH
 watch(rowsPerPage, () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 watch(
   [selectedYear, selectedArea, selectedStatus, selectedType, selectedMonth],
   () => {
-    currentPage.value = 1
+    currentPage.value = 1;
   },
   { deep: true }
-)
+);
 watch(selectedType, (val) => {
   if (!val) {
-    jenisSearch.value = ''
-    return
+    jenisSearch.value = '';
+    return;
   }
-  const found = jenisOptions.value.find((j) => j.jenis === val)
-  if (found) jenisSearch.value = found.jenis_text
-})
+  const found = jenisOptions.value.find((j) => j.jenis === val);
+  if (found) jenisSearch.value = found.jenis_text;
+});
 // Re-fetch when year changes
 watch(selectedYear, () => {
-  if (selectedYear.value) fetchRekap()
-})
+  if (selectedYear.value) fetchRekap();
+});
 
 //API FETCH
 const fetchRekap = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const params: any = {
       tahun: selectedYear.value ?? new Date().getFullYear()
-    }
-    if (selectedArea.value) params.area = selectedArea.value
-    if (selectedStatus.value) params.status = selectedStatus.value
-    if (selectedType.value) params.jenis = selectedType.value
+    };
+    if (selectedArea.value) params.area = selectedArea.value;
+    if (selectedStatus.value) params.status = selectedStatus.value;
+    if (selectedType.value) params.jenis = selectedType.value;
 
-    const res = await getRekapNaskah(params)
+    const res = await getRekapNaskah(params);
     rekapData.value = res.data.rekap.map((item: any, idx: number) => ({
       id: idx,
       naskah: item.jenis_text,
@@ -671,58 +675,58 @@ const fetchRekap = async () => {
       november: item.nov,
       desember: item.des,
       jumlah: item.total
-    }))
+    }));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const fetchArea = async () => {
-  const res = await getAreaList()
-  const raw = res?.data?.data || res?.data || []
+  const res = await getAreaList();
+  const raw = res?.data?.data || res?.data || [];
   areaOptions.value = raw.map((item: any) => ({
     label: item.longText,
     value: item.area
-  }))
-}
+  }));
+};
 
 const fetchJenis = async () => {
-  const res = await getJenisList()
-  jenisOptions.value = res.data
-}
+  const res = await getJenisList();
+  jenisOptions.value = res.data;
+};
 
 //SELECT HANDLER
 const selectJenis = (item: any | null) => {
   if (!item) {
-    selectedType.value = ''
-    jenisSearch.value = ''
+    selectedType.value = '';
+    jenisSearch.value = '';
   } else {
-    selectedType.value = item.jenis
-    jenisSearch.value = item.jenis_text
+    selectedType.value = item.jenis;
+    jenisSearch.value = item.jenis_text;
   }
-  openDropdown.value = null
-}
+  openDropdown.value = null;
+};
 
 const toggle = (key: string) => {
-  openDropdown.value = openDropdown.value === key ? null : key
-}
+  openDropdown.value = openDropdown.value === key ? null : key;
+};
 
 // ─── Inline multi-statement handler replacements ──────────────────────────────
 
 const selectRows = (n: number) => {
-  rowsPerPage.value = n
-  openDropdown.value = null
-}
+  rowsPerPage.value = n;
+  openDropdown.value = null;
+};
 
 const selectMonth = (val: string) => {
-  selectedMonth.value = val
-  openDropdown.value = null
-}
+  selectedMonth.value = val;
+  openDropdown.value = null;
+};
 
 const selectYear = (val: number) => {
-  selectedYear.value = val
-  openDropdown.value = null
-}
+  selectedYear.value = val;
+  openDropdown.value = null;
+};
 
 //EXPORT
 const exportExcel = () => {
@@ -732,92 +736,92 @@ const exportExcel = () => {
       description: t('export_data_kosong'),
       color: 'warning',
       icon: 'i-lucide-alert-circle'
-    })
-    return
+    });
+    return;
   }
 
   try {
-    const rows: any[] = []
+    const rows: any[] = [];
     filteredTableData.value.forEach((row) => {
-      const baseRow: any = { [t('naskah_tbl')]: row.naskah }
+      const baseRow: any = { [t('naskah_tbl')]: row.naskah };
       if (selectedMonth.value) {
-        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0
+        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
       } else {
         monthOptions.value.forEach((b) => {
-          baseRow[b.label] = row[b.value] ?? 0
-        })
+          baseRow[b.label] = row[b.value] ?? 0;
+        });
       }
-      baseRow[t('jumlah')] = row.jumlah
-      baseRow[t('sign_status')] = formatStatusLabel(row.status)
-      rows.push(baseRow)
-    })
+      baseRow[t('jumlah')] = row.jumlah;
+      baseRow[t('sign_status')] = formatStatusLabel(row.status);
+      rows.push(baseRow);
+    });
 
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, t('rekap'))
-    const fileName = `rekap-naskah-${selectedYear.value ?? new Date().getFullYear()}.xlsx`
-    XLSX.writeFile(wb, fileName)
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('rekap'));
+    const fileName = `rekap-naskah-${selectedYear.value ?? new Date().getFullYear()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 
     toast.add({
       title: t('export_berhasil'),
       description: t('export_file_berhasil'),
       color: 'success',
       icon: 'i-lucide-file-check'
-    })
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     toast.add({
       title: t('export_gagal'),
       description: t('export_error'),
       color: 'error',
       icon: 'i-lucide-x-circle'
-    })
+    });
   }
-}
+};
 
 //LIFECYCLE
 const handleClickOutside = (e: MouseEvent) => {
-  const target = e.target as HTMLElement
+  const target = e.target as HTMLElement;
   if (!target.closest('.relative')) {
-    openDropdown.value = null
-    showLangDropdown.value = false
+    openDropdown.value = null;
+    showLangDropdown.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchRekap()
-  fetchArea()
-  fetchJenis()
-  document.addEventListener('click', handleClickOutside)
-})
+  fetchRekap();
+  fetchArea();
+  fetchJenis();
+  document.addEventListener('click', handleClickOutside);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 
 //UI HELPER
 const refreshData = async () => {
-  selectedMonth.value = ''
-  selectedType.value = ''
-  jenisSearch.value = ''
-  selectedStatus.value = ''
-  selectedArea.value = ''
-  selectedYear.value = new Date().getFullYear()
-  await fetchRekap()
-}
+  selectedMonth.value = '';
+  selectedType.value = '';
+  jenisSearch.value = '';
+  selectedStatus.value = '';
+  selectedArea.value = '';
+  selectedYear.value = new Date().getFullYear();
+  await fetchRekap();
+};
 
 const tableColCount = computed(() => {
-  if (selectedMonth.value) return 4
-  return 1 + monthOptions.value.length + 2
-})
+  if (selectedMonth.value) return 4;
+  return 1 + monthOptions.value.length + 2;
+});
 
-const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6))
+const skeletonRows = computed(() => (selectedMonth.value ? 4 : 6));
 
 const formatStatusLabel = (status: string) => {
-  if (!status) return '-'
-  const found = statusOptions.value.find((s) => s.value === status)
-  return found?.label ?? status
-}
+  if (!status) return '-';
+  const found = statusOptions.value.find((s) => s.value === status);
+  return found?.label ?? status;
+};
 </script>
 
 <style scoped>
