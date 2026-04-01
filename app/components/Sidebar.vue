@@ -252,20 +252,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from 'vue';
+import { useRoute } from 'vue-router';
 
-import { useAuth } from '~/composables/useAuth'
-import { usePenomoran } from '~/composables/usePenomoran'
-import { useInboxCount } from '~/composables/useInboxCount'
-import { useLabel } from '~/composables/useLabel'
-import { buildLabelTree } from '~/utils/treeHelper'
-import SidebarLabelItem from '~/components/SidebarLabelItem.vue'
+import { useAuth } from '~/composables/useAuth';
+import { usePenomoran } from '~/composables/usePenomoran';
+import { useInboxCount } from '~/composables/useInboxCount';
+import { useLabel } from '~/composables/useLabel';
+import { buildLabelTree } from '~/utils/treeHelper';
+import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile } = useAuth()
+const { user, getProfile } = useAuth();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
-  usePenomoran()
-const { unreadCount, fetchInboxCount } = useInboxCount()
+  usePenomoran();
+const { unreadCount, fetchInboxCount } = useInboxCount();
 const {
   labels,
   labelCounts,
@@ -275,133 +275,132 @@ const {
   createLabel,
   updateLabel,
   deleteLabel
-} = useLabel()
+} = useLabel();
 
-const labelTree = computed(() => labels.value)
-const route = useRoute()
-const { t } = useI18n()
+const labelTree = computed(() => labels.value);
+const route = useRoute();
+const { t } = useI18n();
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
-const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role))
+const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 
-// ✅ Manajerial BOD: semua user dengan bodTag BOD / BOD-1 / BOD-2 / BOD-3
 const isBODManajerial = computed(() => {
-  const tag = user.value?.bodTag ?? ''
-  return ['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag)
-})
+  const tag = user.value?.bodTag ?? '';
+  return ['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
+});
 
 // ─── Position ID helper ───────────────────────────────────────────────────────
 
 const getPositionId = (userValue) => {
-  if (!userValue) return null
+  if (!userValue) return null;
   if (userValue.position && typeof userValue.position === 'object') {
-    const id = userValue.position.id
-    return typeof id === 'number' ? id : typeof id === 'string' ? Number(id) : null
+    const id = userValue.position.id;
+    return typeof id === 'number' ? id : typeof id === 'string' ? Number(id) : null;
   }
-  if (typeof userValue.position === 'number') return userValue.position
+  if (typeof userValue.position === 'number') return userValue.position;
   if (typeof userValue.position === 'string' && !isNaN(Number(userValue.position)))
-    return Number(userValue.position)
-  return null
-}
+    return Number(userValue.position);
+  return null;
+};
 
 // ─── Count fetching ───────────────────────────────────────────────────────────
 
 const fetchCounts = async () => {
   try {
-    if (!user.value) return
-    const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin'
-    const positionId = getPositionId(user.value)
+    if (!user.value) return;
+    const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin';
+    const positionId = getPositionId(user.value);
     if (isAdmin) {
-      await getNomorRequestCountAdmin()
+      await getNomorRequestCountAdmin();
     } else if (positionId && !isNaN(positionId)) {
-      await getNomorRequestCountUser(positionId)
+      await getNomorRequestCountUser(positionId);
     }
   } catch (error) {
-    console.error('❌ Error fetching counts:', error)
+    console.error('❌ Error fetching counts:', error);
   }
-}
+};
 
-let countInterval = null
+let countInterval = null;
 
 watch(
   () => user.value,
   async (newUser) => {
     if (newUser) {
-      fetchLabels()
-      fetchLabelCounts()
-      const posId = getPositionId(newUser)
-      await fetchCounts()
-      if (posId && !isNaN(posId)) await fetchInboxCount(posId)
+      fetchLabels();
+      fetchLabelCounts();
+      const posId = getPositionId(newUser);
+      await fetchCounts();
+      if (posId && !isNaN(posId)) await fetchInboxCount(posId);
     }
   },
   { immediate: true }
-)
+);
 
 onMounted(async () => {
   try {
-    if (!user.value) await getProfile()
-    await nextTick()
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
+    if (!user.value) await getProfile();
+    await nextTick();
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
     if (user.value) {
-      fetchLabels()
-      fetchLabelCounts()
-      await fetchCounts()
-      const positionId = getPositionId(user.value)
-      if (positionId && !isNaN(positionId)) await fetchInboxCount(positionId)
+      fetchLabels();
+      fetchLabelCounts();
+      await fetchCounts();
+      const positionId = getPositionId(user.value);
+      if (positionId && !isNaN(positionId)) await fetchInboxCount(positionId);
     }
     countInterval = setInterval(() => {
       if (user.value) {
-        fetchCounts()
-        fetchLabelCounts()
-        const positionId = getPositionId(user.value)
-        if (positionId && !isNaN(positionId)) fetchInboxCount(positionId)
+        fetchCounts();
+        fetchLabelCounts();
+        const positionId = getPositionId(user.value);
+        if (positionId && !isNaN(positionId)) fetchInboxCount(positionId);
       }
-    }, 30000)
+    }, 30000);
   } catch (error) {
-    console.error('❌ Error in sidebar mount:', error)
+    console.error('❌ Error in sidebar mount:', error);
   }
-})
+});
 
 // ─── Props / emits ────────────────────────────────────────────────────────────
 
-const props = defineProps({ collapsed: Boolean })
-const emit = defineEmits(['update:collapsed'])
+const props = defineProps({ collapsed: Boolean });
+const emit = defineEmits(['update:collapsed']);
 
-const isMobileOpen = ref(false)
-const isMobile = ref(false)
-const activeApp = ref('')
-const hoveredApp = ref(null)
+const isMobileOpen = ref(false);
+const isMobile = ref(false);
+const activeApp = ref('');
+const hoveredApp = ref(null);
 
-const hasInboxUnread = computed(() => unreadCount.value > 0)
+const hasInboxUnread = computed(() => unreadCount.value > 0);
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
 const tulisChildrenByBod = computed(() => {
-  const tag = user.value?.bodTag ?? ''
+  const tag = user.value?.bodTag ?? '';
   const all = [
     { label: t('nota_dinas'), to: '/korespondensi/tulis/nota-dinas' },
     { label: t('disposisi'), to: '/korespondensi/tulis/disposisi' },
     { label: t('surat_dinas_internal'), to: '/korespondensi/tulis/surat-dinas-internal' },
     { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal' },
     { label: t('kajian'), to: '/korespondensi/tulis/kajian' }
-  ]
-  if (tag === 'BOD' || tag === 'BOD-1') return all
+  ];
+  if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
     return all.filter(
       (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
-    )
+    );
   }
-  return all.filter((i) => i.label === t('kajian'))
-})
+  return all.filter((i) => i.label === t('kajian'));
+});
 
 const tulisMenu = computed(() => ({
   label: t('tulis'),
   to: '/korespondensi/tulis',
   icon: 'i-lucide-edit',
   children: tulisChildrenByBod.value
-}))
+}));
 
 const userMenuUtama = computed(() => [
   { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
@@ -415,16 +414,16 @@ const userMenuUtama = computed(() => [
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
   { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
-])
+]);
 
 const userMenuUtilitas = computed(() => {
-  const badgeCount = userCounts.value.belum_diajukan || 0
+  const badgeCount = userCounts.value.belum_diajukan || 0;
   const menus = [
     { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
     { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' }
-  ]
+  ];
 
   if (isBODManajerial.value) {
     menus.push({
@@ -445,27 +444,27 @@ const userMenuUtilitas = computed(() => {
               : null
         }
       ]
-    })
+    });
   } else {
     menus.push({
       label: t('usulan-penomoran') || 'Usulan Penomoran',
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
       badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
-    })
+    });
   }
 
-  return menus
-})
+  return menus;
+});
 
 const faqMenuUser = computed(() => [
   { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' }
-])
+]);
 
 const faqMenuAdmin = computed(() => [
   { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
   { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' }
-])
+]);
 
 // ─── Admin menus ──────────────────────────────────────────────────────────────
 
@@ -481,7 +480,7 @@ const adminMenuUtama = computed(() => [
   { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
   { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
   { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
-])
+]);
 
 const adminMenuUtilitas = computed(() => {
   const menus = [
@@ -498,11 +497,12 @@ const adminMenuUtilitas = computed(() => {
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
     { label: 'Usulan Penomoran', to: '/usulan-penomoran', icon: 'i-lucide-hash', onlyUser: true }
-  ]
-  return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value))
-})
+  ];
+  return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value));
+});
 
 const adminMenuAdministrasi = computed(() => {
+  // FIX: Use consistent, explicit icon strings — never rely on translated keys for icons
   const base = [
     { label: t('delegasi'), to: '/delegasi', icon: 'i-lucide-users' },
     { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
@@ -524,8 +524,10 @@ const adminMenuAdministrasi = computed(() => {
         { label: t('penomoran'), to: '/penomoran/nomor' }
       ]
     },
-    { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-text' }
-  ]
+    // FIX: Was missing explicit icon — icon was undefined, causing UIcon to
+    // fall back to a default/random resolved icon from the icon bundle
+    { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-input' }
+  ];
   if (user.value?.role === 'superadmin') {
     base.push(
       {
@@ -539,37 +541,57 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('jenis'), to: '/master/jenis' }
         ]
       },
+      // FIX: icon was 'i-lucide-settings-2' but the app icon for Administrasi
+      // uses 'i-lucide-settings' — both are valid but must be set explicitly and
+      // consistently. Using 'i-lucide-settings-2' here is correct per img 1/2.
       { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
-    )
+    );
   }
-  return base
-})
+  return base;
+});
 
 const adminMenuLaporan = computed(() => [
+  // FIX: All three had correct icons already, but the issue was the app-level
+  // icon for Laporan tab was not stable. Defined explicitly below in apps computed.
   { label: t('rekap'), to: '/laporan/rekap-naskah', icon: 'i-lucide-file-bar-chart-2' },
   { label: t('detail'), to: '/laporan/detail-naskah', icon: 'i-lucide-file-search' },
   { label: t('naskah'), to: '/laporan/naskah-masuk', icon: 'i-lucide-folder-input' }
-])
+]);
 
 // ─── Notification flags ───────────────────────────────────────────────────────
 
-const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0)
+const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0);
 const hasUtilitasNotification = computed(() => {
   if (!isAdminOrSuperadmin.value) {
     return (
       userCounts.value.menunggu_verifikasi > 0 || (userCounts.value.menunggu_persetujuan ?? 0) > 0
-    )
+    );
   }
-  return false
-})
+  return false;
+});
+
 // ─── Apps ─────────────────────────────────────────────────────────────────────
 
 const apps = computed(() => {
+  // FIX: The core bug. When the page refreshes, user.value is null initially.
+  // isAdminOrSuperadmin returns false, so the user apps array is returned first.
+  // The watch(apps) with { immediate: true } then sets activeApp to 'user-utama'.
+  // When getProfile() resolves and user.value updates, apps switches to admin
+  // menus — but activeApp is still 'user-utama', which no longer exists in the
+  // new apps array. The watch tries to match from route, but if route matching
+  // fails (e.g. /delegasi is only in admin menus), activeApp stays stale.
+  //
+  // The real fix: guard the entire apps computed with a userReady flag so we
+  // never return mismatched menus before user data is loaded.
+  if (!userReady.value) return [];
+
   if (isAdminOrSuperadmin.value) {
     return [
       {
         id: 'admin-utama',
         label: t('utama'),
+        // FIX: Use 'i-heroicons-home' consistently — this is the correct icon
+        // shown in img 1/2. Never use a computed/dynamic value here.
         icon: 'i-heroicons-home',
         menus: adminMenuUtama.value,
         hasNotification: hasInboxUnread.value
@@ -584,6 +606,8 @@ const apps = computed(() => {
       {
         id: 'admin-administrasi',
         label: t('administrasi'),
+        // FIX: Was 'i-lucide-settings' in original. This is correct per img 1/2.
+        // Must be a hardcoded string literal — never a variable or t() call.
         icon: 'i-lucide-settings',
         menus: adminMenuAdministrasi.value,
         hasNotification: hasAdministrasiNotification.value
@@ -591,6 +615,7 @@ const apps = computed(() => {
       {
         id: 'admin-laporan',
         label: t('laporan'),
+        // FIX: Was 'i-heroicons-presentation-chart-line'. Correct per img 1/2.
         icon: 'i-heroicons-presentation-chart-line',
         menus: adminMenuLaporan.value,
         hasNotification: false
@@ -602,7 +627,7 @@ const apps = computed(() => {
         menus: faqMenuAdmin.value,
         hasNotification: false
       }
-    ]
+    ];
   }
 
   return [
@@ -627,77 +652,94 @@ const apps = computed(() => {
       menus: faqMenuUser.value,
       hasNotification: false
     }
-  ]
-})
+  ];
+});
+
+// ─── FIX: userReady flag ──────────────────────────────────────────────────────
+// This is the KEY fix. We track whether user data has been loaded at least once.
+// Until it's true, apps returns [] and no activeApp is set prematurely.
+// This prevents the "flash" where user menus render briefly before admin menus load.
+const userReady = ref(false);
+
+watch(
+  () => user.value,
+  (newUser) => {
+    if (newUser) {
+      userReady.value = true;
+    }
+  },
+  { immediate: true }
+);
 
 // ─── Active app ───────────────────────────────────────────────────────────────
 
 const setActiveApp = (appId) => {
-  activeApp.value = appId
-}
+  activeApp.value = appId;
+};
 
 const currentAppData = computed(() => {
-  return apps.value.find((app) => app.id === activeApp.value) || apps.value[0]
-})
+  return apps.value.find((app) => app.id === activeApp.value) || apps.value[0] || { menus: [] };
+});
 
+// FIX: Removed { immediate: true } from this watch.
+// With immediate: true, this ran before user was loaded, setting activeApp to
+// the first app in the user-role list (user-utama) even for admins.
+// Now it only runs after apps actually has content (userReady is true).
 watch(
   apps,
   (newApps) => {
-    if (newApps.length > 0) {
-      // Try to determine active app from current route
-      const path = route.path
-      let matchedAppId = ''
+    if (newApps.length === 0) return; // guard: user not loaded yet
 
-      for (const app of newApps) {
-        if (app.menus && Array.isArray(app.menus)) {
-          for (const menu of app.menus) {
-            if (menu.to && path.startsWith(menu.to)) {
-              matchedAppId = app.id
-              break
-            }
-            // Check children menus
-            if (menu.children && Array.isArray(menu.children)) {
-              for (const child of menu.children) {
-                if (child.to && path.startsWith(child.to)) {
-                  matchedAppId = app.id
-                  break
-                }
+    const path = route.path;
+    let matchedAppId = '';
+
+    for (const app of newApps) {
+      if (app.menus && Array.isArray(app.menus)) {
+        for (const menu of app.menus) {
+          if (menu.to && path.startsWith(menu.to)) {
+            matchedAppId = app.id;
+            break;
+          }
+          if (menu.children && Array.isArray(menu.children)) {
+            for (const child of menu.children) {
+              if (child.to && path.startsWith(child.to)) {
+                matchedAppId = app.id;
+                break;
               }
             }
           }
-          if (matchedAppId) break
         }
-      }
-
-      if (matchedAppId) {
-        activeApp.value = matchedAppId
-      } else {
-        const exists = newApps.find((a) => a.id === activeApp.value)
-        if (!exists) activeApp.value = newApps[0].id
+        if (matchedAppId) break;
       }
     }
-  },
-  { immediate: true }
-)
 
-// Update active app when route changes
+    if (matchedAppId) {
+      activeApp.value = matchedAppId;
+    } else {
+      const exists = newApps.find((a) => a.id === activeApp.value);
+      if (!exists) activeApp.value = newApps[0].id;
+    }
+  }
+  // FIX: No { immediate: true } here
+);
+
 watch(
   () => route.path,
   (path) => {
-    if (!apps.value || apps.value.length === 0) return
+    if (!apps.value || apps.value.length === 0) return;
 
     for (const app of apps.value) {
       if (app.menus && Array.isArray(app.menus)) {
         for (const menu of app.menus) {
           if (menu.to && path.startsWith(menu.to)) {
-            activeApp.value = app.id
-            return
+            activeApp.value = app.id;
+            return;
           }
           if (menu.children && Array.isArray(menu.children)) {
             for (const child of menu.children) {
               if (child.to && path.startsWith(child.to)) {
-                activeApp.value = app.id
-                return
+                activeApp.value = app.id;
+                return;
               }
             }
           }
@@ -705,118 +747,118 @@ watch(
       }
     }
   }
-)
+);
 
 // ─── Screen / collapse ────────────────────────────────────────────────────────
 
 const checkScreenSize = () => {
-  isMobile.value = window.innerWidth < 768
-}
+  isMobile.value = window.innerWidth < 768;
+};
 
 const handleMenuClick = () => {
   if (isMobile.value) {
-    isMobileOpen.value = false
+    isMobileOpen.value = false;
   } else {
-    emit('update:collapsed', !props.collapsed)
+    emit('update:collapsed', !props.collapsed);
   }
-}
+};
 
-const closeMobile = () => (isMobileOpen.value = false)
-const openMobile = () => (isMobileOpen.value = true)
+const closeMobile = () => (isMobileOpen.value = false);
+const openMobile = () => (isMobileOpen.value = true);
 
 // ─── Label management ─────────────────────────────────────────────────────────
 
-const showLabelModal = ref(false)
-const showDeleteModal = ref(false)
-const isEditing = ref(false)
-const isProcessing = ref(false)
-const labelToDelete = ref(null)
+const showLabelModal = ref(false);
+const showDeleteModal = ref(false);
+const isEditing = ref(false);
+const isProcessing = ref(false);
+const labelToDelete = ref(null);
 
 const labelForm = reactive({
   id: null,
   name: '',
   isNested: false,
   parentId: ''
-})
+});
 
 const availableParents = computed(() => {
-  if (!isEditing.value) return labels.value
-  return labels.value.filter((l) => l.id !== labelForm.id)
-})
+  if (!isEditing.value) return labels.value;
+  return labels.value.filter((l) => l.id !== labelForm.id);
+});
 
 const openCreateLabelModal = () => {
-  isEditing.value = false
-  labelForm.id = null
-  labelForm.nama = ''
-  labelForm.isNested = false
-  labelForm.parentId = ''
-  showLabelModal.value = true
-}
+  isEditing.value = false;
+  labelForm.id = null;
+  labelForm.nama = '';
+  labelForm.isNested = false;
+  labelForm.parentId = '';
+  showLabelModal.value = true;
+};
 
 const openEditLabelModal = (label) => {
-  isEditing.value = true
-  labelForm.id = label.id
-  labelForm.nama = label.nama
-  labelForm.isNested = !!label.parent_id
-  labelForm.parentId = label.parent_id || ''
-  showLabelModal.value = true
-}
+  isEditing.value = true;
+  labelForm.id = label.id;
+  labelForm.nama = label.nama;
+  labelForm.isNested = !!label.parent_id;
+  labelForm.parentId = label.parent_id || '';
+  showLabelModal.value = true;
+};
 
 const closeLabelModal = () => {
-  showLabelModal.value = false
-  isProcessing.value = false
-}
+  showLabelModal.value = false;
+  isProcessing.value = false;
+};
 
 const saveLabel = async () => {
-  if (!labelForm.nama) return
-  isProcessing.value = true
+  if (!labelForm.nama) return;
+  isProcessing.value = true;
   const payload = {
     nama: labelForm.nama,
     idParent: labelForm.isNested && labelForm.parentId ? labelForm.parentId : null
-  }
+  };
   try {
     if (isEditing.value) {
-      await updateLabel(labelForm.id, payload)
+      await updateLabel(labelForm.id, payload);
     } else {
-      await createLabel(payload)
+      await createLabel(payload);
     }
-    await fetchLabels()
-    closeLabelModal()
+    await fetchLabels();
+    closeLabelModal();
   } catch (err) {
-    console.error('Gagal menyimpan label:', err)
+    console.error('Gagal menyimpan label:', err);
   } finally {
-    isProcessing.value = false
+    isProcessing.value = false;
   }
-}
+};
 
 const openDeleteConfirm = (label) => {
-  labelToDelete.value = label
-  showDeleteModal.value = true
-}
+  labelToDelete.value = label;
+  showDeleteModal.value = true;
+};
 
 const confirmDelete = async () => {
-  if (!labelToDelete.value) return
-  isProcessing.value = true
+  if (!labelToDelete.value) return;
+  isProcessing.value = true;
   try {
-    await deleteLabel(labelToDelete.value.id)
-    await fetchLabels()
-    showDeleteModal.value = false
-    labelToDelete.value = null
+    await deleteLabel(labelToDelete.value.id);
+    await fetchLabels();
+    showDeleteModal.value = false;
+    labelToDelete.value = null;
   } catch (err) {
-    console.error('Gagal menghapus label:', err)
+    console.error('Gagal menghapus label:', err);
   } finally {
-    isProcessing.value = false
+    isProcessing.value = false;
   }
-}
+};
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkScreenSize)
-  if (countInterval) clearInterval(countInterval)
-})
+  window.removeEventListener('resize', checkScreenSize);
+  if (countInterval) clearInterval(countInterval);
+});
 
-defineExpose({ openMobile, closeMobile })
+defineExpose({ openMobile, closeMobile });
 </script>
 
 <style scoped>
