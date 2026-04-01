@@ -73,17 +73,9 @@
             @click="toggle('type')"
             class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
           >
-            <span v-if="!selectedType" class="text-black dark:text-white truncate text-sm flex-1">
-              {{ $t('semua_jenis') }}
+            <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+              {{ jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text || $t('semua_jenis') }}
             </span>
-            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
-              <span
-                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-              >
-                {{ jenisOptions.find((j) => j.jenis === selectedType)?.jenis_text }}
-                <button @click.stop="selectJenis(null)" class="hover:text-red-500">✕</button>
-              </span>
-            </div>
             <ChevronDown
               class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'type' }"
@@ -142,57 +134,62 @@
           </Transition>
         </div>
 
-        <!-- STATUS FILTER -->
-        <div class="relative w-[180px] shrink-0">
-          <div
-            @click="toggle('status')"
-            class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
-          >
-            <span
-              v-if="!selectedStatuses.length"
-              class="text-black dark:text-white truncate text-sm flex-1"
-            >
-              {{ $t('semua_status') }}
-            </span>
-            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
-              <span
-                v-for="status in selectedStatuses"
-                :key="status"
-                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-              >
-                {{ statusOptions.find((s) => s.value === status)?.label }}
-                <button @click.stop="removeStatus(status)" class="hover:text-red-500">✕</button>
-              </span>
-            </div>
-            <ChevronDown
-              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
-              :class="{ 'rotate-180': openDropdown === 'status' }"
-            />
-          </div>
-          <Transition name="filter-dd">
+          <!-- STATUS FILTER -->
+          <div class="relative w-[180px] shrink-0">
             <div
-              v-if="openDropdown === 'status'"
-              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+              @click="toggle('status')"
+              class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
             >
-              <div class="flex flex-col gap-1">
-                <button
-                  v-for="status in statusOptions"
-                  :key="status.value"
-                  @mousedown.prevent
-                  @click="toggleStatus(status.value)"
-                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                  :class="
-                    selectedStatuses.includes(status.value)
-                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                  "
-                >
-                  {{ status.label }}
-                </button>
-              </div>
+              <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                {{ statusOptions.find(s => s.value === selectedStatus)?.label || $t('semua_status') }}
+              </span>
+              <ChevronDown
+                class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
+                :class="{ 'rotate-180': openDropdown === 'status' }"
+              />
             </div>
-          </Transition>
-        </div>
+            <Transition name="filter-dd">
+              <div
+                v-if="openDropdown === 'status'"
+                class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+              >
+                <div class="flex flex-col gap-1">
+                  <button
+                    @mousedown.prevent
+                    @click="
+                      selectedStatus = '';
+                      openDropdown = null;
+                    "
+                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                    :class="
+                      !selectedStatus
+                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                    "
+                  >
+                    {{ $t('semua_status') }}
+                  </button>
+                  <button
+                    v-for="status in statusOptions"
+                    :key="status.value"
+                    @mousedown.prevent
+                    @click="
+                      selectedStatus = status.value;
+                      openDropdown = null;
+                    "
+                    class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                    :class="
+                      selectedStatus === status.value
+                        ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                    "
+                  >
+                    {{ status.label }}
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
         <!-- BULAN -->
         <div class="relative w-[150px] shrink-0">
@@ -200,20 +197,9 @@
             @click="toggle('month')"
             class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
           >
-            <span
-              v-if="!selectedMonth"
-              class="text-gray-black dark:text-white truncate text-sm flex-1"
-            >
-              {{ $t('semua_bulan') }}
+            <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+              {{ selectedMonthLabel || $t('semua_bulan') }}
             </span>
-            <div v-else class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1">
-              <span
-                class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-              >
-                {{ selectedMonthLabel }}
-                <button @click.stop="selectedMonth = ''" class="hover:text-red-500">✕</button>
-              </span>
-            </div>
             <ChevronDown
               class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
               :class="{ 'rotate-180': openDropdown === 'month' }"
@@ -536,7 +522,7 @@ const selectedYear = ref<number | null>(new Date().getFullYear())
 const selectedMonth = ref('')
 const selectedType = ref('')
 const selectedArea = ref('')
-const selectedStatuses = ref<string[]>([])
+const selectedStatus = ref('')
 
 const openDropdown = ref<null | string>(null)
 const jenisSearch = ref('')
@@ -600,8 +586,8 @@ const filteredJenisOptions = computed(() => {
 const filteredTableData = computed(() => {
   let data = [...rekapData.value]
 
-  if (selectedStatuses.value.length) {
-    data = data.filter((row) => selectedStatuses.value.includes(row.status))
+  if (selectedStatus.value) {
+    data = data.filter((row) => row.status === selectedStatus.value)
   }
 
   if (selectedType.value) {
@@ -637,7 +623,7 @@ watch(rowsPerPage, () => {
   currentPage.value = 1
 })
 watch(
-  [selectedYear, selectedArea, selectedStatuses, selectedType, selectedMonth],
+  [selectedYear, selectedArea, selectedStatus, selectedType, selectedMonth],
   () => {
     currentPage.value = 1
   },
@@ -664,7 +650,7 @@ const fetchRekap = async () => {
       tahun: selectedYear.value ?? new Date().getFullYear()
     }
     if (selectedArea.value) params.area = selectedArea.value
-    if (selectedStatuses.value.length === 1) params.status = selectedStatuses.value[0]
+    if (selectedStatus.value) params.status = selectedStatus.value
     if (selectedType.value) params.jenis = selectedType.value
 
     const res = await getRekapNaskah(params)
@@ -715,18 +701,6 @@ const selectJenis = (item: any | null) => {
     jenisSearch.value = item.jenis_text
   }
   openDropdown.value = null
-}
-
-const toggleStatus = (status: string) => {
-  if (selectedStatuses.value.includes(status)) {
-    selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status)
-  } else {
-    selectedStatuses.value.push(status)
-  }
-}
-
-const removeStatus = (status: string) => {
-  selectedStatuses.value = selectedStatuses.value.filter((s) => s !== status)
 }
 
 const toggle = (key: string) => {
@@ -826,7 +800,7 @@ const refreshData = async () => {
   selectedMonth.value = ''
   selectedType.value = ''
   jenisSearch.value = ''
-  selectedStatuses.value = []
+  selectedStatus.value = ''
   selectedArea.value = ''
   selectedYear.value = new Date().getFullYear()
   await fetchRekap()

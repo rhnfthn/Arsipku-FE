@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          {{ $t("naskah_masuk") }}
+          {{ $t('naskah_masuk') }}
         </h1>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -22,10 +22,7 @@
               @click="refreshData"
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400"
             >
-              <RotateCcw
-                class="w-4 h-4"
-                :class="{ 'animate-spin': loadingTable1 }"
-              />
+              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loadingTable1 }" />
             </button>
 
             <!-- JENIS FILTER -->
@@ -34,28 +31,9 @@
                 @click="t1Toggle('jenis')"
                 class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
               >
-                <span
-                  v-if="!selectedJenis"
-                  class="text-black dark:text-white truncate text-sm flex-1"
-                >
-                  {{ $t("semua_jenis") }}
+                <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                  {{ selectedJenis || $t('semua_jenis') }}
                 </span>
-                <div
-                  v-else
-                  class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-                >
-                  <span
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                  >
-                    {{ selectedJenis }}
-                    <button
-                      @click.stop="selectJenis('')"
-                      class="hover:text-red-500"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                </div>
                 <ChevronDown
                   class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                   :class="{ 'rotate-180': t1Open === 'jenis' }"
@@ -86,7 +64,7 @@
                           : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                       "
                     >
-                      {{ $t("semua_jenis") }}
+                      {{ $t('semua_jenis') }}
                     </button>
                     <button
                       v-for="jenis in jenisOptions"
@@ -106,7 +84,7 @@
                       v-if="!jenisOptions.length"
                       class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
                     >
-                      {{ $t("tidak_ditemukan") }}
+                      {{ $t('tidak_ditemukan') }}
                     </div>
                   </div>
                 </div>
@@ -119,28 +97,9 @@
                 @click="t1Toggle('bulan')"
                 class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
               >
-                <span
-                  v-if="!selectedMonth"
-                  class="text-black dark:text-white truncate text-sm flex-1"
-                >
-                  {{ $t("semua_bulan") }}
+                <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                  {{ selectedMonthLabel || $t('semua_bulan') }}
                 </span>
-                <div
-                  v-else
-                  class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-                >
-                  <span
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                  >
-                    {{ selectedMonthLabel }}
-                    <button
-                      @click.stop="selectedMonth = ''"
-                      class="hover:text-red-500"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                </div>
                 <ChevronDown
                   class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                   :class="{ 'rotate-180': t1Open === 'bulan' }"
@@ -165,7 +124,7 @@
                           : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                       "
                     >
-                      {{ $t("semua_bulan") }}
+                      {{ $t('semua_bulan') }}
                     </button>
                     <button
                       v-for="bulan in monthOptions"
@@ -195,9 +154,7 @@
                 @click="t1Toggle('tahun')"
                 class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
               >
-                <span
-                  class="flex-1 truncate text-sm text-gray-700 dark:text-white"
-                >
+                <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
                   {{ selectedYear }}
                 </span>
                 <ChevronDown
@@ -239,18 +196,16 @@
             @click="exportTable1"
           >
             <FileDown class="w-4 h-4" />
-            {{ $t("export") }}
+            {{ $t('export') }}
           </button>
         </div>
 
         <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table class="w-full text-sm">
-            <thead
-              class="sticky top-0 z-30 bg-primary dark:bg-primary-700 text-white"
-            >
+            <thead class="sticky top-0 z-30 bg-primary dark:bg-primary-700 text-white">
               <tr>
                 <th class="px-4 py-3 text-left font-semibold">
-                  {{ $t("naskah_tbl") }}
+                  {{ $t('naskah_tbl') }}
                 </th>
                 <template v-if="!selectedMonth">
                   <th
@@ -267,7 +222,7 @@
                   </th>
                 </template>
                 <th class="px-4 py-3 text-center font-semibold">
-                  {{ $t("jumlah") }}
+                  {{ $t('jumlah') }}
                 </th>
               </tr>
             </thead>
@@ -280,9 +235,7 @@
                 class="animate-pulse border-b border-gray-200 dark:border-gray-700"
               >
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
                 </td>
                 <template v-if="!selectedMonth">
                   <td
@@ -290,22 +243,16 @@
                     :key="bulan.value"
                     class="px-4 py-3 text-center"
                   >
-                    <div
-                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"
-                    ></div>
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"></div>
                   </td>
                 </template>
                 <template v-else>
                   <td class="px-4 py-3 text-center">
-                    <div
-                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"
-                    ></div>
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"></div>
                   </td>
                 </template>
                 <td class="px-4 py-3 text-center">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 mx-auto"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 mx-auto"></div>
                 </td>
               </tr>
             </tbody>
@@ -317,9 +264,7 @@
                 :key="row.id"
                 class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
-                <td
-                  class="px-4 py-3 text-gray-900 dark:text-white font-medium max-w-[350px]"
-                >
+                <td class="px-4 py-3 text-gray-900 dark:text-white font-medium max-w-[350px]">
                   {{ row.naskah }}
                 </td>
                 <template v-if="!selectedMonth">
@@ -328,19 +273,15 @@
                     :key="bulan.value"
                     class="px-4 py-3 text-center text-gray-600 dark:text-gray-300"
                   >
-                    {{ row[bulan.value] || "-" }}
+                    {{ row[bulan.value] || '-' }}
                   </td>
                 </template>
                 <template v-else>
-                  <td
-                    class="px-4 py-3 text-center text-gray-600 dark:text-gray-300"
-                  >
-                    {{ row[selectedMonth] || "-" }}
+                  <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                    {{ row[selectedMonth] || '-' }}
                   </td>
                 </template>
-                <td
-                  class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white"
-                >
+                <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">
                   {{ row.jumlah.toLocaleString() }}
                 </td>
               </tr>
@@ -353,7 +294,7 @@
                   :colspan="monthOptions.length + 2"
                   class="text-center py-6 text-gray-400 dark:text-gray-500"
                 >
-                  {{ $t("tidak_ada_data") }}
+                  {{ $t('tidak_ada_data') }}
                 </td>
               </tr>
             </tbody>
@@ -366,11 +307,9 @@
           class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            {{ $t("menampilkan") }}
-            {{
-              Math.min(currentPageTable1 * itemsPerPageTable1, totalItemsTable1)
-            }}
-            {{ $t("dari") }} {{ totalItemsTable1 }} {{ $t("data") }}
+            {{ $t('menampilkan') }}
+            {{ Math.min(currentPageTable1 * itemsPerPageTable1, totalItemsTable1) }}
+            {{ $t('dari') }} {{ totalItemsTable1 }} {{ $t('data') }}
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -380,10 +319,10 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPageTable1 === 1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
               ]"
             >
-              {{ $t("sebelumnya") }}
+              {{ $t('sebelumnya') }}
             </button>
             <button
               v-for="page in paginationPagesTable1"
@@ -393,27 +332,22 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPageTable1 === page
                   ? 'bg-primary text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300',
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
               ]"
             >
               {{ page }}
             </button>
             <button
-              @click="
-                currentPageTable1 = Math.min(
-                  totalPagesTable1,
-                  currentPageTable1 + 1,
-                )
-              "
+              @click="currentPageTable1 = Math.min(totalPagesTable1, currentPageTable1 + 1)"
               :disabled="currentPageTable1 === totalPagesTable1"
               :class="[
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPageTable1 === totalPagesTable1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
               ]"
             >
-              {{ $t("selanjutnya") }}
+              {{ $t('selanjutnya') }}
             </button>
           </div>
         </div>
@@ -431,10 +365,7 @@
                 @click="refreshData"
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400"
               >
-                <RotateCcw
-                  class="w-4 h-4"
-                  :class="{ 'animate-spin': loadingTable2 }"
-                />
+                <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loadingTable2 }" />
               </button>
 
               <!-- ROWS PER PAGE -->
@@ -467,7 +398,7 @@
                         'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                         itemsPerPage === n
                           ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                       ]"
                     >
                       {{ n }}
@@ -482,30 +413,9 @@
                   @click="t2Toggle('jenis')"
                   class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
                 >
-                  <span
-                    v-if="!filters.jenis"
-                    class="text-black dark:text-white truncate text-sm flex-1"
-                  >
-                    {{ $t("semua_jenis") }}
+                  <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                    {{ table2JenisLabel }}
                   </span>
-                  <div
-                    v-else
-                    class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-                  >
-                    <span
-                      class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                    >
-                      {{
-                        filters.jenis === "ND" ? "Nota Dinas" : "Surat Tugas"
-                      }}
-                      <button
-                        @click.stop="filters.jenis = ''"
-                        class="hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  </div>
                   <ChevronDown
                     class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                     :class="{ 'rotate-180': t2Open === 'jenis' }"
@@ -516,17 +426,23 @@
                     v-if="t2Open === 'jenis'"
                     class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
                   >
-                    <div class="flex flex-col gap-1">
+                    <div class="mb-1">
+                      <input
+                        v-model="t2JenisKeyword"
+                        @click.stop
+                        type="text"
+                        :placeholder="$t('cari')"
+                        class="h-7 w-full rounded-lg px-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div class="flex flex-col gap-1 max-h-48 overflow-y-auto">
                       <button
-                        v-for="opt in [
-                          { label: $t('semua_jenis'), value: '' },
-                          { label: 'Nota Dinas', value: 'ND' },
-                          { label: 'Surat Tugas', value: 'ST' },
-                        ]"
+                        v-for="opt in filteredTable2JenisOptions"
                         :key="opt.value"
                         @mousedown.prevent
                         @click="
                           filters.jenis = opt.value;
+                          t2JenisKeyword = '';
                           t2Open = null;
                         "
                         class="px-3 py-2 text-left text-sm rounded-md transition-colors"
@@ -538,6 +454,12 @@
                       >
                         {{ opt.label }}
                       </button>
+                      <div
+                        v-if="filteredTable2JenisOptions.length === 0"
+                        class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+                      >
+                        {{ $t('tidak_ditemukan') }}
+                      </div>
                     </div>
                   </div>
                 </Transition>
@@ -549,28 +471,9 @@
                   @click="t2Toggle('lokasi')"
                   class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
                 >
-                  <span
-                    v-if="!filters.lokasi"
-                    class="text-black dark:text-white truncate text-sm flex-1"
-                  >
-                    {{ $t("semua_lokasi") }}
+                  <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                    {{ filters.lokasi || $t('semua_lokasi') }}
                   </span>
-                  <div
-                    v-else
-                    class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-                  >
-                    <span
-                      class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                    >
-                      {{ filters.lokasi }}
-                      <button
-                        @click.stop="filters.lokasi = ''"
-                        class="hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  </div>
                   <ChevronDown
                     class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                     :class="{ 'rotate-180': t2Open === 'lokasi' }"
@@ -581,11 +484,21 @@
                     v-if="t2Open === 'lokasi'"
                     class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
                   >
+                    <div class="mb-1">
+                      <input
+                        v-model="t2LokasiKeyword"
+                        @click.stop
+                        type="text"
+                        :placeholder="$t('cari')"
+                        class="h-7 w-full rounded-lg px-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+                      />
+                    </div>
                     <div class="flex flex-col gap-1 max-h-60 overflow-y-auto">
                       <button
                         @mousedown.prevent
                         @click="
                           filters.lokasi = '';
+                          t2LokasiKeyword = '';
                           t2Open = null;
                         "
                         class="px-3 py-2 text-left text-sm rounded-md transition-colors"
@@ -595,14 +508,15 @@
                             : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
                         "
                       >
-                        {{ $t("semua_lokasi") }}
+                        {{ $t('semua_lokasi') }}
                       </button>
                       <button
-                        v-for="lok in lokasiOptions"
+                        v-for="lok in filteredTable2LokasiOptions"
                         :key="lok"
                         @mousedown.prevent
                         @click="
                           filters.lokasi = lok;
+                          t2LokasiKeyword = '';
                           t2Open = null;
                         "
                         class="px-3 py-2 text-left text-sm rounded-md transition-colors"
@@ -614,6 +528,12 @@
                       >
                         {{ lok }}
                       </button>
+                      <div
+                        v-if="filteredTable2LokasiOptions.length === 0"
+                        class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+                      >
+                        {{ $t('tidak_ditemukan') }}
+                      </div>
                     </div>
                   </div>
                 </Transition>
@@ -625,28 +545,9 @@
                   @click="t2Toggle('status')"
                   class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
                 >
-                  <span
-                    v-if="!filters.status"
-                    class="text-black dark:text-white truncate text-sm flex-1"
-                  >
-                    {{ $t("semua_status") }}
+                  <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                    {{ t2StatusLabel || $t('semua_status') }}
                   </span>
-                  <div
-                    v-else
-                    class="flex items-center gap-1 flex-nowrap overflow-hidden flex-1"
-                  >
-                    <span
-                      class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary dark:text-primary-300 text-[10px] whitespace-nowrap"
-                    >
-                      {{ t2StatusLabel }}
-                      <button
-                        @click.stop="filters.status = ''"
-                        class="hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  </div>
                   <ChevronDown
                     class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
                     :class="{ 'rotate-180': t2Open === 'status' }"
@@ -657,20 +558,22 @@
                     v-if="t2Open === 'status'"
                     class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
                   >
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-1 max-h-60 overflow-y-auto">
                       <button
                         v-for="opt in [
-                          { label: $t('semua_status'), value: '' },
+                          { label: $t('semua_status'), value: '', color: null },
                           {
                             label: $t('nom_status_final'),
-                            value: 'terpakai_final',
+                            value: 'terpakai_final'
                           },
                           {
                             label: $t('nom_status_terpakai'),
-                            value: 'Terpakai',
+                            value: 'Terpakai'
                           },
                           { label: $t('nom_status_booking'), value: 'booking' },
-                          { label: $t('nom_status_hangus'), value: 'Hangus' },
+                          { label: 'Draft', value: 'draft' },
+                          { label: 'Ditolak', value: 'ditolak' },
+                          { label: 'Batal', value: 'Hangus' }
                         ]"
                         :key="opt.value"
                         @mousedown.prevent
@@ -679,11 +582,12 @@
                           t2Open = null;
                         "
                         class="px-3 py-2 text-left text-sm rounded-md transition-colors"
-                        :class="
+                        :class="[
                           filters.status === opt.value
                             ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
-                        "
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                          filters.status !== opt.value && opt.color ? opt.color : ''
+                        ]"
                       >
                         {{ opt.label }}
                       </button>
@@ -701,9 +605,7 @@
                   <span
                     class="flex-1 truncate text-sm"
                     :class="
-                      filters.tahun
-                        ? 'text-gray-700 dark:text-white'
-                        : 'text-black dark:text-white'
+                      filters.tahun ? 'text-gray-700 dark:text-white' : 'text-black dark:text-white'
                     "
                   >
                     {{ filters.tahun || new Date().getFullYear() }}
@@ -747,7 +649,7 @@
               @click="exportTable2"
             >
               <FileDown class="w-4 h-4" />
-              {{ $t("export") }}
+              {{ $t('export') }}
             </button>
           </div>
         </div>
@@ -767,13 +669,10 @@
                     <ArrowUpDown
                       class="w-4 h-4 flex-shrink-0 transition-transform duration-200"
                       :class="[
-                        sortConfig.key === col.key
-                          ? 'opacity-100'
-                          : 'opacity-40',
-                        sortConfig.key === col.key &&
-                        sortConfig.direction === 'desc'
+                        sortConfig.key === col.key ? 'opacity-100' : 'opacity-40',
+                        sortConfig.key === col.key && sortConfig.direction === 'desc'
                           ? 'rotate-180'
-                          : '',
+                          : ''
                       ]"
                     />
                   </div>
@@ -782,45 +681,28 @@
             </thead>
 
             <!-- SKELETON LOADING TABLE 2 -->
-            <tbody
-              v-if="loadingTable2"
-              class="divide-y divide-gray-200 dark:divide-gray-700"
-            >
+            <tbody v-if="loadingTable2" class="divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="i in 5" :key="'skeleton-2-' + i" class="animate-pulse">
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-20"
-                  ></div>
+                  <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-20"></div>
                 </td>
               </tr>
             </tbody>
@@ -835,9 +717,7 @@
                 <td class="px-4 py-3 text-gray-900 dark:text-white">
                   {{ item.jenis }}
                 </td>
-                <td
-                  class="px-4 py-3 text-gray-600 dark:text-gray-300 font-mono"
-                >
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 font-mono">
                   {{ item.nomor }}
                 </td>
                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
@@ -857,18 +737,15 @@
                     class="inline-flex px-3 py-1 rounded-full text-xs font-medium"
                     :class="getStatusClass(item.status)"
                   >
-                    {{ item.status }}
+                    {{ getStatusLabel(item.status) }}
                   </span>
                 </td>
               </tr>
 
               <!-- EMPTY STATE TABLE 2 -->
               <tr v-if="paginatedData.length === 0">
-                <td
-                  colspan="7"
-                  class="text-center py-8 text-gray-400 dark:text-gray-500"
-                >
-                  {{ $t("tidak_ada_data") }}
+                <td colspan="7" class="text-center py-8 text-gray-400 dark:text-gray-500">
+                  {{ $t('tidak_ada_data') }}
                 </td>
               </tr>
             </tbody>
@@ -881,8 +758,8 @@
           class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            {{ $t("menampilkan") }} {{ currentItemsCount }} {{ $t("dari") }}
-            {{ totalItems }} {{ $t("data") }}
+            {{ $t('menampilkan') }} {{ currentItemsCount }} {{ $t('dari') }} {{ totalItems }}
+            {{ $t('data') }}
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -892,10 +769,10 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === 1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
               ]"
             >
-              {{ $t("sebelumnya") }}
+              {{ $t('sebelumnya') }}
             </button>
             <div class="flex items-center gap-1">
               <button
@@ -905,9 +782,7 @@
               >
                 1
               </button>
-              <span
-                v-if="paginationPages[0] > 2"
-                class="px-2 text-gray-400 dark:text-gray-500"
+              <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 dark:text-gray-500"
                 >...</span
               >
               <button
@@ -918,15 +793,13 @@
                   'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                   currentPage === page
                     ? 'bg-primary text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300',
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                 ]"
               >
                 {{ page }}
               </button>
               <span
-                v-if="
-                  paginationPages[paginationPages.length - 1] < totalPages - 1
-                "
+                v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
                 class="px-2 text-gray-400 dark:text-gray-500"
                 >...</span
               >
@@ -945,10 +818,10 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === totalPages
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700',
+                  : 'bg-white dark:bg-gray-800 text-primary border border-primary hover:bg-primary-50 dark:hover:bg-gray-700'
               ]"
             >
-              {{ $t("selanjutnya") }}
+              {{ $t('selanjutnya') }}
             </button>
           </div>
         </div>
@@ -959,24 +832,24 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { RotateCcw, ChevronDown, ArrowUpDown, FileDown } from "lucide-vue-next";
-import { useLaporan } from "~/composables/useLaporan";
-import { useToast } from "#imports";
-import * as XLSX from "xlsx";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { RotateCcw, ChevronDown, ArrowUpDown, FileDown } from 'lucide-vue-next';
+import { useLaporan } from '~/composables/useLaporan';
+import { useToast } from '#imports';
+import * as XLSX from 'xlsx';
 
 const toast = useToast();
 const { t } = useI18n();
 
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("naskah_masuk"), to: "/admin/laporan/naskah-masuk" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('naskah_masuk'), to: '/admin/laporan/naskah-masuk' }
 ]);
 
-const { getRekapNaskahMasuk, getRekapNaskahMasukDetail } = useLaporan();
+const { getRekapNaskahMasuk, getRekapNaskahMasukDetail, getAreaList, getJenisList } = useLaporan();
 
 const table1Raw = ref<any[]>([]);
 const loadingTable1 = ref(false);
@@ -984,14 +857,18 @@ const loadingTable1 = ref(false);
 const table2Data = ref<any[]>([]);
 const loadingTable2 = ref(false);
 
+// API OPTIONS DATA
+const jenisOptionsApi = ref<any[]>([]);
+const lokasiOptionsApi = ref<any[]>([]);
+
 // TABLE 1 FILTER STATE
-const jenisSearch = ref("");
-const selectedJenis = ref("");
+const jenisSearch = ref('');
+const selectedJenis = ref('');
 const t1Open = ref<string | null>(null);
 
 const selectJenis = (jenis: string) => {
   selectedJenis.value = jenis;
-  jenisSearch.value = "";
+  jenisSearch.value = '';
   t1Open.value = null;
 };
 
@@ -1002,67 +879,72 @@ const t1Toggle = (key: string) => {
 // TABLE 2 FILTER STATE
 const t2Open = ref<string | null>(null);
 
+const t2JenisKeyword = ref('');
+const t2LokasiKeyword = ref('');
+
 const t2Toggle = (key: string) => {
   t2Open.value = t2Open.value === key ? null : key;
 };
 
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  if (!target.closest(".relative")) {
+  if (!target.closest('.relative')) {
     t1Open.value = null;
     t2Open.value = null;
   }
 };
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
+  document.addEventListener('click', handleClickOutside);
   fetchTable1();
   fetchTable2();
+  fetchJenis();
+  fetchArea();
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
+  document.removeEventListener('click', handleClickOutside);
 });
 
-const selectedMonth = ref("");
+const selectedMonth = ref('');
 const selectedYear = ref<number>(new Date().getFullYear());
 const filters = ref({
-  jenis: "",
-  lokasi: "",
-  status: "",
-  tahun: "",
-  search: "",
+  jenis: '',
+  lokasi: '',
+  status: '',
+  tahun: '',
+  search: ''
 });
-const sortConfig = ref<{ key: string | null; direction: "asc" | "desc" }>({
+const sortConfig = ref<{ key: string | null; direction: 'asc' | 'desc' }>({
   key: null,
-  direction: "asc",
+  direction: 'asc'
 });
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 
 const monthOptions = computed(() => [
-  { label: t("jan"), value: "jan" },
-  { label: t("feb"), value: "feb" },
-  { label: t("mar"), value: "mar" },
-  { label: t("apr"), value: "apr" },
-  { label: t("mei"), value: "mei" },
-  { label: t("juni"), value: "jun" },
-  { label: t("juli"), value: "jul" },
-  { label: t("agu"), value: "agu" },
-  { label: t("sep"), value: "sep" },
-  { label: t("okt"), value: "okt" },
-  { label: t("nov"), value: "nov" },
-  { label: t("des"), value: "des" },
+  { label: t('jan'), value: 'jan' },
+  { label: t('feb'), value: 'feb' },
+  { label: t('mar'), value: 'mar' },
+  { label: t('apr'), value: 'apr' },
+  { label: t('mei'), value: 'mei' },
+  { label: t('juni'), value: 'jun' },
+  { label: t('juli'), value: 'jul' },
+  { label: t('agu'), value: 'agu' },
+  { label: t('sep'), value: 'sep' },
+  { label: t('okt'), value: 'okt' },
+  { label: t('nov'), value: 'nov' },
+  { label: t('des'), value: 'des' }
 ]);
 
 const table2Columns = computed(() => [
-  { key: "jenis", label: t("naskah_tbl") },
-  { key: "nomor", label: t("nodokumen") },
-  { key: "tanggal", label: t("tanggal") },
-  { key: "perihal", label: t("perihal") },
-  { key: "jabatan", label: t("jabatan") },
-  { key: "lokasi", label: t("lokasi") },
-  { key: "status", label: t("sign_status") },
+  { key: 'jenis', label: t('naskah_tbl') },
+  { key: 'nomor', label: t('nodokumen') },
+  { key: 'tanggal', label: t('tanggal') },
+  { key: 'perihal', label: t('perihal') },
+  { key: 'jabatan', label: t('jabatan') },
+  { key: 'lokasi', label: t('lokasi') },
+  { key: 'status', label: t('sign_status') }
 ]);
 
 const fetchTable1 = async () => {
@@ -1071,7 +953,7 @@ const fetchTable1 = async () => {
     const res = await getRekapNaskahMasuk({ tahun: selectedYear.value });
     table1Raw.value = res.data.rekap ?? [];
   } catch (err) {
-    console.error("Gagal ambil rekap naskah masuk", err);
+    console.error('Gagal ambil rekap naskah masuk', err);
   } finally {
     loadingTable1.value = false;
   }
@@ -1082,12 +964,11 @@ const fetchTable2 = async () => {
   try {
     const params: any = {
       page: currentPage.value,
-      limit: itemsPerPage.value,
+      limit: itemsPerPage.value
     };
     if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
     if (filters.value.jenis) params.jenis = filters.value.jenis;
-    if (filters.value.status)
-      params.status = filters.value.status.toLowerCase();
+    if (filters.value.status) params.status = filters.value.status.toLowerCase();
 
     const res = await getRekapNaskahMasukDetail(params);
     table2Data.value = (res.data ?? []).map((item: any) => ({
@@ -1096,15 +977,14 @@ const fetchTable2 = async () => {
       jenis_text: item.naskah_text,
       nomor: item.nomor,
       tanggal: formatTanggal(item.tanggal),
-      perihal: item.perihal ?? "-",
+      perihal: item.perihal ?? '-',
       jabatan: item.jabatan,
       lokasi: item.lokasi,
-      status:
-        item.status === "terpakai_final" ? "Final" : capitalize(item.status),
+      status: item.status === 'terpakai_final' ? 'Final' : capitalize(item.status)
     }));
     totalItems.value = res.pagination?.total ?? 0;
   } catch (err) {
-    console.error("Gagal ambil detail naskah masuk", err);
+    console.error('Gagal ambil detail naskah masuk', err);
     totalItems.value = 0;
   } finally {
     loadingTable2.value = false;
@@ -1112,23 +992,42 @@ const fetchTable2 = async () => {
 };
 
 const formatTanggal = (date: string) => {
-  if (!date) return "-";
+  if (!date) return '-';
   const d = new Date(date);
-  return d.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
 };
 
-const capitalize = (text: string) =>
-  text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
+const capitalize = (text: string) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : '-');
+
+const fetchJenis = async () => {
+  try {
+    const res = await getJenisList();
+    jenisOptionsApi.value = res.data || [];
+  } catch (err) {
+    console.error('Gagal ambil jenis list', err);
+    jenisOptionsApi.value = [];
+  }
+};
+
+const fetchArea = async () => {
+  try {
+    const res = await getAreaList();
+    const raw = res?.data?.data || res?.data || [];
+    lokasiOptionsApi.value = raw;
+  } catch (err) {
+    console.error('Gagal ambil area list', err);
+    lokasiOptionsApi.value = [];
+  }
+};
 
 const filteredTableData = computed(() => {
   return table1Raw.value
     .filter((row) => {
-      if (selectedJenis.value && row.jenis_text !== selectedJenis.value)
-        return false;
+      if (selectedJenis.value && row.jenis_text !== selectedJenis.value) return false;
       if (
         jenisSearch.value &&
         !row.jenis_text?.toLowerCase().includes(jenisSearch.value.toLowerCase())
@@ -1140,7 +1039,7 @@ const filteredTableData = computed(() => {
       id: row.jenis,
       naskah: row.jenis_text,
       ...row,
-      jumlah: row.total ?? 0,
+      jumlah: row.total ?? 0
     }));
 });
 
@@ -1150,21 +1049,17 @@ watch(
     currentPage.value = 1;
     fetchTable2();
   },
-  { deep: true },
+  { deep: true }
 );
 
 const jenisOptions = computed(() => {
-  const all = [...new Set(table1Raw.value.map((r) => r.jenis_text))];
+  const all = jenisOptionsApi.value.map((item: any) => item.jenis_text);
   if (!jenisSearch.value) return all;
-  return all.filter((j) =>
-    j.toLowerCase().includes(jenisSearch.value.toLowerCase()),
-  );
+  return all.filter((j: string) => j.toLowerCase().includes(jenisSearch.value.toLowerCase()));
 });
 
 const selectedMonthLabel = computed(
-  () =>
-    monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ??
-    "",
+  () => monthOptions.value.find((m) => m.value === selectedMonth.value)?.label ?? ''
 );
 
 watch(selectedYear, () => {
@@ -1176,32 +1071,62 @@ const yearOptions = computed(() => {
   return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
 });
 
-const lokasiOptions = computed(() => [
-  ...new Set(table2Data.value.map((d) => d.lokasi)),
-]);
+const lokasiOptions = computed(() =>
+  lokasiOptionsApi.value.map((item: any) => item.nama || item.longText)
+);
+
+const table2JenisOptions = computed(() => {
+  return [
+    { label: t('semua_jenis'), value: '' },
+    ...jenisOptionsApi.value.map((item: any) => ({
+      label: item.jenis_text,
+      value: item.jenis
+    }))
+  ];
+});
+
+const table2JenisLabel = computed(() => {
+  if (!filters.value.jenis) return t('semua_jenis');
+  const found = jenisOptionsApi.value.find((item: any) => item.jenis === filters.value.jenis);
+  return found?.jenis_text || filters.value.jenis;
+});
+
+const filteredTable2JenisOptions = computed(() => {
+  if (!t2JenisKeyword.value) return table2JenisOptions.value;
+  return table2JenisOptions.value.filter((item: any) =>
+    item.label.toLowerCase().includes(t2JenisKeyword.value.toLowerCase())
+  );
+});
+
+const filteredTable2LokasiOptions = computed(() => {
+  if (!t2LokasiKeyword.value) return lokasiOptions.value;
+  return lokasiOptions.value.filter((item: string) =>
+    item.toLowerCase().includes(t2LokasiKeyword.value.toLowerCase())
+  );
+});
 
 const t2StatusLabel = computed(() => {
   const map: Record<string, string> = {
-    "": t("semua_status"),
-    terpakai_final: t("nom_status_final"),
-    Terpakai: t("nom_status_terpakai"),
-    booking: t("nom_status_booking"),
-    Hangus: t("nom_status_hangus"),
+    '': t('semua_status'),
+    terpakai_final: t('nom_status_final'),
+    Terpakai: t('nom_status_terpakai'),
+    booking: t('nom_status_booking'),
+    Hangus: 'Batal',
+    draft: 'Draft',
+    ditolak: 'Ditolak'
   };
-  return map[filters.value.status] ?? t("semua_status");
+  return map[filters.value.status] ?? t('semua_status');
 });
 
 const tahunOptions = computed(() =>
-  [
-    ...new Set(
-      table2Data.value.map((d) => d.tanggal?.split("/")?.[2]).filter(Boolean),
-    ),
-  ].sort((a, b) => Number(b) - Number(a)),
+  [...new Set(table2Data.value.map((d) => d.tanggal?.split('/')?.[2]).filter(Boolean))].sort(
+    (a, b) => Number(b) - Number(a)
+  )
 );
 
 const filteredData = computed(() => {
   return table2Data.value.filter((item) => {
-    const tahunItem = item.tanggal.split("/")[2];
+    const tahunItem = item.tanggal.split('/')[2];
     return (
       (!filters.value.jenis || item.jenis === filters.value.jenis) &&
       (!filters.value.lokasi || item.lokasi === filters.value.lokasi) &&
@@ -1216,8 +1141,8 @@ const sortedData = computed(() => {
   return [...filteredData.value].sort((a, b) => {
     const aVal = a[sortConfig.value.key];
     const bVal = b[sortConfig.value.key];
-    if (aVal < bVal) return sortConfig.value.direction === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortConfig.value.direction === "asc" ? 1 : -1;
+    if (aVal < bVal) return sortConfig.value.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.value.direction === 'asc' ? 1 : -1;
     return 0;
   });
 });
@@ -1228,7 +1153,7 @@ const itemsPerPageTable1 = ref(5);
 
 const totalItemsTable1 = computed(() => filteredTableData.value.length);
 const totalPagesTable1 = computed(() =>
-  Math.ceil(totalItemsTable1.value / itemsPerPageTable1.value),
+  Math.ceil(totalItemsTable1.value / itemsPerPageTable1.value)
 );
 
 const paginatedTable1Data = computed(() => {
@@ -1252,9 +1177,7 @@ watch([selectedJenis, jenisSearch, selectedMonth, selectedYear], () => {
 
 // PAGINATION TABLE 2
 const totalItems = ref(0);
-const totalPages = computed(() =>
-  Math.ceil(totalItems.value / itemsPerPage.value),
-);
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value));
 const paginatedData = computed(() => table2Data.value);
 const currentItemsCount = computed(() => paginatedData.value.length);
 
@@ -1273,7 +1196,7 @@ watch(
   () => {
     currentPage.value = 1;
   },
-  { deep: true },
+  { deep: true }
 );
 watch(totalPages, (val) => {
   if (currentPage.value > val) currentPage.value = val || 1;
@@ -1289,27 +1212,40 @@ watch(itemsPerPage, () => {
 const handleSort = (key: string) => {
   sortConfig.value = {
     key,
-    direction:
-      sortConfig.value.key === key && sortConfig.value.direction === "asc"
-        ? "desc"
-        : "asc",
+    direction: sortConfig.value.key === key && sortConfig.value.direction === 'asc' ? 'desc' : 'asc'
   };
 };
 
 const getStatusClass = (status: string) => {
-  if (status === "Terpakai")
-    return "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300";
-  if (status === "Final")
-    return "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200";
-  if (status === "Booking")
-    return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300";
-  return "bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+  if (status === 'Terpakai') return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300';
+  if (status === 'Final')
+    return 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200';
+  if (status === 'Booking')
+    return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
+  if (status === 'Draft')
+    return 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300';
+  if (status === 'Ditolak') return 'bg-black dark:bg-white text-white dark:text-black';
+  if (status === 'Hangus') return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300';
+  return 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+};
+
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    Hangus: 'Batal',
+    draft: 'Draft',
+    ditolak: 'Ditolak',
+    Terpakai: t('nom_status_terpakai'),
+    Final: t('nom_status_final'),
+    Booking: t('nom_status_booking'),
+    terpakai_final: t('nom_status_final')
+  };
+  return statusMap[status] || status;
 };
 
 const refreshData = () => {
-  selectedMonth.value = "";
-  jenisSearch.value = "";
-  selectedJenis.value = "";
+  selectedMonth.value = '';
+  jenisSearch.value = '';
+  selectedJenis.value = '';
   selectedYear.value = new Date().getFullYear();
   fetchTable1();
   fetchTable2();
@@ -1318,20 +1254,20 @@ const refreshData = () => {
 const exportTable1 = () => {
   if (!filteredTableData.value.length) {
     toast.add({
-      title: t("export_gagal"),
-      description: t("export_tidak_ada"),
-      color: "warning",
+      title: t('export_gagal'),
+      description: t('export_tidak_ada'),
+      color: 'warning'
     });
     return;
   }
   try {
-    const headers: string[] = [t("naskah_tbl")];
+    const headers: string[] = [t('naskah_tbl')];
     if (!selectedMonth.value) {
       headers.push(...monthOptions.value.map((m) => m.label));
     } else {
       headers.push(selectedMonthLabel.value);
     }
-    headers.push(t("jumlah"));
+    headers.push(t('jumlah'));
     const rows = filteredTableData.value.map((row) => {
       const data: (string | number)[] = [row.naskah];
       if (!selectedMonth.value) {
@@ -1345,21 +1281,21 @@ const exportTable1 = () => {
       return data;
     });
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    worksheet["!cols"] = headers.map(() => ({ wch: 20 }));
+    worksheet['!cols'] = headers.map(() => ({ wch: 20 }));
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Naskah Masuk");
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Naskah Masuk');
     XLSX.writeFile(workbook, `naskah-masuk-summary-${selectedYear.value}.xlsx`);
     toast.add({
-      title: t("export_berhasil"),
-      description: t("export_file_berhasil"),
-      color: "success",
+      title: t('export_berhasil'),
+      description: t('export_file_berhasil'),
+      color: 'success'
     });
   } catch (err) {
     console.error(err);
     toast.add({
-      title: t("export_gagal"),
-      description: t("export_error"),
-      color: "error",
+      title: t('export_gagal'),
+      description: t('export_error'),
+      color: 'error'
     });
   }
 };
@@ -1367,49 +1303,46 @@ const exportTable1 = () => {
 const exportTable2 = () => {
   if (!sortedData.value.length) {
     toast.add({
-      title: t("export_gagal"),
-      description: t("export_tidak_ada"),
-      color: "warning",
+      title: t('export_gagal'),
+      description: t('export_tidak_ada'),
+      color: 'warning'
     });
     return;
   }
   try {
     const rows = sortedData.value.map((item) => ({
-      [t("naskah_tbl")]: item.jenis,
-      [t("nodokumen")]: item.nomor,
-      [t("tanggal")]: item.tanggal,
-      [t("perihal")]: item.perihal,
-      [t("jabatan")]: item.jabatan,
-      [t("lokasi")]: item.lokasi,
-      [t("sign_status")]: item.status,
+      [t('naskah_tbl')]: item.jenis,
+      [t('nodokumen')]: item.nomor,
+      [t('tanggal')]: item.tanggal,
+      [t('perihal')]: item.perihal,
+      [t('jabatan')]: item.jabatan,
+      [t('lokasi')]: item.lokasi,
+      [t('sign_status')]: item.status
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet["!cols"] = [
+    worksheet['!cols'] = [
       { wch: 15 },
       { wch: 25 },
       { wch: 15 },
       { wch: 35 },
       { wch: 30 },
       { wch: 20 },
-      { wch: 15 },
+      { wch: 15 }
     ];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Naskah");
-    XLSX.writeFile(
-      workbook,
-      `naskah-masuk-detail-${new Date().getTime()}.xlsx`,
-    );
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Naskah');
+    XLSX.writeFile(workbook, `naskah-masuk-detail-${new Date().getTime()}.xlsx`);
     toast.add({
-      title: t("export_berhasil"),
-      description: t("export_file_berhasil"),
-      color: "success",
+      title: t('export_berhasil'),
+      description: t('export_file_berhasil'),
+      color: 'success'
     });
   } catch (err) {
     console.error(err);
     toast.add({
-      title: t("export_gagal"),
-      description: t("export_error"),
-      color: "error",
+      title: t('export_gagal'),
+      description: t('export_error'),
+      color: 'error'
     });
   }
 };
