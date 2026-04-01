@@ -1,16 +1,14 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
-    >
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
       <button
-        @click="showModal = true"
+        @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        {{ $t("nm_button") }}
+        {{ $t('nm_button') }}
       </button>
     </div>
 
@@ -28,7 +26,7 @@
           >
             <span>{{ rowsPerPage }}</span>
             <ChevronDown
-            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': openRowsDropdown }"
             />
           </button>
@@ -41,12 +39,15 @@
                 v-for="n in rowsChoices"
                 :key="n"
                 type="button"
-                @click="rowsPerPage = n; openRowsDropdown = false"
+                @click="
+                  rowsPerPage = n;
+                  openRowsDropdown = false;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   rowsPerPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ n }}
@@ -91,7 +92,7 @@
           <tr>
             <th @click="handleSort('nama')" class="cursor-pointer">
               <div class="flex items-center gap-2 ml-5">
-                <span>{{ $t("te_nama") }}</span>
+                <span>{{ $t('te_nama') }}</span>
                 <ArrowUpDown
                   class="w-4 h-4 origin-center transition-transform duration-300"
                   :class="[
@@ -99,21 +100,17 @@
                       ? sortDirection === 'desc'
                         ? 'rotate-180'
                         : 'rotate-0'
-                      : 'opacity-50',
+                      : 'opacity-50'
                   ]"
                 />
               </div>
             </th>
 
-            <th
-              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
-            >
-              {{ $t("te_alamat") }}
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              {{ $t('te_alamat') }}
             </th>
-            <th
-              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
-            >
-              {{ $t("te_telepon") }}
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              {{ $t('te_telepon') }}
             </th>
             <th @click="handleSort('status')" class="cursor-pointer">
               <div class="flex items-center gap-2">
@@ -130,15 +127,11 @@
                 />
               </div>
             </th>
-            <th
-              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
-            >
-              {{ $t("te_pengusul") }}
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              {{ $t('te_pengusul') }}
             </th>
-            <th
-              class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
-            >
-              {{ $t("aksi") }}
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              {{ $t('aksi') }}
             </th>
           </tr>
         </thead>
@@ -149,9 +142,7 @@
             :key="item.id"
             :class="[
               'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700 capitalize',
-              idx % 2 === 0
-                ? 'bg-white dark:bg-gray-800'
-                : 'bg-white dark:bg-gray-800',
+              idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
             ]"
           >
             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
@@ -162,9 +153,7 @@
               {{ item.alamat }}
             </td>
 
-            <td
-              class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
-            >
+            <td class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">
               {{ item.telepon }}
             </td>
 
@@ -177,7 +166,7 @@
                     : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
                 "
               >
-                {{ item.aktif ? $t("te_aktif") : $t("te_tidak_aktif") }}
+                {{ item.aktif ? $t('te_aktif') : $t('te_tidak_aktif') }}
               </span>
             </td>
 
@@ -199,9 +188,7 @@
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
-                <Trash2
-                  class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600"
-                />
+                <Trash2 class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600" />
               </button>
             </td>
           </tr>
@@ -214,8 +201,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t("menampilkan") }} {{ paginatedData.length }} {{ $t("dari") }}
-          {{ filteredData.length }} {{ $t("data") }}
+          {{ $t('menampilkan') }} {{ paginatedData.length }} {{ $t('dari') }}
+          {{ filteredData.length }} {{ $t('data') }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -227,15 +214,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -243,7 +225,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            {{ $t("sebelumnya") }}
+            {{ $t('sebelumnya') }}
           </button>
 
           <!-- Page Numbers -->
@@ -271,16 +253,14 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
               ]"
             >
               {{ page }}
             </button>
 
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
@@ -303,16 +283,11 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            {{ $t("selanjutnya") }}
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            {{ $t('selanjutnya') }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -326,20 +301,17 @@
     </div>
 
     <Teleport to="body">
-      <Modal v-model="showModal" @save="handleSave" size="xl">
+      <Modal v-model="showModal" @save="handleSave" size="xl" @close="resetForm">
         <template #title>
-          <Heading
-            variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
-          >
-            {{ editId ? $t("te_modal_edit") : $t("te_modal_add") }}
+          <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
+            {{ editId ? $t('te_modal_edit') : $t('te_modal_add') }}
           </Heading>
         </template>
 
         <!-- FIELD NAMA -->
         <div class="flex flex-col gap-2 p-1">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t("te_nama") }} <span class="text-red-500">*</span>
+            {{ $t('te_nama') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.nama"
@@ -352,7 +324,7 @@
         <!-- FIELD ALAMAT -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t("te_alamat") }} <span class="text-red-500">*</span>
+            {{ $t('te_alamat') }} <span class="text-red-500">*</span>
           </Heading>
           <textarea
             v-model="form.alamat"
@@ -365,7 +337,7 @@
         <!-- FIELD TELEPHONE -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t("te_telepon") }} <span class="text-red-500">*</span>
+            {{ $t('te_telepon') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.telephone"
@@ -384,9 +356,9 @@
             v-model="form.aktif"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
           >
-            <option value="" disabled>{{ $t("te_status_placeholder") }}</option>
-            <option :value="true">{{ $t("te_aktif") }}</option>
-            <option :value="false">{{ $t("te_tidak_aktif") }}</option>
+            <option value="" disabled>{{ $t('te_status_placeholder') }}</option>
+            <option :value="true">{{ $t('te_aktif') }}</option>
+            <option :value="false">{{ $t('te_tidak_aktif') }}</option>
           </select>
         </div>
       </Modal>
@@ -407,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from "vue";
+import { onMounted, ref, computed, watch } from 'vue';
 import {
   Search,
   FileDown,
@@ -417,18 +389,18 @@ import {
   Plus,
   ArrowUpDown,
   ChevronUp,
-  ChevronDown,
-} from "lucide-vue-next";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
-import { useAuth } from "~/composables/useAuth";
-import Modal from "@/components/Modal.vue";
-import ConfirmPopup from "@/components/ConfirmPopup.vue";
-import { useToast } from "#imports";
+  ChevronDown
+} from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
+import { useAuth } from '~/composables/useAuth';
+import Modal from '@/components/Modal.vue';
+import ConfirmPopup from '@/components/ConfirmPopup.vue';
+import { useToast } from '#imports';
 
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 const { t } = useI18n();
@@ -438,7 +410,7 @@ const toast = useToast();
 const showToast = (
   title: string,
   message: string,
-  color: 'success' | 'error' | 'warning' | 'primary' = 'success',
+  color: 'success' | 'error' | 'warning' | 'primary' = 'success'
 ) => {
   toast.add({
     title,
@@ -449,13 +421,13 @@ const showToast = (
         ? 'i-lucide-check-circle'
         : color === 'error'
           ? 'i-lucide-x-circle'
-          : 'i-lucide-info',
+          : 'i-lucide-info'
   });
 };
 
 const items = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("tertuju"), to: "/admin/master/tertuju-eksternal" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('tertuju'), to: '/admin/master/tertuju-eksternal' }
 ]);
 
 const auth = useAuth();
@@ -467,24 +439,24 @@ const {
   fetchTertujuEksternal,
   createTertujuEksternal,
   deleteTertujuEksternal,
-  updateTertujuEksternal,
+  updateTertujuEksternal
 } = useTertujuEksternal();
 
 // sort
 const handleSort = (column: string) => {
   if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortColumn.value = column;
-    sortDirection.value = "asc";
+    sortDirection.value = 'asc';
   }
 };
 
 const form = ref({
-  nama: "",
-  alamat: "",
-  telephone: "",
-  aktif: true as boolean,
+  nama: '',
+  alamat: '',
+  telephone: '',
+  aktif: true as boolean
 });
 
 onMounted(() => {
@@ -501,36 +473,63 @@ const currentPage = ref<number>(1);
 const openRowsDropdown = ref(false);
 
 // Sorting
-const sortColumn = ref<string>("nama");
-const sortDirection = ref<"asc" | "desc">("asc");
-const sortKey = ref("");
-const sortOrder = ref("asc");
+const sortColumn = ref<string>('nama');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+const sortKey = ref('');
+const sortOrder = ref('asc');
 
 const handleSave = async () => {
+  // Validate required fields
+  const emptyFields: string[] = [];
+  if (!form.value.nama.trim()) emptyFields.push(t('te_nama') || 'Nama');
+  if (!form.value.alamat.trim()) emptyFields.push(t('te_alamat') || 'Alamat');
+  if (!form.value.telephone.trim()) emptyFields.push(t('te_telepon') || 'Telepon');
+  
+  if (emptyFields.length > 0) {
+    showToast(
+      t('gagal'),
+      `${emptyFields.join(', ')} wajib diisi`,
+      'error'
+    );
+    return;
+  }
+
   try {
     if (editId.value) {
       await updateTertujuEksternal(editId.value, {
         nama: form.value.nama,
         alamat: form.value.alamat,
         telepon: form.value.telephone,
-        aktif: form.value.aktif,
+        aktif: form.value.aktif
       });
-      showToast(t('te_berhasil') || 'Berhasil', t('te_success_edit') || 'Data berhasil diperbarui.', 'success');
+      showToast(
+        'Berhasil',
+        'Data berhasil diperbarui.',
+        'success'
+      );
     } else {
       await createTertujuEksternal({
         id_position_pembuat: user.value.position,
-        company: "MN",
-        area: "Regional 1",
+        company: 'MN',
+        area: 'Regional 1',
         nama: form.value.nama,
         alamat: form.value.alamat,
         telepon: form.value.telephone,
-        aktif: form.value.aktif,
+        aktif: form.value.aktif
       });
-      showToast(t('te_berhasil') || 'Berhasil', t('te_success_add') || 'Data berhasil ditambahkan.', 'success');
+      showToast(
+        'Berhasil',
+        'Data berhasil ditambahkan.',
+        'success'
+      );
     }
+
+    // Refresh data after save to get updated status
+    await fetchTertujuEksternal();
   } catch (err: any) {
     console.error('Gagal menyimpan data:', err?.response?.data || err);
-    showToast(t('te_gagal') || 'Gagal', t('te_err_save') || 'Gagal menyimpan data.', 'error');
+    showToast('Gagal', 'Gagal menyimpan data.', 'error');
+    return;
   }
 
   showModal.value = false;
@@ -538,16 +537,31 @@ const handleSave = async () => {
 
   // Reset form
   form.value = {
-    nama: "",
-    alamat: "",
-    telephone: "",
-    aktif: true,
+    nama: '',
+    alamat: '',
+    telephone: '',
+    aktif: true
   };
 };
 
 const showConfirmDelete = ref(false);
 const deleteTargetId = ref<string | null>(null);
 const isDeleting = ref(false);
+
+const resetForm = () => {
+  editId.value = null;
+  form.value = {
+    nama: '',
+    alamat: '',
+    telephone: '',
+    aktif: true
+  };
+};
+
+const openAddModal = () => {
+  resetForm();
+  showModal.value = true;
+};
 
 const handleDelete = (id: string) => {
   deleteTargetId.value = id;
@@ -560,11 +574,15 @@ const confirmDelete = async () => {
   try {
     isDeleting.value = true;
     await deleteTertujuEksternal(deleteTargetId.value);
-    showToast(t('te_berhasil') || 'Berhasil', t('te_success_delete') || 'Data berhasil dihapus.', 'success');
+    showToast(
+      'Berhasil',
+      'Data berhasil dihapus.',
+      'success'
+    );
     showConfirmDelete.value = false;
   } catch (err: any) {
-    console.error("Gagal menghapus data:", err?.response?.data || err);
-    showToast(t('te_gagal') || 'Gagal', t('te_err_delete') || 'Gagal menghapus data.', 'error');
+    console.error('Gagal menghapus data:', err?.response?.data || err);
+    showToast('Gagal', 'Gagal menghapus data.', 'error');
   } finally {
     isDeleting.value = false;
     deleteTargetId.value = null;
@@ -577,18 +595,18 @@ const openEdit = (item: any) => {
     nama: item.nama,
     alamat: item.alamat,
     telephone: item.telepon,
-    aktif: item.aktif,
+    aktif: item.aktif
   };
   showModal.value = true;
 };
 
 // Filter state
 const filters = ref({
-  jenis: "",
-  lokasi: "",
-  status: "",
-  tahun: "",
-  search: "",
+  jenis: '',
+  lokasi: '',
+  status: '',
+  tahun: '',
+  search: ''
 });
 
 // Filtered data
@@ -604,11 +622,11 @@ const filteredData = computed(() => {
       item.telepon,
       item.email,
       item.kontak,
-      item.nama_pembuat,
+      item.nama_pembuat
     ]
-      .join(" ")
+      .join(' ')
       .toLowerCase()
-      .includes(keyword),
+      .includes(keyword)
   );
 });
 
@@ -617,11 +635,11 @@ const sortedData = computed(() => {
   const sorted = [...filteredData.value];
 
   sorted.sort((a, b) => {
-    const aVal = String(a[sortColumn.value] || "").toLowerCase();
-    const bVal = String(b[sortColumn.value] || "").toLowerCase();
+    const aVal = String(a[sortColumn.value] || '').toLowerCase();
+    const bVal = String(b[sortColumn.value] || '').toLowerCase();
 
-    if (aVal < bVal) return sortDirection.value === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDirection.value === "asc" ? 1 : -1;
+    if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -630,7 +648,7 @@ const sortedData = computed(() => {
 
 // Pagination computed
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedData.value.length / rowsPerPage.value)),
+  Math.max(1, Math.ceil(sortedData.value.length / rowsPerPage.value))
 );
 
 const paginatedData = computed(() => {
@@ -661,10 +679,10 @@ const paginationPages = computed(() => {
 // Sorting function
 const sortBy = (column: string) => {
   if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortColumn.value = column;
-    sortDirection.value = "asc";
+    sortDirection.value = 'asc';
   }
 };
 
@@ -674,7 +692,7 @@ watch([() => filters.value.search, rowsPerPage], () => {
 });
 
 const refreshData = async () => {
-  filters.value.search = "";
+  filters.value.search = '';
   currentPage.value = 1;
   await fetchTertujuEksternal();
 };
@@ -686,7 +704,7 @@ const onExport = () => {
     [t('te_alamat')]: item.alamat,
     [t('te_telepon')]: item.telepon || '-',
     Status: item.aktif ? t('te_aktif') : t('te_tidak_aktif'),
-    [t('te_pengusul')]: item.nama_pembuat || '-',
+    [t('te_pengusul')]: item.nama_pembuat || '-'
   }));
 
   if (data.length === 0) {
@@ -695,11 +713,20 @@ const onExport = () => {
   }
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 40 }, { wch: 18 }, { wch: 12 }, { wch: 25 }];
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 30 },
+    { wch: 40 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 25 }
+  ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('tertuju'));
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
   saveAs(blob, `tertuju_eksternal_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast(t('te_berhasil') || 'Berhasil', 'Export berhasil.', 'success');
 };

@@ -9,6 +9,14 @@ import {
 
 export const useDelegasi = () => {
   const { apiGet, apiPost, apiPut, apiDelete } = useApi();
+  const tokenCookie = useCookie<string | null>("token", {
+    sameSite: "lax",
+    path: "/",
+  });
+  const roleCookie = useCookie<string | null>("auth_role", {
+    sameSite: "lax",
+    path: "/",
+  });
 
   // GET LIST
   const getDelegasiList = async (params: any) => {
@@ -75,6 +83,8 @@ export const useDelegasi = () => {
           res.data.user?.positionText,
         );
         localStorage.setItem("token", res.data.accessToken);
+        tokenCookie.value = res.data.accessToken;
+        roleCookie.value = res.data.user?.role || null;
       }
     }
 

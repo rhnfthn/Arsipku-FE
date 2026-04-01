@@ -27,7 +27,8 @@ export const useTertujuEksternal = () => {
   const fetchTertujuEksternal = async () => {
     loading.value = true;
     try {
-      const res = await apiGet("/persuratan/eksternal");
+      // Include inactive data
+      const res = await apiGet("/persuratan/eksternal?include_inactive=true");
       data.value = res?.data ?? [];
     } catch (err) {
       error.value = err;

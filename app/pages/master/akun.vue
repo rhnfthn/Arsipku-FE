@@ -573,8 +573,13 @@ const openEdit = (row: any) => {
 };
 
 const saveAccount = async () => {
-  if (!form.value.persnum || !form.value.role) {
-    showToast(t("ma_val_title"), t("ma_val_desc"), "warning");
+  // Validasi field dengan nama deskriptif
+  const emptyFields: string[] = [];
+  if (!form.value.persnum) emptyFields.push('Nama/Persnum');
+  if (!form.value.role) emptyFields.push('Role');
+  
+  if (emptyFields.length > 0) {
+    showToast(t("gagal"), `${emptyFields.join(', ')} wajib diisi`, "error");
     return;
   }
 
@@ -594,6 +599,9 @@ const saveAccount = async () => {
       isEdit ? t("ma_te_desc") : t("ma_tb_desc"),
       "success",
     );
+    
+    // Refresh data setelah save untuk memastikan status terupdate
+    await fetchAccounts();
   } catch (error) {
     showToast(t("ma_err_title"), t("ma_err_save_desc"), "error");
   }
@@ -614,8 +622,8 @@ const deleteNow = async () => {
   }
 };
 
-const refreshData = () => {
-  fetchAccounts();
+const refreshData = async () => {
+  await fetchAccounts();
   currentPage.value = 1;
 };
 
@@ -706,7 +714,6 @@ const onExport = () => {
     No: idx + 1,
     [t('namauser')]: user.name,
     Persnum: user.persnum,
-    Email: user.email || '-',
     Role: user.role,
     Jabatan: user.positionText || '-',
   }));
@@ -717,7 +724,7 @@ const onExport = () => {
   }
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 30 }];
+  worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 30 }];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen Akun');
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
