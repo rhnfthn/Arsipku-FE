@@ -1,10 +1,8 @@
 <template>
   <div class="mb-0.5">
     <div v-if="hasChildren" @click="toggle" :class="containerClasses">
-      <UIcon v-if="item?.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{
-        item?.label
-      }}</span>
+      <UIcon v-if="item?.icon" :key="item.icon" :name="item.icon" :class="iconClasses" />
+      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
 
       <span
         v-if="item?.badge"
@@ -20,18 +18,13 @@
 
       <UIcon
         name="i-heroicons-chevron-down"
-        :class="[
-          'w-3 h-3 transition-transform duration-200 text-gray-500',
-          isOpen && 'rotate-180',
-        ]"
+        :class="['w-3 h-3 transition-transform duration-200 text-gray-500', isOpen && 'rotate-180']"
       />
     </div>
 
     <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses">
       <UIcon v-if="item?.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{
-        item?.label
-      }}</span>
+      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
 
       <span
         v-if="item?.badge"
@@ -70,16 +63,14 @@
 <script setup>
 const props = defineProps({
   item: { type: Object, required: true },
-  collapsed: Boolean,
+  collapsed: Boolean
 });
 
 const route = useRoute();
 const isOpen = ref(false);
 
 // Check if has children
-const hasChildren = computed(
-  () => props.item?.children && props.item.children.length > 0,
-);
+const hasChildren = computed(() => props.item?.children && props.item.children.length > 0);
 
 // Check if any children has badge
 const hasChildrenWithBadges = computed(() => {
@@ -89,12 +80,12 @@ const hasChildrenWithBadges = computed(() => {
 
 // Helper for exact or nested active state
 const isActivePath = (path) => {
-  return route.path === path || route.path.startsWith(path + "/");
+  return route.path === path || route.path.startsWith(path + '/');
 };
 
 // Helper khusus untuk child agar active state lebih akurat
 const isActiveChild = (path) => {
-  return route.path === path || route.path.startsWith(path + "/");
+  return route.path === path || route.path.startsWith(path + '/');
 };
 
 // Logic Active State
@@ -106,9 +97,7 @@ const isActive = computed(() => {
   }
 
   if (hasChildren.value) {
-    return props.item.children.some(
-      (child) => child?.to && isActivePath(child.to),
-    );
+    return props.item.children.some((child) => child?.to && isActivePath(child.to));
   }
   return false;
 });
@@ -137,7 +126,7 @@ watch(
     if (shouldAutoOpen.value) {
       isOpen.value = true;
     }
-  },
+  }
 );
 
 const toggle = () => {
@@ -145,18 +134,16 @@ const toggle = () => {
 };
 
 const containerClasses = computed(() => [
-  "flex items-center gap-3 my-1.5 px-4 py-2.5 mx-0 rounded-full min-w-[200px] cursor-pointer transition-colors duration-200 select-none",
+  'flex items-center gap-3 my-1.5 px-4 py-2.5 mx-0 rounded-full min-w-[200px] cursor-pointer transition-colors duration-200 select-none',
   isActive.value
-    ? "bg-[#D3E3FD] text-gray-900 font-bold dark:bg-gray-700 dark:text-white"
-    : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
-  "mx-3",
+    ? 'bg-[#D3E3FD] text-gray-900 font-bold dark:bg-gray-700 dark:text-white'
+    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+  'mx-3'
 ]);
 
 const iconClasses = computed(() => [
-  "w-5 h-5",
-  isActive.value
-    ? "text-gray-900 dark:text-white"
-    : "text-gray-600 dark:text-gray-400",
+  'w-5 h-5',
+  isActive.value ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
 ]);
 </script>
 
