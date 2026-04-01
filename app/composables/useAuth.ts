@@ -3,6 +3,18 @@ import type { UserProfile } from "~/types/auth";
 
 export const useAuth = () => {
   const { apiGet, apiPost } = useApi();
+  const tokenCookie = useCookie<string | null>("token", {
+    sameSite: "lax",
+    path: "/",
+  });
+  const roleCookie = useCookie<string | null>("auth_role", {
+    sameSite: "lax",
+    path: "/",
+  });
+  const sessionCookie = useCookie<string | null>("sessionId", {
+    sameSite: "lax",
+    path: "/",
+  });
   const user = useState<UserProfile | null>("user", () => null);
   const setUser = (data: UserProfile | null) => {
     user.value = data;
@@ -12,6 +24,7 @@ export const useAuth = () => {
     try {
       const token = process.client ? localStorage.getItem("token") : null;
       if (!token) return null;
+      tokenCookie.value = token;
 
       const res: any = await apiGet("/auth/profile", {
         headers: { Authorization: `Bearer ${token}` },
@@ -40,6 +53,7 @@ export const useAuth = () => {
 
         // Simpan ke state global
         setUser(normalizedProfile);
+        roleCookie.value = normalizedProfile.role ?? null;
 
         return normalizedProfile;
       }
@@ -93,6 +107,9 @@ export const useAuth = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("sessionId");
     }
+    tokenCookie.value = null;
+    sessionCookie.value = null;
+    roleCookie.value = null;
     user.value = null;
 
     // 3️⃣ Redirect ke SSO AirNav
@@ -121,6 +138,7 @@ export const useAuth = () => {
     if (!newAccessToken) throw new Error("Refresh token failed");
 
     localStorage.setItem("token", newAccessToken);
+    tokenCookie.value = newAccessToken;
     return newAccessToken as string;
   };
 

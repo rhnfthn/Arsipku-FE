@@ -26,8 +26,12 @@ interface FaqRaw {
   id: string
   pertanyaan: string
   deskripsi: string
-  kategori: string | { id: string; nama: string }
+  kategori: string | { id?: string | number; nama?: string; name?: string }
   kategori_id?: string
+  kategoriId?: string | number
+  id_kategori?: string | number
+  kategoriNama?: string
+  kategori_nama?: string
   puas: number
   tidak_puas: number
   created_at: string
@@ -51,8 +55,23 @@ interface KategoriApiResponse {
 // ── Helper mapper snake_case → camelCase ──────────────────────
 const mapFaq = (raw: FaqRaw): Faq => {
   const kat = raw.kategori
-  const kategoriNama = typeof kat === 'string' ? kat : (kat?.nama ?? '')
-  const kategoriId = typeof kat === 'object' ? kat?.id : raw.kategori_id
+  const kategoriNama =
+    typeof kat === 'string'
+      ? kat
+      : (
+          kat?.nama ??
+          kat?.name ??
+          raw.kategoriNama ??
+          raw.kategori_nama ??
+          (raw as any).nama_kategori ??
+          (raw as any).category_name ??
+          ''
+        )
+  const kategoriIdRaw =
+    typeof kat === 'object'
+      ? kat?.id
+      : raw.kategori_id ?? raw.kategoriId ?? raw.id_kategori ?? (raw as any).category_id
+  const kategoriId = kategoriIdRaw != null ? String(kategoriIdRaw) : undefined
   return {
     id: raw.id,
     pertanyaan: raw.pertanyaan,
@@ -72,6 +91,40 @@ export const useFaq = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  const extractArray = (res: any): any[] => {
+    if (Array.isArray(res)) return res
+    if (Array.isArray(res?.data)) return res.data
+    if (Array.isArray(res?.data?.data)) return res.data.data
+    if (Array.isArray(res?.data?.items)) return res.data.items
+    if (Array.isArray(res?.items)) return res.items
+    if (Array.isArray(res?.result)) return res.result
+    if (Array.isArray(res?.data?.result)) return res.data.result
+    return []
+  }
+
+  const pickCategoryRows = (res: any): any[] => {
+    const direct = extractArray(res)
+    if (direct.length > 0) return direct
+
+    const bag = [res, res?.data, res?.data?.data, res?.result, res?.payload]
+    for (const src of bag) {
+      if (!src || typeof src !== 'object') continue
+      const candidates = [
+        (src as any).kategori,
+        (src as any).categories,
+        (src as any).category,
+        (src as any).rows,
+        (src as any).items,
+        (src as any).list
+      ]
+      for (const candidate of candidates) {
+        if (Array.isArray(candidate)) return candidate
+      }
+    }
+
+    return []
+  }
+
   // ── GET ALL ──────────────────────────────────────────────────
   const fetchFaqs = async (options?: { kategoriId?: string; search?: string }) => {
     loading.value = true
@@ -80,8 +133,11 @@ export const useFaq = () => {
       const query: Record<string, string> = {}
       if (options?.kategoriId) query.kategoriId = options.kategoriId
       if (options?.search) query.search = options.search
-      const res = await apiGet<FaqApiResponse>('/faq', Object.keys(query).length ? { params: query } : {})
-      faqs.value = res.data.map(mapFaq)
+      const res = await apiGet<FaqApiResponse | { data?: any[] } | any[]>('/faq',
+        Object.keys(query).length ? { params: query } : {}
+      )
+      const list = extractArray(res)
+      faqs.value = list.map(mapFaq)
     } catch (err) {
       error.value = 'Gagal memuat data FAQ'
       console.error(err)
@@ -93,18 +149,43 @@ export const useFaq = () => {
   // ── GET ALL CATEGORIES from dedicated endpoint ───────────────
   const fetchCategories = async (): Promise<FaqKategori[]> => {
     try {
-      const res = await apiGet<KategoriApiResponse>('/faq-kategori')
-      const raw = res.data
+      const res = await apiGet<KategoriApiResponse | any[]>('/faq-kategori')
+      const raw = pickCategoryRows(res)
       if (!Array.isArray(raw) || raw.length === 0) return []
       if (typeof raw[0] === 'string') {
         // Fallback: plain string array, no IDs available
         return (raw as string[]).map((nama, i) => ({ id: String(i), nama }))
       }
-      return (raw as Array<{ id: string; nama: string; deskripsi?: string }>).map((item) => ({
-        id: item.id,
-        nama: item.nama,
-        deskripsi: item.deskripsi,
-      }))
+      return (raw as Array<{
+        id?: string | number
+        kategori_id?: string | number
+        id_kategori?: string | number
+        nama?: string
+        name?: string
+        kategori?: string
+        kategoriNama?: string
+        kategori_nama?: string
+        categoryName?: string
+        deskripsi?: string
+      }>).
+        map((item, i) => ({
+          id: item.id != null
+            ? String(item.id)
+            : item.kategori_id != null
+              ? String(item.kategori_id)
+              : item.id_kategori != null
+                ? String(item.id_kategori)
+                : String(i),
+          nama:
+            item.nama ||
+            item.name ||
+            item.kategori ||
+            item.kategoriNama ||
+            item.kategori_nama ||
+            item.categoryName ||
+            '',
+          deskripsi: item.deskripsi,
+        })).filter((item) => item.nama)
     } catch {
       return []
     }

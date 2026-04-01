@@ -2,17 +2,17 @@
   <div class="flex items-center justify-between w-full pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-        {{ $t("nm_title") }}
+        {{ $t('nm_title') }}
       </Heading>
       <PageHeader :items="items" />
     </div>
     <!-- ADD BUTTON -->
     <button
-      @click="showAddModal = true"
+      @click="openAddModal"
       class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
     >
       <Plus class="w-4 h-4" />
-      {{ $t("nm_button") }}
+      {{ $t('nm_button') }}
     </button>
   </div>
 
@@ -44,14 +44,14 @@
             @click.stop="openFilterStatus = !openFilterStatus"
           >
             <span class="text-sm">
-              {{ perPage === "all" ? $t("semua") : ` ${perPage}` }}
+              {{ perPage === 'all' ? $t('semua') : ` ${perPage}` }}
             </span>
 
             <!-- Icon V -->
             <svg
               :class="[
                 'w-4 h-4 transition-transform duration-200',
-                openFilterStatus ? 'rotate-180' : 'rotate-0',
+                openFilterStatus ? 'rotate-180' : 'rotate-0'
               ]"
               fill="none"
               stroke="currentColor"
@@ -74,7 +74,7 @@
               class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
               @click.prevent="setPerPage('all')"
             >
-              {{ $t("semua") }}
+              {{ $t('semua') }}
             </button>
 
             <button
@@ -103,40 +103,28 @@
           class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
         >
           <FileDown class="w-4 h-4" />
-          {{ $t("export") }}
+          {{ $t('export') }}
         </button>
       </div>
       <!-- LIST TABLE -->
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">
           <thead>
-            <tr
-              class="bg-primary-400 dark:bg-primary-700 text-white whitespace-nowrap text-left"
-            >
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                {{ $t("tanggal") }}
+            <tr class="bg-primary-400 dark:bg-primary-700 text-white whitespace-nowrap text-left">
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                {{ $t('tanggal') }}
               </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                {{ $t("asal_naskah") }}
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                {{ $t('asal_naskah') }}
               </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                {{ $t("Tertuju") }}
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                {{ $t('Tertuju') }}
               </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                {{ $t("perihal") }}
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                {{ $t('perihal') }}
               </th>
-              <th
-                class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700"
-              >
-                {{ $t("pembuat") }}
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                {{ $t('pembuat') }}
               </th>
             </tr>
           </thead>
@@ -166,9 +154,7 @@
               <td class="px-4 py-3 text-gray-500 dark:text-gray-200">
                 <div class="flex gap-2">
                   <div>
-                    {{
-                      formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal
-                    }}
+                    {{ formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal }}
                   </div>
                   <div>
                     {{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}
@@ -176,22 +162,18 @@
                 </div>
               </td>
 
-              <td
-                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-              >
+              <td class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap">
                 <div class="font-medium">
-                  {{ item.pengirim?.nama || "-" }}
+                  {{ item.pengirim?.nama || '-' }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ item.nomor || "-" }}
+                  {{ item.nomor || '-' }}
                 </div>
               </td>
 
               <td class="px-4 py-3 text-black dark:text-gray-200">
                 <div class="font-medium">
-                  {{
-                    item.penerima?.map((p) => p.position_text).join(", ") || "-"
-                  }}
+                  {{ item.penerima?.map((p) => p.position_text).join(', ') || '-' }}
                 </div>
               </td>
 
@@ -213,9 +195,7 @@
                 </template>
               </USlideover>
 
-              <td
-                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-              >
+              <td class="px-4 py-3 text-black dark:text-gray-200">
                 <div class="flex flex-col gap-1">
                   <div class="font-medium">
                     {{ item.perihal }}
@@ -229,24 +209,17 @@
                   >
                     <FileText class="w-3 h-3 shrink-0" />
                     <span class="truncate">
-                      {{
-                        truncateFileName(
-                          getFileNameFromUrl(item.final_pdf_url),
-                          28,
-                        )
-                      }}
+                      {{ truncateFileName(getFileNameFromUrl(item.final_pdf_url), 28) }}
                     </span>
                   </button>
                 </div>
               </td>
-              <td
-                class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap"
-              >
+              <td class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap">
                 <div class="font-medium">
-                  {{ item.pembuat?.position_text || "-" }}
+                  {{ item.pembuat?.position_text || '-' }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ item.pembuat?.nama || "-" }}
+                  {{ item.pembuat?.nama || '-' }}
                 </div>
               </td>
             </tr>
@@ -254,20 +227,18 @@
         </table>
 
         <!-- PAGINATION -->
-        <div
-          class="flex items-center justify-between px-4 py-3 dark:border-gray-700"
-        >
+        <div class="flex items-center justify-between px-4 py-3 dark:border-gray-700">
           <!-- INFO -->
           <div class="text-xs text-gray-500 dark:text-gray-400">
-            {{ $t("menampilkan") }}
+            {{ $t('menampilkan') }}
             {{ paginatedData.length }}
-            {{ $t("dari") }}
+            {{ $t('dari') }}
             {{ totalItems }}
-            {{ $t("data") }}
+            {{ $t('data') }}
           </div>
 
           <!-- CONTROLS -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-2">
             <!-- BACK -->
             <button
               :disabled="currentPage === 1"
@@ -275,16 +246,11 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === 1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
               ]"
               @click="goToPage(currentPage - 1)"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -292,27 +258,63 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              {{ $t("sebelumnya") }}
+              {{ $t('sebelumnya') }}
             </button>
 
             <!-- PAGE NUMBERS -->
-            <button
-              v-for="(page, i) in paginationPages"
-              :key="i"
-              :class="[
-                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+            <div class="flex items-center gap-1">
+              <!-- FIRST -->
+              <button
+                v-if="paginationPages.length > 0 && typeof paginationPages[0] === 'number' && paginationPages[0] > 1"
+                @click="goToPage(1)"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all dark:text-gray-200"
+              >
+                1
+              </button>
 
-                page === currentPage
-                  ? 'bg-primary-500 text-white'
-                  : page === '...'
-                    ? 'text-gray-400 dark:text-gray-500 cursor-default'
-                    : 'border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200',
-              ]"
-              :disabled="page === '...'"
-              @click="typeof page === 'number' && goToPage(page)"
-            >
-              {{ page }}
-            </button>
+              <!-- DOTS LEFT -->
+              <span
+                v-if="paginationPages.length > 0 && typeof paginationPages[0] === 'number' && paginationPages[0] > 2"
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- WINDOW -->
+              <button
+                v-for="(page, i) in paginationPages"
+                :key="i"
+                :class="[
+                  'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  page === currentPage
+                    ? 'bg-primary text-white shadow-md'
+                    : page === '...'
+                      ? 'text-gray-400 dark:text-gray-500 cursor-default'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
+                ]"
+                :disabled="page === '...'"
+                @click="typeof page === 'number' && goToPage(page)"
+              >
+                {{ page }}
+              </button>
+
+              <!-- DOTS RIGHT -->
+              <span
+                v-if="paginationPages.length > 0 && typeof paginationPages[paginationPages.length - 1] === 'number' && paginationPages[paginationPages.length - 1] < totalPages - 1"
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+
+              <!-- LAST -->
+              <button
+                v-if="paginationPages.length > 0 && typeof paginationPages[paginationPages.length - 1] === 'number' && paginationPages[paginationPages.length - 1] < totalPages"
+                @click="goToPage(totalPages)"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all dark:text-gray-200"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
 
             <!-- NEXT -->
             <button
@@ -321,16 +323,12 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === totalPages
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
               ]"
+              @click="goToPage(currentPage + 1)"
             >
-              {{ $t("selanjutnya") }}
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              {{ $t('selanjutnya') }}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -348,28 +346,18 @@
   <!-- MODAL TAMBAH -->
   <!-- ======= -->
   <Teleport to="body">
-    <Modal
-      v-model="showAddModal"
-      @save="saveDelegasi"
-      @close="resetNewDelegasi"
-      size="xl"
-    >
+    <Modal v-model="showAddModal" @save="saveDelegasi" @close="resetNewDelegasi" size="xl">
       <template #title>
-        <Heading
-          variant="heading9b"
-          class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white"
-          >{{ $t("nm_modal_title") }}</Heading
-        >
+        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">{{
+          $t('nm_modal_title')
+        }}</Heading>
       </template>
 
       <div class="flex flex-col">
         <div class="flex flex-col gap-4 p-1 pb-4">
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_jenisnaskah") }}<span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_jenisnaskah') }}<span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
               <button
@@ -384,7 +372,7 @@
                       : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  {{ newDelegasi.jenisnaskah || $t("nm_pilih_jenis_naskah") }}
+                  {{ newDelegasi.jenisnaskah || $t('nm_pilih_jenis_naskah') }}
                 </span>
               </button>
 
@@ -405,11 +393,8 @@
           </div>
 
           <div class="flex flex-wrap flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_tanggalsurat") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_tanggalsurat') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="newDelegasi.tanggal_surat"
@@ -419,11 +404,8 @@
           </div>
 
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_sifatnaskah") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_sifatnaskah') }} <span class="text-red-500">*</span>
             </Heading>
             <div class="relative" data-custom-dropdown>
               <button
@@ -438,7 +420,7 @@
                       : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  {{ newDelegasi.sifat_naskah || $t("nm_pilih_sifat_naskah") }}
+                  {{ newDelegasi.sifat_naskah || $t('nm_pilih_sifat_naskah') }}
                 </span>
               </button>
 
@@ -459,11 +441,8 @@
           </div>
 
           <div class="flex flex-wrap flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_noasal") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_noasal') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="newDelegasi.nomor_asal"
@@ -474,11 +453,8 @@
           </div>
 
           <div class="flex flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_asalnaskah") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_asalnaskah') }} <span class="text-red-500">*</span>
             </Heading>
 
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
@@ -524,7 +500,7 @@
                   v-if="loadingAsalNaskah"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  {{ $t("memuat_data") }}
+                  {{ $t('memuat_data') }}
                 </div>
 
                 <button
@@ -537,23 +513,18 @@
                 </button>
 
                 <div
-                  v-if="
-                    !loadingAsalNaskah && filteredAsalNaskahList.length === 0
-                  "
+                  v-if="!loadingAsalNaskah && filteredAsalNaskahList.length === 0"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  {{ $t("tidak_ditemukan") }}
+                  {{ $t('tidak_ditemukan') }}
                 </div>
               </div>
             </div>
           </div>
 
           <div class="flex flex-wrap flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_perihal") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_perihal') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="newDelegasi.perihal"
@@ -564,11 +535,8 @@
           </div>
 
           <div class="flex flex-wrap flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_lampiran") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_lampiran') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               :value="lampiranText"
@@ -580,11 +548,8 @@
           </div>
 
           <div class="flex flex-wrap flex-col">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("tertuju") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('tertuju') }} <span class="text-red-500">*</span>
             </Heading>
 
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
@@ -598,9 +563,7 @@
                   :key="t.position"
                   class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
                 >
-                  <span
-                    class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
-                  >
+                  <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
                     {{ t.position_text }}
                   </span>
                   <span class="text-[10px] text-gray-800 dark:text-gray-300">
@@ -623,11 +586,7 @@
                 <input
                   v-model="searchTertuju"
                   @focus="openNewTertuju = true"
-                  :placeholder="
-                    newDelegasi.tertuju.length === 0
-                      ? $t('nm_cari_tertuju')
-                      : ''
-                  "
+                  :placeholder="newDelegasi.tertuju.length === 0 ? $t('nm_cari_tertuju') : ''"
                   class="flex-1 min-w-[180px] outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
                 />
               </div>
@@ -640,14 +599,14 @@
                   v-if="loadingTertuju"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  {{ $t("memuat_data") }}
+                  {{ $t('memuat_data') }}
                 </div>
 
                 <div
                   v-if="!loadingTertuju && filteredTertujuList.length === 0"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
                 >
-                  {{ $t("tidak_ditemukan") }}
+                  {{ $t('tidak_ditemukan') }}
                 </div>
 
                 <button
@@ -656,9 +615,7 @@
                   class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
                   @click.prevent="selectNewTertuju(item)"
                 >
-                  <div
-                    class="font-medium text-[13px] text-primary-400 dark:text-primary-300"
-                  >
+                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
                     {{ item.position_text }}
                   </div>
 
@@ -675,11 +632,8 @@
           </div>
 
           <div class="flex flex-col gap-2">
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
-            >
-              {{ $t("nm_file") }} <span class="text-red-500">*</span>
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              {{ $t('nm_file') }} <span class="text-red-500">*</span>
             </Heading>
 
             <!-- Upload Box -->
@@ -691,10 +645,8 @@
               />
 
               <p class="text-xs text-gray-600 dark:text-gray-400">
-                {{ $t("nm_text1") }}
-                <span class="text-primary-500 font-medium">{{
-                  $t("nm_text2")
-                }}</span>
+                {{ $t('nm_text1') }}
+                <span class="text-primary-500 font-medium">{{ $t('nm_text2') }}</span>
               </p>
 
               <input
@@ -715,9 +667,7 @@
                 <div class="flex items-center gap-2">
                   <FileText class="w-4 h-4 text-primary-400" />
                   <div class="flex flex-col">
-                    <span
-                      class="text-xs font-medium truncate max-w-[220px] dark:text-gray-200"
-                    >
+                    <span class="text-xs font-medium truncate max-w-[220px] dark:text-gray-200">
                       {{ file.name }}
                     </span>
                     <span class="text-[10px] text-gray-400 dark:text-gray-500">
@@ -743,7 +693,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import {
   Search,
   ArrowUpDown,
@@ -754,19 +704,19 @@ import {
   FileText,
   X,
   Moon,
-  Sun,
-} from "lucide-vue-next";
+  Sun
+} from 'lucide-vue-next';
 
-import Modal from "~/components/Modal.vue";
-import ConfirmPopup from "~/components/ConfirmPopup.vue";
-import { useNaskahDinas } from "~/composables/useNaskahDinas";
-import { useTertujuEksternal } from "~/composables/useTertujuEksternal";
-import { useToast } from "#imports";
-import { useAuth } from "~/composables/useAuth";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+import Modal from '~/components/Modal.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import { useNaskahDinas } from '~/composables/useNaskahDinas';
+import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
+import { useToast } from '#imports';
+import { useAuth } from '~/composables/useAuth';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 const { t } = useI18n();
@@ -804,25 +754,25 @@ const { t } = useI18n();
 // STATE (existing)
 // ==============================
 const toast = useToast();
-const search = ref("");
-const sortDirection = ref<"asc" | "desc" | null>("desc");
+const search = ref('');
+const sortDirection = ref<'asc' | 'desc' | null>('desc');
 const showAddModal = ref(false);
-const searchTertuju = ref("");
-const searchAsalNaskah = ref("");
+const searchTertuju = ref('');
+const searchAsalNaskah = ref('');
 const skeletonRows = computed(() => {
-  if (perPage.value === "all") return 10;
+  if (perPage.value === 'all') return 10;
   return Number(perPage.value);
 });
 
 const items = [
   {
-    label: t("beranda"),
-    to: "/beranda",
+    label: t('beranda'),
+    to: '/beranda'
   },
   {
-    label: t("naskah_masuk"),
-    to: "/naskah-dinas",
-  },
+    label: t('naskah_masuk'),
+    to: '/naskah-dinas'
+  }
 ] satisfies BreadcrumbItem[];
 
 const { user } = useAuth();
@@ -837,13 +787,13 @@ const {
   loadingRecipients: loadingTertuju,
   fetchRecipients,
 
-  sendNaskahDinas,
+  sendNaskahDinas
 } = useNaskahDinas();
 
 const {
   data: asalNaskahList,
   loading: loadingAsalNaskah,
-  fetchTertujuEksternal,
+  fetchTertujuEksternal
 } = useTertujuEksternal();
 
 onMounted(() => {
@@ -851,7 +801,7 @@ onMounted(() => {
   fetchNaskahDinas();
   fetchTertujuEksternal();
   fetchRecipients();
-  document.addEventListener("click", handleDocumentClick);
+  document.addEventListener('click', handleDocumentClick);
 });
 
 const filteredTertujuList = computed(() => {
@@ -873,22 +823,20 @@ const filteredAsalNaskahList = computed(() => {
 
   if (!keyword) return asalNaskahList.value;
 
-  return asalNaskahList.value.filter((item) =>
-    item.nama?.toLowerCase().includes(keyword),
-  );
+  return asalNaskahList.value.filter((item) => item.nama?.toLowerCase().includes(keyword));
 });
 
 // ==============================
 // SORT & REFRESH (existing)
 // ==============================
 const toggleSort = () => {
-  if (!sortDirection.value) sortDirection.value = "asc";
-  else if (sortDirection.value === "asc") sortDirection.value = "desc";
+  if (!sortDirection.value) sortDirection.value = 'asc';
+  else if (sortDirection.value === 'asc') sortDirection.value = 'desc';
   else sortDirection.value = null;
 };
 
 const refreshData = async () => {
-  search.value = "";
+  search.value = '';
   sortDirection.value = null;
   currentPage.value = 1;
 
@@ -901,17 +849,31 @@ const filteredData = computed(() => {
   const keyword = search.value.toLowerCase();
 
   // =====================
-  // SEARCH
+  // SEARCH (naskah, tertuju, perihal, pembuat)
   // =====================
   data = data.filter((item) => {
+    // Naskah (asal naskah)
+    const asalNaskah = (item.pengirim?.persnum_person_text || '').toLowerCase();
+    const nomor = (item.nomor || '').toLowerCase();
+    
+    // Tertuju (semua penerima)
+    const tertujuText = (item.penerima || [])
+      .map((p: any) => `${p.position_text || ''} ${p.persnum_person_text || ''}`)
+      .join(' ')
+      .toLowerCase();
+    
+    // Perihal
+    const perihal = (item.perihal || '').toLowerCase();
+    
+    // Pembuat
+    const pembuat = `${item.pembuat?.position_text || ''} ${item.pembuat?.nama || ''}`.toLowerCase();
+    
     return (
-      (item.pengirim?.persnum_person_text || "")
-        .toLowerCase()
-        .includes(keyword) ||
-      (item.nomor || "").toLowerCase().includes(keyword) ||
-      (item.perihal || "").toLowerCase().includes(keyword) ||
-      (item.lampiran || "").toLowerCase().includes(keyword) ||
-      (item.penerima?.[0]?.position_text || "").toLowerCase().includes(keyword)
+      asalNaskah.includes(keyword) ||
+      nomor.includes(keyword) ||
+      tertujuText.includes(keyword) ||
+      perihal.includes(keyword) ||
+      pembuat.includes(keyword)
     );
   });
 
@@ -923,7 +885,7 @@ const filteredData = computed(() => {
     const dateB = parseUtcTanggalJam(b.tanggal, b.jam)?.getTime() ?? 0;
 
     // default: terbaru
-    if (sortDirection.value !== "asc") {
+    if (sortDirection.value !== 'asc') {
       return dateB - dateA;
     }
 
@@ -937,17 +899,17 @@ const filteredData = computed(() => {
 // PAGINATION
 // ==============================
 const currentPage = ref(1);
-const perPage = ref<number | "all">(10);
+const perPage = ref<number | 'all'>(10);
 
 const totalItems = computed(() => filteredData.value.length);
 
 const totalPages = computed(() => {
-  if (perPage.value === "all") return 1;
+  if (perPage.value === 'all') return 1;
   return Math.ceil(totalItems.value / perPage.value);
 });
 
 const paginatedData = computed(() => {
-  if (perPage.value === "all") {
+  if (perPage.value === 'all') {
     return filteredData.value;
   }
 
@@ -956,30 +918,22 @@ const paginatedData = computed(() => {
 });
 
 const paginationPages = computed(() => {
-  const pages: (number | string)[] = [];
   const total = totalPages.value;
   const current = currentPage.value;
-
-  if (total <= 7) {
+  const pages: number[] = [];
+  
+  if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
-    return pages;
+  } else {
+    if (current <= 2) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 1) {
+      pages.push(total - 4, total - 3, total - 2, total - 1, total);
+    } else {
+      pages.push(current - 2, current - 1, current, current + 1, current + 2);
+    }
   }
-
-  pages.push(1);
-
-  if (current > 4) pages.push("...");
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  if (current < total - 3) pages.push("...");
-
-  pages.push(total);
-
+  
   return pages;
 });
 
@@ -1004,33 +958,36 @@ const lampiranText = computed(() => {
 });
 
 const newDelegasi = ref({
-  tanggal_surat: "",
-  nomor_asal: "",
-  sifat_naskah: "",
-  perihal: "",
+  jenisnaskah: '',
+  tanggal_surat: '',
+  nomor_asal: '',
+  sifat_naskah: '',
+  perihal: '',
   asal_naskah: null as number | null,
-  asal_naskah_label: "",
+  asal_naskah_label: '',
 
   tertuju: [] as any[],
-  tertuju_label: "",
+  tertuju_label: ''
 });
 
 const saveDelegasi = async () => {
-  if (!newDelegasi.value.asal_naskah) {
+  // Collect empty required fields - using exact label names from modal
+  const emptyFields: string[] = [];
+  
+  if (!newDelegasi.value.jenisnaskah) emptyFields.push('Jenis Naskah');
+  if (!newDelegasi.value.tanggal_surat) emptyFields.push('Tanggal Surat');
+  if (!newDelegasi.value.sifat_naskah) emptyFields.push('Sifat Naskah');
+  if (!newDelegasi.value.asal_naskah) emptyFields.push('Asal Naskah');
+  if (!newDelegasi.value.perihal) emptyFields.push('Perihal');
+  if (newDelegasi.value.tertuju.length === 0) emptyFields.push('Tertuju Eksternal');
+  if (filesRef.value.length === 0) emptyFields.push('File');
+  
+  if (emptyFields.length > 0) {
     toast.add({
-      title: t("nm_validasi_gagal"),
-      description: t("nm_asal_naskah_wajib"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
-    });
-    return;
-  }
-  if (filesRef.value.length === 0) {
-    toast.add({
-      title: t("nm_validasi_gagal"),
-      description: t("nm_file_wajib"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
+      title: t('gagal'),
+      description: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     return;
   }
@@ -1045,27 +1002,27 @@ const saveDelegasi = async () => {
       perihal: newDelegasi.value.perihal,
       lampiran: lampiranText.value,
       file: filesRef.value,
-      pembuat_id: Number(user.value.position),
+      pembuat_id: Number(user.value.position)
     });
 
     toast.add({
-      title: t("berhasil"),
-      description: t("nm_berhasil_tambah"),
-      color: "success",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      description: t('nm_berhasil_tambah'),
+      color: 'success',
+      icon: 'i-lucide-check-circle'
     });
 
     resetNewDelegasi();
     showAddModal.value = false;
     fetchNaskahDinas();
   } catch (e) {
-    console.error("Gagal kirim naskah dinas", e);
+    console.error('Gagal kirim naskah dinas', e);
 
     toast.add({
-      title: t("gagal"),
-      description: t("nm_gagal_simpan"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('nm_gagal_simpan'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
   }
 };
@@ -1076,28 +1033,28 @@ const saveDelegasi = async () => {
 const jenisnaskahList = [
   {
     id: 1,
-    label: "UND - Surat Undangan",
-    value: "Surat Undangan",
+    label: 'UND - Surat Undangan',
+    value: 'Surat Undangan'
   },
   {
     id: 2,
-    label: "SDE - Surat Dinas Eksternal",
-    value: "Surat Dinas Eksternal",
-  },
+    label: 'SDE - Surat Dinas Eksternal',
+    value: 'Surat Dinas Eksternal'
+  }
 ];
 
 const sifatnaskahList = [
-  { id: 1, label: "Biasa/Terbuka", value: "Biasa" },
-  { id: 2, label: "Terbatas", value: "Terbatas" },
-  { id: 3, label: "Rahasia", value: "Rahasia" },
-  { id: 4, label: "Sangat Rahasia", value: "Sangat Rahasia" },
+  { id: 1, label: 'Biasa/Terbuka', value: 'Biasa' },
+  { id: 2, label: 'Terbatas', value: 'Terbatas' },
+  { id: 3, label: 'Rahasia', value: 'Rahasia' },
+  { id: 4, label: 'Sangat Rahasia', value: 'Sangat Rahasia' }
 ];
 
 const jabatanList = [
-  { id: 1, label: "Asisten", value: "Asisten" },
-  { id: 2, label: "Manager", value: "Manager" },
-  { id: 3, label: "Supervisor", value: "Supervisor" },
-  { id: 4, label: "Staff", value: "Staff" },
+  { id: 1, label: 'Asisten', value: 'Asisten' },
+  { id: 2, label: 'Manager', value: 'Manager' },
+  { id: 3, label: 'Supervisor', value: 'Supervisor' },
+  { id: 4, label: 'Staff', value: 'Staff' }
 ];
 
 // ==============================
@@ -1124,7 +1081,7 @@ const previewFileUrl = ref<string | null>(null);
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   // if click outside any dropdown, close all
-  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
+  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]');
   for (const el of Array.from(dropdownEls)) {
     if (el.contains(target)) {
       // clicked inside a dropdown - do nothing for that dropdown
@@ -1139,12 +1096,12 @@ function handleDocumentClick(e: MouseEvent) {
   openEditSifatNaskah.value = false;
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
-  searchTertuju.value = "";
-  searchAsalNaskah.value = "";
+  searchTertuju.value = '';
+  searchAsalNaskah.value = '';
 }
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
+  document.removeEventListener('click', handleDocumentClick);
 });
 
 function selectNewJenisNaskah(val: string) {
@@ -1160,26 +1117,22 @@ function selectNewAsalNaskah(item: { id: number; nama: string }) {
   newDelegasi.value.asal_naskah = item.id;
   newDelegasi.value.asal_naskah_label = item.nama;
   openNewAsalNaskah.value = false;
-  searchAsalNaskah.value = "";
+  searchAsalNaskah.value = '';
 }
 
 function selectNewTertuju(item: any) {
-  const exists = newDelegasi.value.tertuju.some(
-    (t) => t.position === item.position,
-  );
+  const exists = newDelegasi.value.tertuju.some((t) => t.position === item.position);
 
   if (!exists) {
     newDelegasi.value.tertuju.push(item);
   }
 
-  searchTertuju.value = ""; // reset search
+  searchTertuju.value = ''; // reset search
   openNewTertuju.value = false;
 }
 
 function removeTertuju(position: number) {
-  newDelegasi.value.tertuju = newDelegasi.value.tertuju.filter(
-    (t) => t.position !== position,
-  );
+  newDelegasi.value.tertuju = newDelegasi.value.tertuju.filter((t) => t.position !== position);
 }
 
 function handleFileChange(e: Event) {
@@ -1189,20 +1142,20 @@ function handleFileChange(e: Event) {
   const file = input.files[0];
 
   // VALIDASI MIME TYPE
-  if (file.type !== "application/pdf") {
+  if (file.type !== 'application/pdf') {
     toast.add({
-      title: t("nm_file_tidak_valid"),
-      description: t("nm_file_hanya_pdf"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
+      title: t('nm_file_tidak_valid'),
+      description: t('nm_file_hanya_pdf'),
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
     });
 
-    input.value = "";
+    input.value = '';
     return;
   }
 
   filesRef.value = [file];
-  input.value = "";
+  input.value = '';
 }
 
 function parseUtcTanggalJam(tanggal?: string, jam?: string) {
@@ -1215,41 +1168,47 @@ function parseUtcTanggalJam(tanggal?: string, jam?: string) {
 function formatTanggalJamIndonesia(tanggal?: string, jam?: string) {
   const date = parseUtcTanggalJam(tanggal, jam);
   if (!date) {
-    return { tanggal: "-", jam: "-" };
+    return { tanggal: '-', jam: '-' };
   }
 
   return {
-    tanggal: date.toLocaleDateString("id-ID", {
-      timeZone: "Asia/Jakarta",
+    tanggal: date.toLocaleDateString('id-ID', {
+      timeZone: 'Asia/Jakarta'
     }),
-    jam: date.toLocaleTimeString("id-ID", {
-      timeZone: "Asia/Jakarta",
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    jam: date.toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   };
 }
 
 function resetNewDelegasi() {
   newDelegasi.value = {
-    tanggal_surat: "",
-    nomor_asal: "",
-    sifat_naskah: "",
-    perihal: "",
+    jenisnaskah: '',
+    tanggal_surat: '',
+    nomor_asal: '',
+    sifat_naskah: '',
+    perihal: '',
     asal_naskah: null,
-    asal_naskah_label: "",
+    asal_naskah_label: '',
     tertuju: [],
-    tertuju_label: "",
+    tertuju_label: ''
   };
 
   filesRef.value = [];
-  searchTertuju.value = "";
-  searchAsalNaskah.value = "";
+  searchTertuju.value = '';
+  searchAsalNaskah.value = '';
 
   openNewJenisNaskah.value = false;
   openNewSifatNaskah.value = false;
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
+}
+
+function openAddModal() {
+  resetNewDelegasi();
+  showAddModal.value = true;
 }
 
 function openFinalPdf(url?: string) {
@@ -1259,24 +1218,22 @@ function openFinalPdf(url?: string) {
 }
 
 function getFileNameFromUrl(url?: string) {
-  if (!url) return "";
+  if (!url) return '';
 
   try {
-    const cleanUrl = url.split("?")[0]; // buang query string
-    return decodeURIComponent(
-      cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1),
-    );
+    const cleanUrl = url.split('?')[0]; // buang query string
+    return decodeURIComponent(cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1));
   } catch {
-    return "";
+    return '';
   }
 }
 
 function truncateFileName(name: string, maxLength = 25) {
   if (name.length <= maxLength) return name;
 
-  const extIndex = name.lastIndexOf(".");
+  const extIndex = name.lastIndexOf('.');
   if (extIndex === -1) {
-    return name.slice(0, maxLength) + "…";
+    return name.slice(0, maxLength) + '…';
   }
 
   const ext = name.slice(extIndex); // .pdf
@@ -1285,7 +1242,7 @@ function truncateFileName(name: string, maxLength = 25) {
   return `${base}…${ext}`;
 }
 
-function setPerPage(val: number | "all") {
+function setPerPage(val: number | 'all') {
   perPage.value = val;
   openFilterStatus.value = false;
 }
@@ -1293,10 +1250,10 @@ function setPerPage(val: number | "all") {
 function exportExcel() {
   if (filteredData.value.length === 0) {
     toast.add({
-      title: t("export_tidak_ada"),
-      description: t("export_data_kosong"),
-      color: "warning",
-      icon: "i-lucide-alert-circle",
+      title: t('export_tidak_ada'),
+      description: t('export_data_kosong'),
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
     });
     return;
   }
@@ -1307,42 +1264,41 @@ function exportExcel() {
 
     return {
       No: index + 1,
-      "Asal Naskah": item.pengirim?.nama || "-",
-      "Nomor Naskah": item.nomor || "-",
+      'Asal Naskah': item.pengirim?.nama || '-',
+      'Nomor Naskah': item.nomor || '-',
       Tanggal: waktu.tanggal,
       Jam: waktu.jam,
-      Tertuju:
-        item.penerima?.map((p: any) => p.position_text).join(", ") || "-",
-      Perihal: item.perihal || "-",
-      Pembuat: item.pembuat?.nama || "-",
-      "Jabatan Pembuat": item.pembuat?.position_text || "-",
-      "Final PDF URL": item.final_pdf_url || "-",
+      Tertuju: item.penerima?.map((p: any) => p.position_text).join(', ') || '-',
+      Perihal: item.perihal || '-',
+      Pembuat: item.pembuat?.nama || '-',
+      'Jabatan Pembuat': item.pembuat?.position_text || '-',
+      'Final PDF URL': item.final_pdf_url || '-'
     };
   });
 
   // Buat worksheet & workbook
   const worksheet = XLSX.utils.json_to_sheet(excelData);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Naskah Dinas");
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Naskah Dinas');
 
   // Generate file
   const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
+    bookType: 'xlsx',
+    type: 'array'
   });
 
   const blob = new Blob([excelBuffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
 
   const filename = `Naskah_Dinas_${new Date().toISOString().slice(0, 10)}.xlsx`;
   saveAs(blob, filename);
 
   toast.add({
-    title: t("export_berhasil"),
-    description: t("export_file_berhasil"),
-    color: "success",
-    icon: "i-lucide-check-circle",
+    title: t('export_berhasil'),
+    description: t('export_file_berhasil'),
+    color: 'success',
+    icon: 'i-lucide-check-circle'
   });
 }
 </script>
@@ -1369,7 +1325,7 @@ function exportExcel() {
 }
 
 /* file input */
-.modal-form input[type="file"]:focus {
+.modal-form input[type='file']:focus {
   border-color: rgb(59 130 246);
   box-shadow: 0 0 0 1px rgb(59 130 246);
 }

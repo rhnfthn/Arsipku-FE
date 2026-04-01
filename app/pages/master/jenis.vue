@@ -1,9 +1,7 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
-    >
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <div>
         <PageHeader :title="t('je_title')" :items="items" />
       </div>
@@ -13,7 +11,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        {{ t("nm_button") }}
+        {{ t('nm_button') }}
       </button>
     </div>
 
@@ -45,12 +43,16 @@
                 v-for="n in rowsChoices"
                 :key="n"
                 type="button"
-                @click="perPage = n; openRowsDropdown = false; currentPage = 1"
+                @click="
+                  perPage = n;
+                  openRowsDropdown = false;
+                  currentPage = 1;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   perPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ n }}
@@ -92,22 +94,19 @@
 
       <div class="overflow-x-auto">
         <table class="min-w-full border-collapse text-sm">
-          <thead
-            class="text-left bg-primary-400 dark:bg-primary-700 text-white"
-          >
+          <thead class="text-left bg-primary-400 dark:bg-primary-700 text-white">
             <tr>
               <th
                 @click="sortBy('jenis')"
                 class="px-4 py-3 cursor-pointer select-none text-left whitespace-nowrap"
               >
                 <div class="flex items-center gap-1">
-                  {{ t("je_kode") }}
+                  {{ t('je_kode') }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
-                      'rotate-180':
-                        sortColumn === 'jenis' && sortDirection === 'desc',
-                      'opacity-30': sortColumn !== 'jenis',
+                      'rotate-180': sortColumn === 'jenis' && sortDirection === 'desc',
+                      'opacity-30': sortColumn !== 'jenis'
                     }"
                   />
                 </div>
@@ -115,22 +114,22 @@
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                {{ t("je_nama") }}
+                {{ t('je_nama') }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                {{ t("je_perihal") }}
+                {{ t('je_perihal') }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold"
               >
-                {{ t("je_format") }}
+                {{ t('je_format') }}
               </th>
               <th
                 class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 font-semibold text-center"
               >
-                {{ t("aksi") }}
+                {{ t('aksi') }}
               </th>
             </tr>
           </thead>
@@ -138,21 +137,15 @@
           <tbody>
             <!-- Loading -->
             <tr v-if="loading">
-              <td
-                colspan="6"
-                class="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
-              >
-                {{ t("je_loading") }}
+              <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                {{ t('je_loading') }}
               </td>
             </tr>
 
             <!-- Empty -->
             <tr v-else-if="filteredJenis.length === 0">
-              <td
-                colspan="6"
-                class="px-4 py-10 text-center text-gray-500 dark:text-gray-400"
-              >
-                {{ t("je_empty") }}
+              <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                {{ t('je_empty') }}
               </td>
             </tr>
 
@@ -163,9 +156,7 @@
               :key="row.id"
               :class="[
                 'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700 capitalize',
-                idx % 2 === 0
-                  ? 'bg-white dark:bg-gray-800'
-                  : 'bg-white dark:bg-gray-800',
+                idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
               ]"
             >
               <!-- KODE -->
@@ -185,9 +176,7 @@
               </td>
 
               <!-- PERIHAL -->
-              <td
-                class="px-4 py-3 text-gray-900 dark:text-gray-200 text-nowrap normal-case"
-              >
+              <td class="px-4 py-3 text-gray-900 dark:text-gray-200 text-nowrap normal-case">
                 <span class="text-sm">
                   {{ row.jenis_text }}
                 </span>
@@ -247,7 +236,7 @@
               >
                 <div class="p-4">
                   <Heading variant="heading9sb" class="dark:text-white">
-                    {{ t("je_modal_detail") }}
+                    {{ t('je_modal_detail') }}
                   </Heading>
                 </div>
 
@@ -261,32 +250,28 @@
               </div>
 
               <!-- BODY -->
-              <div
-                class="flex flex-col gap-5 ml-5 mr-5 max-h-[67vh] overflow-y-auto"
-              >
+              <div class="flex flex-col gap-5 ml-5 mr-5 max-h-[67vh] overflow-y-auto">
                 <div
                   v-if="detailLoading"
                   class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
-                  {{ t("je_detail_loading") }}
+                  {{ t('je_detail_loading') }}
                 </div>
 
                 <div
                   v-else-if="!detailJenis"
                   class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
                 >
-                  {{ t("je_detail_empty") }}
+                  {{ t('je_detail_empty') }}
                 </div>
 
                 <div v-else class="space-y-6 pb-2">
                   <!-- KODE JENIS -->
                   <div class="flex gap-3 items-start">
-                    <Hash
-                      class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1"
-                    />
+                    <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_kode") }}
+                        {{ t('je_kode') }}
                       </p>
                       <div class="mt-2">
                         <span
@@ -300,16 +285,12 @@
 
                   <!-- NAMA JENIS -->
                   <div class="flex gap-3 items-start">
-                    <FileText
-                      class="w-5 h-5 text-green-600 dark:text-green-400 mt-1"
-                    />
+                    <FileText class="w-5 h-5 text-green-600 dark:text-green-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_nama") }}
+                        {{ t('je_nama') }}
                       </p>
-                      <p
-                        class="mt-2 text-sm font-medium text-black dark:text-white"
-                      >
+                      <p class="mt-2 text-sm font-medium text-black dark:text-white">
                         {{ detailJenis.jenis_text }}
                       </p>
                     </div>
@@ -317,12 +298,10 @@
 
                   <!-- PERIHAL -->
                   <div class="flex gap-3 items-start">
-                    <ChartNoAxesGantt
-                      class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1"
-                    />
+                    <ChartNoAxesGantt class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_perihal") }}
+                        {{ t('je_perihal') }}
                       </p>
                       <p
                         class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200 uppercase"
@@ -334,12 +313,10 @@
 
                   <!-- FORMAT PENOMORAN -->
                   <div class="flex gap-3 items-start">
-                    <Hash
-                      class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1"
-                    />
+                    <Hash class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_format") }}
+                        {{ t('je_format') }}
                       </p>
                       <p
                         class="mt-2 text-sm font-mono text-gray-900 dark:text-gray-200 whitespace-pre-line"
@@ -351,12 +328,10 @@
 
                   <!-- FILE TEMPLATE -->
                   <div class="flex gap-3 items-start">
-                    <FileText
-                      class="w-5 h-5 text-pink-500 dark:text-pink-400 mt-1"
-                    />
+                    <FileText class="w-5 h-5 text-pink-500 dark:text-pink-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_file_template") }}
+                        {{ t('je_file_template') }}
                       </p>
 
                       <div
@@ -366,9 +341,7 @@
                           <FileText
                             class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
                           />
-                          <p
-                            class="text-sm text-gray-800 dark:text-gray-200 truncate"
-                          >
+                          <p class="text-sm text-gray-800 dark:text-gray-200 truncate">
                             {{ getTemplateName(detailJenis) }}
                           </p>
                         </div>
@@ -379,14 +352,11 @@
                           class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                         >
                           <Download class="w-3 h-3" />
-                          {{ t("je_unduh") }}
+                          {{ t('je_unduh') }}
                         </button>
 
-                        <span
-                          v-else
-                          class="text-xs text-gray-400 dark:text-gray-500"
-                        >
-                          {{ t("je_tidak_ada_file") }}
+                        <span v-else class="text-xs text-gray-400 dark:text-gray-500">
+                          {{ t('je_tidak_ada_file') }}
                         </span>
                       </div>
                     </div>
@@ -394,17 +364,13 @@
 
                   <!-- TANGGAL DIBUAT -->
                   <div class="flex gap-3 items-start">
-                    <Calendar
-                      class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1"
-                    />
+                    <Calendar class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1" />
                     <div class="flex-1">
                       <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t("je_tgl_dibuat") }}
+                        {{ t('je_tgl_dibuat') }}
                       </p>
                       <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">
-                        {{
-                          detailJenis.created_at ? detailJenis.created_at : "-"
-                        }}
+                        {{ detailJenis.created_at ? detailJenis.created_at : '-' }}
                       </p>
                     </div>
                   </div>
@@ -412,14 +378,12 @@
               </div>
 
               <!-- FOOTER -->
-              <div
-                class="border-t border-gray-300 dark:border-gray-700 mt-7 mb-1 gap-3 px-5 py-2"
-              >
+              <div class="border-t border-gray-300 dark:border-gray-700 mt-7 mb-1 gap-3 px-5 py-2">
                 <button
                   @click="showDetailModal = false"
                   class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
                 >
-                  {{ t("je_tutup") }}
+                  {{ t('je_tutup') }}
                 </button>
               </div>
             </div>
@@ -428,24 +392,21 @@
 
         <!-- MODAL TAMBAH JENIS -->
         <Teleport to="body">
-          <Modal v-model="showAddModal" size="xl" @save="submitAddJenis">
+          <Modal v-model="showAddModal" size="xl" @save="submitAddJenis" @close="resetAddForm">
             <template #title>
               <Heading
                 variant="heading9b"
                 class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
-                {{ t("je_modal_add") }}
+                {{ t('je_modal_add') }}
               </Heading>
             </template>
 
             <div class="space-y-5 p-1">
               <!-- Kode Jenis -->
               <div class="flex flex-col gap-1">
-                <Heading
-                  variant="heading11m"
-                  class="text-xs dark:text-gray-200"
-                >
-                  {{ t("je_kode") }} <span class="text-red-500">*</span>
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('je_kode') }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis"
@@ -460,11 +421,8 @@
 
               <!-- Nama Jenis -->
               <div class="flex flex-col gap-1">
-                <Heading
-                  variant="heading11m"
-                  class="text-xs dark:text-gray-200"
-                >
-                  {{ t("je_nama") }} <span class="text-red-500">*</span>
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('je_nama') }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.jenis_text"
@@ -479,11 +437,8 @@
 
               <!-- Perihal -->
               <div class="flex flex-col gap-1">
-                <Heading
-                  variant="heading11m"
-                  class="text-xs dark:text-gray-200"
-                >
-                  {{ t("je_perihal") }} <span class="text-red-500">*</span>
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('je_perihal') }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.file_text"
@@ -498,11 +453,8 @@
 
               <!-- Format Penomoran -->
               <div class="flex flex-col gap-1">
-                <Heading
-                  variant="heading11m"
-                  class="text-xs dark:text-gray-200"
-                >
-                  {{ t("je_format") }} <span class="text-red-500">*</span>
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('je_format') }} <span class="text-red-500">*</span>
                 </Heading>
                 <input
                   v-model="addForm.format_penomoran"
@@ -510,33 +462,22 @@
                   :placeholder="t('je_format_placeholder')"
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
-                <p
-                  v-if="addErrors.format_penomoran"
-                  class="text-xs text-red-500"
-                >
+                <p v-if="addErrors.format_penomoran" class="text-xs text-red-500">
                   {{ addErrors.format_penomoran }}
                 </p>
               </div>
 
               <!-- Upload File Template -->
               <div class="flex flex-col gap-1">
-                <Heading
-                  variant="heading11m"
-                  class="text-xs dark:text-gray-200"
-                >
-                  {{ t("je_upload_template") }}
-                  <span class="text-red-500">*</span>
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('je_upload_template') }}
                 </Heading>
 
                 <label
                   class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
                 >
                   <span class="text-gray-600 dark:text-gray-300 truncate">
-                    {{
-                      addForm.file
-                        ? addForm.file.name
-                        : t("je_file_placeholder")
-                    }}
+                    {{ addForm.file ? addForm.file.name : t('je_file_placeholder') }}
                   </span>
 
                   <input
@@ -552,7 +493,7 @@
                 </p>
 
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ t("je_file_hint") }}
+                  {{ t('je_file_hint') }}
                 </p>
               </div>
             </div>
@@ -567,7 +508,7 @@
                 variant="heading9b"
                 class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
               >
-                {{ t("je_modal_edit") }}
+                {{ t('je_modal_edit') }}
               </Heading>
             </template>
 
@@ -575,7 +516,7 @@
               <!-- Kode Jenis -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ t("je_kode") }} <span class="text-red-500">*</span>
+                  {{ t('je_kode') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis"
@@ -588,7 +529,7 @@
               <!-- Nama Jenis -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ t("je_nama") }} <span class="text-red-500">*</span>
+                  {{ t('je_nama') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.jenis_text"
@@ -601,7 +542,7 @@
               <!-- Perihal -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ t("je_perihal") }} <span class="text-red-500">*</span>
+                  {{ t('je_perihal') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.file_text"
@@ -614,7 +555,7 @@
               <!-- Format Penomoran -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ t("je_format") }} <span class="text-red-500">*</span>
+                  {{ t('je_format') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="editForm.format_penomoran"
@@ -626,8 +567,7 @@
 
               <!-- Upload File Template -->
               <label class="text-sm text-gray-700 dark:text-gray-300">
-                {{ t("je_upload_template") }}
-                <span class="text-red-500">*</span>
+                {{ t('je_upload_template') }}
               </label>
 
               <label
@@ -639,7 +579,7 @@
                       ? editForm.file.name
                       : editForm.file_name
                         ? editForm.file_name
-                        : t("je_file_placeholder")
+                        : t('je_file_placeholder')
                   }}
                 </span>
 
@@ -665,8 +605,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ t("menampilkan") }} {{ paginatedJenis.length }} {{ t("dari") }}
-          {{ totalItems }} {{ t("data") }}
+          {{ t('menampilkan') }} {{ paginatedJenis.length }} {{ t('dari') }} {{ totalItems }}
+          {{ t('data') }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -678,15 +618,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -694,7 +629,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            {{ t("sebelumnya") }}
+            {{ t('sebelumnya') }}
           </button>
 
           <!-- PAGE NUMBERS -->
@@ -725,7 +660,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
               ]"
             >
               {{ page }}
@@ -733,9 +668,7 @@
 
             <!-- DOTS RIGHT -->
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
@@ -759,16 +692,11 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            {{ t("selanjutnya") }}
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            {{ t('selanjutnya') }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -810,17 +738,13 @@
     class="z-[9999]"
   >
     <template #body>
-      <iframe
-        v-if="previewFileUrl"
-        :src="previewFileUrl"
-        class="w-full h-full"
-      ></iframe>
+      <iframe v-if="previewFileUrl" :src="previewFileUrl" class="w-full h-full"></iframe>
     </template>
   </USlideover>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   Plus,
   Download,
@@ -838,16 +762,16 @@ import {
   Search,
   ArrowUpDown,
   ChevronUp,
-  ChevronDown,
-} from "lucide-vue-next";
+  ChevronDown
+} from 'lucide-vue-next';
 
-import type { BreadcrumbItem } from "~/types/breadcrumb";
-import { useJenis, type JenisItem } from "~/composables/useJenis";
-import Modal from "@/components/Modal.vue";
-import ConfirmDialog from "@/components/ConfirmPopup.vue";
+import type { BreadcrumbItem } from '~/types/breadcrumb';
+import { useJenis, type JenisItem } from '~/composables/useJenis';
+import Modal from '@/components/Modal.vue';
+import ConfirmDialog from '@/components/ConfirmPopup.vue';
 
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 // ─────────────────────────────────────────────
@@ -859,41 +783,40 @@ const { t, locale } = useI18n();
 // BREADCRUMB (reaktif terhadap bahasa)
 // ─────────────────────────────────────────────
 const items = computed<BreadcrumbItem[]>(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("je_title"), to: "/master/jenis" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('je_title'), to: '/master/jenis' }
 ]);
 
 // ─────────────────────────────────────────────
 // TOAST
 // ─────────────────────────────────────────────
-import { useToast } from "#imports";
+import { useToast } from '#imports';
 
 const toast = useToast();
 
 const showToast = (opt: {
   title: string;
   message?: string;
-  color?: "primary" | "neutral" | "secondary" | "warning" | "error" | "success";
+  color?: 'primary' | 'neutral' | 'secondary' | 'warning' | 'error' | 'success';
   icon?: string;
 }) => {
   toast.add({
     title: opt.title,
     description: opt.message,
-    color: opt.color ?? "primary",
-    icon: opt.icon ?? "i-lucide-info",
+    color: opt.color ?? 'primary',
+    icon: opt.icon ?? 'i-lucide-info'
   });
 };
 
 // ─────────────────────────────────────────────
 // COMPOSABLE
 // ─────────────────────────────────────────────
-const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis } =
-  useJenis();
+const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis } = useJenis();
 
 const loading = ref(false);
 const deletingId = ref<string | null>(null);
 
-const search = ref("");
+const search = ref('');
 const jenisList = ref<JenisItem[]>([]);
 
 // ─────────────────────────────────────────────
@@ -903,8 +826,8 @@ const currentPage = ref(1);
 const perPage = ref(10);
 const rowsChoices = [5, 10, 20, 50];
 const openRowsDropdown = ref(false);
-const sortColumn = ref<string>("jenis");
-const sortDirection = ref<"asc" | "desc">("asc");
+const sortColumn = ref<string>('jenis');
+const sortDirection = ref<'asc' | 'desc'>('asc');
 
 // ─────────────────────────────────────────────
 // FETCH
@@ -916,7 +839,7 @@ const fetchJenis = async () => {
     jenisList.value = res.data || [];
     currentPage.value = 1;
   } catch (e) {
-    console.error("Gagal ambil data jenis:", e);
+    console.error('Gagal ambil data jenis:', e);
   } finally {
     loading.value = false;
   }
@@ -929,9 +852,9 @@ const filteredJenis = computed(() => {
   if (!q) return jenisList.value;
   return jenisList.value.filter((x) => {
     return (
-      (x.jenis || "").toLowerCase().includes(q) ||
-      (x.jenis_text || "").toLowerCase().includes(q) ||
-      (x.format_penomoran || "").toLowerCase().includes(q)
+      (x.jenis || '').toLowerCase().includes(q) ||
+      (x.jenis_text || '').toLowerCase().includes(q) ||
+      (x.format_penomoran || '').toLowerCase().includes(q)
     );
   });
 });
@@ -939,10 +862,10 @@ const filteredJenis = computed(() => {
 const sortedJenis = computed(() => {
   const sorted = [...filteredJenis.value];
   sorted.sort((a, b) => {
-    const aVal = String(a[sortColumn.value] || "").toLowerCase();
-    const bVal = String(b[sortColumn.value] || "").toLowerCase();
-    if (aVal < bVal) return sortDirection.value === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDirection.value === "asc" ? 1 : -1;
+    const aVal = String(a[sortColumn.value] || '').toLowerCase();
+    const bVal = String(b[sortColumn.value] || '').toLowerCase();
+    if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;
   });
   return sorted;
@@ -976,10 +899,10 @@ const paginationPages = computed(() => {
 
 const sortBy = (column: string) => {
   if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortColumn.value = column;
-    sortDirection.value = "asc";
+    sortDirection.value = 'asc';
   }
 };
 
@@ -991,11 +914,11 @@ const router = useRouter();
 
 const getFileName = (url: string) => {
   try {
-    const cleanUrl = url.split("?")[0];
-    const parts = cleanUrl.split("/");
-    return parts[parts.length - 1] || "file";
+    const cleanUrl = url.split('?')[0];
+    const parts = cleanUrl.split('/');
+    return parts[parts.length - 1] || 'file';
   } catch {
-    return "file";
+    return 'file';
   }
 };
 
@@ -1014,7 +937,7 @@ const onView = async (row: JenisItem) => {
     const res = await getJenisDetail(row.id);
     detailJenis.value = res.data;
   } catch (e) {
-    console.error("Gagal ambil detail jenis:", e);
+    console.error('Gagal ambil detail jenis:', e);
   } finally {
     detailLoading.value = false;
   }
@@ -1023,7 +946,7 @@ const onView = async (row: JenisItem) => {
 const getTemplateName = (data: any) => {
   if (data?.file_name) return data.file_name;
   if (data?.file_url) return getFileName(data.file_url);
-  return "-";
+  return '-';
 };
 
 const isOpenPreviewFile = ref(false);
@@ -1031,7 +954,7 @@ const previewFileUrl = ref<string | null>(null);
 
 const normalizeUrl = (url: string | null) => {
   if (!url) return null;
-  if (url.startsWith("http")) return url;
+  if (url.startsWith('http')) return url;
   const base = useRuntimeConfig().public.apiBase;
   return `${base}/${url}`;
 };
@@ -1059,24 +982,22 @@ const confirmDelete = async () => {
   try {
     deleteLoading.value = true;
     await deleteJenis(deleteTarget.value.id);
-    jenisList.value = jenisList.value.filter(
-      (x) => x.id !== deleteTarget.value!.id,
-    );
+    jenisList.value = jenisList.value.filter((x) => x.id !== deleteTarget.value!.id);
     showDeleteModal.value = false;
     showToast({
-      title: t("berhasil"),
-      message: t("je_success_delete"),
-      color: "error",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      message: t('je_success_delete'),
+      color: 'error',
+      icon: 'i-lucide-check-circle'
     });
     deleteTarget.value = null;
   } catch (e) {
-    console.error("Gagal hapus jenis:", e);
+    console.error('Gagal hapus jenis:', e);
     showToast({
-      title: t("gagal"),
-      message: t("je_err_delete"),
-      color: "error",
-      icon: "i-lucide-alert-circle",
+      title: t('gagal'),
+      message: t('je_err_delete'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
     });
   } finally {
     deleteLoading.value = false;
@@ -1091,34 +1012,46 @@ const savingAdd = ref(false);
 const addErrors = ref<Record<string, string>>({});
 
 const addForm = ref({
-  jenis: "",
-  jenis_text: "",
-  file_text: "",
-  format_penomoran: "",
-  file: null as File | null,
+  jenis: '',
+  jenis_text: '',
+  file_text: '',
+  format_penomoran: '',
+  file: null as File | null
 });
 
 const openAddModal = () => {
-  addErrors.value = {};
-  addForm.value = {
-    jenis: "",
-    jenis_text: "",
-    file_text: "",
-    format_penomoran: "",
-    file: null,
-  };
+  resetAddForm();
   showAddModal.value = true;
 };
 
+const resetAddForm = () => {
+  addErrors.value = {};
+  addForm.value = {
+    jenis: '',
+    jenis_text: '',
+    file_text: '',
+    format_penomoran: '',
+    file: null
+  };
+};
+
 const validateAdd = () => {
-  const err: Record<string, string> = {};
-  if (!addForm.value.jenis.trim()) err.jenis = t("je_val_kode");
-  if (!addForm.value.jenis_text.trim()) err.jenis_text = t("je_val_nama");
-  if (!addForm.value.file_text.trim()) err.file_text = t("je_val_perihal");
-  if (!addForm.value.format_penomoran.trim())
-    err.format_penomoran = t("je_val_format");
-  addErrors.value = err;
-  return Object.keys(err).length === 0;
+  const emptyFields: string[] = [];
+  if (!addForm.value.jenis.trim()) emptyFields.push(t('je_kode'));
+  if (!addForm.value.jenis_text.trim()) emptyFields.push(t('je_nama'));
+  if (!addForm.value.file_text.trim()) emptyFields.push(t('je_perihal'));
+  if (!addForm.value.format_penomoran.trim()) emptyFields.push(t('je_format'));
+
+  if (emptyFields.length > 0) {
+    showToast({
+      title: t('gagal'),
+      message: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+  return true;
 };
 
 const submitAddJenis = async () => {
@@ -1130,23 +1063,23 @@ const submitAddJenis = async () => {
       jenis_text: addForm.value.jenis_text,
       file_text: addForm.value.file_text,
       format_penomoran: addForm.value.format_penomoran,
-      file: addForm.value.file,
+      file: addForm.value.file
     });
     showAddModal.value = false;
     await fetchJenis();
     showToast({
-      title: t("berhasil"),
-      message: t("je_success_add"),
-      color: "success",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      message: t('je_success_add'),
+      color: 'success',
+      icon: 'i-lucide-check-circle'
     });
   } catch (e) {
-    console.error("Gagal tambah jenis:", e);
+    console.error('Gagal tambah jenis:', e);
     showToast({
-      title: t("gagal"),
-      message: t("je_err_add"),
-      color: "error",
-      icon: "i-lucide-alert-circle",
+      title: t('gagal'),
+      message: t('je_err_add'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
     });
   } finally {
     savingAdd.value = false;
@@ -1168,13 +1101,13 @@ const editId = ref<string | null>(null);
 const editErrors = ref<Record<string, string>>({});
 
 const editForm = ref({
-  jenis: "",
-  jenis_text: "",
-  file_text: "",
-  format_penomoran: "",
+  jenis: '',
+  jenis_text: '',
+  file_text: '',
+  format_penomoran: '',
   file: null as File | null,
-  file_name: "" as string,
-  file_url: "" as string,
+  file_name: '' as string,
+  file_url: '' as string
 });
 
 const onEdit = async (row: JenisItem) => {
@@ -1187,34 +1120,41 @@ const onEdit = async (row: JenisItem) => {
     const data = res.data;
     editForm.value.jenis = data.jenis;
     editForm.value.jenis_text = data.jenis_text;
-    editForm.value.file_text = data.file_text || "";
+    editForm.value.file_text = data.file_text || '';
     editForm.value.format_penomoran = data.format_penomoran;
     editForm.value.file = null;
-    editForm.value.file_name = data.file_name || "";
-    editForm.value.file_url = data.file_url || "";
+    editForm.value.file_name = data.file_name || '';
+    editForm.value.file_url = data.file_url || '';
   } catch (e) {
-    console.error("Gagal ambil data edit:", e);
-    alert("Gagal memuat data");
+    console.error('Gagal ambil data edit:', e);
+    alert('Gagal memuat data');
     showEditModal.value = false;
   }
 };
 
 const validateEdit = () => {
-  const err: Record<string, string> = {};
-  if (!editForm.value.jenis.trim()) err.jenis = t("je_val_kode");
-  if (!editForm.value.jenis_text.trim()) err.jenis_text = t("je_val_nama");
-  if (!editForm.value.file_text.trim()) err.file_text = t("je_val_perihal");
-  if (!editForm.value.format_penomoran.trim())
-    err.format_penomoran = t("je_val_format");
+  const emptyFields: string[] = [];
+  if (!editForm.value.jenis.trim()) emptyFields.push(t('je_kode'));
+  if (!editForm.value.jenis_text.trim()) emptyFields.push(t('je_nama'));
+  if (!editForm.value.file_text.trim()) emptyFields.push(t('je_perihal'));
+  if (!editForm.value.format_penomoran.trim()) emptyFields.push(t('je_format'));
 
   const hasExistingFile = !!editForm.value.file_url;
   const hasNewFile = !!editForm.value.file;
   if (!hasExistingFile && !hasNewFile) {
-    err.file = t("je_val_file");
+    emptyFields.push(t('je_upload_template'));
   }
 
-  editErrors.value = err;
-  return Object.keys(err).length === 0;
+  if (emptyFields.length > 0) {
+    showToast({
+      title: t('gagal'),
+      message: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+  return true;
 };
 
 const submitEditJenis = async () => {
@@ -1227,23 +1167,23 @@ const submitEditJenis = async () => {
       jenis_text: editForm.value.jenis_text,
       file_text: editForm.value.file_text,
       format_penomoran: editForm.value.format_penomoran,
-      file: editForm.value.file,
+      file: editForm.value.file
     });
     showEditModal.value = false;
     await fetchJenis();
     showToast({
-      title: t("berhasil"),
-      message: t("je_success_edit"),
-      color: "success",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      message: t('je_success_edit'),
+      color: 'success',
+      icon: 'i-lucide-check-circle'
     });
   } catch (e) {
-    console.error("Gagal update jenis:", e);
+    console.error('Gagal update jenis:', e);
     showToast({
-      title: t("gagal"),
-      message: t("je_err_edit"),
-      color: "error",
-      icon: "i-lucide-alert-circle",
+      title: t('gagal'),
+      message: t('je_err_edit'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
     });
   } finally {
     savingEdit.value = false;
@@ -1259,55 +1199,55 @@ const onPickFileEdit = (e: Event) => {
 // ─────────────────────────────────────────────
 // EXPORT
 // ─────────────────────────────────────────────
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const onExport = () => {
   const data = sortedJenis.value.map((row, index) => ({
     No: index + 1,
-    [t("je_kode")]: row.jenis,
-    [t("je_nama")]: row.jenis_text,
-    [t("je_perihal")]: row.file_text || row.jenis_text,
-    [t("je_format")]: row.format_penomoran,
-    [t("je_tgl_dibuat")]: row.created_at || "-",
+    [t('je_kode')]: row.jenis,
+    [t('je_nama')]: row.jenis_text,
+    [t('je_perihal')]: row.file_text || row.jenis_text,
+    [t('je_format')]: row.format_penomoran,
+    [t('je_tgl_dibuat')]: row.created_at || '-'
   }));
 
   if (data.length === 0) {
     showToast({
-      title: locale.value === "id" ? "Tidak ada data" : "No Data",
-      message: t("je_export_empty"),
-      color: "warning",
-      icon: "i-lucide-alert-triangle",
+      title: locale.value === 'id' ? 'Tidak ada data' : 'No Data',
+      message: t('je_export_empty'),
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
     });
     return;
   }
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet["!cols"] = [
+  worksheet['!cols'] = [
     { wch: 5 },
     { wch: 15 },
     { wch: 30 },
     { wch: 30 },
     { wch: 40 },
-    { wch: 20 },
+    { wch: 20 }
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, t("je_title"));
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('je_title'));
 
-  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
 
   const date = new Date().toISOString().slice(0, 10);
   saveAs(blob, `master_jenis_${date}.xlsx`);
 
   showToast({
-    title: locale.value === "id" ? "Export berhasil" : "Export Successful",
-    message: t("je_export_success"),
-    color: "success",
-    icon: "i-lucide-file-down",
+    title: locale.value === 'id' ? 'Export berhasil' : 'Export Successful',
+    message: t('je_export_success'),
+    color: 'success',
+    icon: 'i-lucide-file-down'
   });
 };
 </script>

@@ -109,7 +109,7 @@
                       class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
                     >
                       <ThumbsUp class="w-4 h-4" />
-                      Puas <span class="text-xs text-gray-400">({{ faq.puas }})</span>
+                      Puas
                     </button>
 
                     <button
@@ -118,7 +118,7 @@
                       class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
                     >
                       <ThumbsDown class="w-4 h-4" />
-                      Tidak Puas <span class="text-xs text-gray-400">({{ faq.tidakPuas }})</span>
+                      Tidak Puas
                     </button>
                   </div>
                 </div>

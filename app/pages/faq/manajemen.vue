@@ -674,13 +674,21 @@ const openAdd = () => {
   showModal.value = true
 }
 
-const openEdit = (faq: Faq) => {
+const openEdit = async (faq: Faq) => {
+  if (kategoriOptions.value.length === 0) {
+    await loadCategories()
+  }
+
   isEditMode.value = true
   editingId.value = faq.id
   const matchingKat = faq.kategoriId
-    ? kategoriOptions.value.find((k) => k.id === faq.kategoriId)
-    : kategoriOptions.value.find((k) => k.nama === faq.kategori)
-  form.value = { pertanyaan: faq.pertanyaan, deskripsi: faq.deskripsi, kategoriId: matchingKat?.id ?? '' }
+    ? kategoriOptions.value.find((k) => String(k.id) === String(faq.kategoriId))
+    : kategoriOptions.value.find((k) => k.nama.toLowerCase() === faq.kategori.toLowerCase())
+  form.value = {
+    pertanyaan: faq.pertanyaan,
+    deskripsi: faq.deskripsi,
+    kategoriId: matchingKat?.id ? String(matchingKat.id) : ''
+  }
   showModal.value = true
 }
 
