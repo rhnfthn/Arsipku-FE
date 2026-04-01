@@ -303,6 +303,7 @@ watch(showEditor, async (isShown) => {
 
 // ── Payload & validation ─────────────────────────────────────────────────────
 const validateAndToast = (payload: DisposisiPayload) => {
+  // 1. Validasi bawaan dari schema Zod
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
     const firstKey = Object.keys(check.errors)[0];
@@ -310,6 +311,16 @@ const validateAndToast = (payload: DisposisiPayload) => {
     toastError("Validasi Gagal", message);
     return false;
   }
+
+  // 2. Validasi tambahan: Jika "Lainnya" dipilih, konten/catatan tidak boleh kosong
+  if (selectedChecklist.value.includes("Lainnya")) {
+    const strippedContent = (editorContent.value || "").replace(/<[^>]*>?/gm, '').trim(); // Hapus tag HTML
+    if (!strippedContent) {
+      toastError("Validasi Gagal", "Catatan/Konten wajib diisi jika instruksi 'Lainnya' dipilih.");
+      return false;
+    }
+  }
+
   return true;
 };
 

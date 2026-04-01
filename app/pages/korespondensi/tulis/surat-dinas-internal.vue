@@ -255,6 +255,8 @@ onMounted(async () => {
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
+  const draftId = route.query.draft_id as string;
+
   if (!user.value) await getProfile();
 
   try {
@@ -263,11 +265,6 @@ onMounted(async () => {
     klasifikasiStatus.value = "success";
 
     const resRec = await getRecipients();
-    console.log("resRec keys:", Object.keys(resRec));
-    console.log("resRec sample:", JSON.stringify(
-      (resRec.recipients || resRec.data || [])[0], null, 2
-    ));
-
     tertujuItems.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
@@ -277,22 +274,12 @@ onMounted(async () => {
     }));
     tembusanItems.value = tertujuItems.value;
 
-    console.log("tertujuItems[0]:", JSON.stringify(tertujuItems.value[0], null, 2));
-
-    // draft loading
-    const res = await getSDIDetail(draftId);
-    if (res.success && res.data) {
-      console.log("d.penerima[0]:", JSON.stringify(res.data.penerima?.[0], null, 2));
-      console.log("d.tembusan[0]:", JSON.stringify(res.data.tembusan?.[0], null, 2));
-    }
-
     const groups = await getRecipientGroups("SDI");
     recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch {
     klasifikasiStatus.value = "error";
   }
 
-  const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
       editDraftId.value = draftId;
@@ -300,9 +287,6 @@ onMounted(async () => {
 
       if (res.success && res.data) {
         const d = res.data;
-
-        console.log("d.penerima:", JSON.stringify(d.penerima?.slice(0, 2), null, 2));
-        console.log("tertujuItems sample:", JSON.stringify(tertujuItems.value?.slice(0, 2), null, 2));
 
         subject.value = d.perihal || "";
         lampiranText.value = d.lampiran || "";
@@ -314,15 +298,13 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        // ✅ Match berdasarkan persnum karena format ID berbeda antara API detail vs API list
         const buildSelected = (apiArr: any[]) => {
           return (apiArr || []).map((item) => {
             const found = tertujuItems.value.find(
               (m) => String(m.raw.persnum_person) === String(item.persnum)
             );
-            if (found) return found; // ✅ pakai object dari tertujuItems langsung — format sudah benar
+            if (found) return found;
 
-            // fallback jika tidak ketemu
             return {
               label: `${item.persnum} - () ${item.positionText || ""}`,
               labelJob: item.positionText || "",
@@ -509,7 +491,7 @@ watch(
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
+                  <div class="font-bold underlinec mb-1">Tembusan :</div>
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">

@@ -5,57 +5,57 @@ import { z } from 'zod'
 
 const groupIdArray = z
   .array(z.union([z.string(), z.number()]).transform(String))
-  .optional()
   .default([])
 
-export const SDIPayloadSchema = z.object({
-  id_naskah: z.string().nullable().optional(),
+export const SDIPayloadSchema = z
+  .object({
+    id_naskah: z.string().nullable().optional(),
 
-  pengirim: z.string().min(1, 'Pengirim (User ID) tidak boleh kosong'),
+    pengirim: z.string().min(1, 'Pengirim wajib diisi'),
 
-  // Individu — validasi "min 1" ditangani di page karena bisa kosong jika pakai grup
-  tertuju: z.array(z.string()).optional().default([]),
-  tembusan: z.array(z.string()).optional().default([]),
+    tertuju: z.array(z.string()).default([]),
+    tembusan: z.array(z.string()).default([]),
 
-  // Grup — terima string ATAU number, coerce ke string
-  penerima_grup: groupIdArray,
-  tembusan_grup: groupIdArray,
+    penerima_grup: groupIdArray,
+    tembusan_grup: groupIdArray,
 
-  // Format YYYY-MM-DD
-  tgl: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal salah (YYYY-MM-DD)'),
+    klasifikasi: z.string().min(1, 'Klasifikasi wajib dipilih'),
+    klasifikasi_text: z.string().optional(),
 
-  klasifikasi: z.string().min(1, 'Klasifikasi harus dipilih'),
-  klasifikasi_text: z.string().optional(),
+    sifat: z.string().min(1, 'Sifat surat wajib dipilih'),
+    perihal: z.string().min(1, 'Perihal wajib diisi').max(200, 'Perihal maksimal 200 karakter'),
+    konten: z.string().min(1, 'Isi surat tidak boleh kosong'),
+    english: z.boolean().default(false),
 
-  sifat: z.string().min(1, 'Sifat surat harus dipilih'),
-  perihal: z.string().min(1, 'Perihal wajib diisi').max(200, 'Perihal maksimal 200 karakter'),
-  konten: z.string().min(1, 'Isi surat tidak boleh kosong'),
-  english: z.boolean().default(false),
+    lampiran: z.string().optional().default(''),
+    nama_tempat: z.string().optional(),
+    nama_jabatan: z.string().optional(),
+    nama_lengkap: z.string().optional(),
 
-  lampiran: z.string().optional().default(''),
-  nama_tempat: z.string().optional(),
-  nama_jabatan: z.string().optional(),
-  nama_lengkap: z.string().optional(),
+    tgl: z
+      .string()
+      .min(1, 'Tanggal wajib diisi')
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal salah (YYYY-MM-DD)'),
+    tanggal: z.string().min(1, 'Tanggal wajib diisi'),
 
-  lampiran_temp_ids: z.array(z.string()).optional().default([]),
-
-  // UI only — tidak dikirim ke backend
-  tanggal: z.string().optional()
-})
+    lampiran_temp_ids: z.array(z.string()).default([]),
+  })
+  .refine((data) => data.tertuju.length > 0 || data.penerima_grup.length > 0, {
+    message: 'Minimal pilih satu tertuju (individu atau grup)',
+    path: ['tertuju'],
+  })
+  .refine((data) => data.tembusan.length > 0 || data.tembusan_grup.length > 0, {
+    message: 'Minimal pilih satu tembusan (individu atau grup)',
+    path: ['tembusan'],
+  })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-// Input type: dipakai saat membuat payload di page (sebelum Zod parse)
-// Grup boleh berisi number atau string karena belum di-transform
-export type SDIPayloadInput = Omit<
-  z.input<typeof SDIPayloadSchema>,
-  'penerima_grup' | 'tembusan_grup'
-> & {
+export type SDIPayloadInput = z.input<typeof SDIPayloadSchema> & {
   penerima_grup?: (string | number)[]
   tembusan_grup?: (string | number)[]
 }
 
-// Output type: hasil setelah Zod parse — semua field sudah normalized
 export type SDIPayload = z.infer<typeof SDIPayloadSchema>
 
 // ── Validator ─────────────────────────────────────────────────────────────────
@@ -67,14 +67,17 @@ export const validateSDIPayload = (
   errors: Record<string, string>
 } => {
   const result = SDIPayloadSchema.safeParse(data)
+
   if (!result.success) {
-    const errors: Record<string, string> = {}
-    result.error.issues.forEach((err) => {
-      if (err.path[0] !== undefined) {
-        errors[String(err.path[0])] = err.message
-      }
-    })
-    return { isValid: false, errors }
+    const firstIssue =
+      result.error.issues && result.error.issues.length > 0 ? result.error.issues[0] : null
+
+    const errorMessage = firstIssue ? firstIssue.message : 'Validasi gagal'
+    const errorPath =
+      firstIssue && firstIssue.path.length > 0 ? (firstIssue.path[0] as string) : 'unknown'
+
+    return { isValid: false, errors: { [errorPath]: errorMessage } }
   }
+
   return { isValid: true, errors: {} }
 }
