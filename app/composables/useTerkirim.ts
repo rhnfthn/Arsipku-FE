@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useApi } from './useApi'
 
-// Helper format tanggal (dipindahkan agar lebih bersih)
+// Helper format tanggal
 const formatDateTime = (value: string | null | undefined): string => {
   if (!value) return '-'
   const date = new Date(value)
@@ -26,10 +26,13 @@ export interface SentParams {
   start_date?: string
   end_date?: string
   sort?: string
+  arsip?: boolean
+  favorite?: boolean
+  priority?: boolean
 }
 
 export const useSirkulasi = () => {
-  const { apiGet, post } = useApi()
+  const { apiGet, post, apiPatch } = useApi()
 
   const items = ref<any[]>([])
   const isLoading = ref(false)
@@ -66,14 +69,22 @@ export const useSirkulasi = () => {
       if (params.start_date) query.append('start_date', params.start_date)
       if (params.end_date) query.append('end_date', params.end_date)
       if (params.sort) query.append('sort', params.sort)
+      if (params.arsip) query.append('arsip', 'true')
+      if (params.favorite) query.append('favorite', 'true')
+      if (params.priority) query.append('priority', 'true')
 
       const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`)
 
       // Normalisasi response
-      const responseBody = res?.data?.pagination ? res.data : res
-      const rawItems = Array.isArray(responseBody?.data) ? responseBody.data : []
+      const responseBody = res?.data ?? res
+      const rawItems = Array.isArray(responseBody?.data)
+        ? responseBody.data
+        : Array.isArray(responseBody)
+          ? responseBody
+          : []
 
       items.value = rawItems.map((item: any) => {
+        console.log('Sample item keys:', Object.keys(rawItems[0]))
         const listPenerima = item.penerima || []
         const jenisSurat = (item.jenis || '').toUpperCase()
         const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(jenisSurat)
@@ -110,6 +121,7 @@ export const useSirkulasi = () => {
         return {
           id: item.id_naskah,
           naskahId: item.id_naskah,
+          id_sirkulasi: item.id_sirkulasi,
           fullRecipients: fullRecipientList,
           from: displayRecipient,
           email: firstRecipientTitle,
@@ -123,8 +135,10 @@ export const useSirkulasi = () => {
           viewCount: item.summary_baca?.terbaca || 0,
           isRead: true,
           isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
-          isLocked: ['final_tte', 'final'].includes(item.status),
-          isArchived: item.arsip,
+          isLocked: item.is_locked, // ← pakai field langsung
+          isArchived: item.arsip, // ← bukan item.is_arsip
+          isStarred: item.favorit, // ← bukan item.is_favorit
+          is_priority: item.is_priority, // ← tambahkan ini
           recipient: listPenerima.map((p: any) => p.position_text || p.nama).join(', '),
           labels: item.labels || [],
           originalData: item
@@ -139,6 +153,27 @@ export const useSirkulasi = () => {
       items.value = []
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const toggleFlag = async (mail: any, flagType: 'favorit' | 'arsip') => {
+    const oldVal = flagType === 'favorit' ? mail.isStarred : mail.isArchived
+
+    try {
+      const idToSend =
+        mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id
+
+      if (!idToSend) throw new Error('ID tidak ditemukan')
+
+      await apiPatch('/naskah_sirkulasi/toggle-flag', {
+        id_sirkulasi: idToSend,
+        flag_type: flagType
+      })
+    } catch (err) {
+      console.error('Gagal toggle flag:', flagType, err)
+      if (flagType === 'favorit') mail.isStarred = oldVal
+      else if (flagType === 'arsip') mail.isArchived = oldVal
+      throw err
     }
   }
 
@@ -162,6 +197,7 @@ export const useSirkulasi = () => {
     isLoading,
     error,
     fetchSentBox,
-    bulkActionSent
+    bulkActionSent,
+    toggleFlag
   }
 }
