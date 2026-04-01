@@ -27,6 +27,8 @@ export interface SentParams {
   end_date?: string
   sort?: string
   arsip?: boolean
+  favorite?: boolean
+  priority?: boolean
 }
 
 export const useSirkulasi = () => {
@@ -68,6 +70,8 @@ export const useSirkulasi = () => {
       if (params.end_date) query.append('end_date', params.end_date)
       if (params.sort) query.append('sort', params.sort)
       if (params.arsip) query.append('arsip', 'true')
+      if (params.favorite) query.append('favorite', 'true')
+      if (params.priority) query.append('priority', 'true')
 
       const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`)
 
@@ -131,9 +135,10 @@ export const useSirkulasi = () => {
           viewCount: item.summary_baca?.terbaca || 0,
           isRead: true,
           isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
-          isLocked: ['final_tte', 'final'].includes(item.status),
-          isArchived: item.is_arsip,
-          isStarred: item.is_favorit,
+          isLocked: item.is_locked, // ← pakai field langsung
+          isArchived: item.arsip, // ← bukan item.is_arsip
+          isStarred: item.favorit, // ← bukan item.is_favorit
+          is_priority: item.is_priority, // ← tambahkan ini
           recipient: listPenerima.map((p: any) => p.position_text || p.nama).join(', '),
           labels: item.labels || [],
           originalData: item

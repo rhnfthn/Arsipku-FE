@@ -82,8 +82,8 @@ const tabs = [
 
 const filterMenuOptions = [
   { label: "Semua", value: "Semua" },
-  { label: "Sudah Dibaca", value: "Sudah Dibaca" },
-  { label: "Belum Dibaca", value: "Belum Dibaca" },
+  { label: "Favorit", value: "Favorit" },
+  { label: "Prioritas", value: "Prioritas" },
   { label: "Arsip", value: "Arsip" },
 ];
 
@@ -159,9 +159,12 @@ const refreshData = async () => {
     }
 
     // Filter type → status_baca
-    if (activeFilterType.value === "Sudah Dibaca") params.status_baca = "terbaca";
-    if (activeFilterType.value === "Belum Dibaca") params.status_baca = "belum_terbaca";
-    if (activeFilterType.value === "Arsip") params.arsip = true;
+    const filterMap: Record<string, Record<string, any>> = {
+      "Arsip": { arsip: true },
+      "Favorit": { favorite: true },
+      "Prioritas": { priority: true },
+    };
+    Object.assign(params, filterMap[activeFilterType.value] || {});
 
     // Sort
     params.sort = activeSortLabel.value === "Terlama" ? "terlama" : "terbaru";
@@ -723,7 +726,12 @@ onMounted(async () => {
             <!-- Mail Items -->
             <div v-else class="w-full">
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
-                class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors relative w-full min-h-[50px]"
+                :class="[
+                  mail.is_priority
+                    ? 'bg-red-50/60 dark:bg-red-900/20 hover:bg-red-100/60 dark:hover:bg-red-900/30 border-l-4 border-l-red-500 pl-3'
+                    : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 border-l-4 border-l-transparent pl-4',
+                ]">
 
                 <!-- Left Controls -->
                 <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
@@ -759,8 +767,13 @@ onMounted(async () => {
                           {{ mail.from }}
                         </span>
                       </UTooltip>
-                      <div class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 truncate">
-                        {{ mail.body }}
+                      <div
+                        class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 flex items-center gap-2 truncate">
+                        <span class="truncate">{{ mail.body }}</span>
+                        <span v-if="mail.is_priority"
+                          class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 shrink-0">
+                          <AlertTriangle class="w-3 h-3" /> PRIORITAS
+                        </span>
                       </div>
                     </div>
                   </div>
