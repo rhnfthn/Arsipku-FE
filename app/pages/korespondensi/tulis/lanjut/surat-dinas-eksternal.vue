@@ -59,7 +59,8 @@
           </div>
         </div>
 
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
             <div class="flex-1 space-y-2 pt-1">
@@ -83,17 +84,21 @@
       </div>
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'" />
 
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tujuan Eksternal" :items="externalItems" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tujuan Eksternal"
+          :items="externalItems" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="internalItems" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+          :items="internalItems" />
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -108,7 +113,8 @@
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -123,7 +129,8 @@
           <TemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
                 <div class="flex items-center pb-4 mb-6 px-10">
@@ -166,7 +173,8 @@
                         <tr>
                           <td class="align-top">Perihal</td>
                           <td class="align-top">:</td>
-                          <td class="align-top font-bold text-justify">{{ subject || "................................................" }}</td>
+                          <td class="align-top font-bold text-justify">{{ subject ||
+                            "................................................" }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -186,7 +194,7 @@
                   <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
-                <div class="flex justify-end mt-12 text-black px-10">
+                <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
@@ -199,18 +207,28 @@
                   <div class="font-bold underline mb-1">Tembusan :</div>
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " + t.raw.area_text : "") }}</li>
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " +
+                      t.raw.area_text : "") }}</li>
                   </ol>
                   <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
-                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5" class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
@@ -223,7 +241,9 @@
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">
+                        {{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}
+                      </li>
                     </ol>
                   </div>
                 </div>
@@ -235,7 +255,8 @@
           <div class="flex items-center py-3 mt-2 gap-2">
             <input type="checkbox" id="check_english" v-model="isEnglish"
               class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
-            <label for="check_english" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+            <label for="check_english"
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
               Aktifkan Format Bahasa Inggris
             </label>
           </div>
@@ -243,14 +264,16 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
       </div>
     </UCard>
 
-    <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl"
-      @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
+    <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" @save-draft="handleConfirmSaveDraft"
+      @send="handleConfirmKirim" />
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
@@ -279,6 +302,7 @@ import { Alert } from "@/composables/useAlert";
 import { useDigsig } from "@/composables/useDigsig";
 import { useInbox } from "@/composables/useInbox";
 import { useSde } from "~/composables/useSde";
+import { validateSDEPayload } from "~/types/sde";
 
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
@@ -316,7 +340,7 @@ const internalItems = ref<any[]>([]); // Data dropdown Tembusan
 
 const selectedSendType = ref("qr_only");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 
 // ── Sign method modal state ───────────────────────────────────────────────────
 const isSignMethodModalOpen = ref(false);
@@ -325,11 +349,16 @@ const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Detail", to: "#" },
-  { label: "Tulis Lanjut Surat Dinas Eksternal", to: "#" },
-];
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string || "";
+  const refJenis = route.query.ref_jenis as string || "";
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    { label: "Detail Surat", to: `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis}` },
+    { label: "Tulis Lanjut Surat Dinas Eksternal", to: "#" },
+  ];
+});
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
@@ -361,23 +390,23 @@ const formatDateRef = (dateString: string) => {
 const getPayload = () => {
   return {
     id_naskah: editDraftId.value || null,
-    id_referensi_naskah: (route.query.ref_id as string) || null, // ← ditambahkan
+    id_referensi_naskah: (route.query.ref_id as string) || null,
     pengirim: user.value?.position || "",
     penerima: selectedTertuju.value.map(item => item.value),
-    english: isEnglish.value,
     tembusan: selectedTembusan.value.map(i => i.value),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || "biasa",
-    perihal: subject.value,
+    perihal: subject.value || "",
     lampiran: lampiranText.value,
-    konten: editorContent.value,
-    htmlContent: editorContent.value,
+    konten: editorContent.value || "",
+    htmlContent: editorContent.value || "",
+    english: isEnglish.value,
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: user.value?.nama || "",
-    tgl: tglDb.value,
-    tanggal: tglDisplay.value,
+    tgl: tglDb.value || "",
+    tanggal: tglDisplay.value || "",
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)
   };
 };
@@ -405,22 +434,22 @@ const createFormData = (payload: any, includePdf: boolean = false) => {
 };
 
 const validateAndToast = (payload: any) => {
-  if (!payload.perihal || payload.perihal.trim() === '') {
-    toastError('Gagal', 'Perihal surat wajib diisi');
+  const check = validateSDEPayload(payload);
+  if (!check.isValid) {
+    const firstKey = Object.keys(check.errors)[0];
+    toastError('Validasi Gagal', check.errors[firstKey]);
     return false;
   }
-  if (!payload.penerima || payload.penerima.length === 0) {
-    toastError('Gagal', 'Penerima (Tertuju) wajib dipilih');
-    return false;
-  }
+
+  // Validasi konten TinyMCE — strip HTML dulu
   const rawHtml = payload.konten || "";
   const textOnly = rawHtml.replace(/<[^>]*>/g, '').trim();
   const hasImage = rawHtml.includes('<img');
-
   if (!textOnly && !hasImage) {
     toastError('Konten Kosong', 'Mohon isi badan surat terlebih dahulu.');
     return false;
   }
+
   return true;
 };
 
@@ -563,9 +592,6 @@ onMounted(async () => {
       const result = await fetchInboxDetail(refId, refJenis);
       if (result) {
         refData.value = Array.isArray(result) ? result : [result];
-        // Autofill perihal dari referensi jika belum ada
-        const firstRef = refData.value[0];
-        if (!subject.value && firstRef.perihal) subject.value = firstRef.perihal;
       }
     } catch { /* abaikan error ref */ }
   }

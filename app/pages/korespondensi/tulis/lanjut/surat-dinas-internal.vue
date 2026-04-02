@@ -52,7 +52,7 @@ const tembusanItems = ref<any[]>([]);
 
 const selectedSendType = ref("qr_only");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 
 // ── Sign method modal state ───────────────────────────────────────────────────
 const isSignMethodModalOpen = ref(false);
@@ -61,11 +61,16 @@ const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Detail", to: "#" },
-  { label: "Tulis Lanjut Surat Dinas Internal", to: "#" },
-];
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string || "";
+  const refJenis = route.query.ref_jenis as string || "";
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    { label: "Detail Surat", to: `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis}` },
+    { label: "Tulis Lanjut Surat Dinas Internal", to: "#" },
+  ];
+});
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || "Nama Lengkap",
@@ -278,9 +283,6 @@ onMounted(async () => {
       const result = await fetchInboxDetail(refId, refJenis);
       if (result) {
         refData.value = Array.isArray(result) ? result : [result];
-        // Autofill perihal dari referensi jika belum ada
-        const firstRef = refData.value[0];
-        if (!subject.value && firstRef.perihal) subject.value = firstRef.perihal;
       }
     } catch { /* abaikan error ref */ }
   }
@@ -534,7 +536,7 @@ watch(
                   <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
-                <div class="flex justify-end mt-12 text-black px-10">
+                <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>

@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
 
-// Helper format tanggal
 const formatDateTime = (value: string | null | undefined): string => {
   if (!value) return '-';
   const date = new Date(value);
@@ -38,13 +37,7 @@ export const useSirkulasi = () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  const pagination = ref({
-    total: 0,
-    page: 1,
-    limit: 10,
-    totalPages: 1
-  });
-
+  const pagination = ref({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const summary = ref<any>(null);
 
   const fetchSentBox = async (params: SentParams = {}) => {
@@ -55,12 +48,10 @@ export const useSirkulasi = () => {
       const query = new URLSearchParams();
       if (params.page) query.append('page', params.page.toString());
       if (params.limit) query.append('limit', params.limit.toString());
-      if (params.jenis && !['ALL', 'Semua'].includes(params.jenis)) {
+      if (params.jenis && !['ALL', 'Semua'].includes(params.jenis))
         query.append('jenis', params.jenis);
-      }
-      if (params.status_baca && params.status_baca !== 'Semua') {
+      if (params.status_baca && params.status_baca !== 'Semua')
         query.append('status_baca', params.status_baca);
-      }
       if (params.search) query.append('search', params.search);
       if (params.start_date) query.append('start_date', params.start_date);
       if (params.end_date) query.append('end_date', params.end_date);
@@ -71,22 +62,16 @@ export const useSirkulasi = () => {
 
       const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
 
-      // Normalisasi response
-      const responseBody = res?.data ?? res;
+      // Samakan normalisasi dengan useInbox agar pagination & summary selalu terbaca
+      const responseBody = res?.data?.pagination ? res.data : res;
+      const rawItems = Array.isArray(responseBody?.data) ? responseBody.data : [];
 
-      const rawItems = Array.isArray(responseBody?.data)
-        ? responseBody.data
-        : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(responseBody)
-            ? responseBody
-            : [];
+      if (responseBody?.pagination) pagination.value = responseBody.pagination;
+      if (responseBody?.summary) summary.value = responseBody.summary;
 
       items.value = rawItems.map((item: any) => {
-        console.log('Sample item keys:', Object.keys(rawItems[0]));
         const listPenerima = item.penerima || [];
-        const jenisSurat = (item.jenis || '').toUpperCase();
-        const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL'].includes(jenisSurat);
+        const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((item.jenis || '').toUpperCase());
 
         let displayRecipient = 'Tanpa Penerima';
         let fullRecipientList = 'Tanpa Penerima';
@@ -94,26 +79,20 @@ export const useSirkulasi = () => {
         let initialLetter = '?';
 
         if (listPenerima.length > 0) {
-          const firstPerson = listPenerima[0];
-
-          // Penentuan Nama Utama
+          const first = listPenerima[0];
           const primaryName =
-            (isSDE ? firstPerson.nama : firstPerson.position_text || firstPerson.nama) ||
-            'Tanpa Nama';
+            (isSDE ? first.nama : first.position_text || first.nama) || 'Tanpa Nama';
 
-          firstRecipientTitle = firstPerson.position_text || firstPerson.nama || 'Tanpa Penerima';
+          firstRecipientTitle = first.position_text || first.nama || 'Tanpa Penerima';
           initialLetter = primaryName.charAt(0).toUpperCase();
-
           displayRecipient =
             listPenerima.length > 1
               ? `${primaryName} +${listPenerima.length - 1} lainnya`
               : primaryName;
-
           fullRecipientList = listPenerima
-            .map((p: any, idx: number) => {
-              const pName = isSDE ? p.nama : p.position_text || p.nama;
-              return `${idx + 1}. ${pName}`;
-            })
+            .map(
+              (p: any, idx: number) => `${idx + 1}. ${isSDE ? p.nama : p.position_text || p.nama}`
+            )
             .join('\n');
         }
 
@@ -134,29 +113,15 @@ export const useSirkulasi = () => {
           viewCount: item.summary_baca?.terbaca || 0,
           isRead: true,
           isFlagged: ['rahasia', 'penting', 'segera'].includes((item.sifat || '').toLowerCase()),
-          isLocked: item.is_locked, // ← pakai field langsung
-          isArchived: item.arsip, // ← bukan item.is_arsip
-          isStarred: item.favorit, // ← bukan item.is_favorit
-          is_priority: item.is_priority, // ← tambahkan ini
+          isLocked: item.is_locked,
+          isArchived: item.arsip, // field dari API (bukan is_arsip)
+          isStarred: item.favorit, // field dari API (bukan is_favorit)
+          is_priority: item.is_priority,
           recipient: listPenerima.map((p: any) => p.position_text || p.nama).join(', '),
           labels: item.labels || [],
           originalData: item
         };
       });
-
-      if (responseBody?.pagination) pagination.value = responseBody.pagination;
-
-      const summaryData = responseBody?.summary ?? res?.summary ?? null;
-      if (summaryData) {
-        summary.value = summaryData;
-        console.log('Summary set:', summaryData);
-      } else {
-        console.warn(
-          'Summary tidak ditemukan. responseBody keys:',
-          Object.keys(responseBody || {})
-        );
-        console.warn('res keys:', Object.keys(res || {}));
-      }
     } catch (err: any) {
       console.error('Fetch Sent Box Error:', err);
       error.value = err.message || 'Terjadi kesalahan jaringan';
@@ -168,13 +133,10 @@ export const useSirkulasi = () => {
 
   const toggleFlag = async (mail: any, flagType: 'favorit' | 'arsip') => {
     const oldVal = flagType === 'favorit' ? mail.isStarred : mail.isArchived;
-
     try {
       const idToSend =
         mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id;
-
       if (!idToSend) throw new Error('ID tidak ditemukan');
-
       await apiPatch('/naskah_sirkulasi/toggle-flag', {
         id_sirkulasi: idToSend,
         flag_type: flagType
@@ -182,7 +144,7 @@ export const useSirkulasi = () => {
     } catch (err) {
       console.error('Gagal toggle flag:', flagType, err);
       if (flagType === 'favorit') mail.isStarred = oldVal;
-      else if (flagType === 'arsip') mail.isArchived = oldVal;
+      else mail.isArchived = oldVal;
       throw err;
     }
   };
@@ -200,14 +162,5 @@ export const useSirkulasi = () => {
     }
   };
 
-  return {
-    items,
-    pagination,
-    summary,
-    isLoading,
-    error,
-    fetchSentBox,
-    bulkActionSent,
-    toggleFlag
-  };
+  return { items, pagination, summary, isLoading, error, fetchSentBox, bulkActionSent, toggleFlag };
 };
