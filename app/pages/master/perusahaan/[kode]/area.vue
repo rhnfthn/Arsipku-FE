@@ -590,7 +590,13 @@
               v-model="formArea.nama"
               type="text"
               :placeholder="t('ar_form_nama_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.nama
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.nama = false"
             />
           </div>
 
@@ -604,7 +610,13 @@
               v-model="formArea.kode"
               type="text"
               :placeholder="t('ar_form_kode_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.kode
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.kode = false"
             />
           </div>
 
@@ -618,7 +630,12 @@
               <button
                 type="button"
                 @click="showAreaDropdown = !showAreaDropdown"
-                class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                :class="[
+                  'w-full flex items-center justify-between px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+                  formErrors.area
+                    ? 'border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                ]"
               >
                 <span
                   :class="
@@ -692,7 +709,13 @@
               v-model="formArea.alamat"
               rows="3"
               :placeholder="t('ar_form_alamat_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.alamat
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.alamat = false"
             ></textarea>
           </div>
 
@@ -705,7 +728,13 @@
               <input
                 v-model="formArea.mulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  formErrors.mulai
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="formErrors.mulai = false"
               />
             </div>
             <div>
@@ -716,7 +745,13 @@
               <input
                 v-model="formArea.berakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  formErrors.berakhir
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="formErrors.berakhir = false"
               />
             </div>
           </div>
@@ -740,7 +775,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   ChevronLeft,
   Building2,
@@ -752,23 +787,23 @@ import {
   Search,
   Pencil,
   Trash2
-} from 'lucide-vue-next'
+} from 'lucide-vue-next';
 
 definePageMeta({
   middleware: 'auth'
-})
+});
 
-import { useArea } from '~/composables/useArea'
-import { useCompany } from '~/composables/useCompany'
-import { useToast } from '#imports'
+import { useArea } from '~/composables/useArea';
+import { useCompany } from '~/composables/useCompany';
+import { useToast } from '#imports';
 
 // ─────────────────────────────────────────────
 // i18n
 // ─────────────────────────────────────────────
-const { t, locale } = useI18n()
+const { t, locale } = useI18n();
 
-const route = useRoute()
-const companyId = computed(() => route.params.kode as string)
+const route = useRoute();
+const companyId = computed(() => route.params.kode as string);
 
 const {
   getAreasByCompany,
@@ -780,31 +815,31 @@ const {
   createSubAreaByCompany,
   updateSubAreaByCompany,
   deleteSubArea
-} = useArea()
+} = useArea();
 
-const { getCompanyByCode } = useCompany()
-const toast = useToast()
+const { getCompanyByCode } = useCompany();
+const toast = useToast();
 
 // ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
-const activeTab = ref<'area' | 'subArea'>('area')
-const searchQuery = ref('')
-const expandedAreas = ref<Record<string, boolean>>({})
-const openAddArea = ref(false)
-const showDeleteConfirm = ref(false)
-const selectedItem = ref<any>(null)
-const isDeleting = ref(false)
-const isEditing = ref(false)
+const activeTab = ref<'area' | 'subArea'>('area');
+const searchQuery = ref('');
+const expandedAreas = ref<Record<string, boolean>>({});
+const openAddArea = ref(false);
+const showDeleteConfirm = ref(false);
+const selectedItem = ref<any>(null);
+const isDeleting = ref(false);
+const isEditing = ref(false);
 
-const showAreaDropdown = ref(false)
-const areaSearchQuery = ref('')
-const filteredAreasDropdown = ref<any[]>([])
+const showAreaDropdown = ref(false);
+const areaSearchQuery = ref('');
+const filteredAreasDropdown = ref<any[]>([]);
 
-const rowsPerPage = ref<number>(10)
-const rowsChoices = [5, 10, 20, 50]
-const currentPage = ref<number>(1)
-const currentPageSub = ref<number>(1)
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref<number>(1);
+const currentPageSub = ref<number>(1);
 
 const formArea = ref({
   nama: '',
@@ -813,7 +848,7 @@ const formArea = ref({
   alamat: '',
   mulai: '',
   berakhir: ''
-})
+});
 
 const formErrors = ref({
   nama: false,
@@ -822,55 +857,55 @@ const formErrors = ref({
   alamat: false,
   mulai: false,
   berakhir: false
-})
+});
 
-const company = ref<{ kode: string; namaPanjang: string } | null>(null)
-const areas = ref<any[]>([])
-const subAreas = ref<any[]>([])
+const company = ref<{ kode: string; namaPanjang: string } | null>(null);
+const areas = ref<any[]>([]);
+const subAreas = ref<any[]>([]);
 
 // ─────────────────────────────────────────────
 // COMPUTED
 // ─────────────────────────────────────────────
 const modalTitle = computed(() => {
   if (activeTab.value === 'area') {
-    return isEditing.value ? t('ar_modal_edit_area') : t('ar_modal_tambah_area')
+    return isEditing.value ? t('ar_modal_edit_area') : t('ar_modal_tambah_area');
   }
-  return isEditing.value ? t('ar_modal_edit_subarea') : t('ar_modal_tambah_subarea')
-})
+  return isEditing.value ? t('ar_modal_edit_subarea') : t('ar_modal_tambah_subarea');
+});
 
 const deleteMessage = computed(() => {
-  if (!selectedItem.value) return ''
+  if (!selectedItem.value) return '';
   return locale.value === 'id'
     ? `Apakah Anda yakin ingin menghapus ${selectedItem.value.nama}?`
-    : `Are you sure you want to delete ${selectedItem.value.nama}?`
-})
+    : `Are you sure you want to delete ${selectedItem.value.nama}?`;
+});
 
 // ─────────────────────────────────────────────
 // CLICK OUTSIDE DROPDOWN
 // ─────────────────────────────────────────────
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
+  const target = event.target as HTMLElement;
   if (showAreaDropdown.value && !target.closest('.area-dropdown-container')) {
-    showAreaDropdown.value = false
+    showAreaDropdown.value = false;
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  fetchCompany()
-  fetchAreas()
-})
+  document.addEventListener('click', handleClickOutside);
+  fetchCompany();
+  fetchAreas();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 
 // ─────────────────────────────────────────────
 // FETCH
 // ─────────────────────────────────────────────
 const fetchAreas = async () => {
   try {
-    const res = await getAreasByCompany(companyId.value)
+    const res = await getAreasByCompany(companyId.value);
     areas.value = res.data.map((item) => ({
       id: item.id,
       kode: item.area,
@@ -879,16 +914,16 @@ const fetchAreas = async () => {
       mulai: item.startDate,
       berakhir: item.endDate,
       subCount: item.subAreasCount ?? 0
-    }))
-    filteredAreasDropdown.value = areas.value
+    }));
+    filteredAreasDropdown.value = areas.value;
   } catch (error) {
-    console.error('Gagal mengambil area', error)
+    console.error('Gagal mengambil area', error);
   }
-}
+};
 
 const fetchSubAreas = async (areaCode: string) => {
   try {
-    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode)
+    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
     const mapped = res.data.map((item) => ({
       id: item.id,
       kode: String(item.sub_area),
@@ -898,16 +933,16 @@ const fetchSubAreas = async (areaCode: string) => {
       alamat: item.longText,
       mulai: item.startDate,
       berakhir: item.endDate
-    }))
-    subAreas.value = [...subAreas.value.filter((s) => s.area !== areaCode), ...mapped]
+    }));
+    subAreas.value = [...subAreas.value.filter((s) => s.area !== areaCode), ...mapped];
   } catch (error) {
-    console.error('Gagal mengambil sub area', error)
+    console.error('Gagal mengambil sub area', error);
   }
-}
+};
 
 const fetchAllSubAreas = async () => {
   try {
-    const res = await getSubAreasByCompany(companyId.value)
+    const res = await getSubAreasByCompany(companyId.value);
     subAreas.value = res.data.map((item) => ({
       id: item.id,
       kode: String(item.sub_area),
@@ -917,160 +952,161 @@ const fetchAllSubAreas = async () => {
       alamat: item.longText,
       mulai: item.startDate,
       berakhir: item.endDate
-    }))
+    }));
   } catch (error) {
-    console.error('Gagal mengambil sub area', error)
+    console.error('Gagal mengambil sub area', error);
   }
-}
+};
 
 const fetchCompany = async () => {
   try {
-    const data = await getCompanyByCode(companyId.value)
-    if (!data) return
-    company.value = { kode: String(data.company), namaPanjang: data.longText }
+    const data = await getCompanyByCode(companyId.value);
+    if (!data) return;
+    company.value = { kode: String(data.company), namaPanjang: data.longText };
   } catch (error) {
-    console.error('Gagal mengambil data company', error)
+    console.error('Gagal mengambil data company', error);
   }
-}
+};
 
 // ─────────────────────────────────────────────
 // DROPDOWN AREA
 // ─────────────────────────────────────────────
 const getSelectedAreaText = () => {
-  if (!formArea.value.area) return ''
-  const selected = areas.value.find((a) => a.kode === formArea.value.area)
-  return selected ? `${selected.nama} (${selected.kode})` : ''
-}
+  if (!formArea.value.area) return '';
+  const selected = areas.value.find((a) => a.kode === formArea.value.area);
+  return selected ? `${selected.nama} (${selected.kode})` : '';
+};
 
 const filterAreas = () => {
-  const query = areaSearchQuery.value.toLowerCase().trim()
+  const query = areaSearchQuery.value.toLowerCase().trim();
   if (!query) {
-    filteredAreasDropdown.value = areas.value
-    return
+    filteredAreasDropdown.value = areas.value;
+    return;
   }
   filteredAreasDropdown.value = areas.value.filter((area) => {
     return (
       String(area.kode).toLowerCase().includes(query) ||
       (area.nama || '').toLowerCase().includes(query)
-    )
-  })
-}
+    );
+  });
+};
 
 const selectArea = (area: any) => {
-  formArea.value.area = area.kode
-  showAreaDropdown.value = false
-  areaSearchQuery.value = ''
-}
+  formArea.value.area = area.kode;
+  showAreaDropdown.value = false;
+  areaSearchQuery.value = '';
+  formErrors.value.area = false;
+};
 
 // ─────────────────────────────────────────────
 // FILTER & PAGINATION
 // ─────────────────────────────────────────────
 const filteredAreas = computed(() => {
-  if (!searchQuery.value) return areas.value
-  const query = searchQuery.value.toLowerCase()
+  if (!searchQuery.value) return areas.value;
+  const query = searchQuery.value.toLowerCase();
   return areas.value.filter(
     (area) =>
       area.kode.toLowerCase().includes(query) ||
       area.nama.toLowerCase().includes(query) ||
       area.alamat.toLowerCase().includes(query)
-  )
-})
+  );
+});
 
 const filteredSubAreas = computed(() => {
-  if (!searchQuery.value) return subAreas.value
-  const query = searchQuery.value.toLowerCase()
+  if (!searchQuery.value) return subAreas.value;
+  const query = searchQuery.value.toLowerCase();
   return subAreas.value.filter(
     (sub) =>
       sub.kode.toLowerCase().includes(query) ||
       sub.nama.toLowerCase().includes(query) ||
       sub.areaName.toLowerCase().includes(query) ||
       sub.alamat.toLowerCase().includes(query)
-  )
-})
+  );
+});
 
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(filteredAreas.value.length / rowsPerPage.value))
-)
+);
 
 const paginatedAreas = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return filteredAreas.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredAreas.value.slice(start, start + rowsPerPage.value);
+});
 
 const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
+    pages.push(1, 2, 3, 4, 5);
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
+    pages.push(total - 2, total - 1, total);
   } else {
-    pages.push(current - 1, current, current + 1)
+    pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 const totalPagesSub = computed(() =>
   Math.max(1, Math.ceil(filteredSubAreas.value.length / rowsPerPage.value))
-)
+);
 
 const paginatedSubAreas = computed(() => {
-  const start = (currentPageSub.value - 1) * rowsPerPage.value
-  return filteredSubAreas.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPageSub.value - 1) * rowsPerPage.value;
+  return filteredSubAreas.value.slice(start, start + rowsPerPage.value);
+});
 
 const paginationPagesSub = computed(() => {
-  const total = totalPagesSub.value
-  const current = currentPageSub.value
-  const pages: number[] = []
+  const total = totalPagesSub.value;
+  const current = currentPageSub.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
+    pages.push(1, 2, 3, 4, 5);
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
+    pages.push(total - 2, total - 1, total);
   } else {
-    pages.push(current - 1, current, current + 1)
+    pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 watch(activeTab, async (tab) => {
   if (tab === 'subArea') {
-    subAreas.value = []
-    await fetchAllSubAreas()
+    subAreas.value = [];
+    await fetchAllSubAreas();
   }
-  currentPage.value = 1
-  currentPageSub.value = 1
-})
+  currentPage.value = 1;
+  currentPageSub.value = 1;
+});
 
 watch([searchQuery, rowsPerPage], () => {
-  currentPage.value = 1
-  currentPageSub.value = 1
-})
+  currentPage.value = 1;
+  currentPageSub.value = 1;
+});
 
 // ─────────────────────────────────────────────
 // EXPAND
 // ─────────────────────────────────────────────
 const toggleAreaExpand = async (areaCode: string) => {
-  expandedAreas.value[areaCode] = !expandedAreas.value[areaCode]
+  expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
   if (expandedAreas.value[areaCode]) {
-    await fetchSubAreas(areaCode)
+    await fetchSubAreas(areaCode);
   }
-}
+};
 
 const getSubAreasForArea = (areaKode: string) => {
-  return subAreas.value.filter((sub) => sub.area === areaKode)
-}
+  return subAreas.value.filter((sub) => sub.area === areaKode);
+};
 
 // ─────────────────────────────────────────────
 // MODAL OPEN
 // ─────────────────────────────────────────────
 const openAddAreaModal = () => {
-  isEditing.value = false
+  isEditing.value = false;
   formArea.value = {
     nama: '',
     kode: '',
@@ -1078,7 +1114,7 @@ const openAddAreaModal = () => {
     alamat: '',
     mulai: '',
     berakhir: ''
-  }
+  };
   formErrors.value = {
     nama: false,
     kode: false,
@@ -1086,14 +1122,14 @@ const openAddAreaModal = () => {
     alamat: false,
     mulai: false,
     berakhir: false
-  }
-  areaSearchQuery.value = ''
-  openAddArea.value = true
-}
+  };
+  areaSearchQuery.value = '';
+  openAddArea.value = true;
+};
 
 const openEditModal = (item: any) => {
-  isEditing.value = true
-  selectedItem.value = item
+  isEditing.value = true;
+  selectedItem.value = item;
   formArea.value = {
     nama: item.nama,
     kode: item.kode,
@@ -1101,7 +1137,7 @@ const openEditModal = (item: any) => {
     alamat: item.alamat,
     mulai: item.mulai,
     berakhir: item.berakhir
-  }
+  };
   formErrors.value = {
     nama: false,
     kode: false,
@@ -1109,43 +1145,43 @@ const openEditModal = (item: any) => {
     alamat: false,
     mulai: false,
     berakhir: false
-  }
-  areaSearchQuery.value = ''
-  openAddArea.value = true
-}
+  };
+  areaSearchQuery.value = '';
+  openAddArea.value = true;
+};
 
 const openDeleteConfirm = (item: any) => {
-  selectedItem.value = item
-  showDeleteConfirm.value = true
-}
+  selectedItem.value = item;
+  showDeleteConfirm.value = true;
+};
 
 // ─────────────────────────────────────────────
 // VALIDATION HELPERS
 // ─────────────────────────────────────────────
 const buildRequiredFieldsMessage = (fields: string[]) => {
-  if (fields.length === 0) return ''
-  return `${fields.join(', ')} wajib diisi`
-}
+  if (fields.length === 0) return '';
+  return `${fields.join(', ')} wajib diisi`;
+};
 
 const isEndDateInvalid = (startDate?: string, endDate?: string) => {
-  if (!startDate || !endDate) return false
+  if (!startDate || !endDate) return false;
 
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-  start.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
-  return end <= start
-}
+  return end <= start;
+};
 
 const formatDateWarningMessage = () => {
   return locale.value === 'id'
     ? 'Tanggal berakhir tidak boleh sama dengan atau lebih awal dari tanggal mulai'
-    : 'The end date cannot be the same as or earlier than the start date.'
-}
+    : 'The end date cannot be the same as or earlier than the start date.';
+};
 
 const validateAreaForm = (): boolean => {
-  const emptyFields: string[] = []
+  const emptyFields: string[] = [];
 
   // Reset errors
   formErrors.value = {
@@ -1155,68 +1191,108 @@ const validateAreaForm = (): boolean => {
     alamat: false,
     mulai: false,
     berakhir: false
-  }
+  };
 
   // Check required fields
-  formErrors.value.nama = !formArea.value.nama.trim()
-  formErrors.value.kode = !formArea.value.kode.trim()
-  formErrors.value.alamat = !formArea.value.alamat.trim()
-  formErrors.value.mulai = !formArea.value.mulai
-  formErrors.value.berakhir = !formArea.value.berakhir
+  formErrors.value.nama = !formArea.value.nama.trim();
+  formErrors.value.kode = !formArea.value.kode.trim();
+  formErrors.value.alamat = !formArea.value.alamat.trim();
+  formErrors.value.mulai = !formArea.value.mulai;
+  formErrors.value.berakhir = !formArea.value.berakhir;
 
   // For subArea, area is required
   if (activeTab.value === 'subArea') {
-    formErrors.value.area = !formArea.value.area
+    formErrors.value.area = !formArea.value.area;
   }
 
   if (formErrors.value.nama) {
     if (activeTab.value === 'area') {
-      emptyFields.push('Nama Area')
+      emptyFields.push('Nama Area');
     } else {
-      emptyFields.push('Nama Sub Area')
+      emptyFields.push('Nama Sub Area');
     }
   }
   if (formErrors.value.kode) {
     if (activeTab.value === 'area') {
-      emptyFields.push('Kode Area')
+      emptyFields.push('Kode Area');
     } else {
-      emptyFields.push('Kode Sub Area')
+      emptyFields.push('Kode Sub Area');
     }
   }
-  if (formErrors.value.area && activeTab.value === 'subArea') emptyFields.push('Area Induk')
-  if (formErrors.value.alamat) emptyFields.push('Alamat')
-  if (formErrors.value.mulai) emptyFields.push('Tanggal Mulai')
-  if (formErrors.value.berakhir) emptyFields.push('Tanggal Berakhir')
+  if (formErrors.value.area && activeTab.value === 'subArea') emptyFields.push('Area Induk');
+  if (formErrors.value.alamat) emptyFields.push('Alamat');
+  if (formErrors.value.mulai) emptyFields.push('Tanggal Mulai');
+  if (formErrors.value.berakhir) emptyFields.push('Tanggal Berakhir');
 
   if (emptyFields.length > 0) {
-    showToast(t('gagal'), buildRequiredFieldsMessage(emptyFields), 'error')
-    return false
+    showToast(t('gagal'), buildRequiredFieldsMessage(emptyFields), 'error');
+    return false;
   }
 
   // Validate date range
   if (isEndDateInvalid(formArea.value.mulai, formArea.value.berakhir)) {
-    formErrors.value.berakhir = true
-    showToast(t('gagal'), formatDateWarningMessage(), 'error')
-    return false
+    formErrors.value.berakhir = true;
+    showToast(t('gagal'), formatDateWarningMessage(), 'error');
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 // ─────────────────────────────────────────────
 // SUBMIT
 // ─────────────────────────────────────────────
 const submitArea = async () => {
   // Run validation first
-  if (!validateAreaForm()) return
+  if (!validateAreaForm()) return;
   if (activeTab.value === 'subArea' && isNaN(Number(formArea.value.kode))) {
     toast.add({
       title: t('gagal'),
       description: t('ar_val_kode_angka'),
       color: 'error',
       icon: 'i-lucide-x-circle'
-    })
-    return
+    });
+    return;
+  }
+
+  // Check for duplicate code
+  if (activeTab.value === 'area') {
+    // Check if area code already exists (only when adding new or changing code)
+    const isDuplicate = areas.value.some(
+      (item) =>
+        item.kode === formArea.value.kode &&
+        (!isEditing.value || item.id !== selectedItem.value?.id)
+    );
+    if (isDuplicate) {
+      toast.add({
+        title: t('gagal'),
+        description:
+          locale.value === 'id' ? 'Kode area sudah digunakan' : 'Area code already in use',
+        color: 'error',
+        icon: 'i-lucide-x-circle'
+      });
+      return;
+    }
+  }
+
+  if (activeTab.value === 'subArea') {
+    // Check if sub area code already exists (only when adding new or changing code)
+    const isDuplicate = subAreas.value.some(
+      (item) =>
+        item.kode === formArea.value.kode &&
+        item.area === formArea.value.area &&
+        (!isEditing.value || item.id !== selectedItem.value?.id)
+    );
+    if (isDuplicate) {
+      toast.add({
+        title: t('gagal'),
+        description:
+          locale.value === 'id' ? 'Kode sub area sudah digunakan' : 'Sub area code already in use',
+        color: 'error',
+        icon: 'i-lucide-x-circle'
+      });
+      return;
+    }
   }
 
   try {
@@ -1227,16 +1303,16 @@ const submitArea = async () => {
         longText: formArea.value.alamat,
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
-      }
+      };
 
       if (!isEditing.value) {
-        await createAreaByCompany(companyId.value, payload)
-        showToast(t('berhasil'), t('ar_success_add_area'), 'success')
+        await createAreaByCompany(companyId.value, payload);
+        showToast(t('berhasil'), t('ar_success_add_area'), 'success');
       } else {
-        await updateAreaByCompany(companyId.value, selectedItem.value.id, payload)
-        showToast(t('berhasil'), t('ar_success_edit_area'), 'success')
+        await updateAreaByCompany(companyId.value, selectedItem.value.id, payload);
+        showToast(t('berhasil'), t('ar_success_edit_area'), 'success');
       }
-      await fetchAreas()
+      await fetchAreas();
     }
 
     if (activeTab.value === 'subArea') {
@@ -1247,21 +1323,21 @@ const submitArea = async () => {
         longText: formArea.value.alamat,
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
-      }
+      };
 
       if (!isEditing.value) {
-        await createSubAreaByCompany(companyId.value, payload)
-        showToast(t('berhasil'), t('ar_success_add_subarea'), 'success')
+        await createSubAreaByCompany(companyId.value, payload);
+        showToast(t('berhasil'), t('ar_success_add_subarea'), 'success');
       } else {
-        await updateSubAreaByCompany(companyId.value, selectedItem.value.id, payload)
-        showToast(t('berhasil'), t('ar_success_edit_subarea'), 'success')
+        await updateSubAreaByCompany(companyId.value, selectedItem.value.id, payload);
+        showToast(t('berhasil'), t('ar_success_edit_subarea'), 'success');
       }
-      await fetchAllSubAreas()
+      await fetchAllSubAreas();
     }
 
-    openAddArea.value = false
-    isEditing.value = false
-    selectedItem.value = null
+    openAddArea.value = false;
+    isEditing.value = false;
+    selectedItem.value = null;
     formArea.value = {
       nama: '',
       kode: '',
@@ -1269,7 +1345,7 @@ const submitArea = async () => {
       alamat: '',
       mulai: '',
       berakhir: ''
-    }
+    };
     formErrors.value = {
       nama: false,
       kode: false,
@@ -1277,41 +1353,41 @@ const submitArea = async () => {
       alamat: false,
       mulai: false,
       berakhir: false
-    }
+    };
   } catch (error) {
-    console.error('Gagal menyimpan data', error)
-    showToast(t('gagal'), t('ar_err_save'), 'error')
+    console.error('Gagal menyimpan data', error);
+    showToast(t('gagal'), t('ar_err_save'), 'error');
   }
-}
+};
 
 // ─────────────────────────────────────────────
 // DELETE
 // ─────────────────────────────────────────────
 const handleDelete = async () => {
   try {
-    isDeleting.value = true
+    isDeleting.value = true;
 
     if (activeTab.value === 'area') {
-      await deleteArea(selectedItem.value.id)
-      await fetchAreas()
-      showToast(t('berhasil'), t('ar_success_delete_area'), 'success')
+      await deleteArea(selectedItem.value.id);
+      await fetchAreas();
+      showToast(t('berhasil'), t('ar_success_delete_area'), 'success');
     }
 
     if (activeTab.value === 'subArea') {
-      await deleteSubArea(selectedItem.value.id)
-      await fetchAllSubAreas()
-      showToast(t('berhasil'), t('ar_success_delete_subarea'), 'success')
+      await deleteSubArea(selectedItem.value.id);
+      await fetchAllSubAreas();
+      showToast(t('berhasil'), t('ar_success_delete_subarea'), 'success');
     }
 
-    showDeleteConfirm.value = false
-    selectedItem.value = null
+    showDeleteConfirm.value = false;
+    selectedItem.value = null;
   } catch (error) {
-    console.error('Gagal menghapus data', error)
-    showToast(t('gagal'), t('ar_err_delete'), 'error')
+    console.error('Gagal menghapus data', error);
+    showToast(t('gagal'), t('ar_err_delete'), 'error');
   } finally {
-    isDeleting.value = false
+    isDeleting.value = false;
   }
-}
+};
 
 // ─────────────────────────────────────────────
 // TOAST HELPER
@@ -1331,6 +1407,6 @@ const showToast = (
         : color === 'error'
           ? 'i-lucide-x-circle'
           : 'i-lucide-info'
-  })
-}
+  });
+};
 </script>

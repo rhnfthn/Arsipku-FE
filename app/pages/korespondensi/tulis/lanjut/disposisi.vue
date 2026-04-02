@@ -94,7 +94,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refNumber"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Ref. Nomor Surat" />
+                placeholder="Ketik Ref. Nomor Surat" readonly />
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Ref. Perihal" />
+                placeholder="Ketik Ref. Perihal" readonly />
             </div>
           </div>
         </div>
@@ -285,11 +285,16 @@ const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 const { fetchDetail, detail: refDetail } = useTerkirimDetail();
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
-  { label: "Tulis Lanjut Disposisi", to: "#" },
-];
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string || "";
+  const refJenis = route.query.ref_jenis as string || "";
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    { label: "Detail Surat", to: `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis}` },
+    { label: "Tulis Lanjut Disposisi", to: "#" },
+  ];
+});
 
 const isLoadingData = ref(false);
 const loadingMessage = ref("");
@@ -418,24 +423,29 @@ const handlePriorityChange = async (e: Event) => {
 };
 
 const getPayload = (): DisposisiPayload => {
-  const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
-  const tglUi = `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`;
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : "";
+
+  const tglUi = date.value
+    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
+    : "";
 
   return {
-    id_naskah: editDraftId.value || null,
-    pengirim: user.value?.position || "",
-    tertuju: selectedTertuju.value.map(i => i.value),
+    id_naskah:         editDraftId.value || null,
+    ref_id:            (route.query.ref_id as string) || null,
+    pengirim:          user.value?.position || "",
+    tertuju:           selectedTertuju.value.map(i => i.value),
     tanggal_disposisi: tglDb,
-    tanggal_ui: tglUi,
-    sifat: selectedSifat.value?.label || "Biasa",
-    ref_nomor: refNumber.value || "-",
-    ref_perihal: refPerihal.value || "-",
-    catatan: showEditor.value ? editorContent.value : "",
-    htmlContent: showEditor.value ? editorContent.value : "",
-    disposisi: selectedChecklist.value,
-    is_priority: isPriority.value,
+    tanggal_ui:        tglUi,
+    sifat:             selectedSifat.value?.label || "Biasa",
+    ref_nomor:         refNumber.value || "-",
+    ref_perihal:       refPerihal.value || "-",
+    catatan:           showEditor.value ? editorContent.value : "",
+    htmlContent:       showEditor.value ? editorContent.value : "",
+    disposisi:         selectedChecklist.value,
+    is_priority:       isPriority.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean),
-    ref_id: (route.query.ref_id as string) || null,
   };
 };
 
@@ -477,6 +487,16 @@ const validateAndToast = (payload: DisposisiPayload) => {
     toast.add({ title: 'Validasi Gagal', description: check.errors[firstKey], color: 'error' });
     return false;
   }
+
+  // Jika "Lainnya" dipilih, konten/catatan wajib diisi
+  if (selectedChecklist.value.includes("Lainnya")) {
+    const strippedContent = (editorContent.value || "").replace(/<[^>]*>?/gm, '').trim();
+    if (!strippedContent) {
+      toast.add({ title: 'Validasi Gagal', description: "Catatan wajib diisi jika instruksi 'Lainnya' dipilih.", color: 'error' });
+      return false;
+    }
+  }
+
   return true;
 };
 

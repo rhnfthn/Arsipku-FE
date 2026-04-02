@@ -259,13 +259,18 @@ const {
 const items = ref<any[]>([]);
 const selectedSendType = ref("qr_only");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Detail", to: "#" },
-  { label: "Tulis Lanjut Nota Dinas", to: "#" },
-];
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string || "";
+  const refJenis = route.query.ref_jenis as string || "";
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    { label: "Detail Surat", to: `/korespondensi/kotak-masuk/${refId}?jenis=${refJenis}` },
+    { label: "Tulis Lanjut Nota Dinas", to: "#" },
+  ];
+});
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || "Nama Lengkap",
@@ -296,8 +301,12 @@ const formatDateRef = (dateString: string) => {
 // ── Payload ───────────────────────────────────────────────────────────────────
 
 const validateAndToast = (payload: DraftPayload) => {
+  // Debug: lihat field mana yang null
+  console.log('Payload sebelum validasi:', JSON.stringify(payload, null, 2));
+
   const result = validateDraftPayload(payload);
   if (!result.isValid) {
+    console.log('Validation errors:', result.errors);
     const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
     toastError("Validasi Gagal", firstError);
     return false;
@@ -313,8 +322,8 @@ const getBasePayload = (): DraftPayload => ({
   tembusan: tembusanIndividu.value,
   penerima_grup: tertujuGrup.value,
   tembusan_grup: tembusanGrup.value,
-  klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+  klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
+  klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
   sifat: selectedSifat.value?.value || "biasa",
   perihal: subject.value,
   konten: String(editorContent.value || ""),

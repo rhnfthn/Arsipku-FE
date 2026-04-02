@@ -368,11 +368,16 @@ const handleBulkExecute = async () => {
 };
 
 // ── Filter / Sort / Pagination UI Actions ─────────────────────────────────────
-const applyFilter = (v: string) => { activeFilterType.value = v; showFilterMenu.value = false; currentPage.value = 1; refreshData(); };
+const applyFilter = (v: string) => {
+  activeFilterType.value = v;
+  showFilterMenu.value = false;
+  currentPage.value = 1;
+  // watch activeFilterType akan auto-trigger refreshData()
+};
 const selectSortOption = (v: string) => { activeSortLabel.value = v; showSortMenu.value = false; currentPage.value = 1; refreshData(); };
-const selectPageSize = (v: number) => { itemsPerPage.value = v; showPageMenu.value = false; refreshData(); };
-const nextPage = () => { if (currentPage.value < totalPages.value) { currentPage.value++; refreshData(); } };
-const prevPage = () => { if (currentPage.value > 1) { currentPage.value--; refreshData(); } };
+const selectPageSize = (v: number) => { itemsPerPage.value = v; showPageMenu.value = false; };
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 const openLabelAssignModal = () => { showLabelAssignModal.value = true; };
 
 const selectDateFilter = (opt: string) => {
@@ -437,7 +442,13 @@ const isUnarchiveMode = computed(() => activeFilterType.value === 'Arsip');
 
 // ── Watchers ──────────────────────────────────────────────────────────────────
 // Tab berubah → reset ke halaman 1
-watch([activeTab], () => { currentPage.value = 1; refreshData(); });
+watch([activeTab, itemsPerPage, activeFilterType], () => {
+  currentPage.value = 1;
+  refreshData();
+});
+
+// currentPage berubah → refresh otomatis (pagination)
+watch(currentPage, () => refreshData());
 
 // Search dengan debounce 500ms
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -449,7 +460,10 @@ watch(searchQuery, () => {
 // ── Init ──────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   if (!user.value) await getProfile();
-  refreshData();
+  await refreshData();
+  console.log('pagination:', pagination.value);
+  console.log('totalPages:', totalPages.value);
+  console.log('items count:', items.value.length);
 });
 </script>
 

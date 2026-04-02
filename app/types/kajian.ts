@@ -3,28 +3,48 @@ import { z } from 'zod'
 export const KajianSchema = z.object({
   id_naskah: z.string().nullable().optional(),
 
-  pengirim: z.number({
-    required_error: 'Posisi pengirim tidak valid'
-  }),
+  pengirim: z.number().positive('Posisi pengirim tidak valid'),
 
-  penerima: z.array(z.number()).min(1, 'Pilih minimal satu penerima (Kepada)'),
+  penerima: z.array(z.number()).min(1, 'Pilih minimal satu penerima'),
 
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
 
   klasifikasi: z.string().min(1, 'Klasifikasi wajib dipilih'),
   klasifikasi_text: z.string().optional(),
-
   sifat: z.string().default('biasa'),
 
-  perihal: z.string().min(5, 'Perihal terlalu pendek').max(200, 'Perihal maksimal 200 karakter'),
+  perihal: z.string()
+    .min(5, 'Perihal terlalu pendek (min 5 karakter)')
+    .max(200, 'Perihal maksimal 200 karakter'),
 
-  konten: z.string().min(1, 'Isi kajian tidak boleh kosong'),
+  konten: z.string().refine(
+    val => val.replace(/<[^>]*>/g, '').trim().length > 0,
+    { message: 'Isi kajian tidak boleh kosong' }
+  ),
 
   lampiran_temp_ids: z.array(z.string()).optional(),
   lampiran_text: z.string().optional()
 })
 
 export type KajianPayload = z.infer<typeof KajianSchema>
+
+// Tambahkan wrapper function seperti pola disposisi
+export const validateKajianPayload = (data: any) => {
+  const result = KajianSchema.safeParse(data)
+
+  if (!result.success) {
+    const firstIssue = result.error.issues?.[0] ?? null
+    const errorMessage = firstIssue?.message ?? 'Validasi gagal'
+    const errorPath = firstIssue?.path?.[0] ? String(firstIssue.path[0]) : 'unknown'
+
+    return {
+      isValid: false,
+      errors: { [errorPath]: errorMessage }
+    }
+  }
+
+  return { isValid: true, data: result.data }
+}
 
 export interface KajianDetail {
   id: string
@@ -40,9 +60,8 @@ export interface KajianDetail {
     nama: string
     position_text: string
   }
-  // Struktur response detail penerima biasanya array object
   penerima: Array<{
-    id: string | number // ID table atau Position ID
+    id: string | number
     nama: string
     position_text?: string
   }>

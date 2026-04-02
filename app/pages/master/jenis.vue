@@ -135,10 +135,16 @@
           </thead>
 
           <tbody>
-            <!-- Loading -->
+            <!-- Loading - Skeleton -->
             <tr v-if="loading">
-              <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                {{ t('je_loading') }}
+              <td colspan="6" class="px-4 py-6">
+                <div class="space-y-4 animate-pulse">
+                  <div
+                    v-for="n in skeletonRows"
+                    :key="'skeleton-' + n"
+                    class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
+                  />
+                </div>
               </td>
             </tr>
 
@@ -412,7 +418,13 @@
                   v-model="addForm.jenis"
                   type="text"
                   :placeholder="t('je_kode_placeholder')"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.jenis
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.jenis = false"
                 />
                 <p v-if="addErrors.jenis" class="text-xs text-red-500">
                   {{ addErrors.jenis }}
@@ -428,7 +440,13 @@
                   v-model="addForm.jenis_text"
                   type="text"
                   :placeholder="t('je_nama_placeholder')"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.jenis_text
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.jenis_text = false"
                 />
                 <p v-if="addErrors.jenis_text" class="text-xs text-red-500">
                   {{ addErrors.jenis_text }}
@@ -444,7 +462,13 @@
                   v-model="addForm.file_text"
                   type="text"
                   :placeholder="t('je_perihal_placeholder')"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.file_text
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.file_text = false"
                 />
                 <p v-if="addErrors.file_text" class="text-xs text-red-500">
                   {{ addErrors.file_text }}
@@ -460,7 +484,13 @@
                   v-model="addForm.format_penomoran"
                   type="text"
                   :placeholder="t('je_format_placeholder')"
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.format_penomoran
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.format_penomoran = false"
                 />
                 <p v-if="addErrors.format_penomoran" class="text-xs text-red-500">
                   {{ addErrors.format_penomoran }}
@@ -522,7 +552,13 @@
                   v-model="editForm.jenis"
                   type="text"
                   :placeholder="t('je_kode_placeholder')"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'w-full border rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    editFormErrors.jenis
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary/30'
+                  ]"
+                  @input="editFormErrors.jenis = false"
                 />
               </div>
 
@@ -535,7 +571,13 @@
                   v-model="editForm.jenis_text"
                   type="text"
                   :placeholder="t('je_nama_placeholder')"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'w-full border rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    editFormErrors.jenis_text
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary/30'
+                  ]"
+                  @input="editFormErrors.jenis_text = false"
                 />
               </div>
 
@@ -548,7 +590,13 @@
                   v-model="editForm.file_text"
                   type="text"
                   :placeholder="t('je_perihal_placeholder')"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'w-full border rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    editFormErrors.file_text
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary/30'
+                  ]"
+                  @input="editFormErrors.file_text = false"
                 />
               </div>
 
@@ -561,7 +609,13 @@
                   v-model="editForm.format_penomoran"
                   type="text"
                   :placeholder="t('je_format_placeholder')"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 font-mono dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  :class="[
+                    'w-full border rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 font-mono dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    editFormErrors.format_penomoran
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary/30'
+                  ]"
+                  @input="editFormErrors.format_penomoran = false"
                 />
               </div>
 
@@ -876,6 +930,8 @@ const paginatedJenis = computed(() => {
   return sortedJenis.value.slice(start, start + perPage.value);
 });
 
+const skeletonRows = computed(() => perPage.value);
+
 const totalItems = computed(() => sortedJenis.value.length);
 const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
 
@@ -1019,6 +1075,13 @@ const addForm = ref({
   file: null as File | null
 });
 
+const addFormErrors = ref({
+  jenis: false,
+  jenis_text: false,
+  file_text: false,
+  format_penomoran: false
+});
+
 const openAddModal = () => {
   resetAddForm();
   showAddModal.value = true;
@@ -1033,14 +1096,25 @@ const resetAddForm = () => {
     format_penomoran: '',
     file: null
   };
+  addFormErrors.value = {
+    jenis: false,
+    jenis_text: false,
+    file_text: false,
+    format_penomoran: false
+  };
 };
 
 const validateAdd = () => {
+  addFormErrors.value.jenis = !addForm.value.jenis.trim();
+  addFormErrors.value.jenis_text = !addForm.value.jenis_text.trim();
+  addFormErrors.value.file_text = !addForm.value.file_text.trim();
+  addFormErrors.value.format_penomoran = !addForm.value.format_penomoran.trim();
+
   const emptyFields: string[] = [];
-  if (!addForm.value.jenis.trim()) emptyFields.push(t('je_kode'));
-  if (!addForm.value.jenis_text.trim()) emptyFields.push(t('je_nama'));
-  if (!addForm.value.file_text.trim()) emptyFields.push(t('je_perihal'));
-  if (!addForm.value.format_penomoran.trim()) emptyFields.push(t('je_format'));
+  if (addFormErrors.value.jenis) emptyFields.push(t('je_kode'));
+  if (addFormErrors.value.jenis_text) emptyFields.push(t('je_nama'));
+  if (addFormErrors.value.file_text) emptyFields.push(t('je_perihal'));
+  if (addFormErrors.value.format_penomoran) emptyFields.push(t('je_format'));
 
   if (emptyFields.length > 0) {
     showToast({
@@ -1110,12 +1184,25 @@ const editForm = ref({
   file_url: '' as string
 });
 
+const editFormErrors = ref({
+  jenis: false,
+  jenis_text: false,
+  file_text: false,
+  format_penomoran: false
+});
+
 const onEdit = async (row: JenisItem) => {
   try {
     showEditModal.value = true;
     editId.value = row.id;
     savingEdit.value = false;
     editErrors.value = {};
+    editFormErrors.value = {
+      jenis: false,
+      jenis_text: false,
+      file_text: false,
+      format_penomoran: false
+    };
     const res = await getJenisDetail(row.id);
     const data = res.data;
     editForm.value.jenis = data.jenis;
@@ -1133,11 +1220,16 @@ const onEdit = async (row: JenisItem) => {
 };
 
 const validateEdit = () => {
+  editFormErrors.value.jenis = !editForm.value.jenis.trim();
+  editFormErrors.value.jenis_text = !editForm.value.jenis_text.trim();
+  editFormErrors.value.file_text = !editForm.value.file_text.trim();
+  editFormErrors.value.format_penomoran = !editForm.value.format_penomoran.trim();
+
   const emptyFields: string[] = [];
-  if (!editForm.value.jenis.trim()) emptyFields.push(t('je_kode'));
-  if (!editForm.value.jenis_text.trim()) emptyFields.push(t('je_nama'));
-  if (!editForm.value.file_text.trim()) emptyFields.push(t('je_perihal'));
-  if (!editForm.value.format_penomoran.trim()) emptyFields.push(t('je_format'));
+  if (editFormErrors.value.jenis) emptyFields.push(t('je_kode'));
+  if (editFormErrors.value.jenis_text) emptyFields.push(t('je_nama'));
+  if (editFormErrors.value.file_text) emptyFields.push(t('je_perihal'));
+  if (editFormErrors.value.format_penomoran) emptyFields.push(t('je_format'));
 
   const hasExistingFile = !!editForm.value.file_url;
   const hasNewFile = !!editForm.value.file;
