@@ -533,6 +533,8 @@
   "nom_confirm_hangus_batal": "Batal",
   "nom_pratinjau_dokumen": "Pratinjau Dokumen",
   "tit_title": "Titelatur Inggris",
+  "tit_validationI_required": "Titelatur Indonesia wajib diisi",
+  "tit_validationE_required": "Titelatur Inggris wajib diisi",
   "tit_btn_tambah": "Tambah Titelatur",
   "tit_cari_placeholder": "Cari Titelatur",
   "tit_col_indonesia": "Titelatur Indonesia",

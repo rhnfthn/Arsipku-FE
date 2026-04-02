@@ -285,10 +285,7 @@ const { t } = useI18n();
 
 const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 
-const isBODManajerial = computed(() => {
-  const tag = user.value?.bodTag ?? '';
-  return ['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
-});
+const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
 // ─── Position ID helper ───────────────────────────────────────────────────────
 
@@ -313,6 +310,9 @@ const fetchCounts = async () => {
     const positionId = getPositionId(user.value);
     if (isAdmin) {
       await getNomorRequestCountAdmin();
+      if (user.value.bodTag?.trim() && positionId && !isNaN(positionId)) {
+        await getNomorRequestCountUser(positionId);
+      }
     } else if (positionId && !isNaN(positionId)) {
       await getNomorRequestCountUser(positionId);
     }
@@ -425,7 +425,7 @@ const userMenuUtilitas = computed(() => {
     { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' }
   ];
 
-  if (isBODManajerial.value) {
+  if (hasBodTag.value) {
     menus.push({
       label: t('penomoran') || 'Penomoran',
       icon: 'i-lucide-hash',
@@ -495,39 +495,66 @@ const adminMenuUtilitas = computed(() => {
       ]
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
-    { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
-    { label: 'Usulan Penomoran', to: '/usulan-penomoran', icon: 'i-lucide-hash', onlyUser: true }
+    { label: t('template'), to: '/template', icon: 'i-lucide-copy' }
   ];
-  return menus.filter((menu) => !(menu.onlyUser && isAdminOrSuperadmin.value));
+
+  // if (hasBodTag.value) {
+  //   menus.push({
+  //     label: t('Persetujuan') || 'Persetujuan',
+  //     to: '/persetujuan-penomoran',
+  //     icon: 'i-lucide-stamp',
+  //     badge:
+  //       (userCounts.value.menunggu_persetujuan ?? 0) > 0
+  //         ? userCounts.value.menunggu_persetujuan
+  //         : null
+  //   });
+  // }
+
+  return menus;
 });
 
 const adminMenuAdministrasi = computed(() => {
-  // FIX: Use consistent, explicit icon strings — never rely on translated keys for icons
+  const penomoranChildren = [
+    {
+      label: t('usulan'),
+      to: '/penomoran/usulan',
+      badge: adminCounts.value.draft > 0 ? adminCounts.value.draft : null
+    }
+  ];
+
+  // Persetujuan di urutan ke-2, hanya kalau ada bodTag
+  if (hasBodTag.value) {
+    penomoranChildren.push({
+      label: t('Persetujuan') || 'Persetujuan',
+      to: '/persetujuan-penomoran',
+      badge:
+        (userCounts.value.menunggu_persetujuan ?? 0) > 0
+          ? userCounts.value.menunggu_persetujuan
+          : null
+    });
+  }
+
+  penomoranChildren.push(
+    {
+      label: t('ver'),
+      to: '/penomoran/verifikasi',
+      badge:
+        adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null
+    },
+    { label: t('penomoran'), to: '/penomoran/nomor' }
+  );
+
   const base = [
     { label: t('delegasi'), to: '/delegasi', icon: 'i-lucide-users' },
     { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
     {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
-      children: [
-        {
-          label: t('usulan'),
-          to: '/penomoran/usulan',
-          badge: adminCounts.value.draft > 0 ? adminCounts.value.draft : null
-        },
-        {
-          label: t('ver'),
-          to: '/penomoran/verifikasi',
-          badge:
-            adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null
-        },
-        { label: t('penomoran'), to: '/penomoran/nomor' }
-      ]
+      children: penomoranChildren
     },
-    // FIX: Was missing explicit icon — icon was undefined, causing UIcon to
-    // fall back to a default/random resolved icon from the icon bundle
     { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-input' }
   ];
+
   if (user.value?.role === 'superadmin') {
     base.push(
       {
@@ -541,12 +568,10 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('jenis'), to: '/master/jenis' }
         ]
       },
-      // FIX: icon was 'i-lucide-settings-2' but the app icon for Administrasi
-      // uses 'i-lucide-settings' — both are valid but must be set explicitly and
-      // consistently. Using 'i-lucide-settings-2' here is correct per img 1/2.
       { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
     );
   }
+
   return base;
 });
 
@@ -560,14 +585,17 @@ const adminMenuLaporan = computed(() => [
 
 // ─── Notification flags ───────────────────────────────────────────────────────
 
-const hasAdministrasiNotification = computed(() => adminCounts.value.menunggu_verifikasi > 0);
+const hasAdministrasiNotification = computed(
+  () =>
+    adminCounts.value.menunggu_verifikasi > 0 ||
+    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
+);
 const hasUtilitasNotification = computed(() => {
-  if (!isAdminOrSuperadmin.value) {
-    return (
-      userCounts.value.menunggu_verifikasi > 0 || (userCounts.value.menunggu_persetujuan ?? 0) > 0
-    );
-  }
-  return false;
+  if (isAdminOrSuperadmin.value) return false;
+  return (
+    userCounts.value.menunggu_verifikasi > 0 ||
+    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
+  );
 });
 
 // ─── Apps ─────────────────────────────────────────────────────────────────────
@@ -601,7 +629,7 @@ const apps = computed(() => {
         label: t('utilitas'),
         icon: 'i-heroicons-squares-plus',
         menus: adminMenuUtilitas.value,
-        hasNotification: false
+        hasNotification: hasUtilitasNotification.value // ← UBAH dari false
       },
       {
         id: 'admin-administrasi',
