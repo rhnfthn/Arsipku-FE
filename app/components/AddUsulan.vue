@@ -111,7 +111,8 @@
           <div class="relative" ref="jenisRef">
             <button
               @click="toggleJenis"
-              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:text-gray-200"
+              :disabled="isLoadingJenis"
+              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               :class="{
                 'text-gray-400': !form.jenisDisplay,
                 'text-gray-900 dark:text-gray-200': form.jenisDisplay
@@ -129,6 +130,7 @@
                   v-model="jenisSearch"
                   ref="jenisInput"
                   :placeholder="$t('add_usl_cari_jenis')"
+                  :disabled="isLoadingJenis"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -141,11 +143,12 @@
                 >
                   {{ item.display }}
                 </button>
+                <!-- ✅ PINDAH KE SINI, bukan di dalam <button> di atas -->
                 <p
                   v-if="filteredJenis.length === 0"
                   class="px-3 py-2 text-xs text-center text-gray-400"
                 >
-                  {{ $t('add_usl_tidak_ada_hasil') }}
+                  {{ isLoadingJenis ? $t('add_usl_memuat') : $t('add_usl_tidak_ada_hasil') }}
                 </p>
               </div>
             </div>
@@ -639,42 +642,43 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { ChevronDown, FileText, X } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import ConfirmPopup from '~/components/ConfirmPopup.vue'
-import { usePenomoran } from '~/composables/usePenomoran'
-import { useAuth } from '~/composables/useAuth'
-import { useApi } from '~/composables/useApi'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ChevronDown, FileText, X } from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import { usePenomoran } from '~/composables/usePenomoran';
+import { useAuth } from '~/composables/useAuth';
+import { useApi } from '~/composables/useApi';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false }
-})
-const emit = defineEmits(['update:modelValue', 'submit'])
+});
+const emit = defineEmits(['update:modelValue', 'submit']);
 
-const { t } = useI18n()
-const toast = useToast()
-const { getKlasifikasi, deleteUsulanUser, submitBooking, submitBookingSingleFile } = usePenomoran()
-const { user, getProfile } = useAuth()
-const { get, post, api } = useApi()
+const { t } = useI18n();
+const toast = useToast();
+const { getKlasifikasi, getJenis, deleteUsulanUser, submitBooking, submitBookingSingleFile } =
+  usePenomoran();
+const { user, getProfile } = useAuth();
+const { get, post, api } = useApi();
 
 // ─── STEP STATE ────────────────────────────────────────────────
-const currentStep = ref(1)
+const currentStep = ref(1);
 
 // ─── DRAFT/BOOKING STATE ───────────────────────────────────────
-const createdRequestId = ref(null)
-const bookingDetails = ref([])
+const createdRequestId = ref(null);
+const bookingDetails = ref([]);
 
-const isSubmittingStep1 = ref(false)
-const isSubmittingStep2 = ref(false)
-const isDeletingDraft = ref(false)
-const showCloseConfirm = ref(false)
+const isSubmittingStep1 = ref(false);
+const isSubmittingStep2 = ref(false);
+const isDeletingDraft = ref(false);
+const showCloseConfirm = ref(false);
 
 // ─── FORM ──────────────────────────────────────────────────────
-const today = new Date()
-const todayString = today.toISOString().split('T')[0]
-const tanggalString = ref(todayString)
+const today = new Date();
+const todayString = today.toISOString().split('T')[0];
+const tanggalString = ref(todayString);
 
 const form = ref({
   tanggal: new Date(),
@@ -686,212 +690,193 @@ const form = ref({
   id_position_penandatangan: null,
   perihal: '',
   jumlah: 1
-})
+});
 
-const jumlahError = ref('')
-const perihalError = ref('')
-const penandatanganNama = ref('')
+const jumlahError = ref('');
+const perihalError = ref('');
+const penandatanganNama = ref('');
 
 watch(tanggalString, (val) => {
-  if (val) form.value.tanggal = new Date(val)
-})
+  if (val) form.value.tanggal = new Date(val);
+});
 
 // ─── DROPDOWN: KLASIFIKASI ─────────────────────────────────────
-const openKlasifikasi = ref(false)
-const klasifikasiSearch = ref('')
-const klasifikasiRef = ref(null)
-const klasifikasiInput = ref(null)
-const klasifikasiOptions = ref([])
-const isLoadingKlasifikasi = ref(false)
-const hasLoadedKlasifikasi = ref(false)
+const openKlasifikasi = ref(false);
+const klasifikasiSearch = ref('');
+const klasifikasiRef = ref(null);
+const klasifikasiInput = ref(null);
+const klasifikasiOptions = ref([]);
+const isLoadingKlasifikasi = ref(false);
+const hasLoadedKlasifikasi = ref(false);
 
 const filteredKlasifikasi = computed(() => {
-  if (!klasifikasiSearch.value) return klasifikasiOptions.value
+  if (!klasifikasiSearch.value) return klasifikasiOptions.value;
   return klasifikasiOptions.value.filter((i) =>
     i.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase())
-  )
-})
+  );
+});
 
 const toggleKlasifikasi = async () => {
   if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
-    await fetchKlasifikasi()
-    hasLoadedKlasifikasi.value = true
+    await fetchKlasifikasi();
+    hasLoadedKlasifikasi.value = true;
   }
-  openKlasifikasi.value = !openKlasifikasi.value
+  openKlasifikasi.value = !openKlasifikasi.value;
   if (openKlasifikasi.value) {
-    await nextTick()
-    klasifikasiInput.value?.focus()
+    await nextTick();
+    klasifikasiInput.value?.focus();
   }
-}
+};
 
 const selectKlasifikasi = (item) => {
-  form.value.klasifikasi = item.code
-  form.value.klasifikasiDisplay = item.display
-  klasifikasiSearch.value = ''
-  openKlasifikasi.value = false
-}
+  form.value.klasifikasi = item.code;
+  form.value.klasifikasiDisplay = item.display;
+  klasifikasiSearch.value = '';
+  openKlasifikasi.value = false;
+};
 
 const fetchKlasifikasi = async () => {
-  isLoadingKlasifikasi.value = true
+  isLoadingKlasifikasi.value = true;
   try {
-    const response = await getKlasifikasi()
-    klasifikasiOptions.value = response
+    const response = await getKlasifikasi();
+    klasifikasiOptions.value = response;
   } catch (err) {
-    console.error('❌ Error fetch klasifikasi:', err)
+    console.error('❌ Error fetch klasifikasi:', err);
     toast.add({
       title: t('add_usl_toast_gagal_klasifikasi_title'),
       description: t('add_usl_toast_gagal_klasifikasi_desc'),
       color: 'warning'
-    })
+    });
   } finally {
-    isLoadingKlasifikasi.value = false
+    isLoadingKlasifikasi.value = false;
   }
-}
+};
 
 // ─── DROPDOWN: JENIS ──────────────────────────────────────────
-const jenisOptions = [
-  { code: 'PER', display: 'PER - Peraturan' },
-  { code: 'KEP', display: 'KEP - Keputusan Direksi' },
-  { code: 'INS', display: 'INS - Instruksi' },
-  { code: 'SPR', display: 'SPR - Surat Perintah' },
-  { code: 'SOP', display: 'SOP - Standar Operasional Prosedur' },
-  { code: 'EDR', display: 'EDR - Surat Edaran' },
-  { code: 'ND', display: 'ND - Nota Dinas' },
-  { code: 'SDI', display: 'SDI - Surat Dinas Internal' },
-  { code: 'DI', display: 'DI - Disposisi' },
-  { code: 'SDE', display: 'SDE - Surat Dinas Eksternal' },
-  { code: 'MOU', display: 'MOU - Memorandum of Understanding' },
-  { code: 'PKS', display: 'PKS - Perjanjian Kerja Sama' },
-  { code: 'LOA', display: 'LOA - Letter of Agreement' },
-  { code: 'LOCA', display: 'LOCA - Letter of Coordination Agreement' },
-  { code: 'PROC', display: 'PROC - Kontrak Pengadaan' },
-  { code: 'PJJ', display: 'PJJ - Perjanjian Lainnya' },
-  { code: 'ADD-PJJ', display: 'ADD-PJJ - Adendum Perjanjian' },
-  { code: 'ADD-PROC', display: 'ADD-PROC - Kontrak Pengadaan Adendum' },
-  { code: 'SPK', display: 'SPK - Surat Perintah Kerja Pengadaan' },
-  { code: 'ADD-SPK', display: 'ADD-SPK - Adendum Surat Perintah Kerja Pengadaaan' },
-  { code: 'SKU', display: 'SKU - Surat Kuasa' },
-  { code: 'BAC', display: 'BAC - Berita Acara' },
-  { code: 'UND', display: 'UND - Surat Undangan' },
-  { code: 'KET', display: 'KET - Surat Keterangan' },
-  { code: 'SPE', display: 'SPE - Surat Pengantar' },
-  { code: 'RPT', display: 'RPT - Risalah Rapat' },
-  { code: 'PEN', display: 'PEN - Pengumuman' },
-  { code: 'PGM', display: 'PGM - Sertifikat atau Piagam' },
-  { code: 'LAP', display: 'LAP - Laporan' }
-]
-const openJenis = ref(false)
-const jenisSearch = ref('')
-const jenisRef = ref(null)
-const jenisInput = ref(null)
+const jenisOptions = ref([]);
+const isLoadingJenis = ref(false);
+const hasLoadedJenis = ref(false);
+const openJenis = ref(false);
+const jenisSearch = ref('');
+const jenisRef = ref(null);
+const jenisInput = ref(null);
 
 const filteredJenis = computed(() => {
-  if (!jenisSearch.value) return jenisOptions
-  return jenisOptions.filter((i) =>
+  if (!jenisSearch.value) return jenisOptions.value;
+  return jenisOptions.value.filter((i) =>
     i.display.toLowerCase().includes(jenisSearch.value.toLowerCase())
-  )
-})
+  );
+});
 
 const toggleJenis = async () => {
-  openJenis.value = !openJenis.value
-  if (openJenis.value) {
-    await nextTick()
-    jenisInput.value?.focus()
+  if (!openJenis.value && !hasLoadedJenis.value) {
+    isLoadingJenis.value = true;
+    try {
+      jenisOptions.value = await getJenis();
+      hasLoadedJenis.value = true;
+    } finally {
+      isLoadingJenis.value = false;
+    }
   }
-}
+  openJenis.value = !openJenis.value;
+  if (openJenis.value) {
+    await nextTick();
+    jenisInput.value?.focus();
+  }
+};
 
 const selectJenis = (item) => {
-  form.value.jenis = item.code
-  form.value.jenisDisplay = item.display
-  jenisSearch.value = ''
-  openJenis.value = false
-}
+  form.value.jenis = item.code;
+  form.value.jenisDisplay = item.display;
+  jenisSearch.value = '';
+  openJenis.value = false;
+};
 
 // ─── DROPDOWN: PENANDATANGAN ───────────────────────────────────
-const openPenandatangan = ref(false)
-const penandatanganSearch = ref('')
-const penandatanganRef = ref(null)
-const penandatanganInput = ref(null)
-const penandatanganOptions = ref([])
-const isLoadingPositions = ref(false)
-const hasLoadedPositions = ref(false)
+const openPenandatangan = ref(false);
+const penandatanganSearch = ref('');
+const penandatanganRef = ref(null);
+const penandatanganInput = ref(null);
+const penandatanganOptions = ref([]);
+const isLoadingPositions = ref(false);
+const hasLoadedPositions = ref(false);
 
 const filteredPenandatangan = computed(() => {
-  if (!penandatanganSearch.value) return penandatanganOptions.value
+  if (!penandatanganSearch.value) return penandatanganOptions.value;
   return penandatanganOptions.value.filter((i) =>
     i.displayText.toLowerCase().includes(penandatanganSearch.value.toLowerCase())
-  )
-})
+  );
+});
 
 const togglePenandatangan = async () => {
   if (!openPenandatangan.value && !hasLoadedPositions.value) {
-    await fetchPositions()
-    hasLoadedPositions.value = true
+    await fetchPositions();
+    hasLoadedPositions.value = true;
   }
-  openPenandatangan.value = !openPenandatangan.value
+  openPenandatangan.value = !openPenandatangan.value;
   if (openPenandatangan.value) {
-    await nextTick()
-    penandatanganInput.value?.focus()
+    await nextTick();
+    penandatanganInput.value?.focus();
   }
-}
+};
 
 const selectPenandatangan = (item) => {
-  form.value.penandatanganJabatan = item.displayText
-  form.value.id_position_penandatangan = Number(item.position)
-  penandatanganNama.value = item.nama
-  penandatanganSearch.value = ''
-  openPenandatangan.value = false
-}
+  form.value.penandatanganJabatan = item.displayText;
+  form.value.id_position_penandatangan = Number(item.position);
+  penandatanganNama.value = item.nama;
+  penandatanganSearch.value = '';
+  openPenandatangan.value = false;
+};
 
 const fetchPositions = async () => {
-  isLoadingPositions.value = true
+  isLoadingPositions.value = true;
   try {
-    const response = await get('/person/with-position/all')
-    const raw = response?.data ?? response
-    const list = Array.isArray(raw) ? raw : []
+    const response = await get('/person/with-position/all');
+    const raw = response?.data ?? response;
+    const list = Array.isArray(raw) ? raw : [];
     penandatanganOptions.value = list.map((item) => {
-      const positionText = item.position_text || ''
-      const subAreaText = item.sub_area_text || ''
-      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText
-      return { displayText, position: item.position, nama: item.nama }
-    })
+      const positionText = item.position_text || '';
+      const subAreaText = item.sub_area_text || '';
+      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText;
+      return { displayText, position: item.position, nama: item.nama };
+    });
   } catch (err) {
-    console.error('❌ Error fetch positions:', err)
+    console.error('❌ Error fetch positions:', err);
     toast.add({
       title: t('add_usl_toast_gagal_posisi_title'),
       description: t('add_usl_toast_gagal_posisi_desc'),
       color: 'error'
-    })
+    });
   } finally {
-    isLoadingPositions.value = false
+    isLoadingPositions.value = false;
   }
-}
+};
 
 // ─── NOMOR PREVIEW GENERATOR ──────────────────────────────────
-const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
 const generatedNomorPreview = computed(() => {
-  const jenis = form.value.jenis || '...'
-  const klasifikasi = form.value.klasifikasi || '...'
-  const date = tanggalString.value ? new Date(tanggalString.value) : new Date()
-  const bulan = ROMAN_MONTHS[date.getMonth()]
-  const tahun = date.getFullYear()
-  return `${jenis}..../TN/00/LPPNPI/${klasifikasi}/${bulan}/${tahun}`
-})
+  const jenis = form.value.jenis || '...';
+  const klasifikasi = form.value.klasifikasi || '...';
+  const date = tanggalString.value ? new Date(tanggalString.value) : new Date();
+  const bulan = ROMAN_MONTHS[date.getMonth()];
+  const tahun = date.getFullYear();
+  return `${jenis}..../TN/00/LPPNPI/${klasifikasi}/${bulan}/${tahun}`;
+});
 
 // ─── CLICK OUTSIDE ────────────────────────────────────────────
 const handleClickOutside = (e) => {
   if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target))
-    openKlasifikasi.value = false
-  if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false
+    openKlasifikasi.value = false;
+  if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false;
   if (penandatanganRef.value && !penandatanganRef.value.contains(e.target))
-    openPenandatangan.value = false
-}
+    openPenandatangan.value = false;
+};
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  if (!user.value) getProfile()
-})
-onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+  document.addEventListener('click', handleClickOutside);
+  if (!user.value) getProfile();
+});
+onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside));
 
 // ─── VALIDATION ────────────────────────────────────────────────
 function validateStepOne() {
@@ -909,98 +894,98 @@ function validateStepOne() {
       title: t('add_usl_toast_tidak_lengkap_title'),
       description: t('add_usl_toast_tidak_lengkap_desc'),
       color: 'warning'
-    })
-    return false
+    });
+    return false;
   }
-  return true
+  return true;
 }
 
 function validatePerihal() {
   if (form.value.perihal.length > 100) {
-    form.value.perihal = form.value.perihal.slice(0, 100)
-    perihalError.value = t('add_usl_valid_perihal_maks')
-    return
+    form.value.perihal = form.value.perihal.slice(0, 100);
+    perihalError.value = t('add_usl_valid_perihal_maks');
+    return;
   }
   if (form.value.perihal.length === 0) {
-    perihalError.value = t('add_usl_valid_perihal_kosong')
-    return
+    perihalError.value = t('add_usl_valid_perihal_kosong');
+    return;
   }
-  perihalError.value = ''
+  perihalError.value = '';
 }
 
 function blockInvalidNumber(e) {
   if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
-    e.preventDefault()
-    jumlahError.value = t('add_usl_valid_jumlah_positif')
+    e.preventDefault();
+    jumlahError.value = t('add_usl_valid_jumlah_positif');
   }
 }
 
 function validateJumlah() {
-  const val = Number(form.value.jumlah)
+  const val = Number(form.value.jumlah);
   if (!val || isNaN(val)) {
-    jumlahError.value = t('add_usl_valid_jumlah')
-    return
+    jumlahError.value = t('add_usl_valid_jumlah');
+    return;
   }
   if (val < 1) {
-    jumlahError.value = t('add_usl_valid_jumlah_min')
-    form.value.jumlah = 1
-    return
+    jumlahError.value = t('add_usl_valid_jumlah_min');
+    form.value.jumlah = 1;
+    return;
   }
-  jumlahError.value = ''
+  jumlahError.value = '';
 }
 
 // ─── FILE STATE (STEP 2) ───────────────────────────────────────
-const isSingleFile = ref(false)
-const filesByIndex = ref([])
-const singleFile = ref(null)
+const isSingleFile = ref(false);
+const filesByIndex = ref([]);
+const singleFile = ref(null);
 
 watch(
   () => form.value.jumlah,
   (val) => {
-    filesByIndex.value = Array.from({ length: val }, () => null)
+    filesByIndex.value = Array.from({ length: val }, () => null);
   },
   { immediate: true }
-)
+);
 
 watch(isSingleFile, (val) => {
-  if (val) filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null)
-  else singleFile.value = null
-})
+  if (val) filesByIndex.value = Array.from({ length: form.value.jumlah }, () => null);
+  else singleFile.value = null;
+});
 
 function handleFile(idx, event) {
-  const file = event.target.files[0]
-  if (!file) return
-  filesByIndex.value = [...filesByIndex.value]
-  filesByIndex.value[idx] = file
+  const file = event.target.files[0];
+  if (!file) return;
+  filesByIndex.value = [...filesByIndex.value];
+  filesByIndex.value[idx] = file;
 }
 function removeFile(idx) {
-  filesByIndex.value = [...filesByIndex.value]
-  filesByIndex.value[idx] = null
+  filesByIndex.value = [...filesByIndex.value];
+  filesByIndex.value[idx] = null;
 }
 function handleSingleFile(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  singleFile.value = file
+  const file = event.target.files[0];
+  if (!file) return;
+  singleFile.value = file;
 }
 function removeSingleFile() {
-  singleFile.value = null
+  singleFile.value = null;
 }
 function formatFileSize(size) {
-  if (!size) return ''
-  return (size / 1024 / 1024).toFixed(2) + ' MB'
+  if (!size) return '';
+  return (size / 1024 / 1024).toFixed(2) + ' MB';
 }
 
 // ─── STEP CIRCLE/LINE ─────────────────────────────────────────
 const stepCircleClass = (step) => [
   'w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold',
   currentStep.value >= step ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
-]
-const stepLineClass = (step) => (currentStep.value >= step ? 'bg-primary' : 'bg-gray-200')
+];
+const stepLineClass = (step) => (currentStep.value >= step ? 'bg-primary' : 'bg-gray-200');
 
 // ─── STEP 1 → 2 ───────────────────────────────────────────────
 async function goToStep2() {
-  if (!validateStepOne()) return
-  isSubmittingStep1.value = true
+  if (!validateStepOne()) return;
+  isSubmittingStep1.value = true;
   try {
     const payload = {
       position_id: Number(user.value?.position?.id ?? user.value?.position),
@@ -1011,31 +996,31 @@ async function goToStep2() {
       penandatangan: form.value.penandatanganJabatan,
       id_position_penandatangan: Number(form.value.id_position_penandatangan),
       jumlah: Number(form.value.jumlah)
-    }
-    const response = await post('/nomor-request', payload)
-    const data = response?.data ?? response
-    createdRequestId.value = data?.id ?? data?.request_id ?? data?.data?.id
-    if (!createdRequestId.value) throw new Error('Request ID tidak ditemukan dari response')
+    };
+    const response = await post('/nomor-request', payload);
+    const data = response?.data ?? response;
+    createdRequestId.value = data?.id ?? data?.request_id ?? data?.data?.id;
+    if (!createdRequestId.value) throw new Error('Request ID tidak ditemukan dari response');
     toast.add({
       title: t('add_usl_toast_draft_berhasil_title'),
       description: t('add_usl_toast_draft_berhasil_desc'),
       color: 'success'
-    })
-    currentStep.value = 2
+    });
+    currentStep.value = 2;
   } catch (err) {
-    console.error('❌ Error create draft:', err)
+    console.error('❌ Error create draft:', err);
     const msg =
       err.response?.data?.message ||
       err.response?.data?.error ||
       err.message ||
-      t('add_usl_toast_gagal_buat_desc')
+      t('add_usl_toast_gagal_buat_desc');
     toast.add({
       title: t('add_usl_toast_gagal_title'),
       description: Array.isArray(msg) ? msg.join(', ') : msg,
       color: 'error'
-    })
+    });
   } finally {
-    isSubmittingStep1.value = false
+    isSubmittingStep1.value = false;
   }
 }
 
@@ -1048,14 +1033,14 @@ async function goToStep3() {
         title: t('add_usl_toast_file_wajib_title'),
         description: t('add_usl_toast_file_wajib_desc'),
         color: 'warning'
-      })
-      return
+      });
+      return;
     }
   } else {
     // Multiple file: SETIAP nomor wajib punya file
     const missingIndexes = filesByIndex.value
       .map((f, i) => (!(f instanceof File) ? i + 1 : null))
-      .filter(Boolean)
+      .filter(Boolean);
 
     if (missingIndexes.length > 0) {
       toast.add({
@@ -1064,35 +1049,35 @@ async function goToStep3() {
           nomor: missingIndexes.join(', ')
         }),
         color: 'warning'
-      })
-      return
+      });
+      return;
     }
   }
 
-  isSubmittingStep2.value = true
+  isSubmittingStep2.value = true;
   try {
-    let responseData
+    let responseData;
 
     if (isSingleFile.value) {
       // POST /nomor-request/:id/booking-single-file
-      responseData = await submitBookingSingleFile(createdRequestId.value, singleFile.value)
+      responseData = await submitBookingSingleFile(createdRequestId.value, singleFile.value);
     } else {
       // POST /admin/nomor-request/:id/booking  ← isAdmin: true
-      const formData = new FormData()
+      const formData = new FormData();
       filesByIndex.value.forEach((file) => {
-        formData.append('file', file)
-        formData.append('file_name', file.name)
-        formData.append('file_text', file.name)
-      })
-      responseData = await submitBooking(createdRequestId.value, formData, false)
+        formData.append('file', file);
+        formData.append('file_name', file.name);
+        formData.append('file_text', file.name);
+      });
+      responseData = await submitBooking(createdRequestId.value, formData, false);
     }
 
-    bookingDetails.value = responseData?.data?.details ?? []
-    currentStep.value = 3
+    bookingDetails.value = responseData?.data?.details ?? [];
+    currentStep.value = 3;
   } catch {
     // toast sudah ditangani di composable
   } finally {
-    isSubmittingStep2.value = false
+    isSubmittingStep2.value = false;
   }
 }
 // ─── FINISH ───────────────────────────────────────────────────
@@ -1101,51 +1086,53 @@ function finishAndClose() {
     title: t('add_usl_toast_kirim_berhasil_title'),
     description: t('add_usl_toast_kirim_berhasil_desc'),
     color: 'success'
-  })
-  emit('submit', { requestId: createdRequestId.value, ...form.value })
-  resetAndClose()
+  });
+  emit('submit', { requestId: createdRequestId.value, ...form.value });
+  resetAndClose();
 }
 
 // ─── HANDLE CLOSE ─────────────────────────────────────────────
 function handleCloseRequest(value) {
   if (!value) {
     if (currentStep.value >= 2 && createdRequestId.value) {
-      showCloseConfirm.value = true
-      return
+      showCloseConfirm.value = true;
+      return;
     }
-    resetAndClose()
+    resetAndClose();
   }
 }
 
 async function confirmCloseAndDelete() {
   if (!createdRequestId.value) {
-    resetAndClose()
-    showCloseConfirm.value = false
-    return
+    resetAndClose();
+    hasLoadedJenis.value = false;
+    jenisOptions.value = [];
+    showCloseConfirm.value = false;
+    return;
   }
-  isDeletingDraft.value = true
+  isDeletingDraft.value = true;
   try {
-    await deleteUsulanUser(createdRequestId.value)
+    await deleteUsulanUser(createdRequestId.value);
     toast.add({
       title: t('add_usl_toast_draft_dihapus_title'),
       description: t('add_usl_toast_draft_dihapus_desc'),
       color: 'warning'
-    })
+    });
   } catch (err) {
-    console.error('❌ Error deleting draft:', err)
+    console.error('❌ Error deleting draft:', err);
   } finally {
-    isDeletingDraft.value = false
-    showCloseConfirm.value = false
-    resetAndClose()
+    isDeletingDraft.value = false;
+    showCloseConfirm.value = false;
+    resetAndClose();
   }
 }
 
 // ─── RESET ────────────────────────────────────────────────────
 function resetAndClose() {
-  currentStep.value = 1
-  createdRequestId.value = null
-  bookingDetails.value = []
-  tanggalString.value = todayString
+  currentStep.value = 1;
+  createdRequestId.value = null;
+  bookingDetails.value = [];
+  tanggalString.value = todayString;
   form.value = {
     tanggal: new Date(),
     klasifikasi: '',
@@ -1156,40 +1143,42 @@ function resetAndClose() {
     penandatanganJabatan: '',
     perihal: '',
     jumlah: 1
-  }
-  klasifikasiSearch.value = ''
-  jenisSearch.value = ''
-  penandatanganSearch.value = ''
-  penandatanganNama.value = ''
-  jumlahError.value = ''
-  perihalError.value = ''
-  openKlasifikasi.value = false
-  openJenis.value = false
-  openPenandatangan.value = false
-  hasLoadedPositions.value = false
-  hasLoadedKlasifikasi.value = false
-  isSingleFile.value = false
-  singleFile.value = null
-  filesByIndex.value = [null]
-  emit('update:modelValue', false)
+  };
+  klasifikasiSearch.value = '';
+  jenisSearch.value = '';
+  penandatanganSearch.value = '';
+  penandatanganNama.value = '';
+  jumlahError.value = '';
+  perihalError.value = '';
+  openKlasifikasi.value = false;
+  openJenis.value = false;
+  hasLoadedJenis.value = false;
+  jenisOptions.value = [];
+  openPenandatangan.value = false;
+  hasLoadedPositions.value = false;
+  hasLoadedKlasifikasi.value = false;
+  isSingleFile.value = false;
+  singleFile.value = null;
+  filesByIndex.value = [null];
+  emit('update:modelValue', false);
 }
 
 // ─── FORMATTERS ───────────────────────────────────────────────
 function formatDate(dateStr) {
-  if (!dateStr) return '-'
+  if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
-  })
+  });
 }
 function formatDateTime(date) {
-  if (!date) return '-'
+  if (!date) return '-';
   return (
     date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) +
     ' ' +
     date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-  )
+  );
 }
 </script>
 

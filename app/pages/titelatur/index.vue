@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import Modal from '~/components/Modal.vue'
-import ConfirmPopup from '~/components/ConfirmPopup.vue'
-import { useTitelatur } from '~/composables/useTitelatur'
-import type { TitelaturItem } from '~/types/titelatur'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
+import Modal from '~/components/Modal.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import { useTitelatur } from '~/composables/useTitelatur';
+import type { TitelaturItem } from '~/types/titelatur';
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth' });
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('tit_title'), to: '/admin/titelatur' }
-])
+]);
 
 const {
   items,
@@ -26,97 +26,100 @@ const {
   createTitelatur,
   updateTitelatur,
   deleteTitelatur
-} = useTitelatur()
-
+} = useTitelatur();
+const addErrors = ref({
+  long_text: '',
+  long_text_en: ''
+});
 onMounted(async () => {
-  await fetchTitelatur(true)
-  document.addEventListener('click', handleDocumentClick)
-})
+  await fetchTitelatur(true);
+  document.addEventListener('click', handleDocumentClick);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-})
+  document.removeEventListener('click', handleDocumentClick);
+});
 
 // ─── Search + Sort ────────────────────────────────────────────────────────────
-const search = ref('')
+const search = ref('');
 const filteredItems = computed(() => {
-  const s = search.value.toLowerCase()
+  const s = search.value.toLowerCase();
   return items.value.filter(
     (it) => it.long_text?.toLowerCase().includes(s) || it.long_text_en?.toLowerCase().includes(s)
-  )
-})
+  );
+});
 
 const refreshData = async () => {
-  search.value = ''
-  sortDirection.value = null
-  currentPage.value = 1
-  await fetchTitelatur(true)
-}
+  search.value = '';
+  sortDirection.value = null;
+  currentPage.value = 1;
+  await fetchTitelatur(true);
+};
 
-const sortDirection = ref<'asc' | 'desc' | null>(null)
+const sortDirection = ref<'asc' | 'desc' | null>(null);
 const toggleSort = () => {
   sortDirection.value =
-    sortDirection.value === 'asc' ? 'desc' : sortDirection.value === 'desc' ? null : 'asc'
-}
+    sortDirection.value === 'asc' ? 'desc' : sortDirection.value === 'desc' ? null : 'asc';
+};
 
 const sortedItems = computed(() => {
-  let arr = [...filteredItems.value]
+  let arr = [...filteredItems.value];
   if (sortDirection.value === 'asc')
-    arr.sort((a, b) => (a.long_text || '').localeCompare(b.long_text || ''))
+    arr.sort((a, b) => (a.long_text || '').localeCompare(b.long_text || ''));
   if (sortDirection.value === 'desc')
-    arr.sort((a, b) => (b.long_text || '').localeCompare(a.long_text || ''))
-  return arr
-})
+    arr.sort((a, b) => (b.long_text || '').localeCompare(a.long_text || ''));
+  return arr;
+});
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const currentPage = ref(1)
-const rowsPerPage = ref(10)
-const rowsChoices = [10, 25, 50, 100]
-const showRowsDropdown = ref(false)
-const rowsRef = ref<HTMLElement | null>(null)
+const currentPage = ref(1);
+const rowsPerPage = ref(10);
+const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
+const rowsRef = ref<HTMLElement | null>(null);
 
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n
-  showRowsDropdown.value = false
-  currentPage.value = 1
-}
+  rowsPerPage.value = n;
+  showRowsDropdown.value = false;
+  currentPage.value = 1;
+};
 
-const totalItems = computed(() => filteredItems.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)))
+const totalItems = computed(() => filteredItems.value.length);
+const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)));
 
 const paginatedItems = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return sortedItems.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return sortedItems.value.slice(start, start + rowsPerPage.value);
+});
 
-watch(rowsPerPage, () => (currentPage.value = 1))
+watch(rowsPerPage, () => (currentPage.value = 1));
 
 const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
+    pages.push(1, 2, 3, 4, 5);
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
+    pages.push(total - 2, total - 1, total);
   } else {
-    pages.push(current - 1, current, current + 1)
+    pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+  const target = e.target as HTMLElement;
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
 }
 
 // ─── Modal: Edit ──────────────────────────────────────────────────────────────
-const showEditModal = ref(false)
-const selectedItem = ref<TitelaturItem | null>(null)
-const isSavingEdit = ref(false)
+const showEditModal = ref(false);
+const selectedItem = ref<TitelaturItem | null>(null);
+const isSavingEdit = ref(false);
 
 const editForm = ref({
   company: '10000',
@@ -125,12 +128,12 @@ const editForm = ref({
   object_type: 'CO',
   long_text: '',
   long_text_en: ''
-})
+});
 
 const openEdit = async (item: TitelaturItem) => {
-  const fullItem = await fetchTitelaturById(item.id)
+  const fullItem = await fetchTitelaturById(item.id);
   if (fullItem) {
-    selectedItem.value = fullItem
+    selectedItem.value = fullItem;
     editForm.value = {
       company: fullItem.company || '10000',
       start_date: fullItem.start_date || '',
@@ -138,14 +141,14 @@ const openEdit = async (item: TitelaturItem) => {
       object_type: fullItem.object_type || 'CO',
       long_text: fullItem.long_text || '',
       long_text_en: fullItem.long_text_en || ''
-    }
-    showEditModal.value = true
+    };
+    showEditModal.value = true;
   }
-}
+};
 
 const saveEdit = async () => {
-  if (!selectedItem.value) return
-  isSavingEdit.value = true
+  if (!selectedItem.value) return;
+  isSavingEdit.value = true;
   try {
     const success = await updateTitelatur(selectedItem.value.id, {
       company: editForm.value.company,
@@ -154,16 +157,16 @@ const saveEdit = async () => {
       object_type: editForm.value.object_type,
       long_text: editForm.value.long_text,
       long_text_en: editForm.value.long_text_en
-    })
-    if (success) showEditModal.value = false
+    });
+    if (success) showEditModal.value = false;
   } finally {
-    isSavingEdit.value = false
+    isSavingEdit.value = false;
   }
-}
+};
 
 // ─── Modal: Add ───────────────────────────────────────────────────────────────
-const showAddModal = ref(false)
-const isSavingAdd = ref(false)
+const showAddModal = ref(false);
+const isSavingAdd = ref(false);
 
 const addForm = ref({
   company: '10000',
@@ -172,7 +175,7 @@ const addForm = ref({
   object_type: 'CO',
   long_text: '',
   long_text_en: ''
-})
+});
 
 const openAdd = () => {
   addForm.value = {
@@ -182,12 +185,33 @@ const openAdd = () => {
     object_type: 'CO',
     long_text: '',
     long_text_en: ''
-  }
-  showAddModal.value = true
-}
+  };
+  showAddModal.value = true;
+};
 
 const saveAdd = async () => {
-  isSavingAdd.value = true
+  // reset error
+  addErrors.value = {
+    long_text: '',
+    long_text_en: ''
+  };
+
+  // validasi
+  let isValid = true;
+
+  if (!addForm.value.long_text.trim()) {
+    addErrors.value.long_text = t('tit_validationI_required');
+    isValid = false;
+  }
+
+  if (!addForm.value.long_text_en.trim()) {
+    addErrors.value.long_text_en = t('tit_validationE_required');
+    isValid = false;
+  }
+
+  if (!isValid) return;
+
+  isSavingAdd.value = true;
   try {
     const success = await createTitelatur({
       company: addForm.value.company,
@@ -196,33 +220,33 @@ const saveAdd = async () => {
       object_type: addForm.value.object_type,
       long_text: addForm.value.long_text,
       long_text_en: addForm.value.long_text_en
-    })
-    if (success) showAddModal.value = false
+    });
+    if (success) showAddModal.value = false;
   } finally {
-    isSavingAdd.value = false
+    isSavingAdd.value = false;
   }
-}
+};
 
 // ─── Popup Delete ─────────────────────────────────────────────────────────────
-const confirmDeleteOpen = ref(false)
-const itemToDelete = ref<TitelaturItem | null>(null)
-const isDeletingItem = ref(false)
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<TitelaturItem | null>(null);
+const isDeletingItem = ref(false);
 
 const openDelete = (item: TitelaturItem) => {
-  itemToDelete.value = item
-  confirmDeleteOpen.value = true
-}
+  itemToDelete.value = item;
+  confirmDeleteOpen.value = true;
+};
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return
-  isDeletingItem.value = true
+  if (!itemToDelete.value) return;
+  isDeletingItem.value = true;
   try {
-    const success = await deleteTitelatur(itemToDelete.value.id, itemToDelete.value.long_text)
-    if (success) confirmDeleteOpen.value = false
+    const success = await deleteTitelatur(itemToDelete.value.id, itemToDelete.value.long_text);
+    if (success) confirmDeleteOpen.value = false;
   } finally {
-    isDeletingItem.value = false
+    isDeletingItem.value = false;
   }
-}
+};
 </script>
 
 <template>
@@ -528,7 +552,13 @@ const deleteNow = async () => {
 
     <!-- MODAL ADD -->
     <Teleport to="body">
-      <Modal v-model="showAddModal" @save="saveAdd" size="xl">
+      <!-- <Modal v-model="showAddModal" @save="saveAdd" size="xl"> -->
+      <Modal
+        v-model="showAddModal"
+        @save="saveAdd"
+        :disableSave="!addForm.long_text || !addForm.long_text_en"
+        size="xl"
+      >
         <template #title>
           <div class="mt-5 ml-5 mb-5">
             <Heading variant="heading9b" class="font-semibold text-sm dark:text-white">
@@ -543,16 +573,22 @@ const deleteNow = async () => {
           <input
             v-model="addForm.long_text"
             :placeholder="$t('tit_placeholder_indonesia')"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-5 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-200 px-3 py-2 rounded-md text-sm bg-gray-50 mb-1 focus:ring-2 focus:ring-primary focus:outline-none"
           />
+          <p v-if="addErrors.long_text" class="text-red-500 text-xs mb-3">
+            {{ addErrors.long_text }}
+          </p>
           <Heading variant="body2m" class="dark:text-gray-200">
             {{ $t('tit_label_inggris') }} <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="addForm.long_text_en"
             :placeholder="$t('tit_placeholder_inggris')"
-            class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md text-sm bg-gray-50 mb-3 focus:ring-2 focus:ring-primary focus:outline-none"
+            class="border border-gray-200 px-3 py-2 rounded-md text-sm bg-gray-50 mb-1 focus:ring-2 focus:ring-primary focus:outline-none"
           />
+          <p v-if="addErrors.long_text_en" class="text-red-500 text-xs mb-3">
+            {{ addErrors.long_text_en }}
+          </p>
         </div>
       </Modal>
     </Teleport>
