@@ -258,7 +258,7 @@ import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
 import TemplateManager from '@/components/Tulis/TemplateManager.vue';
 
 import type { Klasifikasi } from "~/types/klasifikasi";
-import { KajianSchema, type KajianPayload } from "~/types/kajian";
+import { KajianSchema, validateKajianPayload, type KajianPayload } from "~/types/kajian";
 import { useKajian } from "~/composables/useKajian";
 import { Alert } from "@/composables/useAlert";
 import { useDigSign } from "@/composables/useDigSign"; // Add this import
@@ -318,7 +318,9 @@ const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
+const date = ref<CalendarDate | null>(
+  new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate())
+)
 
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref("idle");
@@ -355,10 +357,10 @@ const selectedKlasifikasi = computed(() =>
 );
 
 const formattedDate = computed(() => {
-  if (!date.value) return "-";
+  if (!date.value) return "-"
   return new Date(date.value.year, date.value.month - 1, date.value.day)
-    .toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-});
+    .toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+})
 
 watch(existingFiles, (files) => {
   lampiranText.value = files.length > 0 ? `${files.length} Berkas` : "-";
@@ -366,23 +368,26 @@ watch(existingFiles, (files) => {
 
 // --- PAYLOAD ---
 const getPayload = (): KajianPayload => {
-  const tglDb = `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`;
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : "" // kosong → validasi min(1) akan catch
+
+  const positionId = Number(user.value?.position)
 
   return {
     id_naskah: editDraftId.value || null,
-    pengirim: Number(user.value?.position),
+    pengirim: isNaN(positionId) ? 0 : positionId,
     penerima: selectedPenerima.value.map(i => Number(i.value)),
-    // Tembusan removed
     tanggal: tglDb,
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi ?? "",
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text ?? "",
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
     konten: editorContent.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean) as string[],
     lampiran_text: lampiranText.value
-  };
-};
+  }
+}
 
 const createFormData = (payload: KajianPayload, includePdf: boolean) => {
   const fd = new FormData();
@@ -409,20 +414,26 @@ const createFormData = (payload: KajianPayload, includePdf: boolean) => {
 
 // --- ACTIONS ---
 const validateInput = (payload: KajianPayload) => {
-  const res = KajianSchema.safeParse(payload);
-  if (!res.success) {
-    const msg = res.error?.errors?.[0]?.message ||
-      res.error?.issues?.[0]?.message ||
-      "Terjadi kesalahan validasi input";
-
-    toast.add({ title: 'Validasi Gagal', description: msg, color: 'error' });
-    return false;
+  const check = validateKajianPayload(payload)
+  if (!check.isValid) {
+    const firstKey = Object.keys(check.errors)[0]
+    const message = firstKey ? check.errors[firstKey] : 'Mohon lengkapi semua field yang wajib diisi.'
+    toast.add({ title: 'Validasi Gagal', description: message, color: 'error' })
+    return false
   }
-  return true;
-};
+  return true
+}
 
 const handlePreview = async () => {
   const payload = getPayload();
+
+  // DEBUG SEMENTARA - hapus setelah fix
+  console.log('=== PAYLOAD DEBUG ===', JSON.stringify(payload, null, 2));
+  console.log('user.value:', user.value);
+  console.log('selectedKlasifikasiId:', selectedKlasifikasiId.value);
+  console.log('selectedKlasifikasi:', selectedKlasifikasi.value);
+  console.log('editorContent:', editorContent.value);
+
   if (!validateInput(payload)) return;
 
   isLoadingData.value = true;

@@ -112,20 +112,8 @@
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               {{ $t('te_telepon') }}
             </th>
-            <th @click="handleSort('status')" class="cursor-pointer">
-              <div class="flex items-center gap-2">
-                <span>Status</span>
-                <ArrowUpDown
-                  class="w-4 h-4 origin-center transition-transform duration-200"
-                  :class="
-                    sortKey === 'status'
-                      ? sortOrder === 'desc'
-                        ? 'rotate-180'
-                        : 'rotate-0'
-                      : 'opacity-50'
-                  "
-                />
-              </div>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Status
             </th>
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               {{ $t('te_pengusul') }}
@@ -137,7 +125,22 @@
         </thead>
 
         <tbody>
+          <!-- Loading - Skeleton -->
+          <tr v-if="loading">
+            <td colspan="6" class="px-4 py-6">
+              <div class="space-y-4 animate-pulse">
+                <div
+                  v-for="n in skeletonRows"
+                  :key="'skeleton-' + n"
+                  class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
+                />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
           <tr
+            v-else
             v-for="(item, idx) in paginatedData"
             :key="item.id"
             :class="[
@@ -317,7 +320,13 @@
             v-model="form.nama"
             type="text"
             :placeholder="$t('te_nama_placeholder')"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            :class="[
+              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+              formErrors.nama
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+            @input="formErrors.nama = false"
           />
         </div>
 
@@ -330,18 +339,17 @@
             v-model="form.alamat"
             type="text"
             :placeholder="$t('te_alamat_placeholder')"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            :class="[
+              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+              formErrors.alamat
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+            @input="formErrors.alamat = false"
           />
         </div>
 
-        <!-- FIELD TELEPHONE -->
-        <!-- 
-          - type="text" agar payload yang dikirim ke backend tetap string (bukan number)
-          - inputmode="numeric" memunculkan keyboard angka di perangkat mobile
-          - @keydown  → blokir tombol non-angka saat mengetik
-          - @input    → strip karakter non-angka jika user berhasil bypass (misal autocomplete)
-          - @paste    → filter clipboard agar hanya digit yang masuk, posisi kursor tetap akurat
-        -->
+        <!-- FIELD TELEPON -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             {{ $t('te_telepon') }} <span class="text-red-500">*</span>
@@ -351,11 +359,17 @@
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
+            maxlength="15"
             @keydown="onPhoneKeydown"
             @input="onPhoneInput"
             @paste="onPhonePaste"
             :placeholder="$t('te_telepon_placeholder')"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            :class="[
+              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+              formErrors.telephone
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+            ]"
           />
         </div>
 
@@ -366,7 +380,13 @@
           </Heading>
           <select
             v-model="form.aktif"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            :class="[
+              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-200',
+              formErrors.aktif
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
+            ]"
+            @change="formErrors.aktif = false"
           >
             <option value="" disabled>{{ $t('te_status_placeholder') }}</option>
             <option :value="true">{{ $t('te_aktif') }}</option>
@@ -468,11 +488,20 @@ const form = ref({
   nama: '',
   alamat: '',
   telephone: '',
-  aktif: true as boolean
+  aktif: '' as boolean | ''
 });
 
-onMounted(() => {
-  fetchTertujuEksternal();
+const formErrors = ref({
+  nama: false,
+  alamat: false,
+  telephone: false,
+  aktif: false
+});
+
+onMounted(async () => {
+  loading.value = true;
+  await fetchTertujuEksternal();
+  loading.value = false;
 });
 
 const showModal = ref(false);
@@ -490,42 +519,27 @@ const sortDirection = ref<'asc' | 'desc'>('asc');
 const sortKey = ref('');
 const sortOrder = ref('asc');
 
-// ─── Phone number handlers ────────────────────────────────────────────────────
-// Blokir penekanan tombol selain angka dan tombol navigasi/kontrol.
-// type="text" tetap dipakai agar nilai form.telephone selalu berupa string
-// sehingga payload yang dikirim ke backend pun tetap string.
 const onPhoneKeydown = (e: KeyboardEvent) => {
-  // Tombol navigasi & kontrol yang diizinkan
   const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'];
   if (allowedKeys.includes(e.key)) return;
-
-  // Izinkan shortcut keyboard (Ctrl/Cmd + A/C/V/X/Z)
   if (e.ctrlKey || e.metaKey) return;
-
-  // Blokir semua karakter yang bukan digit 0-9
   if (!/^\d$/.test(e.key)) {
     e.preventDefault();
   }
 };
 
-// Guard tambahan: strip karakter non-angka jika user bypass keydown
-// (misal autocomplete browser atau drag-and-drop teks)
 const onPhoneInput = (e: Event) => {
   const input = e.target as HTMLInputElement;
   const digitsOnly = input.value.replace(/\D/g, '');
   if (input.value !== digitsOnly) {
-    // Pertahankan posisi kursor setelah koreksi
     const cursorPos = (input.selectionStart ?? 0) - (input.value.length - digitsOnly.length);
     input.value = digitsOnly;
     input.setSelectionRange(cursorPos, cursorPos);
   }
-  // v-model tidak reaktif saat kita mutasi input.value langsung,
-  // jadi update form secara manual agar payload tetap string
   form.value.telephone = digitsOnly;
+  formErrors.value.telephone = false;
 };
 
-// Filter clipboard paste agar hanya digit yang disisipkan,
-// sambil tetap menghormati posisi & seleksi kursor saat ini
 const onPhonePaste = (e: ClipboardEvent) => {
   e.preventDefault();
   const pasted = e.clipboardData?.getData('text') ?? '';
@@ -535,22 +549,25 @@ const onPhonePaste = (e: ClipboardEvent) => {
   const end = input.selectionEnd ?? 0;
   const current = form.value.telephone;
   const newVal = current.slice(0, start) + digitsOnly + current.slice(end);
-  form.value.telephone = newVal; // tetap string
-  // Pindahkan kursor ke akhir teks yang baru disisipkan
+  form.value.telephone = newVal;
   const newCursor = start + digitsOnly.length;
-  // nextTick agar DOM sudah diperbarui oleh Vue sebelum set kursor
   nextTick(() => {
     input.setSelectionRange(newCursor, newCursor);
   });
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 const handleSave = async () => {
-  // Validate required fields
+  // Validasi semua field termasuk status
+  formErrors.value.nama = !form.value.nama.trim();
+  formErrors.value.alamat = !form.value.alamat.trim();
+  formErrors.value.telephone = !form.value.telephone.trim();
+  formErrors.value.aktif = form.value.aktif === '';
+
   const emptyFields: string[] = [];
-  if (!form.value.nama.trim()) emptyFields.push(t('te_nama') || 'Nama');
-  if (!form.value.alamat.trim()) emptyFields.push(t('te_alamat') || 'Alamat');
-  if (!form.value.telephone.trim()) emptyFields.push(t('te_telepon') || 'Telepon');
+  if (formErrors.value.nama) emptyFields.push(t('te_nama') || 'Nama');
+  if (formErrors.value.alamat) emptyFields.push(t('te_alamat') || 'Alamat');
+  if (formErrors.value.telephone) emptyFields.push(t('te_telepon') || 'Telepon');
+  if (formErrors.value.aktif) emptyFields.push('Status');
 
   if (emptyFields.length > 0) {
     showToast(t('gagal'), `${emptyFields.join(', ')} wajib diisi`, 'error');
@@ -562,8 +579,8 @@ const handleSave = async () => {
       await updateTertujuEksternal(editId.value, {
         nama: form.value.nama,
         alamat: form.value.alamat,
-        telepon: form.value.telephone, // string ✓
-        aktif: form.value.aktif
+        telepon: form.value.telephone,
+        aktif: form.value.aktif as boolean
       });
       showToast('Berhasil', 'Data berhasil diperbarui.', 'success');
     } else {
@@ -573,13 +590,12 @@ const handleSave = async () => {
         area: 'Regional 1',
         nama: form.value.nama,
         alamat: form.value.alamat,
-        telepon: form.value.telephone, // string ✓
-        aktif: form.value.aktif
+        telepon: form.value.telephone,
+        aktif: form.value.aktif as boolean
       });
       showToast('Berhasil', 'Data berhasil ditambahkan.', 'success');
     }
 
-    // Refresh data after save to get updated status
     await fetchTertujuEksternal();
   } catch (err: any) {
     console.error('Gagal menyimpan data:', err?.response?.data || err);
@@ -590,12 +606,11 @@ const handleSave = async () => {
   showModal.value = false;
   editId.value = null;
 
-  // Reset form
   form.value = {
     nama: '',
     alamat: '',
     telephone: '',
-    aktif: true
+    aktif: ''
   };
 };
 
@@ -609,7 +624,13 @@ const resetForm = () => {
     nama: '',
     alamat: '',
     telephone: '',
-    aktif: true
+    aktif: ''
+  };
+  formErrors.value = {
+    nama: false,
+    alamat: false,
+    telephone: false,
+    aktif: false
   };
 };
 
@@ -625,7 +646,6 @@ const handleDelete = (id: string) => {
 
 const confirmDelete = async () => {
   if (!deleteTargetId.value) return;
-
   try {
     isDeleting.value = true;
     await deleteTertujuEksternal(deleteTargetId.value);
@@ -663,7 +683,6 @@ const filters = ref({
 // Filtered data
 const filteredData = computed(() => {
   const keyword = filters.value.search.toLowerCase();
-
   return data.value.filter((item) =>
     [
       item.company,
@@ -684,16 +703,13 @@ const filteredData = computed(() => {
 // Sorted data
 const sortedData = computed(() => {
   const sorted = [...filteredData.value];
-
   sorted.sort((a, b) => {
     const aVal = String(a[sortColumn.value] || '').toLowerCase();
     const bVal = String(b[sortColumn.value] || '').toLowerCase();
-
     if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;
   });
-
   return sorted;
 });
 
@@ -707,11 +723,12 @@ const paginatedData = computed(() => {
   return sortedData.value.slice(start, start + rowsPerPage.value);
 });
 
+const skeletonRows = computed(() => rowsPerPage.value);
+
 const paginationPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
-
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
@@ -723,11 +740,9 @@ const paginationPages = computed(() => {
       pages.push(current - 1, current, current + 1);
     }
   }
-
   return pages;
 });
 
-// Sorting function
 const sortBy = (column: string) => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
@@ -737,19 +752,19 @@ const sortBy = (column: string) => {
   }
 };
 
-// Watch for changes that should reset pagination
 watch([() => filters.value.search, rowsPerPage], () => {
   currentPage.value = 1;
 });
 
 const refreshData = async () => {
+  loading.value = true;
   filters.value.search = '';
   currentPage.value = 1;
   await fetchTertujuEksternal();
 };
 
 const onExport = () => {
-  const data = sortedData.value.map((item, idx) => ({
+  const exportData = sortedData.value.map((item, idx) => ({
     No: idx + 1,
     [t('te_nama')]: item.nama,
     [t('te_alamat')]: item.alamat,
@@ -758,12 +773,12 @@ const onExport = () => {
     [t('te_pengusul')]: item.nama_pembuat || '-'
   }));
 
-  if (data.length === 0) {
+  if (exportData.length === 0) {
     showToast(t('te_gagal') || 'Info', 'Tidak ada data untuk diekspor.', 'warning');
     return;
   }
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
   worksheet['!cols'] = [
     { wch: 5 },
     { wch: 30 },
@@ -820,20 +835,14 @@ const onExport = () => {
   }
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb {
   border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
 }
 </style>

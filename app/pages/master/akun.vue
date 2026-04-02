@@ -1,9 +1,7 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
-    >
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <div>
         <PageHeader :title="$t('ma')" :items="items" />
       </div>
@@ -20,7 +18,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
         <Plus class="w-4 h-4" />
-        {{ $t("nm_button") }}
+        {{ $t('nm_button') }}
       </button>
     </div>
 
@@ -38,7 +36,7 @@
           >
             <span>{{ rowsPerPage }}</span>
             <ChevronDown
-            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': openRowsDropdown }"
             />
           </button>
@@ -51,12 +49,15 @@
                 v-for="n in rowsChoices"
                 :key="n"
                 type="button"
-                @click="rowsPerPage = n; openRowsDropdown = false"
+                @click="
+                  rowsPerPage = n;
+                  openRowsDropdown = false;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   rowsPerPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ n }}
@@ -100,24 +101,37 @@
         <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
           <tr>
             <th class="px-7 py-3 border-primary-600 font-semibold">
-              {{ $t("namauser") }}
+              {{ $t('namauser') }}
             </th>
             <th class="px-4 py-3 border-primary-600 font-semibold">Role</th>
             <th class="px-4 py-3 border-primary-600 font-semibold text-center">
-              {{ $t("aksi") }}
+              {{ $t('aksi') }}
             </th>
           </tr>
         </thead>
 
         <tbody>
+          <!-- Loading - Skeleton -->
+          <tr v-if="loading">
+            <td colspan="3" class="px-4 py-6">
+              <div class="space-y-4 animate-pulse">
+                <div
+                  v-for="n in skeletonRows"
+                  :key="'skeleton-' + n"
+                  class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
+                />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
           <tr
+            v-else
             v-for="(user, idx) in paginatedUsers"
             :key="user.username"
             :class="[
               'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
-              idx % 2 === 0
-                ? 'bg-white dark:bg-gray-800'
-                : 'bg-white dark:bg-gray-800',
+              idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
             ]"
           >
             <td class="px-4 py-3">
@@ -200,8 +214,8 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t("menampilkan") }} {{ paginatedUsers.length }} {{ $t("dari") }}
-          {{ filteredUsers.length }} {{ $t("data") }}
+          {{ $t('menampilkan') }} {{ paginatedUsers.length }} {{ $t('dari') }}
+          {{ filteredUsers.length }} {{ $t('data') }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -213,15 +227,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -229,7 +238,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            {{ $t("sebelumnya") }}
+            {{ $t('sebelumnya') }}
           </button>
 
           <!-- Page Numbers -->
@@ -257,16 +266,14 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
               ]"
             >
               {{ page }}
             </button>
 
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
@@ -289,16 +296,11 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
             ]"
           >
-            {{ $t("selanjutnya") }}
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            {{ $t('selanjutnya') }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -315,39 +317,38 @@
   <Teleport to="body">
     <Modal v-model="showAddModal" @save="saveAccount">
       <template #title>
-        <Heading
-          variant="heading9b"
-          class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
-        >
-          {{ isEditMode ? $t("ma_modal_edit") : $t("ma_modal_add") }}
+        <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
+          {{ isEditMode ? $t('ma_modal_edit') : $t('ma_modal_add') }}
         </Heading>
       </template>
 
       <!-- FIELD PERSNUM -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
-          >Nama/Persnum</label
-        >
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Nama/Persnum</label>
         <div class="relative">
           <input
             v-model="personSearchQuery"
             type="text"
             :disabled="isEditMode"
             :placeholder="$t('ma_persnum_placeholder')"
-            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            :class="[
+              'w-full border rounded-md px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+              formErrors.persnum
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'
+            ]"
             @input="onPersonSearch"
             @focus="personSuggestions.length > 0 && (showPersonSuggestions = true)"
             @blur="hidePersonSuggestions"
             @keydown.escape="showPersonSuggestions = false"
-            @keydown.down.prevent="highlightedIndex = Math.min(highlightedIndex + 1, personSuggestions.length - 1)"
+            @keydown.down.prevent="
+              highlightedIndex = Math.min(highlightedIndex + 1, personSuggestions.length - 1)
+            "
             @keydown.up.prevent="highlightedIndex = Math.max(highlightedIndex - 1, 0)"
             @keydown.enter.prevent="selectPersonSuggestion(personSuggestions[highlightedIndex])"
             autocomplete="off"
           />
-          <div
-            v-if="isSearchingPerson"
-            class="absolute right-3 top-1/2 -translate-y-1/2"
-          >
+          <div v-if="isSearchingPerson" class="absolute right-3 top-1/2 -translate-y-1/2">
             <div
               class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"
             />
@@ -364,15 +365,11 @@
                 'px-4 py-2 cursor-pointer text-sm transition-colors',
                 highlightedIndex === idx
                   ? 'bg-primary-100 dark:bg-gray-600'
-                  : 'hover:bg-primary-50 dark:hover:bg-gray-700',
+                  : 'hover:bg-primary-50 dark:hover:bg-gray-700'
               ]"
             >
-              <span class="font-medium text-gray-800 dark:text-white">{{
-                person.name
-              }}</span>
-              <span class="text-gray-500 dark:text-gray-400 ml-1"
-                >- {{ person.persnum }}</span
-              >
+              <span class="font-medium text-gray-800 dark:text-white">{{ person.name }}</span>
+              <span class="text-gray-500 dark:text-gray-400 ml-1">- {{ person.persnum }}</span>
             </div>
           </div>
         </div>
@@ -388,14 +385,18 @@
 
       <!-- FIELD ROLE -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
-          >Role</label
-        >
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Role</label>
         <select
           v-model="form.role"
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200"
+          :class="[
+            'border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200',
+            formErrors.role
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 dark:border-gray-600'
+          ]"
+          @change="formErrors.role = false"
         >
-          <option value="" disabled>{{ $t("ma_role_placeholder") }}</option>
+          <option value="" disabled>{{ $t('ma_role_placeholder') }}</option>
           <option value="admin">Admin</option>
           <option value="superadmin">Super Admin</option>
         </select>
@@ -415,7 +416,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from 'vue';
 import {
   Trash2,
   UserRound,
@@ -425,25 +426,24 @@ import {
   Search,
   Plus,
   Pencil,
-  ChevronDown,
-} from "lucide-vue-next";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-import Modal from "@/components/Modal.vue";
-import { useManajemenAkun } from "@/composables/useManajemenAkun";
-import { usePerson } from "@/composables/usePerson";
-import type { PersonSuggestion } from "@/composables/usePerson";
-import { useToast } from "#imports";
+  ChevronDown
+} from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import Modal from '@/components/Modal.vue';
+import { useManajemenAkun } from '@/composables/useManajemenAkun';
+import { usePerson } from '@/composables/usePerson';
+import type { PersonSuggestion } from '@/composables/usePerson';
+import { useToast } from '#imports';
 
 const { user: authUser } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
-const { accounts, fetchAccounts, loading, addAccount, deleteAccount } =
-  useManajemenAkun();
+const { accounts, fetchAccounts, loading, addAccount, deleteAccount } = useManajemenAkun();
 const { searchPersons } = usePerson();
 
 // Person autocomplete state
@@ -460,11 +460,13 @@ const resetPersonSearch = () => {
   showPersonSuggestions.value = false;
   highlightedIndex.value = 0;
   selectedPersonJabatan.value = '';
+  formErrors.value = { persnum: false, role: false };
 };
 
 const onPersonSearch = () => {
   form.value.persnum = '';
   highlightedIndex.value = 0;
+  formErrors.value.persnum = false;
 
   if (personSearchTimeout) clearTimeout(personSearchTimeout);
 
@@ -514,13 +516,13 @@ const openDelete = (row: any) => {
 };
 
 const items = computed(() => [
-  { label: t("beranda"), to: "/" },
-  { label: t("ma"), to: "/master/akun" },
+  { label: t('beranda'), to: '/' },
+  { label: t('ma'), to: '/master/akun' }
 ]);
 
 const filters = ref({
-  search: "",
-  role: "",
+  search: '',
+  role: ''
 });
 
 // Pagination
@@ -532,7 +534,7 @@ const openRowsDropdown = ref(false);
 const selectedPersonJabatan = ref('');
 
 const getInitials = (name: string) => {
-  if (!name) return "";
+  if (!name) return '';
 
   const words = name.trim().split(/\s+/);
 
@@ -548,10 +550,7 @@ const getInitials = (name: string) => {
 };
 
 const isSelfSuperAdmin = (row: any) => {
-  return (
-    authUser.value?.role === "superadmin" &&
-    authUser.value?.persnum === row.persnum
-  );
+  return authUser.value?.role === 'superadmin' && authUser.value?.persnum === row.persnum;
 };
 const isEditMode = ref(false);
 const editingUser = ref<any>(null);
@@ -563,7 +562,7 @@ const openEdit = (row: any) => {
   editingUser.value = row;
   form.value = {
     persnum: row.persnum,
-    role: row.role,
+    role: row.role
   };
   personSearchQuery.value = `${row.name} - ${row.persnum}`;
   selectedPersonJabatan.value = row.positionText || '';
@@ -573,13 +572,17 @@ const openEdit = (row: any) => {
 };
 
 const saveAccount = async () => {
+  // Set error states
+  formErrors.value.persnum = !form.value.persnum;
+  formErrors.value.role = !form.value.role;
+
   // Validasi field dengan nama deskriptif
   const emptyFields: string[] = [];
-  if (!form.value.persnum) emptyFields.push('Nama/Persnum');
-  if (!form.value.role) emptyFields.push('Role');
-  
+  if (formErrors.value.persnum) emptyFields.push('Nama/Persnum');
+  if (formErrors.value.role) emptyFields.push('Role');
+
   if (emptyFields.length > 0) {
-    showToast(t("gagal"), `${emptyFields.join(', ')} wajib diisi`, "error");
+    showToast(t('gagal'), `${emptyFields.join(', ')} wajib diisi`, 'error');
     return;
   }
 
@@ -591,19 +594,15 @@ const saveAccount = async () => {
     showAddModal.value = false;
     isEditMode.value = false;
     editingUser.value = null;
-    form.value = { persnum: "", role: "" };
+    form.value = { persnum: '', role: '' };
     resetPersonSearch();
 
-    showToast(
-      t("ma_tb_title"),
-      isEdit ? t("ma_te_desc") : t("ma_tb_desc"),
-      "success",
-    );
-    
+    showToast(t('ma_tb_title'), isEdit ? t('ma_te_desc') : t('ma_tb_desc'), 'success');
+
     // Refresh data setelah save untuk memastikan status terupdate
     await fetchAccounts();
   } catch (error) {
-    showToast(t("ma_err_title"), t("ma_err_save_desc"), "error");
+    showToast(t('ma_err_title'), t('ma_err_save_desc'), 'error');
   }
 };
 
@@ -613,12 +612,12 @@ const deleteNow = async () => {
   try {
     await deleteAccount(itemToDelete.value.persnum);
 
-    showToast(t("ma_tb_title"), t("ma_th_desc"), "success");
+    showToast(t('ma_tb_title'), t('ma_th_desc'), 'success');
 
     confirmDeleteOpen.value = false;
     itemToDelete.value = null;
   } catch (err) {
-    showToast(t("ma_err_title"), t("ma_err_del_desc"), "error");
+    showToast(t('ma_err_title'), t('ma_err_del_desc'), 'error');
   }
 };
 
@@ -629,8 +628,13 @@ const refreshData = async () => {
 
 const showAddModal = ref(false);
 const form = ref({
-  persnum: "",
-  role: "",
+  persnum: '',
+  role: ''
+});
+
+const formErrors = ref({
+  persnum: false,
+  role: false
 });
 
 onMounted(() => {
@@ -641,16 +645,13 @@ const filteredUsers = computed(() => {
   const searchText = filters.value.search.toLowerCase();
 
   const result = accounts.value.filter((user) => {
-    const userRole = (user.role || "").toLowerCase();
+    const userRole = (user.role || '').toLowerCase();
 
     const matchesSearch =
       !searchText ||
-      `${user.persnum} ${user.name} ${user.email}`
-        .toLowerCase()
-        .includes(searchText);
+      `${user.persnum} ${user.name} ${user.email}`.toLowerCase().includes(searchText);
 
-    const matchesRole =
-      !filters.value.role || userRole === filters.value.role.toLowerCase();
+    const matchesRole = !filters.value.role || userRole === filters.value.role.toLowerCase();
 
     return matchesSearch && matchesRole;
   });
@@ -666,13 +667,15 @@ const filteredUsers = computed(() => {
 
 // Pagination computed
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredUsers.value.length / rowsPerPage.value)),
+  Math.max(1, Math.ceil(filteredUsers.value.length / rowsPerPage.value))
 );
 
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
   return filteredUsers.value.slice(start, start + rowsPerPage.value);
 });
+
+const skeletonRows = computed(() => rowsPerPage.value);
 
 const paginationPages = computed(() => {
   const total = totalPages.value;
@@ -700,14 +703,14 @@ watch([() => filters.value.search, rowsPerPage], () => {
 });
 
 const resetFilter = () => {
-  filters.value = { search: "", role: "" };
+  filters.value = { search: '', role: '' };
   currentPage.value = 1;
 };
 
 const getRoleColor = (role: string) =>
-  role === "admin"
-    ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-    : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
+  role === 'admin'
+    ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
 
 const onExport = () => {
   const data = filteredUsers.value.map((user, idx) => ({
@@ -715,7 +718,7 @@ const onExport = () => {
     [t('namauser')]: user.name,
     Persnum: user.persnum,
     Role: user.role,
-    Jabatan: user.positionText || '-',
+    Jabatan: user.positionText || '-'
   }));
 
   if (data.length === 0) {
@@ -728,7 +731,9 @@ const onExport = () => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen Akun');
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
   saveAs(blob, `manajemen_akun_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast(t('ma_tb_title'), 'Export berhasil.', 'success');
 };
@@ -736,18 +741,18 @@ const onExport = () => {
 const showToast = (
   title: string,
   message: string,
-  color: "success" | "error" | "warning" | "primary" = "success",
+  color: 'success' | 'error' | 'warning' | 'primary' = 'success'
 ) => {
   toast.add({
     title,
     description: message,
     color,
     icon:
-      color === "success"
-        ? "i-lucide-check-circle"
-        : color === "error"
-          ? "i-lucide-x-circle"
-          : "i-lucide-info",
+      color === 'success'
+        ? 'i-lucide-check-circle'
+        : color === 'error'
+          ? 'i-lucide-x-circle'
+          : 'i-lucide-info'
   });
 };
 </script>
