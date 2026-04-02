@@ -1,25 +1,25 @@
 // composables/usePenomoran.ts
-import { ref, computed } from 'vue'
-import { useApi } from './useApi'
-import type { PenomoranPayload, PenomoranResponse } from '~/types/penomoran'
+import { ref, computed } from 'vue';
+import { useApi } from './useApi';
+import type { PenomoranPayload, PenomoranResponse } from '~/types/penomoran';
 
 export const usePenomoran = () => {
-  const { get, post, del, api } = useApi()
-  const toast = useToast()
+  const { get, post, del, api } = useApi();
+  const toast = useToast();
 
-  const isLoadingPenomoran = ref(false)
-  const isLoadingBooking = ref(false)
-  const isLoadingList = ref(false)
-  const isLoadingSubmitted = ref(false)
+  const isLoadingPenomoran = ref(false);
+  const isLoadingBooking = ref(false);
+  const isLoadingList = ref(false);
+  const isLoadingSubmitted = ref(false);
 
   // ✅ Reactive trigger untuk refetch
-  const refreshTrigger = ref(0)
+  const refreshTrigger = ref(0);
 
   // ✅ Method untuk trigger refetch
   const triggerRefresh = () => {
-    refreshTrigger.value++
-    console.log('🔄 Refresh triggered:', refreshTrigger.value)
-  }
+    refreshTrigger.value++;
+    console.log('🔄 Refresh triggered:', refreshTrigger.value);
+  };
 
   /* ===========================
    * STATE - PISAHKAN ADMIN & USER
@@ -31,7 +31,7 @@ export const usePenomoran = () => {
     belum_diajukan: 0,
     draft: 0,
     total: 0
-  })
+  });
 
   const userCounts = ref({
     menunggu_verifikasi: 0,
@@ -40,12 +40,12 @@ export const usePenomoran = () => {
     ditolak: 0,
     belum_diajukan: 0,
     total: 0
-  })
+  });
 
   // Computed untuk backward compatibility
   const nomorCounts = computed(() => {
-    const { user } = useAuth()
-    const isAdmin = user.value?.role === 'admin' || user.value?.role === 'superadmin'
+    const { user } = useAuth();
+    const isAdmin = user.value?.role === 'admin' || user.value?.role === 'superadmin';
 
     console.log('📊 nomorCounts computed:', {
       role: user.value?.role,
@@ -53,10 +53,10 @@ export const usePenomoran = () => {
       adminCounts: adminCounts.value,
       userCounts: userCounts.value,
       returning: isAdmin ? 'adminCounts' : 'userCounts'
-    })
+    });
 
-    return isAdmin ? adminCounts.value : userCounts.value
-  })
+    return isAdmin ? adminCounts.value : userCounts.value;
+  });
 
   /* ===========================
    * GET COUNT (ADMIN)
@@ -64,16 +64,16 @@ export const usePenomoran = () => {
    * =========================== */
   const getNomorRequestCountAdmin = async () => {
     try {
-      const { user } = useAuth()
+      const { user } = useAuth();
       const positionId =
-        typeof user.value?.position === 'object' ? user.value?.position?.id : user.value?.position
+        typeof user.value?.position === 'object' ? user.value?.position?.id : user.value?.position;
 
       if (!positionId) {
-        console.warn('⚠️ positionId tidak tersedia untuk admin count')
-        return adminCounts.value
+        console.warn('⚠️ positionId tidak tersedia untuk admin count');
+        return adminCounts.value;
       }
 
-      const res = await get(`/admin/nomor-request-count/${positionId}`)
+      const res = await get(`/admin/nomor-request-count/${positionId}`);
       if (res?.success && res?.data) {
         adminCounts.value = {
           menunggu_verifikasi: res.data.menunggu_verifikasi ?? 0,
@@ -82,14 +82,14 @@ export const usePenomoran = () => {
           belum_diajukan: res.data.belum_diajukan ?? 0,
           draft: res.data.draft ?? 0,
           total: res.data.total ?? 0
-        }
+        };
       }
-      return adminCounts.value
+      return adminCounts.value;
     } catch (e) {
-      console.error('❌ Admin count error:', e)
-      return adminCounts.value
+      console.error('❌ Admin count error:', e);
+      return adminCounts.value;
     }
-  }
+  };
 
   /* ===========================
    * GET COUNT (USER)
@@ -98,23 +98,23 @@ export const usePenomoran = () => {
   const getNomorRequestCountUser = async (positionId: number | string) => {
     try {
       if (!positionId) {
-        console.warn('⚠️ Position ID is empty, skipping user count fetch')
-        return userCounts.value
+        console.warn('⚠️ Position ID is empty, skipping user count fetch');
+        return userCounts.value;
       }
 
-      const numericPositionId = Number(positionId)
+      const numericPositionId = Number(positionId);
 
       if (isNaN(numericPositionId) || numericPositionId <= 0) {
-        console.error('❌ Invalid position ID:', positionId, 'Converted:', numericPositionId)
-        return userCounts.value
+        console.error('❌ Invalid position ID:', positionId, 'Converted:', numericPositionId);
+        return userCounts.value;
       }
 
-      console.log('📤 Fetching user counts for position:', numericPositionId)
+      console.log('📤 Fetching user counts for position:', numericPositionId);
 
-      const endpoint = `/nomor-request-count/${numericPositionId}`
-      const res = await get(endpoint)
-      userCounts.value = res.data
-      console.log('📥 User count response:', res)
+      const endpoint = `/nomor-request-count/${numericPositionId}`;
+      const res = await get(endpoint);
+      userCounts.value = res.data;
+      console.log('📥 User count response:', res);
 
       if (res?.success && res?.data) {
         userCounts.value = {
@@ -126,51 +126,51 @@ export const usePenomoran = () => {
           belum_diajukan: res.data.belum_diajukan ?? 0,
           draft: res.data.draft ?? 0,
           total: res.data.total ?? 0
-        }
+        };
       }
 
-      return userCounts.value
+      return userCounts.value;
     } catch (e: any) {
-      console.error('❌ User count error:', e)
+      console.error('❌ User count error:', e);
 
       if (e.response?.status !== 404) {
         toast.add({
           title: 'Gagal mengambil count',
           description: e.response?.data?.message || 'Silakan refresh halaman',
           color: 'error'
-        })
+        });
       }
 
-      return userCounts.value
+      return userCounts.value;
     }
-  }
+  };
 
   /* ===========================
    * HELPER UNIVERSAL
    * =========================== */
   const fetchNomorRequestCount = async (payload: {
-    role: 'admin' | 'user'
-    positionId?: number | string
+    role: 'admin' | 'user';
+    positionId?: number | string;
   }) => {
     if (payload.role === 'admin') {
-      return await getNomorRequestCountAdmin()
+      return await getNomorRequestCountAdmin();
     }
 
     if (payload.role === 'user' && payload.positionId) {
-      return await getNomorRequestCountUser(payload.positionId)
+      return await getNomorRequestCountUser(payload.positionId);
     }
 
-    return nomorCounts.value
-  }
+    return nomorCounts.value;
+  };
 
   /** ===========================
    * CREATE PENOMORAN FINAL (ADMIN ONLY)
    * =========================== */
   const createPenomoranFinal = async (payload: PenomoranPayload): Promise<PenomoranResponse> => {
-    isLoadingPenomoran.value = true
+    isLoadingPenomoran.value = true;
 
     try {
-      if (!payload.tanggal) throw new Error('Tanggal tidak boleh kosong')
+      if (!payload.tanggal) throw new Error('Tanggal tidak boleh kosong');
 
       const formattedPayload = {
         position_id: Number(payload.position_id),
@@ -184,53 +184,53 @@ export const usePenomoran = () => {
         jumlah: Number(payload.jumlah),
         penandatangan: String(payload.penandatangan),
         id_position_penandatangan: Number(payload.id_position_penandatangan)
-      }
+      };
 
-      console.log('📤 POST to /admin/nomor:', formattedPayload)
+      console.log('📤 POST to /admin/nomor:', formattedPayload);
 
-      const response = await post('/admin/nomor', formattedPayload)
+      const response = await post('/admin/nomor', formattedPayload);
 
-      console.log('✅ Response from /admin/nomor:', response)
+      console.log('✅ Response from /admin/nomor:', response);
 
       toast.add({
         title: 'Berhasil',
         description: response?.message || 'Penomoran final berhasil dibuat.',
         color: 'success'
-      })
+      });
 
       // ✅ Trigger refetch setelah create berhasil
-      triggerRefresh()
+      triggerRefresh();
 
-      return response
+      return response;
     } catch (error: any) {
-      console.error('❌ Error create penomoran:', error)
+      console.error('❌ Error create penomoran:', error);
 
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal membuat penomoran'
+        'Gagal membuat penomoran';
 
       toast.add({
         title: 'Gagal',
         description: Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage,
         color: 'error'
-      })
+      });
 
-      throw error
+      throw error;
     } finally {
-      isLoadingPenomoran.value = false
+      isLoadingPenomoran.value = false;
     }
-  }
+  };
 
   /** ===========================
    * CREATE USULAN (DRAFT)
    * =========================== */
   const createUsulanDraft = async (payload: PenomoranPayload): Promise<PenomoranResponse> => {
-    isLoadingPenomoran.value = true
+    isLoadingPenomoran.value = true;
 
     try {
-      if (!payload.tanggal) throw new Error('Tanggal tidak boleh kosong')
+      if (!payload.tanggal) throw new Error('Tanggal tidak boleh kosong');
 
       const formattedPayload = {
         position_id: Number(payload.position_id),
@@ -241,26 +241,26 @@ export const usePenomoran = () => {
         penandatangan: String(payload.penandatangan),
         id_position_penandatangan: Number(payload.id_position_penandatangan),
         jumlah: Number(payload.jumlah)
-      }
+      };
 
-      const response = await post('/nomor-request', formattedPayload)
+      const response = await post('/nomor-request', formattedPayload);
 
       toast.add({
         title: 'Berhasil',
         description: 'Usulan berhasil disimpan (Belum Diajukan).',
         color: 'success'
-      })
+      });
 
-      const { user } = useAuth()
+      const { user } = useAuth();
       if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id)
+        await getNomorRequestCountUser(user.value.position.id);
       }
 
-      return response.data ?? response
+      return response.data ?? response;
     } finally {
-      isLoadingPenomoran.value = false
+      isLoadingPenomoran.value = false;
     }
-  }
+  };
 
   /** ===========================
    * SUBMIT BOOKING WITH FILES (USER)
@@ -273,36 +273,36 @@ export const usePenomoran = () => {
     formData: FormData,
     isAdmin: boolean = false
   ) => {
-    isLoadingBooking.value = true
+    isLoadingBooking.value = true;
 
     try {
-      console.log('📤 Submitting booking for request:', id_request)
-      console.log('📍 Mode:', isAdmin ? 'Admin' : 'User')
+      console.log('📤 Submitting booking for request:', id_request);
+      console.log('📍 Mode:', isAdmin ? 'Admin' : 'User');
 
       // Log FormData content
-      console.log('📦 FormData content:')
+      console.log('📦 FormData content:');
       for (const pair of formData.entries()) {
         if (pair[1] instanceof File) {
-          console.log(`  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`)
+          console.log(`  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`);
         } else {
-          console.log(`  ${pair[0]}: ${pair[1]}`)
+          console.log(`  ${pair[0]}: ${pair[1]}`);
         }
       }
 
       // Determine endpoint based on role
       const endpoint = isAdmin
         ? `/admin/nomor-request/${id_request}/booking`
-        : `/nomor-request/${id_request}/booking`
+        : `/nomor-request/${id_request}/booking`;
 
-      console.log('📍 Using endpoint:', endpoint)
+      console.log('📍 Using endpoint:', endpoint);
 
       const response = await api.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      })
+      });
 
-      console.log('✅ Booking response:', response.data)
+      console.log('✅ Booking response:', response.data);
 
       toast.add({
         title: 'Berhasil',
@@ -310,38 +310,38 @@ export const usePenomoran = () => {
           response.data?.message ||
           "Usulan berhasil dikirim. Status diperbarui menjadi 'Menunggu Verifikasi'.",
         color: 'success'
-      })
+      });
 
       // Refresh count sesuai role
-      const { user } = useAuth()
+      const { user } = useAuth();
       if (isAdmin || user.value?.role === 'admin' || user.value?.role === 'superadmin') {
-        await getNomorRequestCountAdmin()
+        await getNomorRequestCountAdmin();
       } else if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id)
+        await getNomorRequestCountUser(user.value.position.id);
       }
 
-      return response.data
+      return response.data;
     } catch (error: any) {
-      console.error('❌ Error submit booking:', error)
-      console.error('❌ Error response:', error.response?.data)
+      console.error('❌ Error submit booking:', error);
+      console.error('❌ Error response:', error.response?.data);
 
       const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal mengirim usulan.'
+        'Gagal mengirim usulan.';
 
       toast.add({
         title: 'Gagal',
         description: Array.isArray(msg) ? msg.join(', ') : msg,
         color: 'error'
-      })
+      });
 
-      throw error
+      throw error;
     } finally {
-      isLoadingBooking.value = false
+      isLoadingBooking.value = false;
     }
-  }
+  };
 
   /** ===========================
    * SUBMIT BOOKING SINGLE FILE (USER) ← ✅ BARU
@@ -349,14 +349,14 @@ export const usePenomoran = () => {
    * 1 file dipakai untuk semua nomor dalam request
    * =========================== */
   const submitBookingSingleFile = async (id_request: string | number, file: File) => {
-    isLoadingBooking.value = true
+    isLoadingBooking.value = true;
 
     try {
-      console.log('📤 Submitting single-file booking for request:', id_request)
-      console.log('📄 File:', file.name, file.size, 'bytes')
+      console.log('📤 Submitting single-file booking for request:', id_request);
+      console.log('📄 File:', file.name, file.size, 'bytes');
 
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
 
       const response = await api.post(
         `/nomor-request/${id_request}/booking-single-file`,
@@ -364,64 +364,64 @@ export const usePenomoran = () => {
         {
           headers: { 'Content-Type': 'multipart/form-data' }
         }
-      )
+      );
 
-      console.log('✅ Single-file booking response:', response.data)
+      console.log('✅ Single-file booking response:', response.data);
 
       toast.add({
         title: 'Berhasil',
         description:
           response.data?.message || 'Usulan berhasil dikirim dengan 1 file untuk semua nomor.',
         color: 'success'
-      })
+      });
 
-      const { user } = useAuth()
+      const { user } = useAuth();
       if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id)
+        await getNomorRequestCountUser(user.value.position.id);
       }
 
-      return response.data
+      return response.data;
     } catch (error: any) {
-      console.error('❌ Error submit single-file booking:', error)
-      console.error('❌ Error response:', error.response?.data)
+      console.error('❌ Error submit single-file booking:', error);
+      console.error('❌ Error response:', error.response?.data);
 
       const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal mengirim usulan single file.'
+        'Gagal mengirim usulan single file.';
 
       toast.add({
         title: 'Gagal',
         description: Array.isArray(msg) ? msg.join(', ') : msg,
         color: 'error'
-      })
+      });
 
-      throw error
+      throw error;
     } finally {
-      isLoadingBooking.value = false
+      isLoadingBooking.value = false;
     }
-  }
+  };
 
   /** ===========================
    * GET DETAIL NOMOR BY ID (ADMIN)
    * =========================== */
   const getDetailNomor = async (id: string) => {
     try {
-      const res = await get(`/nomor/${id}`)
+      const res = await get(`/nomor/${id}`);
 
-      console.log('✅ Detail nomor loaded:', res)
+      console.log('✅ Detail nomor loaded:', res);
 
       if (!res?.success) {
-        throw new Error('Gagal mengambil detail nomor')
+        throw new Error('Gagal mengambil detail nomor');
       }
 
-      return res.data
+      return res.data;
     } catch (e: any) {
-      console.error('❌ Error fetch detail nomor:', e)
-      return null
+      console.error('❌ Error fetch detail nomor:', e);
+      return null;
     }
-  }
+  };
 
   /** ===========================
    * GET LIST NOMOR (ADMIN)
@@ -429,57 +429,57 @@ export const usePenomoran = () => {
    * endpoint: /nomor?search=&page=1&limit=10&sort_by=&sort_order=
    * =========================== */
   const getListNomor = async (params?: {
-    search?: string
-    page?: number
-    limit?: number
-    sort_by?: string
-    sort_order?: string
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: string;
   }) => {
-    isLoadingList.value = true
+    isLoadingList.value = true;
     try {
       // Build query params sesuai dokumentasi API
-      const queryParams = new URLSearchParams()
+      const queryParams = new URLSearchParams();
       if (params?.search) {
-        queryParams.append('search', params.search)
+        queryParams.append('search', params.search);
       }
       if (params?.page) {
-        queryParams.append('page', String(params.page))
+        queryParams.append('page', String(params.page));
       }
       if (params?.limit) {
-        queryParams.append('limit', String(params.limit))
+        queryParams.append('limit', String(params.limit));
       }
       if (params?.sort_by) {
-        queryParams.append('sort_by', params.sort_by)
+        queryParams.append('sort_by', params.sort_by);
       }
       if (params?.sort_order) {
-        queryParams.append('sort_order', params.sort_order)
+        queryParams.append('sort_order', params.sort_order);
       }
 
-      const queryString = queryParams.toString()
-      const endpoint = `/nomor${queryString ? `?${queryString}` : ''}`
+      const queryString = queryParams.toString();
+      const endpoint = `/nomor${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📤 Fetching nomor data with params:', params)
-      console.log('📍 Full endpoint:', endpoint)
+      console.log('📤 Fetching nomor data with params:', params);
+      console.log('📍 Full endpoint:', endpoint);
 
-      const res = await get(endpoint)
-      console.log('✅ Nomor data received:', res)
+      const res = await get(endpoint);
+      console.log('✅ Nomor data received:', res);
 
       return {
         data: res.data ?? [],
         pagination: res.pagination ?? null
-      }
+      };
     } catch (e: any) {
-      console.error('❌ Error ambil list nomor:', e)
+      console.error('❌ Error ambil list nomor:', e);
       toast.add({
         title: 'Gagal fetch data',
         description: e.message || 'Gagal mengambil daftar nomor',
         color: 'error'
-      })
-      return { data: [], pagination: null }
+      });
+      return { data: [], pagination: null };
     } finally {
-      isLoadingList.value = false
+      isLoadingList.value = false;
     }
-  }
+  };
 
   /** ===========================
    * GET LIST USULAN (USER - by position)
@@ -487,48 +487,48 @@ export const usePenomoran = () => {
   const getListUsulanByPosition = async (
     positionId: string | number,
     params?: {
-      search?: string
-      page?: number
-      limit?: number
-      status?: string
-      sort_by?: string
-      sort_order?: string
+      search?: string;
+      page?: number;
+      limit?: number;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
     }
   ) => {
-    isLoadingList.value = true
+    isLoadingList.value = true;
     try {
-      const queryParams = new URLSearchParams()
-      if (params?.search) queryParams.append('search', params.search)
-      if (params?.page) queryParams.append('page', String(params.page))
-      if (params?.limit) queryParams.append('limit', String(params.limit))
-      if (params?.status && params.status !== 'Semua') queryParams.append('status', params.status)
-      if (params?.sort_by) queryParams.append('sort_by', params.sort_by)
-      if (params?.sort_order) queryParams.append('sort_order', params.sort_order)
+      const queryParams = new URLSearchParams();
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.page) queryParams.append('page', String(params.page));
+      if (params?.limit) queryParams.append('limit', String(params.limit));
+      if (params?.status && params.status !== 'Semua') queryParams.append('status', params.status);
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+      if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
-      const queryString = queryParams.toString()
-      const endpoint = `/nomor-request/${positionId}${queryString ? `?${queryString}` : ''}`
+      const queryString = queryParams.toString();
+      const endpoint = `/nomor-request/${positionId}${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📤 Fetching usulan for position:', positionId, 'with params:', params)
+      console.log('📤 Fetching usulan for position:', positionId, 'with params:', params);
 
-      const res = await get(endpoint)
-      console.log('✅ Usulan data received:', res)
+      const res = await get(endpoint);
+      console.log('✅ Usulan data received:', res);
 
       return {
         data: res.data ?? [],
         pagination: res.pagination ?? null
-      }
+      };
     } catch (e: any) {
-      console.error('❌ Error ambil list usulan:', e)
+      console.error('❌ Error ambil list usulan:', e);
       toast.add({
         title: 'Gagal fetch data',
         description: e.message || 'Gagal mengambil daftar usulan',
         color: 'error'
-      })
-      return { data: [], pagination: null }
+      });
+      return { data: [], pagination: null };
     } finally {
-      isLoadingList.value = false
+      isLoadingList.value = false;
     }
-  }
+  };
 
   /** ===========================
    * GET LIST USULAN (ADMIN - by position ID)
@@ -538,131 +538,155 @@ export const usePenomoran = () => {
   const getListUsulan = async (
     positionId: string | number,
     params?: {
-      search?: string
-      page?: number
-      limit?: number
-      status?: string
-      sort_by?: string
-      sort_order?: string
+      search?: string;
+      page?: number;
+      limit?: number;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
     }
   ) => {
-    isLoadingList.value = true
+    isLoadingList.value = true;
     try {
       if (!positionId) {
-        console.error('❌ Position ID is required')
-        return { data: [], pagination: null }
+        console.error('❌ Position ID is required');
+        return { data: [], pagination: null };
       }
 
       // Build query params sesuai dokumentasi API
-      const queryParams = new URLSearchParams()
+      const queryParams = new URLSearchParams();
       if (params?.search) {
-        queryParams.append('search', params.search)
+        queryParams.append('search', params.search);
       }
       if (params?.page) {
-        queryParams.append('page', String(params.page))
+        queryParams.append('page', String(params.page));
       }
       if (params?.limit) {
-        queryParams.append('limit', String(params.limit))
+        queryParams.append('limit', String(params.limit));
       }
       if (params?.status && params.status !== 'Semua') {
-        queryParams.append('status', params.status)
+        queryParams.append('status', params.status);
       }
       // ✅ FIX: Gunakan sort_by dan sort_order, BUKAN sortBy
       if (params?.sort_by) {
-        queryParams.append('sort_by', params.sort_by)
+        queryParams.append('sort_by', params.sort_by);
       }
       if (params?.sort_order) {
-        queryParams.append('sort_order', params.sort_order)
+        queryParams.append('sort_order', params.sort_order);
       }
 
-      const queryString = queryParams.toString()
-      const endpoint = `/admin/nomor-request-by-position/${positionId}${queryString ? `?${queryString}` : ''}`
+      const queryString = queryParams.toString();
+      const endpoint = `/admin/nomor-request-by-position/${positionId}${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📤 Fetching usulan for position (admin):', positionId, 'with params:', params)
-      console.log('📍 Full endpoint:', endpoint)
+      console.log('📤 Fetching usulan for position (admin):', positionId, 'with params:', params);
+      console.log('📍 Full endpoint:', endpoint);
 
-      const res = await get(endpoint)
-      console.log('✅ Admin usulan data received:', res)
+      const res = await get(endpoint);
+      console.log('✅ Admin usulan data received:', res);
 
       return {
         data: res.data ?? [],
         pagination: res.pagination ?? null
-      }
+      };
     } catch (e: any) {
-      console.error('❌ Error ambil list usulan (admin):', e)
+      console.error('❌ Error ambil list usulan (admin):', e);
       toast.add({
         title: 'Gagal fetch data',
         description: e.message || 'Gagal mengambil daftar usulan',
         color: 'error'
-      })
-      return { data: [], pagination: null }
+      });
+      return { data: [], pagination: null };
     } finally {
-      isLoadingList.value = false
+      isLoadingList.value = false;
     }
-  }
+  };
 
   /** ===========================
    * GET DETAIL USULAN (ADMIN)
    * =========================== */
   const getDetailUsulan = async (id?: string) => {
     if (!id) {
-      console.error('❌ getDetailUsulan dipanggil tanpa ID')
-      return null
+      console.error('❌ getDetailUsulan dipanggil tanpa ID');
+      return null;
     }
 
     try {
-      console.log('📤 GET DETAIL ID:', id)
+      console.log('📤 GET DETAIL ID:', id);
 
-      const res = await get(`/admin/nomor-request/${id}`)
+      const res = await get(`/admin/nomor-request/${id}`);
 
-      console.log('📥 RAW RESPONSE:', res)
+      console.log('📥 RAW RESPONSE:', res);
 
-      const data = res?.data
+      const data = res?.data;
 
       if (Array.isArray(data)) {
-        throw new Error('Endpoint mengembalikan LIST, bukan DETAIL')
+        throw new Error('Endpoint mengembalikan LIST, bukan DETAIL');
       }
 
-      return data
+      return data;
     } catch (e: any) {
-      console.error('❌ Error in getDetailUsulan:', e)
+      console.error('❌ Error in getDetailUsulan:', e);
 
       toast.add({
         title: 'Gagal fetch detail',
         description: e.message || 'Gagal memuat detail usulan',
         color: 'error'
-      })
+      });
 
-      return null
+      return null;
     }
-  }
+  };
 
   /** ===========================
    * GET KLASIFIKASI
    * =========================== */
   const getKlasifikasi = async () => {
     try {
-      const res = await get('/persuratan/klasifikasi')
+      const res = await get('/persuratan/klasifikasi');
 
-      const rawData = res.data ?? res
-      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? [])
+      const rawData = res.data ?? res;
+      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? []);
 
       return dataArray.map((item: any) => ({
         code: item.klasifikasi,
         text: item.klasifikasi_text,
         display: `${item.klasifikasi} - ${item.klasifikasi_text}`,
         id: item.id
-      }))
+      }));
     } catch (e: any) {
-      console.error('❌ Error fetch klasifikasi:', e)
+      console.error('❌ Error fetch klasifikasi:', e);
       toast.add({
         title: 'Gagal fetch klasifikasi',
         description: e.message || 'Gagal mengambil klasifikasi',
         color: 'error'
-      })
-      return []
+      });
+      return [];
     }
-  }
+  };
+
+  /** ===========================
+   * GET JENIS NASKAH
+   * =========================== */
+  const getJenis = async () => {
+    try {
+      const res = await get('/jenis');
+      const rawData = res.data ?? res;
+      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data ?? []);
+
+      return dataArray.map((item: any) => ({
+        code: item.jenis,
+        display: `${item.jenis} - ${item.jenis_text}`
+      }));
+    } catch (e: any) {
+      console.error('❌ Error fetch jenis:', e);
+      toast.add({
+        title: 'Gagal fetch jenis',
+        description: e.message || 'Gagal mengambil jenis naskah',
+        color: 'error'
+      });
+      return [];
+    }
+  };
 
   /** ===========================
    * GET LIST SUBMITTED (ADMIN)
@@ -670,188 +694,191 @@ export const usePenomoran = () => {
    * endpoint: /admin/nomor-request-submitted?search=&page=1&limit=10&status=&sort_by=&sort_order=
    * =========================== */
   const getListSubmitted = async (params?: {
-    search?: string
-    page?: number
-    limit?: number
-    status?: string
-    sort_by?: string
-    sort_order?: string
+    search?: string;
+    page?: number;
+    limit?: number;
+    status?: string;
+    sort_by?: string;
+    sort_order?: string;
   }) => {
-    isLoadingSubmitted.value = true
+    isLoadingSubmitted.value = true;
     try {
       // Build query params sesuai dokumentasi API
-      const queryParams = new URLSearchParams()
+      const queryParams = new URLSearchParams();
       if (params?.search) {
-        queryParams.append('search', params.search)
+        queryParams.append('search', params.search);
       }
       if (params?.page) {
-        queryParams.append('page', String(params.page))
+        queryParams.append('page', String(params.page));
       }
       if (params?.limit) {
-        queryParams.append('limit', String(params.limit))
+        queryParams.append('limit', String(params.limit));
       }
       if (params?.status && params.status !== 'Semua') {
-        queryParams.append('status', params.status)
+        queryParams.append('status', params.status);
       }
       if (params?.sort_by) {
-        queryParams.append('sort_by', params.sort_by)
+        queryParams.append('sort_by', params.sort_by);
       }
       if (params?.sort_order) {
-        queryParams.append('sort_order', params.sort_order)
+        queryParams.append('sort_order', params.sort_order);
       }
 
-      const queryString = queryParams.toString()
-      const endpoint = `/admin/nomor-request-submitted${queryString ? `?${queryString}` : ''}`
+      const queryString = queryParams.toString();
+      const endpoint = `/admin/nomor-request-submitted${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📤 Fetching submitted data with params:', params)
-      console.log('📍 Full endpoint:', endpoint)
+      console.log('📤 Fetching submitted data with params:', params);
+      console.log('📍 Full endpoint:', endpoint);
 
-      const res = await get(endpoint)
-      console.log('✅ Submitted data received:', res)
+      const res = await get(endpoint);
+      console.log('✅ Submitted data received:', res);
 
       return {
         data: res.data ?? [],
         pagination: res.pagination ?? null
-      }
+      };
     } catch (e: any) {
-      console.error('❌ Error ambil list submitted:', e)
+      console.error('❌ Error ambil list submitted:', e);
       toast.add({
         title: 'Gagal fetch submitted',
         description: e.message || 'Gagal mengambil data submitted',
         color: 'error'
-      })
-      return { data: [], pagination: null }
+      });
+      return { data: [], pagination: null };
     } finally {
-      isLoadingSubmitted.value = false
+      isLoadingSubmitted.value = false;
     }
-  }
+  };
 
   /** ===========================
    * GET PERSON WITH POSITION
    * =========================== */
   const getPersonWithPosition = async () => {
     try {
-      const res = await get('/person/with-position/all')
-      return res.data ?? []
+      const res = await get('/person/with-position/all');
+      return res.data ?? [];
     } catch (e: any) {
-      console.error('❌ Error fetch person with position:', e)
+      console.error('❌ Error fetch person with position:', e);
       toast.add({
         title: 'Gagal fetch person',
         description: e.message || 'Gagal mengambil data person',
         color: 'error'
-      })
-      return []
+      });
+      return [];
     }
-  }
+  };
 
   /** ===========================
    * DELETE USULAN (USER - delete by ID)
    * =========================== */
   const deleteUsulanUser = async (id: string) => {
     try {
-      const res = await del(`/admin/nomor-request/${id}`)
+      const res = await del(`/admin/nomor-request/${id}`);
 
-      console.log('✅ Delete response:', res)
+      console.log('✅ Delete response:', res);
 
       toast.add({
         title: 'Berhasil',
         description: res?.data?.message || res?.message || 'Usulan berhasil dihapus',
         color: 'error'
-      })
+      });
 
-      const { user } = useAuth()
+      const { user } = useAuth();
       if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id)
+        await getNomorRequestCountUser(user.value.position.id);
       }
 
-      return res.data ?? res
+      return res.data ?? res;
     } catch (e: any) {
-      console.error('❌ Error delete usulan:', e)
+      console.error('❌ Error delete usulan:', e);
 
       const errorMsg =
         e.response?.data?.message ||
         e.response?.data?.error ||
         e.message ||
-        'Gagal menghapus usulan'
+        'Gagal menghapus usulan';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw e
+      throw e;
     }
-  }
+  };
 
   /** ===========================
    * DELETE USULAN (ADMIN)
    * =========================== */
   const deleteUsulan = async (id: string) => {
     try {
-      const res = await del(`/admin/nomor-request/${id}`)
+      const res = await del(`/admin/nomor-request/${id}`);
 
-      console.log('✅ Delete response:', res)
+      console.log('✅ Delete response:', res);
 
       toast.add({
         title: 'Berhasil',
         description: res?.data?.message || 'Usulan berhasil dihapus',
         color: 'error'
-      })
+      });
 
-      await getNomorRequestCountAdmin()
+      await getNomorRequestCountAdmin();
 
-      return res.data ?? res
+      return res.data ?? res;
     } catch (e: any) {
-      console.error('❌ Error delete usulan:', e)
+      console.error('❌ Error delete usulan:', e);
 
       const errorMsg =
         e.response?.data?.message ||
         e.response?.data?.error ||
         e.message ||
-        'Gagal menghapus usulan'
+        'Gagal menghapus usulan';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw e
+      throw e;
     }
-  }
+  };
 
   /** ===========================
    * DELETE NOMOR (ADMIN)
    * =========================== */
   const deleteNomor = async (id: string) => {
     try {
-      const res = await del(`/admin/nomor/${id}`)
+      const res = await del(`/admin/nomor/${id}`);
 
-      console.log('✅ Delete nomor response:', res)
+      console.log('✅ Delete nomor response:', res);
 
       toast.add({
         title: 'Berhasil',
         description: res?.data?.message || 'Nomor berhasil dihapus',
         color: 'error'
-      })
+      });
 
-      return res.data ?? res
+      return res.data ?? res;
     } catch (e: any) {
-      console.error('❌ Error delete nomor:', e)
+      console.error('❌ Error delete nomor:', e);
 
       const errorMsg =
-        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menghapus nomor'
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        e.message ||
+        'Gagal menghapus nomor';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw e
+      throw e;
     }
-  }
+  };
 
   /** ===========================
    * APPROVE BULK NOMOR (ADMIN)
@@ -859,40 +886,40 @@ export const usePenomoran = () => {
   const approveBulkNomor = async (detailIds: string[]) => {
     try {
       if (!detailIds || detailIds.length === 0) {
-        throw new Error('Detail IDs tidak boleh kosong')
+        throw new Error('Detail IDs tidak boleh kosong');
       }
 
-      const validIds = detailIds.filter((id) => id !== null && id !== undefined && id !== '')
+      const validIds = detailIds.filter((id) => id !== null && id !== undefined && id !== '');
 
       if (validIds.length === 0) {
-        throw new Error('Tidak ada detail ID yang valid')
+        throw new Error('Tidak ada detail ID yang valid');
       }
 
       const response = await post('/admin/nomor-request-detail/approve-bulk', {
         detail_ids: validIds
-      })
+      });
 
-      await getNomorRequestCountAdmin()
+      await getNomorRequestCountAdmin();
 
-      return response
+      return response;
     } catch (e: any) {
-      console.error('❌ Error approve bulk:', e)
+      console.error('❌ Error approve bulk:', e);
 
       const errorMsg =
         e.response?.data?.message ||
         e.response?.data?.error ||
         e.message ||
-        'Gagal menyetujui nomor'
+        'Gagal menyetujui nomor';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw e
+      throw e;
     }
-  }
+  };
 
   /** ===========================
    * REJECT NOMOR REQUEST (ADMIN)
@@ -900,71 +927,71 @@ export const usePenomoran = () => {
   const rejectNomorRequest = async (requestId: string, detailIds: string[], keterangan: string) => {
     try {
       if (!requestId) {
-        throw new Error('Request ID tidak boleh kosong')
+        throw new Error('Request ID tidak boleh kosong');
       }
 
       if (!keterangan || !keterangan.trim()) {
-        throw new Error('Keterangan penolakan harus diisi')
+        throw new Error('Keterangan penolakan harus diisi');
       }
 
       console.log('📤 Reject nomor request:', {
         requestId,
         detailIds,
         keterangan
-      })
+      });
 
       const response = await post(`/admin/nomor-request/${requestId}/reject-nomor`, {
         detail_ids: detailIds,
         keterangan: keterangan
-      })
+      });
 
-      console.log('✅ Reject response:', response)
+      console.log('✅ Reject response:', response);
 
       toast.add({
         title: 'Berhasil',
         description: response?.message || 'Nomor berhasil ditolak',
         color: 'error'
-      })
+      });
 
-      await getNomorRequestCountAdmin()
+      await getNomorRequestCountAdmin();
 
-      return response
+      return response;
     } catch (e: any) {
-      console.error('❌ Error reject nomor:', e)
+      console.error('❌ Error reject nomor:', e);
 
       const errorMsg =
-        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menolak nomor'
-      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
+        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menolak nomor';
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' });
 
-      throw e
+      throw e;
     }
-  }
+  };
 
   /** ===========================
    * GET DETAIL VERIFIKASI REQUEST (ADMIN)
    * =========================== */
   const getDetailVerifikasiRequest = async (requestId: string) => {
     try {
-      const mainRes = await get(`/admin/nomor-request/${requestId}`)
+      const mainRes = await get(`/admin/nomor-request/${requestId}`);
 
       if (!mainRes?.success) {
         toast.add({
           title: 'Gagal',
           description: 'Tidak dapat mengambil detail usulan',
           color: 'error'
-        })
-        return null
+        });
+        return null;
       }
 
-      const mainData = mainRes.data
+      const mainData = mainRes.data;
 
-      const detailRes = await get(`/admin/detail-nomor-request/${requestId}`)
-      const existingDetails = detailRes?.success ? detailRes.data?.details || [] : []
+      const detailRes = await get(`/admin/detail-nomor-request/${requestId}`);
+      const existingDetails = detailRes?.success ? detailRes.data?.details || [] : [];
 
-      const jumlah = mainData.jumlah || 0
-      const template_nomor = mainData.template_nomor || null
+      const jumlah = mainData.jumlah || 0;
+      const template_nomor = mainData.template_nomor || null;
 
-      let details = []
+      let details = [];
 
       if (existingDetails.length > 0) {
         details = existingDetails.slice(0, jumlah).map((d: any) => ({
@@ -976,9 +1003,9 @@ export const usePenomoran = () => {
           file_name: d.file_name || null,
           file_text: d.file_text || null,
           file_url: d.file_url || null
-        }))
+        }));
 
-        const remaining = jumlah - details.length
+        const remaining = jumlah - details.length;
         for (let i = 0; i < remaining; i++) {
           details.push({
             id: null,
@@ -989,7 +1016,7 @@ export const usePenomoran = () => {
             file_name: null,
             file_text: null,
             file_url: null
-          })
+          });
         }
       } else {
         for (let i = 0; i < jumlah; i++) {
@@ -1002,7 +1029,7 @@ export const usePenomoran = () => {
             file_name: null,
             file_text: null,
             file_url: null
-          })
+          });
         }
       }
 
@@ -1010,17 +1037,17 @@ export const usePenomoran = () => {
         ...mainData,
         jumlah: jumlah,
         details: details
-      }
+      };
     } catch (error) {
-      console.error('❌ Error fetch detail verifikasi:', error)
+      console.error('❌ Error fetch detail verifikasi:', error);
       toast.add({
         title: 'Gagal',
         description: 'Terjadi kesalahan saat mengambil detail',
         color: 'error'
-      })
-      return null
+      });
+      return null;
     }
-  }
+  };
 
   /** ===========================
    * UPLOAD DETAIL FILE (ADMIN)
@@ -1029,53 +1056,53 @@ export const usePenomoran = () => {
    * =========================== */
   const uploadDetailFile = async (detailId: string, file: File) => {
     try {
-      console.log('📤 Uploading file for detail ID:', detailId)
-      console.log('📄 File:', file.name, file.size, 'bytes')
+      console.log('📤 Uploading file for detail ID:', detailId);
+      console.log('📄 File:', file.name, file.size, 'bytes');
 
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
 
       const response = await api.post(`/admin/nomor-request-detail/${detailId}/file`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      })
+      });
 
-      console.log('✅ Upload response:', response.data)
+      console.log('✅ Upload response:', response.data);
 
       if (response.data?.success) {
         toast.add({
           title: 'Berhasil',
           description: response.data?.message || 'File berhasil diupload, status menjadi final',
           color: 'success'
-        })
+        });
 
         // ✅ Trigger refetch setelah upload berhasil
-        triggerRefresh()
+        triggerRefresh();
 
-        return response.data.data
+        return response.data.data;
       }
 
-      throw new Error(response.data?.message || 'Gagal upload file')
+      throw new Error(response.data?.message || 'Gagal upload file');
     } catch (error: any) {
-      console.error('❌ Upload file error:', error)
-      console.error('❌ Error response:', error.response?.data)
+      console.error('❌ Upload file error:', error);
+      console.error('❌ Error response:', error.response?.data);
 
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal upload file'
+        'Gagal upload file';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw error
+      throw error;
     }
-  }
+  };
 
   /** ===========================
    * UPDATE/GANTI FILE NOMOR (USER)
@@ -1084,37 +1111,37 @@ export const usePenomoran = () => {
    * =========================== */
   const updateNomorFile = async (detailId: string, file: File) => {
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('file_name', file.name)
-      formData.append('file_text', file.name)
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('file_name', file.name);
+      formData.append('file_text', file.name);
 
       const response = await api.post(`/admin/nomor-request-detail/${detailId}/file`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      });
 
       if (response.data?.success || response.status === 200 || response.status === 201) {
         toast.add({
           title: 'Berhasil',
           description: response.data?.message || 'File berhasil diperbarui, status menjadi Final',
           color: 'success'
-        })
-        triggerRefresh()
-        return response.data?.data ?? response.data
+        });
+        triggerRefresh();
+        return response.data?.data ?? response.data;
       }
 
-      throw new Error(response.data?.message || 'Gagal mengganti file')
+      throw new Error(response.data?.message || 'Gagal mengganti file');
     } catch (error: any) {
-      console.error('❌ updateNomorFile error:', error)
+      console.error('❌ updateNomorFile error:', error);
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal mengganti file'
-      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
-      throw error
+        'Gagal mengganti file';
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' });
+      throw error;
     }
-  }
+  };
 
   /** ===========================
    * HANGUS DETAIL NOMOR (ADMIN)
@@ -1123,44 +1150,44 @@ export const usePenomoran = () => {
    * =========================== */
   const hangusDetailNomor = async (detailId: string) => {
     try {
-      console.log(`🗑️ Hangus nomor for detail ID: ${detailId}`)
+      console.log(`🗑️ Hangus nomor for detail ID: ${detailId}`);
 
-      const response = await post(`/admin/nomor-request-detail/${detailId}/hangus`, {})
+      const response = await post(`/admin/nomor-request-detail/${detailId}/hangus`, {});
 
-      console.log('✅ Hangus response:', response)
+      console.log('✅ Hangus response:', response);
 
       if (response?.success) {
         toast.add({
           title: 'Berhasil',
           description: response?.message || 'Status berhasil diubah menjadi hangus',
           color: 'success'
-        })
+        });
 
         // ✅ Trigger refetch setelah hangus berhasil
-        triggerRefresh()
+        triggerRefresh();
 
-        return response.data
+        return response.data;
       } else {
-        throw new Error(response?.message || 'Gagal menghanguskan nomor')
+        throw new Error(response?.message || 'Gagal menghanguskan nomor');
       }
     } catch (error: any) {
-      console.error('❌ Error hangus nomor:', error)
+      console.error('❌ Error hangus nomor:', error);
 
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        'Gagal menghanguskan nomor'
+        'Gagal menghanguskan nomor';
 
       toast.add({
         title: 'Gagal',
         description: errorMsg,
         color: 'error'
-      })
+      });
 
-      throw error
+      throw error;
     }
-  }
+  };
 
   // ============================================================
   // ✅ NEW: PENANDATANGAN APPROVAL FLOW
@@ -1171,43 +1198,43 @@ export const usePenomoran = () => {
    * endpoint: GET /nomor-request/pending-approval
    * =========================== */
   const getListPendingApproval = async (params?: {
-    search?: string
-    page?: number
-    limit?: number
-    sort_by?: string
-    sort_order?: string
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: string;
   }) => {
     try {
-      const queryParams = new URLSearchParams()
-      if (params?.search) queryParams.append('search', params.search)
-      if (params?.page) queryParams.append('page', String(params.page))
-      if (params?.limit) queryParams.append('limit', String(params.limit))
-      if (params?.sort_by) queryParams.append('sort_by', params.sort_by)
-      if (params?.sort_order) queryParams.append('sort_order', params.sort_order)
+      const queryParams = new URLSearchParams();
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.page) queryParams.append('page', String(params.page));
+      if (params?.limit) queryParams.append('limit', String(params.limit));
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+      if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
-      const queryString = queryParams.toString()
-      const endpoint = `/nomor-request/pending-approval${queryString ? `?${queryString}` : ''}`
+      const queryString = queryParams.toString();
+      const endpoint = `/nomor-request/pending-approval${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📤 Fetching pending approval list with params:', params)
-      console.log('📍 Full endpoint:', endpoint)
+      console.log('📤 Fetching pending approval list with params:', params);
+      console.log('📍 Full endpoint:', endpoint);
 
-      const res = await get(endpoint)
-      console.log('✅ Pending approval data received:', res)
+      const res = await get(endpoint);
+      console.log('✅ Pending approval data received:', res);
 
       return {
         data: res.data ?? [],
         pagination: res.pagination ?? null
-      }
+      };
     } catch (e: any) {
-      console.error('❌ Error ambil list pending approval:', e)
+      console.error('❌ Error ambil list pending approval:', e);
       toast.add({
         title: 'Gagal fetch data',
         description: e.message || 'Gagal mengambil daftar usulan menunggu persetujuan',
         color: 'error'
-      })
-      return { data: [], pagination: null }
+      });
+      return { data: [], pagination: null };
     }
-  }
+  };
 
   /** ===========================
    * APPROVE PENANDATANGAN
@@ -1260,31 +1287,31 @@ export const usePenomoran = () => {
    * =========================== */
   const approvePenandatanganBulk = async (detailIds: string[]) => {
     try {
-      if (!detailIds || detailIds.length === 0) throw new Error('Detail IDs tidak boleh kosong')
+      if (!detailIds || detailIds.length === 0) throw new Error('Detail IDs tidak boleh kosong');
 
       const response = await post('/nomor-request/approve-penandatangan-bulk', {
         detail_ids: detailIds
-      })
+      });
 
       toast.add({
         title: 'Berhasil',
         description:
           response?.message || `${response?.data?.success_count ?? 0} nomor berhasil disetujui`,
         color: 'success'
-      })
+      });
 
-      return response
+      return response;
     } catch (e: any) {
-      console.error('❌ Error approve penandatangan bulk:', e)
+      console.error('❌ Error approve penandatangan bulk:', e);
       const errorMsg =
         e.response?.data?.message ||
         e.response?.data?.error ||
         e.message ||
-        'Gagal menyetujui usulan'
-      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
-      throw e
+        'Gagal menyetujui usulan';
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' });
+      throw e;
     }
-  }
+  };
   /** ===========================
    * REJECT PENANDATANGAN
    * endpoint: POST /nomor-request/:id_request/reject-penandatangan
@@ -1296,34 +1323,34 @@ export const usePenomoran = () => {
     detailIds?: string[]
   ) => {
     try {
-      if (!requestId) throw new Error('Request ID tidak boleh kosong')
-      if (!keterangan?.trim()) throw new Error('Keterangan penolakan harus diisi')
+      if (!requestId) throw new Error('Request ID tidak boleh kosong');
+      if (!keterangan?.trim()) throw new Error('Keterangan penolakan harus diisi');
 
-      console.log('📤 Reject penandatangan for request:', requestId)
+      console.log('📤 Reject penandatangan for request:', requestId);
 
-      const body: Record<string, any> = { keterangan }
-      if (detailIds && detailIds.length > 0) body.detail_ids = detailIds
+      const body: Record<string, any> = { keterangan };
+      if (detailIds && detailIds.length > 0) body.detail_ids = detailIds;
 
-      const response = await post(`/nomor-request/${requestId}/reject-penandatangan`, body)
+      const response = await post(`/nomor-request/${requestId}/reject-penandatangan`, body);
 
-      console.log('✅ Reject penandatangan response:', response)
+      console.log('✅ Reject penandatangan response:', response);
 
       toast.add({
         title: 'Ditolak',
         description:
           response?.message || `${response?.data?.rejected_count ?? 0} usulan berhasil ditolak`,
         color: 'error'
-      })
+      });
 
-      return response
+      return response;
     } catch (e: any) {
-      console.error('❌ Error reject penandatangan:', e)
+      console.error('❌ Error reject penandatangan:', e);
       const errorMsg =
-        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menolak usulan'
-      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' })
-      throw e
+        e.response?.data?.message || e.response?.data?.error || e.message || 'Gagal menolak usulan';
+      toast.add({ title: 'Gagal', description: errorMsg, color: 'error' });
+      throw e;
     }
-  }
+  };
 
   /* ===========================
    * TOAST HELPERS — UI LEVEL
@@ -1335,32 +1362,32 @@ export const usePenomoran = () => {
       title: 'File tidak ditemukan',
       description: 'File tidak tersedia untuk ditampilkan',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastFileTooLarge = () => {
     toast.add({
       title: 'File terlalu besar',
       description: 'Ukuran file maksimal 5MB',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastCopied = (nomor: string) => {
     toast.add({
       title: 'Tersalin',
       description: `Nomor surat "${nomor}" berhasil disalin.`,
       color: 'success'
-    })
-  }
+    });
+  };
 
   const showToastNomorMinimal = () => {
     toast.add({
       title: 'Peringatan',
       description: 'Pilih minimal 1 nomor untuk disetujui!',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastKeteranganRequired = (uncheckedCount?: number) => {
     toast.add({
@@ -1369,8 +1396,8 @@ export const usePenomoran = () => {
         ? `Ada ${uncheckedCount} nomor yang tidak dicentang. Isi keterangan penolakan terlebih dahulu.`
         : 'Silakan isi keterangan penolakan terlebih dahulu!',
       color: 'error'
-    })
-  }
+    });
+  };
 
   const showToastApprovalSuccess = (approvedCount: number, rejectedCount: number) => {
     if (rejectedCount > 0) {
@@ -1378,71 +1405,71 @@ export const usePenomoran = () => {
         title: 'Berhasil',
         description: `${approvedCount} nomor disetujui, ${rejectedCount} nomor ditolak`,
         color: 'success'
-      })
+      });
     } else {
       toast.add({
         title: 'Berhasil',
         description: `${approvedCount} nomor berhasil disetujui`,
         color: 'success'
-      })
+      });
     }
-  }
+  };
 
   const showToastTidakAdaYangDitolak = () => {
     toast.add({
       title: 'Peringatan',
       description: 'Tidak ada nomor yang akan ditolak!',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastTidakAdaNomor = (action: 'disetujui' | 'ditolak') => {
     toast.add({
       title: 'Peringatan',
       description: `Tidak ada nomor yang dapat ${action}.`,
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastGagalPreview = () => {
     toast.add({
       title: 'Gagal membuka file',
       description: 'File tidak dapat dipratinjau',
       color: 'error'
-    })
-  }
+    });
+  };
 
   const showToastFileTooLargeAdmin = () => {
     toast.add({
       title: 'File terlalu besar',
       description: 'Ukuran file maksimal 10MB',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastPilihFile = () => {
     toast.add({
       title: 'Pilih file',
       description: 'Silakan pilih file terlebih dahulu',
       color: 'warning'
-    })
-  }
+    });
+  };
 
   const showToastSaveTitle = () => {
     toast.add({
       title: 'Berhasil',
       description: 'Judul berhasil diperbarui',
       color: 'success'
-    })
-  }
+    });
+  };
 
   const showToastPenomoranSuccess = (count: number) => {
     toast.add({
       title: 'Berhasil',
       description: `Berhasil menambahkan ${count} nomor baru`,
       color: 'success'
-    })
-  }
+    });
+  };
 
   return {
     // STATE - TERPISAH
@@ -1494,6 +1521,7 @@ export const usePenomoran = () => {
 
     // MASTER DATA
     getKlasifikasi,
+    getJenis,
     getPersonWithPosition,
 
     // LOADING
@@ -1516,5 +1544,5 @@ export const usePenomoran = () => {
     showToastApprovalSuccess,
     showToastTidakAdaYangDitolak,
     showToastTidakAdaNomor
-  }
-}
+  };
+};

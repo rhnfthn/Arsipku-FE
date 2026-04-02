@@ -125,7 +125,7 @@
             </template>
 
             <!-- EMPTY -->
-            <template v-else-if="rows.length === 0">
+            <template v-else-if="sortedRows.length === 0">
               <tr>
                 <td
                   :colspan="headers.length + 1"
@@ -139,7 +139,7 @@
             <!-- DATA ROWS -->
             <template v-else>
               <tr
-                v-for="row in rows"
+                v-for="row in sortedRows"
                 :key="row.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 cursor-pointer transition"
                 @mousemove="onRowMouseMove($event, $t('ver_tooltip_detail'))"
@@ -174,11 +174,11 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="rows.length > 0 && pagination"
+        v-if="sortedRows.length > 0 && pagination"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t('menampilkan') }} {{ rows.length }} {{ $t('dari') }} {{ pagination.total }}
+          {{ $t('menampilkan') }} {{ sortedRows.length }} {{ $t('dari') }} {{ pagination.total }}
           {{ $t('data') }}
         </div>
         <div class="flex items-center gap-2">
@@ -850,18 +850,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import PageHeader from '~/components/PageHeader.vue'
-import { Modal } from '#components'
-import ConfirmPopup from '~/components/ConfirmPopup.vue'
-import { usePenomoran } from '~/composables/usePenomoran'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Search, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
+import PageHeader from '~/components/PageHeader.vue';
+import { Modal } from '#components';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import { usePenomoran } from '~/composables/usePenomoran';
+import { useAuth } from '~/composables/useAuth';
 
-definePageMeta({ middleware: 'auth' })
+const { user } = useAuth();
+definePageMeta({ middleware: 'auth' });
 
-const { t } = useI18n()
+const { t } = useI18n();
 const {
   getListPendingApproval,
   approvePenandatangan,
@@ -871,21 +873,22 @@ const {
   showToastKeteranganRequired,
   showToastApprovalSuccess,
   showToastTidakAdaNomor
-} = usePenomoran()
+} = usePenomoran();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('pernom_title'), to: '/persetujuan-penomoran' }
-])
+]);
 
+// ─── Column definitions — semua kolom sekarang sortable ───────────────────────
 const headers = computed(() => [
   { label: t('ver_col_jenis'), key: 'jenis', sortable: true },
   { label: t('ver_col_tanggal'), key: 'tanggal', sortable: true },
-  { label: t('ver_col_perihal'), key: 'perihal', sortable: false },
-  { label: t('ver_col_jumlah'), key: 'jumlah', sortable: false },
-  { label: t('ver_col_pengusul'), key: 'pengusul', sortable: false },
-  { label: t('ver_col_tgl_usulan'), key: 'tanggal_usulan', sortable: true }
-])
+  { label: t('ver_col_perihal'), key: 'perihal', sortable: true },
+  { label: t('ver_col_jumlah'), key: 'jumlah', sortable: true },
+  { label: t('ver_col_pengusul'), key: 'pengusul', sortable: true },
+  { label: t('ver_col_tgl_usulan'), key: 'tglUsulan', sortable: true }
+]);
 
 const getDetailStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -895,9 +898,9 @@ const getDetailStatusLabel = (status: string) => {
     terpakai_final: t('ver_status_detail_final'),
     ditolak: t('ver_status_detail_ditolak'),
     hangus: t('ver_status_detail_hangus')
-  }
-  return map[status] ?? status
-}
+  };
+  return map[status] ?? status;
+};
 
 const detailStatusClass = (status: string) => ({
   'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400':
@@ -907,47 +910,73 @@ const detailStatusClass = (status: string) => ({
     status === 'terpakai_final',
   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': status === 'ditolak',
   'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400': status === 'hangus'
-})
+});
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const openModal = ref(false)
-const isOpenPreview = ref(false)
-const pdfUrl = ref<string | null>(null)
-const rowsPerPage = ref<number>(10)
-const rowsChoices = [10, 25, 50, 100]
-const showRowsDropdown = ref(false)
-const rowsRef = ref<HTMLElement | null>(null)
-const currentPage = ref<number>(1)
-const search = ref<string>('')
-const selectedRow = ref<any>(null)
-const keterangan_ditolak = ref('')
-const showKeteranganWarning = ref(false)
-const keteranganRef = ref<HTMLTextAreaElement | null>(null)
-const isProcessing = ref(false)
-const processingAction = ref<'approve' | 'reject' | null>(null)
-const showConfirmApprove = ref(false)
-const showConfirmReject = ref(false)
-const sortBy = ref<string>('')
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const rows = ref<any[]>([])
-const pagination = ref<any>(null)
-const loading = ref(false)
-const uncheckAll = ref(false)
+const openModal = ref(false);
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
+const rowsRef = ref<HTMLElement | null>(null);
+const currentPage = ref<number>(1);
+const search = ref<string>('');
+const selectedRow = ref<any>(null);
+const keterangan_ditolak = ref('');
+const showKeteranganWarning = ref(false);
+const keteranganRef = ref<HTMLTextAreaElement | null>(null);
+const isProcessing = ref(false);
+const processingAction = ref<'approve' | 'reject' | null>(null);
+const showConfirmApprove = ref(false);
+const showConfirmReject = ref(false);
+const sortBy = ref<string>('');
+const sortOrder = ref<'asc' | 'desc'>('desc');
+const rows = ref<any[]>([]);
+const pagination = ref<any>(null);
+const loading = ref(false);
+const uncheckAll = ref(false);
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// ─── Client-side sort ─────────────────────────────────────────────────────────
+/**
+ * Mengembalikan salinan rows yang sudah diurutkan di sisi klien.
+ * Sort server-side tetap dikirim ke API (untuk konsistensi antar halaman).
+ * Sort klien bekerja instan pada data halaman yang sedang tampil.
+ */
+const sortedRows = computed<any[]>(() => {
+  if (!sortBy.value || rows.value.length === 0) return rows.value;
+
+  const key = sortBy.value as keyof (typeof rows.value)[0];
+  const dir = sortOrder.value === 'asc' ? 1 : -1;
+
+  return [...rows.value].sort((a, b) => {
+    const av = a[key] ?? '';
+    const bv = b[key] ?? '';
+
+    // Numerik
+    if (key === 'jumlah') {
+      return (Number(av) - Number(bv)) * dir;
+    }
+
+    // String biasa (locale-aware)
+    return String(av).localeCompare(String(bv), 'id', { sensitivity: 'base' }) * dir;
+  });
+});
 
 // ─── Rows per page ────────────────────────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n
-  showRowsDropdown.value = false
-  currentPage.value = 1
-  fetchData()
-}
+  rowsPerPage.value = n;
+  showRowsDropdown.value = false;
+  currentPage.value = 1;
+  fetchData();
+};
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+  const target = e.target as HTMLElement;
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
 }
 
 // ─── validDetails ─────────────────────────────────────────────────────────────
@@ -955,41 +984,41 @@ const validDetails = computed<any[]>(() =>
   (selectedRow.value?.details ?? []).filter(
     (d: any) => d.id && d.id !== null && d.id !== 'null' && d.status !== 'hangus'
   )
-)
+);
 
-const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked))
-const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked))
+const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked));
+const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked));
 const allUnchecked = computed(
   () => validDetails.value.length > 0 && validDetails.value.every((d: any) => !d.checked)
-)
-const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length)
-const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length)
+);
+const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length);
+const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length);
 
 const sharedFileDetail = computed(() => {
-  if (!selectedRow.value?.is_single_file) return null
-  return (selectedRow.value?.details ?? []).find((d: any) => d.file_name || d.file_url) ?? null
-})
+  if (!selectedRow.value?.is_single_file) return null;
+  return (selectedRow.value?.details ?? []).find((d: any) => d.file_name || d.file_url) ?? null;
+});
 
 const toggleUncheckAll = () => {
-  if (!selectedRow.value?.details) return
+  if (!selectedRow.value?.details) return;
   validDetails.value.forEach((d: any) => {
-    d.checked = !uncheckAll.value
-  })
-}
+    d.checked = !uncheckAll.value;
+  });
+};
 
 watch(
   () => selectedRow.value?.details,
   (details) => {
-    if (!details) return
-    const valid = details.filter((d: any) => d.status !== 'hangus')
-    uncheckAll.value = valid.length > 0 && valid.every((d: any) => !d.checked)
+    if (!details) return;
+    const valid = details.filter((d: any) => d.status !== 'hangus');
+    uncheckAll.value = valid.length > 0 && valid.every((d: any) => !d.checked);
   },
   { deep: true }
-)
+);
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 const fetchData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const params = {
       search: search.value || undefined,
@@ -997,20 +1026,24 @@ const fetchData = async () => {
       limit: rowsPerPage.value,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
-    }
-    const res = await getListPendingApproval(params)
-    const data = res.data || []
-    pagination.value = res.pagination || null
+    };
+    const res = await getListPendingApproval(params);
+    const data = res.data || [];
+    pagination.value = res.pagination || null;
     if (!Array.isArray(data)) {
-      rows.value = []
-      return
+      rows.value = [];
+      return;
     }
 
     rows.value = data.map((item: any) => {
-      const td = new Date(item.tanggal)
-      const formattedTanggal = `${String(td.getUTCDate()).padStart(2, '0')}/${String(td.getUTCMonth() + 1).padStart(2, '0')}/${td.getUTCFullYear()}`
-      const cd = new Date(item.created_at.replace('Z', '').replace('+00:00', ''))
-      const tglUsulan = `${String(cd.getDate()).padStart(2, '0')}/${String(cd.getMonth() + 1).padStart(2, '0')}/${String(cd.getFullYear()).slice(-2)} ${String(cd.getHours()).padStart(2, '0')}:${String(cd.getMinutes()).padStart(2, '0')}`
+      const td = new Date(item.tanggal);
+      const formattedTanggal = `${String(td.getUTCDate()).padStart(2, '0')}/${String(td.getUTCMonth() + 1).padStart(2, '0')}/${td.getUTCFullYear()}`;
+      const cd = new Date(item.created_at.replace('Z', '').replace('+00:00', ''));
+      const tglUsulan = `${String(cd.getDate()).padStart(2, '0')}/${String(cd.getMonth() + 1).padStart(2, '0')}/${String(cd.getFullYear()).slice(-2)} ${String(cd.getHours()).padStart(2, '0')}:${String(cd.getMinutes()).padStart(2, '0')}`;
+
+      const rawDetails = Array.isArray(item.details) ? item.details : [];
+      const slicedDetails = rawDetails.slice(0, item.jumlah);
+
       return {
         id: item.id,
         jenis: item.jenis,
@@ -1022,231 +1055,248 @@ const fetchData = async () => {
         klasifikasi: item.klasifikasi,
         is_single_file: !!item.is_single_file,
         template_nomor: item.template_nomor || null,
-        details: Array.isArray(item.details)
-          ? item.details.map((d: any) => ({
-              id: d.id,
-              status: d.status || 'draft',
-              file_name: d.file_name || null,
-              file_url: d.file_url || null,
-              checked: d.status !== 'hangus'
-            }))
-          : []
-      }
-    })
+        details: slicedDetails.map((d: any) => ({
+          id: d.id,
+          status: d.status || 'draft',
+          file_name: d.file_name || null,
+          file_url: d.file_url || null,
+          checked: d.status !== 'hangus'
+        }))
+      };
+    });
   } catch (e) {
-    console.error('❌ Error fetch pending approval:', e)
-    rows.value = []
-    pagination.value = null
+    console.error('❌ Error fetch pending approval:', e);
+    rows.value = [];
+    pagination.value = null;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSearchInput = () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchTimeout) clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1
-    fetchData()
-  }, 500)
-}
-const handleSort = (col: string) => {
-  sortBy.value === col
-    ? (sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc')
-    : ((sortBy.value = col), (sortOrder.value = 'desc'))
-  currentPage.value = 1
-  fetchData()
-}
-const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return
-  currentPage.value = page
-  fetchData()
-}
+    currentPage.value = 1;
+    fetchData();
+  }, 500);
+};
 
-const totalPages = computed(() => pagination.value?.totalPages || 1)
+/**
+ * handleSort — toggle kolom / arah, lalu fetch ulang dari server.
+ * sortedRows computed akan langsung memperbarui tampilan secara instan
+ * sementara request berjalan di background.
+ */
+const handleSort = (col: string) => {
+  if (sortBy.value === col) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortBy.value = col;
+    sortOrder.value = 'desc';
+  }
+  currentPage.value = 1;
+  fetchData();
+};
+
+const handlePageChange = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchData();
+};
+
+const totalPages = computed(() => pagination.value?.totalPages || 1);
 const paginationPages = computed(() => {
-  const total = totalPages.value,
-    current = currentPage.value,
-    pages: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else if (current <= 2) pages.push(1, 2, 3, 4, 5)
-  else if (current >= total - 1) pages.push(total - 2, total - 1, total)
-  else pages.push(current - 1, current, current + 1)
-  return pages
-})
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 2) {
+    pages.push(1, 2, 3, 4, 5);
+  } else if (current >= total - 1) {
+    pages.push(total - 2, total - 1, total);
+  } else {
+    pages.push(current - 1, current, current + 1);
+  }
+  return pages;
+});
 
 // ─── Show modal ───────────────────────────────────────────────────────────────
 const showModal = (row: any) => {
   const detailsWithChecked = (row.details ?? []).map((d: any) => ({
     ...d,
     checked: d.status !== 'hangus'
-  }))
-  selectedRow.value = { ...row, details: detailsWithChecked }
-  keterangan_ditolak.value = ''
-  showKeteranganWarning.value = false
-  uncheckAll.value = false
-  openModal.value = true
-}
+  }));
+  selectedRow.value = { ...row, details: detailsWithChecked };
+  keterangan_ditolak.value = '';
+  showKeteranganWarning.value = false;
+  uncheckAll.value = false;
+  openModal.value = true;
+};
 
 // ─── Preview file ─────────────────────────────────────────────────────────────
 const openPreviewFile = (detail: any) => {
   if (!detail?.file_url) {
-    showToastFileNotFound()
-    return
+    showToastFileNotFound();
+    return;
   }
-  pdfUrl.value = detail.file_url
-  isOpenPreview.value = true
-}
+  pdfUrl.value = detail.file_url;
+  isOpenPreview.value = true;
+};
 
-// ─── Validasi keterangan ─────────────────────────────────────────────────────
+// ─── Validasi keterangan ──────────────────────────────────────────────────────
 const validateKeterangan = async (): Promise<boolean> => {
-  if (!hasUnchecked.value) return true
-  if (keterangan_ditolak.value.trim()) return true
-  showKeteranganWarning.value = true
-  showToastKeteranganRequired()
-  await nextTick()
-  keteranganRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  keteranganRef.value?.focus()
-  return false
-}
+  if (!hasUnchecked.value) return true;
+  if (keterangan_ditolak.value.trim()) return true;
+  showKeteranganWarning.value = true;
+  showToastKeteranganRequired();
+  await nextTick();
+  keteranganRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  keteranganRef.value?.focus();
+  return false;
+};
 
 // ─── Approve ──────────────────────────────────────────────────────────────────
 const confirmApproval = async () => {
-  if (!hasAnyChecked.value) return
-
+  if (!hasAnyChecked.value) return;
   if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
-    showKeteranganWarning.value = true
-    showToastKeteranganRequired(uncheckedCount.value)
-    await nextTick()
-    keteranganRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    keteranganRef.value?.focus()
-    return
+    showKeteranganWarning.value = true;
+    showToastKeteranganRequired(uncheckedCount.value);
+    await nextTick();
+    keteranganRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    keteranganRef.value?.focus();
+    return;
   }
-
-  showKeteranganWarning.value = false
-  showConfirmApprove.value = true
-}
+  showKeteranganWarning.value = false;
+  showConfirmApprove.value = true;
+};
 
 const processApproval = async () => {
-  showConfirmApprove.value = false
-  if (!selectedRow.value) return
+  showConfirmApprove.value = false;
+  if (!selectedRow.value) return;
 
-  const approvedDetails = validDetails.value.filter((d: any) => d.checked)
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
+  const approvedDetails = validDetails.value.filter((d: any) => d.checked);
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
 
   if (approvedDetails.length === 0) {
-    showToastTidakAdaNomor('disetujui')
-    return
+    showToastTidakAdaNomor('disetujui');
+    return;
   }
 
-  isProcessing.value = true
-  processingAction.value = 'approve'
+  isProcessing.value = true;
+  processingAction.value = 'approve';
   try {
-    // 1. Approve yang dicentang
-    await approvePenandatanganBulk(approvedDetails.map((d: any) => d.id))
-
-    // 2. Reject yang tidak dicentang (jika ada + keterangan terisi)
+    await approvePenandatanganBulk(approvedDetails.map((d: any) => d.id));
     if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
       await rejectPenandatangan(
         selectedRow.value.id,
         keterangan_ditolak.value,
         rejectedDetails.map((d: any) => d.id)
-      )
+      );
     }
-
-    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length)
-    openModal.value = false
-    await fetchData()
+    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length);
+    openModal.value = false;
+    await fetchData();
   } catch (e) {
-    console.error('❌ Error approval:', e)
+    console.error('❌ Error approval:', e);
   } finally {
-    isProcessing.value = false
-    processingAction.value = null
+    isProcessing.value = false;
+    processingAction.value = null;
   }
-}
+};
+
 // ─── Tolak semua ──────────────────────────────────────────────────────────────
 const confirmRejection = async () => {
-  if (!allUnchecked.value) return
-  const valid = await validateKeterangan()
-  if (!valid) return
-  showConfirmReject.value = true
-}
+  if (!allUnchecked.value) return;
+  const valid = await validateKeterangan();
+  if (!valid) return;
+  showConfirmReject.value = true;
+};
 
 const processRejection = async () => {
-  showConfirmReject.value = false
-  if (!selectedRow.value) return
+  showConfirmReject.value = false;
+  if (!selectedRow.value) return;
 
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
-
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
   if (rejectedDetails.length === 0) {
-    showToastTidakAdaNomor('ditolak')
-    return
+    showToastTidakAdaNomor('ditolak');
+    return;
   }
-
   if (!keterangan_ditolak.value.trim()) {
-    showKeteranganWarning.value = true
-    showToastKeteranganRequired()
-    return
+    showKeteranganWarning.value = true;
+    showToastKeteranganRequired();
+    return;
   }
 
-  isProcessing.value = true
-  processingAction.value = 'reject'
+  isProcessing.value = true;
+  processingAction.value = 'reject';
   try {
     await rejectPenandatangan(
       selectedRow.value.id,
       keterangan_ditolak.value,
       rejectedDetails.map((d: any) => d.id)
-    )
-    openModal.value = false
-    await fetchData()
+    );
+    openModal.value = false;
+    await fetchData();
   } catch (e) {
-    console.error('❌ Error rejection:', e)
+    console.error('❌ Error rejection:', e);
   } finally {
-    isProcessing.value = false
-    processingAction.value = null
+    isProcessing.value = false;
+    processingAction.value = null;
   }
-}
+};
 
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(keterangan_ditolak, (v) => {
-  if (v.trim()) showKeteranganWarning.value = false
-})
+  if (v.trim()) showKeteranganWarning.value = false;
+});
 watch(openModal, (open) => {
   if (!open) {
-    selectedRow.value = null
-    uncheckAll.value = false
-    keterangan_ditolak.value = ''
-    showKeteranganWarning.value = false
+    selectedRow.value = null;
+    uncheckAll.value = false;
+    keterangan_ditolak.value = '';
+    showKeteranganWarning.value = false;
   }
-})
+});
 watch(isOpenPreview, (open) => {
-  if (!open) pdfUrl.value = null
-})
+  if (!open) pdfUrl.value = null;
+});
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await fetchData()
-  document.addEventListener('click', handleDocumentClick)
-})
+  if (!user.value) {
+    const { getProfile } = useAuth();
+    await getProfile();
+  }
+
+  const hasBodTag = !!user.value?.bodTag?.trim();
+  if (!hasBodTag) {
+    await navigateTo('/beranda');
+    return;
+  }
+
+  await fetchData();
+  document.addEventListener('click', handleDocumentClick);
+});
+
 onBeforeUnmount(() => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  pdfUrl.value = null
-  document.removeEventListener('click', handleDocumentClick)
-})
+  if (searchTimeout) clearTimeout(searchTimeout);
+  pdfUrl.value = null;
+  document.removeEventListener('click', handleDocumentClick);
+});
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
-const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
+const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
     show: true,
     text,
     x: Math.min(e.clientX + 12, window.innerWidth - 200),
     y: Math.min(e.clientY + 12, window.innerHeight - 40)
-  }
-}
+  };
+};
 const onRowMouseLeave = () => {
-  tooltip.value.show = false
-}
+  tooltip.value.show = false;
+};
 </script>
 
 <style scoped>
