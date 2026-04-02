@@ -472,45 +472,30 @@
               {{ $t('nm_asalnaskah') }} <span class="text-red-500">*</span>
             </Heading>
 
-            <div class="relative mt-1 dropdown-input" data-custom-dropdown>
-              <div
+            <div class="relative mt-1" data-custom-dropdown>
+              <button
                 :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                  'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
                   modalErrors.asal_naskah
-                    ? 'border-red-500'
+                    ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 dark:border-gray-600'
                 ]"
-                @click.stop="openNewAsalNaskah = true"
+                @click.stop="openNewAsalNaskah = !openNewAsalNaskah"
               >
-                <input
-                  :value="newDelegasi.asal_naskah_label || searchAsalNaskah"
-                  @input="searchAsalNaskah = $event.target.value"
-                  @focus="openNewAsalNaskah = true"
-                  :placeholder="$t('nm_cari_asal_naskah')"
-                  class="flex-1 outline-none text-sm dark:bg-gray-700 dark:text-gray-200"
+                <span
                   :class="
                     newDelegasi.asal_naskah_label
                       ? 'text-gray-700 dark:text-gray-200'
-                      : 'text-gray-700 dark:text-gray-500'
-                  "
-                />
-                <button
-                  v-if="newDelegasi.asal_naskah_label"
-                  type="button"
-                  class="text-red-400 text-xs ml-2"
-                  @click.stop="
-                    newDelegasi.asal_naskah = null;
-                    newDelegasi.asal_naskah_label = '';
-                    searchAsalNaskah = '';
+                      : 'text-gray-400 dark:text-gray-500'
                   "
                 >
-                  ✕
-                </button>
-              </div>
+                  {{ newDelegasi.asal_naskah_label || $t('nm_cari_asal_naskah') }}
+                </span>
+              </button>
 
               <div
                 v-if="openNewAsalNaskah"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-60 overflow-auto"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
               >
                 <div
                   v-if="loadingAsalNaskah"
@@ -522,7 +507,7 @@
                 <button
                   v-for="item in filteredAsalNaskahList"
                   :key="item.id"
-                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs dark:text-gray-200"
+                  class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
                   @click.prevent="selectNewAsalNaskah(item)"
                 >
                   {{ item.nama }}
@@ -580,41 +565,43 @@
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
               <div
                 :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2',
                   modalErrors.tertuju ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 ]"
                 @click.stop="openNewTertuju = true"
               >
-                <!-- CHIP -->
-                <span
-                  v-for="t in newDelegasi.tertuju"
-                  :key="t.position"
-                  class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
-                >
-                  <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                    {{ t.position_text }}
-                  </span>
-                  <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                    {{ t.persnum_person_text }}
-                  </span>
-                  <span class="text-[9px] text-gray-400 dark:text-gray-500">
-                    {{ t.organization_parent_text }}
-                  </span>
-                  <button
-                    type="button"
-                    class="text-red-500 text-[10px] self-end"
-                    @click.stop="removeTertuju(t.position)"
+                <!-- CHIP CONTAINER -->
+                <div v-if="newDelegasi.tertuju.length > 0" class="flex flex-wrap gap-2">
+                  <span
+                    v-for="t in newDelegasi.tertuju"
+                    :key="t.position"
+                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
                   >
-                    ✕
-                  </button>
-                </span>
+                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
+                      {{ t.position_text }}
+                    </span>
+                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
+                      {{ t.persnum_person_text }}
+                    </span>
+                    <span class="text-[9px] text-gray-400 dark:text-gray-500">
+                      {{ t.organization_parent_text }}
+                    </span>
+                    <button
+                      type="button"
+                      class="text-red-500 text-[10px] self-end"
+                      @click.stop="removeTertuju(t.position)"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
 
-                <!-- INPUT SEARCH -->
+                <!-- INPUT SEARCH - SELALU DI BAWAH -->
                 <input
                   v-model="searchTertuju"
                   @focus="openNewTertuju = true"
-                  :placeholder="newDelegasi.tertuju.length === 0 ? $t('nm_cari_tertuju') : ''"
-                  class="flex-1 min-w-[180px] outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                  :placeholder="$t('nm_cari_tertuju')"
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
                 />
               </div>
 
