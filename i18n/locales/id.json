@@ -169,7 +169,7 @@
   "sign_lihat_detail": "Lihat Detail",
   "sign_tolak": "Tolak",
   "log_title": "Log Digsig",
-  "log_cari_placeholder": "Cari berdasarkan user, IP, atau jenis naskah",
+  "log_cari_placeholder": "Cari berdasarkan nama atau jenis naskah",
   "log_col_tanggal": "Tanggal",
   "log_col_ip": "IP Address",
   "log_col_user": "User",

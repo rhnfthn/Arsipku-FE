@@ -373,7 +373,7 @@
 
       <!-- MODAL TAMBAH -->
       <Teleport to="body">
-        <AddUsulan v-if="openAdd" @submit="handleSubmitFromModal" />
+        <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
       </Teleport>
     </div>
   </div>
