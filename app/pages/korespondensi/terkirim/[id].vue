@@ -268,9 +268,17 @@ const loadData = async () => {
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
             from: flow.pengirim, // Aktor alur (Yusak meneruskan ke Suryadi, from = Yusak)
 
-            // Jika aksi 'create', tampilkan target asli surat. Jika alur biasa, tampilkan tujuan alur
-            to: aksi === 'create' ? (flow.detail?.naskah_penerima || flow.penerima || []) : (flow.penerima || []),
-            cc: aksi === 'create' ? (flow.detail?.naskah_tembusan || flow.tembusan || []) : (flow.tembusan || []),
+            // Grouping penerima & tembusan (sama seperti logika surat masuk)
+            to: (() => {
+              const raw = aksi === 'create' ? (flow.detail?.naskah_penerima || flow.penerima || []) : (flow.penerima || []);
+              const grup = flow.penerima_grup || flow.detail?.penerima_grup || [];
+              return processGrouping(raw, grup);
+            })(),
+            cc: (() => {
+              const raw = aksi === 'create' ? (flow.detail?.naskah_tembusan || flow.tembusan || []) : (flow.tembusan || []);
+              const grup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
+              return processGrouping(raw, grup);
+            })(),
 
             rich_content: flow.konten || '',
             catatan: flow.detail?.catatan,
