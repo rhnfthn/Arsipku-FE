@@ -1,12 +1,10 @@
 <template>
   <div class="min-h-screen dark:bg-gray-900 transition-colors pt-5">
     <div class="max-w-7xl mx-auto">
-      <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3"
-      >
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3">
         <div>
           <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-            {{ t("mp_title") }}
+            {{ t('mp_title') }}
           </Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
@@ -15,7 +13,7 @@
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          {{ t("nm_button") }}
+          {{ t('nm_button') }}
         </button>
       </div>
 
@@ -46,31 +44,29 @@
                   @click="toggleSortTanggalMulai"
                   class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
                 >
-                  {{ t("mp_col_tgl_mulai") }}
+                  {{ t('mp_col_tgl_mulai') }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
                       'rotate-180': sortBy === 'desc',
-                      'rotate-0': sortBy !== 'desc',
+                      'rotate-0': sortBy !== 'desc'
                     }"
                   />
                 </th>
-                <th
-                  class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
-                >
-                  {{ t("mp_col_tgl_berakhir") }}
+                <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">
+                  {{ t('mp_col_tgl_berakhir') }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  {{ t("mp_col_kode") }}
+                  {{ t('mp_col_kode') }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t("mp_col_nama_pendek") }}
+                  {{ t('mp_col_nama_pendek') }}
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t("mp_col_nama_panjang") }}
+                  {{ t('mp_col_nama_panjang') }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
-                  {{ t("mp_col_aksi") }}
+                  {{ t('mp_col_aksi') }}
                 </th>
               </tr>
             </thead>
@@ -80,9 +76,7 @@
                 :key="row.kode"
                 :class="[
                   'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
-                  idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800'
-                    : 'bg-gray-50/50 dark:bg-gray-800',
+                  idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800'
                 ]"
               >
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
@@ -99,9 +93,7 @@
                     <div class="flex p-2 rounded-lg transition-colors">
                       <Building2 class="w-5 h-5" />
                     </div>
-                    <div
-                      class="flex items-center text-sm font-semibold transition-colors"
-                    >
+                    <div class="flex items-center text-sm font-semibold transition-colors">
                       {{ row.kode }}
                     </div>
                   </NuxtLink>
@@ -155,7 +147,7 @@
         <template #title>
           <div class="p-3 ml-2">
             <h3 class="text-xl font-bold dark:text-white">
-              {{ t("mp_modal_add") }}
+              {{ t('mp_modal_add') }}
             </h3>
           </div>
         </template>
@@ -164,60 +156,89 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t("mp_tgl_mulai") }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formCompany.tanggalMulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  formErrors.tanggalMulai
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="formErrors.tanggalMulai = false"
               />
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t("mp_tgl_berakhir") }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="formCompany.tanggalBerakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  formErrors.tanggalBerakhir
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="formErrors.tanggalBerakhir = false"
               />
             </div>
           </div>
-          <p class="text-xs text-red-500">{{ t("mp_tgl_warning") }}</p>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_kode") }} <span class="text-red-500">*</span>
+              {{ t('mp_kode') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.kode"
               type="text"
               :placeholder="t('mp_kode_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.kode
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.kode = false"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_nama_pendek") }} <span class="text-red-500">*</span>
+              {{ t('mp_nama_pendek') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formCompany.namaPendek"
               type="text"
               :placeholder="t('mp_nama_pendek_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.namaPendek
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.namaPendek = false"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_nama_panjang") }} <span class="text-red-500">*</span>
+              {{ t('mp_nama_panjang') }} <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="formCompany.namaPanjang"
               rows="3"
               :placeholder="t('mp_nama_panjang_placeholder')"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.namaPanjang
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.namaPanjang = false"
             ></textarea>
           </div>
         </div>
@@ -230,7 +251,7 @@
         <template #title>
           <div>
             <h3 class="text-lg font-bold p-3 dark:text-white">
-              {{ t("mp_modal_edit") }}
+              {{ t('mp_modal_edit') }}
             </h3>
           </div>
         </template>
@@ -239,55 +260,85 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t("mp_tgl_mulai") }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalMulai"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  editFormErrors.tanggalMulai
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="editFormErrors.tanggalMulai = false"
               />
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t("mp_tgl_berakhir") }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
               </Heading>
               <input
                 v-model="editForm.tanggalBerakhir"
                 type="date"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  editFormErrors.tanggalBerakhir
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="editFormErrors.tanggalBerakhir = false"
               />
             </div>
           </div>
-          <p class="text-xs text-red-500">{{ t("mp_tgl_warning") }}</p>
+          <p class="text-xs text-red-500">{{ t('mp_tgl_warning') }}</p>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_kode_edit") }} <span class="text-red-500">*</span>
+              {{ t('mp_kode_edit') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.kode"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                editFormErrors.kode
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="editFormErrors.kode = false"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_nama_pendek") }} <span class="text-red-500">*</span>
+              {{ t('mp_nama_pendek') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="editForm.namaPendek"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                editFormErrors.namaPendek
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="editFormErrors.namaPendek = false"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t("mp_nama_panjang") }} <span class="text-red-500">*</span>
+              {{ t('mp_nama_panjang') }} <span class="text-red-500">*</span>
             </Heading>
             <textarea
               v-model="editForm.namaPanjang"
               rows="3"
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                editFormErrors.namaPanjang
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="editFormErrors.namaPanjang = false"
             ></textarea>
           </div>
         </div>
@@ -310,20 +361,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import {
-  Search,
-  Plus,
-  MapPin,
-  Pencil,
-  Trash2,
-  Building2,
-  ArrowUpDown,
-} from "lucide-vue-next";
-import { useCompany } from "~/composables/useCompany";
+import { ref, computed, onMounted } from 'vue';
+import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
+import { useCompany } from '~/composables/useCompany';
 
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 const { t, locale } = useI18n();
@@ -332,20 +375,19 @@ const { t, locale } = useI18n();
 // BREADCRUMB (reaktif terhadap bahasa)
 // ─────────────────────────────────────────────
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("mp_title"), to: "/master/perusahaan" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('mp_title'), to: '/master/perusahaan' }
 ]);
 
 // ─────────────────────────────────────────────
 // COMPOSABLE & STATE
 // ─────────────────────────────────────────────
-const { getCompanies, createCompany, updateCompany, deleteCompany } =
-  useCompany();
+const { getCompanies, createCompany, updateCompany, deleteCompany } = useCompany();
 
-import { useToast } from "#imports";
+import { useToast } from '#imports';
 const toast = useToast();
 
-const search = ref("");
+const search = ref('');
 const openAddCompany = ref(false);
 const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
@@ -353,19 +395,27 @@ const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
 
 const formCompany = ref({
-  tanggalMulai: "",
-  tanggalBerakhir: "",
-  kode: "",
-  namaPendek: "",
-  namaPanjang: "",
+  tanggalMulai: '',
+  tanggalBerakhir: '',
+  kode: '',
+  namaPendek: '',
+  namaPanjang: ''
+});
+
+const formErrors = ref({
+  kode: false,
+  namaPendek: false,
+  namaPanjang: false,
+  tanggalMulai: false,
+  tanggalBerakhir: false
 });
 
 // ─────────────────────────────────────────────
 // DELETE MESSAGE (reaktif terhadap bahasa)
 // ─────────────────────────────────────────────
 const deleteMessage = computed(() => {
-  if (!selectedRow.value) return "";
-  return locale.value === "id"
+  if (!selectedRow.value) return '';
+  return locale.value === 'id'
     ? `Apakah Anda yakin ingin menghapus perusahaan ${selectedRow.value.namaPendek}?`
     : `Are you sure you want to delete company ${selectedRow.value.namaPendek}?`;
 });
@@ -398,12 +448,12 @@ const fetchCompanies = async () => {
         tanggalBerakhir: item.endDate,
         kode: String(item.company),
         namaPendek: item.shortText,
-        namaPanjang: item.longText,
+        namaPanjang: item.longText
       });
     }
     rows.value = validRows;
   } catch (error) {
-    console.error("Gagal mengambil data company", error);
+    console.error('Gagal mengambil data company', error);
   }
 };
 
@@ -412,7 +462,7 @@ onMounted(fetchCompanies);
 // ─────────────────────────────────────────────
 // FILTER & SORT
 // ─────────────────────────────────────────────
-const sortBy = ref<"asc" | "desc" | null>(null);
+const sortBy = ref<'asc' | 'desc' | null>(null);
 
 const filteredRows = computed(() => {
   let result = [...rows.value];
@@ -423,41 +473,107 @@ const filteredRows = computed(() => {
       (row) =>
         row.kode.toLowerCase().includes(s) ||
         row.namaPendek.toLowerCase().includes(s) ||
-        row.namaPanjang.toLowerCase().includes(s),
+        row.namaPanjang.toLowerCase().includes(s)
     );
   }
 
-  if (sortBy.value === "asc") {
-    result.sort(
-      (a, b) =>
-        new Date(a.tanggalMulai).getTime() - new Date(b.tanggalMulai).getTime(),
-    );
-  } else if (sortBy.value === "desc") {
-    result.sort(
-      (a, b) =>
-        new Date(b.tanggalMulai).getTime() - new Date(a.tanggalMulai).getTime(),
-    );
+  if (sortBy.value === 'asc') {
+    result.sort((a, b) => new Date(a.tanggalMulai).getTime() - new Date(b.tanggalMulai).getTime());
+  } else if (sortBy.value === 'desc') {
+    result.sort((a, b) => new Date(b.tanggalMulai).getTime() - new Date(a.tanggalMulai).getTime());
   }
 
   return result;
 });
 
 const toggleSortTanggalMulai = () => {
-  if (sortBy.value === null) sortBy.value = "asc";
-  else if (sortBy.value === "asc") sortBy.value = "desc";
+  if (sortBy.value === null) sortBy.value = 'asc';
+  else if (sortBy.value === 'asc') sortBy.value = 'desc';
   else sortBy.value = null;
+};
+
+// ─────────────────────────────────────────────
+// VALIDATION HELPERS
+// ─────────────────────────────────────────────
+const isEndDateInvalid = (startDate?: string, endDate?: string) => {
+  if (!startDate || !endDate) return false;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  return end <= start;
+};
+
+const formatDateWarningMessage = () => {
+  return locale.value === 'id'
+    ? 'Tanggal berakhir tidak boleh sama dengan atau lebih awal dari tanggal mulai'
+    : 'The end date cannot be the same as or earlier than the start date.';
 };
 
 // ─────────────────────────────────────────────
 // ADD
 // ─────────────────────────────────────────────
+const validateAddForm = (): boolean => {
+  // Set error states
+  formErrors.value.kode = !formCompany.value.kode.trim();
+  formErrors.value.namaPendek = !formCompany.value.namaPendek.trim();
+  formErrors.value.namaPanjang = !formCompany.value.namaPanjang.trim();
+  formErrors.value.tanggalMulai = !formCompany.value.tanggalMulai;
+  formErrors.value.tanggalBerakhir = !formCompany.value.tanggalBerakhir;
+
+  const emptyFields: string[] = [];
+
+  if (formErrors.value.kode) {
+    emptyFields.push(t('mp_kode'));
+  }
+  if (formErrors.value.namaPendek) {
+    emptyFields.push(t('mp_nama_pendek'));
+  }
+  if (formErrors.value.namaPanjang) {
+    emptyFields.push(t('mp_nama_panjang'));
+  }
+  if (formErrors.value.tanggalMulai) {
+    emptyFields.push(t('mp_tgl_mulai'));
+  }
+  if (formErrors.value.tanggalBerakhir) {
+    emptyFields.push(t('mp_tgl_berakhir'));
+  }
+
+  if (emptyFields.length > 0) {
+    toast.add({
+      title: t('gagal'),
+      description: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+
+  // Validate date range
+  if (isEndDateInvalid(formCompany.value.tanggalMulai, formCompany.value.tanggalBerakhir)) {
+    toast.add({
+      title: t('gagal'),
+      description: formatDateWarningMessage(),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+
+  return true;
+};
+
 const handleSaveCompany = async () => {
+  // Validate required fields first
+  if (!validateAddForm()) return;
   if (isNaN(Number(formCompany.value.kode))) {
     toast.add({
-      title: t("gagal"),
-      description: t("mp_val_kode_angka"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('mp_val_kode_angka'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     return;
   }
@@ -468,32 +584,39 @@ const handleSaveCompany = async () => {
       shortText: formCompany.value.namaPendek,
       longText: formCompany.value.namaPanjang,
       startDate: formCompany.value.tanggalMulai,
-      endDate: formCompany.value.tanggalBerakhir,
+      endDate: formCompany.value.tanggalBerakhir
     });
 
     await fetchCompanies();
 
     toast.add({
-      title: t("berhasil"),
-      description: t("mp_success_add"),
-      color: "success",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      description: t('mp_success_add'),
+      color: 'success',
+      icon: 'i-lucide-check-circle'
     });
 
     openAddCompany.value = false;
     formCompany.value = {
-      tanggalMulai: "",
-      tanggalBerakhir: "",
-      kode: "",
-      namaPendek: "",
-      namaPanjang: "",
+      tanggalMulai: '',
+      tanggalBerakhir: '',
+      kode: '',
+      namaPendek: '',
+      namaPanjang: ''
+    };
+    formErrors.value = {
+      kode: false,
+      namaPendek: false,
+      namaPanjang: false,
+      tanggalMulai: false,
+      tanggalBerakhir: false
     };
   } catch (error) {
     toast.add({
-      title: t("gagal"),
-      description: t("mp_err_add"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('mp_err_add'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     console.error(error);
   }
@@ -503,12 +626,20 @@ const handleSaveCompany = async () => {
 // EDIT
 // ─────────────────────────────────────────────
 const editForm = ref({
-  id: "",
-  tanggalMulai: "",
-  tanggalBerakhir: "",
-  kode: "",
-  namaPendek: "",
-  namaPanjang: "",
+  id: '',
+  tanggalMulai: '',
+  tanggalBerakhir: '',
+  kode: '',
+  namaPendek: '',
+  namaPanjang: ''
+});
+
+const editFormErrors = ref({
+  kode: false,
+  namaPendek: false,
+  namaPanjang: false,
+  tanggalMulai: false,
+  tanggalBerakhir: false
 });
 
 const openEditModal = (row: any) => {
@@ -519,18 +650,77 @@ const openEditModal = (row: any) => {
     tanggalBerakhir: row.tanggalBerakhir,
     kode: row.kode,
     namaPendek: row.namaPendek,
-    namaPanjang: row.namaPanjang,
+    namaPanjang: row.namaPanjang
+  };
+  editFormErrors.value = {
+    kode: false,
+    namaPendek: false,
+    namaPanjang: false,
+    tanggalMulai: false,
+    tanggalBerakhir: false
   };
   showEditModal.value = true;
 };
 
+const validateEditForm = (): boolean => {
+  // Set error states
+  editFormErrors.value.kode = !editForm.value.kode.trim();
+  editFormErrors.value.namaPendek = !editForm.value.namaPendek.trim();
+  editFormErrors.value.namaPanjang = !editForm.value.namaPanjang.trim();
+  editFormErrors.value.tanggalMulai = !editForm.value.tanggalMulai;
+  editFormErrors.value.tanggalBerakhir = !editForm.value.tanggalBerakhir;
+
+  const emptyFields: string[] = [];
+
+  if (editFormErrors.value.kode) {
+    emptyFields.push(t('mp_kode'));
+  }
+  if (editFormErrors.value.namaPendek) {
+    emptyFields.push(t('mp_nama_pendek'));
+  }
+  if (editFormErrors.value.namaPanjang) {
+    emptyFields.push(t('mp_nama_panjang'));
+  }
+  if (editFormErrors.value.tanggalMulai) {
+    emptyFields.push(t('mp_tgl_mulai'));
+  }
+  if (editFormErrors.value.tanggalBerakhir) {
+    emptyFields.push(t('mp_tgl_berakhir'));
+  }
+
+  if (emptyFields.length > 0) {
+    toast.add({
+      title: t('gagal'),
+      description: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+
+  // Validate date range
+  if (isEndDateInvalid(editForm.value.tanggalMulai, editForm.value.tanggalBerakhir)) {
+    toast.add({
+      title: t('gagal'),
+      description: formatDateWarningMessage(),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return false;
+  }
+
+  return true;
+};
+
 const handleSaveEdit = async () => {
+  // Validate required fields first
+  if (!validateEditForm()) return;
   if (isNaN(Number(editForm.value.kode))) {
     toast.add({
-      title: t("gagal"),
-      description: t("mp_val_kode_angka"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('mp_val_kode_angka'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     return;
   }
@@ -541,25 +731,25 @@ const handleSaveEdit = async () => {
       shortText: editForm.value.namaPendek,
       longText: editForm.value.namaPanjang,
       startDate: editForm.value.tanggalMulai,
-      endDate: editForm.value.tanggalBerakhir,
+      endDate: editForm.value.tanggalBerakhir
     });
 
     await fetchCompanies();
 
     toast.add({
-      title: t("berhasil"),
-      description: t("mp_success_edit"),
-      color: "success",
-      icon: "i-lucide-check-circle",
+      title: t('berhasil'),
+      description: t('mp_success_edit'),
+      color: 'success',
+      icon: 'i-lucide-check-circle'
     });
 
     showEditModal.value = false;
   } catch (error) {
     toast.add({
-      title: t("gagal"),
-      description: t("mp_err_edit"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('mp_err_edit'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     console.error(error);
   }
@@ -582,20 +772,20 @@ const handleDelete = async () => {
     await fetchCompanies();
 
     toast.add({
-      title: t("berhasil"),
-      description: `${selectedRow.value.namaPendek} ${t("mp_success_delete")}`,
-      color: "success",
-      icon: "i-lucide-trash-2",
+      title: t('berhasil'),
+      description: `${selectedRow.value.namaPendek} ${t('mp_success_delete')}`,
+      color: 'success',
+      icon: 'i-lucide-trash-2'
     });
 
     showDeleteConfirm.value = false;
     selectedRow.value = null;
   } catch (error) {
     toast.add({
-      title: t("gagal"),
-      description: t("mp_err_delete"),
-      color: "error",
-      icon: "i-lucide-x-circle",
+      title: t('gagal'),
+      description: t('mp_err_delete'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
     });
     console.error(error);
   } finally {
@@ -604,11 +794,11 @@ const handleDelete = async () => {
 };
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return "";
+  if (!dateStr) return '';
   const date = new Date(dateStr);
 
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
 
   return `${day}/${month}/${year}`;

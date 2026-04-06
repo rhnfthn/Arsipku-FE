@@ -118,10 +118,16 @@
             </thead>
 
             <tbody>
-              <!-- LOADING -->
+              <!-- LOADING - Skeleton -->
               <tr v-if="loading">
-                <td colspan="4" class="py-6 text-center text-gray-500 dark:text-gray-400">
-                  {{ t('ka_loading') }}
+                <td colspan="4" class="px-4 py-6">
+                  <div class="space-y-4 animate-pulse">
+                    <div
+                      v-for="n in skeletonRows"
+                      :key="'skeleton-' + n"
+                      class="h-16 w-full rounded-lg bg-gray-200 dark:bg-gray-700"
+                    />
+                  </div>
                 </td>
               </tr>
 
@@ -391,7 +397,13 @@
                 v-model="addForm.klasifikasi"
                 type="text"
                 :placeholder="t('ka_kode_placeholder')"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  addFormErrors.klasifikasi
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="addFormErrors.klasifikasi = false"
               />
               <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
                 {{ addErrors.klasifikasi }}
@@ -407,7 +419,13 @@
                 v-model="addForm.klasifikasi_text"
                 type="text"
                 :placeholder="t('ka_nama_placeholder')"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  addFormErrors.klasifikasi_text
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="addFormErrors.klasifikasi_text = false"
               />
               <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
                 {{ addErrors.klasifikasi_text }}
@@ -460,7 +478,13 @@
                 v-model="editForm.klasifikasi"
                 type="text"
                 :placeholder="t('ka_kode_placeholder')"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  editFormErrors.klasifikasi
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="editFormErrors.klasifikasi = false"
               />
               <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
                 {{ editErrors.klasifikasi }}
@@ -476,7 +500,13 @@
                 v-model="editForm.klasifikasi_text"
                 type="text"
                 :placeholder="t('ka_nama_placeholder')"
-                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  editFormErrors.klasifikasi_text
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="editFormErrors.klasifikasi_text = false"
               />
               <p v-if="editErrors.klasifikasi_text" class="text-xs text-red-500">
                 {{ editErrors.klasifikasi_text }}
@@ -645,6 +675,11 @@ const addForm = ref({
 
 const addErrors = ref<Record<string, string>>({});
 
+const addFormErrors = ref({
+  klasifikasi: false,
+  klasifikasi_text: false
+});
+
 const openAddModal = () => {
   resetAddForm();
   showAddModal.value = true;
@@ -653,13 +688,17 @@ const openAddModal = () => {
 const resetAddForm = () => {
   addErrors.value = {};
   addForm.value = { klasifikasi: '', klasifikasi_text: '', deskripsi: '' };
+  addFormErrors.value = { klasifikasi: false, klasifikasi_text: false };
 };
 
 const validateAdd = () => {
+  addFormErrors.value.klasifikasi = !addForm.value.klasifikasi.trim();
+  addFormErrors.value.klasifikasi_text = !addForm.value.klasifikasi_text.trim();
+
   const emptyFields: string[] = [];
-  if (!addForm.value.klasifikasi.trim()) emptyFields.push(t('ka_kode'));
-  if (!addForm.value.klasifikasi_text.trim()) emptyFields.push(t('ka_nama'));
-  
+  if (addFormErrors.value.klasifikasi) emptyFields.push(t('ka_kode'));
+  if (addFormErrors.value.klasifikasi_text) emptyFields.push(t('ka_nama'));
+
   if (emptyFields.length > 0) {
     showToast({
       title: t('gagal'),
@@ -718,11 +757,19 @@ const editForm = ref({
 
 const editErrors = ref<Record<string, string>>({});
 
+const editFormErrors = ref({
+  klasifikasi: false,
+  klasifikasi_text: false
+});
+
 const validateEdit = () => {
+  editFormErrors.value.klasifikasi = !editForm.value.klasifikasi.trim();
+  editFormErrors.value.klasifikasi_text = !editForm.value.klasifikasi_text.trim();
+
   const emptyFields: string[] = [];
-  if (!editForm.value.klasifikasi.trim()) emptyFields.push(t('ka_kode'));
-  if (!editForm.value.klasifikasi_text.trim()) emptyFields.push(t('ka_nama'));
-  
+  if (editFormErrors.value.klasifikasi) emptyFields.push(t('ka_kode'));
+  if (editFormErrors.value.klasifikasi_text) emptyFields.push(t('ka_nama'));
+
   if (emptyFields.length > 0) {
     showToast({
       title: t('gagal'),
@@ -740,6 +787,7 @@ const onEdit = async (row: Klasifikasi) => {
     showEditModal.value = true;
     savingEdit.value = false;
     editErrors.value = {};
+    editFormErrors.value = { klasifikasi: false, klasifikasi_text: false };
     editId.value = row.id;
     editForm.value = { klasifikasi: '', klasifikasi_text: '', deskripsi: '' };
 
@@ -855,6 +903,8 @@ const paginatedKlasifikasi = computed(() => {
   const end = start + perPage.value;
   return filteredKlasifikasi.value.slice(start, end);
 });
+
+const skeletonRows = computed(() => perPage.value);
 
 const paginationPages = computed(() => {
   const windowSize = 5;
