@@ -150,18 +150,20 @@
                 <td class="px-4 py-3 font-semibold">
                   <span
                     class="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs"
+                    v-html="highlight(row.klasifikasi, search)"
                   >
-                    {{ row.klasifikasi }}
                   </span>
                 </td>
 
-                <td class="px-4 py-3 text-gray-900 dark:text-white">
-                  {{ row.klasifikasi_text }}
-                </td>
+                <td
+                  class="px-4 py-3 text-gray-900 dark:text-white"
+                  v-html="highlight(row.klasifikasi_text, search)"
+                ></td>
 
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
-                  {{ row.deskripsi ?? '-' }}
-                </td>
+                <td
+                  class="px-4 py-3 text-gray-600 dark:text-gray-300"
+                  v-html="highlight(row.deskripsi ?? '-', search)"
+                ></td>
 
                 <td class="px-4 py-3">
                   <div class="flex justify-center gap-3">
@@ -405,8 +407,8 @@
                 ]"
                 @input="addFormErrors.klasifikasi = false"
               />
-              <p v-if="addErrors.klasifikasi" class="text-xs text-red-500">
-                {{ addErrors.klasifikasi }}
+              <p v-if="addFormErrors.klasifikasi" class="text-xs text-red-500 mt-1">
+                {{ t('ka_kode') }}
               </p>
             </div>
 
@@ -427,8 +429,8 @@
                 ]"
                 @input="addFormErrors.klasifikasi_text = false"
               />
-              <p v-if="addErrors.klasifikasi_text" class="text-xs text-red-500">
-                {{ addErrors.klasifikasi_text }}
+              <p v-if="addFormErrors.klasifikasi_text" class="text-xs text-red-500 mt-1">
+                {{ t('ka_nama') }}
               </p>
             </div>
 
@@ -486,8 +488,8 @@
                 ]"
                 @input="editFormErrors.klasifikasi = false"
               />
-              <p v-if="editErrors.klasifikasi" class="text-xs text-red-500">
-                {{ editErrors.klasifikasi }}
+              <p v-if="editFormErrors.klasifikasi" class="text-xs text-red-500 mt-1">
+                {{ t('ka_kode') }}
               </p>
             </div>
 
@@ -508,8 +510,8 @@
                 ]"
                 @input="editFormErrors.klasifikasi_text = false"
               />
-              <p v-if="editErrors.klasifikasi_text" class="text-xs text-red-500">
-                {{ editErrors.klasifikasi_text }}
+              <p v-if="editFormErrors.klasifikasi_text" class="text-xs text-red-500 mt-1">
+                {{ t('ka_nama') }}
               </p>
             </div>
 
@@ -1011,6 +1013,17 @@ const onExport = () => {
     icon: 'i-lucide-file-down'
   });
 };
+
+// Highlight function for search results
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 </script>
 
 <style scoped>

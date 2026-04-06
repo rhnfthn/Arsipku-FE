@@ -169,31 +169,27 @@
               <td class="px-4 py-3">
                 <span
                   class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-xs whitespace-nowrap"
+                  v-html="highlight(row.jenis, search)"
                 >
-                  {{ row.jenis }}
                 </span>
               </td>
 
               <!-- NAMA -->
               <td
                 class="px-4 py-3 font-medium text-nowrap text-gray-900 dark:text-white normal-case"
-              >
-                {{ row.jenis_text }}
-              </td>
+                v-html="highlight(row.jenis_text, search)"
+              ></td>
 
               <!-- PERIHAL -->
               <td class="px-4 py-3 text-gray-900 dark:text-gray-200 text-nowrap normal-case">
-                <span class="text-sm">
-                  {{ row.jenis_text }}
-                </span>
+                <span class="text-sm" v-html="highlight(row.jenis_text, search)"> </span>
               </td>
 
               <!-- FORMAT -->
               <td
                 class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 normal-case whitespace-nowrap"
-              >
-                {{ row.format_penomoran }}
-              </td>
+                v-html="highlight(row.format_penomoran, search)"
+              ></td>
 
               <!-- AKSI -->
               <td class="px-4 py-3">
@@ -426,8 +422,8 @@
                   ]"
                   @input="addFormErrors.jenis = false"
                 />
-                <p v-if="addErrors.jenis" class="text-xs text-red-500">
-                  {{ addErrors.jenis }}
+                <p v-if="addFormErrors.jenis" class="text-xs text-red-500 mt-1">
+                  {{ t('je_kode') }}
                 </p>
               </div>
 
@@ -448,8 +444,8 @@
                   ]"
                   @input="addFormErrors.jenis_text = false"
                 />
-                <p v-if="addErrors.jenis_text" class="text-xs text-red-500">
-                  {{ addErrors.jenis_text }}
+                <p v-if="addFormErrors.jenis_text" class="text-xs text-red-500 mt-1">
+                  {{ t('je_nama') }}
                 </p>
               </div>
 
@@ -470,8 +466,8 @@
                   ]"
                   @input="addFormErrors.file_text = false"
                 />
-                <p v-if="addErrors.file_text" class="text-xs text-red-500">
-                  {{ addErrors.file_text }}
+                <p v-if="addFormErrors.file_text" class="text-xs text-red-500 mt-1">
+                  {{ t('je_perihal') }}
                 </p>
               </div>
 
@@ -492,8 +488,8 @@
                   ]"
                   @input="addFormErrors.format_penomoran = false"
                 />
-                <p v-if="addErrors.format_penomoran" class="text-xs text-red-500">
-                  {{ addErrors.format_penomoran }}
+                <p v-if="addFormErrors.format_penomoran" class="text-xs text-red-500 mt-1">
+                  {{ t('je_format') }}
                 </p>
               </div>
 
@@ -560,6 +556,9 @@
                   ]"
                   @input="editFormErrors.jenis = false"
                 />
+                <p v-if="editFormErrors.jenis" class="text-xs text-red-500 mt-1">
+                  {{ t('je_kode') }}
+                </p>
               </div>
 
               <!-- Nama Jenis -->
@@ -579,6 +578,9 @@
                   ]"
                   @input="editFormErrors.jenis_text = false"
                 />
+                <p v-if="editFormErrors.jenis_text" class="text-xs text-red-500 mt-1">
+                  {{ t('je_nama') }}
+                </p>
               </div>
 
               <!-- Perihal -->
@@ -598,6 +600,9 @@
                   ]"
                   @input="editFormErrors.file_text = false"
                 />
+                <p v-if="editFormErrors.file_text" class="text-xs text-red-500 mt-1">
+                  {{ t('je_perihal') }}
+                </p>
               </div>
 
               <!-- Format Penomoran -->
@@ -617,6 +622,9 @@
                   ]"
                   @input="editFormErrors.format_penomoran = false"
                 />
+                <p v-if="editFormErrors.format_penomoran" class="text-xs text-red-500 mt-1">
+                  {{ t('je_format') }}
+                </p>
               </div>
 
               <!-- Upload File Template -->
@@ -1342,6 +1350,17 @@ const onExport = () => {
     icon: 'i-lucide-file-down'
   });
 };
+
+// Highlight function for search results
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 </script>
 
 <style scoped>

@@ -80,10 +80,10 @@
                 ]"
               >
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ formatDate(row.tanggalMulai) }}
+                  <span v-html="highlight(formatDate(row.tanggalMulai), search)"></span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ formatDate(row.tanggalBerakhir) }}
+                  <span v-html="highlight(formatDate(row.tanggalBerakhir), search)"></span>
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
@@ -94,18 +94,18 @@
                       <Building2 class="w-5 h-5" />
                     </div>
                     <div class="flex items-center text-sm font-semibold transition-colors">
-                      {{ row.kode }}
+                      <span v-html="highlight(row.kode, search)"></span>
                     </div>
                   </NuxtLink>
                 </td>
                 <td
                   class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                >
-                  {{ row.namaPendek }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row.namaPanjang }}
-                </td>
+                  v-html="highlight(row.namaPendek, search)"
+                ></td>
+                <td
+                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                  v-html="highlight(row.namaPanjang, search)"
+                ></td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
                     <button
@@ -803,6 +803,17 @@ const formatDate = (dateStr: string) => {
 
   return `${day}/${month}/${year}`;
 };
+
+// Highlight function for search results
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 </script>
 
 <style scoped>
