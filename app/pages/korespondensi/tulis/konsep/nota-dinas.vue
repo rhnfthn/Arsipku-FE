@@ -223,6 +223,7 @@ interface RecipientItem {
   label: string;
   labelJob: string;
   value: string;
+  isGroup?: boolean;
   raw: any;
 }
 
@@ -297,19 +298,25 @@ const mapPersonToUI = (person: any): RecipientItem => {
     label: `${person.nama || ''} - ${person.position_text || ''}`,
     labelJob: person.position_text || '',
     value: val,
+    isGroup: false,
     raw: person,
   };
 };
 
-const mapGroupsToUI = (groups: any[]): any[] => {
+const mapGroupsToUI = (groups: any[]): RecipientItem[] => {
   if (!Array.isArray(groups)) return [];
-  return groups.map((g: any) => ({
-    label: g.nama || g.name || g.label || '',
-    labelJob: g.nama || g.name || g.label || '',
-    value: String(g.id || g.value || ''),
-    isGroup: true,
-    raw: g,
-  }));
+  return groups.map((g: any) => {
+    // Pertahankan prefix GROUP_ jika sudah ada, atau tambahkan
+    const rawId = String(g.id || g.value || '');
+    const val = rawId.startsWith('GROUP_') ? rawId : `GROUP_${rawId}`;
+    return {
+      label: g.nama || g.name || g.label || '',
+      labelJob: g.nama || g.name || g.label || '',
+      value: val,
+      isGroup: true,
+      raw: g,
+    };
+  });
 };
 
 const formatDateRef = (value?: string) => {
@@ -330,26 +337,36 @@ const refPdfUrl = computed(() => {
 });
 
 const isEditMode = computed(() => route.query.action === 'edit' && !!route.query.ref_id);
-
 const isSenderSelected = computed(() => !!selectedSender.value);
 
-// Computed exclude lists — gabungkan individu + grup agar cross-exclude berjalan dengan benar
+// Ganti semua 4 computed ini
+const tertujuIndividu = computed(() =>
+  selectedTertuju.value
+    .filter((i: RecipientItem) => !String(i.value).startsWith('GROUP_') && !!i.value)
+    .map((i: RecipientItem) => String(i.value))
+);
+
+const tembusanIndividu = computed(() =>
+  selectedTembusan.value
+    .filter((i: RecipientItem) => !String(i.value).startsWith('GROUP_') && !!i.value)
+    .map((i: RecipientItem) => String(i.value))
+);
+
+const tertujuGrup = computed(() =>
+  selectedTertuju.value
+    .filter((i: RecipientItem) => String(i.value).startsWith('GROUP_') && !!i.value)
+    .map((i: RecipientItem) => String(i.value).replace('GROUP_', '')) // strip prefix
+);
+
+const tembusanGrup = computed(() =>
+  selectedTembusan.value
+    .filter((i: RecipientItem) => String(i.value).startsWith('GROUP_') && !!i.value)
+    .map((i: RecipientItem) => String(i.value).replace('GROUP_', '')) // strip prefix
+);
+
+// Computed exclude lists (cross-exclude antar field)
 const excludeTertujuList = computed(() => selectedTertuju.value);
 const excludeTembusanList = computed(() => selectedTembusan.value);
-
-// Helper untuk pisahkan individu dan grup dari selectedTertuju/Tembusan
-const tertujuIndividu = computed(() =>
-  selectedTertuju.value.filter((i: any) => !i.isGroup).map((i: any) => i.value)
-);
-const tembusanIndividu = computed(() =>
-  selectedTembusan.value.filter((i: any) => !i.isGroup).map((i: any) => i.value)
-);
-const tertujuGrup = computed(() =>
-  selectedTertuju.value.filter((i: any) => i.isGroup).map((i: any) => i.value)
-);
-const tembusanGrup = computed(() =>
-  selectedTembusan.value.filter((i: any) => i.isGroup).map((i: any) => i.value)
-);
 
 const selectedKlasifikasi = computed(() =>
   klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
@@ -408,6 +425,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
         labelJob: r.position_text,
         value: String(r.position),
+        isGroup: false, // FIX: Selalu set isGroup secara eksplisit
         raw: r,
       }));
     } else {
@@ -428,6 +446,7 @@ const fetchSenderList = async (posId: string | number) => {
         label: `${r.persnum_person_text} - ${r.position_text}`,
         labelJob: r.position_text,
         value: String(r.position),
+        isGroup: false,
         raw: r,
       }));
       if (senderItems.value.length === 1 && !selectedSender.value) {
@@ -459,13 +478,20 @@ const getBasePayload = (): DraftPayload => {
     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
     : "";
   const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+
+  // FIX: Snapshot computed values ke variabel lokal
+  const penerimaPosIds = tertujuIndividu.value;
+  const tembusanPosIds = tembusanIndividu.value;
+  const penerimaGrupIds = tertujuGrup.value;
+  const tembusanGrupIds = tembusanGrup.value;
+
   return {
     id_naskah: editDraftId.value || null,
     pengirim: (currentSender as any).value || user.value?.position || "",
-    penerima: tertujuIndividu.value,
-    tembusan: tembusanIndividu.value,
-    penerima_grup: tertujuGrup.value,
-    tembusan_grup: tembusanGrup.value,
+    penerima: penerimaPosIds,
+    tembusan: tembusanPosIds,
+    penerima_grup: penerimaGrupIds,
+    tembusan_grup: tembusanGrupIds,
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
@@ -497,6 +523,7 @@ const createFormData = (payload: DraftPayload) => {
   return formData;
 };
 
+// FIX: Snapshot semua computed values ke variabel lokal sebelum dipakai di FormData
 const prepareKonsepFormData = () => {
   const formData = new FormData();
   const signerInfo = selectedSender.value || {} as any;
@@ -507,15 +534,29 @@ const prepareKonsepFormData = () => {
     : "";
   const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
 
+  // FIX: Snapshot computed arrays ke lokal variable agar tidak stale
+  const penerimaPosIds = tertujuIndividu.value;
+  const tembusanPosIds = tembusanIndividu.value;
+  const penerimaGrupIds = tertujuGrup.value;
+  const tembusanGrupIds = tembusanGrup.value;
+
+  // DEBUG: Uncomment untuk troubleshoot jika masih ada masalah
+  // console.log('[prepareKonsepFormData] selectedTertuju:', selectedTertuju.value);
+  // console.log('[prepareKonsepFormData] penerimaPosIds:', penerimaPosIds);
+  // console.log('[prepareKonsepFormData] penerimaGrupIds:', penerimaGrupIds);
+  // console.log('[prepareKonsepFormData] selectedTembusan:', selectedTembusan.value);
+  // console.log('[prepareKonsepFormData] tembusanPosIds:', tembusanPosIds);
+  // console.log('[prepareKonsepFormData] tembusanGrupIds:', tembusanGrupIds);
+
   formData.append('jenis', 'ND');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', signerInfo.value || '');
-  formData.append('pengirim_position_id', signerInfo.value || '');
-  formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
-  formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
-  formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
-  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
+  formData.append('to_position_id', String(signerInfo.value || ''));
+  formData.append('pengirim_position_id', String(signerInfo.value || ''));
+  formData.append('penerima_position_ids', JSON.stringify(penerimaPosIds));
+  formData.append('tembusan_position_ids', JSON.stringify(tembusanPosIds));
+  formData.append('penerima_grup', JSON.stringify(penerimaGrupIds));
+  formData.append('tembusan_grup', JSON.stringify(tembusanGrupIds));
   formData.append('tgl', tglDb);
   formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
   formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -528,6 +569,47 @@ const prepareKonsepFormData = () => {
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
   formData.append('catatan', message.value || '-');
+
+  return formData;
+};
+
+const prepareRevisiFormData = () => {
+  const formData = new FormData();
+  const currentSender = selectedSender.value || {} as any;
+  const signerRaw = currentSender.raw || {};
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : "";
+  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+
+  // FIX: Snapshot computed arrays ke lokal variable
+  const penerimaPosIds = tertujuIndividu.value;
+  const tembusanPosIds = tembusanIndividu.value;
+  const penerimaGrupIds = tertujuGrup.value;
+  const tembusanGrupIds = tembusanGrup.value;
+
+  formData.append('jenis', 'ND');
+  formData.append('from_position_id', user.value?.position || '');
+  formData.append('to_position_id', String(currentSender.value || ''));
+  formData.append('pengirim_position_id', String(currentSender.value || ''));
+  formData.append('penerima_position_ids', JSON.stringify(penerimaPosIds));
+  formData.append('tembusan_position_ids', JSON.stringify(tembusanPosIds));
+  formData.append('penerima_grup_ids', JSON.stringify(penerimaGrupIds));
+  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrupIds));
+  formData.append('tgl', tglDb);
+  formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
+  formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
+  formData.append('sifat', selectedSifat.value?.value || 'biasa');
+  formData.append('perihal', subject.value);
+  formData.append('konten', editorContent.value);
+  formData.append('english', String(english.value));
+  formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
+  formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
+  formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
+  formData.append('catatan', message.value || '-');
+  formData.append('lampiran', existingFiles.value.length > 0 ? '1' : '0');
+
   return formData;
 };
 
@@ -544,7 +626,7 @@ const handlePreview = async () => {
     toast.add({ title: 'Data Belum Lengkap', description: 'Harap isi Pengirim dan Perihal', color: 'warning' });
     return;
   }
-  loadingMessage.value = "Memproses Pratinjau PDF...";
+  loadingMessage.value = "Memproses Pratinjau...";
   isLoadingData.value = true;
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
@@ -564,7 +646,6 @@ const handlePreview = async () => {
   }
 };
 
-// Kirim langsung tanpa sign option / passphrase modal
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
@@ -587,35 +668,8 @@ const handleKirimDokumen = async () => {
     let result;
 
     if (isRevision) {
-      const formData = new FormData();
-      const currentSender = selectedSender.value || {} as any;
-      const signerRaw = currentSender.raw || {};
-      const tglDb = date.value
-        ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-        : "";
-      const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
-
-      formData.append('jenis', 'ND');
-      formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', currentSender.value || '');
-      formData.append('pengirim_position_id', currentSender.value || '');
-      formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
-      formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
-      formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
-      formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
-      formData.append('tgl', tglDb);
-      formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
-      formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
-      formData.append('sifat', selectedSifat.value?.value || 'biasa');
-      formData.append('perihal', subject.value);
-      formData.append('konten', editorContent.value);
-      formData.append('english', String(english.value));
-      formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
-      formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
-      formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
-      formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
-      formData.append('catatan', message.value || '-');
-      formData.append('lampiran', existingFiles.value.length > 0 ? '1' : '0');
+      // FIX: Gunakan helper prepareRevisiFormData() agar konsisten
+      const formData = prepareRevisiFormData();
 
       const dataWrapper = detail.value?.data || detail.value;
       const konsepId = dataWrapper?.konsep?.id;
@@ -774,12 +828,14 @@ onMounted(async () => {
 
         if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
           const grupTertuju = mapGroupsToUI(unwrappedData.kepada_grup || []);
+          // FIX: Gunakan mapPersonToUI agar isGroup selalu ter-set ke false
           const individTertuju = unwrappedData.kepada.map((p: any) => mapPersonToUI(p));
           selectedTertuju.value = [...grupTertuju, ...individTertuju];
         }
 
         if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
           const grupTembusan = mapGroupsToUI(unwrappedData.tembusan_grup || []);
+          // FIX: Gunakan mapPersonToUI agar isGroup selalu ter-set ke false
           const individTembusan = unwrappedData.tembusan.map((t: any) => mapPersonToUI(t));
           selectedTembusan.value = [...grupTembusan, ...individTembusan];
         }
@@ -863,13 +919,14 @@ onMounted(async () => {
 
         if (user.value?.position) await fetchSenderList(user.value.position);
 
-        const mapApiToUI = (list: any[]) => list?.map(item => {
+        const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
           const posId = String(item.position_id || item.position || item.value);
           const master = items.value.find(m => m.value === posId);
           return master || {
             label: `${item.persnum || ''} - ${item.positionText || item.labelJob || ''}`,
             labelJob: item.positionText || item.labelJob || '',
             value: posId,
+            isGroup: false, // FIX: Selalu set isGroup
             raw: item,
           };
         }) || [];

@@ -605,7 +605,7 @@ const handlePreview = async () => {
     toast.add({ title: 'Data Belum Lengkap', description: 'Harap isi Pengirim dan Perihal', color: 'warning' });
     return;
   }
-  loadingMessage.value = "Memproses Pratinjau PDF...";
+  loadingMessage.value = "Memproses Pratinjau...";
   isLoadingData.value = true;
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
