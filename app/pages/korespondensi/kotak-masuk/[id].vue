@@ -206,11 +206,20 @@ const loadData = async () => {
         showFinalizeActions.value = isTarget;
 
         // Mapping array ke state details
-        // Mapping array ke state details
         details.value = sortedFlows.map((flow: any, index: number) => {
-          // Ambil properti dari flow
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
           const catatan = flow.detail?.catatan || flow.catatan || '';
+
+          // --- GROUPING PENERIMA (sama seperti logika surat masuk) ---
+          let rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
+          const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
+          const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
+
+          // --- GROUPING TEMBUSAN ---
+          let rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
+          const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
+          const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
+          // ----------------------------------------------------------
 
           return {
             id: flow.id,
@@ -222,23 +231,11 @@ const loadData = async () => {
             perihal: flow.perihal || '-',
             nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
-
-            // --- PERUBAHAN ADA DI SINI ---
-            // 'from' untuk profil/avatar yang melakukan aksi (Pembuat Draft/Disposisi)
             from: flow.pengirim || {},
-
-            // 'pengirim' untuk data teks Pengirim Surat/Naskah
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
-
-            penerima: flow.penerima,
-
-            // 'to' untuk data teks Tertuju Surat/Naskah
-            to: flow.detail?.naskah_penerima || flow.penerima || [],
-
-            // 'cc' untuk data teks Tembusan Surat/Naskah
-            cc: flow.detail?.naskah_tembusan || flow.tembusan || [],
-            // -----------------------------
-
+            penerima: processedPenerima,
+            to: processedPenerima,       // sudah di-group
+            cc: processedTembusan,       // sudah di-group
             rich_content: flow.konten || '',
             catatan: catatan,
             attachments: flow.lampiran_files || [],
