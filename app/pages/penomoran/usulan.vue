@@ -824,7 +824,6 @@ const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 
 const openAdd = ref(false);
-// const personMap = ref(new Map());
 const klasifikasiMap = ref(new Map());
 
 const search = ref('');
@@ -870,6 +869,20 @@ const selectRowsPerPage = (n: number) => {
 };
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
+// const fetchPersonMap = async () => {
+//   try {
+//     const response = await getPersonWithPosition();
+//     const list = Array.isArray(response) ? response : (response.data ?? []);
+//     list.forEach((item: any) => {
+//       const displayText = item.sub_area_text
+//         ? `${item.position_text} - ${item.sub_area_text}`
+//         : item.position_text || '';
+//       personMap.value.set(item.persnum, { nama: item.nama, position_text: displayText });
+//     });
+//   } catch (e) {
+//     console.error('❌ Error fetch person map:', e);
+//   }
+// };
 
 const fetchKlasifikasiMap = async () => {
   try {
@@ -920,6 +933,7 @@ const fetchData = async () => {
         klasifikasi: item.klasifikasi || '-',
         klasifikasiDisplay,
         pengusul: item.nama || user.value?.nama || '-',
+        tglUsulan: `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`,
         status: mappedStatus,
         details: item.details || [],
         template_nomor: item.template_nomor || ''

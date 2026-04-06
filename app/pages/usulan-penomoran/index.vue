@@ -989,14 +989,8 @@ definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
 const { user, getProfile } = useAuth();
-const {
-  getListUsulanByPosition,
-  getDetailUsulan,
-
-  getKlasifikasi,
-  updateNomorFile,
-  userCounts
-} = usePenomoran();
+const { getListUsulanByPosition, getDetailUsulan, getKlasifikasi, updateNomorFile, userCounts } =
+  usePenomoran();
 const toast = useToast();
 
 // ─── Breadcrumbs ─────────────────────────────────────────────────────────────
@@ -1415,20 +1409,6 @@ const mapItem = (item: any) => {
 };
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
-const fetchPersonMap = async () => {
-  try {
-    // const response = await getPersonWithPosition()
-    const list = Array.isArray(response) ? response : (response.data ?? []);
-    list.forEach((item: any) => {
-      const displayText = item.sub_area_text
-        ? `${item.position_text} - ${item.sub_area_text}`
-        : item.position_text || '';
-      personMap.value.set(item.persnum, { nama: item.nama, position_text: displayText });
-    });
-  } catch (e) {
-    console.error('❌ Error fetch person map:', e);
-  }
-};
 
 const fetchKlasifikasiMap = async () => {
   try {

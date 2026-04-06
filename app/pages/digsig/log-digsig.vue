@@ -4,15 +4,10 @@
     <div class="w-full">
       <!-- HEADER -->
       <div class="mb-2">
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2"
-        >
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
           <div>
-            <Heading
-              variant="heading6b"
-              class="text-2xl font-bold text-gray-900 dark:text-white"
-            >
-              {{ $t("log_title") }}
+            <Heading variant="heading6b" class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ $t('log_title') }}
             </Heading>
             <PageHeader :items="breadcrumbs" class="mt-1" />
           </div>
@@ -23,32 +18,15 @@
       <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
-        <!-- TOOLBAR (FIXED - NO SCROLL) -->
-        <div
-          class="p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-        >
-          <div
-            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-          >
-            <!-- SEARCH & LIMIT FILTER -->
-            <div
-              class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1"
-            >
-              <!-- LIMIT FILTER -->
-              <!-- <select
-                v-model="limitPerPage"
-                @change="handleLimitChange"
-                class="px-4 py-2 text-sm rounded-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition cursor-pointer"
-              >
-                <option :value="10">10</option>
-                <option :value="15">15</option>
-                <option :value="20">20</option>
-                <option :value="25">25</option>
-              </select> -->
+        <!-- TOOLBAR -->
+        <div class="p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <!-- SEARCH & LIMIT -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
+              <!-- ROWS PER PAGE DROPDOWN -->
               <div class="flex items-center gap-2">
                 <div class="relative" ref="rowsRef">
                   <button
-                    @change="handleLimitChange"
                     type="button"
                     @click.stop="showRowsDropdown = !showRowsDropdown"
                     class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
@@ -68,15 +46,12 @@
                         v-for="n in rowsChoices"
                         :key="n"
                         type="button"
-                        @click.stop="
-                          rowsPerPage = n;
-                          showRowsDropdown = false;
-                        "
+                        @click.stop="selectRowsPerPage(n)"
                         :class="[
                           'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                           rowsPerPage === n
                             ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                            : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                            : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                         ]"
                       >
                         {{ n }}
@@ -86,7 +61,7 @@
                 </div>
               </div>
 
-              <!-- SEARCH -->
+              <!-- SEARCH — only jenisNaskah -->
               <div class="relative flex-1">
                 <input
                   v-model="searchQuery"
@@ -107,50 +82,40 @@
                 'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
                 bsreAlert?.isActive
                   ? 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800'
-                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800',
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
               ]"
-              @click="
-                bsreAlert?.isActive
-                  ? openDeactivateModal()
-                  : openActivateModal()
-              "
+              @click="bsreAlert?.isActive ? openDeactivateModal() : openActivateModal()"
               :disabled="loadingAlert"
             >
               <AlertTriangle class="w-4 h-4" />
               {{
                 loadingAlert
-                  ? $t("log_btn_loading")
+                  ? $t('log_btn_loading')
                   : bsreAlert?.isActive
-                    ? $t("log_btn_deactivate")
-                    : $t("log_btn_activate")
+                    ? $t('log_btn_deactivate')
+                    : $t('log_btn_activate')
               }}
             </button>
           </div>
         </div>
 
-        <!-- TABLE CONTAINER (SCROLLABLE) -->
+        <!-- TABLE -->
         <div class="overflow-x-auto">
-          <table
-            class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
-          >
-            <!-- TABLE HEAD (STICKY) -->
-            <thead
-              class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10"
-            >
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <!-- THEAD -->
+            <thead class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10">
               <tr>
                 <th
                   @click="handleSort('tanggal')"
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_tanggal") }}</span>
+                    <span>{{ $t('log_col_tanggal') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
                         sortKey === 'tanggal' ? 'opacity-100' : 'opacity-40',
-                        sortKey === 'tanggal' && sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : '',
+                        sortKey === 'tanggal' && sortOrder === 'desc' ? 'rotate-180' : ''
                       ]"
                     />
                   </div>
@@ -160,14 +125,12 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_ip") }}</span>
+                    <span>{{ $t('log_col_ip') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
                         sortKey === 'ipAddress' ? 'opacity-100' : 'opacity-40',
-                        sortKey === 'ipAddress' && sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : '',
+                        sortKey === 'ipAddress' && sortOrder === 'desc' ? 'rotate-180' : ''
                       ]"
                     />
                   </div>
@@ -177,21 +140,19 @@
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_user") }}</span>
+                    <span>{{ $t('log_col_user') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
                         sortKey === 'userName' ? 'opacity-100' : 'opacity-40',
-                        sortKey === 'userName' && sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : '',
+                        sortKey === 'userName' && sortOrder === 'desc' ? 'rotate-180' : ''
                       ]"
                     />
                   </div>
                 </th>
                 <th class="px-4 py-3 text-left text-sm tracking-wider">
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_api") }}</span>
+                    <span>{{ $t('log_col_api') }}</span>
                   </div>
                 </th>
                 <th
@@ -199,16 +160,12 @@
                   class="px-4 py-3 text-left text-sm text-nowrap tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_naskah") }}</span>
+                    <span>{{ $t('log_col_naskah') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
-                        sortKey === 'jenisNaskah'
-                          ? 'opacity-100'
-                          : 'opacity-40',
-                        sortKey === 'jenisNaskah' && sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : '',
+                        sortKey === 'jenisNaskah' ? 'opacity-100' : 'opacity-40',
+                        sortKey === 'jenisNaskah' && sortOrder === 'desc' ? 'rotate-180' : ''
                       ]"
                     />
                   </div>
@@ -218,14 +175,12 @@
                   class="px-4 py-3 text-left text-sm tracking-wider cursor-pointer transition-colors hover:bg-primary-600 dark:hover:bg-primary-800"
                 >
                   <div class="flex items-center gap-2">
-                    <span>{{ $t("log_col_status") }}</span>
+                    <span>{{ $t('log_col_status') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 transition-transform duration-200"
                       :class="[
                         sortKey === 'status' ? 'opacity-100' : 'opacity-40',
-                        sortKey === 'status' && sortOrder === 'desc'
-                          ? 'rotate-180'
-                          : '',
+                        sortKey === 'status' && sortOrder === 'desc' ? 'rotate-180' : ''
                       ]"
                     />
                   </div>
@@ -233,46 +188,32 @@
               </tr>
             </thead>
 
-            <!-- TABLE BODY -->
-            <tbody
-              class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
-            >
-              <!-- LOADING STATE (SKELETON) -->
-              <tr v-if="loading" v-for="i in limitPerPage" :key="i">
+            <!-- TBODY -->
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <!-- SKELETON -->
+              <tr v-if="loading" v-for="i in rowsPerPage" :key="i">
                 <td class="px-6 py-4">
                   <div class="space-y-2">
-                    <div
-                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"
-                    ></div>
-                    <div
-                      class="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"
-                    ></div>
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
+                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
                   </div>
                 </td>
                 <td class="px-6 py-4">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"></div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-2">
                     <div
                       class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"
                     ></div>
-                    <div
-                      class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"
-                    ></div>
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
                   </div>
                 </td>
                 <td class="px-6 py-4">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40"></div>
                 </td>
                 <td class="px-6 py-4">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
                 </td>
                 <td class="px-6 py-4">
                   <div
@@ -281,19 +222,16 @@
                 </td>
               </tr>
 
-              <!-- EMPTY STATE -->
+              <!-- EMPTY -->
               <tr v-else-if="sortedLogs.length === 0">
                 <td colspan="6" class="px-6 py-12 text-center">
                   <div class="flex flex-col items-center gap-2">
-                    <Search
-                      class="w-12 h-12 text-gray-300 dark:text-gray-600"
-                    />
-                    <span
-                      class="text-sm text-gray-500 dark:text-gray-400 font-medium"
-                      >{{ $t("log_empty") }}</span
-                    >
+                    <Search class="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                    <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">{{
+                      $t('log_empty')
+                    }}</span>
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{
-                      $t("log_empty_hint")
+                      $t('log_empty_hint')
                     }}</span>
                   </div>
                 </td>
@@ -306,13 +244,9 @@
                 :key="row.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   <div class="flex flex-col">
-                    <span class="font-medium">{{
-                      formatDate(row.tanggal)
-                    }}</span>
+                    <span class="font-medium">{{ formatDate(row.tanggal) }}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">{{
                       formatTime(row.tanggal)
                     }}</span>
@@ -321,11 +255,9 @@
                 <td
                   class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 font-mono"
                 >
-                  {{ row.ipAddress || "-" }}
+                  {{ row.ipAddress || '-' }}
                 </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   <div class="flex items-center gap-2">
                     <div
                       class="w-8 h-8 rounded-full bg-primary-500 dark:bg-primary-900 text-white dark:text-primary-300 flex items-center justify-center font-semibold text-xs"
@@ -336,16 +268,12 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                  <code
-                    class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono"
-                  >
-                    {{ row.apiEndpoint || "-" }}
+                  <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+                    {{ row.apiEndpoint || '-' }}
                   </code>
                 </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                >
-                  {{ row.jenisNaskah || "-" }}
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  {{ row.jenisNaskah || '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <span
@@ -354,9 +282,7 @@
                   >
                     <span
                       class="w-1.5 h-1.5 rounded-full"
-                      :class="
-                        row.status === 'sukses' ? 'bg-green-600' : 'bg-red-600'
-                      "
+                      :class="row.status === 'sukses' ? 'bg-green-600' : 'bg-red-600'"
                     ></span>
                     {{ row.note || row.status }}
                   </span>
@@ -371,29 +297,19 @@
           v-if="meta && sortedLogs.length > 0"
           class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
         >
-          <div
-            class="flex flex-col sm:flex-row items-center justify-between gap-4"
-          >
-            <!-- INFO -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- INFO: "menampilkan X dari Y data" -->
             <div class="text-xs text-gray-600 dark:text-gray-400">
-              {{ $t("menampilkan") }}
-              <span class="text-gray-600 dark:text-gray-300">{{
-                (meta.page - 1) * meta.limit + 1
-              }}</span>
-              -
-              <span class="text-gray-600 dark:text-gray-300">{{
-                Math.min(meta.page * meta.limit, meta.total)
-              }}</span>
-              {{ $t("dari") }}
-              <span class="text-gray-600 dark:text-gray-300">{{
-                meta.total
-              }}</span>
-              {{ $t("data") }}
+              {{ $t('menampilkan') }}
+              <span class="text-gray-700 dark:text-gray-300">{{ sortedLogs.length }}</span>
+              {{ $t('dari') }}
+              <span class="text-gray-700 dark:text-gray-300">{{ meta.total }}</span>
+              {{ $t('data') }}
             </div>
 
-            <!-- PAGINATION CONTROLS -->
+            <!-- CONTROLS -->
             <div class="flex items-center gap-2">
-              <!-- PREVIOUS -->
+              <!-- PREV -->
               <button
                 @click="goToPage(meta.page - 1)"
                 :disabled="meta.page === 1"
@@ -401,15 +317,10 @@
                   'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                   meta.page === 1
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
                 ]"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -417,7 +328,7 @@
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                {{ $t("sebelumnya") }}
+                {{ $t('sebelumnya') }}
               </button>
 
               <!-- PAGE NUMBERS -->
@@ -432,9 +343,8 @@
                 <span
                   v-if="paginationPages[0] > 2"
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
                 <button
                   v-for="page in paginationPages"
                   :key="page"
@@ -443,23 +353,18 @@
                     'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                     currentPage === page
                       ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400'
                   ]"
                 >
                   {{ page }}
                 </button>
                 <span
-                  v-if="
-                    paginationPages[paginationPages.length - 1] < totalPages - 1
-                  "
+                  v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
                   class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                  >...</span
                 >
-                  ...
-                </span>
                 <button
-                  v-if="
-                    paginationPages[paginationPages.length - 1] < totalPages
-                  "
+                  v-if="paginationPages[paginationPages.length - 1] < totalPages"
                   @click="goToPage(totalPages)"
                   class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all"
                 >
@@ -475,16 +380,11 @@
                   'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
                   meta.page === meta.totalPages
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                    : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
                 ]"
               >
-                {{ $t("selanjutnya") }}
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                {{ $t('selanjutnya') }}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -499,43 +399,34 @@
       </div>
     </div>
 
-    <!-- MODAL ACTIVATE ALERT -->
+    <!-- MODAL ACTIVATE -->
     <Teleport to="body">
       <Modal v-model="showActivateModal" :hideDefaultFooter="true" size="xl">
         <template #title>
           <div class="flex items-center gap-3 ml-5 mt-5 mb-3">
-            <div
-              class="bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 p-3 rounded-full"
-            >
+            <div class="bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 p-3 rounded-full">
               <AlertTriangle class="w-5 h-5" />
             </div>
-            <Heading
-              variant="heading9b"
-              class="text-sm font-semibold dark:text-white"
-            >
-              {{ $t("log_modal_activate_title") }}
+            <Heading variant="heading9b" class="text-sm font-semibold dark:text-white">
+              {{ $t('log_modal_activate_title') }}
             </Heading>
           </div>
         </template>
-
         <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
-          <p>{{ $t("log_modal_activate_desc") }}</p>
-
+          <p>{{ $t('log_modal_activate_desc') }}</p>
           <textarea
             v-model="alertMessage"
             :placeholder="$t('log_modal_activate_placeholder')"
             rows="3"
             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
           ></textarea>
-
           <div
             class="flex items-center gap-5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm"
           >
             <AlertTriangle class="w-8 h-8 flex-shrink-0" />
-            <span>{{ $t("log_modal_activate_warning") }}</span>
+            <span>{{ $t('log_modal_activate_warning') }}</span>
           </div>
         </div>
-
         <template #footer>
           <div
             class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
@@ -544,25 +435,21 @@
               @click="showActivateModal = false"
               class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
             >
-              {{ $t("log_batal") }}
+              {{ $t('log_batal') }}
             </button>
             <button
               @click="activateAlert"
               :disabled="!alertMessage.trim() || loadingAlert"
               class="flex-1 px-5 py-2 text-sm mt-5 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{
-                loadingAlert
-                  ? $t("log_modal_activating")
-                  : $t("log_modal_activate_confirm")
-              }}
+              {{ loadingAlert ? $t('log_modal_activating') : $t('log_modal_activate_confirm') }}
             </button>
           </div>
         </template>
       </Modal>
     </Teleport>
 
-    <!-- MODAL DEACTIVATE ALERT -->
+    <!-- MODAL DEACTIVATE -->
     <Teleport to="body">
       <Modal v-model="showDeactivateModal" :hideDefaultFooter="true" size="xl">
         <template #title>
@@ -572,18 +459,13 @@
             >
               <AlertTriangle class="w-5 h-5" />
             </div>
-            <Heading
-              variant="heading9b"
-              class="text-sm font-semibold dark:text-white"
-            >
-              {{ $t("log_modal_deactivate_title") }}
+            <Heading variant="heading9b" class="text-sm font-semibold dark:text-white">
+              {{ $t('log_modal_deactivate_title') }}
             </Heading>
           </div>
         </template>
-
         <div class="px-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
-          <p>{{ $t("log_modal_deactivate_desc") }}</p>
-
+          <p>{{ $t('log_modal_deactivate_desc') }}</p>
           <div
             class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
           >
@@ -592,19 +474,15 @@
                 class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"
               />
               <div class="text-sm text-yellow-800 dark:text-yellow-300">
-                <p class="font-medium">
-                  {{ $t("log_modal_deactivate_current") }}
-                </p>
+                <p class="font-medium">{{ $t('log_modal_deactivate_current') }}</p>
                 <p class="mt-1 italic">"{{ bsreAlert?.message }}"</p>
                 <p class="mt-2 text-xs">
-                  {{ $t("log_modal_deactivate_by") }}
-                  {{ bsreAlert?.activatedByName || "-" }}
+                  {{ $t('log_modal_deactivate_by') }} {{ bsreAlert?.activatedByName || '-' }}
                 </p>
               </div>
             </div>
           </div>
         </div>
-
         <template #footer>
           <div
             class="flex justify-end border-t border-gray-300 dark:border-gray-700 w-full gap-3 px-5 pb-5 mt-6"
@@ -613,18 +491,14 @@
               @click="showDeactivateModal = false"
               class="flex-1 px-5 py-2 text-sm border mt-5 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white transition"
             >
-              {{ $t("log_batal") }}
+              {{ $t('log_batal') }}
             </button>
             <button
               @click="deactivateAlert"
               :disabled="loadingAlert"
               class="flex-1 px-5 py-2 text-sm mt-5 bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800 text-white rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{
-                loadingAlert
-                  ? $t("log_modal_deactivating")
-                  : $t("log_modal_deactivate_confirm")
-              }}
+              {{ loadingAlert ? $t('log_modal_deactivating') : $t('log_modal_deactivate_confirm') }}
             </button>
           </div>
         </template>
@@ -634,46 +508,30 @@
 </template>
 
 <script setup lang="ts">
-import Modal from "~/components/Modal.vue";
-import {
-  Search,
-  AlertTriangle,
-  X,
-  ArrowUpDown,
-  Check,
-  ChevronDown,
-} from "lucide-vue-next";
-import { useI18n } from "vue-i18n";
-import type { DigsigLog } from "~/types/digsig";
+import Modal from '~/components/Modal.vue';
+import { Search, AlertTriangle, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import type { DigsigLog } from '~/types/digsig';
 
-definePageMeta({
-  middleware: "auth",
-});
+definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
 
-// ─── Refs for click-outside ───────────────────
+// ─── Refs ──────────────────────────────────────
 const rowsRef = ref<HTMLElement | null>(null);
-const filterStatusRef = ref<HTMLElement | null>(null);
 
+/**
+ * Single source of truth for rows per page.
+ * Previously there were two separate refs (rowsPerPage & limitPerPage)
+ * that were never synced — this caused the limit change to not apply.
+ */
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
 const showRowsDropdown = ref(false);
-// ─── Click outside ────────────────────────────
-const handleClickOutside = (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (rowsRef.value && !rowsRef.value.contains(target)) {
-    showRowsDropdown.value = false;
-  }
-  if (filterStatusRef.value && !filterStatusRef.value.contains(target)) {
-    openFilterStatus.value = false;
-  }
-};
 
-// ─── Breadcrumbs (reactive to locale) ────────
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("log_title"), to: "/digsig/log-digsig" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('log_title'), to: '/digsig/log-digsig' }
 ]);
 
 const {
@@ -692,89 +550,115 @@ const {
   deactivateBsreAlert,
   showToastAlertPesanKosong,
   showToastAlertActivated,
-  showToastAlertDeactivated,
+  showToastAlertDeactivated
 } = useDigsig();
 
-// State
-const searchQuery = ref("");
+// ─── State ─────────────────────────────────────
+const searchQuery = ref('');
 const currentPage = ref(1);
-const limitPerPage = ref(10);
 const showActivateModal = ref(false);
 const showDeactivateModal = ref(false);
-const alertMessage = ref("");
-const sortKey = ref("tanggal");
-const sortOrder = ref<"asc" | "desc">("desc");
+const alertMessage = ref('');
+const sortKey = ref('tanggal');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 
-// Computed
+// ─── Computed ──────────────────────────────────
 const totalPages = computed(() => meta.value?.totalPages || 1);
 
-// Client-side sorting
 const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
-  tanggal: "tanggal",
-  ipAddress: "ipAddress",
-  userName: "userName",
-  jenisNaskah: "jenisNaskah",
-  status: "note",
+  tanggal: 'tanggal',
+  ipAddress: 'ipAddress',
+  userName: 'userName',
+  jenisNaskah: 'jenisNaskah',
+  status: 'note'
 };
 
+/**
+ * 1. Filter client-side: hanya cocokkan searchQuery pada userName & jenisNaskah.
+ * 2. Sort hasil filter sesuai sortKey / sortOrder.
+ */
 const sortedLogs = computed(() => {
-  if (!sortKey.value || !logs.value.length) return logs.value;
+  const q = searchQuery.value.trim().toLowerCase();
 
+  // Filter hanya pada dua field: userName dan jenisNaskah
+  const filtered = q
+    ? logs.value.filter(
+        (row) =>
+          (row.userName ?? '').toLowerCase().includes(q) ||
+          (row.jenisNaskah ?? '').toLowerCase().includes(q)
+      )
+    : logs.value;
+
+  if (!sortKey.value || !filtered.length) return filtered;
   const field = SORT_FIELD_MAP[sortKey.value];
-  if (!field) return logs.value;
+  if (!field) return filtered;
 
-  return [...logs.value].sort((a, b) => {
+  return [...filtered].sort((a, b) => {
     let aVal = a[field];
     let bVal = b[field];
-
     if (aVal == null) return 1;
     if (bVal == null) return -1;
 
-    if (field === "tanggal") {
-      return sortOrder.value === "asc"
-        ? new Date(aVal as string).getTime() -
-            new Date(bVal as string).getTime()
-        : new Date(bVal as string).getTime() -
-            new Date(aVal as string).getTime();
+    if (field === 'tanggal') {
+      return sortOrder.value === 'asc'
+        ? new Date(aVal as string).getTime() - new Date(bVal as string).getTime()
+        : new Date(bVal as string).getTime() - new Date(aVal as string).getTime();
     }
 
     const aStr = String(aVal).toLowerCase();
     const bStr = String(bVal).toLowerCase();
-
-    return sortOrder.value === "asc"
-      ? aStr.localeCompare(bStr)
-      : bStr.localeCompare(aStr);
+    return sortOrder.value === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
   });
 });
 
-function handleSort(key: string) {
-  if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortOrder.value = "asc";
-  }
-}
+const paginationPages = computed(() => {
+  if (!meta.value) return [];
+  const total = meta.value.totalPages;
+  const current = meta.value.page;
+  const pages: number[] = [];
 
-const handleLimitChange = () => {
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else if (current <= 3) {
+    for (let i = 1; i <= 5; i++) pages.push(i);
+  } else if (current >= total - 2) {
+    for (let i = total - 4; i <= total; i++) pages.push(i);
+  } else {
+    for (let i = current - 1; i <= current + 1; i++) pages.push(i);
+  }
+  return pages;
+});
+
+// ─── Methods ───────────────────────────────────
+const loadLogs = async () => {
+  await fetchLogs({
+    page: currentPage.value,
+    limit: rowsPerPage.value, // always use the single ref
+    search: searchQuery.value // backend filters userName & jenisNaskah only
+  });
+};
+
+/**
+ * Selecting a new rows-per-page value:
+ * - updates the ref
+ * - resets to page 1
+ * - preserves the current sort (sortKey / sortOrder unchanged)
+ * - reloads data
+ */
+const selectRowsPerPage = (n: number) => {
+  rowsPerPage.value = n;
+  showRowsDropdown.value = false;
   currentPage.value = 1;
   loadLogs();
 };
 
-const loadLogs = async () => {
-  await fetchLogs({
-    page: currentPage.value,
-    limit: limitPerPage.value,
-    search: searchQuery.value,
-  });
-};
-
-const loadBsreHealth = async () => {
-  await fetchBsreHealth();
-};
-
-const loadBsreAlert = async () => {
-  await fetchBsreAlert();
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
 };
 
 const goToPage = (page: number) => {
@@ -784,29 +668,7 @@ const goToPage = (page: number) => {
   }
 };
 
-const paginationPages = computed(() => {
-  if (!meta.value) return [];
-
-  const total = meta.value.totalPages;
-  const current = meta.value.page;
-  const pages: number[] = [];
-
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    if (current <= 3) {
-      for (let i = 1; i <= 5; i++) pages.push(i);
-    } else if (current >= total - 2) {
-      for (let i = total - 4; i <= total; i++) pages.push(i);
-    } else {
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i);
-    }
-  }
-
-  return pages;
-});
-
-let searchTimeout: NodeJS.Timeout;
+let searchTimeout: ReturnType<typeof setTimeout>;
 const debounceSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -815,8 +677,15 @@ const debounceSearch = () => {
   }, 500);
 };
 
+// Click-outside for rows dropdown
+const handleClickOutside = (e: MouseEvent) => {
+  if (rowsRef.value && !rowsRef.value.contains(e.target as HTMLElement)) {
+    showRowsDropdown.value = false;
+  }
+};
+
 const openActivateModal = () => {
-  alertMessage.value = "";
+  alertMessage.value = '';
   showActivateModal.value = true;
 };
 
@@ -834,7 +703,7 @@ const activateAlert = async () => {
     showToastAlertActivated();
     showActivateModal.value = false;
   } catch (err: any) {
-    console.error("❌ activateAlert error:", err);
+    console.error('❌ activateAlert error:', err);
   }
 };
 
@@ -844,49 +713,45 @@ const deactivateAlert = async () => {
     showToastAlertDeactivated();
     showDeactivateModal.value = false;
   } catch (err: any) {
-    console.error("❌ deactivateAlert error:", err);
+    console.error('❌ deactivateAlert error:', err);
   }
 };
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+// ─── Formatters ────────────────────────────────
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   });
-};
 
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
+const formatTime = (dateString: string) =>
+  new Date(dateString).toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit'
   });
-};
 
 const getUserInitials = (name: string) => {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return (
-    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
-  ).toUpperCase();
+  if (!name) return '';
+  const parts = name.trim().split(' ');
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 };
 
-const statusClass = (status: string) => {
-  if (status === "sukses")
-    return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800";
-  return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800";
-};
+const statusClass = (status: string) =>
+  status === 'sukses'
+    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+    : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800';
 
+// ─── Lifecycle ─────────────────────────────────
 onMounted(() => {
   loadLogs();
-  loadBsreHealth();
-  loadBsreAlert();
+  fetchBsreHealth();
+  fetchBsreAlert();
+  document.addEventListener('click', handleClickOutside);
+});
 
-  watch([rowsPerPage], () => {
-    currentPage.value = 1;
-  });
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -899,5 +764,17 @@ onMounted(() => {
 }
 .overflow-x-auto::-webkit-scrollbar-thumb {
   border-radius: 10px;
+}
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

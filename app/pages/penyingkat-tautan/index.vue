@@ -30,38 +30,62 @@
         </template>
 
         <div class="flex flex-col gap-1">
-          <Heading variant="body2m" class="dark:text-gray-200">
-            {{ t('pt_label_long_url') }}<span class="text-red-500">*</span>
-          </Heading>
-          <UInput
-            color="primary"
-            :placeholder="t('pt_placeholder_long_url')"
-            size="lg"
-            v-model="addForm.LUrl"
-            class="mb-3"
-          />
+          <!-- Tautan Panjang -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="body2m" class="dark:text-gray-200">
+              {{ t('pt_label_long_url') }}<span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="addForm.LUrl"
+              type="text"
+              :placeholder="t('pt_placeholder_long_url')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.LUrl
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.LUrl = false"
+            />
+            <p v-if="formErrors.LUrl" class="text-xs text-red-500 mt-1">
+              {{ t('pt_label_long_url') }}
+            </p>
+          </div>
 
-          <Heading variant="body2m" class="dark:text-gray-200">
-            {{ t('pt_label_short_url') }} <span class="text-red-500">*</span>
-          </Heading>
-          <UInput
-            color="primary"
-            :placeholder="t('pt_placeholder_short_url')"
-            size="lg"
-            v-model="addForm.SUrl"
-            class="mb-3"
-          />
+          <!-- Bagian Belakang Tautan -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="body2m" class="dark:text-gray-200">
+              {{ t('pt_label_short_url') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="addForm.SUrl"
+              type="text"
+              :placeholder="t('pt_placeholder_short_url')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.SUrl
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.SUrl = false"
+            />
+            <p v-if="formErrors.SUrl" class="text-xs text-red-500 mt-1">
+              {{ t('pt_label_short_url') }}
+            </p>
+          </div>
 
-          <Heading variant="body2m" class="dark:text-gray-200">
-            {{ t('pt_label_keterangan') }}
-          </Heading>
-          <UInput
-            color="primary"
-            :placeholder="t('pt_placeholder_keterangan')"
-            size="lg"
-            v-model="addForm.keterangan"
-            class="mb-3"
-          />
+          <!-- Keterangan -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="body2m" class="dark:text-gray-200">
+              {{ t('pt_label_keterangan') }}
+            </Heading>
+            <input
+              v-model="addForm.keterangan"
+              type="text"
+              :placeholder="t('pt_placeholder_keterangan')"
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
         </div>
       </Modal>
     </Teleport>
@@ -74,9 +98,49 @@
       <div
         class="flex flex-wrap gap-2 p-3 items-center border-b border-gray-200 dark:border-gray-700"
       >
+        <!-- Rows per page -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openRowsDropdown = !openRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ perPage }}</span>
+            <ChevronDown
+              class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="
+                  perPage = n;
+                  openRowsDropdown = false;
+                  currentPage = 1;
+                "
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  perPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
         <button
           @click="toggleSort"
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition"
           title="Urutkan"
         >
           <ArrowUpDown class="w-4 h-4" />
@@ -84,21 +148,21 @@
 
         <button
           @click="refreshData"
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 transition"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition"
           :disabled="isRefreshing"
           title="Refresh"
         >
           <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
-        <div class="relative flex-1 min-w-[180px]">
+        <div class="relative flex-1 min-w-40">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
             v-model="search"
             :placeholder="t('pt_search_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
       </div>
@@ -171,7 +235,7 @@
             <!-- DATA ROWS -->
             <template v-else>
               <tr
-                v-for="(row, index) in sortedData"
+                v-for="(row, index) in paginatedData"
                 :key="index"
                 class="hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition"
               >
@@ -194,8 +258,8 @@
                     rel="noopener noreferrer"
                     class="text-primary-600 dark:text-primary-400 underline hover:text-primary-800 dark:hover:text-primary-300 transition break-all line-clamp-2"
                     :title="row.LUrl"
+                    v-html="highlight(truncateUrl(row.LUrl, 50), search)"
                   >
-                    {{ truncateUrl(row.LUrl, 50) }}
                   </a>
                 </td>
 
@@ -204,8 +268,8 @@
                   <span
                     class="font-mono text-xs text-gray-900 dark:text-white break-all"
                     :title="row.SUrl"
+                    v-html="highlight(row.SUrl, search)"
                   >
-                    {{ row.SUrl }}
                   </span>
                 </td>
 
@@ -216,12 +280,12 @@
                     :title="t('pt_toast_copied') ?? 'Salin'"
                     @click="
                       () => {
-                        copy(row.SUrl)
+                        copy(row.SUrl);
                         toast.add({
                           title: t('pt_toast_copied'),
                           color: 'success',
                           icon: 'i-lucide-copy'
-                        })
+                        });
                       }
                     "
                   >
@@ -230,9 +294,10 @@
                 </td>
 
                 <!-- Keterangan -->
-                <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm break-words">
-                  {{ row.keterangan }}
-                </td>
+                <td
+                  class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm break-words"
+                  v-html="highlight(row.keterangan || '-', search)"
+                ></td>
 
                 <!-- Aksi -->
                 <td class="px-4 py-3 text-center">
@@ -259,7 +324,7 @@
               </tr>
 
               <!-- EMPTY STATE -->
-              <tr v-if="sortedData.length === 0">
+              <tr v-if="filteredData.length === 0">
                 <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                   {{ t('pt_empty') }}
                 </td>
@@ -279,71 +344,191 @@
           @confirm="confirmDelete"
         />
       </div>
+
+      <!-- PAGINATION -->
+      <div
+        v-if="totalItems > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
+      >
+        <div class="text-xs text-gray-600 dark:text-gray-400">
+          {{ t('menampilkan') }} {{ paginatedData.length }} {{ t('dari') }} {{ totalItems }}
+          {{ t('data') }}
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- BACK -->
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === 1
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+            ]"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            {{ t('sebelumnya') }}
+          </button>
+
+          <!-- PAGE NUMBERS -->
+          <div class="flex items-center gap-1">
+            <!-- FIRST -->
+            <button
+              v-if="paginationPages[0] > 1"
+              @click="currentPage = 1"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+            >
+              1
+            </button>
+
+            <!-- DOTS LEFT -->
+            <span
+              v-if="paginationPages[0] > 2"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- WINDOW -->
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                currentPage === page
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <!-- DOTS RIGHT -->
+            <span
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
+              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+            >
+              ...
+            </span>
+
+            <!-- LAST -->
+            <button
+              v-if="paginationPages[paginationPages.length - 1] < totalPages"
+              @click="currentPage = totalPages"
+              class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+            >
+              {{ totalPages }}
+            </button>
+          </div>
+
+          <!-- NEXT -->
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+              currentPage === totalPages
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+            ]"
+          >
+            {{ t('selanjutnya') }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
-import { ref, computed, watch, onMounted } from 'vue'
-import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import ConfirmPopup from '@/components/ConfirmPopup.vue'
-import { useUrl } from '~/composables/useUrl'
-import { useI18n } from 'vue-i18n'
+import { useClipboard } from '@vueuse/core';
+import { ref, computed, watch, onMounted } from 'vue';
+import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil, ChevronDown } from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
+import ConfirmPopup from '@/components/ConfirmPopup.vue';
+import { useUrl } from '~/composables/useUrl';
+import { useI18n } from 'vue-i18n';
 
 definePageMeta({
   middleware: 'auth'
-})
+});
 
-const { t } = useI18n()
-const toast = useToast()
-const { copy } = useClipboard()
+const { t } = useI18n();
+const toast = useToast();
+const { copy } = useClipboard();
 const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
-  useUrl()
+  useUrl();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Payment = {
-  id?: number
-  tanggal: string
-  LUrl: string
-  SUrl: string
-  alias?: string
-  keterangan: string
-}
+  id?: number;
+  tanggal: string;
+  LUrl: string;
+  SUrl: string;
+  alias?: string;
+  keterangan: string;
+};
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const loading = computed(() => isLoading.value)
-const isRefreshing = ref(false)
-const search = ref('')
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const showAddModal = ref(false)
-const isEditMode = ref(false)
-const editIndex = ref<number | null>(null)
-const editItemId = ref<number | null>(null)
-const showDeleteConfirm = ref(false)
-const deleteIndex = ref<number | null>(null)
+const loading = computed(() => isLoading.value);
+const isRefreshing = ref(false);
+const search = ref('');
+const sortOrder = ref<'asc' | 'desc'>('desc');
+const showAddModal = ref(false);
+const isEditMode = ref(false);
+const editIndex = ref<number | null>(null);
+const editItemId = ref<number | null>(null);
+const showDeleteConfirm = ref(false);
+const deleteIndex = ref<number | null>(null);
 
 const addForm = ref({
   LUrl: '',
   SUrl: '',
   keterangan: ''
-})
+});
+
+const formErrors = ref({
+  LUrl: false,
+  SUrl: false
+});
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const currentPage = ref(1);
+const perPage = ref(10);
+const rowsChoices = [5, 10, 20, 50];
+const openRowsDropdown = ref(false);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const generateRandomString = (length = 5) => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return result
-}
+  return result;
+};
 
 const truncateUrl = (url: string, max = 50) => {
-  if (!url) return ''
-  return url.length > max ? url.slice(0, max) + '.....' : url
-}
+  if (!url) return '';
+  return url.length > max ? url.slice(0, max) + '.....' : url;
+};
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 const fetchData = async () => {
@@ -353,61 +538,114 @@ const fetchData = async () => {
     orderby: 'udate',
     sortby: sortOrder.value,
     cari: search.value
-  })
-}
+  });
+};
 
 const toggleSort = () => {
-  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-  fetchData()
-}
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc';
+  fetchData();
+};
 
 const refreshData = async () => {
-  if (isRefreshing.value) return
-  isRefreshing.value = true
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
   try {
-    await fetchData()
+    await fetchData();
   } catch (err) {
-    console.error('Gagal refresh data', err)
+    console.error('Gagal refresh data', err);
   } finally {
-    isRefreshing.value = false
+    isRefreshing.value = false;
   }
-}
+};
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
-const sortedData = computed(() => data.value)
+const filteredData = computed(() => {
+  if (!search.value) return data.value;
+  const keyword = search.value.toLowerCase();
+  return data.value.filter((item) =>
+    [item.LUrl, item.SUrl, item.keterangan].join(' ').toLowerCase().includes(keyword)
+  );
+});
+
+const sortedData = computed(() => filteredData.value);
+
+const totalItems = computed(() => sortedData.value.length);
+const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  return sortedData.value.slice(start, start + perPage.value);
+});
+
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 3) {
+      pages.push(1, 2, 3, 4, 5);
+    } else if (current >= total - 2) {
+      for (let i = total - 4; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(current - 1, current, current + 1);
+    }
+  }
+  return pages;
+});
 
 // ─── Add / Edit ───────────────────────────────────────────────────────────────
 const openAdd = () => {
-  isEditMode.value = false
-  editIndex.value = null
-  editItemId.value = null
-  addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
-  showAddModal.value = true
-}
+  isEditMode.value = false;
+  editIndex.value = null;
+  editItemId.value = null;
+  addForm.value = { LUrl: '', SUrl: '', keterangan: '' };
+  formErrors.value = { LUrl: false, SUrl: false };
+  showAddModal.value = true;
+};
 
 const openEdit = (row: Payment, index: number) => {
-  isEditMode.value = true
-  editIndex.value = index
-  editItemId.value = row.id ?? null
+  isEditMode.value = true;
+  editIndex.value = index;
+  editItemId.value = row.id ?? null;
   addForm.value = {
     LUrl: row.LUrl,
     SUrl: row.alias ?? '',
     keterangan: row.keterangan
-  }
-  showAddModal.value = true
-}
+  };
+  formErrors.value = { LUrl: false, SUrl: false };
+  showAddModal.value = true;
+};
 
 const saveAdd = async () => {
-  if (!addForm.value.LUrl) {
-    toast.add({
-      title: t('pt_toast_url_empty'),
-      color: 'warning',
-      icon: 'i-lucide-alert-triangle'
-    })
-    return
+  // Reset errors
+  formErrors.value = { LUrl: false, SUrl: false };
+
+  // Validation
+  const emptyFields: string[] = [];
+  
+  if (!addForm.value.LUrl || !addForm.value.LUrl.trim()) {
+    formErrors.value.LUrl = true;
+    emptyFields.push('Tautan Panjang');
+  }
+  
+  if (!addForm.value.SUrl || !addForm.value.SUrl.trim()) {
+    formErrors.value.SUrl = true;
+    emptyFields.push('Bagian Belakang Tautan');
   }
 
-  const alias = addForm.value.SUrl ? addForm.value.SUrl : generateRandomString()
+  if (emptyFields.length > 0) {
+    toast.add({
+      title: t('gagal'),
+      description: `${emptyFields.join(', ')} wajib diisi`,
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    });
+    return;
+  }
+
+  const alias = addForm.value.SUrl;
 
   try {
     if (isEditMode.value && editItemId.value !== null) {
@@ -416,72 +654,89 @@ const saveAdd = async () => {
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
         alias
-      })
-      toast.add({ title: t('pt_toast_updated'), color: 'success', icon: 'i-lucide-circle-check' })
+      });
+      toast.add({ title: t('pt_toast_updated'), color: 'success', icon: 'i-lucide-circle-check' });
     } else {
       await createShortUrl({
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
         alias
-      })
-      toast.add({ title: t('pt_toast_added'), color: 'success', icon: 'i-lucide-circle-check' })
+      });
+      toast.add({ title: t('pt_toast_added'), color: 'success', icon: 'i-lucide-circle-check' });
     }
-    await fetchData()
+    await fetchData();
   } catch (err: any) {
     toast.add({
       title: err?.response?.data?.message ?? t('pt_toast_save_failed'),
       color: 'error',
       icon: 'i-lucide-alert-circle'
-    })
+    });
   } finally {
-    showAddModal.value = false
-    isEditMode.value = false
-    editIndex.value = null
-    editItemId.value = null
-    addForm.value = { LUrl: '', SUrl: '', keterangan: '' }
+    showAddModal.value = false;
+    isEditMode.value = false;
+    editIndex.value = null;
+    editItemId.value = null;
+    addForm.value = { LUrl: '', SUrl: '', keterangan: '' };
+    formErrors.value = { LUrl: false, SUrl: false };
   }
-}
+};
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const openDeleteConfirm = (index: number) => {
-  deleteIndex.value = index
-  showDeleteConfirm.value = true
-}
+  deleteIndex.value = index;
+  showDeleteConfirm.value = true;
+};
 
 const confirmDelete = async () => {
   if (deleteIndex.value !== null) {
-    const item = data.value[deleteIndex.value]
+    const item = data.value[deleteIndex.value];
     try {
-      await deleteShortUrl(item.id)
-      toast.add({ title: t('pt_toast_deleted'), color: 'success', icon: 'i-lucide-circle-check' })
-      await fetchData()
+      await deleteShortUrl(item.id);
+      toast.add({ title: t('pt_toast_deleted'), color: 'success', icon: 'i-lucide-circle-check' });
+      await fetchData();
     } catch (err: any) {
       toast.add({
         title: err?.response?.data?.message ?? t('pt_toast_delete_failed'),
         color: 'error',
         icon: 'i-lucide-alert-circle'
-      })
+      });
     }
   }
-  showDeleteConfirm.value = false
-  deleteIndex.value = null
-}
+  showDeleteConfirm.value = false;
+  deleteIndex.value = null;
+};
 
 // ─── Search debounce ──────────────────────────────────────────────────────────
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 watch(search, () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => fetchData(), 400)
-})
+  currentPage.value = 1;
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => fetchData(), 400);
+});
+
+watch(perPage, () => {
+  currentPage.value = 1;
+});
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
-onMounted(() => fetchData())
+onMounted(() => fetchData());
 
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('pt_title'), to: '/penyingkat-tautan' }
-])
+]);
+
+// ─── Highlight Function ───────────────────────────────────────────────────────
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 </script>
 
 <style scoped>
@@ -496,5 +751,16 @@ const breadcrumbs = computed(() => [
   to {
     transform: rotate(360deg);
   }
+}
+
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.2s ease;
+}
+
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

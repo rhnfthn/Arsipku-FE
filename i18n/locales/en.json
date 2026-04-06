@@ -296,7 +296,7 @@
   "sign_lihat_detail": "View Detail",
   "sign_tolak": "Reject",
   "log_title": "Digsig Log",
-  "log_cari_placeholder": "Search by user, IP, or manuscript type",
+  "log_cari_placeholder": "Search by user or manuscript type",
   "log_col_tanggal": "Date",
   "log_col_ip": "IP Address",
   "log_col_user": "User",

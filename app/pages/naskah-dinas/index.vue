@@ -85,6 +85,7 @@
           </div>
         </div>
 
+        <!-- SEARCH INPUT -->
         <div class="relative flex-1 w-full md:w-56">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
@@ -95,6 +96,7 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
+
         <button
           @click="exportExcel"
           class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
@@ -146,22 +148,39 @@
               :key="item.id"
               class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700"
             >
+              <!-- TANGGAL -->
               <td class="px-4 py-3 text-gray-500 dark:text-gray-200">
                 <div class="flex gap-2">
-                  <div>{{ formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal }}</div>
-                  <div>{{ formatTanggalJamIndonesia(item.tanggal, item.jam).jam }}</div>
+                  <div
+                    v-html="
+                      highlight(formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal, search)
+                    "
+                  />
+                  <div
+                    v-html="
+                      highlight(formatTanggalJamIndonesia(item.tanggal, item.jam).jam, search)
+                    "
+                  />
                 </div>
               </td>
 
+              <!-- ASAL NASKAH — nama + nomor dapat di-search -->
               <td class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap">
-                <div class="font-medium">{{ item.pengirim?.nama || '-' }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.nomor || '-' }}</div>
+                <div class="font-medium" v-html="highlight(item.pengirim?.nama || '-', search)" />
+                <div
+                  class="text-xs text-gray-500 dark:text-gray-400"
+                  v-html="highlight(item.nomor || '-', search)"
+                />
               </td>
 
+              <!-- TERTUJU -->
               <td class="px-4 py-3 text-black dark:text-gray-200">
-                <div class="font-medium">
-                  {{ item.penerima?.map((p) => p.position_text).join(', ') || '-' }}
-                </div>
+                <div
+                  class="font-medium"
+                  v-html="
+                    highlight(item.penerima?.map((p) => p.position_text).join(', ') || '-', search)
+                  "
+                />
               </td>
 
               <!-- FILE PREVIEW SLIDEOVER -->
@@ -182,9 +201,10 @@
                 </template>
               </USlideover>
 
+              <!-- PERIHAL -->
               <td class="px-4 py-3 text-black dark:text-gray-200">
                 <div class="flex flex-col gap-1">
-                  <div class="font-medium">{{ item.perihal }}</div>
+                  <div class="font-medium" v-html="highlight(item.perihal || '-', search)" />
                   <button
                     v-if="item.final_pdf_url"
                     @click="openFinalPdf(item.final_pdf_url)"
@@ -199,11 +219,26 @@
                 </div>
               </td>
 
+              <!-- PEMBUAT -->
               <td class="px-4 py-3 text-black dark:text-gray-200 whitespace-nowrap">
-                <div class="font-medium">{{ item.pembuat?.position_text || '-' }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ item.pembuat?.nama || '-' }}
-                </div>
+                <div
+                  class="font-medium"
+                  v-html="highlight(item.pembuat?.position_text || '-', search)"
+                />
+                <div
+                  class="text-xs text-gray-500 dark:text-gray-400"
+                  v-html="highlight(item.pembuat?.nama || '-', search)"
+                />
+              </td>
+            </tr>
+
+            <!-- EMPTY STATE -->
+            <tr v-if="!pending && paginatedData.length === 0">
+              <td
+                colspan="5"
+                class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500"
+              >
+                {{ $t('tidak_ditemukan') }}
               </td>
             </tr>
           </tbody>
@@ -385,6 +420,9 @@
                 </button>
               </div>
             </div>
+            <p v-if="modalErrors.jenisnaskah" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_jenisnaskah') }}
+            </p>
           </div>
 
           <!-- TANGGAL SURAT -->
@@ -403,6 +441,9 @@
               ]"
               @change="modalErrors.tanggal_surat = false"
             />
+            <p v-if="modalErrors.tanggal_surat" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_tanggalsurat') }}
+            </p>
           </div>
 
           <!-- SIFAT NASKAH -->
@@ -445,6 +486,9 @@
                 </button>
               </div>
             </div>
+            <p v-if="modalErrors.sifat_naskah" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_sifatnaskah') }}
+            </p>
           </div>
 
           <!-- NOMOR ASAL -->
@@ -464,6 +508,9 @@
               :placeholder="$t('nm_masukan_nomor')"
               @input="modalErrors.nomor_asal = false"
             />
+            <p v-if="modalErrors.nomor_asal" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_noasal') }}
+            </p>
           </div>
 
           <!-- ASAL NASKAH -->
@@ -521,6 +568,9 @@
                 </div>
               </div>
             </div>
+            <p v-if="modalErrors.asal_naskah" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_asalnaskah') }}
+            </p>
           </div>
 
           <!-- PERIHAL -->
@@ -540,6 +590,9 @@
               :placeholder="$t('nm_masukan_perihal')"
               @input="modalErrors.perihal = false"
             />
+            <p v-if="modalErrors.perihal" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_perihal') }}
+            </p>
           </div>
 
           <!-- LAMPIRAN (readonly) -->
@@ -641,6 +694,9 @@
                 </button>
               </div>
             </div>
+            <p v-if="modalErrors.tertuju" class="text-xs text-red-500 mt-1">
+              {{ $t('tertuju') }}
+            </p>
           </div>
 
           <!-- FILE UPLOAD -->
@@ -704,6 +760,9 @@
                 </button>
               </div>
             </div>
+            <p v-if="modalErrors.file" class="text-xs text-red-500 mt-1">
+              {{ $t('nm_file') }}
+            </p>
           </div>
         </div>
       </div>
@@ -802,6 +861,20 @@ const filteredAsalNaskahList = computed(() => {
 });
 
 // ==============================
+// HIGHLIGHT helper
+// Membungkus teks yang cocok dengan <mark> untuk highlight hasil pencarian
+// ==============================
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
+// ==============================
 // SORT & REFRESH
 // ==============================
 const toggleSort = () => {
@@ -817,29 +890,49 @@ const refreshData = async () => {
   await fetchNaskahDinas();
 };
 
+// ==============================
+// FILTERED DATA
+// Perbaikan: search mencakup pengirim.nama DAN pengirim.persnum_person_text DAN nomor
+// ==============================
 const filteredData = computed(() => {
   let data = [...listDelegasi.value];
-  const keyword = search.value.toLowerCase();
+  const keyword = search.value.toLowerCase().trim();
 
-  data = data.filter((item) => {
-    const asalNaskah = (item.pengirim?.persnum_person_text || '').toLowerCase();
-    const nomor = (item.nomor || '').toLowerCase();
-    const tertujuText = (item.penerima || [])
-      .map((p: any) => `${p.position_text || ''} ${p.persnum_person_text || ''}`)
-      .join(' ')
-      .toLowerCase();
-    const perihal = (item.perihal || '').toLowerCase();
-    const pembuat =
-      `${item.pembuat?.position_text || ''} ${item.pembuat?.nama || ''}`.toLowerCase();
+  if (keyword) {
+    data = data.filter((item) => {
+      // Kolom Tanggal & Jam (formatted Indonesia)
+      const waktu = formatTanggalJamIndonesia(item.tanggal, item.jam);
+      const tanggalFormatted = (waktu.tanggal || '').toLowerCase();
+      const jamFormatted = (waktu.jam || '').toLowerCase();
+      // Kolom Asal Naskah — nama pengirim
+      const asalNaskahNama = (item.pengirim?.nama || '').toLowerCase();
+      // Kolom Asal Naskah — persnum / kode pengirim (fallback)
+      const asalNaskahPersnum = (item.pengirim?.persnum_person_text || '').toLowerCase();
+      // Kolom Asal Naskah — nomor naskah (sub-baris di bawah nama)
+      const nomor = (item.nomor || '').toLowerCase();
+      // Kolom Tertuju
+      const tertujuText = (item.penerima || [])
+        .map((p: any) => `${p.position_text || ''} ${p.persnum_person_text || ''}`)
+        .join(' ')
+        .toLowerCase();
+      // Kolom Perihal
+      const perihal = (item.perihal || '').toLowerCase();
+      // Kolom Pembuat
+      const pembuat =
+        `${item.pembuat?.position_text || ''} ${item.pembuat?.nama || ''}`.toLowerCase();
 
-    return (
-      asalNaskah.includes(keyword) ||
-      nomor.includes(keyword) ||
-      tertujuText.includes(keyword) ||
-      perihal.includes(keyword) ||
-      pembuat.includes(keyword)
-    );
-  });
+      return (
+        tanggalFormatted.includes(keyword) ||
+        jamFormatted.includes(keyword) ||
+        asalNaskahNama.includes(keyword) ||
+        asalNaskahPersnum.includes(keyword) ||
+        nomor.includes(keyword) ||
+        tertujuText.includes(keyword) ||
+        perihal.includes(keyword) ||
+        pembuat.includes(keyword)
+      );
+    });
+  }
 
   data.sort((a, b) => {
     const dateA = parseUtcTanggalJam(a.tanggal, a.jam)?.getTime() ?? 0;
@@ -895,7 +988,8 @@ function goToPage(page: number) {
   currentPage.value = page;
 }
 
-watch(perPage, () => {
+// Reset ke halaman 1 saat search atau perPage berubah
+watch([search, perPage], () => {
   currentPage.value = 1;
 });
 
@@ -936,7 +1030,6 @@ const newDelegasi = ref({
 });
 
 const saveDelegasi = async () => {
-  // Validasi semua field dengan border merah
   modalErrors.value.jenisnaskah = !newDelegasi.value.jenisnaskah;
   modalErrors.value.tanggal_surat = !newDelegasi.value.tanggal_surat;
   modalErrors.value.sifat_naskah = !newDelegasi.value.sifat_naskah;
@@ -1140,7 +1233,6 @@ function resetNewDelegasi() {
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
 
-  // Reset semua error
   modalErrors.value = {
     jenisnaskah: false,
     tanggal_surat: false,

@@ -148,17 +148,20 @@
               idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
             ]"
           >
-            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-              {{ item.nama }}
-            </td>
+            <td
+              class="px-4 py-3 font-medium text-gray-900 dark:text-white"
+              v-html="highlight(item.nama, filters.search)"
+            ></td>
 
-            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
-              {{ item.alamat }}
-            </td>
+            <td
+              class="px-4 py-3 text-gray-700 dark:text-gray-300"
+              v-html="highlight(item.alamat, filters.search)"
+            ></td>
 
-            <td class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">
-              {{ item.telepon }}
-            </td>
+            <td
+              class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
+              v-html="highlight(item.telepon, filters.search)"
+            ></td>
 
             <td class="px-4 py-3">
               <span
@@ -173,9 +176,10 @@
               </span>
             </td>
 
-            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
-              {{ item.nama_pembuat }}
-            </td>
+            <td
+              class="px-4 py-3 text-gray-700 dark:text-gray-300"
+              v-html="highlight(item.nama_pembuat, filters.search)"
+            ></td>
 
             <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
@@ -328,6 +332,9 @@
             ]"
             @input="formErrors.nama = false"
           />
+          <p v-if="formErrors.nama" class="text-xs text-red-500 mt-1">
+            {{ $t('te_nama') }}
+          </p>
         </div>
 
         <!-- FIELD ALAMAT -->
@@ -347,6 +354,9 @@
             ]"
             @input="formErrors.alamat = false"
           />
+          <p v-if="formErrors.alamat" class="text-xs text-red-500 mt-1">
+            {{ $t('te_alamat') }}
+          </p>
         </div>
 
         <!-- FIELD TELEPON -->
@@ -371,6 +381,9 @@
                 : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
             ]"
           />
+          <p v-if="formErrors.telephone" class="text-xs text-red-500 mt-1">
+            {{ $t('te_telepon') }}
+          </p>
         </div>
 
         <!-- FIELD STATUS -->
@@ -392,6 +405,9 @@
             <option :value="true">{{ $t('te_aktif') }}</option>
             <option :value="false">{{ $t('te_tidak_aktif') }}</option>
           </select>
+          <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">
+            Status
+          </p>
         </div>
       </Modal>
     </Teleport>
@@ -796,6 +812,17 @@ const onExport = () => {
   saveAs(blob, `tertuju_eksternal_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast(t('te_berhasil') || 'Berhasil', 'Export berhasil.', 'success');
 };
+
+// Highlight function for search results
+function highlight(text: string, keyword: string): string {
+  if (!keyword || !text) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 </script>
 
 <style scoped>

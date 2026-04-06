@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref } from 'vue';
 import type {
   DigsigLog,
   DigsigLogResponse,
@@ -20,8 +20,8 @@ import type {
   PenandatangananDocument,
   PenandatangananResponse,
   PenandatangananDetailResponse,
-  DigsigConfigResponse,
-} from "~/types/digsig";
+  DigsigConfigResponse
+} from '~/types/digsig';
 
 export const useDigsig = () => {
   const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
@@ -31,7 +31,7 @@ export const useDigsig = () => {
   const documentDetail = ref<DigsigDocument | null>(null);
   const documentCheck = ref<CekDokumenResponse | null>(null);
   const meta = ref<any>(null);
-  const bsreHealth = ref<BsreHealthResponse["data"] | null>(null);
+  const bsreHealth = ref<BsreHealthResponse['data'] | null>(null);
 
   // BsrE Alert state
   const bsreAlert = ref<{
@@ -78,15 +78,15 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<{ success: boolean; data: any[] }>("/admin/config/digsig");
+      const res = await apiGet<{ success: boolean; data: any[] }>('/admin/config/digsig');
       if (res.success && res.data) {
         digsigConfig.value = res.data;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch digsig config";
-      console.error("❌ fetchDigsigConfig error:", err);
+      error.value = err?.message || 'Failed to fetch digsig config';
+      console.error('❌ fetchDigsigConfig error:', err);
     } finally {
       loadingDigsigConfig.value = false;
     }
@@ -103,24 +103,24 @@ export const useDigsig = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      if (params?.page) queryParams.append("page", params.page.toString());
-      if (params?.limit) queryParams.append("limit", params.limit.toString());
-      if (params?.search) queryParams.append("search", params.search);
-      if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
-      if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+      if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
 
-      const url = `/digsig/log${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      const url = `/digsig/log${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const res = await apiGet<DigsigLogResponse>(url);
 
       if (res.success && res.data) {
         logs.value = res.data.data;
         meta.value = res.data.meta;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch logs";
-      console.error("❌ fetchLogs error:", err);
+      error.value = err?.message || 'Failed to fetch logs';
+      console.error('❌ fetchLogs error:', err);
     } finally {
       loading.value = false;
     }
@@ -135,16 +135,16 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<BsreHealthResponse>("/digsig/log/bsre-health");
+      const res = await apiGet<BsreHealthResponse>('/digsig/log/bsre-health');
 
       if (res.success && res.data) {
         bsreHealth.value = res.data;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch BsrE health status";
-      console.error("❌ fetchBsreHealth error:", err);
+      error.value = err?.message || 'Failed to fetch BsrE health status';
+      console.error('❌ fetchBsreHealth error:', err);
     } finally {
       loadingHealth.value = false;
     }
@@ -167,17 +167,17 @@ export const useDigsig = () => {
           activatedAt: string | null;
           activatedByName: string | null;
         };
-      }>("/digsig/log/bsre-alert");
+      }>('/digsig/log/bsre-alert');
 
       if (res.success && res.data) {
         bsreAlert.value = res.data;
-        console.log("✅ BsrE Alert status:", res.data);
+        console.log('✅ BsrE Alert status:', res.data);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch BsrE alert status";
-      console.error("❌ fetchBsreAlert error:", err);
+      error.value = err?.message || 'Failed to fetch BsrE alert status';
+      console.error('❌ fetchBsreAlert error:', err);
     } finally {
       loadingAlert.value = false;
     }
@@ -192,7 +192,7 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      console.log("📤 Activating BsrE alert:", { message });
+      console.log('📤 Activating BsrE alert:', { message });
 
       const res = await apiPost<{
         success: boolean;
@@ -203,29 +203,23 @@ export const useDigsig = () => {
           activatedAt: string;
           activatedByName: string;
         };
-      }>("/digsig/log/bsre-alert/activate", { message });
+      }>('/digsig/log/bsre-alert/activate', { message });
 
-      console.log("✅ BsrE Alert activated:", res);
+      console.log('✅ BsrE Alert activated:', res);
 
       if (res.success && res.data) {
         bsreAlert.value = res.data;
         return res;
       } else {
-        throw new Error(res.message || "Failed to activate BsrE alert");
+        throw new Error(res.message || 'Failed to activate BsrE alert');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to activate BsrE alert";
-      console.error("❌ activateBsreAlert error:", err);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to activate BsrE alert';
+      console.error('❌ activateBsreAlert error:', err);
       useToast().add({
-        title: "Gagal",
-        description:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Gagal mengaktifkan alert",
-        color: "error",
+        title: 'Gagal',
+        description: err?.response?.data?.message || err?.message || 'Gagal mengaktifkan alert',
+        color: 'error'
       });
       throw err;
     } finally {
@@ -242,7 +236,7 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      console.log("📤 Deactivating BsrE alert");
+      console.log('📤 Deactivating BsrE alert');
 
       const res = await apiPost<{
         success: boolean;
@@ -253,29 +247,24 @@ export const useDigsig = () => {
           activatedAt: null;
           activatedByName: null;
         };
-      }>("/digsig/log/bsre-alert/deactivate", {});
+      }>('/digsig/log/bsre-alert/deactivate', {});
 
-      console.log("✅ BsrE Alert deactivated:", res);
+      console.log('✅ BsrE Alert deactivated:', res);
 
       if (res.success && res.data) {
         bsreAlert.value = res.data;
         return res;
       } else {
-        throw new Error(res.message || "Failed to deactivate BsrE alert");
+        throw new Error(res.message || 'Failed to deactivate BsrE alert');
       }
     } catch (err: any) {
       error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to deactivate BsrE alert";
-      console.error("❌ deactivateBsreAlert error:", err);
+        err?.response?.data?.message || err?.message || 'Failed to deactivate BsrE alert';
+      console.error('❌ deactivateBsreAlert error:', err);
       useToast().add({
-        title: "Gagal",
-        description:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Gagal menonaktifkan alert",
-        color: "error",
+        title: 'Gagal',
+        description: err?.response?.data?.message || err?.message || 'Gagal menonaktifkan alert',
+        color: 'error'
       });
       throw err;
     } finally {
@@ -294,13 +283,13 @@ export const useDigsig = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      if (params?.page) queryParams.append("page", params.page.toString());
-      if (params?.limit) queryParams.append("limit", params.limit.toString());
-      if (params?.search) queryParams.append("search", params.search);
-      if (params?.status) queryParams.append("status", params.status);
-      if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
 
-      const url = `/digsig/document${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      const url = `/digsig/document${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const res = await apiGet<DigsigDocumentResponse>(url);
 
       if (res.success && res.data) {
@@ -309,18 +298,18 @@ export const useDigsig = () => {
           total: res.data.total,
           page: res.data.page,
           limit: res.data.limit,
-          totalPages: res.data.totalPages,
+          totalPages: res.data.totalPages
         };
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch documents";
-      console.error("❌ fetchDocuments error:", err);
+      error.value = err?.message || 'Failed to fetch documents';
+      console.error('❌ fetchDocuments error:', err);
       useToast().add({
-        title: "Gagal",
-        description: err?.message || "Gagal memuat dokumen",
-        color: "error",
+        title: 'Gagal',
+        description: err?.message || 'Gagal memuat dokumen',
+        color: 'error'
       });
     } finally {
       loading.value = false;
@@ -336,23 +325,21 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<DigsigDocumentDetailResponse>(
-        `/digsig/document/${id}`,
-      );
+      const res = await apiGet<DigsigDocumentDetailResponse>(`/digsig/document/${id}`);
 
       if (res.success && res.data) {
         documentDetail.value = res.data;
         return res.data;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch document detail";
-      console.error("❌ fetchDocumentDetail error:", err);
+      error.value = err?.message || 'Failed to fetch document detail';
+      console.error('❌ fetchDocumentDetail error:', err);
       useToast().add({
-        title: "Gagal",
-        description: err?.message || "Gagal memuat detail dokumen",
-        color: "error",
+        title: 'Gagal',
+        description: err?.message || 'Gagal memuat detail dokumen',
+        color: 'error'
       });
       return null;
     } finally {
@@ -370,54 +357,44 @@ export const useDigsig = () => {
 
     try {
       const formData = new FormData();
-      formData.append("tanggalDokumen", payload.tanggalDokumen);
-      formData.append("klasifikasi", payload.klasifikasi);
-      formData.append("jenisNaskah", payload.jenisNaskah);
-      formData.append("nomorDokumen", payload.nomorDokumen);
-      formData.append("perihal", payload.perihal);
-      formData.append("file", payload.file);
-      formData.append("visibleSign", payload.visibleSign.toString());
+      formData.append('tanggalDokumen', payload.tanggalDokumen);
+      formData.append('klasifikasi', payload.klasifikasi);
+      formData.append('jenisNaskah', payload.jenisNaskah);
+      formData.append('nomorDokumen', payload.nomorDokumen);
+      formData.append('perihal', payload.perihal);
+      formData.append('file', payload.file);
+      formData.append('visibleSign', payload.visibleSign.toString());
 
       const cleanSigners = payload.signers.map((s) => ({
         urutan: Number(s.urutan),
-        persnum: Number(s.persnum),
+        persnum: Number(s.persnum)
       }));
 
-      formData.append("signers", JSON.stringify(cleanSigners));
+      formData.append('signers', JSON.stringify(cleanSigners));
 
-      console.log("📤 Creating document with signers:", cleanSigners);
+      console.log('📤 Creating document with signers:', cleanSigners);
 
-      const res = await api.post<DigsigDocumentDetailResponse>(
-        "/digsig/document",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      const res = await api.post<DigsigDocumentDetailResponse>('/digsig/document', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-      console.log("✅ Document created:", res.data);
+      console.log('✅ Document created:', res.data);
 
       if (res.data.success) {
         return res.data.data;
       } else {
-        throw new Error(res.data.message || "Failed to create document");
+        throw new Error(res.data.message || 'Failed to create document');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to create document";
-      console.error("❌ createDocument error:", err);
-      console.error("❌ Error response:", err?.response?.data);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to create document';
+      console.error('❌ createDocument error:', err);
+      console.error('❌ Error response:', err?.response?.data);
       useToast().add({
-        title: "Gagal",
-        description:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Gagal menyimpan dokumen",
-        color: "error",
+        title: 'Gagal',
+        description: err?.response?.data?.message || err?.message || 'Gagal menyimpan dokumen',
+        color: 'error'
       });
       throw err;
     } finally {
@@ -436,60 +413,48 @@ export const useDigsig = () => {
     try {
       const formData = new FormData();
 
-      if (payload.tanggalDokumen)
-        formData.append("tanggalDokumen", payload.tanggalDokumen);
-      if (payload.klasifikasi)
-        formData.append("klasifikasi", payload.klasifikasi);
-      if (payload.jenisNaskah)
-        formData.append("jenisNaskah", payload.jenisNaskah);
-      if (payload.nomorDokumen)
-        formData.append("nomorDokumen", payload.nomorDokumen);
-      if (payload.perihal) formData.append("perihal", payload.perihal);
-      if (payload.file) formData.append("file", payload.file);
+      if (payload.tanggalDokumen) formData.append('tanggalDokumen', payload.tanggalDokumen);
+      if (payload.klasifikasi) formData.append('klasifikasi', payload.klasifikasi);
+      if (payload.jenisNaskah) formData.append('jenisNaskah', payload.jenisNaskah);
+      if (payload.nomorDokumen) formData.append('nomorDokumen', payload.nomorDokumen);
+      if (payload.perihal) formData.append('perihal', payload.perihal);
+      if (payload.file) formData.append('file', payload.file);
       if (payload.visibleSign !== undefined)
-        formData.append("visibleSign", payload.visibleSign.toString());
+        formData.append('visibleSign', payload.visibleSign.toString());
 
       if (payload.signers) {
         const cleanSigners = payload.signers.map((s) => ({
+          id_document: id,
           urutan: Number(s.urutan),
-          persnum: Number(s.persnum),
+          persnum: Number(s.persnum)
         }));
-        formData.append("signers", JSON.stringify(cleanSigners));
+        formData.append('id_document', id);
+        formData.append('signers', JSON.stringify(cleanSigners));
 
-        console.log("📤 Updating document with signers:", cleanSigners);
+        console.log('📤 Updating document with signers:', cleanSigners);
       }
 
-      const res = await api.put<DigsigDocumentDetailResponse>(
-        `/digsig/document/${id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      const res = await api.put<DigsigDocumentDetailResponse>(`/digsig/document/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-      console.log("✅ Document updated:", res.data);
+      console.log('✅ Document updated:', res.data);
 
       if (res.data.success) {
         return res.data.data;
       } else {
-        throw new Error(res.data.message || "Failed to update document");
+        throw new Error(res.data.message || 'Failed to update document');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to update document";
-      console.error("❌ updateDocument error:", err);
-      console.error("❌ Error response:", err?.response?.data);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to update document';
+      console.error('❌ updateDocument error:', err);
+      console.error('❌ Error response:', err?.response?.data);
       useToast().add({
-        title: "Gagal",
-        description:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Gagal menyimpan dokumen",
-        color: "error",
+        title: 'Gagal',
+        description: err?.response?.data?.message || err?.message || 'Gagal menyimpan dokumen',
+        color: 'error'
       });
       throw err;
     } finally {
@@ -511,11 +476,11 @@ export const useDigsig = () => {
       if (res.success) {
         return true;
       } else {
-        throw new Error("Failed to delete document");
+        throw new Error('Failed to delete document');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to delete document";
-      console.error("❌ deleteDocument error:", err);
+      error.value = err?.message || 'Failed to delete document';
+      console.error('❌ deleteDocument error:', err);
       throw err;
     } finally {
       loading.value = false;
@@ -533,30 +498,23 @@ export const useDigsig = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const res = await api.post<CekDokumenResponse>(
-        "/digsig/cek-dokumen/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      const res = await api.post<CekDokumenResponse>('/digsig/cek-dokumen/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       if (res.data.success && res.data.data) {
         documentCheck.value = res.data;
         return res.data;
       } else {
-        throw new Error(res.data.message || "Failed to check document");
+        throw new Error(res.data.message || 'Failed to check document');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to check document";
-      console.error("❌ checkDocument error:", err);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to check document';
+      console.error('❌ checkDocument error:', err);
       throw err;
     } finally {
       loadingCheck.value = false;
@@ -579,12 +537,12 @@ export const useDigsig = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      if (params?.page) queryParams.append("page", params.page.toString());
-      if (params?.limit) queryParams.append("limit", params.limit.toString());
-      if (params?.search) queryParams.append("search", params.search);
-      if (params?.status) queryParams.append("status", params.status);
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.status) queryParams.append('status', params.status);
 
-      const url = `/digsig/penandatanganan${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      const url = `/digsig/penandatanganan${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
       const res = await apiGet<PenandatangananResponse>(url);
 
@@ -594,15 +552,15 @@ export const useDigsig = () => {
           total: res.data.total,
           page: res.data.page,
           limit: res.data.limit,
-          totalPages: res.data.totalPages,
+          totalPages: res.data.totalPages
         };
         penandatanganSummary.value = res.data.summary;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch penandatanganan documents";
-      console.error("❌ fetchPenandatanganDocuments error:", err);
+      error.value = err?.message || 'Failed to fetch penandatanganan documents';
+      console.error('❌ fetchPenandatanganDocuments error:', err);
     } finally {
       loading.value = false;
     }
@@ -625,11 +583,11 @@ export const useDigsig = () => {
         penandatanganDetail.value = res.data;
         return res.data;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch penandatanganan detail";
-      console.error("❌ fetchPenandatanganDetail error:", err);
+      error.value = err?.message || 'Failed to fetch penandatanganan detail';
+      console.error('❌ fetchPenandatanganDetail error:', err);
       return null;
     } finally {
       loadingDetail.value = false;
@@ -640,46 +598,37 @@ export const useDigsig = () => {
    * SIGN DOCUMENT
    * POST /digsig/penandatanganan/:id/sign
    * ====================== */
-  const signDocument = async (
-    id: string,
-    payload: { passphrase: string; keterangan?: string },
-  ) => {
+  const signDocument = async (id: string, payload: { passphrase: string; keterangan?: string }) => {
     loading.value = true;
     error.value = null;
 
     try {
       const body: any = {
-        passphrase: payload.passphrase,
+        passphrase: payload.passphrase
       };
 
       if (payload.keterangan) {
         body.keterangan = payload.keterangan;
       }
 
-      console.log("📤 Signing document:", id, body);
+      console.log('📤 Signing document:', id, body);
 
       const res = await apiPost(`/digsig/penandatanganan/${id}/sign`, body);
 
-      console.log("✅ Document signed:", res);
+      console.log('✅ Document signed:', res);
 
       if (res.success) {
         return res;
       } else {
-        throw new Error(res.message || "Failed to sign document");
+        throw new Error(res.message || 'Failed to sign document');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to sign document";
-      console.error("❌ signDocument error:", err);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to sign document';
+      console.error('❌ signDocument error:', err);
       useToast().add({
-        title: "Gagal",
-        description:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Gagal menandatangani dokumen",
-        color: "error",
+        title: 'Gagal',
+        description: err?.response?.data?.message || err?.message || 'Gagal menandatangani dokumen',
+        color: 'error'
       });
       throw err;
     } finally {
@@ -696,25 +645,22 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      console.log("📤 Rejecting document:", id, { alasan });
+      console.log('📤 Rejecting document:', id, { alasan });
 
       const res = await apiPost(`/digsig/penandatanganan/${id}/reject`, {
-        alasan,
+        alasan
       });
 
-      console.log("✅ Document rejected:", res);
+      console.log('✅ Document rejected:', res);
 
       if (res.success) {
         return res;
       } else {
-        throw new Error(res.message || "Failed to reject document");
+        throw new Error(res.message || 'Failed to reject document');
       }
     } catch (err: any) {
-      error.value =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to reject document";
-      console.error("❌ rejectDocument error:", err);
+      error.value = err?.response?.data?.message || err?.message || 'Failed to reject document';
+      console.error('❌ rejectDocument error:', err);
       throw err;
     } finally {
       loading.value = false;
@@ -730,19 +676,17 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<KlasifikasiResponse>("/persuratan/klasifikasi");
+      const res = await apiGet<KlasifikasiResponse>('/persuratan/klasifikasi');
 
       if (res.success && res.data) {
-        klasifikasiList.value = res.data.filter(
-          (k) => !k.klasifikasi.includes("."),
-        );
-        console.log("✅ Klasifikasi loaded:", klasifikasiList.value.length);
+        klasifikasiList.value = res.data.filter((k) => !k.klasifikasi.includes('.'));
+        console.log('✅ Klasifikasi loaded:', klasifikasiList.value.length);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch klasifikasi";
-      console.error("❌ fetchKlasifikasi error:", err);
+      error.value = err?.message || 'Failed to fetch klasifikasi';
+      console.error('❌ fetchKlasifikasi error:', err);
     } finally {
       loadingKlasifikasi.value = false;
     }
@@ -758,23 +702,23 @@ export const useDigsig = () => {
 
     try {
       const res = await apiGet<{ success: boolean; data: Klasifikasi }>(
-        `/persuratan/klasifikasi/${id}`,
+        `/persuratan/klasifikasi/${id}`
       );
 
       if (res.success && res.data) {
         klasifikasiDetail.value = res.data;
-        console.log("✅ Klasifikasi detail loaded:", res.data);
+        console.log('✅ Klasifikasi detail loaded:', res.data);
         return res.data;
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch klasifikasi detail";
-      console.error("❌ fetchKlasifikasiDetail error:", err);
+      error.value = err?.message || 'Failed to fetch klasifikasi detail';
+      console.error('❌ fetchKlasifikasiDetail error:', err);
       useToast().add({
-        title: "Gagal",
-        description: err?.message || "Gagal memuat detail klasifikasi",
-        color: "error",
+        title: 'Gagal',
+        description: err?.message || 'Gagal memuat detail klasifikasi',
+        color: 'error'
       });
       return null;
     } finally {
@@ -791,17 +735,17 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<JenisNaskahResponse>("/jenis");
+      const res = await apiGet<JenisNaskahResponse>('/jenis');
 
       if (res.success && res.data) {
         jenisNaskahList.value = res.data;
-        console.log("✅ Jenis Naskah loaded:", jenisNaskahList.value.length);
+        console.log('✅ Jenis Naskah loaded:', jenisNaskahList.value.length);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch jenis naskah";
-      console.error("❌ fetchJenisNaskah error:", err);
+      error.value = err?.message || 'Failed to fetch jenis naskah';
+      console.error('❌ fetchJenisNaskah error:', err);
     } finally {
       loadingJenisNaskah.value = false;
     }
@@ -816,19 +760,17 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<VerifikatorResponse>(
-        "/digsig/document/verifikator",
-      );
+      const res = await apiGet<VerifikatorResponse>('/digsig/document/verifikator');
 
       if (res.success && res.data) {
         verifikatorList.value = res.data;
-        console.log("✅ Verifikator loaded:", verifikatorList.value.length);
+        console.log('✅ Verifikator loaded:', verifikatorList.value.length);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch verifikator";
-      console.error("❌ fetchVerifikator error:", err);
+      error.value = err?.message || 'Failed to fetch verifikator';
+      console.error('❌ fetchVerifikator error:', err);
     } finally {
       loadingVerifikator.value = false;
     }
@@ -843,19 +785,17 @@ export const useDigsig = () => {
     error.value = null;
 
     try {
-      const res = await apiGet<{ success: boolean; data: { noktp: string } }>(
-        "/digsig/ktp",
-      );
+      const res = await apiGet<{ success: boolean; data: { noktp: string } }>('/digsig/ktp');
 
       if (res.success && res.data) {
         userEnik.value = res.data.noktp;
-        console.log("✅ User E-NIK loaded:", userEnik.value);
+        console.log('✅ User E-NIK loaded:', userEnik.value);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      error.value = err?.message || "Failed to fetch E-NIK";
-      console.error("❌ fetchUserEnik error:", err);
+      error.value = err?.message || 'Failed to fetch E-NIK';
+      console.error('❌ fetchUserEnik error:', err);
     } finally {
       loadingEnik.value = false;
     }
@@ -866,121 +806,121 @@ export const useDigsig = () => {
    * ====================== */
   const showToastSignerAdded = (nama: string) => {
     useToast().add({
-      title: "Berhasil",
+      title: 'Berhasil',
       description: `${nama} ditambahkan sebagai Penanda Tangan`,
-      color: "success",
+      color: 'success'
     });
   };
 
   const showToastSignerRemoved = (nama: string) => {
     useToast().add({
-      title: "Info",
+      title: 'Info',
       description: `${nama} dihapus dari daftar Penanda Tangan`,
-      color: "warning",
+      color: 'warning'
     });
   };
 
   const showToastFileTooLarge = () => {
     useToast().add({
-      title: "Gagal",
-      description: "Ukuran file maksimal 10MB",
-      color: "error",
+      title: 'Gagal',
+      description: 'Ukuran file maksimal 10MB',
+      color: 'error'
     });
   };
 
   const showToastFileSelected = (nama: string) => {
     useToast().add({
-      title: "Berhasil",
+      title: 'Berhasil',
       description: `File "${nama}" berhasil dipilih`,
-      color: "success",
+      color: 'success'
     });
   };
 
   const showToastFileNotAvailable = () => {
     useToast().add({
-      title: "Gagal",
-      description: "File pratinjau tidak tersedia",
-      color: "error",
+      title: 'Gagal',
+      description: 'File pratinjau tidak tersedia',
+      color: 'error'
     });
   };
 
   const showToastGagalPreview = () => {
     useToast().add({
-      title: "Gagal",
-      description: "Gagal memuat pratinjau dokumen",
-      color: "error",
+      title: 'Gagal',
+      description: 'Gagal memuat pratinjau dokumen',
+      color: 'error'
     });
   };
 
   const showToastValidasiForm = (field: string) => {
     useToast().add({
-      title: "Gagal",
+      title: 'Gagal',
       description: field,
-      color: "error",
+      color: 'error'
     });
   };
 
   const showToastDokumenCreated = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Dokumen berhasil dibuat",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Dokumen berhasil dibuat',
+      color: 'success'
     });
   };
 
   const showToastDokumenUpdated = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Dokumen berhasil diperbarui",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Dokumen berhasil diperbarui',
+      color: 'success'
     });
   };
 
   const showToastAlertPesanKosong = () => {
     useToast().add({
-      title: "Gagal",
-      description: "Pesan alert tidak boleh kosong",
-      color: "error",
+      title: 'Gagal',
+      description: 'Pesan alert tidak boleh kosong',
+      color: 'error'
     });
   };
 
   const showToastAlertActivated = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil diaktifkan",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Alert gangguan BsrE berhasil diaktifkan',
+      color: 'success'
     });
   };
 
   const showToastAlertDeactivated = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Alert gangguan BsrE berhasil dinonaktifkan",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Alert gangguan BsrE berhasil dinonaktifkan',
+      color: 'success'
     });
   };
 
   const showToastDataTidakValid = () => {
     useToast().add({
-      title: "Gagal",
-      description: "Data dokumen tidak valid",
-      color: "error",
+      title: 'Gagal',
+      description: 'Data dokumen tidak valid',
+      color: 'error'
     });
   };
 
   const showToastDokumenSigned = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditandatangani",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Dokumen berhasil ditandatangani',
+      color: 'success'
     });
   };
 
   const showToastDokumenRejected = () => {
     useToast().add({
-      title: "Berhasil",
-      description: "Dokumen berhasil ditolak",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Dokumen berhasil ditolak',
+      color: 'success'
     });
   };
 
@@ -1067,6 +1007,6 @@ export const useDigsig = () => {
     showToastDokumenUpdated,
     showToastAlertPesanKosong,
     showToastAlertActivated,
-    showToastAlertDeactivated,
+    showToastAlertDeactivated
   };
 };
