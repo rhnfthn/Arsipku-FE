@@ -373,7 +373,7 @@
 
       <!-- MODAL TAMBAH -->
       <Teleport to="body">
-        <AddUsulan v-model="openAdd" @submit="handleSubmitFromModal" />
+        <AddUsulan v-if="openAdd" @submit="handleSubmitFromModal" />
       </Teleport>
     </div>
   </div>
@@ -975,50 +975,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
-import AddUsulan from '~/components/AddUsulan.vue'
-import Heading from '~/components/Heading.vue'
-import PageHeader from '~/components/PageHeader.vue'
-import { Modal } from '#components'
-import { usePenomoran } from '~/composables/usePenomoran'
-import { useAuth } from '~/composables/useAuth'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next';
+import AddUsulan from '~/components/AddUsulan.vue';
+import Heading from '~/components/Heading.vue';
+import PageHeader from '~/components/PageHeader.vue';
+import { Modal } from '#components';
+import { usePenomoran } from '~/composables/usePenomoran';
+import { useAuth } from '~/composables/useAuth';
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth' });
 
-const { t } = useI18n()
-const { user, getProfile } = useAuth()
-const {
-  getListUsulanByPosition,
-  getDetailUsulan,
-  getPersonWithPosition,
-  getKlasifikasi,
-  updateNomorFile,
-  userCounts
-} = usePenomoran()
-const toast = useToast()
+const { t } = useI18n();
+const { user, getProfile } = useAuth();
+const { getListUsulanByPosition, getDetailUsulan, getKlasifikasi, updateNomorFile, userCounts } =
+  usePenomoran();
+const toast = useToast();
 
 // ─── Breadcrumbs ─────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('usl_title'), to: '/usulan-penomoran' }
-])
+]);
 
 const updateDraftCount = async () => {
-  if (!user.value?.position) return
+  if (!user.value?.position) return;
   const positionId =
-    typeof user.value.position === 'object' ? user.value.position.id : user.value.position
+    typeof user.value.position === 'object' ? user.value.position.id : user.value.position;
   try {
-    const res = await getListUsulanByPosition(String(positionId), { limit: 9999 })
+    const res = await getListUsulanByPosition(String(positionId), { limit: 9999 });
     userCounts.value.belum_diajukan = (res.data || []).filter((item: any) => {
-      const active = (item.details || []).filter((d: any) => d.status !== 'hangus')
-      return active.length > 0 && active.every((d: any) => d.status === 'draft')
-    }).length
+      const active = (item.details || []).filter((d: any) => d.status !== 'hangus');
+      return active.length > 0 && active.every((d: any) => d.status === 'draft');
+    }).length;
   } catch (e) {
-    console.error('❌ Error update draft count:', e)
+    console.error('❌ Error update draft count:', e);
   }
-}
+};
 // ─── Table headers ────────────────────────────────────────────────────────────
 const headers = computed(() => [
   { label: t('usl_col_jenis'), key: 'jenis', sortable: true },
@@ -1028,7 +1022,7 @@ const headers = computed(() => [
   { label: t('usl_col_jumlah'), key: 'jumlah', sortable: false },
   { label: t('usl_col_pengusul'), key: 'pengusul', sortable: false },
   { label: t('usl_col_tgl_usulan'), key: 'tanggal_usulan', sortable: true }
-])
+]);
 
 // ─── Filter options ───────────────────────────────────────────────────────────
 const filterOptions = computed(() => [
@@ -1038,12 +1032,12 @@ const filterOptions = computed(() => [
   { label: t('usl_filter_disetujui'), value: 'Disetujui' },
   { label: t('usl_filter_final'), value: 'Final' },
   { label: t('usl_filter_ditolak'), value: 'Ditolak' }
-])
+]);
 
 const selectedFilterLabel = computed(
   () =>
     filterOptions.value.find((o) => o.value === filterStatus.value)?.label ?? t('usl_filter_semua')
-)
+);
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const rowStatusClass = (status: string) => ({
@@ -1060,7 +1054,7 @@ const rowStatusClass = (status: string) => ({
     'Final',
     'Ditolak'
   ].includes(status)
-})
+});
 
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -1070,9 +1064,9 @@ const getRowStatusLabel = (status: string) => {
     Disetujui: t('usl_status_disetujui'),
     Final: t('usl_status_final'),
     Ditolak: t('usl_status_ditolak')
-  }
-  return map[status] || status
-}
+  };
+  return map[status] || status;
+};
 
 const getDetailStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -1082,9 +1076,9 @@ const getDetailStatusLabel = (status: string) => {
     terpakai_final: t('usl_status_final'),
     ditolak: t('usl_status_ditolak'),
     hangus: t('usl_status_hangus')
-  }
-  return map[status] || status
-}
+  };
+  return map[status] || status;
+};
 
 const detailStatusClass = (status: string) => ({
   'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400': status === 'draft',
@@ -1094,112 +1088,111 @@ const detailStatusClass = (status: string) => ({
     status === 'terpakai_final',
   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': status === 'ditolak',
   'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400': status === 'hangus'
-})
+});
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const openDetail = ref(false)
-const loadingDetail = ref(false)
-const selectedRow = ref<any>(null)
-const rows = ref<any[]>([])
-const allMappedRows = ref<any[]>([])
-const loading = ref(true)
-const pagination = ref<any>(null)
+const openDetail = ref(false);
+const loadingDetail = ref(false);
+const selectedRow = ref<any>(null);
+const rows = ref<any[]>([]);
+const allMappedRows = ref<any[]>([]);
+const loading = ref(true);
+const pagination = ref<any>(null);
 
-const isOpenPreview = ref(false)
-const pdfUrl = ref<string | null>(null)
+const isOpenPreview = ref(false);
+const pdfUrl = ref<string | null>(null);
 
-const openAdd = ref(false)
-const personMap = ref(new Map())
-const klasifikasiMap = ref(new Map())
+const openAdd = ref(false);
+const klasifikasiMap = ref(new Map());
 
-const search = ref('')
-const currentPage = ref(1)
-const rowsPerPage = ref(10)
-const rowsChoices = [10, 25, 50, 100]
-const showRowsDropdown = ref(false)
-const rowsRef = ref<HTMLElement | null>(null)
-const sortBy = ref('')
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const filterStatus = ref('Semua')
-const openFilterStatus = ref(false)
+const search = ref('');
+const currentPage = ref(1);
+const rowsPerPage = ref(10);
+const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
+const rowsRef = ref<HTMLElement | null>(null);
+const sortBy = ref('');
+const sortOrder = ref<'asc' | 'desc'>('desc');
+const filterStatus = ref('Semua');
+const openFilterStatus = ref(false);
 
 // State untuk file replace per detail (multi-file mode)
 const fileStates = ref<
   Record<string, { isReplacing: boolean; isUploading: boolean; file: File | null }>
->({})
+>({});
 
 // State untuk file replace di single-file mode
 const singleFileState = ref<{ isReplacing: boolean; isUploading: boolean; file: File | null }>({
   isReplacing: false,
   isUploading: false,
   file: null
-})
+});
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // ─── Local filter mode ────────────────────────────────────────────────────────
-const isLocalFilter = computed(() => filterStatus.value !== 'Semua')
+const isLocalFilter = computed(() => filterStatus.value !== 'Semua');
 
 const localFilteredRows = computed(() => {
-  if (!isLocalFilter.value) return allMappedRows.value
-  return allMappedRows.value.filter((row) => row.status === filterStatus.value)
-})
+  if (!isLocalFilter.value) return allMappedRows.value;
+  return allMappedRows.value.filter((row) => row.status === filterStatus.value);
+});
 
 const localTotalPages = computed(() =>
   Math.max(1, Math.ceil(localFilteredRows.value.length / rowsPerPage.value))
-)
+);
 
 const localPaginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return localFilteredRows.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return localFilteredRows.value.slice(start, start + rowsPerPage.value);
+});
 
 const totalPages = computed(() =>
   isLocalFilter.value ? localTotalPages.value : pagination.value?.totalPages || 1
-)
+);
 
 const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
+    pages.push(1, 2, 3, 4, 5);
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
+    pages.push(total - 2, total - 1, total);
   } else {
-    pages.push(current - 1, current, current + 1)
+    pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 // ─── Single vs Multi file mode ────────────────────────────────────────────────
 // Gunakan flag is_single_file dari API (di-set saat openRowModal), bukan heuristik file_text
-const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file)
+const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file);
 
 const sharedFile = computed(() => {
-  if (!isSingleFileMode.value) return null
-  return selectedRow.value?.details?.find((d: any) => d.file_name) ?? null
-})
+  if (!isSingleFileMode.value) return null;
+  return selectedRow.value?.details?.find((d: any) => d.file_name) ?? null;
+});
 
 // Boleh upload/ganti single file hanya jika ada detail dengan status terpakai atau terpakai_final
 const canUploadSingleFile = computed(() => {
-  if (!isSingleFileMode.value) return false
+  if (!isSingleFileMode.value) return false;
   return (selectedRow.value?.details ?? []).some(
     (d: any) => d.status === 'terpakai' || d.status === 'terpakai_final'
-  )
-})
+  );
+});
 
 // Detail non-hangus pertama sebagai representasi untuk upload single file
 const singleFileRepresentativeDetail = computed(() => {
-  if (!isSingleFileMode.value) return null
+  if (!isSingleFileMode.value) return null;
   return (
     selectedRow.value?.details?.find((d: any) => d.status !== 'hangus') ??
     selectedRow.value?.details?.[0] ??
     null
-  )
-})
+  );
+});
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
 const previewFile = (detail: any) => {
@@ -1208,12 +1201,12 @@ const previewFile = (detail: any) => {
       title: t('usl_toast_file_tidak_ada_title'),
       description: t('usl_toast_file_tidak_ada_desc'),
       color: 'warning'
-    })
-    return
+    });
+    return;
   }
-  pdfUrl.value = detail.file_url
-  isOpenPreview.value = true
-}
+  pdfUrl.value = detail.file_url;
+  isOpenPreview.value = true;
+};
 
 // ─── File replace actions ─────────────────────────────────────────────────────
 const startReplacingFile = (detailId: string) => {
@@ -1221,49 +1214,49 @@ const startReplacingFile = (detailId: string) => {
     isReplacing: true,
     isUploading: false,
     file: null
-  }
-}
+  };
+};
 
 const handleFileSelect = (detailId: string, event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
 
-  const MAX_SIZE = 5 * 1024 * 1024 // 5MB untuk user
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB untuk user
   if (file.size > MAX_SIZE) {
     toast.add({
       title: t('usl_file_terlalu_besar_title') || 'File terlalu besar',
       description: t('usl_file_terlalu_besar_desc') || 'Ukuran file maksimal 5MB',
       color: 'warning'
-    })
-    return
+    });
+    return;
   }
 
   if (fileStates.value[detailId]) {
-    fileStates.value[detailId].file = file
+    fileStates.value[detailId].file = file;
   }
-}
+};
 
 const saveFile = async (detail: any) => {
-  const detailId = detail.id
-  const state = fileStates.value[detailId]
+  const detailId = detail.id;
+  const state = fileStates.value[detailId];
   if (!state?.file) {
     toast.add({
       title: t('usl_pilih_file_title') || 'Pilih file',
       description: t('usl_pilih_file_desc') || 'Silakan pilih file terlebih dahulu',
       color: 'warning'
-    })
-    return
+    });
+    return;
   }
 
-  state.isUploading = true
+  state.isUploading = true;
   try {
     // ✅ Pakai endpoint yang sama dengan halaman nomor: updateNomorFile
-    const result = await updateNomorFile(detailId, state.file)
+    const result = await updateNomorFile(detailId, state.file);
 
     // ✅ Gunakan splice agar Vue mendeteksi perubahan dan preview langsung bisa muncul
-    const details = selectedRow.value?.details
+    const details = selectedRow.value?.details;
     if (details) {
-      const idx = details.findIndex((d: any) => d.id === detailId)
+      const idx = details.findIndex((d: any) => d.id === detailId);
       if (idx !== -1) {
         const updatedDetail = {
           ...details[idx],
@@ -1271,132 +1264,133 @@ const saveFile = async (detail: any) => {
           file_text: result?.file_text || details[idx].file_text || null,
           file_url: result?.file_url || details[idx].file_url || null,
           status: result?.status || 'terpakai_final'
-        }
+        };
         // splice memaksa Vue reaktif mendeteksi perubahan array
-        details.splice(idx, 1, updatedDetail)
+        details.splice(idx, 1, updatedDetail);
       }
     }
 
     // Update status di baris tabel juga
-    syncTableStatus()
-    delete fileStates.value[detailId]
+    syncTableStatus();
+    delete fileStates.value[detailId];
   } catch (error: any) {
-    console.error('❌ Error save file usulan:', error)
+    console.error('❌ Error save file usulan:', error);
   } finally {
     if (fileStates.value[detailId]) {
-      fileStates.value[detailId].isUploading = false
+      fileStates.value[detailId].isUploading = false;
     }
   }
-}
+};
 
 const cancelReplacing = (detailId: string) => {
-  delete fileStates.value[detailId]
-}
+  delete fileStates.value[detailId];
+};
 
 // ─── Single-file replace actions ──────────────────────────────────────────────
 const startReplacingSingleFile = () => {
-  singleFileState.value = { isReplacing: true, isUploading: false, file: null }
-}
+  singleFileState.value = { isReplacing: true, isUploading: false, file: null };
+};
 
 const handleSingleFileSelect = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  const MAX_SIZE = 5 * 1024 * 1024
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const MAX_SIZE = 5 * 1024 * 1024;
   if (file.size > MAX_SIZE) {
     toast.add({
       title: t('usl_file_terlalu_besar_title') || 'File terlalu besar',
       description: t('usl_file_terlalu_besar_desc') || 'Ukuran file maksimal 5MB',
       color: 'warning'
-    })
-    return
+    });
+    return;
   }
-  singleFileState.value.file = file
-}
+  singleFileState.value.file = file;
+};
 
 const saveSingleFile = async () => {
-  const file = singleFileState.value.file
+  const file = singleFileState.value.file;
   if (!file) {
     toast.add({
       title: t('usl_pilih_file_title') || 'Pilih file',
       description: t('usl_pilih_file_desc') || 'Silakan pilih file terlebih dahulu',
       color: 'warning'
-    })
-    return
+    });
+    return;
   }
-  const repDetail = singleFileRepresentativeDetail.value
-  if (!repDetail?.id) return
+  const repDetail = singleFileRepresentativeDetail.value;
+  if (!repDetail?.id) return;
 
-  singleFileState.value.isUploading = true
+  singleFileState.value.isUploading = true;
   try {
-    const result = await updateNomorFile(repDetail.id, file)
+    const result = await updateNomorFile(repDetail.id, file);
     // Sync file info + status ke SEMUA detail non-hangus
     if (selectedRow.value?.details) {
       selectedRow.value.details.forEach((d: any) => {
         if (d.status !== 'hangus') {
-          d.file_name = result?.file_name || file.name
-          d.file_url = result?.file_url || d.file_url || null
-          d.file_text = result?.file_text || d.file_text || null
-          d.status = result?.status || 'terpakai_final'
+          d.file_name = result?.file_name || file.name;
+          d.file_url = result?.file_url || d.file_url || null;
+          d.file_text = result?.file_text || d.file_text || null;
+          d.status = result?.status || 'terpakai_final';
         }
-      })
+      });
     }
-    syncTableStatus()
-    singleFileState.value = { isReplacing: false, isUploading: false, file: null }
+    syncTableStatus();
+    singleFileState.value = { isReplacing: false, isUploading: false, file: null };
   } catch (error: any) {
-    console.error('❌ Error save single file:', error)
+    console.error('❌ Error save single file:', error);
   } finally {
-    singleFileState.value.isUploading = false
+    singleFileState.value.isUploading = false;
   }
-}
+};
 
 const cancelReplacingSingleFile = () => {
-  singleFileState.value = { isReplacing: false, isUploading: false, file: null }
-}
+  singleFileState.value = { isReplacing: false, isUploading: false, file: null };
+};
 
 // ─── Sync status tabel setelah file upload ────────────────────────────────────
 const syncTableStatus = () => {
-  const details = selectedRow.value?.details || []
-  const activeStatuses = details.filter((d: any) => d.status !== 'hangus').map((d: any) => d.status)
+  const details = selectedRow.value?.details || [];
+  const activeStatuses = details
+    .filter((d: any) => d.status !== 'hangus')
+    .map((d: any) => d.status);
   const allFinal =
-    activeStatuses.length > 0 && activeStatuses.every((s: string) => s === 'terpakai_final')
+    activeStatuses.length > 0 && activeStatuses.every((s: string) => s === 'terpakai_final');
   if (allFinal) {
-    const tableRow = rows.value.find((r) => r.id === selectedRow.value?.id_usulan)
-    if (tableRow) tableRow.status = 'Final'
-    const allRow = allMappedRows.value.find((r) => r.id === selectedRow.value?.id_usulan)
-    if (allRow) allRow.status = 'Final'
-    selectedRow.value.status = 'Final'
+    const tableRow = rows.value.find((r) => r.id === selectedRow.value?.id_usulan);
+    if (tableRow) tableRow.status = 'Final';
+    const allRow = allMappedRows.value.find((r) => r.id === selectedRow.value?.id_usulan);
+    if (allRow) allRow.status = 'Final';
+    selectedRow.value.status = 'Final';
   }
-}
+};
 
 // ─── Derive status dari details ───────────────────────────────────────────────
 const deriveStatusFromDetails = (details: any[]): string => {
-  if (!details || details.length === 0) return 'Draft'
+  if (!details || details.length === 0) return 'Draft';
 
-  const activeDetails = details.filter((d) => d.status !== 'hangus')
-  if (activeDetails.length === 0) return 'Ditolak'
+  const activeDetails = details.filter((d) => d.status !== 'hangus');
+  if (activeDetails.length === 0) return 'Ditolak';
 
-  const statuses = activeDetails.map((d) => d.status)
+  const statuses = activeDetails.map((d) => d.status);
 
-  if (statuses.every((s) => s === 'terpakai_final')) return 'Final'
-  if (statuses.some((s) => s === 'terpakai' || s === 'terpakai_final')) return 'Disetujui'
-  if (statuses.every((s) => s === 'ditolak')) return 'Ditolak'
-  if (statuses.every((s) => s === 'draft')) return 'Draft'
+  if (statuses.every((s) => s === 'terpakai_final')) return 'Final';
+  if (statuses.some((s) => s === 'terpakai' || s === 'terpakai_final')) return 'Disetujui';
+  if (statuses.every((s) => s === 'ditolak')) return 'Ditolak';
+  if (statuses.every((s) => s === 'draft')) return 'Draft';
   // booking / campuran booking+draft = Menunggu Verifikasi
-  return 'Menunggu Verifikasi'
-}
+  return 'Menunggu Verifikasi';
+};
 
 // ─── Map item ─────────────────────────────────────────────────────────────────
 const mapItem = (item: any) => {
-  const pengusulInfo = personMap.value.get(item.persnum) || {}
-  const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
-  const mappedStatus = deriveStatusFromDetails(item.details || [])
+  const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+  const mappedStatus = deriveStatusFromDetails(item.details || []);
 
-  const tanggalDate = new Date(item.tanggal)
-  const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+  const tanggalDate = new Date(item.tanggal);
+  const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
 
-  const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
-  const createdDate = new Date(localCreated)
-  const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
+  const localCreated = item.created_at.replace('Z', '').replace('+00:00', '');
+  const createdDate = new Date(localCreated);
+  const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`;
 
   return {
     id: item.id,
@@ -1407,51 +1401,37 @@ const mapItem = (item: any) => {
     penandatangan: item.penandatangan || '-',
     klasifikasi: item.klasifikasi || '-',
     klasifikasiDisplay,
-    pengusul: pengusulInfo.nama || item.nama || user.value?.nama || '-',
+    pengusul: item.nama || user.value?.nama || '-',
     tglUsulan,
     status: mappedStatus,
     template_nomor: item.template_nomor || ''
-  }
-}
+  };
+};
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
-const fetchPersonMap = async () => {
-  try {
-    const response = await getPersonWithPosition()
-    const list = Array.isArray(response) ? response : (response.data ?? [])
-    list.forEach((item: any) => {
-      const displayText = item.sub_area_text
-        ? `${item.position_text} - ${item.sub_area_text}`
-        : item.position_text || ''
-      personMap.value.set(item.persnum, { nama: item.nama, position_text: displayText })
-    })
-  } catch (e) {
-    console.error('❌ Error fetch person map:', e)
-  }
-}
 
 const fetchKlasifikasiMap = async () => {
   try {
-    const list = await getKlasifikasi()
+    const list = await getKlasifikasi();
     if (Array.isArray(list))
-      list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display))
+      list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display));
   } catch (e) {
-    console.error('❌ Error fetch klasifikasi map:', e)
+    console.error('❌ Error fetch klasifikasi map:', e);
   }
-}
+};
 
 const fetchData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     if (!user.value?.position) {
-      rows.value = []
-      allMappedRows.value = []
-      pagination.value = null
-      return
+      rows.value = [];
+      allMappedRows.value = [];
+      pagination.value = null;
+      return;
     }
 
     const positionId =
-      typeof user.value.position === 'object' ? user.value.position.id : user.value.position
+      typeof user.value.position === 'object' ? user.value.position.id : user.value.position;
 
     const params = {
       search: search.value || undefined,
@@ -1459,43 +1439,43 @@ const fetchData = async () => {
       limit: isLocalFilter.value ? 9999 : rowsPerPage.value,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
-    }
+    };
 
-    const response = await getListUsulanByPosition(String(positionId), params)
-    const data = response.data || []
+    const response = await getListUsulanByPosition(String(positionId), params);
+    const data = response.data || [];
 
     if (!Array.isArray(data)) {
-      rows.value = []
-      allMappedRows.value = []
-      pagination.value = null
-      return
+      rows.value = [];
+      allMappedRows.value = [];
+      pagination.value = null;
+      return;
     }
 
-    const mapped = data.map(mapItem)
-    allMappedRows.value = mapped
-    updateDraftCount()
+    const mapped = data.map(mapItem);
+    allMappedRows.value = mapped;
+    updateDraftCount();
 
     if (isLocalFilter.value) {
-      pagination.value = null
-      rows.value = localPaginatedRows.value
+      pagination.value = null;
+      rows.value = localPaginatedRows.value;
     } else {
-      pagination.value = response.pagination || null
-      rows.value = mapped
+      pagination.value = response.pagination || null;
+      rows.value = mapped;
     }
   } catch (err) {
-    console.error('❌ Gagal fetch data:', err)
-    rows.value = []
-    allMappedRows.value = []
-    pagination.value = null
+    console.error('❌ Gagal fetch data:', err);
+    rows.value = [];
+    allMappedRows.value = [];
+    pagination.value = null;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // ─── Open row modal ───────────────────────────────────────────────────────────
 const openRowModal = async (row: any) => {
   // Reset fileStates setiap buka modal baru
-  fileStates.value = {}
+  fileStates.value = {};
 
   selectedRow.value = {
     id_usulan: row.id,
@@ -1510,21 +1490,21 @@ const openRowModal = async (row: any) => {
     status: row.status,
     template_nomor: row.template_nomor || '',
     details: []
-  }
-  openDetail.value = true
-  loadingDetail.value = true
+  };
+  openDetail.value = true;
+  loadingDetail.value = true;
 
   try {
-    const detailData = await getDetailUsulan(row.id)
-    if (!detailData) return
+    const detailData = await getDetailUsulan(row.id);
+    if (!detailData) return;
 
     const klasifikasiDisplay =
-      klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi
+      klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi;
     const normalizedDetails = normalizeDetails(
       detailData.details || [],
       detailData.jumlah,
       detailData.template_nomor || ''
-    )
+    );
 
     selectedRow.value = {
       ...selectedRow.value,
@@ -1536,18 +1516,18 @@ const openRowModal = async (row: any) => {
       jumlah: detailData.is_single_file ? detailData.jumlah : normalizedDetails.length,
       is_single_file: !!detailData.is_single_file,
       details: normalizedDetails
-    }
+    };
   } catch (err) {
-    console.error('❌ Gagal load detail:', err)
+    console.error('❌ Gagal load detail:', err);
   } finally {
-    loadingDetail.value = false
+    loadingDetail.value = false;
   }
-}
+};
 
 const normalizeDetails = (details: any[], jumlah: number, template: string) => {
-  const result = []
+  const result = [];
   for (let i = 0; i < jumlah; i++) {
-    const d = details[i]
+    const d = details[i];
     result.push(
       d
         ? {
@@ -1566,146 +1546,146 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
             file_url: null,
             file_text: null
           }
-    )
+    );
   }
-  return result
-}
+  return result;
+};
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 const handleCopy = (value: string) => {
-  if (!value) return
-  navigator.clipboard.writeText(value)
+  if (!value) return;
+  navigator.clipboard.writeText(value);
   toast.add({
     title: t('usl_toast_tersalin'),
     description: `"${value}" ${t('usl_toast_tersalin_desc')}`,
     color: 'success'
-  })
-}
+  });
+};
 
 // ─── Submit / refresh ─────────────────────────────────────────────────────────
 const handleSubmitFromModal = async () => {
-  openAdd.value = false
-  currentPage.value = 1
-  await fetchData()
-}
+  openAdd.value = false;
+  currentPage.value = 1;
+  await fetchData();
+};
 
 // ─── Pagination & sort & filter ───────────────────────────────────────────────
 const handleSearchInput = () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchTimeout) clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1
-    fetchData()
-  }, 500)
-}
+    currentPage.value = 1;
+    fetchData();
+  }, 500);
+};
 
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
-    sortBy.value = column
-    sortOrder.value = 'desc'
+    sortBy.value = column;
+    sortOrder.value = 'desc';
   }
-  currentPage.value = 1
-  fetchData()
-}
+  currentPage.value = 1;
+  fetchData();
+};
 
 const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return
-  currentPage.value = page
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
   if (isLocalFilter.value) {
-    rows.value = localPaginatedRows.value
+    rows.value = localPaginatedRows.value;
   } else {
-    fetchData()
+    fetchData();
   }
-}
+};
 
 const handleLimitChange = () => {
-  currentPage.value = 1
+  currentPage.value = 1;
   if (isLocalFilter.value) {
-    rows.value = localPaginatedRows.value
+    rows.value = localPaginatedRows.value;
   } else {
-    fetchData()
+    fetchData();
   }
-}
+};
 
 const selectFilterStatus = (val: string) => {
-  filterStatus.value = val
-  openFilterStatus.value = false
-  currentPage.value = 1
-  fetchData()
-}
+  filterStatus.value = val;
+  openFilterStatus.value = false;
+  currentPage.value = 1;
+  fetchData();
+};
 
 watch(localPaginatedRows, (newRows) => {
   if (isLocalFilter.value) {
-    rows.value = newRows
+    rows.value = newRows;
   }
-})
+});
 
 // ─── Date formatter ───────────────────────────────────────────────────────────
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  const localStr = dateStr.replace('Z', '').replace('+00:00', '')
+  if (!dateStr) return '-';
+  const localStr = dateStr.replace('Z', '').replace('+00:00', '');
   return new Date(localStr).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
-  })
-}
+  });
+};
 
 // ─── Dropdown close on outside click ─────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n
-  showRowsDropdown.value = false
-  handleLimitChange()
-}
+  rowsPerPage.value = n;
+  showRowsDropdown.value = false;
+  handleLimitChange();
+};
 
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
+  const target = e.target as HTMLElement;
   if (rowsRef.value && !rowsRef.value.contains(target)) {
-    showRowsDropdown.value = false
+    showRowsDropdown.value = false;
   }
-  const dropdowns = document.querySelectorAll('[data-custom-dropdown]')
+  const dropdowns = document.querySelectorAll('[data-custom-dropdown]');
   for (const el of Array.from(dropdowns)) {
-    if (el.contains(target)) return
+    if (el.contains(target)) return;
   }
-  openFilterStatus.value = false
+  openFilterStatus.value = false;
 }
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
-const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
+const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
 const onMouseMove = (e: MouseEvent, text: string) => {
-  tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 }
-}
+  tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 };
+};
 const onMouseLeave = () => {
-  tooltip.value.show = false
-}
+  tooltip.value.show = false;
+};
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  if (!user.value) await getProfile()
-  await Promise.all([fetchPersonMap(), fetchKlasifikasiMap()])
-  await fetchData()
-  document.addEventListener('click', handleDocumentClick)
-})
+  if (!user.value) await getProfile();
+  await fetchKlasifikasiMap();
+  await fetchData();
+  document.addEventListener('click', handleDocumentClick);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-  if (searchTimeout) clearTimeout(searchTimeout)
-  pdfUrl.value = null
-})
+  document.removeEventListener('click', handleDocumentClick);
+  if (searchTimeout) clearTimeout(searchTimeout);
+  pdfUrl.value = null;
+});
 
 watch(isOpenPreview, (open) => {
-  if (!open) pdfUrl.value = null
-})
+  if (!open) pdfUrl.value = null;
+});
 
 watch(openDetail, (open) => {
   if (!open) {
-    selectedRow.value = null
-    loadingDetail.value = false
-    fileStates.value = {}
-    singleFileState.value = { isReplacing: false, isUploading: false, file: null }
+    selectedRow.value = null;
+    loadingDetail.value = false;
+    fileStates.value = {};
+    singleFileState.value = { isReplacing: false, isUploading: false, file: null };
   }
-})
+});
 </script>
 
 <style scoped>
