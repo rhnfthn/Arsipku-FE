@@ -255,6 +255,7 @@
   "tmpl_tooltip_download": "Download",
   "tmpl_tooltip_edit": "Edit",
   "tmpl_tooltip_hapus": "Hapus",
+  "tmpl_error_harus_diisi": "Form harus diisi",
   "usl_title": "Daftar Usulan Penomoran",
   "usl_btn_tambah": "Tambah",
   "usl_filter_semua": "Semua",
@@ -940,5 +941,9 @@
   "pt_search_placeholder": "Cari Tautan",
 
   "pernom_title": "Daftar Persetujuan Penomoran",
-  "usl_status_draft": "Draft"
+  "usl_status_draft": "Draft",
+  "ver_btn_export": "Export",
+  "ver_btn_mengekspor": "Mengunduh data",
+  "nom_export_success_title": "Data berhasil diunduh",
+  "nom_export_error_title": "Data gagal diunduh"
 }

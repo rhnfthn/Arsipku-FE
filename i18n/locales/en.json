@@ -382,6 +382,7 @@
   "tmpl_tooltip_download": "Download",
   "tmpl_tooltip_edit": "Edit",
   "tmpl_tooltip_hapus": "Delete",
+  "tmpl_error_harus_diisi": "Please fill out the form",
   "usl_title": "Numbering Proposal List",
   "usl_btn_tambah": "Add",
   "usl_filter_semua": "All",
@@ -934,5 +935,9 @@
   "pt_delete_title": "Delete Short URL?",
   "pt_delete_confirm": "Delete",
   "pt_delete_cancel": "Cancel",
-  "pt_search_placeholder": "Search Links"
+  "pt_search_placeholder": "Search Links",
+  "ver_btn_export": "Export",
+  "ver_btn_mengekspor": "download data",
+  "nom_export_success_title": "Data downloaded successfully",
+  "nom_export_error_title": "Data failed to download"
 }

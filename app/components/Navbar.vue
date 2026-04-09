@@ -601,18 +601,54 @@
                       </div>
                     </div>
 
-                    <!-- PRIORITAS (disabled placeholder) -->
+                    <!-- PRIORITAS -->
                     <div>
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
                         Prioritas
                       </label>
-                      <div
-                        class="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                      >
-                        <span>Semua</span>
-                        <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-gray-300" />
+                      <div class="relative">
+                        <button
+                          type="button"
+                          @click.stop="togglePriority"
+                          class="w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-600 dark:text-gray-300 hover:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
+                        >
+                          <span>{{ priorityLabel }}</span>
+                          <UIcon
+                            name="i-heroicons-chevron-down"
+                            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                            :class="{ 'rotate-180': openPriority }"
+                          />
+                        </button>
+                        <Transition
+                          enter-active-class="transition ease-out duration-150 origin-top"
+                          enter-from-class="opacity-0 scale-y-90 -translate-y-1"
+                          enter-to-class="opacity-100 scale-y-100 translate-y-0"
+                          leave-active-class="transition ease-in duration-100 origin-top"
+                          leave-from-class="opacity-100 scale-y-100 translate-y-0"
+                          leave-to-class="opacity-0 scale-y-90 -translate-y-1"
+                        >
+                          <div
+                            v-if="openPriority"
+                            class="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[10001] overflow-hidden"
+                          >
+                            <button
+                              v-for="opt in priorityOptions"
+                              :key="String(opt.value)"
+                              type="button"
+                              @click.stop="selectPriority(opt.value)"
+                              :class="[
+                                'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
+                                advancedFilters.priority === opt.value
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                              ]"
+                            >
+                              {{ opt.label }}
+                            </button>
+                          </div>
+                        </Transition>
                       </div>
                     </div>
                   </div>
@@ -703,31 +739,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, reactive } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useDark } from '@vueuse/core'
-import type { DropdownMenuItem } from '#ui/types'
+import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useDark } from '@vueuse/core';
+import type { DropdownMenuItem } from '#ui/types';
 
 // --- INIT COMPOSABLES ---
-const { user, getProfile, logout } = useAuth()
-const { getAvailableRoles, switchRole } = useDelegasi()
-const toast = useToast()
-const route = useRoute()
-const router = useRouter()
+const { user, getProfile, logout } = useAuth();
+const { getAvailableRoles, switchRole } = useDelegasi();
+const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 // --- STATE ---
-const isSearchModalOpen = ref(false)
-const showLogoutPopup = ref(false)
-const isLoggingOut = ref(false)
-const search = ref('')
-const delegationRoles = ref<any[]>([])
-const switchingMessage = ref('')
+const isSearchModalOpen = ref(false);
+const showLogoutPopup = ref(false);
+const isLoggingOut = ref(false);
+const search = ref('');
+const delegationRoles = ref<any[]>([]);
+const switchingMessage = ref('');
 
 // --- QUICK SEARCH ---
-const quickSearch = ref('')
+const quickSearch = ref('');
 
 const handleQuickSearch = () => {
-  if (!quickSearch.value.trim()) return
+  if (!quickSearch.value.trim()) return;
   navigateTo({
     path: '/search',
     query: {
@@ -737,9 +773,9 @@ const handleQuickSearch = () => {
       sortOrder: 'DESC',
       perihal: quickSearch.value.trim()
     }
-  })
-  quickSearch.value = ''
-}
+  });
+  quickSearch.value = '';
+};
 const advancedFilters = reactive({
   nomorSurat: '',
   perihal: '',
@@ -752,8 +788,9 @@ const advancedFilters = reactive({
   jenis: null,
   sifat: null,
   status: null,
-  hasAttachment: 'Semua'
-})
+  hasAttachment: 'Semua',
+  priority: null as boolean | null
+});
 
 const jenisOptions = [
   { label: 'Semua', value: null },
@@ -763,7 +800,7 @@ const jenisOptions = [
   { label: 'Disposisi (DI)', value: 'DI' },
   { label: 'Kajian (KA)', value: 'KA' },
   { label: 'Konsep (K)', value: 'K' }
-]
+];
 
 // "Semua" sudah ada di index-0 masing-masing, tidak perlu duplikat di template
 const sifatOptions = [
@@ -773,280 +810,300 @@ const sifatOptions = [
   { label: 'Rahasia', value: 'rahasia' },
   { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
   { label: 'Terbuka', value: 'terbuka' }
-]
+];
 
 const statusOptions = [
   { label: 'Semua', value: null },
   { label: 'Draf', value: 'draf' },
   { label: 'Final', value: 'final' },
   { label: 'Final TTE', value: 'final_tte' }
-]
+];
 
 const attachmentOptions = [
   { label: 'Semua', value: 'Semua' },
   { label: 'Ya', value: true },
   { label: 'Tidak', value: false }
-]
+];
 
 // --- CUSTOM DROPDOWN STATE ---
-const openSifat = ref(false)
-const openStatus = ref(false)
-const openLampiran = ref(false)
+const openSifat = ref(false);
+const openStatus = ref(false);
+const openLampiran = ref(false);
 
 const sifatLabel = computed(
   () => sifatOptions.find((s) => s.value === advancedFilters.sifat)?.label ?? 'Semua'
-)
+);
 const statusLabel = computed(
   () => statusOptions.find((s) => s.value === advancedFilters.status)?.label ?? 'Semua'
-)
+);
 const lampiranLabel = computed(() => {
   if (advancedFilters.hasAttachment === 'Semua' || advancedFilters.hasAttachment === null)
-    return 'Semua'
-  return attachmentOptions.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? 'Semua'
-})
+    return 'Semua';
+  return attachmentOptions.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? 'Semua';
+});
 
 function toggleSifat() {
-  openSifat.value = !openSifat.value
-  openStatus.value = false
-  openLampiran.value = false
+  openSifat.value = !openSifat.value;
+  openStatus.value = false;
+  openLampiran.value = false;
 }
 function toggleStatus() {
-  openStatus.value = !openStatus.value
-  openSifat.value = false
-  openLampiran.value = false
+  openStatus.value = !openStatus.value;
+  openSifat.value = false;
+  openLampiran.value = false;
 }
 function toggleLampiran() {
-  openLampiran.value = !openLampiran.value
-  openSifat.value = false
-  openStatus.value = false
+  openLampiran.value = !openLampiran.value;
+  openSifat.value = false;
+  openStatus.value = false;
 }
 function selectSifat(val: any) {
-  advancedFilters.sifat = val
-  openSifat.value = false
+  advancedFilters.sifat = val;
+  openSifat.value = false;
 }
 function selectStatus(val: any) {
-  advancedFilters.status = val
-  openStatus.value = false
+  advancedFilters.status = val;
+  openStatus.value = false;
 }
 function selectLampiran(val: any) {
-  advancedFilters.hasAttachment = val
-  openLampiran.value = false
+  advancedFilters.hasAttachment = val;
+  openLampiran.value = false;
 }
 
 // Tutup semua dropdown saat modal ditutup
 watch(isSearchModalOpen, (val) => {
   if (!val) {
-    openSifat.value = false
-    openStatus.value = false
-    openLampiran.value = false
+    openSifat.value = false;
+    openStatus.value = false;
+    openLampiran.value = false;
   }
-})
+});
 
+const priorityOptions = [
+  { label: 'Semua', value: null },
+  { label: 'Prioritas', value: true }
+];
+const openPriority = ref(false);
+
+const priorityLabel = computed(
+  () => priorityOptions.find((p) => p.value === advancedFilters.priority)?.label ?? 'Semua'
+);
+
+function togglePriority() {
+  openPriority.value = !openPriority.value;
+  openSifat.value = false;
+  openStatus.value = false;
+  openLampiran.value = false;
+}
+function selectPriority(val: any) {
+  advancedFilters.priority = val;
+  openPriority.value = false;
+}
 // --- AUTOCOMPLETE PENGIRIM / PENERIMA ---
 interface UserSuggestion {
-  nama: string
-  jabatan: string
+  nama: string;
+  jabatan: string;
 }
 
 const {
   suggestions: pengirimSuggestions,
   isSuggestionsLoading: isPengirimLoading,
   fetchSuggestions: fetchPengirimSuggestions
-} = useSearch()
+} = useSearch();
 
 const {
   suggestions: penerimasuggestions,
   isSuggestionsLoading: isPenerimaLoading,
   fetchSuggestions: fetchPenerimaSuggestions
-} = useSearch()
+} = useSearch();
 
 // AFTER
-const filteredPengirim = computed(() => pengirimSuggestions.value)
-const filteredPenerima = computed(() => penerimasuggestions.value)
-const showPengirimPopover = ref(false)
-const showPenerimaPopover = ref(false)
+const filteredPengirim = computed(() => pengirimSuggestions.value);
+const filteredPenerima = computed(() => penerimasuggestions.value);
+const showPengirimPopover = ref(false);
+const showPenerimaPopover = ref(false);
 
 // Debounce timer
 // AFTER
-let pengirimTimer: ReturnType<typeof setTimeout> | null = null
-let penerimaTimer: ReturnType<typeof setTimeout> | null = null
+let pengirimTimer: ReturnType<typeof setTimeout> | null = null;
+let penerimaTimer: ReturnType<typeof setTimeout> | null = null;
 
 const handlePengirimInput = () => {
-  if (pengirimTimer) clearTimeout(pengirimTimer)
+  if (pengirimTimer) clearTimeout(pengirimTimer);
   if (!advancedFilters.pengirim.trim()) {
-    pengirimSuggestions.value = []
-    showPengirimPopover.value = false
-    return
+    pengirimSuggestions.value = [];
+    showPengirimPopover.value = false;
+    return;
   }
   pengirimTimer = setTimeout(async () => {
-    await fetchPengirimSuggestions(advancedFilters.pengirim, 'pengirim')
-    showPengirimPopover.value = pengirimSuggestions.value.length > 0
-  }, 300)
-}
+    await fetchPengirimSuggestions(advancedFilters.pengirim, 'pengirim');
+    showPengirimPopover.value = pengirimSuggestions.value.length > 0;
+  }, 300);
+};
 
 const handlePengirimFocus = () => {
   if (advancedFilters.pengirim.trim().length >= 2)
-    showPengirimPopover.value = pengirimSuggestions.value.length > 0
-}
+    showPengirimPopover.value = pengirimSuggestions.value.length > 0;
+};
 const selectPengirim = (nama: string) => {
-  advancedFilters.pengirim = nama
-  pengirimSuggestions.value = []
-  showPengirimPopover.value = false
-}
+  advancedFilters.pengirim = nama;
+  pengirimSuggestions.value = [];
+  showPengirimPopover.value = false;
+};
 const handlePengirimBlur = () => {
   setTimeout(() => {
-    showPengirimPopover.value = false
-  }, 200)
-}
+    showPengirimPopover.value = false;
+  }, 200);
+};
 
 // Penerima — sekarang terisi penuh
 const handlePenerimaInput = () => {
-  if (penerimaTimer) clearTimeout(penerimaTimer)
+  if (penerimaTimer) clearTimeout(penerimaTimer);
   if (!advancedFilters.penerima.trim()) {
-    penerimasuggestions.value = []
-    showPenerimaPopover.value = false
-    return
+    penerimasuggestions.value = [];
+    showPenerimaPopover.value = false;
+    return;
   }
   penerimaTimer = setTimeout(async () => {
-    await fetchPenerimaSuggestions(advancedFilters.penerima, 'penerima')
-    showPenerimaPopover.value = penerimasuggestions.value.length > 0
-  }, 300)
-}
+    await fetchPenerimaSuggestions(advancedFilters.penerima, 'penerima');
+    showPenerimaPopover.value = penerimasuggestions.value.length > 0;
+  }, 300);
+};
 
 const handlePenerimaFocus = () => {
   if (advancedFilters.penerima.trim().length >= 2)
-    showPenerimaPopover.value = penerimasuggestions.value.length > 0
-}
+    showPenerimaPopover.value = penerimasuggestions.value.length > 0;
+};
 const selectPenerima = (nama: string) => {
-  advancedFilters.penerima = nama
-  penerimasuggestions.value = []
-  showPenerimaPopover.value = false
-}
+  advancedFilters.penerima = nama;
+  penerimasuggestions.value = [];
+  showPenerimaPopover.value = false;
+};
 const handlePenerimaBlur = () => {
   setTimeout(() => {
-    showPenerimaPopover.value = false
-  }, 200)
-}
+    showPenerimaPopover.value = false;
+  }, 200);
+};
 const highlightText = (text: string, query: string) => {
-  if (!query) return text
-  const q = query.trim()
-  const regex = new RegExp(`(${q})`, 'gi')
+  if (!query) return text;
+  const q = query.trim();
+  const regex = new RegExp(`(${q})`, 'gi');
   return text.replace(
     regex,
     '<span class="text-primary-600 dark:text-primary-400 font-bold">$1</span>'
-  )
-}
+  );
+};
 
 // --- USER / DELEGATION ---
 const positionStatusLabel = computed(() => {
-  const u = user.value
-  if (!u) return null
-  if (u.position_status) return u.position_status
+  const u = user.value;
+  if (!u) return null;
+  if (u.position_status) return u.position_status;
   if (u.delegations && u.delegations.length > 0) {
-    return u.delegations[0].delegated_role?.position_status
+    return u.delegations[0].delegated_role?.position_status;
   }
-  return null
-})
+  return null;
+});
 
 const getStoredOriginalRole = () =>
-  process.client ? localStorage.getItem('arsipku_original_position') : null
-const originalRoleLabel = ref(getStoredOriginalRole() || 'Posisi Utama')
-const activeDelegationId = ref<string | null>(null)
+  process.client ? localStorage.getItem('arsipku_original_position') : null;
+const originalRoleLabel = ref(getStoredOriginalRole() || 'Posisi Utama');
+const activeDelegationId = ref<string | null>(null);
 
 const initActiveState = () => {
   if (process.client) {
-    activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id')
+    activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
   }
-}
+};
 
 const fetchDelegationRoles = async () => {
-  if (!user.value) return
+  if (!user.value) return;
   try {
-    const roles = await getAvailableRoles()
-    delegationRoles.value = roles || []
+    const roles = await getAvailableRoles();
+    delegationRoles.value = roles || [];
   } catch (e) {
-    console.error('Error fetch roles', e)
+    console.error('Error fetch roles', e);
   }
-}
+};
 
 watch(
   user,
   (newUser) => {
     if (newUser) {
-      fetchDelegationRoles()
+      fetchDelegationRoles();
       if (!activeDelegationId.value) {
-        originalRoleLabel.value = newUser.positionText
-        if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText)
+        originalRoleLabel.value = newUser.positionText;
+        if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
       } else if (process.client) {
-        const stored = localStorage.getItem('arsipku_original_position')
-        if (stored) originalRoleLabel.value = stored
+        const stored = localStorage.getItem('arsipku_original_position');
+        if (stored) originalRoleLabel.value = stored;
       }
     }
   },
   { immediate: true }
-)
+);
 
-const isSwitching = ref(false)
+const isSwitching = ref(false);
 
 const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: string }) => {
-  if (isSwitching.value) return
+  if (isSwitching.value) return;
   switchingMessage.value =
-    target.type === 'delegasi' ? 'Mengalihkan ke Akun Delegasi...' : 'Kembali ke Akun Utama...'
-  isSwitching.value = true
+    target.type === 'delegasi' ? 'Mengalihkan ke Akun Delegasi...' : 'Kembali ke Akun Utama...';
+  isSwitching.value = true;
   try {
     const payload =
       target.type === 'delegasi' && target.id
         ? { delegasiId: target.id }
-        : { resetToOriginal: true }
-    const res = await switchRole(payload)
+        : { resetToOriginal: true };
+    const res = await switchRole(payload);
     if (res?.success) {
       if (target.type === 'delegasi' && target.id) {
-        localStorage.setItem('arsipku_active_delegation_id', target.id)
+        localStorage.setItem('arsipku_active_delegation_id', target.id);
         if (res.data?.user?.role)
-          localStorage.setItem('arsipku_active_delegation_role', res.data.user.role)
+          localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
       } else {
-        localStorage.removeItem('arsipku_active_delegation_id')
-        localStorage.removeItem('arsipku_active_delegation_role')
+        localStorage.removeItem('arsipku_active_delegation_id');
+        localStorage.removeItem('arsipku_active_delegation_role');
       }
-      localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.')
-      window.location.reload()
+      localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
+      window.location.reload();
     } else {
-      isSwitching.value = false
+      isSwitching.value = false;
     }
   } catch (error) {
-    console.error('Gagal ganti role:', error)
+    console.error('Gagal ganti role:', error);
     toast.add({
       title: 'Gagal',
       description: 'Gagal mengganti role.',
       color: 'red'
-    })
-    isSwitching.value = false
+    });
+    isSwitching.value = false;
   }
-}
+};
 
 const confirmLogout = async () => {
   if (process.client) {
-    localStorage.removeItem('arsipku_original_position')
-    localStorage.removeItem('arsipku_active_delegation_id')
-    localStorage.removeItem('arsipku_active_delegation_role')
+    localStorage.removeItem('arsipku_original_position');
+    localStorage.removeItem('arsipku_active_delegation_id');
+    localStorage.removeItem('arsipku_active_delegation_role');
   }
-  isLoggingOut.value = true
-  await logout()
-  isLoggingOut.value = false
-  showLogoutPopup.value = false
-  navigateTo('/')
-}
+  isLoggingOut.value = true;
+  await logout();
+  isLoggingOut.value = false;
+  showLogoutPopup.value = false;
+  navigateTo('/');
+};
 
 // --- SEARCH ---
 const searchConfig = computed(() => ({
   show: true,
   placeholder: 'Cari surat...',
   key: ''
-}))
+}));
 
 const openSearchModal = () => {
-  isSearchModalOpen.value = true
-}
+  isSearchModalOpen.value = true;
+};
 
 const handleAdvancedSearch = () => {
   const queryParams: any = {
@@ -1054,82 +1111,85 @@ const handleAdvancedSearch = () => {
     limit: 20,
     sortBy: 'tanggal',
     sortOrder: 'DESC'
+  };
+  if (advancedFilters.priority === true) {
+    queryParams.scope = 'priority';
   }
-
-  if (search.value) queryParams.keyword = search.value
-  if (advancedFilters.nomorSurat) queryParams.nomor = advancedFilters.nomorSurat
-  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal
-  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis
-  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat
-  if (advancedFilters.status) queryParams.status = advancedFilters.status
-  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim
-  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima
-  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom
-  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo
-  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords
-  if (advancedFilters.doesntHave) queryParams.doesntHave = advancedFilters.doesntHave
+  if (search.value) queryParams.keyword = search.value;
+  if (advancedFilters.nomorSurat) queryParams.nomor = advancedFilters.nomorSurat;
+  if (advancedFilters.perihal) queryParams.perihal = advancedFilters.perihal;
+  if (advancedFilters.jenis) queryParams.jenis = advancedFilters.jenis;
+  if (advancedFilters.sifat) queryParams.sifat = advancedFilters.sifat;
+  if (advancedFilters.status) queryParams.status = advancedFilters.status;
+  if (advancedFilters.pengirim) queryParams.from = advancedFilters.pengirim;
+  if (advancedFilters.penerima) queryParams.to = advancedFilters.penerima;
+  if (advancedFilters.dateFrom) queryParams.dateFrom = advancedFilters.dateFrom;
+  if (advancedFilters.dateTo) queryParams.dateTo = advancedFilters.dateTo;
+  if (advancedFilters.hasWords) queryParams.hasWords = advancedFilters.hasWords;
+  if (advancedFilters.doesntHave) queryParams.doesntHave = advancedFilters.doesntHave;
   if (advancedFilters.hasAttachment !== 'Semua' && advancedFilters.hasAttachment !== null) {
-    queryParams.hasAttachment = advancedFilters.hasAttachment
+    queryParams.hasAttachment = advancedFilters.hasAttachment;
   }
 
-  isSearchModalOpen.value = false
-  navigateTo({ path: '/search', query: queryParams })
-}
+  isSearchModalOpen.value = false;
+  navigateTo({ path: '/search', query: queryParams });
+};
 
 const resetAdvancedFilters = () => {
-  advancedFilters.nomorSurat = ''
-  advancedFilters.perihal = ''
-  advancedFilters.pengirim = ''
-  advancedFilters.penerima = ''
-  advancedFilters.hasWords = ''
-  advancedFilters.doesntHave = ''
-  advancedFilters.dateFrom = ''
-  advancedFilters.dateTo = ''
-  advancedFilters.jenis = null
-  advancedFilters.sifat = null
-  advancedFilters.status = null
-  advancedFilters.hasAttachment = 'Semua'
-  search.value = ''
-  quickSearch.value = ''
-  openSifat.value = false
-  openStatus.value = false
-  openLampiran.value = false
-  pengirimSuggestions.value = []
-  penerimasuggestions.value = []
-  pengirimSuggestions.value = []
-  penerimasuggestions.value = []
-  showPengirimPopover.value = false
-  showPenerimaPopover.value = false
-}
+  advancedFilters.nomorSurat = '';
+  advancedFilters.perihal = '';
+  advancedFilters.pengirim = '';
+  advancedFilters.penerima = '';
+  advancedFilters.hasWords = '';
+  advancedFilters.doesntHave = '';
+  advancedFilters.dateFrom = '';
+  advancedFilters.dateTo = '';
+  advancedFilters.jenis = null;
+  advancedFilters.sifat = null;
+  advancedFilters.status = null;
+  advancedFilters.priority = null;
+  advancedFilters.hasAttachment = 'Semua';
+  search.value = '';
+  quickSearch.value = '';
+  openSifat.value = false;
+  openStatus.value = false;
+  openLampiran.value = false;
+  pengirimSuggestions.value = [];
+  penerimasuggestions.value = [];
+  pengirimSuggestions.value = [];
+  penerimasuggestions.value = [];
+  showPengirimPopover.value = false;
+  showPenerimaPopover.value = false;
+};
 
 const handleReset = () => {
-  search.value = ''
-  router.push({ path: '/beranda', query: {} })
-}
+  search.value = '';
+  router.push({ path: '/beranda', query: {} });
+};
 
 // --- THEME & LOCALE ---
-const isDark = useDark()
+const isDark = useDark();
 const locales = [
   { code: 'id', name: 'ID' },
   { code: 'en', name: 'EN' }
-]
-const { locale, setLocale } = useI18n()
-const currentLocale = locale
+];
+const { locale, setLocale } = useI18n();
+const currentLocale = locale;
 
 const changeLocale = (code: string) => {
-  setLocale(code)
+  setLocale(code);
   if (process.client) {
-    localStorage.setItem('arsipku_locale', code)
+    localStorage.setItem('arsipku_locale', code);
   }
-}
+};
 
 // --- MENU ITEMS ---
-const itemClass = 'text-sm truncate transition-colors cursor-pointer'
+const itemClass = 'text-sm truncate transition-colors cursor-pointer';
 
 const menuItems = computed<DropdownMenuItem[][]>(() => {
-  const currentId = activeDelegationId.value
-  const isMainAccountActive = !currentId
-  const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0
+  const currentId = activeDelegationId.value;
+  const isMainAccountActive = !currentId;
+  const hasDelegationData = delegationRoles.value && delegationRoles.value.length > 0;
 
   const mainAccountItem = {
     uiName: user.value?.nama || 'User',
@@ -1142,10 +1202,10 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     disabled: !hasDelegationData,
     click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
     onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
-  }
+  };
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
-    const details = role.delegated_role || {}
+    const details = role.delegated_role || {};
     return {
       uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
@@ -1156,8 +1216,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       isActive: currentId === role.id,
       click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
       onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
-    }
-  })
+    };
+  });
 
   return [
     [mainAccountItem, ...delegasiItems],
@@ -1166,7 +1226,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         label: 'Pindah Perusahaan',
         class: itemClass,
         onSelect: () => {
-          navigateTo('/switch')
+          navigateTo('/switch');
         }
       },
       { label: 'Setting Notif Email', class: itemClass },
@@ -1182,57 +1242,57 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         onSelect: () => openLogoutPopup()
       }
     ]
-  ]
-})
+  ];
+});
 
 // --- LIFECYCLE ---
 onMounted(() => {
   if (process.client) {
-    initActiveState()
+    initActiveState();
 
-    const savedLocale = localStorage.getItem('arsipku_locale')
+    const savedLocale = localStorage.getItem('arsipku_locale');
     if (savedLocale && ['id', 'en'].includes(savedLocale)) {
-      setLocale(savedLocale)
+      setLocale(savedLocale);
     }
 
-    const successMsg = localStorage.getItem('switch_role_message')
+    const successMsg = localStorage.getItem('switch_role_message');
     if (successMsg) {
       toast.add({
         title: 'Berhasil',
         description: successMsg,
         icon: 'i-heroicons-check-circle',
         color: 'green'
-      })
-      localStorage.removeItem('switch_role_message')
+      });
+      localStorage.removeItem('switch_role_message');
     }
   }
-  if (!user.value) getProfile()
-})
+  if (!user.value) getProfile();
+});
 
 const openLogoutPopup = () => {
-  showLogoutPopup.value = true
-}
+  showLogoutPopup.value = true;
+};
 
 const getInitials = (name: string) => {
-  if (!name) return ''
-  const parts = name.trim().split(' ')
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
-}
+  if (!name) return '';
+  const parts = name.trim().split(' ');
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+};
 
-defineEmits(['open-mobile-sidebar'])
+defineEmits(['open-mobile-sidebar']);
 
 const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase()
+  const c = (cat || '').toUpperCase();
   if (['ND', 'NOTA DINAS'].includes(c))
-    return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300'
+    return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300';
   if (['DI', 'DISPOSISI'].includes(c))
-    return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
+    return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300';
   if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
-    return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300'
+    return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300';
   if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
-    return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300'
+    return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300';
   if (['KAJIAN', 'KA'].includes(c))
-    return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300'
-  return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-}
+    return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300';
+  return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+};
 </script>

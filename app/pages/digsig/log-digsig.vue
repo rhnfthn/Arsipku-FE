@@ -16,87 +16,87 @@
 
       <!-- WHITE CARD CONTAINER -->
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         <!-- TOOLBAR -->
-        <div class="p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <!-- SEARCH & LIMIT -->
-            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
-              <!-- ROWS PER PAGE DROPDOWN -->
-              <div class="flex items-center gap-2">
-                <div class="relative" ref="rowsRef">
-                  <button
-                    type="button"
-                    @click.stop="showRowsDropdown = !showRowsDropdown"
-                    class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+        <div
+          class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
+        >
+          <!-- SEARCH & LIMIT -->
+          <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
+            <!-- ROWS PER PAGE DROPDOWN -->
+            <div class="flex items-center gap-2">
+              <div class="relative" ref="rowsRef">
+                <button
+                  type="button"
+                  @click.stop="showRowsDropdown = !showRowsDropdown"
+                  class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+                >
+                  <span>{{ rowsPerPage }}</span>
+                  <ChevronDown
+                    class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': showRowsDropdown }"
+                  />
+                </button>
+                <Transition name="filter-dd">
+                  <div
+                    v-if="showRowsDropdown"
+                    class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                   >
-                    <span>{{ rowsPerPage }}</span>
-                    <ChevronDown
-                      class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
-                      :class="{ 'rotate-180': showRowsDropdown }"
-                    />
-                  </button>
-                  <Transition name="filter-dd">
-                    <div
-                      v-if="showRowsDropdown"
-                      class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                    <button
+                      v-for="n in rowsChoices"
+                      :key="n"
+                      type="button"
+                      @click.stop="selectRowsPerPage(n)"
+                      :class="[
+                        'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                        rowsPerPage === n
+                          ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ]"
                     >
-                      <button
-                        v-for="n in rowsChoices"
-                        :key="n"
-                        type="button"
-                        @click.stop="selectRowsPerPage(n)"
-                        :class="[
-                          'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
-                          rowsPerPage === n
-                            ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                            : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                        ]"
-                      >
-                        {{ n }}
-                      </button>
-                    </div>
-                  </Transition>
-                </div>
-              </div>
-
-              <!-- SEARCH — only jenisNaskah -->
-              <div class="relative flex-1">
-                <input
-                  v-model="searchQuery"
-                  @input="debounceSearch"
-                  type="text"
-                  :placeholder="$t('log_cari_placeholder')"
-                  class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-                />
-                <Search
-                  class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
-                />
+                      {{ n }}
+                    </button>
+                  </div>
+                </Transition>
               </div>
             </div>
 
-            <!-- BSRE ALERT BUTTON -->
-            <button
-              :class="[
-                'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
-                bsreAlert?.isActive
-                  ? 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800'
-                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-              ]"
-              @click="bsreAlert?.isActive ? openDeactivateModal() : openActivateModal()"
-              :disabled="loadingAlert"
-            >
-              <AlertTriangle class="w-4 h-4" />
-              {{
-                loadingAlert
-                  ? $t('log_btn_loading')
-                  : bsreAlert?.isActive
-                    ? $t('log_btn_deactivate')
-                    : $t('log_btn_activate')
-              }}
-            </button>
+            <!-- SEARCH — only jenisNaskah -->
+            <div class="relative flex-1">
+              <input
+                v-model="searchQuery"
+                @input="debounceSearch"
+                type="text"
+                :placeholder="$t('log_cari_placeholder')"
+                class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              />
+              <Search
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
+              />
+            </div>
           </div>
+
+          <!-- BSRE ALERT BUTTON -->
+          <button
+            :class="[
+              'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
+              bsreAlert?.isActive
+                ? 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800'
+                : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+            ]"
+            @click="bsreAlert?.isActive ? openDeactivateModal() : openActivateModal()"
+            :disabled="loadingAlert"
+          >
+            <AlertTriangle class="w-4 h-4" />
+            {{
+              loadingAlert
+                ? $t('log_btn_loading')
+                : bsreAlert?.isActive
+                  ? $t('log_btn_deactivate')
+                  : $t('log_btn_activate')
+            }}
+          </button>
         </div>
 
         <!-- TABLE -->

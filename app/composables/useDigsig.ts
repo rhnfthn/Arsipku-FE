@@ -424,11 +424,9 @@ export const useDigsig = () => {
 
       if (payload.signers) {
         const cleanSigners = payload.signers.map((s) => ({
-          id_document: id,
           urutan: Number(s.urutan),
           persnum: Number(s.persnum)
         }));
-        formData.append('id_document', id);
         formData.append('signers', JSON.stringify(cleanSigners));
 
         console.log('📤 Updating document with signers:', cleanSigners);
