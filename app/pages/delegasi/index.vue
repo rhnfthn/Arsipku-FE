@@ -1,28 +1,16 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
-import {
-  Search,
-  ArrowUpDown,
-  RotateCcw,
-  Plus,
-  Pencil,
-  Trash2,
-  ChevronDown,
-} from "lucide-vue-next";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { Search, ArrowUpDown, RotateCcw, Plus, Pencil, Trash2, ChevronDown } from 'lucide-vue-next';
 
-import Modal from "~/components/Modal.vue";
-import ConfirmPopup from "~/components/ConfirmPopup.vue";
-import Heading from "~/components/Heading.vue";
+import Modal from '~/components/Modal.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import Heading from '~/components/Heading.vue';
 
-import { useDelegasi } from "~/composables/useDelegasi";
-import type {
-  JabatanItem,
-  PersonilItem,
-  PositionStatusItem,
-} from "~/types/delegasi";
+import { useDelegasi } from '~/composables/useDelegasi';
+import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/delegasi';
 
 const toast = useToast();
 
@@ -33,24 +21,24 @@ const {
   getJabatanList,
   createDelegasi,
   updateDelegasi,
-  deleteDelegasi,
+  deleteDelegasi
 } = useDelegasi();
 
 // STATE
 const isLoading = ref(false);
 const isSubmitting = ref(false);
-const search = ref("");
-const filterStatus = ref("Semua");
-const filterLokasi = ref("Semua");
-const filterJabatan = ref("Semua");
-const sortDirection = ref<"asc" | "desc" | null>(null);
+const search = ref('');
+const filterStatus = ref('Semua');
+const filterLokasi = ref('Semua');
+const filterJabatan = ref('Semua');
+const sortDirection = ref<'asc' | 'desc' | null>(null);
 
 const showAddModal = ref(false);
 const showEditModal = ref(false);
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Delegasi", to: "/delegasi" },
+  { label: 'Beranda', to: '/beranda' },
+  { label: 'Delegasi', to: '/delegasi' }
 ];
 
 const listDelegasi = ref<any[]>([]);
@@ -73,22 +61,20 @@ const openFilterLokasi = ref(false);
 const openFilterJabatan = ref(false);
 
 const statusOptions = [
-  { label: "Semua Status", value: "Semua" },
-  { label: "Aktif", value: "aktif" },
-  { label: "Akan Datang", value: "tidak_aktif" },
-  { label: "Kadaluwarsa", value: "kedaluwarsa" },
+  { label: 'Semua Status', value: 'Semua' },
+  { label: 'Aktif', value: 'aktif' },
+  { label: 'Akan Datang', value: 'tidak_aktif' },
+  { label: 'Kadaluwarsa', value: 'kedaluwarsa' }
 ];
 
 const statusLabel = computed(
-  () =>
-    statusOptions.find((s) => s.value === filterStatus.value)?.label ??
-    "Semua Status",
+  () => statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
 );
 const lokasiLabel = computed(() =>
-  filterLokasi.value === "Semua" ? "Semua Lokasi" : filterLokasi.value,
+  filterLokasi.value === 'Semua' ? 'Semua Lokasi' : filterLokasi.value
 );
 const jabatanLabel = computed(() =>
-  filterJabatan.value === "Semua" ? "Semua Jabatan" : filterJabatan.value,
+  filterJabatan.value === 'Semua' ? 'Semua Jabatan' : filterJabatan.value
 );
 
 function toggleFilterStatus() {
@@ -130,7 +116,7 @@ const fetchData = async () => {
       page: currentPage.value,
       limit: rowsPerPage.value,
       search: search.value,
-      status: filterStatus.value === "Semua" ? undefined : filterStatus.value,
+      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
     };
     const res = await getDelegasiList(params);
     const wrapper = res.data;
@@ -142,69 +128,67 @@ const fetchData = async () => {
     }
     listDelegasi.value = dataArray.map((item: any) => ({
       id: item.id,
-      delegator_nama: item.name || "-",
-      delegator_jabatan: item.position_text || "-",
-      nama: item.as_name || "-",
-      lokasi: item.as_organization_text || item.as_area_text || "-",
-      sebagai: item.position_status || "-",
-      jabatan: item.as_position_text || "-",
+      delegator_nama: item.name || '-',
+      delegator_jabatan: item.position_text || '-',
+      nama: item.as_name || '-',
+      lokasi: item.as_organization_text || item.as_area_text || '-',
+      sebagai: item.position_status || '-',
+      jabatan: item.as_position_text || '-',
       tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
-      status: item.status?.label || "-",
-      raw: item,
+      status: item.status?.label || '-',
+      raw: item
     }));
     if (meta) {
       totalItems.value = meta.total;
       totalPagesApi.value = meta.totalPages;
     }
   } catch (error) {
-    console.error("Gagal mengambil data:", error);
+    console.error('Gagal mengambil data:', error);
   } finally {
     isLoading.value = false;
   }
 };
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return "";
-  const [y, m, d] = dateStr.split("-");
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
   return `${d}.${m}.${y}`;
 };
 
 const handleApiError = (error: any) => {
-  let message = "Terjadi kesalahan pada sistem.";
+  let message = 'Terjadi kesalahan pada sistem.';
   const errData = error.data || error.response?._data || error.response?.data;
   if (errData) {
     if (Array.isArray(errData.message)) message = errData.message[0];
-    else if (typeof errData.message === "string") message = errData.message;
+    else if (typeof errData.message === 'string') message = errData.message;
   } else if (error.message) {
     message = error.message;
   }
-  toast.add({ title: "Gagal", description: message, color: "error" });
+  toast.add({ title: 'Gagal', description: message, color: 'error' });
 };
 
 const validateDates = (start: string, end: string) => {
-  if (!start || !end) return "Tanggal mulai dan sampai harus diisi.";
+  if (!start || !end) return 'Tanggal mulai dan sampai harus diisi.';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date(start);
   const endDate = new Date(end);
-  if (startDate < today)
-    return "Tanggal mulai tidak boleh kurang dari hari ini.";
-  if (endDate < startDate)
-    return "Tanggal sampai tidak boleh kurang dari tanggal mulai.";
+  if (startDate < today) return 'Tanggal mulai tidak boleh kurang dari hari ini.';
+  if (endDate < startDate) return 'Tanggal sampai tidak boleh kurang dari tanggal mulai.';
   return null;
 };
 
 const toggleSort = () => {
-  if (!sortDirection.value) sortDirection.value = "asc";
-  else if (sortDirection.value === "asc") sortDirection.value = "desc";
+  if (!sortDirection.value) sortDirection.value = 'asc';
+  else if (sortDirection.value === 'asc') sortDirection.value = 'desc';
   else sortDirection.value = null;
 };
 
 const refreshData = () => {
-  search.value = "";
-  filterStatus.value = "Semua";
-  filterLokasi.value = "Semua";
-  filterJabatan.value = "Semua";
+  search.value = '';
+  filterStatus.value = 'Semua';
+  filterLokasi.value = 'Semua';
+  filterJabatan.value = 'Semua';
   sortDirection.value = null;
   currentPage.value = 1;
   fetchData();
@@ -212,14 +196,12 @@ const refreshData = () => {
 
 const filteredData = computed(() => {
   let data = [...listDelegasi.value];
-  if (filterLokasi.value !== "Semua")
+  if (filterLokasi.value !== 'Semua')
     data = data.filter((item) => item.lokasi === filterLokasi.value);
-  if (filterJabatan.value !== "Semua")
+  if (filterJabatan.value !== 'Semua')
     data = data.filter((item) => item.jabatan === filterJabatan.value);
-  if (sortDirection.value === "asc")
-    data.sort((a, b) => a.nama.localeCompare(b.nama));
-  if (sortDirection.value === "desc")
-    data.sort((a, b) => b.nama.localeCompare(a.nama));
+  if (sortDirection.value === 'asc') data.sort((a, b) => a.nama.localeCompare(b.nama));
+  if (sortDirection.value === 'desc') data.sort((a, b) => b.nama.localeCompare(a.nama));
   return data;
 });
 
@@ -239,9 +221,9 @@ const deleteNow = async () => {
     await deleteDelegasi(itemToDelete.value.id);
     confirmDeleteOpen.value = false;
     toast.add({
-      title: "Berhasil",
+      title: 'Berhasil',
       description: `Data delegasi ${itemToDelete.value.nama} berhasil dihapus.`,
-      color: "success",
+      color: 'success'
     });
     fetchData();
   } catch (error) {
@@ -255,53 +237,47 @@ const deleteNow = async () => {
 const personilOptions = ref<PersonilItem[]>([]);
 const sebagaiOptions = ref<PositionStatusItem[]>([]);
 const jabatanOptions = ref<JabatanItem[]>([]);
-const jabatanSearch = ref("");
-const personilSearch = ref("");
-const sebagaiSearch = ref("");
+const jabatanSearch = ref('');
+const personilSearch = ref('');
+const sebagaiSearch = ref('');
 
 const jabatanList = computed(() =>
   jabatanOptions.value.map((j) => ({
     id: j.id,
-    label: `${j.persnumText || "empty"} - ${j.displayText || "empty"}`,
+    label: `${j.persnumText || 'empty'} - ${j.displayText || 'empty'}`,
     value: j.id,
-    raw: j,
-  })),
+    raw: j
+  }))
 );
 const filteredJabatanList = computed(() => {
   const query = jabatanSearch.value.toLowerCase();
   if (!query) return jabatanList.value.slice(0, 10);
-  return jabatanList.value
-    .filter((item) => item.label.toLowerCase().includes(query))
-    .slice(0, 10);
+  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
 });
 const personilList = computed(() =>
   personilOptions.value.map((p) => ({
     id: p.persnum,
     label: p.displayText,
     value: p.persnum,
-    raw: p,
-  })),
+    raw: p
+  }))
 );
 const filteredPersonilList = computed(() => {
   const query = personilSearch.value.toLowerCase();
   if (!query) return personilList.value.slice(0, 10);
-  return personilList.value
-    .filter((item) => item.label.toLowerCase().includes(query))
-    .slice(0, 10);
+  return personilList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
 });
 const sebagaiList = computed(() =>
   sebagaiOptions.value.map((s) => ({
     id: s.value,
     label: s.label,
-    value: s.value,
-  })),
+    value: s.value
+  }))
 );
 const filteredSebagaiList = computed(() => {
   const query = sebagaiSearch.value.toLowerCase();
   if (!query) return sebagaiList.value.slice(0, 10);
-  return sebagaiList.value
-    .filter((item) => item.label.toLowerCase().includes(query))
-    .slice(0, 10);
+  return sebagaiList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
 });
 
 const openNewPersonil = ref(false);
@@ -313,27 +289,27 @@ const openEditJabatan = ref(false);
 
 function toggleNewJabatan() {
   openNewJabatan.value = !openNewJabatan.value;
-  if (openNewJabatan.value) jabatanSearch.value = "";
+  if (openNewJabatan.value) jabatanSearch.value = '';
 }
 function toggleEditJabatan() {
   openEditJabatan.value = !openEditJabatan.value;
-  if (openEditJabatan.value) jabatanSearch.value = "";
+  if (openEditJabatan.value) jabatanSearch.value = '';
 }
 function toggleNewPersonil() {
   openNewPersonil.value = !openNewPersonil.value;
-  if (openNewPersonil.value) personilSearch.value = "";
+  if (openNewPersonil.value) personilSearch.value = '';
 }
 function toggleEditPersonil() {
   openEditPersonil.value = !openEditPersonil.value;
-  if (openEditPersonil.value) personilSearch.value = "";
+  if (openEditPersonil.value) personilSearch.value = '';
 }
 function toggleNewSebagai() {
   openNewSebagai.value = !openNewSebagai.value;
-  if (openNewSebagai.value) sebagaiSearch.value = "";
+  if (openNewSebagai.value) sebagaiSearch.value = '';
 }
 function toggleEditSebagai() {
   openEditSebagai.value = !openEditSebagai.value;
-  if (openEditSebagai.value) sebagaiSearch.value = "";
+  if (openEditSebagai.value) sebagaiSearch.value = '';
 }
 
 onMounted(async () => {
@@ -341,18 +317,18 @@ onMounted(async () => {
     fetchData(),
     getPersonilList().then((res) => (personilOptions.value = res)),
     getPositionStatuses().then((res) => (sebagaiOptions.value = res)),
-    getJabatanList().then((res) => (jabatanOptions.value = res)),
+    getJabatanList().then((res) => (jabatanOptions.value = res))
   ]);
-  document.addEventListener("click", handleDocumentClick);
+  document.addEventListener('click', handleDocumentClick);
 });
 
 // ADD
 const newDelegasi = ref({
-  personil: "",
-  sebagai: "",
-  jabatan: "",
-  mulai: "",
-  sampai: "",
+  personil: '',
+  sebagai: '',
+  jabatan: '',
+  mulai: '',
+  sampai: ''
 });
 const getPersonilLabel = (val: string) =>
   personilList.value.find((p) => p.value === val)?.label || val;
@@ -362,33 +338,22 @@ const getJabatanLabel = (val: string) =>
   jabatanList.value.find((j) => j.value === val)?.label || val;
 
 const openAdd = () => {
-  newDelegasi.value = {
-    personil: "",
-    sebagai: "",
-    jabatan: "",
-    mulai: "",
-    sampai: "",
-  };
+  newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
+  newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
   showAddModal.value = true;
 };
 
 const saveDelegasi = async () => {
-  const errorMsg = validateDates(
-    newDelegasi.value.mulai,
-    newDelegasi.value.sampai,
-  );
+  if (!validateForm(newDelegasi.value, newErrors.value)) return;
+  const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai);
   if (errorMsg) {
-    toast.add({
-      title: "Validasi Gagal",
-      description: errorMsg,
-      color: "error",
-    });
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
     return;
   }
   isSubmitting.value = true;
   try {
     const selectedPersonil = personilOptions.value.find(
-      (p) => p.persnum === newDelegasi.value.personil,
+      (p) => p.persnum === newDelegasi.value.personil
     );
     const payload = {
       start_date: newDelegasi.value.mulai,
@@ -396,14 +361,14 @@ const saveDelegasi = async () => {
       position_status: newDelegasi.value.sebagai,
       as_persnum: newDelegasi.value.personil,
       as_name: selectedPersonil?.name,
-      as_position: newDelegasi.value.jabatan,
+      as_position: newDelegasi.value.jabatan
     };
     await createDelegasi(payload);
     showAddModal.value = false;
     toast.add({
-      title: "Berhasil",
-      description: "Data delegasi berhasil ditambahkan.",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Data delegasi berhasil ditambahkan.',
+      color: 'success'
     });
     fetchData();
   } catch (error) {
@@ -415,38 +380,40 @@ const saveDelegasi = async () => {
 
 // EDIT
 const editDelegasi = ref({
-  id: "",
-  personil: "",
-  sebagai: "",
-  jabatan: "",
-  mulai: "",
-  sampai: "",
+  id: '',
+  personil: '',
+  sebagai: '',
+  jabatan: '',
+  mulai: '',
+  sampai: ''
 });
 
 const openEdit = (item: any) => {
   const raw = item.raw;
   editDelegasi.value = {
     id: item.id,
-    personil: raw.as_persnum || "",
-    sebagai: raw.position_status || "PH",
-    jabatan: raw.as_position || "",
+    personil: raw.as_persnum || '',
+    sebagai: raw.position_status || 'PH',
+    jabatan: raw.as_position || '',
     mulai: raw.start_date,
-    sampai: raw.end_date,
+    sampai: raw.end_date
   };
   showEditModal.value = true;
+  editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
 };
 
 const saveEditDelegasi = async () => {
-  const errorMsg = validateDates(
-    editDelegasi.value.mulai,
-    editDelegasi.value.sampai,
-  );
+  const editForm = {
+    personil: editDelegasi.value.personil,
+    sebagai: editDelegasi.value.sebagai,
+    jabatan: editDelegasi.value.jabatan,
+    mulai: editDelegasi.value.mulai,
+    sampai: editDelegasi.value.sampai
+  };
+  if (!validateForm(editForm, editErrors.value)) return;
+  const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai);
   if (errorMsg) {
-    toast.add({
-      title: "Validasi Gagal",
-      description: errorMsg,
-      color: "error",
-    });
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
     return;
   }
   isSubmitting.value = true;
@@ -456,14 +423,14 @@ const saveEditDelegasi = async () => {
       end_date: editDelegasi.value.sampai,
       position_status: editDelegasi.value.sebagai,
       as_persnum: editDelegasi.value.personil,
-      as_position: editDelegasi.value.jabatan,
+      as_position: editDelegasi.value.jabatan
     };
     await updateDelegasi(editDelegasi.value.id, payload);
     showEditModal.value = false;
     toast.add({
-      title: "Berhasil",
-      description: "Data delegasi berhasil diperbarui.",
-      color: "success",
+      title: 'Berhasil',
+      description: 'Data delegasi berhasil diperbarui.',
+      color: 'success'
     });
     fetchData();
   } catch (error) {
@@ -496,7 +463,7 @@ watch(
     currentPage.value = 1;
     fetchData();
   },
-  { deep: true },
+  { deep: true }
 );
 watch(currentPage, () => {
   fetchData();
@@ -504,7 +471,7 @@ watch(currentPage, () => {
 
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
-  const dropdownEls = document.querySelectorAll("[data-custom-dropdown]");
+  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]');
   for (const el of Array.from(dropdownEls)) {
     if (el.contains(target)) return;
   }
@@ -520,7 +487,7 @@ function handleDocumentClick(e: MouseEvent) {
 }
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
+  document.removeEventListener('click', handleDocumentClick);
 });
 
 function selectNewPersonil(val: string) {
@@ -549,23 +516,44 @@ function selectEditJabatan(val: string) {
 }
 
 const exportData = () => {
-  const headers = ["Nama", "Jabatan", "Lokasi", "Periode", "Status"];
-  const rows = listDelegasi.value.map((i) => [
-    i.nama,
-    i.jabatan,
-    i.lokasi,
-    i.tanggal,
-    i.status,
-  ]);
-  const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  if (filteredData.value.length === 0) {
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning'
+    });
+    return;
+  }
+  const headers = ['Nama', 'Jabatan', 'Lokasi', 'Periode', 'Status'];
+  const rows = filteredData.value.map((i) => [i.nama, i.jabatan, i.lokasi, i.tanggal, i.status]);
+  const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
-  link.setAttribute("download", "delegasi.csv");
+  link.setAttribute(
+    'download',
+    `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
+  );
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  toast.add({
+    title: 'Berhasil',
+    description: `${filteredData.value.length} data berhasil diexport`,
+    color: 'success'
+  });
+};
+const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+
+const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.value) => {
+  errors.personil = form.personil ? '' : 'Personil wajib dipilih';
+  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih';
+  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih';
+  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi';
+  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi';
+  return !Object.values(errors).some(Boolean);
 };
 </script>
 
@@ -573,9 +561,7 @@ const exportData = () => {
   <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md dark:text-white"
-          >Delegasi</Heading
-        >
+        <Heading variant="heading6b" class="text-mobile-md dark:text-white">Delegasi</Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
@@ -616,10 +602,7 @@ const exportData = () => {
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
               title="Refresh"
             >
-              <RotateCcw
-                class="w-4 h-4"
-                :class="{ 'animate-spin': isLoading }"
-              />
+              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
             </button>
           </div>
 
@@ -650,7 +633,7 @@ const exportData = () => {
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterStatus === opt.value
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   {{ opt.label }}
@@ -684,7 +667,7 @@ const exportData = () => {
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
                     filterLokasi === 'Semua'
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   Semua Lokasi
@@ -698,7 +681,7 @@ const exportData = () => {
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterLokasi === lok
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   {{ lok }}
@@ -732,7 +715,7 @@ const exportData = () => {
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
                     filterJabatan === 'Semua'
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   Semua Jabatan
@@ -746,7 +729,7 @@ const exportData = () => {
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterJabatan === jab
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                   ]"
                 >
                   {{ jab }}
@@ -779,34 +762,22 @@ const exportData = () => {
         <table class="min-w-full text-sm">
           <thead class="bg-primary dark:bg-primary-700">
             <tr>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Delegator
               </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Penerima Delegasi
               </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Sebagai Jabatan
               </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Periode
               </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
                 Status
               </th>
-              <th
-                class="px-4 py-3 text-center text-sm font-semibold text-white whitespace-nowrap"
-              >
+              <th class="px-4 py-3 text-center text-sm font-semibold text-white whitespace-nowrap">
                 Aksi
               </th>
             </tr>
@@ -819,64 +790,39 @@ const exportData = () => {
                 class="animate-pulse bg-white dark:bg-gray-800"
               >
                 <td class="px-4 py-2">
-                  <div
-                    class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"
-                  ></div>
-                  <div
-                    class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"
-                  ></div>
+                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
                 <td class="px-4 py-2">
                   <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"
-                    ></div>
+                    <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
                     <div>
-                      <div
-                        class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2"
-                      ></div>
-                      <div
-                        class="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded"
-                      ></div>
+                      <div class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                      <div class="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-2">
-                  <div
-                    class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2"
-                  ></div>
-                  <div
-                    class="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"
-                  ></div>
+                  <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div class="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
                 <td class="px-4 py-2">
-                  <div
-                    class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"
-                  ></div>
+                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </td>
                 <td class="px-4 py-2">
-                  <div
-                    class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"
-                  ></div>
+                  <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 </td>
                 <td class="px-4 py-2">
                   <div class="flex justify-center gap-3">
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"
-                    ></div>
-                    <div
-                      class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"
-                    ></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                   </div>
                 </td>
               </tr>
             </template>
             <template v-else-if="paginatedDelegasi.length === 0">
               <tr>
-                <td
-                  colspan="6"
-                  class="text-center py-8 text-gray-500 dark:text-gray-400"
-                >
+                <td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-400">
                   Tidak ada data ditemukan
                 </td>
               </tr>
@@ -892,38 +838,30 @@ const exportData = () => {
                     <span class="text-gray-900 dark:text-white font-medium">{{
                       item.delegator_nama
                     }}</span>
-                    <span
-                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
-                      >{{ item.delegator_jabatan }}</span
-                    >
+                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
+                      item.delegator_jabatan
+                    }}</span>
                   </div>
                 </td>
                 <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{
-                      item.nama
+                    <span class="text-gray-900 dark:text-white font-medium">{{ item.nama }}</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
+                      item.lokasi
                     }}</span>
-                    <span
-                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
-                      >{{ item.lokasi }}</span
-                    >
                   </div>
                 </td>
                 <td class="px-4 py-2">
                   <div class="flex flex-col">
-                    <span
-                      class="text-primary dark:text-primary-400 font-semibold text-xs mb-1"
+                    <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1"
                       >Status: {{ item.sebagai }}</span
                     >
-                    <span
-                      class="text-gray-900 dark:text-white font-medium leading-snug"
-                      >{{ item.jabatan }}</span
-                    >
+                    <span class="text-gray-900 dark:text-white font-medium leading-snug">{{
+                      item.jabatan
+                    }}</span>
                   </div>
                 </td>
-                <td
-                  class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs"
-                >
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
                   {{ item.tanggal }}
                 </td>
                 <td class="px-4 py-2">
@@ -938,13 +876,12 @@ const exportData = () => {
                           ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
                           : item.status === 'Kedaluwarsa'
                             ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300',
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
                     ]"
                   >
                     {{
-                      item.status === "Tidak Aktif" ||
-                      item.status === "tidak_aktif"
-                        ? "Akan Datang"
+                      item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
+                        ? 'Akan Datang'
                         : item.status
                     }}
                   </span>
@@ -987,15 +924,10 @@ const exportData = () => {
               'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -1026,15 +958,13 @@ const exportData = () => {
                 'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400'
               ]"
             >
               {{ page }}
             </button>
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >...</span
             >
@@ -1053,16 +983,11 @@ const exportData = () => {
               'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
             Selanjutnya
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -1076,12 +1001,7 @@ const exportData = () => {
     </div>
 
     <Teleport to="body">
-      <Modal
-        v-model="showAddModal"
-        @save="saveDelegasi"
-        size="xl"
-        :loading="isSubmitting"
-      >
+      <Modal v-model="showAddModal" @save="saveDelegasi" size="xl" :loading="isSubmitting">
         <template #title
           ><Heading
             variant="heading9b"
@@ -1091,9 +1011,7 @@ const exportData = () => {
         >
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Personil <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1102,15 +1020,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewPersonil"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getPersonilLabel(newDelegasi.personil) || "Pilih personil"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getPersonilLabel(newDelegasi.personil) || 'Pilih personil'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openNewPersonil"
@@ -1152,9 +1065,7 @@ const exportData = () => {
             </div>
           </div>
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Sebagai <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1163,15 +1074,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewSebagai"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getSebagaiLabel(newDelegasi.sebagai) || "Pilih peran"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getSebagaiLabel(newDelegasi.sebagai) || 'Pilih peran'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openNewSebagai"
@@ -1213,9 +1119,7 @@ const exportData = () => {
             </div>
           </div>
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Jabatan <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1224,15 +1128,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleNewJabatan"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getJabatanLabel(newDelegasi.jabatan) || "Pilih jabatan"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getJabatanLabel(newDelegasi.jabatan) || 'Pilih jabatan'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openNewJabatan"
@@ -1275,9 +1174,7 @@ const exportData = () => {
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
                 >Mulai <span class="text-red-500">*</span></Heading
               >
               <input
@@ -1287,9 +1184,7 @@ const exportData = () => {
               />
             </div>
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
                 >Sampai <span class="text-red-500">*</span></Heading
               >
               <input
@@ -1304,12 +1199,7 @@ const exportData = () => {
     </Teleport>
 
     <Teleport to="body">
-      <Modal
-        v-model="showEditModal"
-        @save="saveEditDelegasi"
-        size="xl"
-        :loading="isSubmitting"
-      >
+      <Modal v-model="showEditModal" @save="saveEditDelegasi" size="xl" :loading="isSubmitting">
         <template #title
           ><Heading
             variant="heading9b"
@@ -1319,9 +1209,7 @@ const exportData = () => {
         >
         <div class="flex flex-col gap-5 p-3">
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Personil <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1330,15 +1218,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditPersonil"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getPersonilLabel(editDelegasi.personil) || "Pilih personil"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getPersonilLabel(editDelegasi.personil) || 'Pilih personil'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openEditPersonil"
@@ -1380,9 +1263,7 @@ const exportData = () => {
             </div>
           </div>
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Sebagai <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1391,15 +1272,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditSebagai"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getSebagaiLabel(editDelegasi.sebagai) || "Pilih peran"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getSebagaiLabel(editDelegasi.sebagai) || 'Pilih peran'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openEditSebagai"
@@ -1441,9 +1317,7 @@ const exportData = () => {
             </div>
           </div>
           <div>
-            <Heading
-              variant="heading11m"
-              class="text-xs font-medium dark:text-gray-200"
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Jabatan <span class="text-red-500">*</span></Heading
             >
             <div class="relative" data-custom-dropdown>
@@ -1452,15 +1326,10 @@ const exportData = () => {
                 class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                 @click.stop="toggleEditJabatan"
               >
-                <span
-                  class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2"
-                  >{{
-                    getJabatanLabel(editDelegasi.jabatan) || "Pilih jabatan"
-                  }}</span
-                >
-                <ChevronDown
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                />
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
+                  getJabatanLabel(editDelegasi.jabatan) || 'Pilih jabatan'
+                }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
               <div
                 v-if="openEditJabatan"
@@ -1503,9 +1372,7 @@ const exportData = () => {
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
                 >Mulai <span class="text-red-500">*</span></Heading
               >
               <input
@@ -1515,9 +1382,7 @@ const exportData = () => {
               />
             </div>
             <div>
-              <Heading
-                variant="heading11m"
-                class="text-xs font-medium dark:text-gray-200"
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
                 >Sampai <span class="text-red-500">*</span></Heading
               >
               <input

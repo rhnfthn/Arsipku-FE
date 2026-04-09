@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between w-full">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-          {{ $t("vd_title") }}
+          {{ $t('vd_title') }}
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
@@ -14,7 +14,7 @@
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
         <Plus class="w-4 h-4" />
-        {{ $t("nm_button") }}
+        {{ $t('nm_button') }}
       </button>
     </div>
 
@@ -22,9 +22,7 @@
       class="bg-white mt-2 dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
     >
       <!-- TOP ACTION BAR -->
-      <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
-      >
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4">
         <!-- STATUS FILTER -->
         <div class="relative" data-custom-dropdown>
           <button
@@ -36,7 +34,7 @@
             <ChevronDown
               :class="[
                 'w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200',
-                openFilterStatus ? 'rotate-180' : 'rotate-0',
+                openFilterStatus ? 'rotate-180' : 'rotate-0'
               ]"
             />
           </button>
@@ -54,7 +52,7 @@
                   'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                   statusFilter === item.value
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ item.label }}
@@ -92,25 +90,15 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="i in 5"
-              :key="i"
-              class="border-b border-gray-100 dark:border-gray-700"
-            >
+            <tr v-for="i in 5" :key="i" class="border-b border-gray-100 dark:border-gray-700">
               <td class="p-4">
-                <div
-                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"
-                ></div>
+                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"></div>
               </td>
               <td class="p-4">
-                <div
-                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"
-                ></div>
+                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
               </td>
               <td class="p-4">
-                <div
-                  class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48"
-                ></div>
+                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48"></div>
               </td>
               <td class="p-4 text-center">
                 <div
@@ -129,12 +117,8 @@
               </td>
               <td class="p-4">
                 <div class="flex items-center justify-center gap-4">
-                  <div
-                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                  ></div>
-                  <div
-                    class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                  ></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div class="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
               </td>
             </tr>
@@ -160,7 +144,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>{{ $t("tanggal") }}</span>
+                  <span>{{ $t('tanggal') }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -179,7 +163,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>{{ $t("nodokumen") }}</span>
+                  <span>{{ $t('nodokumen') }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -198,7 +182,7 @@
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
               >
                 <div class="flex items-center gap-2 px-4 py-3">
-                  <span>{{ $t("perihal") }}</span>
+                  <span>{{ $t('perihal') }}</span>
                   <ArrowUpDown
                     class="w-4 h-4 origin-center transition-transform duration-200"
                     :class="
@@ -211,8 +195,8 @@
                   />
                 </div>
               </th>
-              <th class="px-4 py-3 text-center">{{ $t("sign") }}</th>
-              <th class="px-4 py-3 text-center">{{ $t("dokumen") }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('sign') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('dokumen') }}</th>
               <th
                 @click="handleSort('status')"
                 class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
@@ -232,7 +216,7 @@
                 </div>
               </th>
 
-              <th class="px-4 py-3 text-center">{{ $t("aksi") }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('aksi') }}</th>
             </tr>
           </thead>
 
@@ -304,7 +288,7 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t("menampilkan") }} {{ paginatedRows.length }} {{ $t("dari") }}
+          {{ $t('menampilkan') }} {{ paginatedRows.length }} {{ $t('dari') }}
           {{ filteredRows.length }} data
         </div>
 
@@ -317,15 +301,10 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -333,7 +312,7 @@
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            {{ $t("sebelumnya") }}
+            {{ $t('sebelumnya') }}
           </button>
 
           <!-- Page Numbers -->
@@ -364,7 +343,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400'
               ]"
             >
               {{ page }}
@@ -372,9 +351,7 @@
 
             <!-- Right ellipsis -->
             <span
-              v-if="
-                paginationPages[paginationPages.length - 1] < totalPages - 1
-              "
+              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
               class="px-2 text-gray-400 dark:text-gray-500 text-sm"
             >
               ...
@@ -398,16 +375,11 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
             ]"
           >
-            {{ $t("selanjutnya") }}
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            {{ $t('selanjutnya') }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -425,11 +397,8 @@
       <Modal v-model="openAdd" :hideDefaultFooter="true" size="xl">
         <template #title>
           <div class="mt-5 ml-5 mb-3">
-            <Heading
-              variant="heading9b"
-              class="font-bold text-sm dark:text-white"
-            >
-              {{ isEditMode ? "Edit Dokumen" : "Tambah Dokumen" }}
+            <Heading variant="heading9b" class="font-bold text-sm dark:text-white">
+              {{ isEditMode ? 'Edit Dokumen' : 'Tambah Dokumen' }}
             </Heading>
           </div>
         </template>
@@ -444,8 +413,20 @@
               <input
                 v-model="addForm.tanggal"
                 type="date"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                @change="formErrors.tanggal = false"
+                :class="[
+                  'w-full border dark:bg-gray-700 dark:text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 text-sm mt-2',
+                  formErrors.tanggal
+                    ? 'border-red-500 focus:ring-red-400'
+                    : 'border-gray-300 dark:border-gray-600 focus:border-primary-500'
+                ]"
               />
+              <p
+                v-if="formErrors.tanggal"
+                class="mt-1 text-xs text-red-500 flex items-center gap-1"
+              >
+                {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+              </p>
             </div>
 
             <div>
@@ -455,18 +436,18 @@
               <div class="relative mt-2" ref="klasifikasiDropdownRef">
                 <div
                   @click="toggleKlasifikasiDropdown"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
+                  :class="[
+                    'w-full border dark:bg-gray-700 px-3 py-2 rounded-md text-sm cursor-pointer flex items-center justify-between',
+                    formErrors.klasifikasi
+                      ? 'border-red-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  ]"
                 >
-                  <span
-                    v-if="addForm.klasifikasi"
-                    class="text-gray-900 dark:text-white"
-                  >
+                  <span v-if="addForm.klasifikasi" class="text-gray-900 dark:text-white">
                     {{ getSelectedKlasifikasiLabel() }}
                   </span>
                   <span v-else class="text-gray-500 dark:text-gray-400">
-                    {{
-                      loadingKlasifikasi ? "Loading..." : "Pilih Klasifikasi"
-                    }}
+                    {{ loadingKlasifikasi ? 'Loading...' : 'Pilih Klasifikasi' }}
                   </span>
                   <svg
                     class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
@@ -483,7 +464,12 @@
                     />
                   </svg>
                 </div>
-
+                <p
+                  v-if="formErrors.klasifikasi"
+                  class="mt-1 text-xs text-red-500 flex items-center gap-1"
+                >
+                  {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+                </p>
                 <!-- Dropdown Menu -->
                 <div
                   v-if="showKlasifikasiDropdown"
@@ -515,13 +501,10 @@
                       @click="selectKlasifikasi(k)"
                       class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       :class="{
-                        'bg-blue-50 dark:bg-gray-700':
-                          addForm.klasifikasi === k.klasifikasi,
+                        'bg-blue-50 dark:bg-gray-700': addForm.klasifikasi === k.klasifikasi
                       }"
                     >
-                      <p class="font-medium">
-                        {{ k.klasifikasi }} - {{ k.klasifikasi_text }}
-                      </p>
+                      <p class="font-medium">{{ k.klasifikasi }} - {{ k.klasifikasi_text }}</p>
                     </div>
 
                     <div
@@ -542,18 +525,18 @@
               <div class="relative mt-2" ref="jenisNaskahDropdownRef">
                 <div
                   @click="toggleJenisNaskahDropdown"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
+                  :class="[
+                    'w-full border dark:bg-gray-700 px-3 py-2 rounded-md text-sm cursor-pointer flex items-center justify-between',
+                    formErrors.jenisNaskah
+                      ? 'border-red-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  ]"
                 >
-                  <span
-                    v-if="addForm.jenisNaskah"
-                    class="text-gray-900 dark:text-white"
-                  >
+                  <span v-if="addForm.jenisNaskah" class="text-gray-900 dark:text-white">
                     {{ getSelectedJenisNaskahLabel() }}
                   </span>
                   <span v-else class="text-gray-500 dark:text-gray-400">
-                    {{
-                      loadingJenisNaskah ? "Loading..." : "Pilih Jenis Naskah"
-                    }}
+                    {{ loadingJenisNaskah ? 'Loading...' : 'Pilih Jenis Naskah' }}
                   </span>
                   <svg
                     class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
@@ -602,13 +585,10 @@
                       @click="selectJenisNaskah(j)"
                       class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       :class="{
-                        'bg-blue-50 dark:bg-gray-700':
-                          addForm.jenisNaskah === j.jenis,
+                        'bg-blue-50 dark:bg-gray-700': addForm.jenisNaskah === j.jenis
                       }"
                     >
-                      <p class="font-medium">
-                        {{ j.jenis }} - {{ j.jenis_text }}
-                      </p>
+                      <p class="font-medium">{{ j.jenis }} - {{ j.jenis_text }}</p>
                     </div>
 
                     <div
@@ -628,9 +608,21 @@
               </Heading>
               <input
                 v-model="addForm.nomorDokumen"
+                @input="formErrors.nomorDokumen = false"
                 placeholder="Masukkan Nomor Dokumen"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                :class="[
+                  'w-full border dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 text-sm mt-2',
+                  formErrors.nomorDokumen
+                    ? 'border-red-500 focus:ring-red-400'
+                    : 'border-gray-300 dark:border-gray-600 focus:border-primary-500'
+                ]"
               />
+              <p
+                v-if="formErrors.nomorDokumen"
+                class="mt-1 text-xs text-red-500 flex items-center gap-1"
+              >
+                {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+              </p>
             </div>
 
             <div>
@@ -639,9 +631,21 @@
               </Heading>
               <input
                 v-model="addForm.perihal"
+                @input="formErrors.perihal = false"
                 placeholder="Masukkan Perihal Dokumen"
-                class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mt-2"
+                :class="[
+                  'w-full border dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 text-sm mt-2',
+                  formErrors.perihal
+                    ? 'border-red-500 focus:ring-red-400'
+                    : 'border-gray-300 dark:border-gray-600 focus:border-primary-500'
+                ]"
               />
+              <p
+                v-if="formErrors.perihal"
+                class="mt-1 text-xs text-red-500 flex items-center gap-1"
+              >
+                {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+              </p>
             </div>
 
             <!-- File Attachment - Compact -->
@@ -652,14 +656,14 @@
               <div class="flex items-center gap-3">
                 <button
                   @click="triggerFileUpload"
-                  class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 dark:text-white rounded-md text-sm font-medium transition flex items-center gap-2"
+                  :class="[
+                    'px-4 py-2 border rounded-md text-sm font-medium transition flex items-center gap-2 dark:text-white',
+                    formErrors.file
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-red-600'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ]"
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
@@ -697,24 +701,21 @@
                   </button>
                 </div>
               </div>
+              <p v-if="formErrors.file" class="mt-1 text-xs text-red-500 flex items-center gap-1">
+                {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+              </p>
             </div>
 
             <!-- Visible Sign -->
             <div class="flex items-center justify-between mt-1 mb-2">
               <div>
-                <Heading variant="body2m" class="dark:text-gray-200"
-                  >Visible Sign</Heading
-                >
+                <Heading variant="body2m" class="dark:text-gray-200">Visible Sign</Heading>
                 <p class="text-xs text-red-500 mt-1">
                   *Visible Sign hanya berlaku pada penanda tangan terakhir
                 </p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="addForm.visibleSign"
-                  class="sr-only peer"
-                />
+                <input type="checkbox" v-model="addForm.visibleSign" class="sr-only peer" />
                 <div
                   class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
                 ></div>
@@ -730,21 +731,15 @@
               </div>
 
               <!-- Selected Signers Display -->
-              <div
-                v-if="addForm.selectedSigners.length > 0"
-                class="mb-4 space-y-2"
-              >
+              <div v-if="addForm.selectedSigners.length > 0" class="mb-4 space-y-2">
                 <div
                   v-for="(signer, index) in addForm.selectedSigners"
                   :key="index"
                   class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3"
                 >
                   <div class="flex-1">
-                    <p
-                      class="font-medium text-sm text-gray-900 dark:text-white"
-                    >
-                      {{ index + 1 }}. {{ signer.jabatan }} -
-                      {{ signer.lokasi }} -
+                    <p class="font-medium text-sm text-gray-900 dark:text-white">
+                      {{ index + 1 }}. {{ signer.jabatan }} - {{ signer.lokasi }} -
                       {{ signer.nama }}
                     </p>
                   </div>
@@ -753,12 +748,7 @@
                     @click="removeSelectedSigner(index)"
                     class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 ml-2"
                   >
-                    <svg
-                      class="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -774,10 +764,13 @@
               <div class="relative" ref="dropdownRef">
                 <div
                   @click="toggleSignerDropdown"
-                  class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm cursor-pointer bg-white dark:bg-gray-700 flex items-center justify-between"
+                  :class="[
+                    'w-full border dark:bg-gray-700 px-3 py-2 rounded-md text-sm cursor-pointer flex items-center justify-between',
+                    formErrors.signers ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  ]"
                 >
                   <span class="text-gray-500 dark:text-gray-400">{{
-                    loadingVerifikator ? "Loading..." : "Pilih Jabatan"
+                    loadingVerifikator ? 'Loading...' : 'Pilih Jabatan'
                   }}</span>
                   <svg
                     class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform"
@@ -794,7 +787,12 @@
                     />
                   </svg>
                 </div>
-
+                <p
+                  v-if="formErrors.signers"
+                  class="mt-1 text-xs text-red-500 flex items-center gap-1"
+                >
+                  {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+                </p>
                 <!-- Dropdown Menu -->
                 <div
                   v-if="showSignerDropdown"
@@ -827,14 +825,10 @@
                       class="px-3 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       :class="{
                         'bg-blue-50 dark:bg-gray-700':
-                          addForm.selectedSigners.findIndex(
-                            (s) => s.persnum === v.persnum,
-                          ) !== -1,
+                          addForm.selectedSigners.findIndex((s) => s.persnum === v.persnum) !== -1
                       }"
                     >
-                      <p class="font-reguler">
-                        {{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}
-                      </p>
+                      <p class="font-reguler">{{ v.jabatan }} - {{ v.nama }} - {{ v.lokasi }}</p>
                     </div>
 
                     <div
@@ -865,7 +859,7 @@
             :disabled="loading"
             class="flex-1 px-6 py-2 bg-primary dark:bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 dark:hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {{ loading ? "Menyimpan..." : "Simpan Perubahan" }}
+            {{ loading ? 'Menyimpan...' : 'Simpan Perubahan' }}
           </button>
         </div>
       </Modal>
@@ -875,10 +869,7 @@
     <Teleport to="body">
       <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
         <template #title>
-          <Heading
-            variant="heading9b"
-            class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
-          >
+          <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
             Detail Dokumen
           </Heading>
         </template>
@@ -918,9 +909,7 @@
               <p class="font-medium text-gray-900 dark:text-white">
                 {{
                   documentDetail.klasifikasiText ||
-                  (documentDetail.klasifikasi
-                    ? `${documentDetail.klasifikasi}`
-                    : "-")
+                  (documentDetail.klasifikasi ? `${documentDetail.klasifikasi}` : '-')
                 }}
               </p>
             </div>
@@ -957,11 +946,7 @@
 
           <!-- TABLE SIGNERS -->
           <div
-            v-if="
-              documentDetail &&
-              documentDetail.signers &&
-              documentDetail.signers.length > 0
-            "
+            v-if="documentDetail && documentDetail.signers && documentDetail.signers.length > 0"
             class="mt-6 mb-5 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
           >
             <div class="overflow-x-auto">
@@ -971,18 +956,10 @@
                 >
                   <tr>
                     <th class="p-3 text-left text-white font-semibold">NO</th>
-                    <th class="p-3 text-left font-semibold text-white">
-                      E-NIK
-                    </th>
-                    <th class="p-3 text-left font-semibold text-white">
-                      NAMA / JABATAN
-                    </th>
-                    <th class="p-3 text-center font-semibold text-white">
-                      STATUS
-                    </th>
-                    <th class="p-3 text-center font-semibold text-white">
-                      KETERANGAN
-                    </th>
+                    <th class="p-3 text-left font-semibold text-white">E-NIK</th>
+                    <th class="p-3 text-left font-semibold text-white">NAMA / JABATAN</th>
+                    <th class="p-3 text-center font-semibold text-white">STATUS</th>
+                    <th class="p-3 text-center font-semibold text-white">KETERANGAN</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -999,16 +976,14 @@
                       </span>
                     </td>
                     <td class="p-3 font-mono text-gray-700 dark:text-gray-300">
-                      {{ s.persnum || "-" }}
+                      {{ s.persnum || '-' }}
                     </td>
                     <td class="p-3">
                       <div class="font-semibold text-gray-900 dark:text-white">
-                        {{ s.nama || "-" }}
+                        {{ s.nama || '-' }}
                       </div>
-                      <div
-                        class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                      >
-                        {{ s.jabatan || "-" }}
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {{ s.jabatan || '-' }}
                       </div>
                     </td>
                     <td class="p-3 text-center">
@@ -1019,10 +994,8 @@
                         {{ getSignerStatusLabel(s.status) }}
                       </span>
                     </td>
-                    <td
-                      class="p-3 font-mono text-center text-gray-700 dark:text-gray-300"
-                    >
-                      {{ s.keterangan || "-" }}
+                    <td class="p-3 font-mono text-center text-gray-700 dark:text-gray-300">
+                      {{ s.keterangan || '-' }}
                     </td>
                   </tr>
                 </tbody>
@@ -1033,8 +1006,7 @@
           <!-- Empty state -->
           <div
             v-else-if="
-              documentDetail &&
-              (!documentDetail.signers || documentDetail.signers.length === 0)
+              documentDetail && (!documentDetail.signers || documentDetail.signers.length === 0)
             "
             class="mt-6 mb-5 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center"
           >
@@ -1055,13 +1027,11 @@
       :ui="{
         content: 'h-screen max-h-screen',
         body: 'p-0',
-        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800'
       }"
     >
       <template #body>
-        <div
-          class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-        >
+        <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <iframe
             v-if="pdfUrl"
             :key="pdfUrl"
@@ -1071,13 +1041,8 @@
           />
 
           <div v-else class="flex flex-col items-center gap-2">
-            <UIcon
-              name="i-lucide-loader-2"
-              class="animate-spin w-8 h-8 text-primary-500"
-            />
-            <span class="text-gray-500 dark:text-gray-400"
-              >Memuat Pratinjau...</span
-            >
+            <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
+            <span class="text-gray-500 dark:text-gray-400">Memuat Pratinjau...</span>
           </div>
         </div>
       </template>
@@ -1086,7 +1051,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 
 import {
   Plus,
@@ -1096,13 +1061,13 @@ import {
   Eye,
   ChevronDown,
   ArrowUpDown,
-  ChevronRight,
-} from "lucide-vue-next";
+  ChevronRight
+} from 'lucide-vue-next';
 
-import { useDigsig } from "~/composables/useDigsig";
-import type { Verifikator } from "~/types/digsig";
+import { useDigsig } from '~/composables/useDigsig';
+import type { Verifikator } from '~/types/digsig';
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 const { t } = useI18n();
@@ -1135,7 +1100,7 @@ const {
   showToastGagalPreview,
   showToastValidasiForm,
   showToastDokumenCreated,
-  showToastDokumenUpdated,
+  showToastDokumenUpdated
 } = useDigsig();
 
 const isOpenPreview = ref(false);
@@ -1143,7 +1108,7 @@ const pdfUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(null);
 
 // Track which modal to return to after closing preview
-const returnToModal = ref<"detail" | "form" | null>(null);
+const returnToModal = ref<'detail' | 'form' | null>(null);
 
 const openDetail = ref(false);
 const openAdd = ref(false);
@@ -1162,65 +1127,73 @@ const showKlasifikasiDropdown = ref(false);
 const showJenisNaskahDropdown = ref(false);
 
 // Search queries
-const signerSearchQuery = ref("");
-const klasifikasiSearchQuery = ref("");
-const jenisNaskahSearchQuery = ref("");
+const signerSearchQuery = ref('');
+const klasifikasiSearchQuery = ref('');
+const jenisNaskahSearchQuery = ref('');
 
 // Filter + Search
-const statusFilter = ref("");
+const statusFilter = ref('');
 const openFilterStatus = ref(false);
-const sortKey = ref("");
-const sortOrder = ref("asc");
+const sortKey = ref('');
+const sortOrder = ref('asc');
 
 // Track if dropdown data has been loaded
 const dropdownDataLoaded = ref({
   klasifikasi: false,
   jenisNaskah: false,
-  verifikator: false,
+  verifikator: false
 });
 
 function handleSort(key) {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortKey.value = key;
-    sortOrder.value = "asc";
+    sortOrder.value = 'asc';
   }
 }
 
-const search = ref("");
+const search = ref('');
 const currentPage = ref(1);
 const limit = ref(10);
 const rowsPerPage = ref(10);
- 
+
 const addForm = ref({
-  tanggal: "",
-  klasifikasi: "",
-  jenisNaskah: "",
-  nomorDokumen: "",
-  perihal: "",
-  fileName: "",
+  tanggal: '',
+  klasifikasi: '',
+  jenisNaskah: '',
+  nomorDokumen: '',
+  perihal: '',
+  fileName: '',
   file: null as File | null,
   visibleSign: false,
   signers: [] as { urutan: number; persnum: number }[],
-  selectedSigners: [] as Verifikator[],
+  selectedSigners: [] as Verifikator[]
 });
-
+const formErrors = ref({
+  tanggal: false,
+  klasifikasi: false,
+  jenisNaskah: false,
+  nomorDokumen: false,
+  perihal: false,
+  file: false,
+  signers: false
+});
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("verifikasi"), to: "/digsig/verifikasi-dokumen" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen' }
 ]);
 
 const filterOptions = [
-  { label: "Semua", value: "" },
-  { label: "Diproses", value: "on_progress" },
-  { label: "Selesai", value: "completed" },
-  { label: "Ditolak", value: "rejected" },
+  { label: 'Semua', value: '' },
+  { label: 'Diproses', value: 'on_progress' },
+  { label: 'Selesai', value: 'completed' },
+  { label: 'Ditolak', value: 'rejected' }
 ];
 
 const filterStatusLabel = computed(() => {
   const found = filterOptions.find((opt) => opt.value === statusFilter.value);
-  return found?.label || "Semua Status";
+  return found?.label || 'Semua Status';
 });
 
 const filteredRows = computed(() => {
@@ -1231,8 +1204,7 @@ const filteredRows = computed(() => {
     if (!r) return false;
 
     const matchSearch =
-      r.nomorDokumen?.toLowerCase().includes(s) ||
-      r.perihal?.toLowerCase().includes(s);
+      r.nomorDokumen?.toLowerCase().includes(s) || r.perihal?.toLowerCase().includes(s);
 
     const matchStatus = !fs || r.status === fs;
     return matchSearch && matchStatus;
@@ -1246,17 +1218,17 @@ const sortedRows = computed(() => {
     let A = a[sortKey.value];
     let B = b[sortKey.value];
 
-    if (sortKey.value.toLowerCase().includes("tanggal")) {
+    if (sortKey.value.toLowerCase().includes('tanggal')) {
       A = new Date(A).getTime();
       B = new Date(B).getTime();
-      return sortOrder.value === "asc" ? A - B : B - A;
+      return sortOrder.value === 'asc' ? A - B : B - A;
     }
 
-    A = String(A ?? "").toLowerCase();
-    B = String(B ?? "").toLowerCase();
+    A = String(A ?? '').toLowerCase();
+    B = String(B ?? '').toLowerCase();
 
-    if (A < B) return sortOrder.value === "asc" ? -1 : 1;
-    if (A > B) return sortOrder.value === "asc" ? 1 : -1;
+    if (A < B) return sortOrder.value === 'asc' ? -1 : 1;
+    if (A > B) return sortOrder.value === 'asc' ? 1 : -1;
     return 0;
   });
 });
@@ -1267,7 +1239,7 @@ const paginatedRows = computed(() => {
 });
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value)),
+  Math.max(1, Math.ceil(sortedRows.value.length / rowsPerPage.value))
 );
 
 const paginationPages = computed(() => {
@@ -1300,7 +1272,7 @@ const ensureDropdownData = async () => {
     promises.push(
       fetchKlasifikasi().then(() => {
         dropdownDataLoaded.value.klasifikasi = true;
-      }),
+      })
     );
   }
 
@@ -1308,7 +1280,7 @@ const ensureDropdownData = async () => {
     promises.push(
       fetchJenisNaskah().then(() => {
         dropdownDataLoaded.value.jenisNaskah = true;
-      }),
+      })
     );
   }
 
@@ -1316,34 +1288,34 @@ const ensureDropdownData = async () => {
     promises.push(
       fetchVerifikator().then(() => {
         dropdownDataLoaded.value.verifikator = true;
-      }),
+      })
     );
   }
 
   if (promises.length > 0) {
     await Promise.all(promises);
-    console.log("✅ Dropdown data loaded");
+    console.log('✅ Dropdown data loaded');
   }
 };
 
 onMounted(() => {
   // ✅ HANYA FETCH DOCUMENTS SAAT LOAD
   loadDocuments();
-  document.addEventListener("click", handleClickOutside);
-  document.addEventListener("click", handleDropdownClickOutside);
-  document.addEventListener("click", handleKlasifikasiDropdownClickOutside);
-  document.addEventListener("click", handleJenisNaskahDropdownClickOutside);
+  document.addEventListener('click', handleClickOutside);
+  document.addEventListener('click', handleDropdownClickOutside);
+  document.addEventListener('click', handleKlasifikasiDropdownClickOutside);
+  document.addEventListener('click', handleJenisNaskahDropdownClickOutside);
 });
 
 onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-  document.removeEventListener("click", handleDropdownClickOutside);
-  document.removeEventListener("click", handleKlasifikasiDropdownClickOutside);
-  document.removeEventListener("click", handleJenisNaskahDropdownClickOutside);
+  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('click', handleDropdownClickOutside);
+  document.removeEventListener('click', handleKlasifikasiDropdownClickOutside);
+  document.removeEventListener('click', handleJenisNaskahDropdownClickOutside);
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value);
   }
-  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+  if (pdfUrl.value && !pdfUrl.value.startsWith('http')) {
     URL.revokeObjectURL(pdfUrl.value);
   }
 });
@@ -1357,7 +1329,7 @@ const filteredVerifikatorList = computed(() => {
     (v) =>
       v.jabatan?.toLowerCase().includes(q) ||
       v.nama?.toLowerCase().includes(q) ||
-      v.lokasi?.toLowerCase().includes(q),
+      v.lokasi?.toLowerCase().includes(q)
   );
 });
 
@@ -1367,9 +1339,7 @@ const filteredKlasifikasiList = computed(() => {
   const q = klasifikasiSearchQuery.value.toLowerCase();
 
   return klasifikasiList.value.filter(
-    (k) =>
-      k.klasifikasi?.toLowerCase().includes(q) ||
-      k.klasifikasi_text?.toLowerCase().includes(q),
+    (k) => k.klasifikasi?.toLowerCase().includes(q) || k.klasifikasi_text?.toLowerCase().includes(q)
   );
 });
 
@@ -1379,9 +1349,7 @@ const filteredJenisNaskahList = computed(() => {
   const q = jenisNaskahSearchQuery.value.toLowerCase();
 
   return jenisNaskahList.value.filter(
-    (j) =>
-      j.jenis?.toLowerCase().includes(q) ||
-      j.jenis_text?.toLowerCase().includes(q),
+    (j) => j.jenis?.toLowerCase().includes(q) || j.jenis_text?.toLowerCase().includes(q)
   );
 });
 
@@ -1392,7 +1360,7 @@ const loadDocuments = async () => {
     search: search.value,
     status: statusFilter.value,
     sortBy: sortKey.value,
-    sortOrder: sortOrder.value,
+    sortOrder: sortOrder.value
   });
 };
 
@@ -1412,7 +1380,7 @@ const selectFilterStatus = (item) => {
 
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  if (!target.closest("[data-custom-dropdown]")) {
+  if (!target.closest('[data-custom-dropdown]')) {
     openFilterStatus.value = false;
   }
 };
@@ -1424,91 +1392,76 @@ const handleDropdownClickOutside = (e: MouseEvent) => {
 };
 
 const handleKlasifikasiDropdownClickOutside = (e: MouseEvent) => {
-  if (
-    klasifikasiDropdownRef.value &&
-    !klasifikasiDropdownRef.value.contains(e.target as Node)
-  ) {
+  if (klasifikasiDropdownRef.value && !klasifikasiDropdownRef.value.contains(e.target as Node)) {
     showKlasifikasiDropdown.value = false;
   }
 };
 
 const handleJenisNaskahDropdownClickOutside = (e: MouseEvent) => {
-  if (
-    jenisNaskahDropdownRef.value &&
-    !jenisNaskahDropdownRef.value.contains(e.target as Node)
-  ) {
+  if (jenisNaskahDropdownRef.value && !jenisNaskahDropdownRef.value.contains(e.target as Node)) {
     showJenisNaskahDropdown.value = false;
   }
 };
 
 const sortBy = (key: string) => {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortKey.value = key;
-    sortOrder.value = "asc";
+    sortOrder.value = 'asc';
   }
 };
 
 const formatDate = (dateString: string) => {
-  if (!dateString) return "-";
+  if (!dateString) return '-';
 
-  const localString = dateString.replace("Z", "").replace("+00:00", "");
+  const localString = dateString.replace('Z', '').replace('+00:00', '');
   const date = new Date(localString);
 
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 };
 
 const getStatusClass = (status: string) => {
   const statusMap = {
-    on_progress:
-      "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
-    completed:
-      "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
-    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
+    on_progress: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300',
+    completed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
   };
-  return (
-    statusMap[status] ||
-    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-  );
+  return statusMap[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
 };
 
 const getStatusLabel = (status: string) => {
   const statusMap = {
-    on_progress: "Diproses",
-    completed: "Selesai",
-    rejected: "Ditolak",
-    draft: "Draft",
+    on_progress: 'Diproses',
+    completed: 'Selesai',
+    rejected: 'Ditolak',
+    draft: 'Draft'
   };
   return statusMap[status] || status;
 };
 
 const getSignerStatusClass = (status: string) => {
   const statusMap = {
-    waiting:
-      "bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300",
-    pending: "bg-gray-200 dark:bg-gray-300 text-gray-600 dark:text-white-300",
-    signed: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
-    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
+    waiting: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300',
+    pending: 'bg-gray-200 dark:bg-gray-300 text-gray-600 dark:text-white-300',
+    signed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
   };
-  return (
-    statusMap[status] ||
-    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-  );
+  return statusMap[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
 };
 
 const getSignerStatusLabel = (status: string) => {
   const statusMap = {
-    waiting: "Menunggu",
-    pending: "Pending",
-    signed: "Sudah TTD",
-    rejected: "Ditolak",
+    waiting: 'Menunggu',
+    pending: 'Pending',
+    signed: 'Sudah TTD',
+    rejected: 'Ditolak'
   };
   return statusMap[status] || status;
 };
@@ -1521,15 +1474,13 @@ const getKlasifikasiText = (kode: string, text: string | null) => {
     return `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`;
   }
 
-  return kode || "-";
+  return kode || '-';
 };
 
 const getSelectedKlasifikasiLabel = () => {
-  if (!addForm.value.klasifikasi) return "";
+  if (!addForm.value.klasifikasi) return '';
 
-  const selected = klasifikasiList.value.find(
-    (k) => k.klasifikasi === addForm.value.klasifikasi,
-  );
+  const selected = klasifikasiList.value.find((k) => k.klasifikasi === addForm.value.klasifikasi);
 
   return selected
     ? `${selected.klasifikasi} - ${selected.klasifikasi_text}`
@@ -1537,21 +1488,17 @@ const getSelectedKlasifikasiLabel = () => {
 };
 
 const getSelectedJenisNaskahLabel = () => {
-  if (!addForm.value.jenisNaskah) return "";
+  if (!addForm.value.jenisNaskah) return '';
 
-  const selected = jenisNaskahList.value.find(
-    (j) => j.jenis === addForm.value.jenisNaskah,
-  );
+  const selected = jenisNaskahList.value.find((j) => j.jenis === addForm.value.jenisNaskah);
 
-  return selected
-    ? `${selected.jenis} - ${selected.jenis_text}`
-    : addForm.value.jenisNaskah;
+  return selected ? `${selected.jenis} - ${selected.jenis_text}` : addForm.value.jenisNaskah;
 };
 
 const toggleKlasifikasiDropdown = async () => {
   showKlasifikasiDropdown.value = !showKlasifikasiDropdown.value;
   if (showKlasifikasiDropdown.value) {
-    klasifikasiSearchQuery.value = "";
+    klasifikasiSearchQuery.value = '';
     // ✅ LAZY LOAD: Fetch klasifikasi saat dropdown dibuka
     if (!dropdownDataLoaded.value.klasifikasi) {
       await fetchKlasifikasi();
@@ -1563,7 +1510,7 @@ const toggleKlasifikasiDropdown = async () => {
 const toggleJenisNaskahDropdown = async () => {
   showJenisNaskahDropdown.value = !showJenisNaskahDropdown.value;
   if (showJenisNaskahDropdown.value) {
-    jenisNaskahSearchQuery.value = "";
+    jenisNaskahSearchQuery.value = '';
     // ✅ LAZY LOAD: Fetch jenis naskah saat dropdown dibuka
     if (!dropdownDataLoaded.value.jenisNaskah) {
       await fetchJenisNaskah();
@@ -1574,8 +1521,9 @@ const toggleJenisNaskahDropdown = async () => {
 
 const selectKlasifikasi = async (klasifikasi: any) => {
   addForm.value.klasifikasi = klasifikasi.klasifikasi;
+  formErrors.value.klasifikasi = false;
   showKlasifikasiDropdown.value = false;
-  klasifikasiSearchQuery.value = "";
+  klasifikasiSearchQuery.value = '';
 
   // Trigger klasifikasi change handler — toast error sudah dihandle di fetchKlasifikasiDetail
   await fetchKlasifikasiDetail(klasifikasi.id);
@@ -1584,15 +1532,14 @@ const selectKlasifikasi = async (klasifikasi: any) => {
 
 const selectJenisNaskah = (jenisNaskah: any) => {
   addForm.value.jenisNaskah = jenisNaskah.jenis;
+  formErrors.value.jenisNaskah = false;
   showJenisNaskahDropdown.value = false;
-  jenisNaskahSearchQuery.value = "";
+  jenisNaskahSearchQuery.value = '';
 };
 
 const onKlasifikasiChange = async () => {
   if (addForm.value.klasifikasi) {
-    const selected = klasifikasiList.value.find(
-      (k) => k.klasifikasi === addForm.value.klasifikasi,
-    );
+    const selected = klasifikasiList.value.find((k) => k.klasifikasi === addForm.value.klasifikasi);
     if (selected) {
       // Toast error sudah dihandle di fetchKlasifikasiDetail
       await fetchKlasifikasiDetail(selected.id);
@@ -1606,7 +1553,7 @@ const onKlasifikasiChange = async () => {
 const toggleSignerDropdown = async () => {
   showSignerDropdown.value = !showSignerDropdown.value;
   if (showSignerDropdown.value) {
-    signerSearchQuery.value = "";
+    signerSearchQuery.value = '';
     // ✅ LAZY LOAD: Fetch verifikator saat dropdown dibuka
     if (!dropdownDataLoaded.value.verifikator) {
       await fetchVerifikator();
@@ -1616,17 +1563,15 @@ const toggleSignerDropdown = async () => {
 };
 
 const selectSigner = (verifikator: Verifikator) => {
-  const exists = addForm.value.selectedSigners.findIndex(
-    (s) => s.persnum === verifikator.persnum,
-  );
-
+  const exists = addForm.value.selectedSigners.findIndex((s) => s.persnum === verifikator.persnum);
+  formErrors.value.signers = false;
   if (exists === -1) {
     addForm.value.selectedSigners.push(verifikator);
     showToastSignerAdded(verifikator.nama);
   }
 
   showSignerDropdown.value = false;
-  signerSearchQuery.value = "";
+  signerSearchQuery.value = '';
 };
 
 const removeSelectedSigner = (index: number) => {
@@ -1651,7 +1596,7 @@ const handleFileUpload = async (event: Event) => {
 
     addForm.value.fileName = file.name;
     addForm.value.file = file;
-
+    formErrors.value.file = false;
     // Create preview URL
     if (previewUrl.value) {
       URL.revokeObjectURL(previewUrl.value);
@@ -1678,7 +1623,7 @@ const openAddModal = async () => {
 const openEditModal = async (id: string) => {
   isEditMode.value = true;
   editingId.value = id;
-
+  resetForm();
   // Fetch dropdown data terlebih dahulu
   await ensureDropdownData();
 
@@ -1689,9 +1634,7 @@ const openEditModal = async (id: string) => {
 
     if (doc.signers && doc.signers.length > 0) {
       for (const s of doc.signers) {
-        const verifikator = verifikatorList.value.find(
-          (v) => v.persnum === Number(s.persnum),
-        );
+        const verifikator = verifikatorList.value.find((v) => v.persnum === Number(s.persnum));
 
         if (verifikator) {
           mappedSigners.push(verifikator);
@@ -1699,34 +1642,32 @@ const openEditModal = async (id: string) => {
           mappedSigners.push({
             positionId: Number(s.positionId) || 0,
             persnum: Number(s.persnum) || 0,
-            nama: s.nama || "",
-            jabatan: s.jabatan || "",
-            lokasi: s.lokasi || "",
-            areaText: "",
-            companyText: "",
+            nama: s.nama || '',
+            jabatan: s.jabatan || '',
+            lokasi: s.lokasi || '',
+            areaText: '',
+            companyText: ''
           });
         }
       }
     }
 
     addForm.value = {
-      tanggal: doc.tanggalDokumen.split("T")[0],
+      tanggal: doc.tanggalDokumen.split('T')[0],
       klasifikasi: doc.klasifikasi,
       jenisNaskah: doc.jenisNaskah,
       nomorDokumen: doc.nomorDokumen,
       perihal: doc.perihal,
-      fileName: doc.fileName || "",
+      fileName: doc.fileName || '',
       file: null,
       visibleSign: Boolean(doc.visibleSign),
       signers: [],
-      selectedSigners: mappedSigners,
+      selectedSigners: mappedSigners
     };
 
     // Load klasifikasi detail — toast error sudah dihandle di composable
     if (doc.klasifikasi) {
-      const selected = klasifikasiList.value.find(
-        (k) => k.klasifikasi === doc.klasifikasi,
-      );
+      const selected = klasifikasiList.value.find((k) => k.klasifikasi === doc.klasifikasi);
       if (selected) {
         await fetchKlasifikasiDetail(selected.id);
         selectedKlasifikasiDetail.value = klasifikasiDetail.value;
@@ -1752,9 +1693,7 @@ const openDetailModal = async (id: string) => {
     if (res) {
       // Load klasifikasi detail if klasifikasiText is null
       if (!res.klasifikasiText && res.klasifikasi) {
-        const klasifikasi = klasifikasiList.value.find(
-          (k) => k.klasifikasi === res.klasifikasi,
-        );
+        const klasifikasi = klasifikasiList.value.find((k) => k.klasifikasi === res.klasifikasi);
 
         if (klasifikasi) {
           if (documentDetail.value) {
@@ -1769,7 +1708,7 @@ const openDetailModal = async (id: string) => {
       openDetail.value = true;
     }
   } catch (err: any) {
-    console.error("❌ Error openDetailModal:", err);
+    console.error('❌ Error openDetailModal:', err);
   }
 };
 
@@ -1786,14 +1725,14 @@ const viewDocumentFromDetail = async () => {
   }
 
   // Set return modal
-  returnToModal.value = "detail";
+  returnToModal.value = 'detail';
 
   // IMPORTANT: Close modal detail first
   openDetail.value = false;
 
   // Reset preview state
   isOpenPreview.value = false;
-  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+  if (pdfUrl.value && !pdfUrl.value.startsWith('http')) {
     URL.revokeObjectURL(pdfUrl.value);
   }
   pdfUrl.value = null;
@@ -1814,26 +1753,35 @@ const closeModal = () => {
 
 const resetForm = () => {
   addForm.value = {
-    tanggal: "",
-    klasifikasi: "",
-    jenisNaskah: "",
-    nomorDokumen: "",
-    perihal: "",
-    fileName: "",
+    tanggal: '',
+    klasifikasi: '',
+    jenisNaskah: '',
+    nomorDokumen: '',
+    perihal: '',
+    fileName: '',
     file: null,
     visibleSign: false,
     signers: [],
-    selectedSigners: [],
+    selectedSigners: []
+  };
+  formErrors.value = {
+    tanggal: false,
+    klasifikasi: false,
+    jenisNaskah: false,
+    nomorDokumen: false,
+    perihal: false,
+    file: false,
+    signers: false
   };
   selectedKlasifikasiDetail.value = null;
   showSignerDropdown.value = false;
   showKlasifikasiDropdown.value = false;
   showJenisNaskahDropdown.value = false;
-  signerSearchQuery.value = "";
-  klasifikasiSearchQuery.value = "";
-  jenisNaskahSearchQuery.value = "";
+  signerSearchQuery.value = '';
+  klasifikasiSearchQuery.value = '';
+  jenisNaskahSearchQuery.value = '';
   if (fileInput.value) {
-    fileInput.value.value = "";
+    fileInput.value.value = '';
   }
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value);
@@ -1856,7 +1804,7 @@ const viewDocument = async (doc: any) => {
 
   // Reset preview state
   isOpenPreview.value = false;
-  if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+  if (pdfUrl.value && !pdfUrl.value.startsWith('http')) {
     URL.revokeObjectURL(pdfUrl.value);
   }
   pdfUrl.value = null;
@@ -1873,7 +1821,7 @@ const viewDocument = async (doc: any) => {
 // FIXED: Preview file from form modal - closes modal and opens slideover
 const previewFileInModal = async () => {
   // Set return modal
-  returnToModal.value = "form";
+  returnToModal.value = 'form';
 
   // IMPORTANT: Close modal first
   openAdd.value = false;
@@ -1893,40 +1841,55 @@ const previewFileInModal = async () => {
 };
 
 const saveDokumen = async () => {
-  // Validation — semua menggunakan showToastValidasiForm(pesan)
+  formErrors.value = {
+    tanggal: false,
+    klasifikasi: false,
+    jenisNaskah: false,
+    nomorDokumen: false,
+    perihal: false,
+    file: false,
+    signers: false
+  };
+
+  let hasError = false;
   if (!addForm.value.tanggal) {
-    showToastValidasiForm("Tanggal Dokumen harus diisi");
-    return;
+    formErrors.value.tanggal = true;
+    hasError = true;
   }
   if (!addForm.value.klasifikasi) {
-    showToastValidasiForm("Klasifikasi harus dipilih");
-    return;
+    formErrors.value.klasifikasi = true;
+    hasError = true;
   }
   if (!addForm.value.jenisNaskah) {
-    showToastValidasiForm("Jenis Naskah harus dipilih");
-    return;
+    formErrors.value.jenisNaskah = true;
+    hasError = true;
   }
   if (!addForm.value.nomorDokumen) {
-    showToastValidasiForm("Nomor Dokumen harus diisi");
-    return;
+    formErrors.value.nomorDokumen = true;
+    hasError = true;
   }
   if (!addForm.value.perihal) {
-    showToastValidasiForm("Perihal harus diisi");
-    return;
+    formErrors.value.perihal = true;
+    hasError = true;
   }
   if (!isEditMode.value && !addForm.value.file) {
-    showToastValidasiForm("Lampiran Berkas harus diupload");
-    return;
+    formErrors.value.file = true;
+    hasError = true;
   }
   if (addForm.value.selectedSigners.length === 0) {
-    showToastValidasiForm("Mohon pilih minimal satu Penanda Tangan");
+    formErrors.value.signers = true;
+    hasError = true;
+  }
+
+  if (hasError) {
+    showToastValidasiForm('Mohon lengkapi semua field yang wajib diisi');
     return;
   }
 
   try {
     const signersPayload = addForm.value.selectedSigners.map((s, idx) => ({
       urutan: idx + 1,
-      persnum: s.persnum,
+      persnum: s.persnum
     }));
 
     if (isEditMode.value && editingId.value) {
@@ -1937,22 +1900,17 @@ const saveDokumen = async () => {
         nomorDokumen: addForm.value.nomorDokumen,
         perihal: addForm.value.perihal,
         visibleSign: addForm.value.visibleSign,
-        signers: signersPayload,
+        signers: signersPayload
       };
-
-      if (addForm.value.file) {
-        payload.file = addForm.value.file;
-      }
-
-      // updateDocument — toast error sudah dihandle di composable
+      if (addForm.value.file) payload.file = addForm.value.file;
       await updateDocument(editingId.value, payload);
       showToastDokumenUpdated();
     } else {
       if (!addForm.value.file) {
-        showToastValidasiForm("File harus diupload untuk dokumen baru");
+        formErrors.value.file = true;
+        showToastValidasiForm('File harus diupload untuk dokumen baru');
         return;
       }
-
       const payload = {
         tanggalDokumen: addForm.value.tanggal,
         klasifikasi: addForm.value.klasifikasi,
@@ -1961,35 +1919,31 @@ const saveDokumen = async () => {
         perihal: addForm.value.perihal,
         file: addForm.value.file,
         visibleSign: addForm.value.visibleSign,
-        signers: signersPayload,
+        signers: signersPayload
       };
-
-      // createDocument — toast error sudah dihandle di composable
       await createDocument(payload);
       showToastDokumenCreated();
     }
-
     closeModal();
     await loadDocuments();
   } catch (err: any) {
-    console.error("❌ Save error:", err);
-    // Error toast sudah dihandle di createDocument/updateDocument composable
+    console.error('❌ Save error:', err);
   }
 };
 
 watch(isOpenPreview, (open) => {
   if (!open) {
     // When slideover closes
-    if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    if (pdfUrl.value && !pdfUrl.value.startsWith('http')) {
       URL.revokeObjectURL(pdfUrl.value);
     }
     pdfUrl.value = null;
 
     // Reopen the modal that was previously open
-    if (returnToModal.value === "detail") {
+    if (returnToModal.value === 'detail') {
       openDetail.value = true;
       returnToModal.value = null;
-    } else if (returnToModal.value === "form") {
+    } else if (returnToModal.value === 'form') {
       openAdd.value = true;
       returnToModal.value = null;
     }

@@ -1,16 +1,14 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
-    <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
-        <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">
-          {{ $t('pernom_title') }}
-        </Heading>
+        <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">{{
+          $t('pernom_title')
+        }}</Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
     </div>
 
-    <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
@@ -50,19 +48,71 @@
               </div>
             </Transition>
           </div>
+
+          <!-- FILTER STATUS DROPDOWN -->
+          <div class="relative" ref="filterRef">
+            <button
+              type="button"
+              @click.stop="showFilterDropdown = !showFilterDropdown"
+              class="h-9 flex ml-4 items-center text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
+            >
+              <div class="flex items-center gap-2">
+                <span class="truncate">{{ selectedFilterLabel }}</span>
+              </div>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': showFilterDropdown }"
+              />
+            </button>
+            <Transition name="rows-dd">
+              <div
+                v-if="showFilterDropdown"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]"
+              >
+                <button
+                  v-for="item in filterOptions"
+                  :key="item.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(item.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0 flex items-center gap-2.5',
+                    statusFilter === item.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  <span class="flex-1">{{ item.label }}</span>
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
 
-        <!-- SEARCH -->
-        <div class="relative flex-1 w-full md:w-56">
-          <Search
-            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-          />
-          <input
-            v-model="search"
-            @input="handleSearchInput"
-            :placeholder="$t('ver_cari_placeholder')"
-            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
-          />
+        <!-- SEARCH + EXPORT -->
+        <div class="flex items-center gap-2 flex-1 w-full md:w-auto pr-0 md:pr-0 px-4 md:px-0">
+          <div class="relative flex-1 w-full md:w-56">
+            <Search
+              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="search"
+              @input="handleSearchInput"
+              :placeholder="$t('ver_cari_placeholder')"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
+            />
+          </div>
+          <button
+            type="button"
+            @click="handleExport"
+            :disabled="isExporting || filteredRows.length === 0"
+            class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
+          >
+            <span>{{
+              isExporting
+                ? $t('ver_btn_mengekspor') || 'Mengekspor...'
+                : $t('ver_btn_export') || 'Export Excel'
+            }}</span>
+          </button>
         </div>
       </div>
 
@@ -125,7 +175,7 @@
             </template>
 
             <!-- EMPTY -->
-            <template v-else-if="sortedRows.length === 0">
+            <template v-else-if="filteredRows.length === 0">
               <tr>
                 <td
                   :colspan="headers.length + 1"
@@ -139,7 +189,7 @@
             <!-- DATA ROWS -->
             <template v-else>
               <tr
-                v-for="row in sortedRows"
+                v-for="row in filteredRows"
                 :key="row.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 cursor-pointer transition"
                 @mousemove="onRowMouseMove($event, $t('ver_tooltip_detail'))"
@@ -159,12 +209,14 @@
                 <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.pengusul }}</td>
                 <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.tglUsulan }}</td>
                 <td @click.stop class="px-5 py-3">
-                  <button
-                    @click="showModal(row)"
-                    class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition whitespace-nowrap"
+                  <span
+                    :class="[
+                      'px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap inline-block',
+                      rowStatusClass(row.status)
+                    ]"
                   >
-                    {{ $t('usl_status_draft') || 'Menunggu Persetujuan' }}
-                  </button>
+                    {{ rowStatusLabel(row.status) }}
+                  </span>
                 </td>
               </tr>
             </template>
@@ -174,11 +226,11 @@
 
       <!-- PAGINATION -->
       <div
-        v-if="sortedRows.length > 0 && pagination"
+        v-if="filteredRows.length > 0 && pagination"
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t('menampilkan') }} {{ sortedRows.length }} {{ $t('dari') }} {{ pagination.total }}
+          {{ $t('menampilkan') }} {{ filteredRows.length }} {{ $t('dari') }} {{ paginationTotal }}
           {{ $t('data') }}
         </div>
         <div class="flex items-center gap-2">
@@ -262,9 +314,7 @@
     </div>
   </div>
 
-  <!-- ================================================================
-       MODAL PERSETUJUAN
-       ================================================================ -->
+  <!-- MODAL -->
   <Teleport to="body">
     <Modal
       v-model="openModal"
@@ -281,7 +331,6 @@
       </template>
 
       <div v-if="selectedRow" class="px-3 pb-3 space-y-5 overflow-y-auto max-h-[70vh]">
-        <!-- Meta info -->
         <div class="space-y-0">
           <div class="py-3 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('ver_modal_tanggal') }}</p>
@@ -309,9 +358,19 @@
               {{ selectedRow.pengusul || '-' }}
             </p>
           </div>
+          <div class="py-3 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-xs mb-1">{{ $t('usl_col_status') }}</p>
+            <span
+              :class="[
+                'px-3 py-1 rounded-lg text-xs font-medium inline-block',
+                rowStatusClass(selectedRow.status)
+              ]"
+              >{{ rowStatusLabel(selectedRow.status) }}</span
+            >
+          </div>
         </div>
 
-        <!-- ── NOMOR SURAT ── -->
+        <!-- NOMOR SURAT -->
         <div>
           <div class="flex items-center justify-between mb-3">
             <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -340,9 +399,10 @@
                   $t('ver_single_file_label')
                 }}</span>
               </span>
-
-              <!-- Toggle Tolak Semua -->
-              <label class="flex items-center gap-2 cursor-pointer select-none">
+              <label
+                v-if="isRowPendingApproval"
+                class="flex items-center gap-2 cursor-pointer select-none"
+              >
                 <div class="relative">
                   <input
                     type="checkbox"
@@ -364,16 +424,14 @@
                       ? 'text-red-600 dark:text-red-400'
                       : 'text-gray-500 dark:text-gray-400'
                   ]"
+                  >{{ $t('ver_tolak_semua') }}</span
                 >
-                  {{ $t('ver_tolak_semua') }}
-                </span>
               </label>
             </div>
           </div>
 
-          <!-- Warning sebagian -->
           <div
-            v-if="hasUnchecked && !allUnchecked"
+            v-if="isRowPendingApproval && hasUnchecked && !allUnchecked"
             class="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2"
           >
             <svg
@@ -394,10 +452,8 @@
               tekan <strong>Setujui</strong>.
             </p>
           </div>
-
-          <!-- Warning semua ditolak -->
           <div
-            v-if="allUnchecked && validDetails.length > 0"
+            v-if="isRowPendingApproval && allUnchecked && validDetails.length > 0"
             class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2"
           >
             <svg
@@ -474,9 +530,8 @@
             </div>
           </div>
 
-          <!-- ── NOMOR CARDS ── -->
+          <!-- NOMOR CARDS -->
           <div class="space-y-3">
-            <!-- SINGLE FILE -->
             <template v-if="selectedRow.is_single_file">
               <div
                 class="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
@@ -495,6 +550,7 @@
                     ]"
                   >
                     <input
+                      v-if="isRowPendingApproval"
                       type="checkbox"
                       v-model="detail.checked"
                       :disabled="detail.status === 'hangus' || isProcessing"
@@ -508,28 +564,24 @@
                         'flex-1 min-w-0 text-sm font-mono',
                         detail.status === 'hangus'
                           ? 'line-through text-gray-400 dark:text-gray-500'
-                          : !detail.checked
+                          : !detail.checked && isRowPendingApproval
                             ? 'text-red-500 dark:text-red-400 line-through'
                             : 'dark:text-gray-200'
                       ]"
+                      >{{ selectedRow.template_nomor || '-' }}</span
                     >
-                      {{ selectedRow.template_nomor || '-' }}
-                    </span>
                     <span
                       v-if="detail.status"
                       :class="[
                         'px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0',
                         detailStatusClass(detail.status)
                       ]"
+                      >{{ getDetailStatusLabel(detail.status) }}</span
                     >
-                      {{ getDetailStatusLabel(detail.status) }}
-                    </span>
                   </div>
                 </div>
               </div>
             </template>
-
-            <!-- MULTI FILE -->
             <template v-else>
               <div
                 v-for="(detail, idx) in validDetails"
@@ -538,13 +590,14 @@
                   'border rounded-lg p-4 transition',
                   detail.status === 'hangus'
                     ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800/50 opacity-60'
-                    : !detail.checked
+                    : !detail.checked && isRowPendingApproval
                       ? 'border-red-200 dark:border-red-800/50 bg-red-50/40 dark:bg-red-900/10'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
                 ]"
               >
                 <div class="flex items-center gap-3 mb-3">
                   <input
+                    v-if="isRowPendingApproval"
                     type="checkbox"
                     v-model="detail.checked"
                     :disabled="detail.status === 'hangus' || isProcessing"
@@ -555,7 +608,7 @@
                       'flex flex-1 min-w-0 items-center gap-2 border rounded-md px-3 py-2',
                       detail.status === 'hangus'
                         ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                        : !detail.checked
+                        : !detail.checked && isRowPendingApproval
                           ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50'
                           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
                     ]"
@@ -568,25 +621,22 @@
                         'flex-1 min-w-0 text-sm font-mono',
                         detail.status === 'hangus'
                           ? 'line-through text-gray-400 dark:text-gray-500'
-                          : !detail.checked
+                          : !detail.checked && isRowPendingApproval
                             ? 'text-red-500 dark:text-red-400 line-through'
                             : 'dark:text-gray-200'
                       ]"
+                      >{{ selectedRow.template_nomor || '-' }}</span
                     >
-                      {{ selectedRow.template_nomor || '-' }}
-                    </span>
                     <span
                       v-if="detail.status"
                       :class="[
                         'px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0',
                         detailStatusClass(detail.status)
                       ]"
+                      >{{ getDetailStatusLabel(detail.status) }}</span
                     >
-                      {{ getDetailStatusLabel(detail.status) }}
-                    </span>
                   </div>
                 </div>
-
                 <template v-if="detail.status === 'hangus'">
                   <div
                     class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 rounded-md p-3"
@@ -609,7 +659,6 @@
                     }}</span>
                   </div>
                 </template>
-
                 <template v-else>
                   <div
                     v-if="detail.file_url || detail.file_name"
@@ -668,16 +717,14 @@
         </div>
 
         <!-- Keterangan Penolakan -->
-        <div v-if="hasUnchecked || allUnchecked" class="pt-2">
+        <div v-if="isRowPendingApproval && (hasUnchecked || allUnchecked)" class="pt-2">
           <label class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-            {{ $t('ver_keterangan_tolak_label') }}
-            <span class="text-red-500">*</span>
+            {{ $t('ver_keterangan_tolak_label') }} <span class="text-red-500">*</span>
             <span
               v-if="!allUnchecked"
               class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1"
+              >{{ $t('ver_keterangan_tolak_suffix') }}</span
             >
-              {{ $t('ver_keterangan_tolak_suffix') }}
-            </span>
           </label>
           <textarea
             ref="keteranganRef"
@@ -714,7 +761,10 @@
       </div>
 
       <template #footer>
-        <div class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div
+          v-if="isRowPendingApproval"
+          class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700"
+        >
           <button
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
@@ -747,7 +797,6 @@
                 : `${$t('ver_btn_setujui')} (${checkedCount})`
             }}</span>
           </button>
-
           <button
             @click="confirmRejection"
             :disabled="isProcessing || !allUnchecked"
@@ -779,6 +828,14 @@
                 ? $t('ver_btn_memproses')
                 : $t('ver_btn_tolak')
             }}</span>
+          </button>
+        </div>
+        <div v-else class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            @click="openModal = false"
+            class="flex-1 px-5 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+          >
+            {{ $t('ver_btn_tutup') || 'Tutup' }}
           </button>
         </div>
       </template>
@@ -814,7 +871,6 @@
     </USlideover>
   </Teleport>
 
-  <!-- CONFIRM SETUJUI -->
   <ConfirmPopup
     v-model="showConfirmApprove"
     :title="$t('ver_confirm_setujui_title')"
@@ -824,8 +880,6 @@
     :cancelText="$t('ver_confirm_batal')"
     @confirm="processApproval"
   />
-
-  <!-- CONFIRM TOLAK SEMUA -->
   <ConfirmPopup
     v-model="showConfirmReject"
     type="danger"
@@ -837,7 +891,6 @@
     @confirm="processRejection"
   />
 
-  <!-- TOOLTIP -->
   <Teleport to="body">
     <div
       v-if="tooltip.show"
@@ -853,6 +906,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Search, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
 import Heading from '~/components/Heading.vue';
 import PageHeader from '~/components/PageHeader.vue';
 import { Modal } from '#components';
@@ -862,11 +916,9 @@ import { useAuth } from '~/composables/useAuth';
 
 const { user } = useAuth();
 definePageMeta({ middleware: 'auth' });
-
 const { t } = useI18n();
 const {
   getListPendingApproval,
-  approvePenandatangan,
   rejectPenandatangan,
   approvePenandatanganBulk,
   showToastFileNotFound,
@@ -880,18 +932,72 @@ const breadcrumbs = computed(() => [
   { label: t('pernom_title'), to: '/persetujuan-penomoran' }
 ]);
 
-// ─── Column definitions — semua kolom sekarang sortable ───────────────────────
-const headers = computed(() => [
-  { label: t('ver_col_jenis'), key: 'jenis', sortable: true },
-  { label: t('ver_col_tanggal'), key: 'tanggal', sortable: true },
-  { label: t('ver_col_perihal'), key: 'perihal', sortable: true },
-  { label: t('ver_col_jumlah'), key: 'jumlah', sortable: true },
-  { label: t('ver_col_pengusul'), key: 'pengusul', sortable: true },
-  { label: t('ver_col_tgl_usulan'), key: 'tglUsulan', sortable: true }
+// ─── Status filter ─────────────────────────────────────────────────────────────
+type StatusFilter = 'all' | 'draft' | 'approved' | 'rejected';
+const statusFilter = ref<StatusFilter>('draft');
+const showFilterDropdown = ref(false);
+
+// Label statis — TIDAK bergantung pada i18n key yang mungkin belum ada
+const LABEL: Record<string, string> = {
+  draft: 'Draf',
+  approved: 'Disetujui',
+  rejected: 'Ditolak'
+};
+
+const filterDotClass = (val: string) => ({
+  'bg-gray-400 dark:bg-gray-400': val === 'all',
+  'bg-yellow-500': val === 'draft',
+  'bg-green-500': val === 'approved',
+  'bg-red-500': val === 'rejected'
+});
+
+// Count badge dihitung dari allRows (client-side, akurat)
+const statusCountMap = computed(() => {
+  const m: Record<string, number> = {
+    all: allRows.value.length,
+    draft: 0,
+    approved: 0,
+    rejected: 0
+  };
+  for (const r of allRows.value) {
+    const s = r.status ?? 'draft';
+    if (s in m) m[s]++;
+  }
+  return m;
+});
+
+const filterOptions = computed(() => [
+  { label: 'Semua', value: 'all', count: statusCountMap.value.all },
+  { label: LABEL.draft, value: 'draft', count: statusCountMap.value.draft },
+  { label: LABEL.approved, value: 'approved', count: statusCountMap.value.approved },
+  { label: LABEL.rejected, value: 'rejected', count: statusCountMap.value.rejected }
 ]);
 
+const selectedFilterLabel = computed(
+  () => filterOptions.value.find((o) => o.value === statusFilter.value)?.label ?? 'Semua'
+);
+
+const selectFilterStatus = (val: StatusFilter) => {
+  statusFilter.value = val;
+  showFilterDropdown.value = false;
+  currentPage.value = 1;
+  // Tidak perlu fetchData ulang — filter dilakukan client-side
+};
+
+// ─── Row status label & class ──────────────────────────────────────────────────
+const rowStatusLabel = (status: string) => LABEL[status] ?? status;
+const rowStatusClass = (status: string) => {
+  const m: Record<string, string> = {
+    draft: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    approved: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+  };
+  return m[status] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+};
+
+// ─── Detail status helpers ─────────────────────────────────────────────────────
 const getDetailStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
+  const m: Record<string, string> = {
     draft: t('ver_status_detail_draft'),
     booking: t('ver_status_detail_booking'),
     terpakai: t('ver_status_detail_terpakai'),
@@ -899,9 +1005,8 @@ const getDetailStatusLabel = (status: string) => {
     ditolak: t('ver_status_detail_ditolak'),
     hangus: t('ver_status_detail_hangus')
   };
-  return map[status] ?? status;
+  return m[status] ?? status;
 };
-
 const detailStatusClass = (status: string) => ({
   'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400':
     status === 'draft' || status === 'booking',
@@ -912,16 +1017,27 @@ const detailStatusClass = (status: string) => ({
   'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400': status === 'hangus'
 });
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// ─── Column headers ────────────────────────────────────────────────────────────
+const headers = computed(() => [
+  { label: t('ver_col_jenis'), key: 'jenis', sortable: true },
+  { label: t('ver_col_tanggal'), key: 'tanggal', sortable: true },
+  { label: t('ver_col_perihal'), key: 'perihal', sortable: true },
+  { label: t('ver_col_jumlah'), key: 'jumlah', sortable: true },
+  { label: t('ver_col_pengusul'), key: 'pengusul', sortable: true },
+  { label: t('ver_col_tgl_usulan'), key: 'tglUsulan', sortable: true }
+]);
+
+// ─── State ─────────────────────────────────────────────────────────────────────
 const openModal = ref(false);
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
-const rowsPerPage = ref<number>(10);
+const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
 const showRowsDropdown = ref(false);
 const rowsRef = ref<HTMLElement | null>(null);
-const currentPage = ref<number>(1);
-const search = ref<string>('');
+const filterRef = ref<HTMLElement | null>(null);
+const currentPage = ref(1);
+const search = ref('');
 const selectedRow = ref<any>(null);
 const keterangan_ditolak = ref('');
 const showKeteranganWarning = ref(false);
@@ -930,42 +1046,103 @@ const isProcessing = ref(false);
 const processingAction = ref<'approve' | 'reject' | null>(null);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
-const sortBy = ref<string>('');
+const sortBy = ref('');
 const sortOrder = ref<'asc' | 'desc'>('desc');
-const rows = ref<any[]>([]);
+const allRows = ref<any[]>([]); // seluruh data dari API, tanpa filter status
 const pagination = ref<any>(null);
 const loading = ref(false);
 const uncheckAll = ref(false);
-
+const isExporting = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-// ─── Client-side sort ─────────────────────────────────────────────────────────
-/**
- * Mengembalikan salinan rows yang sudah diurutkan di sisi klien.
- * Sort server-side tetap dikirim ke API (untuk konsistensi antar halaman).
- * Sort klien bekerja instan pada data halaman yang sedang tampil.
- */
-const sortedRows = computed<any[]>(() => {
-  if (!sortBy.value || rows.value.length === 0) return rows.value;
+// ─── isRowPendingApproval ──────────────────────────────────────────────────────
+const isRowPendingApproval = computed(() => selectedRow.value?.status === 'draft');
 
-  const key = sortBy.value as keyof (typeof rows.value)[0];
+// ─── Sort (client-side) ────────────────────────────────────────────────────────
+const sortedAllRows = computed(() => {
+  if (!sortBy.value || !allRows.value.length) return allRows.value;
+  const key = sortBy.value;
   const dir = sortOrder.value === 'asc' ? 1 : -1;
-
-  return [...rows.value].sort((a, b) => {
-    const av = a[key] ?? '';
-    const bv = b[key] ?? '';
-
-    // Numerik
-    if (key === 'jumlah') {
-      return (Number(av) - Number(bv)) * dir;
-    }
-
-    // String biasa (locale-aware)
+  return [...allRows.value].sort((a, b) => {
+    const av = a[key] ?? '',
+      bv = b[key] ?? '';
+    if (key === 'jumlah') return (Number(av) - Number(bv)) * dir;
     return String(av).localeCompare(String(bv), 'id', { sensitivity: 'base' }) * dir;
   });
 });
 
-// ─── Rows per page ────────────────────────────────────────────────────────────
+/**
+ * filteredRows — filter CLIENT-SIDE berdasarkan statusFilter.
+ * Ini yang ditampilkan di tabel — dijamin akurat tanpa bergantung API.
+ */
+const filteredRows = computed(() => {
+  if (statusFilter.value === 'all') return sortedAllRows.value;
+  return sortedAllRows.value.filter((r) => (r.status ?? 'draft') === statusFilter.value);
+});
+
+const paginationTotal = computed(() =>
+  statusFilter.value === 'all' ? (pagination.value?.total ?? 0) : filteredRows.value.length
+);
+
+// ─── Export Excel ──────────────────────────────────────────────────────────────
+const handleExport = async () => {
+  if (isExporting.value || !filteredRows.value.length) return;
+  isExporting.value = true;
+  try {
+    const sheetData = filteredRows.value.map((row, idx) => ({
+      No: idx + 1,
+      'Jenis Naskah': row.jenis,
+      Tanggal: row.tanggal,
+      Perihal: row.perihal,
+      'Jumlah Nomor': row.jumlah,
+      Pengusul: row.pengusul,
+      'Tanggal Usulan': row.tglUsulan,
+      Klasifikasi: row.klasifikasi,
+      'Template Nomor': row.template_nomor || '-',
+      Status: rowStatusLabel(row.status),
+      'Single File': row.is_single_file ? 'Ya' : 'Tidak'
+    }));
+
+    if (!sheetData.length) {
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning'
+      });
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    ws['!cols'] = Object.keys(sheetData[0] || {}).map((k) => ({
+      wch: Math.max(k.length, ...sheetData.map((r: any) => String(r[k] ?? '').length)) + 2
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Penomoran');
+    const label = filterOptions.value.find((s) => s.value === statusFilter.value)?.label || 'Semua';
+    const now = new Date();
+    const d = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `Penomoran_${label}_${d}.xlsx`);
+
+    // ← toast sukses
+    toast.add({
+      title: 'Export Berhasil',
+      description: `${sheetData.length} data berhasil diexport`,
+      color: 'success'
+    });
+  } catch (e) {
+    console.error('❌ Error export:', e);
+    // ← toast error
+    toast.add({
+      title: 'Export Gagal',
+      description: 'Terjadi kesalahan saat export data',
+      color: 'error'
+    });
+  } finally {
+    isExporting.value = false;
+  }
+};
+const toast = useToast();
+// ─── Rows per page ─────────────────────────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {
   rowsPerPage.value = n;
   showRowsDropdown.value = false;
@@ -973,19 +1150,19 @@ const selectRowsPerPage = (n: number) => {
   fetchData();
 };
 
-// ─── Click outside ────────────────────────────────────────────────────────────
+// ─── Click outside ─────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
+  const t = e.target as HTMLElement;
+  if (rowsRef.value && !rowsRef.value.contains(t)) showRowsDropdown.value = false;
+  if (filterRef.value && !filterRef.value.contains(t)) showFilterDropdown.value = false;
 }
 
-// ─── validDetails ─────────────────────────────────────────────────────────────
-const validDetails = computed<any[]>(() =>
+// ─── validDetails ──────────────────────────────────────────────────────────────
+const validDetails = computed(() =>
   (selectedRow.value?.details ?? []).filter(
-    (d: any) => d.id && d.id !== null && d.id !== 'null' && d.status !== 'hangus'
+    (d: any) => d.id && d.id !== 'null' && d.status !== 'hangus'
   )
 );
-
 const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked));
 const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked));
 const allUnchecked = computed(
@@ -993,19 +1170,15 @@ const allUnchecked = computed(
 );
 const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length);
 const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length);
-
 const sharedFileDetail = computed(() => {
   if (!selectedRow.value?.is_single_file) return null;
   return (selectedRow.value?.details ?? []).find((d: any) => d.file_name || d.file_url) ?? null;
 });
-
 const toggleUncheckAll = () => {
-  if (!selectedRow.value?.details) return;
   validDetails.value.forEach((d: any) => {
     d.checked = !uncheckAll.value;
   });
 };
-
 watch(
   () => selectedRow.value?.details,
   (details) => {
@@ -1016,57 +1189,57 @@ watch(
   { deep: true }
 );
 
-// ─── Fetch ────────────────────────────────────────────────────────────────────
+// ─── Map API rows ──────────────────────────────────────────────────────────────
+const mapApiRows = (data: any[]) =>
+  data.map((item: any) => {
+    const td = new Date(item.tanggal);
+    const tanggal = `${String(td.getUTCDate()).padStart(2, '0')}/${String(td.getUTCMonth() + 1).padStart(2, '0')}/${td.getUTCFullYear()}`;
+    const cd = new Date(item.created_at.replace('Z', '').replace('+00:00', ''));
+    const tglUsulan = `${String(cd.getDate()).padStart(2, '0')}/${String(cd.getMonth() + 1).padStart(2, '0')}/${String(cd.getFullYear()).slice(-2)} ${String(cd.getHours()).padStart(2, '0')}:${String(cd.getMinutes()).padStart(2, '0')}`;
+    const sliced = (Array.isArray(item.details) ? item.details : []).slice(0, item.jumlah);
+    return {
+      id: item.id,
+      jenis: item.jenis,
+      tanggal,
+      perihal: item.perihal || '-',
+      jumlah: item.jumlah,
+      pengusul: item.nama || '-',
+      tglUsulan,
+      klasifikasi: item.klasifikasi,
+      is_single_file: !!item.is_single_file,
+      template_nomor: item.template_nomor || null,
+      // Normalisasi status — hanya nilai yang dikenal, fallback 'draft'
+      status: (['draft', 'approved', 'rejected'].includes(item.status)
+        ? item.status
+        : 'draft') as string,
+      details: sliced.map((d: any) => ({
+        id: d.id,
+        status: d.status || 'draft',
+        file_name: d.file_name || null,
+        file_url: d.file_url || null,
+        checked: d.status !== 'hangus'
+      }))
+    };
+  });
+
+// ─── Fetch — TANPA filter status agar client bisa filter sendiri ──────────────
 const fetchData = async () => {
   loading.value = true;
   try {
-    const params = {
+    const params: Record<string, any> = {
       search: search.value || undefined,
       page: currentPage.value,
       limit: rowsPerPage.value,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
+      // Sengaja tidak mengirim 'status' — server kembalikan semua, filter di client
     };
     const res = await getListPendingApproval(params);
-    const data = res.data || [];
     pagination.value = res.pagination || null;
-    if (!Array.isArray(data)) {
-      rows.value = [];
-      return;
-    }
-
-    rows.value = data.map((item: any) => {
-      const td = new Date(item.tanggal);
-      const formattedTanggal = `${String(td.getUTCDate()).padStart(2, '0')}/${String(td.getUTCMonth() + 1).padStart(2, '0')}/${td.getUTCFullYear()}`;
-      const cd = new Date(item.created_at.replace('Z', '').replace('+00:00', ''));
-      const tglUsulan = `${String(cd.getDate()).padStart(2, '0')}/${String(cd.getMonth() + 1).padStart(2, '0')}/${String(cd.getFullYear()).slice(-2)} ${String(cd.getHours()).padStart(2, '0')}:${String(cd.getMinutes()).padStart(2, '0')}`;
-
-      const rawDetails = Array.isArray(item.details) ? item.details : [];
-      const slicedDetails = rawDetails.slice(0, item.jumlah);
-
-      return {
-        id: item.id,
-        jenis: item.jenis,
-        tanggal: formattedTanggal,
-        perihal: item.perihal || '-',
-        jumlah: item.jumlah,
-        pengusul: item.nama || '-',
-        tglUsulan,
-        klasifikasi: item.klasifikasi,
-        is_single_file: !!item.is_single_file,
-        template_nomor: item.template_nomor || null,
-        details: slicedDetails.map((d: any) => ({
-          id: d.id,
-          status: d.status || 'draft',
-          file_name: d.file_name || null,
-          file_url: d.file_url || null,
-          checked: d.status !== 'hangus'
-        }))
-      };
-    });
+    allRows.value = Array.isArray(res.data) ? mapApiRows(res.data) : [];
   } catch (e) {
-    console.error('❌ Error fetch pending approval:', e);
-    rows.value = [];
+    console.error('❌ Error fetch:', e);
+    allRows.value = [];
     pagination.value = null;
   } finally {
     loading.value = false;
@@ -1080,34 +1253,23 @@ const handleSearchInput = () => {
     fetchData();
   }, 500);
 };
-
-/**
- * handleSort — toggle kolom / arah, lalu fetch ulang dari server.
- * sortedRows computed akan langsung memperbarui tampilan secara instan
- * sementara request berjalan di background.
- */
 const handleSort = (col: string) => {
-  if (sortBy.value === col) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortBy.value = col;
-    sortOrder.value = 'desc';
-  }
+  sortBy.value === col
+    ? (sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc')
+    : ((sortBy.value = col), (sortOrder.value = 'desc'));
   currentPage.value = 1;
   fetchData();
 };
-
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   fetchData();
 };
-
 const totalPages = computed(() => pagination.value?.totalPages || 1);
 const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
+  const total = totalPages.value,
+    current = currentPage.value,
+    pages: number[] = [];
   if (total <= 5) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
@@ -1120,20 +1282,17 @@ const paginationPages = computed(() => {
   return pages;
 });
 
-// ─── Show modal ───────────────────────────────────────────────────────────────
+// ─── Show modal ────────────────────────────────────────────────────────────────
 const showModal = (row: any) => {
-  const detailsWithChecked = (row.details ?? []).map((d: any) => ({
-    ...d,
-    checked: d.status !== 'hangus'
-  }));
-  selectedRow.value = { ...row, details: detailsWithChecked };
+  selectedRow.value = {
+    ...row,
+    details: (row.details ?? []).map((d: any) => ({ ...d, checked: d.status !== 'hangus' }))
+  };
   keterangan_ditolak.value = '';
   showKeteranganWarning.value = false;
   uncheckAll.value = false;
   openModal.value = true;
 };
-
-// ─── Preview file ─────────────────────────────────────────────────────────────
 const openPreviewFile = (detail: any) => {
   if (!detail?.file_url) {
     showToastFileNotFound();
@@ -1143,10 +1302,9 @@ const openPreviewFile = (detail: any) => {
   isOpenPreview.value = true;
 };
 
-// ─── Validasi keterangan ──────────────────────────────────────────────────────
+// ─── Validasi ─────────────────────────────────────────────────────────────────
 const validateKeterangan = async (): Promise<boolean> => {
-  if (!hasUnchecked.value) return true;
-  if (keterangan_ditolak.value.trim()) return true;
+  if (!hasUnchecked.value || keterangan_ditolak.value.trim()) return true;
   showKeteranganWarning.value = true;
   showToastKeteranganRequired();
   await nextTick();
@@ -1169,31 +1327,26 @@ const confirmApproval = async () => {
   showKeteranganWarning.value = false;
   showConfirmApprove.value = true;
 };
-
 const processApproval = async () => {
   showConfirmApprove.value = false;
   if (!selectedRow.value) return;
-
-  const approvedDetails = validDetails.value.filter((d: any) => d.checked);
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
-
-  if (approvedDetails.length === 0) {
+  const approved = validDetails.value.filter((d: any) => d.checked);
+  const rejected = validDetails.value.filter((d: any) => !d.checked);
+  if (!approved.length) {
     showToastTidakAdaNomor('disetujui');
     return;
   }
-
   isProcessing.value = true;
   processingAction.value = 'approve';
   try {
-    await approvePenandatanganBulk(approvedDetails.map((d: any) => d.id));
-    if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
+    await approvePenandatanganBulk(approved.map((d: any) => d.id));
+    if (rejected.length && keterangan_ditolak.value.trim())
       await rejectPenandatangan(
         selectedRow.value.id,
         keterangan_ditolak.value,
-        rejectedDetails.map((d: any) => d.id)
+        rejected.map((d: any) => d.id)
       );
-    }
-    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length);
+    showToastApprovalSuccess(approved.length, rejected.length);
     openModal.value = false;
     await fetchData();
   } catch (e) {
@@ -1204,20 +1357,17 @@ const processApproval = async () => {
   }
 };
 
-// ─── Tolak semua ──────────────────────────────────────────────────────────────
+// ─── Reject ────────────────────────────────────────────────────────────────────
 const confirmRejection = async () => {
   if (!allUnchecked.value) return;
-  const valid = await validateKeterangan();
-  if (!valid) return;
+  if (!(await validateKeterangan())) return;
   showConfirmReject.value = true;
 };
-
 const processRejection = async () => {
   showConfirmReject.value = false;
   if (!selectedRow.value) return;
-
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
-  if (rejectedDetails.length === 0) {
+  const rejected = validDetails.value.filter((d: any) => !d.checked);
+  if (!rejected.length) {
     showToastTidakAdaNomor('ditolak');
     return;
   }
@@ -1226,14 +1376,13 @@ const processRejection = async () => {
     showToastKeteranganRequired();
     return;
   }
-
   isProcessing.value = true;
   processingAction.value = 'reject';
   try {
     await rejectPenandatangan(
       selectedRow.value.id,
       keterangan_ditolak.value,
-      rejectedDetails.map((d: any) => d.id)
+      rejected.map((d: any) => d.id)
     );
     openModal.value = false;
     await fetchData();
@@ -1245,7 +1394,7 @@ const processRejection = async () => {
   }
 };
 
-// ─── Watchers ─────────────────────────────────────────────────────────────────
+// ─── Watchers ──────────────────────────────────────────────────────────────────
 watch(keterangan_ditolak, (v) => {
   if (v.trim()) showKeteranganWarning.value = false;
 });
@@ -1261,30 +1410,26 @@ watch(isOpenPreview, (open) => {
   if (!open) pdfUrl.value = null;
 });
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
+// ─── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
   if (!user.value) {
     const { getProfile } = useAuth();
     await getProfile();
   }
-
-  const hasBodTag = !!user.value?.bodTag?.trim();
-  if (!hasBodTag) {
+  if (!user.value?.bodTag?.trim()) {
     await navigateTo('/beranda');
     return;
   }
-
   await fetchData();
   document.addEventListener('click', handleDocumentClick);
 });
-
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout);
   pdfUrl.value = null;
   document.removeEventListener('click', handleDocumentClick);
 });
 
-// ─── Tooltip ──────────────────────────────────────────────────────────────────
+// ─── Tooltip ───────────────────────────────────────────────────────────────────
 const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {

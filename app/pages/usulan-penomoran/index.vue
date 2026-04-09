@@ -119,6 +119,15 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
+        <!-- EXPORT BUTTON -->
+        <button
+          type="button"
+          @click="handleExport"
+          :disabled="isExporting || rows.length === 0"
+          class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
+        >
+          <span>{{ isExporting ? 'Mengekspor...' : 'Export' }}</span>
+        </button>
       </div>
 
       <!-- TABLE -->
@@ -984,7 +993,7 @@ import PageHeader from '~/components/PageHeader.vue';
 import { Modal } from '#components';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
-
+import * as XLSX from 'xlsx';
 definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
@@ -1560,6 +1569,79 @@ const handleCopy = (value: string) => {
     description: `"${value}" ${t('usl_toast_tersalin_desc')}`,
     color: 'success'
   });
+};
+
+// ─── EXPORT ────────────────────────────────────────────────────────────────────
+const isExporting = ref(false);
+const handleExport = async () => {
+  if (isExporting.value || rows.value.length === 0) return;
+  isExporting.value = true;
+  try {
+    let exportRows = allMappedRows.value;
+
+    // Jika ada filter status aktif, export filtered rows
+    if (isLocalFilter.value) {
+      exportRows = localFilteredRows.value;
+    }
+
+    // Jika tidak filter dan ada lebih banyak data di server, ambil semua
+    if (!isLocalFilter.value && pagination.value && pagination.value.total > rowsPerPage.value) {
+      const positionId =
+        typeof user.value?.position === 'object' ? user.value.position.id : user.value?.position;
+      const res = await getListUsulanByPosition(String(positionId), {
+        limit: pagination.value.total,
+        page: 1,
+        sort_by: sortBy.value || undefined,
+        sort_order: sortOrder.value || undefined,
+        search: search.value || undefined
+      });
+      if (res?.data && Array.isArray(res.data)) {
+        exportRows = res.data.map(mapItem);
+      }
+    }
+
+    const sheetData = exportRows.map((row: any, idx: number) => ({
+      No: idx + 1,
+      'Jenis Naskah': row.jenis || '-',
+      Tanggal: row.tanggal || '-',
+      Perihal: row.perihal || '-',
+      Penandatangan: row.penandatangan || '-',
+      'Jumlah Nomor': row.jumlah || 0,
+      Pengusul: row.pengusul || '-',
+      'Tgl Usulan': row.tglUsulan || '-',
+      Status: row.status || '-'
+    }));
+
+    if (!sheetData.length) return;
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const colWidths = Object.keys(sheetData[0]).map((key) => ({
+      wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Usulan Penomoran');
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `UsulanPenomoran_${dateStr}.xlsx`);
+
+    toast.add({
+      title: 'Export Berhasil',
+      description: `${sheetData.length} data berhasil diexport`,
+      color: 'success'
+    });
+  } catch (e) {
+    console.error('❌ Error export:', e);
+    toast.add({
+      title: 'Export Gagal',
+      description: 'Terjadi kesalahan saat export data',
+      color: 'error'
+    });
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 // ─── Submit / refresh ─────────────────────────────────────────────────────────

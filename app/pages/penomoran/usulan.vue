@@ -109,6 +109,15 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-200 pl-9 pr-3 py-1.5 rounded-lg"
           />
         </div>
+        <!-- EXPORT BUTTON -->
+        <button
+          type="button"
+          @click="handleExport"
+          :disabled="isExporting || sortedRows.length === 0"
+          class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
+        >
+          <span>{{ isExporting ? $t('ver_btn_mengekspor') : $t('ver_btn_export') }}</span>
+        </button>
       </div>
 
       <!-- TABLE -->
@@ -728,7 +737,7 @@ import PageHeader from '~/components/PageHeader.vue';
 import { Modal } from '#components';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
-
+import * as XLSX from 'xlsx';
 definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
@@ -812,6 +821,112 @@ const getStatusClass = (item: any): string => {
   if (item.status === 'draft')
     return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
   return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+};
+
+const sortedRows = computed(() => rows.value);
+
+const statusTabs = computed(() => [
+  { value: 'Semua', label: t('usl_filter_semua') },
+  { value: 'Draft', label: t('usl_status_draft') },
+  { value: 'Menunggu Verifikasi', label: t('usl_status_menunggu_verifikasi') },
+  { value: 'Disetujui', label: t('usl_status_disetujui') },
+  { value: 'Ditolak', label: t('usl_status_ditolak') }
+]);
+// ─── Export Excel ─────────────────────────────────────────────────────────────
+const isExporting = ref(false);
+
+const handleExport = async () => {
+  if (isExporting.value || rows.value.length === 0) return;
+  isExporting.value = true;
+
+  try {
+    let exportRows = sortedRows.value;
+
+    if (pagination.value && pagination.value.total > rowsPerPage.value) {
+      const res = await getListUsulan(String(user.value.position), {
+        search: search.value || undefined,
+        page: 1,
+        limit: pagination.value.total,
+        sort_by: sortBy.value || undefined,
+        sort_order: sortOrder.value || undefined,
+        status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined
+      });
+      exportRows = (res.data || []).map((item: any) => {
+        const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
+        const tanggalDate = new Date(item.tanggal);
+        const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
+        const createdDate = new Date(item.created_at);
+        return {
+          jenis: item.jenis,
+          tanggal: formattedTanggal,
+          perihal: item.perihal || '-',
+          jumlah: item.jumlah,
+          pengusul: item.nama || '-',
+          tglUsulan: createdDate.toLocaleString(),
+          klasifikasi: klasifikasiDisplay,
+          template_nomor: item.template_nomor || '-',
+          status: item.status || 'Draft',
+          is_single_file: item.is_single_file
+        };
+      });
+    }
+
+    const safeRows = Array.isArray(exportRows) ? exportRows : [];
+    const sheetData = safeRows.map((row: any, idx: number) => ({
+      No: idx + 1,
+      'Jenis Naskah': row.jenis,
+      Tanggal: row.tanggal,
+      Perihal: row.perihal,
+      'Jumlah Nomor': row.jumlah,
+      Pengusul: row.pengusul,
+      'Tanggal Usulan': row.tglUsulan,
+      Klasifikasi: row.klasifikasi,
+      'Template Nomor': row.template_nomor || '-',
+      Status: getRowStatusLabel(row.status),
+      'Single File': row.is_single_file ? 'Ya' : 'Tidak'
+    }));
+
+    if (!sheetData.length) {
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Data kosong tidak bisa diexport',
+        color: 'warning'
+      });
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const colWidths = Object.keys(sheetData[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Penomoran');
+
+    const statusLabel =
+      statusTabs.value.find((s) => s.value === filterStatus.value)?.label || 'Semua';
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `Penomoran_${statusLabel}_${dateStr}.xlsx`);
+
+    // ← toast sukses
+    toast.add({
+      title: t('ver_btn_export') || 'Export Berhasil',
+      description: `${sheetData.length} data berhasil diexport`,
+      color: 'success'
+    });
+  } catch (e) {
+    console.error('❌ Error export:', e);
+    // ← toast error
+    toast.add({
+      title: 'Export Gagal',
+      description: 'Terjadi kesalahan saat export data',
+      color: 'error'
+    });
+  } finally {
+    isExporting.value = false;
+  }
 };
 // ─── State ────────────────────────────────────────────────────────────────────
 const openDetail = ref(false);

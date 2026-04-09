@@ -463,10 +463,14 @@
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t('sign_tanggal_dokumen') }}
+                  {{ $t('sign_tanggal_dibuat') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
-                  {{ formatDate(penandatanganDetail.tanggalDokumen) }}
+                  {{
+                    formatDate(
+                      penandatanganDetail.tanggalDibuat || penandatanganDetail.tanggalDokumen
+                    )
+                  }}
                 </p>
               </div>
               <div>
@@ -791,8 +795,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Modal from '~/components/Modal.vue';
 import { useDigsig } from '~/composables/useDigsig';
-import type { PenandatangananDocument } from '~/types/digsig';
-definePageMeta({ middleware: 'auth' });
+
 const { t } = useI18n();
 const toast = useToast();
 
@@ -808,6 +811,8 @@ const {
   signDocument,
   rejectDocument
 } = useDigsig();
+
+definePageMeta({ middleware: 'auth' });
 
 // ─── Modal states ─────────────────────────────
 const openDetail = ref(false);

@@ -6,9 +6,16 @@
           Hasil Pencarian
         </h1>
         <p class="text-gray-500 dark:text-gray-400 text-sm">
-          Ditemukan <span class="font-semibold text-gray-900 dark:text-white">{{ pagination?.total || 0 }}</span>
+          Ditemukan
+          <span class="font-semibold text-gray-900 dark:text-white">{{
+            pagination?.total || 0
+          }}</span>
           data untuk:
-          <span v-if="searchFilters.length === 0" class="font-semibold text-gray-900 dark:text-white">"Semua"</span>
+          <span
+            v-if="searchFilters.length === 0"
+            class="font-semibold text-gray-900 dark:text-white"
+            >"Semua"</span
+          >
           <span v-else class="inline-flex flex-wrap gap-1">
             <span v-for="(filter, index) in searchFilters" :key="index">
               <span v-if="index > 0" class="text-gray-500 mr-1">,</span>
@@ -22,9 +29,13 @@
           </span>
         </p>
       </div>
-      <div v-if="isLoading"
-        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+      <div
+        v-if="isLoading"
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800"
+      >
+        <div
+          class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center"
+        >
           <div class="h-5 w-1/3 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
           <div class="h-8 w-1/4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"></div>
         </div>
@@ -37,36 +48,59 @@
           </div>
         </div>
       </div>
-      <div v-else-if="!results || results.length === 0"
-        class="text-center py-20 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 border-dashed">
-        <UIcon name="i-heroicons-document-magnifying-glass" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Tidak ada dokumen ditemukan</h3>
+      <div
+        v-else-if="!results || results.length === 0"
+        class="text-center py-20 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 border-dashed"
+      >
+        <UIcon
+          name="i-heroicons-document-magnifying-glass"
+          class="w-16 h-16 text-gray-300 mx-auto mb-4"
+        />
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+          Tidak ada dokumen ditemukan
+        </h3>
         <p class="text-gray-500 text-sm mt-1">Coba ubah kata kunci atau filter pencarian Anda.</p>
       </div>
-      <div v-else class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-        <div class="px-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+      <div
+        v-else
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800"
+      >
+        <div class="border-b border-gray-100 dark:border-gray-800">
           <div v-if="pagination.total > 0" class="w-full">
-            <Pagination class="w-full flex justify-between items-center" :current-page="page"
-              :total-pages="pagination.totalPages" :total-items="pagination.total" :rows-per-page="limit"
-              :rows-options="rowsOptions" @update:page="handlePageChange" @update:rowsPerPage="handleLimitChange" />
+            <Pagination
+              class="w-full flex justify-between items-center"
+              :current-page="page"
+              :total-pages="pagination.totalPages"
+              :total-items="pagination.total"
+              :rows-per-page="limit"
+              :rows-options="rowsOptions"
+              @update:page="handlePageChange"
+              @update:rowsPerPage="handleLimitChange"
+            />
           </div>
         </div>
         <ul class="divide-y divide-gray-100 dark:divide-gray-800">
-          <li v-for="item in results" :key="item.id"
+          <li
+            v-for="item in results"
+            :key="item.id"
             class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer first:rounded-t-none last:rounded-b-xl"
-            @click="openDetail(item)">
+            @click="openDetail(item)"
+          >
             <div class="flex flex-col md:flex-row items-start gap-3 md:gap-4 px-6 py-4">
               <div class="shrink-0 flex items-center justify-center pt-1 md:pt-0">
                 <UTooltip :text="getSourceConfig(item).label" :popper="{ placement: 'right' }">
-                  <UIcon :name="getSourceConfig(item).icon"
-                    class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                  <UIcon
+                    :name="getSourceConfig(item).icon"
+                    class="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
+                  />
                 </UTooltip>
               </div>
               <div class="w-full md:w-[28%] shrink-0 min-w-0">
                 <div class="flex items-center gap-2">
                   <UTooltip :popper="{ placement: 'top' }" class="max-w-full">
                     <h4
-                      class="font-bold text-gray-700 dark:text-gray-200 uppercase truncate text-sm md:text-[13px] tracking-wide hover:text-primary-600 transition-colors cursor-help">
+                      class="font-bold text-gray-700 dark:text-gray-200 uppercase truncate text-sm md:text-[13px] tracking-wide hover:text-primary-600 transition-colors cursor-help"
+                    >
                       {{ item.pengirim?.jabatan || item.pengirim?.nama || 'TANPA JABATAN' }}
                     </h4>
                     <template #text>
@@ -80,19 +114,29 @@
                     <UTooltip :popper="{ placement: 'bottom-start' }" class="block w-full">
                       <div class="flex items-center w-full cursor-help">
                         <span
-                          class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors truncate font-medium text-gray-500 block max-w-full">
+                          class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors truncate font-medium text-gray-500 block max-w-full"
+                        >
                           {{ item.penerima[0].jabatan || item.penerima[0].nama }}
                         </span>
-                        <span v-if="item.penerima.length > 1"
-                          class="font-bold text-primary-600 ml-1 shrink-0 text-[10px]">
+                        <span
+                          v-if="item.penerima.length > 1"
+                          class="font-bold text-primary-600 ml-1 shrink-0 text-[10px]"
+                        >
                           +{{ item.penerima.length - 1 }}
                         </span>
                       </div>
                       <template #text>
-                        <div class="flex flex-col gap-2 py-1 text-left min-w-[200px] max-h-[300px] overflow-y-auto">
-                          <div v-for="(p, idx) in item.penerima" :key="idx"
-                            class="border-b border-gray-500/30 pb-1 last:border-0 last:pb-0">
-                            <div class="font-semibold text-xs text-white">{{ p.jabatan || 'Tanpa Jabatan' }}</div>
+                        <div
+                          class="flex flex-col gap-2 py-1 text-left min-w-[200px] max-h-[300px] overflow-y-auto"
+                        >
+                          <div
+                            v-for="(p, idx) in item.penerima"
+                            :key="idx"
+                            class="border-b border-gray-500/30 pb-1 last:border-0 last:pb-0"
+                          >
+                            <div class="font-semibold text-xs text-white">
+                              {{ p.jabatan || 'Tanpa Jabatan' }}
+                            </div>
                             <div class="text-[10px] text-gray-300">{{ p.nama }}</div>
                           </div>
                         </div>
@@ -104,36 +148,43 @@
               </div>
               <div class="flex-1 min-w-0 w-full pl-2">
                 <p
-                  class="text-gray-600 dark:text-gray-300 text-sm leading-snug line-clamp-2 md:line-clamp-1 group-hover:text-primary-600 transition-colors font-medium">
+                  class="text-gray-600 dark:text-gray-300 text-sm leading-snug line-clamp-2 md:line-clamp-1 group-hover:text-primary-600 transition-colors font-medium"
+                >
                   {{ item.perihal || '(Tanpa Perihal)' }}
                 </p>
                 <div class="flex items-center gap-2 mt-1.5">
                   <span
-                    class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                    class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700"
+                  >
                     {{ item.nomor }}
                   </span>
-                  <UIcon v-if="item.hasAttachment" name="i-heroicons-paper-clip" class="w-3.5 h-3.5 text-gray-400" />
+                  <UIcon
+                    v-if="item.hasAttachment"
+                    name="i-heroicons-paper-clip"
+                    class="w-3.5 h-3.5 text-gray-400"
+                  />
                 </div>
               </div>
               <div
-                class="w-full md:w-auto shrink-0 flex flex-row md:items-center justify-between md:justify-end gap-4 mt-2 md:mt-0">
+                class="w-full md:w-auto shrink-0 flex flex-row md:items-center justify-between md:justify-end gap-4 mt-2 md:mt-0"
+              >
                 <span
                   class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-transparent min-w-[60px] text-center"
-                  :class="getCategoryStyle(item.jenis)">
+                  :class="getCategoryStyle(item.jenis)"
+                >
                   {{ getCategoryLabel(item.jenis) }}
                 </span>
 
                 <span
-                  class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap font-medium min-w-[90px] text-right">
+                  class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap font-medium min-w-[90px] text-right"
+                >
                   {{ formatDate(item.tanggal) }}
                 </span>
               </div>
-
             </div>
           </li>
         </ul>
       </div>
-
     </div>
   </div>
 </template>
@@ -142,6 +193,10 @@
 const route = useRoute();
 const router = useRouter();
 const { fetchSearch, results, pagination, isLoading } = useSearch();
+
+definePageMeta({
+  middleware: 'auth'
+});
 
 // --- STATE ---
 const page = ref(1);
@@ -161,9 +216,12 @@ const displaySearchLabel = computed(() => {
   if (q.keyword) return q.keyword;
 
   // 2. Jika tidak ada keyword, cek parameter filter lainnya
-  const ignoredKeys = ['page', 'limit', 'sortBy', 'sortOrder', 'keyword'];
+  const ignoredKeys = ['page', 'limit', 'sortBy', 'sortOrder', 'keyword', 'scope']; // ← tambah 'scope'
 
-  // Mapping nama key agar lebih cantik di UI
+  // Tambahkan sebelum Object.entries loop
+  if (q.scope === 'priority') {
+    activeFilters.unshift('Prioritas');
+  }
   const keyMap: Record<string, string> = {
     jenis: 'Jenis',
     sifat: 'Sifat',
@@ -172,7 +230,6 @@ const displaySearchLabel = computed(() => {
     to: 'Penerima',
     dateFrom: 'Dari',
     dateTo: 'Sampai',
-    hasAttachment: 'Lampiran',
     nomor: 'No. Surat',
     perihal: 'Perihal',
     hasWords: 'Berisi',
@@ -181,17 +238,19 @@ const displaySearchLabel = computed(() => {
 
   // Buat array string "Key: Value"
   const activeFilters = Object.entries(q)
-    .filter(([key, value]) => !ignoredKeys.includes(key) && value) // Filter param teknis
+    .filter(([key, value]) => !ignoredKeys.includes(key) && value)
     .map(([key, value]) => {
-      const label = keyMap[key] || key; // Pakai nama mapping atau nama asli key
-
-      // Khusus boolean hasAttachment biar ga muncul "true/false"
+      const label = keyMap[key] || key;
       if (key === 'hasAttachment') {
         return value === 'true' ? 'Ada Lampiran' : 'Tanpa Lampiran';
       }
-
       return `${label}: ${value}`;
     });
+
+  // ← setelah deklarasi, baru boleh unshift
+  if (q.scope === 'priority') {
+    activeFilters.unshift('Prioritas');
+  }
 
   // 3. Gabungkan hasilnya
   if (activeFilters.length > 0) {
@@ -210,7 +269,7 @@ const getSourceConfig = (item: any) => {
   const type = (item.folder || item.source || item.status || '').toLowerCase();
 
   // Logika Keluar (Sent)
-  if (['sent', 'keluar', 'outbox'].some(k => type.includes(k))) {
+  if (['sent', 'keluar', 'outbox'].some((k) => type.includes(k))) {
     return {
       icon: 'i-lucide-send',
       label: 'Kotak Keluar',
@@ -219,7 +278,7 @@ const getSourceConfig = (item: any) => {
   }
 
   // Logika Draft (Konsep)
-  if (['draft', 'konsep'].some(k => type.includes(k))) {
+  if (['draft', 'konsep'].some((k) => type.includes(k))) {
     return {
       icon: 'i-lucide-file-text',
       label: 'Draft',
@@ -241,11 +300,8 @@ const openDetail = (item: any) => {
 
   const config = getSourceConfig(item);
 
-  navigateTo(
-    `/korespondensi/${config.route}/${item.id}?jenis=${item.jenis || ''}`
-  );
+  navigateTo(`/korespondensi/${config.route}/${item.id}?jenis=${item.jenis || ''}`);
 };
-
 
 const getCategoryStyle = (cat: string) => {
   const c = (cat || '').toUpperCase();
@@ -324,16 +380,12 @@ const searchFilters = computed(() => {
   const q = route.query;
   const result: { label: string | null; value: string }[] = [];
 
-  // 1. Prioritas Keyword Global
   if (q.keyword) {
-    // Jika keyword ada, kita anggap itu satu-satunya yang ditampilkan (atau bisa digabung filter lain jika mau)
-    // Sesuai contoh: Labelnya kosong agar tampil langsung "kata kunci" (bold) atau kasih label "Keyword"
-    // Di sini saya buat labelnya null agar tampil langsung: "test" (bold)
     return [{ label: null, value: `"${q.keyword}"` }];
   }
 
-  // 2. Mapping Filter Lanjutan
-  const ignoredKeys = ['page', 'limit', 'sortBy', 'sortOrder', 'keyword'];
+  // ← tambah 'scope' di sini
+  const ignoredKeys = ['page', 'limit', 'sortBy', 'sortOrder', 'keyword', 'scope'];
   const keyMap: Record<string, string> = {
     jenis: 'Jenis',
     sifat: 'Sifat',
@@ -348,20 +400,22 @@ const searchFilters = computed(() => {
     doesntHave: 'Kecuali'
   };
 
+  // ← tangani scope=priority di sini
+  if (q.scope === 'priority') {
+    result.push({ label: null, value: 'Prioritas' });
+  }
+
   Object.entries(q).forEach(([key, value]) => {
-    // Skip jika param teknis atau kosong
     if (ignoredKeys.includes(key) || !value) return;
 
     let label = keyMap[key] || key;
     let valText = value as string;
 
-    // Khusus Lampiran: Label dikosongkan agar tampil "Tanpa Lampiran" (Bold) saja
     if (key === 'hasAttachment') {
-      label = ''; // Kosongkan label
+      label = '';
       valText = value === 'true' ? 'Ada Lampiran' : 'Tanpa Lampiran';
     }
 
-    // Push ke array result
     result.push({ label: label || null, value: valText });
   });
 

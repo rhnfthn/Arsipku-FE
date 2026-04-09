@@ -86,7 +86,7 @@
           <thead class="bg-primary dark:bg-primary-700 text-white sticky top-0 z-10">
             <tr class="p-3">
               <th
-                class="text-left text-[14px] px-4 py-3 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                class="text-left text-[14px] px-4 py-3 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition min-w-[250px]"
                 @click="handleSort('nama_templat')"
               >
                 <div class="flex items-center gap-2">
@@ -102,7 +102,7 @@
               </th>
 
               <th
-                class="text-left text-[14px] border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition"
+                class="text-left text-[14px] px-4 py-3 border-b border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 min-w-[250px] transition"
                 @click="handleSort('file')"
               >
                 <div class="flex items-center gap-2">
@@ -169,12 +169,18 @@
               :key="template.id"
               class="border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
-              <td class="p-4 text-sm dark:text-gray-200">{{ template.nama_template }}</td>
+              <td class="p-4 text-sm dark:text-gray-200">
+                <div class="max-w-[400px] break-words whitespace-normal">
+                  {{ template.nama_template }}
+                </div>
+              </td>
               <td class="p-4 text-primary dark:text-primary-400 text-sm">
-                {{ getFileName(template.file) }}
+                <div class="max-w-[400px] break-words whitespace-normal">
+                  {{ getFileName(template.file) }}
+                </div>
               </td>
               <td class="px-4 py-2">
-                <div class="flex justify-center gap-3">
+                <div class="flex justify-center gap-2">
                   <button
                     @click="downloadTemplate(template)"
                     class="p-2 hover:bg-sky-100 dark:hover:bg-sky-900/30 rounded-lg text-sky-600 dark:text-sky-500 transition-colors"
@@ -314,21 +320,38 @@
         </template>
         <div class="px-2 py-3 flex flex-col gap-6">
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
+            <Heading variant="heading10m" class="mb-2 dark:text-gray-200">
               {{ $t('tmpl_label_nama') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="addData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
+              @input="addErrors.nama_template = false"
+              :class="[
+                'w-full px-5 py-3 text-sm rounded-lg border bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:outline-none transition',
+                addErrors.nama_template
+                  ? 'border-red-500 dark:border-red-500 focus:ring-red-400'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+              ]"
               :placeholder="$t('tmpl_placeholder_nama')"
             />
+            <p
+              v-if="addErrors.nama_template"
+              class="mt-1.5 text-xs text-red-500 flex items-center gap-1"
+            >
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
           </div>
           <div class="flex flex-col">
-            <Heading variant="heading10sb" class="mb-2 dark:text-gray-200">
+            <Heading variant="heading10m" class="mb-2 dark:text-gray-200">
               {{ $t('tmpl_label_file') }} <span class="text-red-500">*</span>
             </Heading>
             <label
-              class="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+              :class="[
+                'w-full px-4 py-3 text-sm rounded-lg border cursor-pointer flex items-center gap-3 transition',
+                addErrors.file
+                  ? 'border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/10'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+              ]"
             >
               <FileCheck class="w-6 h-6 text-gray-500 dark:text-gray-400" />
               <span class="font-medium dark:text-gray-200">{{ $t('tmpl_pilih_file') }}</span>
@@ -339,9 +362,17 @@
                 type="file"
                 class="hidden"
                 accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
-                @change="handleAddFile"
+                @change="
+                  (e) => {
+                    handleAddFile(e);
+                    addErrors.file = false;
+                  }
+                "
               />
             </label>
+            <p v-if="addErrors.file" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
             <div
               v-if="addData.file"
               class="mt-3 px-4 py-2 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 flex items-center justify-between"
@@ -386,9 +417,34 @@
             </Heading>
             <input
               v-model="editData.nama_template"
-              class="w-full px-5 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:outline-none"
+              @input="editErrors.nama_template = false"
+              :class="[
+                'w-full px-5 py-3 text-sm rounded-lg border bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:outline-none transition',
+                editErrors.nama_template
+                  ? 'border-red-500 dark:border-red-500 focus:ring-red-400'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+              ]"
               :placeholder="$t('tmpl_placeholder_nama')"
             />
+            <p
+              v-if="editErrors.nama_template"
+              class="mt-1.5 text-xs text-red-500 flex items-center gap-1"
+            >
+              <svg
+                class="w-3 h-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
           </div>
           <div class="flex flex-col">
             <Heading variant="heading10sb" class="font-semibold mb-2 dark:text-gray-200">
@@ -465,8 +521,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   Inbox,
   FileCheck,
@@ -477,23 +533,23 @@ import {
   Trash2,
   Plus,
   ChevronDown
-} from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
-import Modal from '~/components/Modal.vue'
-import PageHeader from '~/components/PageHeader.vue'
-import ConfirmPopup from '~/components/ConfirmPopup.vue'
-import { useTemplate } from '~/composables/useTemplate'
-import type { Template } from '~/types/template'
+} from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
+import Modal from '~/components/Modal.vue';
+import PageHeader from '~/components/PageHeader.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import { useTemplate } from '~/composables/useTemplate';
+import type { Template } from '~/types/template';
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth' });
 
-const { t } = useI18n()
-const toast = useToast()
+const { t } = useI18n();
+const toast = useToast();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('tmpl_title'), to: '/admin/template' }
-])
+]);
 
 const {
   getTemplates,
@@ -505,141 +561,158 @@ const {
   isLoadingCreate,
   isLoadingUpdate,
   isLoadingDelete
-} = useTemplate()
+} = useTemplate();
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const templates = ref<Template[]>([])
-const search = ref('')
-const editModal = ref(false)
-const addModal = ref(false)
-const confirmDeleteOpen = ref(false)
-const itemToDelete = ref<Template | null>(null)
-
-const editData = ref<any>({ id: '', nama_template: '', file: '', newFile: null, newFileName: '' })
-const addData = ref<any>({ nama_template: '', file: null, fileName: '' })
+const templates = ref<Template[]>([]);
+const search = ref('');
+const editModal = ref(false);
+const addModal = ref(false);
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<Template | null>(null);
+const addErrors = ref({ nama_template: false, file: false });
+const editErrors = ref({ nama_template: false });
+const editData = ref<any>({ id: '', nama_template: '', file: '', newFile: null, newFileName: '' });
+const addData = ref<any>({ nama_template: '', file: null, fileName: '' });
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 const fetchData = async () => {
   try {
-    const data = await getTemplates()
-    templates.value = data
+    const data = await getTemplates();
+    templates.value = data;
   } catch (error) {
-    console.error('❌ Error loading templates:', error)
+    console.error('❌ Error loading templates:', error);
   }
-}
+};
 
 // ─── Sort ─────────────────────────────────────────────────────────────────────
-const sortKey = ref('')
-const sortOrder = ref<'asc' | 'desc'>('asc')
+const sortKey = ref('');
+const sortOrder = ref<'asc' | 'desc'>('asc');
 
 const filteredTemplates = computed(() => {
-  const s = search.value.toLowerCase()
+  const s = search.value.toLowerCase();
   return templates.value.filter(
     (template) =>
       template.nama_template.toLowerCase().includes(s) || template.file.toLowerCase().includes(s)
-  )
-})
+  );
+});
 
 const sortedTemplates = computed(() => {
-  if (!sortKey.value) return filteredTemplates.value
+  if (!sortKey.value) return filteredTemplates.value;
   return [...filteredTemplates.value].sort((a, b) => {
-    const A = a[sortKey.value]
-    const B = b[sortKey.value]
-    if (A < B) return sortOrder.value === 'asc' ? -1 : 1
-    if (A > B) return sortOrder.value === 'asc' ? 1 : -1
-    return 0
-  })
-})
+    const A = a[sortKey.value];
+    const B = b[sortKey.value];
+    if (A < B) return sortOrder.value === 'asc' ? -1 : 1;
+    if (A > B) return sortOrder.value === 'asc' ? 1 : -1;
+    return 0;
+  });
+});
 
 const handleSort = (key: string) => {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
-    sortKey.value = key
-    sortOrder.value = 'asc'
+    sortKey.value = key;
+    sortOrder.value = 'asc';
   }
-}
+};
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const rowsPerPage = ref(10)
-const rowsChoices = [10, 25, 50, 100]
-const showRowsDropdown = ref(false)
-const rowsRef = ref<HTMLElement | null>(null)
-const currentPage = ref(1)
+const rowsPerPage = ref(10);
+const rowsChoices = [10, 25, 50, 100];
+const showRowsDropdown = ref(false);
+const rowsRef = ref<HTMLElement | null>(null);
+const currentPage = ref(1);
 
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n
-  showRowsDropdown.value = false
-  currentPage.value = 1
-}
+  rowsPerPage.value = n;
+  showRowsDropdown.value = false;
+  currentPage.value = 1;
+};
 
 const paginatedTemplates = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return sortedTemplates.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return sortedTemplates.value.slice(start, start + rowsPerPage.value);
+});
 
-const totalItems = computed(() => filteredTemplates.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)))
+const totalItems = computed(() => filteredTemplates.value.length);
+const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)));
 
 const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const delta = 2
-  const range: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 2;
+  const range: number[] = [];
   for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
-    range.push(i)
+    range.push(i);
   }
-  return range
-})
+  return range;
+});
 
 watch([search, rowsPerPage], () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+  const target = e.target as HTMLElement;
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
 }
 
 // ─── Add ──────────────────────────────────────────────────────────────────────
 const openAdd = () => {
-  addData.value = { nama_template: '', file: null, fileName: '' }
-  addModal.value = true
-}
+  addData.value = { nama_template: '', file: null, fileName: '' };
+  addErrors.value = { nama_template: false, file: false };
+  addModal.value = true;
+};
+
 const handleAddFile = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  addData.value.file = file
-  addData.value.fileName = file.name
-}
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  addData.value.file = file;
+  addData.value.fileName = file.name;
+};
 const clearAddFile = () => {
-  addData.value.file = null
-  addData.value.fileName = ''
-}
+  addData.value.file = null;
+  addData.value.fileName = '';
+};
 const saveAdd = async () => {
-  if (!addData.value.nama_template || !addData.value.file) {
+  // Reset errors
+  addErrors.value = { nama_template: false, file: false };
+
+  let hasError = false;
+  if (!addData.value.nama_template?.trim()) {
+    addErrors.value.nama_template = true;
+    hasError = true;
+  }
+  if (!addData.value.file) {
+    addErrors.value.file = true;
+    hasError = true;
+  }
+
+  if (hasError) {
     toast.add({
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_file_wajib'),
-      color: 'yellow'
-    })
-    return
+      color: 'red'
+    });
+    return;
   }
+
   try {
-    await createTemplate({ nama_template: addData.value.nama_template, file: addData.value.file })
-    addModal.value = false
-    await fetchData()
-    currentPage.value = 1
+    await createTemplate({ nama_template: addData.value.nama_template, file: addData.value.file });
+    addModal.value = false;
+    await fetchData();
+    currentPage.value = 1;
   } catch (error) {
-    console.error('❌ Error creating template:', error)
+    console.error('❌ Error creating template:', error);
   }
-}
+};
 
 // ─── Edit ─────────────────────────────────────────────────────────────────────
 const openEdit = async (template: Template) => {
   try {
-    const detail = await getTemplateById(template.id)
+    const detail = await getTemplateById(template.id);
     if (detail) {
       editData.value = {
         id: detail.id,
@@ -648,96 +721,101 @@ const openEdit = async (template: Template) => {
         file_url: detail.file_url,
         newFile: null,
         newFileName: ''
-      }
-      editModal.value = true
+      };
+      editErrors.value = { nama_template: false }; // ← tambahkan ini
+      editModal.value = true;
     }
   } catch (error) {
-    console.error('❌ Error opening edit modal:', error)
+    console.error('❌ Error opening edit modal:', error);
   }
-}
+};
 const handleEditFile = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  editData.value.newFile = file
-  editData.value.newFileName = file.name
-}
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  editData.value.newFile = file;
+  editData.value.newFileName = file.name;
+};
 const clearEditFile = () => {
-  editData.value.newFile = null
-  editData.value.newFileName = ''
-}
+  editData.value.newFile = null;
+  editData.value.newFileName = '';
+};
 const saveEdit = async () => {
-  if (!editData.value.nama_template) {
+  editErrors.value = { nama_template: false };
+
+  if (!editData.value.nama_template?.trim()) {
+    editErrors.value.nama_template = true;
     toast.add({
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_wajib'),
-      color: 'yellow'
-    })
-    return
+      color: 'red'
+    });
+    return;
   }
+
   try {
-    const payload: any = { nama_template: editData.value.nama_template }
-    if (editData.value.newFile) payload.file = editData.value.newFile
-    await updateTemplate(editData.value.id, payload)
-    editModal.value = false
-    await fetchData()
+    const payload: any = { nama_template: editData.value.nama_template };
+    if (editData.value.newFile) payload.file = editData.value.newFile;
+    await updateTemplate(editData.value.id, payload);
+    editModal.value = false;
+    await fetchData();
   } catch (error) {
-    console.error('❌ Error updating template:', error)
+    console.error('❌ Error updating template:', error);
   }
-}
+};
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const openDelete = (template: Template) => {
-  itemToDelete.value = template
-  confirmDeleteOpen.value = true
-}
+  itemToDelete.value = template;
+  confirmDeleteOpen.value = true;
+};
 const deleteNow = async () => {
-  if (!itemToDelete.value) return
+  if (!itemToDelete.value) return;
   try {
-    await deleteTemplate(itemToDelete.value.id)
-    confirmDeleteOpen.value = false
-    await fetchData()
+    await deleteTemplate(itemToDelete.value.id);
+    confirmDeleteOpen.value = false;
+    await fetchData();
   } catch (error) {
-    console.error('❌ Error deleting template:', error)
+    console.error('❌ Error deleting template:', error);
   } finally {
-    itemToDelete.value = null
+    itemToDelete.value = null;
   }
-}
+};
 
 // ─── Download ─────────────────────────────────────────────────────────────────
 const downloadTemplate = (template: Template) => {
   if (template.file_url) {
-    window.open(template.file_url, '_blank')
+    window.open(template.file_url, '_blank');
   } else {
     toast.add({
       title: t('tmpl_toast_url_tidak_tersedia'),
       description: t('tmpl_toast_tidak_bisa_unduh'),
       color: 'red'
-    })
+    });
   }
-}
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getFileName = (filePath: string): string => {
-  if (!filePath) return '-'
-  const parts = filePath.split('/')
-  return parts[parts.length - 1]
-}
+  if (!filePath) return '-';
+  const parts = filePath.split('/');
+  return parts[parts.length - 1];
+};
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-}
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+};
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await fetchData()
-  document.addEventListener('click', handleDocumentClick)
-})
+  await fetchData();
+  document.addEventListener('click', handleDocumentClick);
+});
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-})
+  document.removeEventListener('click', handleDocumentClick);
+});
 </script>
 
 <style scoped>

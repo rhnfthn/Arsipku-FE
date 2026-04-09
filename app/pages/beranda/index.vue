@@ -12,7 +12,7 @@
           icon: 'i-heroicons-x-mark-20-solid',
           color: 'white',
           variant: 'link',
-          padded: false,
+          padded: false
         }"
         @close="error = null"
       />
@@ -22,12 +22,8 @@
           class="w-full h-64 rounded-3xl shadow-sm bg-gray-100 dark:bg-gray-800 flex items-center px-10 relative overflow-hidden"
         >
           <div class="flex flex-col space-y-3 z-10">
-            <USkeleton
-              class="h-9 w-64 sm:w-96 rounded-lg bg-gray-200 dark:bg-gray-700"
-            />
-            <USkeleton
-              class="h-5 w-48 sm:w-72 rounded-lg bg-gray-200 dark:bg-gray-700"
-            />
+            <USkeleton class="h-9 w-64 sm:w-96 rounded-lg bg-gray-200 dark:bg-gray-700" />
+            <USkeleton class="h-5 w-48 sm:w-72 rounded-lg bg-gray-200 dark:bg-gray-700" />
           </div>
         </div>
 
@@ -38,9 +34,7 @@
                 <USkeleton class="h-4 w-24 bg-gray-200 dark:bg-gray-700" />
                 <USkeleton class="h-8 w-16 bg-gray-200 dark:bg-gray-700" />
               </div>
-              <USkeleton
-                class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700"
-              />
+              <USkeleton class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700" />
             </div>
           </UCard>
         </div>
@@ -50,24 +44,12 @@
             <template #header>
               <USkeleton class="h-6 w-32 bg-gray-200 dark:bg-gray-700" />
             </template>
-            <div
-              class="mb-5 flex items-end justify-between space-x-2 h-[250px] px-2"
-            >
-              <USkeleton
-                class="w-full h-[40%] bg-gray-200 dark:bg-gray-700 rounded-t"
-              />
-              <USkeleton
-                class="w-full h-[70%] bg-gray-200 dark:bg-gray-700 rounded-t"
-              />
-              <USkeleton
-                class="w-full h-[50%] bg-gray-200 dark:bg-gray-700 rounded-t"
-              />
-              <USkeleton
-                class="w-full h-[80%] bg-gray-200 dark:bg-gray-700 rounded-t"
-              />
-              <USkeleton
-                class="w-full h-[60%] bg-gray-200 dark:bg-gray-700 rounded-t"
-              />
+            <div class="mb-5 flex items-end justify-between space-x-2 h-[250px] px-2">
+              <USkeleton class="w-full h-[40%] bg-gray-200 dark:bg-gray-700 rounded-t" />
+              <USkeleton class="w-full h-[70%] bg-gray-200 dark:bg-gray-700 rounded-t" />
+              <USkeleton class="w-full h-[50%] bg-gray-200 dark:bg-gray-700 rounded-t" />
+              <USkeleton class="w-full h-[80%] bg-gray-200 dark:bg-gray-700 rounded-t" />
+              <USkeleton class="w-full h-[60%] bg-gray-200 dark:bg-gray-700 rounded-t" />
             </div>
           </UCard>
 
@@ -97,24 +79,16 @@
       </div>
 
       <template v-else>
-        <div
-          class="relative w-full h-64 flex items-center transition-all group mb-8"
-        >
+        <div class="relative w-full h-64 flex items-center transition-all group mb-8">
           <div
             class="absolute inset-0 bg-gradient-to-br from-primary-100 from-45% to-primary dark:from-primary-800 dark:to-primary-600 rounded-3xl shadow-md overflow-hidden dark:border dark:border-primary-800/50"
           ></div>
           <div class="relative z-10 flex flex-col px-10 max-w-lg">
-            <Heading
-              variant="heading6b"
-              class="text-primary-600 dark:text-white"
-            >
+            <Heading variant="heading6b" class="text-primary-600 dark:text-white">
               Halo, {{ formatName(user?.nama) }}
             </Heading>
-            <Heading
-              variant="heading9m"
-              class="mt-1 text-primary-400 dark:text-primary-300"
-            >
-              {{ $t("hero") }}
+            <Heading variant="heading9m" class="mt-1 text-primary-400 dark:text-primary-300">
+              {{ $t('hero') }}
             </Heading>
           </div>
           <img
@@ -125,16 +99,11 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NuxtLink
-            v-for="(stat, idx) in stats"
-            :key="idx"
-            :to="stat.link"
-            class="block group"
-          >
+          <NuxtLink v-for="(stat, idx) in stats" :key="idx" :to="stat.link" class="block group">
             <UCard
               :ui="{
                 ...cardUI,
-                root: `${cardUI.root} hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer h-full`,
+                root: `${cardUI.root} hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer h-full`
               }"
             >
               <div
@@ -143,9 +112,7 @@
               <div class="flex flex-col justify-between h-full">
                 <div class="flex justify-between items-start">
                   <div class="flex-1 min-w-0">
-                    <p
-                      class="text-nowrap text-sm text-gray-500 dark:text-gray-400"
-                    >
+                    <p class="text-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {{ stat.label }}
                     </p>
                     <Heading
@@ -164,10 +131,7 @@
                   <div
                     :class="`mt-7 p-2 rounded-lg flex items-center ${stat.bgSolid} dark:bg-gray-700 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 flex-shrink-0 ml-3`"
                   >
-                    <UIcon
-                      :name="stat.icon"
-                      :class="`w-6 h-6 ${stat.iconColor}`"
-                    />
+                    <UIcon :name="stat.icon" :class="`w-6 h-6 ${stat.iconColor}`" />
                   </div>
                 </div>
               </div>
@@ -179,27 +143,19 @@
           <UCard :ui="cardUI" class="w-full lg:flex-1">
             <template #header>
               <div class="flex flex-col gap-3">
-                <Heading variant="heading9sb" class="font-semibold">{{
-                  $t("statstitle")
-                }}</Heading>
+                <Heading variant="heading9sb" class="font-semibold">{{ $t('statstitle') }}</Heading>
                 <div class="flex items-center gap-4 text-sm flex-wrap">
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{
-                      $t("stats1")
-                    }}</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats1') }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{
-                      $t("stats2")
-                    }}</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats2') }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-purple-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{
-                      $t("stats3")
-                    }}</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats3') }}</span>
                   </div>
                 </div>
               </div>
@@ -213,7 +169,7 @@
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-gray-900 dark:text-white">
-                  {{ $t("righttitle") }}
+                  {{ $t('righttitle') }}
                 </h3>
                 <UButton
                   to="/korespondensi/kotak-masuk"
@@ -222,7 +178,7 @@
                   variant="ghost"
                   trailing-icon="i-heroicons-arrow-right"
                 >
-                  {{ $t("rightbutton") }}
+                  {{ $t('rightbutton') }}
                 </UButton>
               </div>
             </template>
@@ -239,9 +195,10 @@
               v-else
               class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 pr-1 flex flex-col gap-2"
             >
-              <div
+              <NuxtLink
                 v-for="mail in recentMails"
                 :key="mail.id"
+                :to="`/korespondensi/kotak-masuk/${mail.id}?jenis=${mail.jenis}`"
                 class="py-1 flex items-center gap-3 transition-colors rounded-xl cursor-pointer group"
                 :class="
                   mail.is_priority
@@ -251,9 +208,7 @@
               >
                 <div
                   class="h-14 w-1.5 border-l-[3px] rounded-l-full shrink-0"
-                  :class="
-                    mail.is_priority ? 'border-red-500' : 'border-primary'
-                  "
+                  :class="mail.is_priority ? 'border-red-500' : 'border-primary'"
                 ></div>
 
                 <div class="flex-1 min-w-0">
@@ -266,7 +221,7 @@
                           : 'text-gray-900 dark:text-gray-100'
                       "
                     >
-                      {{ mail.pengirim_nama || "Pengirim Tidak Diketahui" }}
+                      {{ mail.pengirim_nama || 'Pengirim Tidak Diketahui' }}
                     </h4>
 
                     <div class="flex items-center gap-2">
@@ -303,10 +258,10 @@
                         : 'text-gray-500 dark:text-gray-400'
                     "
                   >
-                    {{ mail.perihal || "(Tanpa Perihal)" }}
+                    {{ mail.perihal || '(Tanpa Perihal)' }}
                   </p>
                 </div>
-              </div>
+              </NuxtLink>
             </div>
           </UCard>
         </div>
@@ -316,47 +271,40 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
-import { AlertTriangle } from "lucide-vue-next"; // Import ikon prioritas
-import { useAuth } from "@/composables/useAuth";
-import { useDashboard } from "@/composables/useDashboard";
+import { onMounted, watch } from 'vue';
+import { AlertTriangle } from 'lucide-vue-next';
+import { useAuth } from '@/composables/useAuth';
+import { useDashboard } from '@/composables/useDashboard';
 
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 
 const { user, getProfile } = useAuth();
-const {
-  isLoading,
-  error,
-  stats,
-  recentMails,
-  chartData,
-  fetchDashboardData,
-  dashboardData,
-} = useDashboard();
+const { isLoading, error, stats, recentMails, chartData, fetchDashboardData, dashboardData } =
+  useDashboard();
 
 const { t } = useI18n();
 
 const cardUI = {
-  root: "rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden",
-  header: { padding: "px-5 py-4 sm:px-6" },
-  body: { padding: "p-5 sm:p-6" },
-  divide: "divide-y divide-gray-100 dark:divide-gray-700",
+  root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
+  header: { padding: 'px-5 py-4 sm:px-6' },
+  body: { padding: 'p-5 sm:p-6' },
+  divide: 'divide-y divide-gray-100 dark:divide-gray-700'
 };
 
 const formatName = (name: string | undefined) => {
-  if (!name) return "User";
+  if (!name) return 'User';
   return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 const formatDate = (dateString: string | null) => {
-  if (!dateString) return "-";
+  if (!dateString) return '-';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
   }).format(date);
 };
 
@@ -367,88 +315,88 @@ const initChart = async () => {
   if (!data.labels.length) return;
 
   try {
-    const chartJs = await import("chart.js/auto");
+    const chartJs = await import('chart.js/auto');
     const Chart = chartJs.default;
-    const ctx = document.getElementById("chart") as HTMLCanvasElement;
+    const ctx = document.getElementById('chart') as HTMLCanvasElement;
     if (!ctx) return;
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
-      type: "line",
+      type: 'line',
       data: {
         labels: data.labels,
         datasets: [
           {
-            label: "Surat Masuk",
+            label: 'Surat Masuk',
             data: data.suratMasuk,
             borderWidth: 2,
             tension: 0.4,
             pointRadius: 4,
             pointHoverRadius: 6,
-            borderColor: "#3B82F6",
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: true,
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true
           },
           {
-            label: "Surat Terkirim",
+            label: 'Surat Terkirim',
             data: data.suratTerkirim,
             borderWidth: 2,
             tension: 0.4,
             pointRadius: 4,
             pointHoverRadius: 6,
-            borderColor: "#10B981",
-            backgroundColor: "rgba(16, 185, 129, 0.1)",
-            fill: true,
+            borderColor: '#10B981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true
           },
           {
-            label: "Surat Ditindaklanjuti",
+            label: 'Surat Ditindaklanjuti',
             data: data.suratDitinjut,
             borderWidth: 2,
             tension: 0.4,
             pointRadius: 4,
             pointHoverRadius: 6,
-            borderColor: "#A855F7",
-            backgroundColor: "rgba(168, 85, 247, 0.1)",
-            fill: true,
-          },
-        ],
+            borderColor: '#A855F7',
+            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+            fill: true
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
             padding: 12,
-            titleColor: "#fff",
-            bodyColor: "#fff",
-            borderColor: "rgba(255, 255, 255, 0.1)",
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
             borderWidth: 1,
             displayColors: true,
             callbacks: {
               title: function (context: any) {
                 return `Bulan: ${context[0].label}`;
-              },
-            },
-          },
+              }
+            }
+          }
         },
         scales: {
           y: {
             beginAtZero: true,
-            ticks: { stepSize: 1, color: "#9CA3AF" },
-            grid: { color: "rgba(0, 0, 0, 0.05)" },
+            ticks: { stepSize: 1, color: '#9CA3AF' },
+            grid: { color: 'rgba(0, 0, 0, 0.05)' }
           },
           x: {
-            ticks: { color: "#9CA3AF" },
-            grid: { display: false },
-          },
-        },
-      },
+            ticks: { color: '#9CA3AF' },
+            grid: { display: false }
+          }
+        }
+      }
     });
   } catch (err) {
-    console.error("Error initializing chart:", err);
+    console.error('Error initializing chart:', err);
   }
 };
 

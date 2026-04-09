@@ -48,8 +48,30 @@
             type="date"
             v-model="tanggalString"
             :max="todayString"
-            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+            @change="formErrors.tanggal = false"
+            :class="[
+              'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+              formErrors.tanggal
+                ? 'border-red-500 focus:ring-red-400'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
+            ]"
           />
+          <p v-if="formErrors.tanggal" class="mt-1 text-xs text-red-500 flex items-center gap-1">
+            <svg
+              class="w-3 h-3 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+          </p>
         </div>
 
         <!-- Klasifikasi -->
@@ -61,15 +83,21 @@
             <button
               @click="toggleKlasifikasi"
               :disabled="isLoadingKlasifikasi"
-              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              :class="{
-                'text-gray-400': !form.klasifikasiDisplay,
-                'text-gray-900 dark:text-gray-200': form.klasifikasiDisplay
-              }"
+              class="mt-1 w-full flex justify-between rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border"
+              :class="[
+                formErrors.klasifikasi ? 'border-red-500' : 'border-gray-300 dark:border-gray-600',
+                !form.klasifikasiDisplay ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'
+              ]"
             >
               {{ form.klasifikasiDisplay || $t('add_usl_pilih_klasifikasi') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
+            <p
+              v-if="formErrors.klasifikasi"
+              class="mt-1 text-xs text-red-500 flex items-center gap-1"
+            >
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
             <div
               v-if="openKlasifikasi"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -112,15 +140,18 @@
             <button
               @click="toggleJenis"
               :disabled="isLoadingJenis"
-              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              :class="{
-                'text-gray-400': !form.jenisDisplay,
-                'text-gray-900 dark:text-gray-200': form.jenisDisplay
-              }"
+              class="mt-1 w-full flex justify-between rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border"
+              :class="[
+                formErrors.jenis ? 'border-red-500' : 'border-gray-300 dark:border-gray-600',
+                !form.jenisDisplay ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'
+              ]"
             >
               {{ form.jenisDisplay || $t('add_usl_pilih_jenis') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
+            <p v-if="formErrors.jenis" class="mt-1 text-xs text-red-500 flex items-center gap-1">
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
             <div
               v-if="openJenis"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -143,7 +174,6 @@
                 >
                   {{ item.display }}
                 </button>
-                <!-- ✅ PINDAH KE SINI, bukan di dalam <button> di atas -->
                 <p
                   v-if="filteredJenis.length === 0"
                   class="px-3 py-2 text-xs text-center text-gray-400"
@@ -164,15 +194,23 @@
             <button
               @click="togglePenandatangan"
               :disabled="isLoadingPositions"
-              class="mt-1 w-full flex justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              :class="{
-                'text-gray-400': !form.penandatanganJabatan,
-                'text-gray-900 dark:text-gray-200': form.penandatanganJabatan
-              }"
+              class="mt-1 w-full flex justify-between rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border"
+              :class="[
+                formErrors.penandatangan
+                  ? 'border-red-500'
+                  : 'border-gray-300 dark:border-gray-600',
+                !form.penandatanganJabatan ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'
+              ]"
             >
               {{ form.penandatanganJabatan || $t('add_usl_pilih_penandatangan') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
+            <p
+              v-if="formErrors.penandatangan"
+              class="mt-1 text-xs text-red-500 flex items-center gap-1"
+            >
+              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+            </p>
             <div
               v-if="openPenandatangan"
               class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
@@ -215,8 +253,18 @@
             v-model="form.perihal"
             :placeholder="$t('add_usl_perihal_placeholder')"
             maxlength="100"
-            @input="validatePerihal"
-            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            @input="
+              () => {
+                validatePerihal();
+                formErrors.perihal = false;
+              }
+            "
+            :class="[
+              'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-200',
+              formErrors.perihal
+                ? 'border-red-500 focus:ring-red-400'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
+            ]"
           />
           <div class="flex justify-between mt-1 -mb-3">
             <p v-if="perihalError" class="text-xs text-red-500">{{ perihalError }}</p>
@@ -236,9 +284,38 @@
             v-model.number="form.jumlah"
             :placeholder="$t('add_usl_jumlah_placeholder')"
             @keydown="blockInvalidNumber"
-            @input="validateJumlah"
-            class="mt-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
+            @input="
+              () => {
+                validateJumlah();
+                formErrors.jumlah = false;
+              }
+            "
+            :class="[
+              'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+              formErrors.jumlah
+                ? 'border-red-500 focus:ring-red-400'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
+            ]"
           />
+          <p
+            v-if="formErrors.jumlah && !jumlahError"
+            class="text-xs text-red-500 mt-1 flex items-center gap-1"
+          >
+            <svg
+              class="w-3 h-3 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
+          </p>
           <p v-if="jumlahError" class="text-xs text-red-500 mt-1">{{ jumlahError }}</p>
         </div>
       </div>
@@ -693,7 +770,14 @@ const form = ref({
 });
 
 const jumlahError = ref('');
-const perihalError = ref('');
+const formErrors = ref({
+  tanggal: false,
+  klasifikasi: false,
+  jenis: false,
+  penandatangan: false,
+  perihal: false,
+  jumlah: false
+});
 const penandatanganNama = ref('');
 
 watch(tanggalString, (val) => {
@@ -731,6 +815,7 @@ const toggleKlasifikasi = async () => {
 const selectKlasifikasi = (item) => {
   form.value.klasifikasi = item.code;
   form.value.klasifikasiDisplay = item.display;
+  formErrors.value.klasifikasi = false;
   klasifikasiSearch.value = '';
   openKlasifikasi.value = false;
 };
@@ -880,16 +965,47 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 
 // ─── VALIDATION ────────────────────────────────────────────────
 function validateStepOne() {
-  if (
-    !form.value.tanggal ||
-    !form.value.jenis ||
-    !form.value.klasifikasi ||
-    !form.value.penandatanganJabatan ||
-    !form.value.perihal ||
-    form.value.perihal.length === 0 ||
-    form.value.perihal.length > 100 ||
-    Number(form.value.jumlah) < 1
-  ) {
+  formErrors.value = {
+    tanggal: false,
+    klasifikasi: false,
+    jenis: false,
+    penandatangan: false,
+    perihal: false,
+    jumlah: false
+  };
+
+  let hasError = false;
+
+  if (!form.value.tanggal) {
+    formErrors.value.tanggal = true;
+    hasError = true;
+  }
+  if (!form.value.klasifikasi) {
+    formErrors.value.klasifikasi = true;
+    hasError = true;
+  }
+  if (!form.value.jenis) {
+    formErrors.value.jenis = true;
+    hasError = true;
+  }
+  if (!form.value.penandatanganJabatan) {
+    formErrors.value.penandatangan = true;
+    hasError = true;
+  }
+  if (!form.value.perihal || form.value.perihal.length === 0) {
+    formErrors.value.perihal = true;
+    hasError = true;
+  }
+  if (form.value.perihal.length > 100) {
+    formErrors.value.perihal = true;
+    hasError = true;
+  }
+  if (!form.value.jumlah || Number(form.value.jumlah) < 1) {
+    formErrors.value.jumlah = true;
+    hasError = true;
+  }
+
+  if (hasError) {
     toast.add({
       title: t('add_usl_toast_tidak_lengkap_title'),
       description: t('add_usl_toast_tidak_lengkap_desc'),
@@ -1162,7 +1278,14 @@ function resetAndClose() {
   filesByIndex.value = [null];
   emit('update:modelValue', false);
 }
-
+formErrors.value = {
+  tanggal: false,
+  klasifikasi: false,
+  jenis: false,
+  penandatangan: false,
+  perihal: false,
+  jumlah: false
+};
 // ─── FORMATTERS ───────────────────────────────────────────────
 function formatDate(dateStr) {
   if (!dateStr) return '-';
