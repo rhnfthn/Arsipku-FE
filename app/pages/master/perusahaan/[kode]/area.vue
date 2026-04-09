@@ -151,7 +151,17 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="(area, idx) in paginatedAreas" :key="area.kode">
+              <template v-if="filteredAreas.length === 0">
+                <tr>
+                  <td
+                    colspan="8"
+                    class="text-center py-10 text-gray-400 dark:text-gray-500 text-sm"
+                  >
+                    Tidak ada data ditemukan
+                  </td>
+                </tr>
+              </template>
+              <template v-else v-for="(area, idx) in paginatedAreas" :key="area.kode">
                 <tr
                   :class="[
                     'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors',
@@ -170,27 +180,32 @@
                       <ChevronRight v-else class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </button>
                   </td>
+                  <!-- Kode -->
                   <td class="px-1 py-3">
                     <span
                       class="flex text-nowrap items-center text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      {{ area.kode }}
-                    </span>
+                      v-html="highlightArea(area.kode)"
+                    />
                   </td>
+                  <!-- Nama -->
                   <td
                     class="px-6 py-4 text-nowrap text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    {{ area.nama }}
+                    <span v-html="highlightArea(area.nama)" />
                   </td>
+                  <!-- Alamat -->
                   <td class="px-6 py-4 text-nowrap text-sm text-gray-700 dark:text-gray-300">
-                    {{ area.alamat }}
+                    <span v-html="highlightArea(area.alamat)" />
                   </td>
+                  <!-- Tgl Mulai -->
                   <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    {{ area.mulai }}
+                    <span v-html="highlightArea(area.mulai)" />
                   </td>
+                  <!-- Tgl Berakhir -->
                   <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    {{ area.berakhir }}
+                    <span v-html="highlightArea(area.berakhir)" />
                   </td>
+                  <!-- Sub Count -->
                   <td class="px-6 py-4">
                     <span
                       class="flex text-nowrap items-center text-xs font-medium text-gray-700 dark:text-gray-300"
@@ -199,6 +214,7 @@
                       {{ t('ar_tab_subarea').toLowerCase() }}
                     </span>
                   </td>
+                  <!-- Aksi -->
                   <td class="px-6 py-4">
                     <div class="flex items-center justify-center gap-2">
                       <button
@@ -221,7 +237,7 @@
                   </td>
                 </tr>
 
-                <!-- Expanded Sub Areas -->
+                <!-- Expanded Sub Areas — no highlight in area tab -->
                 <tr v-if="expandedAreas[area.kode]">
                   <td colspan="8" class="px-6 py-4 bg-gray-100 dark:bg-gray-900/50">
                     <div class="ml-12">
@@ -281,6 +297,12 @@
                               }}</span>
                             </div>
                           </div>
+                        </div>
+                        <div
+                          v-if="getSubAreasForArea(area.kode).length === 0"
+                          class="text-xs text-gray-400 dark:text-gray-500 italic py-2"
+                        >
+                          Tidak ada sub area
                         </div>
                       </div>
                     </div>
@@ -390,31 +412,32 @@
           <table class="w-full">
             <thead>
               <tr class="bg-primary dark:bg-primary-700 text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('ar_col_kode') }}
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('ar_col_nama') }}
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('ar_col_area') }}
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('ar_col_alamat') }}
-                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">{{ t('ar_col_kode') }}</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">{{ t('ar_col_nama') }}</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">{{ t('ar_col_area') }}</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">{{ t('ar_col_alamat') }}</th>
                 <th class="px-6 py-4 text-nowrap text-left text-sm font-semibold">
                   {{ t('ar_col_tgl_mulai') }}
                 </th>
                 <th class="px-6 py-4 text-nowrap text-left text-sm font-semibold">
                   {{ t('ar_col_tgl_berakhir') }}
                 </th>
-                <th class="px-6 py-4 text-center text-sm font-semibold">
-                  {{ t('ar_col_aksi') }}
-                </th>
+                <th class="px-6 py-4 text-center text-sm font-semibold">{{ t('ar_col_aksi') }}</th>
               </tr>
             </thead>
             <tbody>
+              <template v-if="filteredSubAreas.length === 0">
+                <tr>
+                  <td
+                    colspan="7"
+                    class="text-center py-10 text-gray-400 dark:text-gray-500 text-sm"
+                  >
+                    Tidak ada data ditemukan
+                  </td>
+                </tr>
+              </template>
               <tr
+                v-else
                 v-for="(sub, idx) in paginatedSubAreas"
                 :key="sub.kode"
                 :class="[
@@ -422,31 +445,39 @@
                   idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
                 ]"
               >
+                <!-- Kode -->
                 <td class="px-6 py-4">
                   <span
                     class="inline-flex items-center text-sm font-semibold text-gray-900 dark:text-white"
-                    >{{ sub.kode }}</span
                   >
+                    <span v-html="highlightSub(sub.kode)" />
+                  </span>
                 </td>
+                <!-- Nama -->
                 <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                  {{ sub.nama }}
+                  <span v-html="highlightSub(sub.nama)" />
                 </td>
+                <!-- Area -->
                 <td class="px-6 py-4">
                   <span
                     class="flex text-nowrap items-center text-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold"
                   >
-                    {{ sub.areaName }}
+                    <span v-html="highlightSub(sub.areaName)" />
                   </span>
                 </td>
+                <!-- Alamat -->
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ sub.alamat }}
+                  <span v-html="highlightSub(sub.alamat)" />
                 </td>
-                <td class="text-nowrap flex px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ sub.mulai }}
+                <!-- Tgl Mulai -->
+                <td class="text-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  <span v-html="highlightSub(sub.mulai)" />
                 </td>
+                <!-- Tgl Berakhir -->
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ sub.berakhir }}
+                  <span v-html="highlightSub(sub.berakhir)" />
                 </td>
+                <!-- Aksi -->
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
                     <button
@@ -632,9 +663,7 @@
                 @click="showAreaDropdown = !showAreaDropdown"
                 :class="[
                   'w-full flex items-center justify-between px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-                  formErrors.area
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                  formErrors.area ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 ]"
               >
                 <span
@@ -661,7 +690,7 @@
                     />
                     <input
                       v-model="areaSearchQuery"
-                      @input="filterAreas"
+                      @input="filterAreasDropdown"
                       :placeholder="t('ar_form_cari_area')"
                       class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       @click.stop
@@ -671,7 +700,7 @@
 
                 <div class="max-h-64 overflow-y-auto">
                   <div
-                    v-for="area in filteredAreasDropdown"
+                    v-for="area in filteredAreasForDropdown"
                     :key="area.kode"
                     @click="selectArea(area)"
                     :class="[
@@ -681,16 +710,14 @@
                         : ''
                     ]"
                   >
-                    <p class="text-sm text-gray-900 dark:text-white font-medium">
-                      {{ area.nama }}
-                    </p>
+                    <p class="text-sm text-gray-900 dark:text-white font-medium">{{ area.nama }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
                       {{ t('ar_col_kode') }}: {{ area.kode }}
                     </p>
                   </div>
 
                   <div
-                    v-if="filteredAreasDropdown.length === 0"
+                    v-if="filteredAreasForDropdown.length === 0"
                     class="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
                   >
                     {{ t('ar_form_area_not_found') }}
@@ -777,7 +804,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
-  ChevronLeft,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -789,19 +815,13 @@ import {
   Trash2
 } from 'lucide-vue-next';
 
-definePageMeta({
-  middleware: 'auth'
-});
+definePageMeta({ middleware: 'auth' });
 
 import { useArea } from '~/composables/useArea';
 import { useCompany } from '~/composables/useCompany';
 import { useToast } from '#imports';
 
-// ─────────────────────────────────────────────
-// i18n
-// ─────────────────────────────────────────────
 const { t, locale } = useI18n();
-
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
 
@@ -820,9 +840,7 @@ const {
 const { getCompanyByCode } = useCompany();
 const toast = useToast();
 
-// ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
+// ─── STATE ───────────────────────────────────
 const activeTab = ref<'area' | 'subArea'>('area');
 const searchQuery = ref('');
 const expandedAreas = ref<Record<string, boolean>>({});
@@ -834,7 +852,7 @@ const isEditing = ref(false);
 
 const showAreaDropdown = ref(false);
 const areaSearchQuery = ref('');
-const filteredAreasDropdown = ref<any[]>([]);
+const filteredAreasForDropdown = ref<any[]>([]);
 
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -863,9 +881,43 @@ const company = ref<{ kode: string; namaPanjang: string } | null>(null);
 const areas = ref<any[]>([]);
 const subAreas = ref<any[]>([]);
 
-// ─────────────────────────────────────────────
-// COMPUTED
-// ─────────────────────────────────────────────
+// ─── HIGHLIGHT HELPERS ───────────────────────
+/**
+ * Wraps matching substring in <mark> tag with yellow highlight.
+ * Safe: escapes HTML in the value before injecting.
+ */
+function escapeHtml(text: string): string {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Highlight for Area tab columns:
+ * Kode, Nama, Alamat, Tanggal Mulai, Tanggal Berakhir
+ */
+function highlightArea(value: string | number): string {
+  const str = String(value ?? '');
+  const query = searchQuery.value.trim();
+  if (!query) return escapeHtml(str);
+  const escaped = escapeHtml(str);
+  const escapedQuery = escapeHtml(query);
+  // case-insensitive replace, keep original casing
+  const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+}
+
+/**
+ * Highlight for Sub Area tab columns:
+ * Kode, Nama, Area (areaName), Alamat, Tanggal Mulai, Tanggal Berakhir
+ */
+function highlightSub(value: string | number): string {
+  return highlightArea(value); // same logic, reuse
+}
+
+// ─── COMPUTED ────────────────────────────────
 const modalTitle = computed(() => {
   if (activeTab.value === 'area') {
     return isEditing.value ? t('ar_modal_edit_area') : t('ar_modal_tambah_area');
@@ -880,147 +932,31 @@ const deleteMessage = computed(() => {
     : `Are you sure you want to delete ${selectedItem.value.nama}?`;
 });
 
-// ─────────────────────────────────────────────
-// CLICK OUTSIDE DROPDOWN
-// ─────────────────────────────────────────────
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (showAreaDropdown.value && !target.closest('.area-dropdown-container')) {
-    showAreaDropdown.value = false;
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  fetchCompany();
-  fetchAreas();
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
-
-// ─────────────────────────────────────────────
-// FETCH
-// ─────────────────────────────────────────────
-const fetchAreas = async () => {
-  try {
-    const res = await getAreasByCompany(companyId.value);
-    areas.value = res.data.map((item) => ({
-      id: item.id,
-      kode: item.area,
-      nama: item.shortText,
-      alamat: item.longText,
-      mulai: item.startDate,
-      berakhir: item.endDate,
-      subCount: item.subAreasCount ?? 0
-    }));
-    filteredAreasDropdown.value = areas.value;
-  } catch (error) {
-    console.error('Gagal mengambil area', error);
-  }
-};
-
-const fetchSubAreas = async (areaCode: string) => {
-  try {
-    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
-    const mapped = res.data.map((item) => ({
-      id: item.id,
-      kode: String(item.sub_area),
-      nama: item.shortText,
-      area: item.area,
-      areaName: areas.value.find((a) => a.kode === item.area)?.nama || '',
-      alamat: item.longText,
-      mulai: item.startDate,
-      berakhir: item.endDate
-    }));
-    subAreas.value = [...subAreas.value.filter((s) => s.area !== areaCode), ...mapped];
-  } catch (error) {
-    console.error('Gagal mengambil sub area', error);
-  }
-};
-
-const fetchAllSubAreas = async () => {
-  try {
-    const res = await getSubAreasByCompany(companyId.value);
-    subAreas.value = res.data.map((item) => ({
-      id: item.id,
-      kode: String(item.sub_area),
-      nama: item.shortText,
-      area: item.area,
-      areaName: areas.value.find((a) => a.kode === item.area)?.nama || '',
-      alamat: item.longText,
-      mulai: item.startDate,
-      berakhir: item.endDate
-    }));
-  } catch (error) {
-    console.error('Gagal mengambil sub area', error);
-  }
-};
-
-const fetchCompany = async () => {
-  try {
-    const data = await getCompanyByCode(companyId.value);
-    if (!data) return;
-    company.value = { kode: String(data.company), namaPanjang: data.longText };
-  } catch (error) {
-    console.error('Gagal mengambil data company', error);
-  }
-};
-
-// ─────────────────────────────────────────────
-// DROPDOWN AREA
-// ─────────────────────────────────────────────
-const getSelectedAreaText = () => {
-  if (!formArea.value.area) return '';
-  const selected = areas.value.find((a) => a.kode === formArea.value.area);
-  return selected ? `${selected.nama} (${selected.kode})` : '';
-};
-
-const filterAreas = () => {
-  const query = areaSearchQuery.value.toLowerCase().trim();
-  if (!query) {
-    filteredAreasDropdown.value = areas.value;
-    return;
-  }
-  filteredAreasDropdown.value = areas.value.filter((area) => {
-    return (
-      String(area.kode).toLowerCase().includes(query) ||
-      (area.nama || '').toLowerCase().includes(query)
-    );
-  });
-};
-
-const selectArea = (area: any) => {
-  formArea.value.area = area.kode;
-  showAreaDropdown.value = false;
-  areaSearchQuery.value = '';
-  formErrors.value.area = false;
-};
-
-// ─────────────────────────────────────────────
-// FILTER & PAGINATION
-// ─────────────────────────────────────────────
+// ─── FILTER & PAGINATION ─────────────────────
 const filteredAreas = computed(() => {
-  if (!searchQuery.value) return areas.value;
-  const query = searchQuery.value.toLowerCase();
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return areas.value;
   return areas.value.filter(
     (area) =>
-      area.kode.toLowerCase().includes(query) ||
-      area.nama.toLowerCase().includes(query) ||
-      area.alamat.toLowerCase().includes(query)
+      String(area.kode).toLowerCase().includes(query) ||
+      String(area.nama).toLowerCase().includes(query) ||
+      String(area.alamat).toLowerCase().includes(query) ||
+      String(area.mulai).toLowerCase().includes(query) ||
+      String(area.berakhir).toLowerCase().includes(query)
   );
 });
 
 const filteredSubAreas = computed(() => {
-  if (!searchQuery.value) return subAreas.value;
-  const query = searchQuery.value.toLowerCase();
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return subAreas.value;
   return subAreas.value.filter(
     (sub) =>
-      sub.kode.toLowerCase().includes(query) ||
-      sub.nama.toLowerCase().includes(query) ||
-      sub.areaName.toLowerCase().includes(query) ||
-      sub.alamat.toLowerCase().includes(query)
+      String(sub.kode).toLowerCase().includes(query) ||
+      String(sub.nama).toLowerCase().includes(query) ||
+      String(sub.areaName).toLowerCase().includes(query) ||
+      String(sub.alamat).toLowerCase().includes(query) ||
+      String(sub.mulai).toLowerCase().includes(query) ||
+      String(sub.berakhir).toLowerCase().includes(query)
   );
 });
 
@@ -1074,6 +1010,64 @@ const paginationPagesSub = computed(() => {
   return pages;
 });
 
+// ─── AUTO-EXPAND WHEN SEARCHING IN AREA TAB ──
+/**
+ * Watch searchQuery: when in area tab and query is non-empty,
+ * auto-expand all matched areas so their sub areas are visible.
+ * When query is cleared, collapse all auto-expanded rows.
+ */
+const autoExpandedBySearch = ref<Set<string>>(new Set());
+
+watch([searchQuery, () => activeTab.value], async ([query, tab]) => {
+  currentPage.value = 1;
+  currentPageSub.value = 1;
+
+  if (tab !== 'area') return;
+
+  const trimmed = query.trim().toLowerCase();
+
+  if (!trimmed) {
+    // Collapse rows that were auto-expanded by search (not manually expanded)
+    for (const kode of autoExpandedBySearch.value) {
+      expandedAreas.value[kode] = false;
+    }
+    autoExpandedBySearch.value.clear();
+    return;
+  }
+
+  // Find matched areas
+  const matched = areas.value.filter(
+    (area) =>
+      String(area.kode).toLowerCase().includes(trimmed) ||
+      String(area.nama).toLowerCase().includes(trimmed) ||
+      String(area.alamat).toLowerCase().includes(trimmed) ||
+      String(area.mulai).toLowerCase().includes(trimmed) ||
+      String(area.berakhir).toLowerCase().includes(trimmed)
+  );
+
+  // Auto-expand matched areas and fetch their sub areas if needed
+  for (const area of matched) {
+    if (!expandedAreas.value[area.kode]) {
+      expandedAreas.value[area.kode] = true;
+      autoExpandedBySearch.value.add(area.kode);
+      // Fetch sub areas if not yet loaded
+      const alreadyLoaded = subAreas.value.some((s) => s.area === area.kode);
+      if (!alreadyLoaded) {
+        await fetchSubAreas(area.kode);
+      }
+    }
+  }
+
+  // Collapse previously auto-expanded areas that no longer match
+  for (const kode of [...autoExpandedBySearch.value]) {
+    const stillMatched = matched.some((a) => a.kode === kode);
+    if (!stillMatched) {
+      expandedAreas.value[kode] = false;
+      autoExpandedBySearch.value.delete(kode);
+    }
+  }
+});
+
 watch(activeTab, async (tab) => {
   if (tab === 'subArea') {
     subAreas.value = [];
@@ -1083,18 +1077,131 @@ watch(activeTab, async (tab) => {
   currentPageSub.value = 1;
 });
 
-watch([searchQuery, rowsPerPage], () => {
+watch(rowsPerPage, () => {
   currentPage.value = 1;
   currentPageSub.value = 1;
 });
 
-// ─────────────────────────────────────────────
-// EXPAND
-// ─────────────────────────────────────────────
+// ─── CLICK OUTSIDE DROPDOWN ──────────────────
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (showAreaDropdown.value && !target.closest('.area-dropdown-container')) {
+    showAreaDropdown.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+  fetchCompany();
+  fetchAreas();
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+// ─── FETCH ───────────────────────────────────
+const fetchAreas = async () => {
+  try {
+    const res = await getAreasByCompany(companyId.value);
+    areas.value = res.data.map((item: any) => ({
+      id: item.id,
+      kode: item.area,
+      nama: item.shortText,
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate,
+      subCount: item.subAreasCount ?? 0
+    }));
+    filteredAreasForDropdown.value = areas.value;
+  } catch (error) {
+    console.error('Gagal mengambil area', error);
+  }
+};
+
+const fetchSubAreas = async (areaCode: string) => {
+  try {
+    const res = await getSubAreasByCompanyAndArea(companyId.value, areaCode);
+    const mapped = res.data.map((item: any) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || '',
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate
+    }));
+    subAreas.value = [...subAreas.value.filter((s) => s.area !== areaCode), ...mapped];
+  } catch (error) {
+    console.error('Gagal mengambil sub area', error);
+  }
+};
+
+const fetchAllSubAreas = async () => {
+  try {
+    const res = await getSubAreasByCompany(companyId.value);
+    subAreas.value = res.data.map((item: any) => ({
+      id: item.id,
+      kode: String(item.sub_area),
+      nama: item.shortText,
+      area: item.area,
+      areaName: areas.value.find((a) => a.kode === item.area)?.nama || '',
+      alamat: item.longText,
+      mulai: item.startDate,
+      berakhir: item.endDate
+    }));
+  } catch (error) {
+    console.error('Gagal mengambil sub area', error);
+  }
+};
+
+const fetchCompany = async () => {
+  try {
+    const data = await getCompanyByCode(companyId.value);
+    if (!data) return;
+    company.value = { kode: String(data.company), namaPanjang: data.longText };
+  } catch (error) {
+    console.error('Gagal mengambil data company', error);
+  }
+};
+
+// ─── DROPDOWN AREA (inside modal) ────────────
+const getSelectedAreaText = () => {
+  if (!formArea.value.area) return '';
+  const selected = areas.value.find((a) => a.kode === formArea.value.area);
+  return selected ? `${selected.nama} (${selected.kode})` : '';
+};
+
+const filterAreasDropdown = () => {
+  const query = areaSearchQuery.value.toLowerCase().trim();
+  if (!query) {
+    filteredAreasForDropdown.value = areas.value;
+    return;
+  }
+  filteredAreasForDropdown.value = areas.value.filter(
+    (area) =>
+      String(area.kode).toLowerCase().includes(query) ||
+      (area.nama || '').toLowerCase().includes(query)
+  );
+};
+
+const selectArea = (area: any) => {
+  formArea.value.area = area.kode;
+  showAreaDropdown.value = false;
+  areaSearchQuery.value = '';
+  formErrors.value.area = false;
+};
+
+// ─── EXPAND ──────────────────────────────────
 const toggleAreaExpand = async (areaCode: string) => {
   expandedAreas.value[areaCode] = !expandedAreas.value[areaCode];
   if (expandedAreas.value[areaCode]) {
     await fetchSubAreas(areaCode);
+  }
+  // If manually expanded, remove from auto-expand tracking so collapse on clear doesn't affect it
+  if (expandedAreas.value[areaCode]) {
+    autoExpandedBySearch.value.delete(areaCode);
   }
 };
 
@@ -1102,19 +1209,10 @@ const getSubAreasForArea = (areaKode: string) => {
   return subAreas.value.filter((sub) => sub.area === areaKode);
 };
 
-// ─────────────────────────────────────────────
-// MODAL OPEN
-// ─────────────────────────────────────────────
+// ─── MODAL OPEN ───────────────────────────────
 const openAddAreaModal = () => {
   isEditing.value = false;
-  formArea.value = {
-    nama: '',
-    kode: '',
-    area: '',
-    alamat: '',
-    mulai: '',
-    berakhir: ''
-  };
+  formArea.value = { nama: '', kode: '', area: '', alamat: '', mulai: '', berakhir: '' };
   formErrors.value = {
     nama: false,
     kode: false,
@@ -1133,7 +1231,7 @@ const openEditModal = (item: any) => {
   formArea.value = {
     nama: item.nama,
     kode: item.kode,
-    area: item.area,
+    area: item.area ?? '',
     alamat: item.alamat,
     mulai: item.mulai,
     berakhir: item.berakhir
@@ -1155,9 +1253,7 @@ const openDeleteConfirm = (item: any) => {
   showDeleteConfirm.value = true;
 };
 
-// ─────────────────────────────────────────────
-// VALIDATION HELPERS
-// ─────────────────────────────────────────────
+// ─── VALIDATION ───────────────────────────────
 const buildRequiredFieldsMessage = (fields: string[]) => {
   if (fields.length === 0) return '';
   return `${fields.join(', ')} wajib diisi`;
@@ -1165,12 +1261,10 @@ const buildRequiredFieldsMessage = (fields: string[]) => {
 
 const isEndDateInvalid = (startDate?: string, endDate?: string) => {
   if (!startDate || !endDate) return false;
-
   const start = new Date(startDate);
   const end = new Date(endDate);
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
-
   return end <= start;
 };
 
@@ -1183,7 +1277,6 @@ const formatDateWarningMessage = () => {
 const validateAreaForm = (): boolean => {
   const emptyFields: string[] = [];
 
-  // Reset errors
   formErrors.value = {
     nama: false,
     kode: false,
@@ -1193,32 +1286,20 @@ const validateAreaForm = (): boolean => {
     berakhir: false
   };
 
-  // Check required fields
   formErrors.value.nama = !formArea.value.nama.trim();
   formErrors.value.kode = !formArea.value.kode.trim();
   formErrors.value.alamat = !formArea.value.alamat.trim();
   formErrors.value.mulai = !formArea.value.mulai;
   formErrors.value.berakhir = !formArea.value.berakhir;
 
-  // For subArea, area is required
   if (activeTab.value === 'subArea') {
     formErrors.value.area = !formArea.value.area;
   }
 
-  if (formErrors.value.nama) {
-    if (activeTab.value === 'area') {
-      emptyFields.push('Nama Area');
-    } else {
-      emptyFields.push('Nama Sub Area');
-    }
-  }
-  if (formErrors.value.kode) {
-    if (activeTab.value === 'area') {
-      emptyFields.push('Kode Area');
-    } else {
-      emptyFields.push('Kode Sub Area');
-    }
-  }
+  if (formErrors.value.nama)
+    emptyFields.push(activeTab.value === 'area' ? 'Nama Area' : 'Nama Sub Area');
+  if (formErrors.value.kode)
+    emptyFields.push(activeTab.value === 'area' ? 'Kode Area' : 'Kode Sub Area');
   if (formErrors.value.area && activeTab.value === 'subArea') emptyFields.push('Area Induk');
   if (formErrors.value.alamat) emptyFields.push('Alamat');
   if (formErrors.value.mulai) emptyFields.push('Tanggal Mulai');
@@ -1229,7 +1310,6 @@ const validateAreaForm = (): boolean => {
     return false;
   }
 
-  // Validate date range
   if (isEndDateInvalid(formArea.value.mulai, formArea.value.berakhir)) {
     formErrors.value.berakhir = true;
     showToast(t('gagal'), formatDateWarningMessage(), 'error');
@@ -1239,12 +1319,10 @@ const validateAreaForm = (): boolean => {
   return true;
 };
 
-// ─────────────────────────────────────────────
-// SUBMIT
-// ─────────────────────────────────────────────
+// ─── SUBMIT ───────────────────────────────────
 const submitArea = async () => {
-  // Run validation first
   if (!validateAreaForm()) return;
+
   if (activeTab.value === 'subArea' && isNaN(Number(formArea.value.kode))) {
     toast.add({
       title: t('gagal'),
@@ -1255,9 +1333,7 @@ const submitArea = async () => {
     return;
   }
 
-  // Check for duplicate code
   if (activeTab.value === 'area') {
-    // Check if area code already exists (only when adding new or changing code)
     const isDuplicate = areas.value.some(
       (item) =>
         item.kode === formArea.value.kode &&
@@ -1276,7 +1352,6 @@ const submitArea = async () => {
   }
 
   if (activeTab.value === 'subArea') {
-    // Check if sub area code already exists (only when adding new or changing code)
     const isDuplicate = subAreas.value.some(
       (item) =>
         item.kode === formArea.value.kode &&
@@ -1304,7 +1379,6 @@ const submitArea = async () => {
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
       };
-
       if (!isEditing.value) {
         await createAreaByCompany(companyId.value, payload);
         showToast(t('berhasil'), t('ar_success_add_area'), 'success');
@@ -1324,7 +1398,6 @@ const submitArea = async () => {
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
       };
-
       if (!isEditing.value) {
         await createSubAreaByCompany(companyId.value, payload);
         showToast(t('berhasil'), t('ar_success_add_subarea'), 'success');
@@ -1338,14 +1411,7 @@ const submitArea = async () => {
     openAddArea.value = false;
     isEditing.value = false;
     selectedItem.value = null;
-    formArea.value = {
-      nama: '',
-      kode: '',
-      area: '',
-      alamat: '',
-      mulai: '',
-      berakhir: ''
-    };
+    formArea.value = { nama: '', kode: '', area: '', alamat: '', mulai: '', berakhir: '' };
     formErrors.value = {
       nama: false,
       kode: false,
@@ -1360,9 +1426,7 @@ const submitArea = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
+// ─── DELETE ───────────────────────────────────
 const handleDelete = async () => {
   try {
     isDeleting.value = true;
@@ -1389,9 +1453,7 @@ const handleDelete = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// TOAST HELPER
-// ─────────────────────────────────────────────
+// ─── TOAST ────────────────────────────────────
 const showToast = (
   title: string,
   message: string,
@@ -1410,3 +1472,18 @@ const showToast = (
   });
 };
 </script>
+
+<style scoped>
+:deep(mark.search-highlight) {
+  background-color: #fef08a; /* yellow-200 */
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Dark mode highlight */
+.dark :deep(mark.search-highlight) {
+  background-color: #ca8a04; /* yellow-600 */
+  color: #fff;
+}
+</style>

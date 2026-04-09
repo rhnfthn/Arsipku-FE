@@ -29,7 +29,7 @@
           >
             <span>{{ rowsPerPage }}</span>
             <ChevronDown
-            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': openRowsDropdown }"
             />
           </button>
@@ -42,12 +42,15 @@
                 v-for="n in rowsChoices"
                 :key="n"
                 type="button"
-                @click="rowsPerPage = n; openRowsDropdown = false"
+                @click="
+                  rowsPerPage = n;
+                  openRowsDropdown = false;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   rowsPerPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ n }}
@@ -88,12 +91,15 @@
             >
               <button
                 type="button"
-                @click="selectedFilterKategoriId = ''; openKategoriFilter = false"
+                @click="
+                  selectedFilterKategoriId = '';
+                  openKategoriFilter = false;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
                   !selectedFilterKategoriId
                     ? 'bg-primary/5 text-primary font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 Semua
@@ -102,12 +108,15 @@
                 v-for="cat in kategoriOptions"
                 :key="cat.id"
                 type="button"
-                @click="selectedFilterKategoriId = cat.id; openKategoriFilter = false"
+                @click="
+                  selectedFilterKategoriId = cat.id;
+                  openKategoriFilter = false;
+                "
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors capitalize',
                   selectedFilterKategoriId === cat.id
                     ? 'bg-primary/5 text-primary font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 {{ cat.nama }}
@@ -133,7 +142,6 @@
           @click="onExport"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
-          <FileDown class="w-4 h-4" />
           Export
         </button>
       </div>
@@ -400,11 +408,19 @@
             @click="openKategoriDropdown = !openKategoriDropdown"
             class="w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-left rounded-md flex items-center justify-between hover:border-primary transition-all"
           >
-            <span :class="form.kategoriId ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-500'">
-              {{ kategoriOptions.find(k => k.id === form.kategoriId)?.nama || 'Pilih kategori...' }}
+            <span
+              :class="
+                form.kategoriId
+                  ? 'text-gray-800 dark:text-white'
+                  : 'text-gray-400 dark:text-gray-500'
+              "
+            >
+              {{
+                kategoriOptions.find((k) => k.id === form.kategoriId)?.nama || 'Pilih kategori...'
+              }}
             </span>
             <ChevronDown
-            class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': openKategoriDropdown }"
             />
           </button>
@@ -420,17 +436,21 @@
                   'group relative flex items-center border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   form.kategoriId === cat.id
                     ? 'bg-primary/5'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700',
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
                 <button
                   type="button"
-                  @click="form.kategoriId = cat.id; openKategoriDropdown = false; showNewKategori = false"
+                  @click="
+                    form.kategoriId = cat.id;
+                    openKategoriDropdown = false;
+                    showNewKategori = false;
+                  "
                   :class="[
                     'flex-1 text-left px-4 py-2.5 text-sm capitalize',
                     form.kategoriId === cat.id
                       ? 'text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white',
+                      : 'text-gray-700 dark:text-white'
                   ]"
                 >
                   {{ cat.nama }}
@@ -446,7 +466,10 @@
               </div>
               <button
                 type="button"
-                @click="showNewKategori = true; openKategoriDropdown = false"
+                @click="
+                  showNewKategori = true;
+                  openKategoriDropdown = false;
+                "
                 class="w-full text-left px-4 py-2.5 text-sm text-primary dark:text-primary-400 hover:bg-primary/5 transition-colors font-medium flex items-center gap-2"
               >
                 <Plus class="w-3.5 h-3.5" />
@@ -484,7 +507,11 @@
             </button>
             <button
               type="button"
-              @click="showNewKategori = false; newKategori = ''; newKategoriDeskripsi = ''"
+              @click="
+                showNewKategori = false;
+                newKategori = '';
+                newKategoriDeskripsi = '';
+              "
               class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-md text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Batal
@@ -519,274 +546,288 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next'
-import * as XLSX from 'xlsx'
-import { saveAs } from 'file-saver'
-import Modal from '@/components/Modal.vue'
-import type { Faq, FaqKategori } from '@/composables/useFaq'
+import { ref, computed, watch, onMounted } from 'vue';
+import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import Modal from '@/components/Modal.vue';
+import type { Faq, FaqKategori } from '@/composables/useFaq';
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth' });
 
-const toast = useToast()
-const { faqs, loading, fetchFaqs, fetchCategories, createFaq, updateFaq, deleteFaq, createKategori, deleteKategori } = useFaq()
+const toast = useToast();
+const {
+  faqs,
+  loading,
+  fetchFaqs,
+  fetchCategories,
+  createFaq,
+  updateFaq,
+  deleteFaq,
+  createKategori,
+  deleteKategori
+} = useFaq();
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'Manajemen FAQ', to: '/faq/manajemen' }
-]
+];
 
 // ─── Categories (from API) ───────────────────────────────────────────────────
-const kategoriOptions = ref<FaqKategori[]>([])
+const kategoriOptions = ref<FaqKategori[]>([]);
 const loadCategories = async () => {
-  kategoriOptions.value = await fetchCategories()
-}
+  kategoriOptions.value = await fetchCategories();
+};
 
 // ─── Filter & Sort ────────────────────────────────────────────────────────────
-const filters = ref({ search: '' })
-const sortKey = ref<'pertanyaan' | 'kategori' | null>(null)
-const sortAsc = ref(true)
+const filters = ref({ search: '' });
+const sortKey = ref<'pertanyaan' | 'kategori' | null>(null);
+const sortAsc = ref(true);
 
 const toggleSort = (key: 'pertanyaan' | 'kategori') => {
   if (sortKey.value === key) {
-    sortAsc.value = !sortAsc.value
+    sortAsc.value = !sortAsc.value;
   } else {
-    sortKey.value = key
-    sortAsc.value = true
+    sortKey.value = key;
+    sortAsc.value = true;
   }
-}
+};
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const rowsPerPage = ref<number>(10)
-const rowsChoices = [5, 10, 20, 50]
-const currentPage = ref<number>(1)
-const openRowsDropdown = ref(false)
-const openKategoriDropdown = ref(false)
-const openKategoriFilter = ref(false)
-const selectedFilterKategoriId = ref('')
+const rowsPerPage = ref<number>(10);
+const rowsChoices = [5, 10, 20, 50];
+const currentPage = ref<number>(1);
+const openRowsDropdown = ref(false);
+const openKategoriDropdown = ref(false);
+const openKategoriFilter = ref(false);
+const selectedFilterKategoriId = ref('');
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
-const selectedIds = ref<string[]>([])
+const selectedIds = ref<string[]>([]);
 
 const isAllSelected = computed(
   () =>
     paginatedFaqs.value.length > 0 &&
     paginatedFaqs.value.every((f) => selectedIds.value.includes(f.id))
-)
+);
 
 const toggleSelectAll = (e: Event) => {
-  const checked = (e.target as HTMLInputElement).checked
+  const checked = (e.target as HTMLInputElement).checked;
   if (checked) {
-    selectedIds.value = paginatedFaqs.value.map((f) => f.id)
+    selectedIds.value = paginatedFaqs.value.map((f) => f.id);
   } else {
-    selectedIds.value = []
+    selectedIds.value = [];
   }
-}
+};
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredFaqs = computed(() => {
-  const q = filters.value.search.toLowerCase()
+  const q = filters.value.search.toLowerCase();
   const selectedKat = selectedFilterKategoriId.value
     ? kategoriOptions.value.find((k) => k.id === selectedFilterKategoriId.value)
-    : null
+    : null;
   let list = faqs.value.filter((f) => {
-    const matchSearch = !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q)
+    const matchSearch =
+      !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q);
     const matchKategori =
-      !selectedKat || f.kategoriId === selectedKat.id || f.kategori === selectedKat.nama
-    return matchSearch && matchKategori
-  })
+      !selectedKat || f.kategoriId === selectedKat.id || f.kategori === selectedKat.nama;
+    return matchSearch && matchKategori;
+  });
   if (sortKey.value) {
-    const key = sortKey.value
+    const key = sortKey.value;
     list = [...list].sort((a, b) => {
-      const cmp = a[key].localeCompare(b[key], 'id')
-      return sortAsc.value ? cmp : -cmp
-    })
+      const cmp = a[key].localeCompare(b[key], 'id');
+      return sortAsc.value ? cmp : -cmp;
+    });
   }
-  return list
-})
+  return list;
+});
 
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(filteredFaqs.value.length / rowsPerPage.value))
-)
+);
 
 const paginatedFaqs = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value
-  return filteredFaqs.value.slice(start, start + rowsPerPage.value)
-})
+  const start = (currentPage.value - 1) * rowsPerPage.value;
+  return filteredFaqs.value.slice(start, start + rowsPerPage.value);
+});
 
 const paginationPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages: number[] = []
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5)
+    pages.push(1, 2, 3, 4, 5);
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total)
+    pages.push(total - 2, total - 1, total);
   } else {
-    pages.push(current - 1, current, current + 1)
+    pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 watch([() => filters.value.search, rowsPerPage, selectedFilterKategoriId], () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-const showModal = ref(false)
-const isEditMode = ref(false)
-const editingId = ref<string | null>(null)
-const isSaving = ref(false)
+const showModal = ref(false);
+const isEditMode = ref(false);
+const editingId = ref<string | null>(null);
+const isSaving = ref(false);
 
-const showNewKategori = ref(false)
-const newKategori = ref('')
-const newKategoriDeskripsi = ref('')
-const isSavingKategori = ref(false)
+const showNewKategori = ref(false);
+const newKategori = ref('');
+const newKategoriDeskripsi = ref('');
+const isSavingKategori = ref(false);
 
 const saveNewKategori = async () => {
-  if (!newKategori.value.trim()) return
-  isSavingKategori.value = true
+  if (!newKategori.value.trim()) return;
+  isSavingKategori.value = true;
   try {
-    const created = await createKategori({ nama: newKategori.value.trim(), deskripsi: newKategoriDeskripsi.value.trim() || undefined })
-    await loadCategories()
+    const created = await createKategori({
+      nama: newKategori.value.trim(),
+      deskripsi: newKategoriDeskripsi.value.trim() || undefined
+    });
+    await loadCategories();
     // Use the returned ID, or find by name as fallback
-    const match = kategoriOptions.value.find(k => k.nama === newKategori.value.trim())
-    form.value.kategoriId = match?.id ?? created.id
-    showNewKategori.value = false
-    newKategori.value = ''
-    newKategoriDeskripsi.value = ''
-    showToast('Berhasil', 'Kategori berhasil ditambahkan.', 'success')
+    const match = kategoriOptions.value.find((k) => k.nama === newKategori.value.trim());
+    form.value.kategoriId = match?.id ?? created.id;
+    showNewKategori.value = false;
+    newKategori.value = '';
+    newKategoriDeskripsi.value = '';
+    showToast('Berhasil', 'Kategori berhasil ditambahkan.', 'success');
   } catch {
-    showToast('Gagal', 'Gagal menambahkan kategori.', 'error')
+    showToast('Gagal', 'Gagal menambahkan kategori.', 'error');
   } finally {
-    isSavingKategori.value = false
+    isSavingKategori.value = false;
   }
-}
+};
 
-const form = ref({ pertanyaan: '', deskripsi: '', kategoriId: '' })
+const form = ref({ pertanyaan: '', deskripsi: '', kategoriId: '' });
 
 const openAdd = () => {
-  isEditMode.value = false
-  editingId.value = null
-  form.value = { pertanyaan: '', deskripsi: '', kategoriId: '' }
-  showModal.value = true
-}
+  isEditMode.value = false;
+  editingId.value = null;
+  form.value = { pertanyaan: '', deskripsi: '', kategoriId: '' };
+  showModal.value = true;
+};
 
 const openEdit = async (faq: Faq) => {
   if (kategoriOptions.value.length === 0) {
-    await loadCategories()
+    await loadCategories();
   }
 
-  isEditMode.value = true
-  editingId.value = faq.id
+  isEditMode.value = true;
+  editingId.value = faq.id;
   const matchingKat = faq.kategoriId
     ? kategoriOptions.value.find((k) => String(k.id) === String(faq.kategoriId))
-    : kategoriOptions.value.find((k) => k.nama.toLowerCase() === faq.kategori.toLowerCase())
+    : kategoriOptions.value.find((k) => k.nama.toLowerCase() === faq.kategori.toLowerCase());
   form.value = {
     pertanyaan: faq.pertanyaan,
     deskripsi: faq.deskripsi,
     kategoriId: matchingKat?.id ? String(matchingKat.id) : ''
-  }
-  showModal.value = true
-}
+  };
+  showModal.value = true;
+};
 
 const saveFaq = async () => {
   if (!form.value.pertanyaan || !form.value.kategoriId) {
-    showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning')
-    return
+    showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning');
+    return;
   }
 
-  isSaving.value = true
+  isSaving.value = true;
   try {
     const payload = {
       pertanyaan: form.value.pertanyaan,
       deskripsi: form.value.deskripsi,
       kategoriId: form.value.kategoriId
-    }
+    };
 
     if (isEditMode.value && editingId.value !== null) {
-      await updateFaq(editingId.value, payload)
-      showToast('Berhasil', 'FAQ berhasil diperbarui.', 'success')
+      await updateFaq(editingId.value, payload);
+      showToast('Berhasil', 'FAQ berhasil diperbarui.', 'success');
     } else {
-      await createFaq(payload)
-      showToast('Berhasil', 'FAQ berhasil ditambahkan.', 'success')
+      await createFaq(payload);
+      showToast('Berhasil', 'FAQ berhasil ditambahkan.', 'success');
     }
 
-    showModal.value = false
-    await Promise.all([fetchFaqs(), loadCategories()])
+    showModal.value = false;
+    await Promise.all([fetchFaqs(), loadCategories()]);
   } catch {
-    showToast('Gagal', 'Terjadi kesalahan saat menyimpan FAQ.', 'error')
+    showToast('Gagal', 'Terjadi kesalahan saat menyimpan FAQ.', 'error');
   } finally {
-    isSaving.value = false
+    isSaving.value = false;
   }
-}
+};
 
 // ─── Delete Kategori ──────────────────────────────────────────────────────────
 const deleteKategoriItem = async (kat: FaqKategori) => {
-  const hasFaqs = faqs.value.some((f) => f.kategoriId === kat.id || f.kategori === kat.nama)
+  const hasFaqs = faqs.value.some((f) => f.kategoriId === kat.id || f.kategori === kat.nama);
   if (hasFaqs) {
-    showToast('Tidak Dapat Dihapus', `Kategori "${kat.nama}" masih digunakan oleh FAQ.`, 'error')
-    return
+    showToast('Tidak Dapat Dihapus', `Kategori "${kat.nama}" masih digunakan oleh FAQ.`, 'error');
+    return;
   }
   try {
-    await deleteKategori(kat.id)
-    await loadCategories()
-    if (form.value.kategoriId === kat.id) form.value.kategoriId = ''
-    if (selectedFilterKategoriId.value === kat.id) selectedFilterKategoriId.value = ''
-    showToast('Berhasil', `Kategori "${kat.nama}" berhasil dihapus.`, 'success')
+    await deleteKategori(kat.id);
+    await loadCategories();
+    if (form.value.kategoriId === kat.id) form.value.kategoriId = '';
+    if (selectedFilterKategoriId.value === kat.id) selectedFilterKategoriId.value = '';
+    showToast('Berhasil', `Kategori "${kat.nama}" berhasil dihapus.`, 'success');
   } catch {
-    showToast('Gagal', 'Gagal menghapus kategori.', 'error')
+    showToast('Gagal', 'Gagal menghapus kategori.', 'error');
   }
-}
+};
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
-const confirmDeleteOpen = ref(false)
-const itemToDelete = ref<Faq | null>(null)
-const confirmBulkDeleteOpen = ref(false)
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<Faq | null>(null);
+const confirmBulkDeleteOpen = ref(false);
 
 const openBulkDelete = () => {
-  confirmBulkDeleteOpen.value = true
-}
+  confirmBulkDeleteOpen.value = true;
+};
 
 const bulkDeleteNow = async () => {
   try {
-    await Promise.all(selectedIds.value.map((id) => deleteFaq(id)))
-    showToast('Berhasil', `${selectedIds.value.length} FAQ berhasil dihapus.`, 'success')
-    selectedIds.value = []
-    await Promise.all([fetchFaqs(), loadCategories()])
+    await Promise.all(selectedIds.value.map((id) => deleteFaq(id)));
+    showToast('Berhasil', `${selectedIds.value.length} FAQ berhasil dihapus.`, 'success');
+    selectedIds.value = [];
+    await Promise.all([fetchFaqs(), loadCategories()]);
   } catch {
-    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error')
+    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error');
   } finally {
-    confirmBulkDeleteOpen.value = false
+    confirmBulkDeleteOpen.value = false;
   }
-}
+};
 
 const openDelete = (faq: Faq) => {
-  itemToDelete.value = faq
-  confirmDeleteOpen.value = true
-}
+  itemToDelete.value = faq;
+  confirmDeleteOpen.value = true;
+};
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return
+  if (!itemToDelete.value) return;
   try {
-    await deleteFaq(itemToDelete.value.id)
-    showToast('Berhasil', 'FAQ berhasil dihapus.', 'success')
-    await Promise.all([fetchFaqs(), loadCategories()])
+    await deleteFaq(itemToDelete.value.id);
+    showToast('Berhasil', 'FAQ berhasil dihapus.', 'success');
+    await Promise.all([fetchFaqs(), loadCategories()]);
   } catch {
-    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error')
+    showToast('Gagal', 'Terjadi kesalahan saat menghapus FAQ.', 'error');
   } finally {
-    confirmDeleteOpen.value = false
-    itemToDelete.value = null
+    confirmDeleteOpen.value = false;
+    itemToDelete.value = null;
   }
-}
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const refreshData = async () => {
-  currentPage.value = 1
-  await fetchFaqs()
-}
+  currentPage.value = 1;
+  await fetchFaqs();
+};
 const onExport = () => {
   const data = filteredFaqs.value.map((faq, idx) => ({
     No: idx + 1,
@@ -795,33 +836,43 @@ const onExport = () => {
     Kategori: faq.kategori,
     'Terakhir Update': formatDate(faq.updatedAt),
     Puas: faq.puas,
-    'Tidak Puas': faq.tidakPuas,
-  }))
+    'Tidak Puas': faq.tidakPuas
+  }));
 
   if (data.length === 0) {
-    showToast('Info', 'Tidak ada data untuk diekspor.', 'warning')
-    return
+    showToast('Info', 'Tidak ada data untuk diekspor.', 'warning');
+    return;
   }
 
-  const worksheet = XLSX.utils.json_to_sheet(data)
-  worksheet['!cols'] = [{ wch: 5 }, { wch: 50 }, { wch: 60 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 10 }]
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen FAQ')
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`)
-  showToast('Berhasil', 'Export berhasil.', 'success')
-}
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 50 },
+    { wch: 60 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 8 },
+    { wch: 10 }
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen FAQ');
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  showToast('Berhasil', 'Export berhasil.', 'success');
+};
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
   if (isNaN(d.getTime())) {
-    const parts = dateStr.split('-')
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-    return dateStr
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dateStr;
   }
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 const showToast = (
   title: string,
@@ -838,13 +889,13 @@ const showToast = (
         : color === 'error'
           ? 'i-lucide-x-circle'
           : 'i-lucide-info'
-  })
-}
+  });
+};
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([fetchFaqs(), loadCategories()])
-})
+  await Promise.all([fetchFaqs(), loadCategories()]);
+});
 </script>
 
 <style scoped>
