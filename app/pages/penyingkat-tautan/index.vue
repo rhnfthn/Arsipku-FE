@@ -528,6 +528,18 @@ const truncateUrl = (url: string, max = 50) => {
   return url.length > max ? url.slice(0, max) + '.....' : url;
 };
 
+const isValidHttpsUrl = (url: string) => {
+  const normalizedUrl = url.trim();
+  if (!normalizedUrl.toLowerCase().startsWith('https://')) return false;
+
+  try {
+    const parsed = new URL(normalizedUrl);
+    return parsed.protocol === 'https:' && !!parsed.hostname;
+  } catch {
+    return false;
+  }
+};
+
 const fallbackCopyText = (text: string) => {
   if (typeof document === 'undefined') return false;
 
@@ -701,6 +713,20 @@ const saveAdd = async () => {
     });
     return;
   }
+
+  const normalizedLongUrl = addForm.value.LUrl.trim();
+  if (!isValidHttpsUrl(normalizedLongUrl)) {
+    formErrors.value.LUrl = true;
+    toast.add({
+      title: t('gagal'),
+      description: 'link tidak valid',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    });
+    return;
+  }
+
+  addForm.value.LUrl = normalizedLongUrl;
 
   const alias = addForm.value.SUrl;
 

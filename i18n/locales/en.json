@@ -150,7 +150,7 @@
   "ka_export_empty": "No data available to export",
   "ka_export_success": "Classification Excel file created successfully",
   "je_title": "Type",
-  "je_cari_placeholder": "Search code / name / format",
+  "je_cari_placeholder": "Search Type",
   "je_modal_add": "Add Type",
   "je_modal_edit": "Edit Type",
   "je_modal_detail": "Type Detail",

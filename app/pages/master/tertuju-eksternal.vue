@@ -81,7 +81,6 @@
           @click="onExport"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
-          <FileDown class="w-4 h-4" />
           Export
         </button>
       </div>
@@ -405,9 +404,7 @@
             <option :value="true">{{ $t('te_aktif') }}</option>
             <option :value="false">{{ $t('te_tidak_aktif') }}</option>
           </select>
-          <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">
-            Status
-          </p>
+          <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">Status</p>
         </div>
       </Modal>
     </Teleport>

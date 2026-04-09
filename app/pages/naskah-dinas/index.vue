@@ -101,7 +101,6 @@
           @click="exportExcel"
           class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
         >
-          <FileDown class="w-4 h-4" />
           {{ $t('export') }}
         </button>
       </div>

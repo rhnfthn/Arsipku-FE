@@ -88,7 +88,6 @@
             class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-500 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
             @click="onExport"
           >
-            <FileDown class="w-4 h-4" />
             Export
           </button>
         </div>
