@@ -1,9 +1,7 @@
 <template>
   <div class="min-h-screen">
     <!-- Header -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5"
-    >
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <div>
         <PageHeader title="Pindah Perusahaan" :items="items" />
       </div>
@@ -57,16 +55,12 @@
               <td class="px-6 py-4 text-center">
                 <button
                   class="px-4 py-2 rounded-lg text-white bg-primary-400 hover:bg-primary-500 transition disabled:opacity-50"
-                  :disabled="
-                    item.isCurrentCompany || switchingId === item.relationSpId
-                  "
+                  :disabled="item.isCurrentCompany || switchingId === item.relationSpId"
                   @click="onSwitch(item)"
                 >
-                  <span v-if="switchingId === item.relationSpId">
-                    Memindahkan...
-                  </span>
+                  <span v-if="switchingId === item.relationSpId"> Memindahkan... </span>
                   <span v-else>
-                    {{ item.isCurrentCompany ? "Aktif" : "Pindah" }}
+                    {{ item.isCurrentCompany ? 'Aktif' : 'Pindah' }}
                   </span>
                 </button>
               </td>
@@ -83,43 +77,38 @@
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="p-6 text-center text-gray-500">
-        Memuat data...
-      </div>
+      <div v-if="loading" class="p-6 text-center text-gray-500">Memuat data...</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useSwitch } from "@/composables/useSwitch";
-import { useToast } from "#imports";
-import { useRouter } from "vue-router";
+import { onMounted, computed } from 'vue';
+import { useSwitch } from '@/composables/useSwitch';
+import { useToast } from '#imports';
 
 const toast = useToast();
 const items = [
-  { label: "Beranda", to: "/" },
-  { label: "Pindah Perusahaan", to: "/switch" },
+  { label: 'Beranda', to: '/' },
+  { label: 'Pindah Perusahaan', to: '/switch' }
 ] satisfies BreadcrumbItem[];
 
-const {
-  companies,
-  loading,
-  switchingId,
-  getAvailableCompanies,
-  switchCompany,
-  resetCompany,
-} = useSwitch();
+const { companies, loading, switchingId, getAvailableCompanies, switchCompany, resetCompany } =
+  useSwitch();
+
+// ✅ Deteksi apakah sedang dalam mode delegasi
+const isInDelegasiMode = computed(() => {
+  if (!process.client) return false;
+  return !!localStorage.getItem('delegasi_origin_token');
+});
 
 onMounted(() => {
   getAvailableCompanies();
 });
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString("id-ID");
+  return new Date(date).toLocaleDateString('id-ID');
 };
-
-const router = useRouter();
 
 const onSwitch = async (item: any) => {
   if (item.isCurrentCompany) return;
@@ -127,14 +116,14 @@ const onSwitch = async (item: any) => {
   const res = await switchCompany(item.relationSpId);
 
   toast.add({
-    title: "Berhasil",
-    description: `Berhasil pindah perusahaan ${res.data.activeCompany.companyText}`,
-    color: "success",
-    icon: "i-lucide-check-circle",
+    title: 'Berhasil',
+    description: `Berhasil pindah ke perusahaan ${res.data.activeCompany.companyText}`,
+    color: 'success',
+    icon: 'i-lucide-check-circle'
   });
 
   setTimeout(() => {
-    window.location.href = "/beranda";
+    window.location.href = '/beranda';
   }, 800);
 };
 
@@ -142,15 +131,16 @@ const onResetCompany = async () => {
   const res = await resetCompany();
 
   const companyText =
-    res?.data?.activeCompany?.companyText ??
-    res?.data?.user?.companyText ??
-    "Perusahaan Default";
+    res?.data?.activeCompany?.companyText ?? res?.data?.user?.companyText ?? 'Perusahaan Default';
 
   toast.add({
-    title: "Berhasil",
-    description: `Berhasil kembali ke perusahaan default (${companyText})`,
-    color: "success",
-    icon: "i-lucide-check-circle",
+    title: 'Berhasil',
+    // ✅ Pesan lebih jelas sesuai context
+    description: isInDelegasiMode.value
+      ? `Kembali ke perusahaan default akun yang didelegasikan (${companyText})`
+      : `Berhasil kembali ke perusahaan default (${companyText})`,
+    color: 'success',
+    icon: 'i-lucide-check-circle'
   });
 
   setTimeout(() => {
@@ -159,6 +149,6 @@ const onResetCompany = async () => {
 };
 
 definePageMeta({
-  middleware: "auth",
+  middleware: 'auth'
 });
 </script>

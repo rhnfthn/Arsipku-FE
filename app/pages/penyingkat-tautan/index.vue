@@ -278,16 +278,7 @@
                   <button
                     class="p-1.5 rounded hover:bg-primary-100 dark:hover:bg-gray-600 transition inline-flex items-center justify-center"
                     :title="t('pt_toast_copied') ?? 'Salin'"
-                    @click="
-                      () => {
-                        copy(row.SUrl);
-                        toast.add({
-                          title: t('pt_toast_copied'),
-                          color: 'success',
-                          icon: 'i-lucide-copy'
-                        });
-                      }
-                    "
+                    @click="copyShortUrl(row.SUrl)"
                   >
                     <Copy class="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   </button>
@@ -458,9 +449,17 @@
 </template>
 
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core';
 import { ref, computed, watch, onMounted } from 'vue';
-import { Search, ArrowUpDown, RotateCcw, Plus, Copy, Trash2, Pencil, ChevronDown } from 'lucide-vue-next';
+import {
+  Search,
+  ArrowUpDown,
+  RotateCcw,
+  Plus,
+  Copy,
+  Trash2,
+  Pencil,
+  ChevronDown
+} from 'lucide-vue-next';
 import Heading from '~/components/Heading.vue';
 import ConfirmPopup from '@/components/ConfirmPopup.vue';
 import { useUrl } from '~/composables/useUrl';
@@ -472,7 +471,6 @@ definePageMeta({
 
 const { t } = useI18n();
 const toast = useToast();
-const { copy } = useClipboard();
 const { data, total, isLoading, fetchShortUrls, createShortUrl, updateShortUrl, deleteShortUrl } =
   useUrl();
 
@@ -528,6 +526,65 @@ const generateRandomString = (length = 5) => {
 const truncateUrl = (url: string, max = 50) => {
   if (!url) return '';
   return url.length > max ? url.slice(0, max) + '.....' : url;
+};
+
+const fallbackCopyText = (text: string) => {
+  if (typeof document === 'undefined') return false;
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  textArea.style.pointerEvents = 'none';
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textArea);
+  return copied;
+};
+
+const copyShortUrl = async (shortUrl: string) => {
+  if (!shortUrl) return;
+
+  let copied = false;
+
+  if (
+    typeof window !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    !!navigator.clipboard &&
+    window.isSecureContext
+  ) {
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      copied = true;
+    } catch (err) {
+      console.error('Clipboard API gagal, mencoba fallback.', err);
+    }
+  }
+
+  if (!copied) {
+    copied = fallbackCopyText(shortUrl);
+  }
+
+  if (copied) {
+    toast.add({
+      title: t('pt_toast_copied'),
+      color: 'success',
+      icon: 'i-lucide-copy'
+    });
+    return;
+  }
+
+  toast.add({
+    title: t('gagal'),
+    description: 'URL gagal disalin. Coba salin manual.',
+    color: 'error',
+    icon: 'i-lucide-alert-circle'
+  });
 };
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -624,12 +681,12 @@ const saveAdd = async () => {
 
   // Validation
   const emptyFields: string[] = [];
-  
+
   if (!addForm.value.LUrl || !addForm.value.LUrl.trim()) {
     formErrors.value.LUrl = true;
     emptyFields.push('Tautan Panjang');
   }
-  
+
   if (!addForm.value.SUrl || !addForm.value.SUrl.trim()) {
     formErrors.value.SUrl = true;
     emptyFields.push('Bagian Belakang Tautan');

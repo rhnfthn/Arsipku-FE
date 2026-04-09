@@ -11,7 +11,6 @@
       @click="exportExcel"
       class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
     >
-      <FileDown class="w-4 h-4" />
       {{ $t('export') }}
     </button>
   </div>
@@ -190,6 +189,80 @@
                 >
                   {{ status.label }}
                 </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- LOKASI FILTER -->
+        <div v-if="canSeeLocationFilter" class="relative w-[180px] shrink-0">
+          <div
+            @click="toggle('area')"
+            class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
+          >
+            <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+              {{ areaOptions.find((a) => a.value === selectedArea)?.label || $t('semua_lokasi') }}
+            </span>
+            <ChevronDown
+              class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
+              :class="{ 'rotate-180': openDropdown === 'area' }"
+            />
+          </div>
+          <Transition name="filter-dd">
+            <div
+              v-if="openDropdown === 'area'"
+              class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+            >
+              <div class="mb-1">
+                <input
+                  v-model="areaSearch"
+                  @click.stop
+                  type="text"
+                  :placeholder="$t('cari')"
+                  class="h-7 w-full rounded-lg px-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div class="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                <button
+                  @mousedown.prevent
+                  @click="
+                    selectedArea = '';
+                    areaSearch = '';
+                    openDropdown = null;
+                  "
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    !selectedArea
+                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                  "
+                >
+                  {{ $t('semua_lokasi') }}
+                </button>
+                <button
+                  v-for="area in filteredAreaOptions"
+                  :key="area.value"
+                  @mousedown.prevent
+                  @click="
+                    selectedArea = area.value;
+                    areaSearch = '';
+                    openDropdown = null;
+                  "
+                  class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                  :class="
+                    selectedArea === area.value
+                      ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                  "
+                >
+                  {{ area.label }}
+                </button>
+                <div
+                  v-if="filteredAreaOptions.length === 0"
+                  class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+                >
+                  {{ $t('tidak_ditemukan') }}
+                </div>
               </div>
             </div>
           </Transition>
@@ -498,10 +571,12 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next';
 import { useToast } from '#imports';
 import { useLaporan } from '~/composables/useLaporan';
+import { useAuth } from '~/composables/useAuth';
 import * as XLSX from 'xlsx';
 
 //COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
+const { user, getProfile } = useAuth();
 const toast = useToast();
 const { t, locale, availableLocales, setLocale } = useI18n();
 
@@ -530,6 +605,7 @@ const selectedStatus = ref('');
 
 const openDropdown = ref<null | string>(null);
 const jenisSearch = ref('');
+const areaSearch = ref('');
 const showLangDropdown = ref(false);
 
 const currentPage = ref(1);
@@ -540,6 +616,12 @@ const rekapData = ref<any[]>([]);
 const areaOptions = ref<{ label: string; value: string }[]>([]);
 const jenisOptions = ref<any[]>([]);
 const loading = ref(false);
+
+//COMPUTED - Check if user can see location filter
+const canSeeLocationFilter = computed(() => {
+  if (!user.value) return false;
+  return user.value.area === 'A000' || user.value.subAreaText === 'Kantor Pusat';
+});
 
 //LANGUAGE SWITCH
 const switchLocale = async (lang: string) => {
@@ -584,6 +666,13 @@ const filteredJenisOptions = computed(() => {
   if (!jenisSearch.value) return jenisOptions.value;
   return jenisOptions.value.filter((item) =>
     item.jenis_text.toLowerCase().includes(jenisSearch.value.toLowerCase())
+  );
+});
+
+const filteredAreaOptions = computed(() => {
+  if (!areaSearch.value) return areaOptions.value;
+  return areaOptions.value.filter((item) =>
+    item.label.toLowerCase().includes(areaSearch.value.toLowerCase())
   );
 });
 
@@ -644,6 +733,16 @@ watch(selectedType, (val) => {
 // Re-fetch when year changes
 watch(selectedYear, () => {
   if (selectedYear.value) fetchRekap();
+});
+
+// Re-fetch when area changes
+watch(selectedArea, () => {
+  fetchRekap();
+});
+
+// Re-fetch when status changes
+watch(selectedStatus, () => {
+  fetchRekap();
 });
 
 //API FETCH
@@ -788,7 +887,8 @@ const handleClickOutside = (e: MouseEvent) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await getProfile();
   fetchRekap();
   fetchArea();
   fetchJenis();
