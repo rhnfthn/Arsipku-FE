@@ -91,6 +91,72 @@
               </Transition>
             </div>
 
+            <!-- LOKASI FILTER (TABLE 1) -->
+            <div v-if="canSeeLocationFilter" class="relative w-[180px] shrink-0">
+              <div
+                @click="t1Toggle('lokasi')"
+                class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
+              >
+                <span class="flex-1 truncate text-sm text-gray-700 dark:text-white">
+                  {{ selectedLokasi || $t('semua_lokasi') }}
+                </span>
+                <ChevronDown
+                  class="w-4 h-4 flex-shrink-0 text-gray-400 pointer-events-none transition-transform duration-200"
+                  :class="{ 'rotate-180': t1Open === 'lokasi' }"
+                />
+              </div>
+              <Transition name="filter-dd">
+                <div
+                  v-if="t1Open === 'lokasi'"
+                  class="absolute z-[999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full p-2"
+                >
+                  <div class="mb-1">
+                    <input
+                      v-model="lokasiSearch"
+                      @click.stop
+                      type="text"
+                      :placeholder="$t('cari')"
+                      class="h-7 w-full rounded-lg px-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                    <button
+                      @mousedown.prevent
+                      @click="selectLokasi('')"
+                      class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                      :class="
+                        !selectedLokasi
+                          ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                      "
+                    >
+                      {{ $t('semua_lokasi') }}
+                    </button>
+                    <button
+                      v-for="lokasi in filteredTable1LokasiOptions"
+                      :key="lokasi"
+                      @mousedown.prevent
+                      @click="selectLokasi(lokasi)"
+                      class="px-3 py-2 text-left text-sm rounded-md transition-colors"
+                      :class="
+                        selectedLokasi === lokasi
+                          ? 'bg-primary/10 text-primary dark:bg-primary-900/40 dark:text-primary-300 font-medium'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100'
+                      "
+                    >
+                      {{ lokasi }}
+                    </button>
+                    <div
+                      v-if="!filteredTable1LokasiOptions.length"
+                      class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic"
+                    >
+                      {{ $t('tidak_ditemukan') }}
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+
             <!-- BULAN FILTER -->
             <div class="relative w-[150px] shrink-0">
               <div
@@ -195,7 +261,6 @@
             class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             @click="exportTable1"
           >
-            <FileDown class="w-4 h-4" />
             {{ $t('export') }}
           </button>
         </div>
@@ -466,7 +531,7 @@
               </div>
 
               <!-- LOKASI -->
-              <div class="relative w-[160px] shrink-0">
+              <div v-if="canSeeLocationFilter" class="relative w-[160px] shrink-0">
                 <div
                   @click="t2Toggle('lokasi')"
                   class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
@@ -648,7 +713,6 @@
               class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
               @click="exportTable2"
             >
-              <FileDown class="w-4 h-4" />
               {{ $t('export') }}
             </button>
           </div>
@@ -838,11 +902,13 @@ definePageMeta({
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { RotateCcw, ChevronDown, ArrowUpDown, FileDown } from 'lucide-vue-next';
 import { useLaporan } from '~/composables/useLaporan';
+import { useAuth } from '~/composables/useAuth';
 import { useToast } from '#imports';
 import * as XLSX from 'xlsx';
 
 const toast = useToast();
 const { t } = useI18n();
+const { user, getProfile } = useAuth();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -861,14 +927,28 @@ const loadingTable2 = ref(false);
 const jenisOptionsApi = ref<any[]>([]);
 const lokasiOptionsApi = ref<any[]>([]);
 
+//COMPUTED - Check if user can see location filter
+const canSeeLocationFilter = computed(() => {
+  if (!user.value) return false;
+  return user.value.area === 'A000' || user.value.subAreaText === 'Kantor Pusat';
+});
+
 // TABLE 1 FILTER STATE
 const jenisSearch = ref('');
 const selectedJenis = ref('');
+const selectedLokasi = ref('');
+const lokasiSearch = ref('');
 const t1Open = ref<string | null>(null);
 
 const selectJenis = (jenis: string) => {
   selectedJenis.value = jenis;
   jenisSearch.value = '';
+  t1Open.value = null;
+};
+
+const selectLokasi = (lokasi: string) => {
+  selectedLokasi.value = lokasi;
+  lokasiSearch.value = '';
   t1Open.value = null;
 };
 
@@ -894,8 +974,9 @@ const handleClickOutside = (e: MouseEvent) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
+  await getProfile();
   fetchTable1();
   fetchTable2();
   fetchJenis();
@@ -950,7 +1031,14 @@ const table2Columns = computed(() => [
 const fetchTable1 = async () => {
   loadingTable1.value = true;
   try {
-    const res = await getRekapNaskahMasuk({ tahun: selectedYear.value });
+    const params: any = { tahun: selectedYear.value };
+    if (selectedLokasi.value) {
+      const lokasiObj = lokasiOptionsApi.value.find(
+        (item: any) => (item.nama || item.longText) === selectedLokasi.value
+      );
+      if (lokasiObj) params.area = lokasiObj.kode || lokasiObj.value;
+    }
+    const res = await getRekapNaskahMasuk(params);
     table1Raw.value = res.data.rekap ?? [];
   } catch (err) {
     console.error('Gagal ambil rekap naskah masuk', err);
@@ -969,6 +1057,12 @@ const fetchTable2 = async () => {
     if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
     if (filters.value.jenis) params.jenis = filters.value.jenis;
     if (filters.value.status) params.status = filters.value.status.toLowerCase();
+    if (filters.value.lokasi) {
+      const lokasiObj = lokasiOptionsApi.value.find(
+        (item: any) => (item.nama || item.longText) === filters.value.lokasi
+      );
+      if (lokasiObj) params.area = lokasiObj.kode || lokasiObj.value;
+    }
 
     const res = await getRekapNaskahMasukDetail(params);
     table2Data.value = (res.data ?? []).map((item: any) => ({
@@ -1033,6 +1127,7 @@ const filteredTableData = computed(() => {
         !row.jenis_text?.toLowerCase().includes(jenisSearch.value.toLowerCase())
       )
         return false;
+      if (selectedLokasi.value && row.lokasi !== selectedLokasi.value) return false;
       return true;
     })
     .map((row) => ({
@@ -1066,6 +1161,10 @@ watch(selectedYear, () => {
   fetchTable1();
 });
 
+watch(selectedLokasi, () => {
+  fetchTable1();
+});
+
 const yearOptions = computed(() => {
   const currentYear = new Date().getFullYear();
   return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
@@ -1074,6 +1173,13 @@ const yearOptions = computed(() => {
 const lokasiOptions = computed(() =>
   lokasiOptionsApi.value.map((item: any) => item.nama || item.longText)
 );
+
+const filteredTable1LokasiOptions = computed(() => {
+  if (!lokasiSearch.value) return lokasiOptions.value;
+  return lokasiOptions.value.filter((item: string) =>
+    item.toLowerCase().includes(lokasiSearch.value.toLowerCase())
+  );
+});
 
 const table2JenisOptions = computed(() => {
   return [

@@ -12,7 +12,6 @@
         @click="exportExcel"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
       >
-        <FileDown class="w-4 h-4" />
         {{ $t('export') }}
       </button>
     </div>
@@ -149,7 +148,7 @@
           </div>
 
           <!-- FILTER LOKASI -->
-          <div class="relative w-[160px] shrink-0">
+          <div v-if="canSeeLocationFilter" class="relative w-[160px] shrink-0">
             <div
               @click="toggle('lokasi')"
               class="h-8 w-full px-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 cursor-pointer overflow-hidden hover:border-primary transition-all"
@@ -545,6 +544,7 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from 'lucide-vue-next';
 import { useToast } from '#imports';
 import { useLaporan } from '~/composables/useLaporan';
+import { useAuth } from '~/composables/useAuth';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -552,6 +552,7 @@ import { saveAs } from 'file-saver';
 const toast = useToast();
 const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
+const { user, getProfile } = useAuth();
 
 //SORT
 const sortKey = ref('');
@@ -586,6 +587,12 @@ const rowsChoices = [5, 10, 20, 50];
 const rawData = ref<any[]>([]);
 const areaOptions = ref<{ kode: string; nama: string }[]>([]);
 const jenisOptions = ref<{ jenis: string; jenis_text: string }[]>([]);
+
+//COMPUTED - Check if user can see location filter
+const canSeeLocationFilter = computed(() => {
+  if (!user.value) return false;
+  return user.value.area === 'A000' || user.value.subAreaText === 'Kantor Pusat';
+});
 
 //FILTER STATE
 const filters = ref({
@@ -849,8 +856,9 @@ const refreshData = async () => {
 };
 
 //LIFECYCLE
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
+  await getProfile();
   fetchDetailNaskah();
   fetchAreaList();
   fetchJenis();
