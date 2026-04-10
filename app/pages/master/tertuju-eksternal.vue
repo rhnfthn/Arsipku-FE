@@ -307,7 +307,13 @@
     </div>
 
     <Teleport to="body">
-      <Modal v-model="showModal" @save="handleSave" size="xl" @close="resetForm">
+      <Modal
+        v-model="showModal"
+        :saving="isSavingForm"
+        @save="handleSave"
+        size="xl"
+        @close="resetForm"
+      >
         <template #title>
           <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
             {{ editId ? $t('te_modal_edit') : $t('te_modal_add') }}
@@ -519,6 +525,7 @@ onMounted(async () => {
 
 const showModal = ref(false);
 const editId = ref<string | null>(null);
+const isSavingForm = ref(false);
 
 // Pagination
 const rowsPerPage = ref<number>(10);
@@ -570,6 +577,8 @@ const onPhonePaste = (e: ClipboardEvent) => {
 };
 
 const handleSave = async () => {
+  if (isSavingForm.value) return;
+
   // Validasi semua field termasuk status
   formErrors.value.nama = !form.value.nama.trim();
   formErrors.value.alamat = !form.value.alamat.trim();
@@ -586,6 +595,8 @@ const handleSave = async () => {
     showToast(t('gagal'), `${emptyFields.join(', ')} wajib diisi`, 'error');
     return;
   }
+
+  isSavingForm.value = true;
 
   try {
     if (editId.value) {
@@ -610,21 +621,23 @@ const handleSave = async () => {
     }
 
     await fetchTertujuEksternal();
+
+    showModal.value = false;
+    editId.value = null;
+
+    form.value = {
+      nama: '',
+      alamat: '',
+      telephone: '',
+      aktif: ''
+    };
   } catch (err: any) {
     console.error('Gagal menyimpan data:', err?.response?.data || err);
     showToast('Gagal', 'Gagal menyimpan data.', 'error');
     return;
+  } finally {
+    isSavingForm.value = false;
   }
-
-  showModal.value = false;
-  editId.value = null;
-
-  form.value = {
-    nama: '',
-    alamat: '',
-    telephone: '',
-    aktif: ''
-  };
 };
 
 const showConfirmDelete = ref(false);

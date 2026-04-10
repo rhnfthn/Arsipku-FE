@@ -393,7 +393,13 @@
 
         <!-- MODAL TAMBAH JENIS -->
         <Teleport to="body">
-          <Modal v-model="showAddModal" size="xl" @save="submitAddJenis" @close="resetAddForm">
+          <Modal
+            v-model="showAddModal"
+            :saving="savingAdd"
+            size="xl"
+            @save="submitAddJenis"
+            @close="resetAddForm"
+          >
             <template #title>
               <Heading
                 variant="heading9b"
@@ -527,7 +533,7 @@
 
         <!-- MODAL EDIT JENIS -->
         <Teleport to="body">
-          <Modal v-model="showEditModal" size="xl" @save="submitEditJenis">
+          <Modal v-model="showEditModal" :saving="savingEdit" size="xl" @save="submitEditJenis">
             <template #title>
               <Heading
                 variant="heading9b"
@@ -1136,6 +1142,7 @@ const validateAdd = () => {
 };
 
 const submitAddJenis = async () => {
+  if (savingAdd.value) return;
   if (!validateAdd()) return;
   try {
     savingAdd.value = true;
@@ -1257,6 +1264,7 @@ const validateEdit = () => {
 };
 
 const submitEditJenis = async () => {
+  if (savingEdit.value) return;
   if (!editId.value) return;
   if (!validateEdit()) return;
   try {
