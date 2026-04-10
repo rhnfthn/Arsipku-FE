@@ -601,7 +601,7 @@
 
     <!-- Add/Edit Modal -->
     <Teleport to="body">
-      <Modal v-model="openAddArea" size="xl" @save="submitArea">
+      <Modal v-model="openAddArea" :saving="isSavingArea" size="xl" @save="submitArea">
         <template #title>
           <div class="p-3 ml-2">
             <h3 class="text-xl font-bold dark:text-white">
@@ -849,6 +849,7 @@ const showDeleteConfirm = ref(false);
 const selectedItem = ref<any>(null);
 const isDeleting = ref(false);
 const isEditing = ref(false);
+const isSavingArea = ref(false);
 
 const showAreaDropdown = ref(false);
 const areaSearchQuery = ref('');
@@ -1321,6 +1322,8 @@ const validateAreaForm = (): boolean => {
 
 // ─── SUBMIT ───────────────────────────────────
 const submitArea = async () => {
+  if (isSavingArea.value) return;
+
   if (!validateAreaForm()) return;
 
   if (activeTab.value === 'subArea' && isNaN(Number(formArea.value.kode))) {
@@ -1369,6 +1372,8 @@ const submitArea = async () => {
       return;
     }
   }
+
+  isSavingArea.value = true;
 
   try {
     if (activeTab.value === 'area') {
@@ -1423,6 +1428,8 @@ const submitArea = async () => {
   } catch (error) {
     console.error('Gagal menyimpan data', error);
     showToast(t('gagal'), t('ar_err_save'), 'error');
+  } finally {
+    isSavingArea.value = false;
   }
 };
 

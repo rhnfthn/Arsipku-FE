@@ -50,12 +50,12 @@ const listLokasi = computed(() => {
   return Array.from(set).sort();
 });
 
-const listJabatan = computed(() => {
+const listJabatanFilter = computed(() => {
   const set = new Set(listDelegasi.value.map((item) => item.jabatan));
   return Array.from(set).sort();
 });
 
-// FILTER DROPDOWN STATE (custom - hanya untuk 3 filter ini)
+// FILTER DROPDOWN STATE
 const openFilterStatus = ref(false);
 const openFilterLokasi = ref(false);
 const openFilterJabatan = ref(false);
@@ -322,6 +322,19 @@ onMounted(async () => {
   document.addEventListener('click', handleDocumentClick);
 });
 
+// ERRORS
+const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+
+const validateForm = (form: any, errors: typeof newErrors.value) => {
+  errors.personil = form.personil ? '' : 'Personil wajib dipilih';
+  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih';
+  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih';
+  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi';
+  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi';
+  return !Object.values(errors).some(Boolean);
+};
+
 // ADD
 const newDelegasi = ref({
   personil: '',
@@ -378,6 +391,38 @@ const saveDelegasi = async () => {
   }
 };
 
+// SELECT helpers — clear error saat dipilih
+function selectNewPersonil(val: string) {
+  newDelegasi.value.personil = val;
+  newErrors.value.personil = '';
+  openNewPersonil.value = false;
+}
+function selectNewSebagai(val: string) {
+  newDelegasi.value.sebagai = val;
+  newErrors.value.sebagai = '';
+  openNewSebagai.value = false;
+}
+function selectNewJabatan(val: string) {
+  newDelegasi.value.jabatan = val;
+  newErrors.value.jabatan = '';
+  openNewJabatan.value = false;
+}
+function selectEditPersonil(val: string) {
+  editDelegasi.value.personil = val;
+  editErrors.value.personil = '';
+  openEditPersonil.value = false;
+}
+function selectEditSebagai(val: string) {
+  editDelegasi.value.sebagai = val;
+  editErrors.value.sebagai = '';
+  openEditSebagai.value = false;
+}
+function selectEditJabatan(val: string) {
+  editDelegasi.value.jabatan = val;
+  editErrors.value.jabatan = '';
+  openEditJabatan.value = false;
+}
+
 // EDIT
 const editDelegasi = ref({
   id: '',
@@ -398,8 +443,8 @@ const openEdit = (item: any) => {
     mulai: raw.start_date,
     sampai: raw.end_date
   };
-  showEditModal.value = true;
   editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
+  showEditModal.value = true;
 };
 
 const saveEditDelegasi = async () => {
@@ -490,31 +535,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
 });
 
-function selectNewPersonil(val: string) {
-  newDelegasi.value.personil = val;
-  openNewPersonil.value = false;
-}
-function selectNewSebagai(val: string) {
-  newDelegasi.value.sebagai = val;
-  openNewSebagai.value = false;
-}
-function selectNewJabatan(val: string) {
-  newDelegasi.value.jabatan = val;
-  openNewJabatan.value = false;
-}
-function selectEditPersonil(val: string) {
-  editDelegasi.value.personil = val;
-  openEditPersonil.value = false;
-}
-function selectEditSebagai(val: string) {
-  editDelegasi.value.sebagai = val;
-  openEditSebagai.value = false;
-}
-function selectEditJabatan(val: string) {
-  editDelegasi.value.jabatan = val;
-  openEditJabatan.value = false;
-}
-
 const exportData = () => {
   if (filteredData.value.length === 0) {
     toast.add({
@@ -543,17 +563,6 @@ const exportData = () => {
     description: `${filteredData.value.length} data berhasil diexport`,
     color: 'success'
   });
-};
-const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
-const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
-
-const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.value) => {
-  errors.personil = form.personil ? '' : 'Personil wajib dipilih';
-  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih';
-  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih';
-  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi';
-  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi';
-  return !Object.values(errors).some(Boolean);
 };
 </script>
 
@@ -584,9 +593,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             v-model="rowsPerPage"
             class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
-            <option v-for="n in [5, 10, 15]" :key="n" :value="n">
-              {{ n }}
-            </option>
+            <option v-for="n in [5, 10, 15]" :key="n" :value="n">{{ n }}</option>
           </select>
 
           <div class="flex items-center gap-2">
@@ -611,7 +618,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <button
               type="button"
               @click.stop="toggleFilterStatus"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between shadow-none"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
             >
               <span class="truncate">{{ statusLabel }}</span>
               <ChevronDown
@@ -721,7 +728,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                   Semua Jabatan
                 </button>
                 <button
-                  v-for="jab in listJabatan"
+                  v-for="jab in listJabatanFilter"
                   :key="jab"
                   type="button"
                   @click.stop="selectFilterJabatan(jab)"
@@ -752,7 +759,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
         </div>
         <button
           @click="exportData"
-          class="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors shadow-sm"
+          class="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm"
         >
           Export
         </button>
@@ -923,8 +930,8 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             :class="[
               'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50'
             ]"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -941,15 +948,11 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <button
               v-if="paginationPages[0] > 1"
               @click="currentPage = 1"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium"
+              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
             >
               1
             </button>
-            <span
-              v-if="paginationPages[0] > 2"
-              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
-              >...</span
-            >
+            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 text-sm">...</span>
             <button
               v-for="page in paginationPages"
               :key="page"
@@ -958,20 +961,20 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 hover:text-primary'
               ]"
             >
               {{ page }}
             </button>
             <span
               v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
-              class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              class="px-2 text-gray-400 text-sm"
               >...</span
             >
             <button
               v-if="paginationPages[paginationPages.length - 1] < totalPages"
               @click="currentPage = totalPages"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400 text-gray-700 dark:text-gray-300 transition-all font-medium"
+              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
             >
               {{ totalPages }}
             </button>
@@ -982,8 +985,8 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             :class="[
               'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50'
             ]"
           >
             Selanjutnya
@@ -1000,16 +1003,18 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
       </div>
     </div>
 
+    <!-- MODAL TAMBAH -->
     <Teleport to="body">
       <Modal v-model="showAddModal" @save="saveDelegasi" size="xl" :loading="isSubmitting">
-        <template #title
-          ><Heading
+        <template #title>
+          <Heading
             variant="heading9b"
             class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white"
             >Tambah Delegasi</Heading
-          ></template
-        >
+          >
+        </template>
         <div class="flex flex-col gap-5 p-3">
+          <!-- Personil -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Personil <span class="text-red-500">*</span></Heading
@@ -1017,7 +1022,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  newErrors.personil
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleNewPersonil"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1034,12 +1044,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="personilSearch"
                       type="text"
                       placeholder="Cari personil..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1047,7 +1058,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredPersonilList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1063,7 +1074,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="newErrors.personil" class="text-red-500 text-xs mt-1">
+              {{ newErrors.personil }}
+            </p>
           </div>
+
+          <!-- Sebagai -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Sebagai <span class="text-red-500">*</span></Heading
@@ -1071,7 +1087,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  newErrors.sebagai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleNewSebagai"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1088,12 +1109,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="sebagaiSearch"
                       type="text"
                       placeholder="Cari peran..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1101,7 +1123,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredSebagaiList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1117,7 +1139,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="newErrors.sebagai" class="text-red-500 text-xs mt-1">
+              {{ newErrors.sebagai }}
+            </p>
           </div>
+
+          <!-- Jabatan -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Jabatan <span class="text-red-500">*</span></Heading
@@ -1125,7 +1152,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  newErrors.jabatan
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleNewJabatan"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1142,12 +1174,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="jabatanSearch"
                       type="text"
                       placeholder="Cari jabatan..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1155,7 +1188,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredJabatanList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1171,7 +1204,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="newErrors.jabatan" class="text-red-500 text-xs mt-1">
+              {{ newErrors.jabatan }}
+            </p>
           </div>
+
+          <!-- Tanggal -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
@@ -1180,8 +1218,15 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
               <input
                 v-model="newDelegasi.mulai"
                 type="date"
-                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                @input="newErrors.mulai = ''"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
+                  newErrors.mulai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                ]"
               />
+              <p v-if="newErrors.mulai" class="text-red-500 text-xs mt-1">{{ newErrors.mulai }}</p>
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
@@ -1190,24 +1235,35 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
               <input
                 v-model="newDelegasi.sampai"
                 type="date"
-                class="mt-1 w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                @input="newErrors.sampai = ''"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
+                  newErrors.sampai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                ]"
               />
+              <p v-if="newErrors.sampai" class="text-red-500 text-xs mt-1">
+                {{ newErrors.sampai }}
+              </p>
             </div>
           </div>
         </div>
       </Modal>
     </Teleport>
 
+    <!-- MODAL EDIT -->
     <Teleport to="body">
       <Modal v-model="showEditModal" @save="saveEditDelegasi" size="xl" :loading="isSubmitting">
-        <template #title
-          ><Heading
+        <template #title>
+          <Heading
             variant="heading9b"
             class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white"
             >Edit Delegasi</Heading
-          ></template
-        >
+          >
+        </template>
         <div class="flex flex-col gap-5 p-3">
+          <!-- Personil -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Personil <span class="text-red-500">*</span></Heading
@@ -1215,7 +1271,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  editErrors.personil
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleEditPersonil"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1232,12 +1293,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="personilSearch"
                       type="text"
                       placeholder="Cari personil..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1245,7 +1307,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredPersonilList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1261,7 +1323,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="editErrors.personil" class="text-red-500 text-xs mt-1">
+              {{ editErrors.personil }}
+            </p>
           </div>
+
+          <!-- Sebagai -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Sebagai <span class="text-red-500">*</span></Heading
@@ -1269,7 +1336,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  editErrors.sebagai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleEditSebagai"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1286,12 +1358,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="sebagaiSearch"
                       type="text"
                       placeholder="Cari peran..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1299,7 +1372,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredSebagaiList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1315,7 +1388,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="editErrors.sebagai" class="text-red-500 text-xs mt-1">
+              {{ editErrors.sebagai }}
+            </p>
           </div>
+
+          <!-- Jabatan -->
           <div>
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
               >Jabatan <span class="text-red-500">*</span></Heading
@@ -1323,7 +1401,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
             <div class="relative" data-custom-dropdown>
               <button
                 type="button"
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
+                  editErrors.jabatan
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                ]"
                 @click.stop="toggleEditJabatan"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
@@ -1340,12 +1423,13 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 >
                   <div class="relative">
                     <Search
-                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-                    /><input
+                      class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
                       v-model="jabatanSearch"
                       type="text"
                       placeholder="Cari jabatan..."
-                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
                   </div>
@@ -1353,7 +1437,7 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 <div class="overflow-y-auto max-h-48">
                   <div
                     v-if="filteredJabatanList.length === 0"
-                    class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 text-center"
+                    class="px-4 py-3 text-xs text-gray-500 text-center"
                   >
                     Tidak ada data
                   </div>
@@ -1369,7 +1453,12 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
                 </div>
               </div>
             </div>
+            <p v-if="editErrors.jabatan" class="text-red-500 text-xs mt-1">
+              {{ editErrors.jabatan }}
+            </p>
           </div>
+
+          <!-- Tanggal -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
@@ -1378,8 +1467,17 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
               <input
                 v-model="editDelegasi.mulai"
                 type="date"
-                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                @input="editErrors.mulai = ''"
+                :class="[
+                  'w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
+                  editErrors.mulai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                ]"
               />
+              <p v-if="editErrors.mulai" class="text-red-500 text-xs mt-1">
+                {{ editErrors.mulai }}
+              </p>
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
@@ -1388,8 +1486,17 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
               <input
                 v-model="editDelegasi.sampai"
                 type="date"
-                class="w-full mt-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                @input="editErrors.sampai = ''"
+                :class="[
+                  'w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
+                  editErrors.sampai
+                    ? 'border-red-500 focus:ring-red-300'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                ]"
               />
+              <p v-if="editErrors.sampai" class="text-red-500 text-xs mt-1">
+                {{ editErrors.sampai }}
+              </p>
             </div>
           </div>
         </div>
@@ -1414,8 +1521,6 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
 [data-custom-dropdown] button:focus {
   outline: none;
 }
-
-/* Animasi dropdown filter */
 .filter-dd-enter-active,
 .filter-dd-leave-active {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1431,7 +1536,6 @@ const validateForm = (form: typeof newDelegasi.value, errors: typeof newErrors.v
   opacity: 1;
   transform: scaleY(1) translateY(0);
 }
-
 .animate-spin {
   animation: spin 1s linear infinite;
 }

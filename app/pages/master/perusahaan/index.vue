@@ -143,7 +143,12 @@
 
     <!-- Add Company Modal -->
     <Teleport to="body">
-      <Modal v-model="openAddCompany" size="xl" @save="handleSaveCompany">
+      <Modal
+        v-model="openAddCompany"
+        :saving="isSavingAddCompany"
+        size="xl"
+        @save="handleSaveCompany"
+      >
         <template #title>
           <div class="p-3 ml-2">
             <h3 class="text-xl font-bold dark:text-white">
@@ -247,7 +252,7 @@
 
     <!-- Edit Modal -->
     <Teleport to="body">
-      <Modal v-model="showEditModal" size="xl" @save="handleSaveEdit">
+      <Modal v-model="showEditModal" :saving="isSavingEditCompany" size="xl" @save="handleSaveEdit">
         <template #title>
           <div>
             <h3 class="text-lg font-bold p-3 dark:text-white">
@@ -393,6 +398,8 @@ const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
 const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
+const isSavingAddCompany = ref(false);
+const isSavingEditCompany = ref(false);
 
 const formCompany = ref({
   tanggalMulai: '',
@@ -566,6 +573,8 @@ const validateAddForm = (): boolean => {
 };
 
 const handleSaveCompany = async () => {
+  if (isSavingAddCompany.value) return;
+
   // Validate required fields first
   if (!validateAddForm()) return;
   if (isNaN(Number(formCompany.value.kode))) {
@@ -577,6 +586,8 @@ const handleSaveCompany = async () => {
     });
     return;
   }
+
+  isSavingAddCompany.value = true;
 
   try {
     await createCompany({
@@ -619,6 +630,8 @@ const handleSaveCompany = async () => {
       icon: 'i-lucide-x-circle'
     });
     console.error(error);
+  } finally {
+    isSavingAddCompany.value = false;
   }
 };
 
@@ -713,6 +726,8 @@ const validateEditForm = (): boolean => {
 };
 
 const handleSaveEdit = async () => {
+  if (isSavingEditCompany.value) return;
+
   // Validate required fields first
   if (!validateEditForm()) return;
   if (isNaN(Number(editForm.value.kode))) {
@@ -724,6 +739,8 @@ const handleSaveEdit = async () => {
     });
     return;
   }
+
+  isSavingEditCompany.value = true;
 
   try {
     await updateCompany(editForm.value.id, {
@@ -752,6 +769,8 @@ const handleSaveEdit = async () => {
       icon: 'i-lucide-x-circle'
     });
     console.error(error);
+  } finally {
+    isSavingEditCompany.value = false;
   }
 };
 

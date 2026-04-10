@@ -370,7 +370,7 @@
 
   <!-- Modal Tambah / Edit -->
   <Teleport to="body" size="xl">
-    <Modal v-model="showModal" @save="saveFaq">
+    <Modal v-model="showModal" :saving="isSaving" @save="saveFaq">
       <template #title>
         <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
           {{ isEditMode ? 'Edit FAQ' : 'Tambah FAQ' }}
@@ -734,6 +734,8 @@ const openEdit = async (faq: Faq) => {
 };
 
 const saveFaq = async () => {
+  if (isSaving.value) return;
+
   if (!form.value.pertanyaan || !form.value.kategoriId) {
     showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning');
     return;

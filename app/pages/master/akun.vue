@@ -323,7 +323,7 @@
 
   <!-- Modal Tambah/Edit -->
   <Teleport to="body">
-    <Modal v-model="showAddModal" @save="saveAccount">
+    <Modal v-model="showAddModal" :saving="isSavingAccount" @save="saveAccount">
       <template #title>
         <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
           {{ isEditMode ? $t('ma_modal_edit') : $t('ma_modal_add') }}
@@ -570,10 +570,13 @@ const openEdit = (row: any) => {
 
 // ── Save ─────────────────────────────────────────────────────────
 const showAddModal = ref(false);
+const isSavingAccount = ref(false);
 const form = ref({ persnum: '', role: '' });
 const formErrors = ref({ persnum: false, role: false });
 
 const saveAccount = async () => {
+  if (isSavingAccount.value) return;
+
   formErrors.value.persnum = !form.value.persnum;
   formErrors.value.role = !form.value.role;
 
@@ -587,6 +590,7 @@ const saveAccount = async () => {
   }
 
   const isEdit = isEditMode.value;
+  isSavingAccount.value = true;
 
   try {
     await addAccount(form.value.persnum, form.value.role);
@@ -601,6 +605,8 @@ const saveAccount = async () => {
     await fetchAccounts();
   } catch {
     showToast(t('ma_err_title'), t('ma_err_save_desc'), 'error');
+  } finally {
+    isSavingAccount.value = false;
   }
 };
 

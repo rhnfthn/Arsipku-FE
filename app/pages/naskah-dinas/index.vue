@@ -370,7 +370,13 @@
   <!-- MODAL TAMBAH -->
   <!-- ======= -->
   <Teleport to="body">
-    <Modal v-model="showAddModal" @save="saveDelegasi" @close="resetNewDelegasi" size="xl">
+    <Modal
+      v-model="showAddModal"
+      :saving="isSavingDelegasi"
+      @save="saveDelegasi"
+      @close="resetNewDelegasi"
+      size="xl"
+    >
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
           {{ $t('nm_modal_title') }}
@@ -804,6 +810,7 @@ const toast = useToast();
 const search = ref('');
 const sortDirection = ref<'asc' | 'desc' | null>('desc');
 const showAddModal = ref(false);
+const isSavingDelegasi = ref(false);
 const searchTertuju = ref('');
 const searchAsalNaskah = ref('');
 const skeletonRows = computed(() => {
@@ -1029,6 +1036,8 @@ const newDelegasi = ref({
 });
 
 const saveDelegasi = async () => {
+  if (isSavingDelegasi.value) return;
+
   modalErrors.value.jenisnaskah = !newDelegasi.value.jenisnaskah;
   modalErrors.value.tanggal_surat = !newDelegasi.value.tanggal_surat;
   modalErrors.value.sifat_naskah = !newDelegasi.value.sifat_naskah;
@@ -1057,6 +1066,8 @@ const saveDelegasi = async () => {
     });
     return;
   }
+
+  isSavingDelegasi.value = true;
 
   try {
     await sendNaskahDinas({
@@ -1089,6 +1100,8 @@ const saveDelegasi = async () => {
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
+  } finally {
+    isSavingDelegasi.value = false;
   }
 };
 

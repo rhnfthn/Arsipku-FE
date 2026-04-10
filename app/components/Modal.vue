@@ -21,8 +21,9 @@
           </slot>
 
           <button
-            @click="$emit('update:modelValue', false)"
-            class="mt-5 mr-5 text-gray-500 hover:text-gray-800 flex-shrink-0"
+            @click="handleCancel"
+            :disabled="props.saving"
+            class="mt-5 mr-5 text-gray-500 hover:text-gray-800 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X class="w-4 h-4" />
           </button>
@@ -39,17 +40,39 @@
           class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2 mt-5"
         >
           <button
-            @click="$emit('update:modelValue', false)"
-            class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md"
+            @click="handleCancel"
+            :disabled="props.saving"
+            class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Batal
           </button>
 
           <button
-            @click="$emit('save')"
-            class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md"
+            @click="handleSave"
+            :disabled="props.saving"
+            class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
           >
-            Simpan
+            <span v-if="props.saving" class="inline-flex items-center gap-2">
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  class="opacity-25"
+                />
+                <path
+                  d="M22 12a10 10 0 0 1-10 10"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  class="opacity-90"
+                />
+              </svg>
+              Menyimpan...
+            </span>
+            <span v-else>Simpan</span>
           </button>
         </div>
 
@@ -61,9 +84,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { X } from 'lucide-vue-next'
-import Heading from '~/components/Heading.vue'
+import { computed } from 'vue';
+import { X } from 'lucide-vue-next';
+import Heading from '~/components/Heading.vue';
 
 const props = defineProps({
   modelValue: {
@@ -72,6 +95,11 @@ const props = defineProps({
   },
 
   hideDefaultFooter: {
+    type: Boolean,
+    default: false
+  },
+
+  saving: {
     type: Boolean,
     default: false
   },
@@ -85,26 +113,36 @@ const props = defineProps({
     type: String,
     default: 'md'
   }
-})
+});
 
-defineEmits(['update:modelValue', 'save'])
+const emit = defineEmits(['update:modelValue', 'save']);
+
+const handleCancel = () => {
+  if (props.saving) return;
+  emit('update:modelValue', false);
+};
+
+const handleSave = () => {
+  if (props.saving) return;
+  emit('save');
+};
 
 const modalSizeClass = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'w-[360px] max-h-[90vh]'
+      return 'w-[360px] max-h-[90vh]';
     case 'md':
-      return 'w-[480px] max-h-[90vh]'
+      return 'w-[480px] max-h-[90vh]';
     case 'lg':
-      return 'w-[570px] max-h-[90vh]'
+      return 'w-[570px] max-h-[90vh]';
     case 'xl':
-      return 'w-[630px] max-w-[90vw] max-h-[90vh]'
+      return 'w-[630px] max-w-[90vw] max-h-[90vh]';
     case 'full':
-      return 'w-[95vw] max-w-none max-h-[90vh]'
+      return 'w-[95vw] max-w-none max-h-[90vh]';
     default:
-      return props.size
+      return props.size;
   }
-})
+});
 </script>
 
 <style scoped>
