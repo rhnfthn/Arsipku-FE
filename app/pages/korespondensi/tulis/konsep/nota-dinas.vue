@@ -16,25 +16,21 @@
             <div>
               <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                <span class="font-mono font-medium">
-                  {{ refData.nomor || '-' }}
-                </span> •
+                <span class="font-mono font-medium">{{ refData.nomor || '-' }}</span> •
                 {{ formatDateRef(refData.tanggal) }}
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
-              :class="{ 'rotate-180': isRefExpanded }" />
-          </div>
+          <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
+            :class="{ 'rotate-180': isRefExpanded }" />
         </div>
+
         <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
           <div v-if="detail && (detail.catatan_reject || detail.data?.catatan_reject)"
             class="bg-white dark:bg-gray-800 px-5 py-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex flex-col gap-1">
-              <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">
-                Catatan Penolakan
-              </span>
+              <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Catatan
+                Penolakan</span>
               <p class="text-sm text-gray-900 dark:text-white leading-relaxed">
                 {{ detail.catatan_reject || detail.data?.catatan_reject }}
               </p>
@@ -43,7 +39,7 @@
 
           <div v-if="refPdfUrl" class="w-full">
             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[400px] border-none"
-              title="Preview Surat Referensi"></iframe>
+              title="Preview Surat Referensi" />
           </div>
           <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
             <UIcon name="i-lucide-file-x" class="w-12 h-12 opacity-30" />
@@ -55,8 +51,6 @@
 
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
-
-      <!-- Skeleton loading -->
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
@@ -64,9 +58,7 @@
         </div>
       </div>
 
-      <!-- Form -->
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-        <!-- Pesan -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -88,20 +80,19 @@
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
           <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
             :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
-            :groups="recipientGroups" :exclude-items="excludeTembusanList" :disabled="!isSenderSelected"
-            disabled-message="Sudah dipilih di Tembusan" />
+            :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled="!isSenderSelected"
+            disabled-message="Sudah dipilih" />
         </div>
 
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
           <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
             :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
-            :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled="!isSenderSelected"
-            disabled-message="Sudah dipilih di Tertuju" />
+            :groups="recipientGroups" :exclude-items="excludeTembusanList" :disabled="!isSenderSelected"
+            disabled-message="Sudah dipilih" />
         </div>
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <!-- Perihal -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -139,8 +130,13 @@
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else
-                            v-html="selectedTertuju.length ? selectedTertuju.map((s: any, i: number) => selectedTertuju.length === 1 ? `<div>${s.labelJob || s.label}</div>` : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`).join('') : '................................................'"></span>
+                          <span v-else v-html="selectedTertuju.length
+                            ? selectedTertuju.map((s: any, i: number) =>
+                              selectedTertuju.length === 1
+                                ? `<div>${s.labelJob || s.label}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                            ).join('')
+                            : '................................................'" />
                         </td>
                       </tr>
                       <tr>
@@ -202,7 +198,6 @@
 
     <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
       @save-draft="confirmSaveDraft" @send="handleKirimDokumen" />
-
   </div>
 </template>
 
@@ -218,7 +213,6 @@ import { Alert } from "@/composables/useAlert";
 
 definePageMeta({ middleware: "auth" });
 
-// --- Interfaces ---
 interface RecipientItem {
   label: string;
   labelJob: string;
@@ -239,7 +233,13 @@ interface UploadedFile {
   fileSize: number;
 }
 
-// --- Composables ---
+const {
+  excludeTertujuList, excludeTembusanList,
+  selectedTertuju, selectedTembusan,
+  tertujuIndividu, tembusanIndividu, tertujuGrup, tembusanGrup,
+  recipientGroups
+} = useTulis();
+
 const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep } = useKonsep();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
@@ -253,7 +253,13 @@ const router = useRouter();
 const toast = useToast();
 const alertState = useAlertState();
 
-// --- State ---
+const sifatOptions: SifatOption[] = [
+  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Rahasia", value: "rahasia" },
+  { label: "Terbatas", value: "terbatas" },
+  { label: "Biasa / Terbuka", value: "biasa" },
+];
+
 const isLoadingData = ref(false);
 const detail = ref<any>(null);
 const loadingMessage = ref("");
@@ -270,34 +276,27 @@ const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
-const selectedSifat = ref<SifatOption | null>(null);
+const selectedSifat = ref<any>(sifatOptions[3]);
 const items = ref<RecipientItem[]>([]);
 const senderItems = ref<RecipientItem[]>([]);
 const selectedSender = ref<RecipientItem | undefined>();
-const selectedTertuju = ref<RecipientItem[]>([]);
-const selectedTembusan = ref<RecipientItem[]>([]);
-const recipientGroups = ref<any[]>([]);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const refData = ref<any>(null);
 const isRefExpanded = ref(false);
 const maxPerihal = 200;
+const refPengirimPositionId = ref<string>('');
+const isPopulating = ref(false);
 
-const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" },
-];
-
-// --- Helpers ---
 const mapPersonToUI = (person: any): RecipientItem => {
   if (!person) return {} as RecipientItem;
-  const val = String(person.position_id || person.position || '');
+  const nama = person.nama || person.persnum_person_text || person.name || person.persnum || '';
+  const posisi = person.position_text || person.positionText || '';
+
   return {
-    label: `${person.nama || ''} - ${person.position_text || ''}`,
-    labelJob: person.position_text || '',
-    value: val,
+    label: `${nama} - ${posisi}`,
+    labelJob: posisi,
+    value: String(person.position_id || person.position || ''),
     isGroup: false,
     raw: person,
   };
@@ -306,9 +305,13 @@ const mapPersonToUI = (person: any): RecipientItem => {
 const mapGroupsToUI = (groups: any[]): RecipientItem[] => {
   if (!Array.isArray(groups)) return [];
   return groups.map((g: any) => {
-    // Pertahankan prefix GROUP_ jika sudah ada, atau tambahkan
     const rawId = String(g.id || g.value || '');
     const val = rawId.startsWith('GROUP_') ? rawId : `GROUP_${rawId}`;
+    const master = recipientGroups.value.find((rg: any) => `GROUP_${rg.id}` === val);
+    if (master) {
+      return { label: master.nama, labelJob: master.nama, value: val, isGroup: true, raw: master };
+    }
+
     return {
       label: g.nama || g.name || g.label || '',
       labelJob: g.nama || g.name || g.label || '',
@@ -319,6 +322,55 @@ const mapGroupsToUI = (groups: any[]): RecipientItem[] => {
   });
 };
 
+const mergeGrupDanIndividu = (grupUI: RecipientItem[], indivUI: RecipientItem[]): RecipientItem[] => {
+  const coveredIds = new Set<string>();
+  grupUI.forEach(g => {
+    const posIds = g.raw?.position_ids || [];
+    posIds.forEach((id: any) => coveredIds.add(String(id)));
+  });
+  const filteredIndiv = indivUI.filter(indiv => !coveredIds.has(String(indiv.value)));
+  return [...grupUI, ...filteredIndiv];
+};
+
+const mapGrupDirect = (arr: any[]): RecipientItem[] => {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((g: any) => g?.id || g?.group_id)
+    .map((g: any) => {
+      const rawId = String(g.id || g.group_id || '');
+      const val = `GROUP_${rawId}`;
+      const master = recipientGroups.value.find((rg: any) => `GROUP_${rg.id}` === val);
+      if (master) {
+        return { label: master.nama, labelJob: master.nama, value: val, isGroup: true, raw: master };
+      }
+      const nama = g.nama || g.name || g.label || rawId;
+      return { label: nama, labelJob: nama, value: val, isGroup: true, raw: g } as RecipientItem;
+    });
+};
+
+const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
+  const posId = String(item.position_id || item.position || item.value);
+  const master = items.value.find(m => m.value === posId);
+
+  return master || {
+    label: `${item.persnum_person_text || item.nama || item.persnum || ''} - ${item.position_text || item.positionText || item.labelJob || ''}`,
+    labelJob: item.position_text || item.positionText || item.labelJob || '',
+    value: posId,
+    isGroup: false,
+    raw: item,
+  };
+}) || [];
+
+const extractDataArray = (result: any): any[] => {
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result?.data)) return result.data;
+  if (Array.isArray(result?.data?.data)) return result.data.data;
+  if (Array.isArray(result?.flow)) return result.flow;
+  if (result?.jenis) return [result];
+  if (result && typeof result === 'object' && result.id) return [result];
+  return [];
+};
+
 const formatDateRef = (value?: string) => {
   if (!value) return "-";
   try {
@@ -326,7 +378,6 @@ const formatDateRef = (value?: string) => {
   } catch { return value; }
 };
 
-// --- Computed ---
 const refPdfUrl = computed(() => {
   if (!refData.value) return '';
   if (refData.value.final_pdf_url) return refData.value.final_pdf_url;
@@ -336,37 +387,7 @@ const refPdfUrl = computed(() => {
   return '';
 });
 
-const isEditMode = computed(() => route.query.action === 'edit' && !!route.query.ref_id);
 const isSenderSelected = computed(() => !!selectedSender.value);
-
-// Ganti semua 4 computed ini
-const tertujuIndividu = computed(() =>
-  selectedTertuju.value
-    .filter((i: RecipientItem) => !String(i.value).startsWith('GROUP_') && !!i.value)
-    .map((i: RecipientItem) => String(i.value))
-);
-
-const tembusanIndividu = computed(() =>
-  selectedTembusan.value
-    .filter((i: RecipientItem) => !String(i.value).startsWith('GROUP_') && !!i.value)
-    .map((i: RecipientItem) => String(i.value))
-);
-
-const tertujuGrup = computed(() =>
-  selectedTertuju.value
-    .filter((i: RecipientItem) => String(i.value).startsWith('GROUP_') && !!i.value)
-    .map((i: RecipientItem) => String(i.value).replace('GROUP_', '')) // strip prefix
-);
-
-const tembusanGrup = computed(() =>
-  selectedTembusan.value
-    .filter((i: RecipientItem) => String(i.value).startsWith('GROUP_') && !!i.value)
-    .map((i: RecipientItem) => String(i.value).replace('GROUP_', '')) // strip prefix
-);
-
-// Computed exclude lists (cross-exclude antar field)
-const excludeTertujuList = computed(() => selectedTertuju.value);
-const excludeTembusanList = computed(() => selectedTembusan.value);
 
 const selectedKlasifikasi = computed(() =>
   klasifikasiList.value.find((b) => b.id === selectedKlasifikasiId.value)
@@ -390,7 +411,6 @@ const breadcrumbs = computed(() => {
   ];
 });
 
-// --- Editor Config ---
 const tinyMceInit = {
   base_url: '/tinymce',
   suffix: '.min',
@@ -410,7 +430,6 @@ const tinyMceInit = {
   },
 };
 
-// --- Methods ---
 const fetchRecipientsBySender = async (senderPositionId: string) => {
   try {
     const res = await getRecipientsBySender(senderPositionId);
@@ -425,7 +444,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
         labelJob: r.position_text,
         value: String(r.position),
-        isGroup: false, // FIX: Selalu set isGroup secara eksplisit
+        isGroup: false,
         raw: r,
       }));
     } else {
@@ -459,13 +478,30 @@ const fetchSenderList = async (posId: string | number) => {
 };
 
 const validateAndToast = (payload: DraftPayload) => {
+  // 1. Validasi Manual Paling Awal untuk Pesan
+  if (!message.value || message.value.trim() === '') {
+    toast.add({
+      title: 'Validasi Gagal',
+      description: 'Pesan wajib diisi',
+      icon: 'i-heroicons-x-circle-20-solid',
+      color: 'error'
+    });
+    return false; // Hentikan proses jika pesan kosong
+  }
+
+  // 2. Validasi dari Zod Schema
   const validationResult = validateDraftPayload(payload);
   if (!validationResult.isValid) {
     const errorKeys = Object.keys(validationResult.errors || {});
     const firstMessage = errorKeys.length > 0 && validationResult.errors
       ? validationResult.errors[errorKeys[0]]
       : "Terjadi kesalahan input";
-    toast.add({ title: 'Validasi Gagal', description: firstMessage, icon: 'i-heroicons-x-circle-20-solid', color: 'error' });
+    toast.add({
+      title: 'Validasi Gagal',
+      description: firstMessage,
+      icon: 'i-heroicons-x-circle-20-solid',
+      color: 'error'
+    });
     return false;
   }
   return true;
@@ -477,86 +513,61 @@ const getBasePayload = (): DraftPayload => {
   const tglDb = date.value
     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
     : "";
-  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
 
-  // FIX: Snapshot computed values ke variabel lokal
-  const penerimaPosIds = tertujuIndividu.value;
-  const tembusanPosIds = tembusanIndividu.value;
-  const penerimaGrupIds = tertujuGrup.value;
-  const tembusanGrupIds = tembusanGrup.value;
+  // Membersihkan elemen HTML kosongan yang dibuat otomatis oleh Text Editor (misal `<p></p>`)
+  const strippedContent = editorContent.value.replace(/<[^>]*>?/gm, '').trim();
 
   return {
     id_naskah: editDraftId.value || null,
-    pengirim: (currentSender as any).value || user.value?.position || "",
-    penerima: penerimaPosIds,
-    tembusan: tembusanPosIds,
-    penerima_grup: penerimaGrupIds,
-    tembusan_grup: tembusanGrupIds,
+    pengirim: (currentSender as any).value || "", // Dikosongkan agar ditangkap Zod jika blm diisi
+    penerima: tertujuIndividu.value || [],
+    tembusan: tembusanIndividu.value || [],
+    penerima_grup: tertujuGrup.value || [],
+    tembusan_grup: tembusanGrup.value || [],
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
-    sifat: selectedSifat.value?.value || 'biasa',
-    perihal: subject.value,
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
+    sifat: selectedSifat.value?.value || "",
+    perihal: subject.value || "",
     konten: String(editorContent.value || ''),
-    htmlContent: String(editorContent.value || ''),
+    htmlContent: strippedContent ? String(editorContent.value) : "", // Dikembalikan empty jika text-only nya kosong
     english: english.value,
     nama_tempat: senderRaw.area_text || senderRaw.areaText || user.value?.areaText || "Kantor Pusat",
     nama_jabatan: senderRaw.position_text || senderRaw.positionText || (currentSender as any).labelJob || "",
     nama_lengkap: senderRaw.persnum_person_text || senderRaw.nama || user.value?.nama || "",
     tgl: tglDb,
-    tanggal: formattedDate.value,
-    lampiran_temp_ids: lampiranIds,
-    catatan: message.value || '',
-  };
+    tanggal: formattedDate.value !== "-" ? formattedDate.value : "",
+    lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean),
+  } as any;
 };
 
 const createFormData = (payload: DraftPayload) => {
   const formData = new FormData();
   (Object.keys(payload) as Array<keyof DraftPayload>).forEach((key) => {
     const value = payload[key];
-    if (Array.isArray(value)) {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
-    }
+    if (Array.isArray(value)) formData.append(key, JSON.stringify(value));
+    else if (value !== null && value !== undefined) formData.append(key, String(value));
   });
   return formData;
 };
 
-// FIX: Snapshot semua computed values ke variabel lokal sebelum dipakai di FormData
 const prepareKonsepFormData = () => {
   const formData = new FormData();
   const signerInfo = selectedSender.value || {} as any;
   const signerRaw = signerInfo.raw || {};
-  const creatorId = user.value?.position || '';
   const tglDb = date.value
     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
     : "";
-  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
-
-  // FIX: Snapshot computed arrays ke lokal variable agar tidak stale
-  const penerimaPosIds = tertujuIndividu.value;
-  const tembusanPosIds = tembusanIndividu.value;
-  const penerimaGrupIds = tertujuGrup.value;
-  const tembusanGrupIds = tembusanGrup.value;
-
-  // DEBUG: Uncomment untuk troubleshoot jika masih ada masalah
-  // console.log('[prepareKonsepFormData] selectedTertuju:', selectedTertuju.value);
-  // console.log('[prepareKonsepFormData] penerimaPosIds:', penerimaPosIds);
-  // console.log('[prepareKonsepFormData] penerimaGrupIds:', penerimaGrupIds);
-  // console.log('[prepareKonsepFormData] selectedTembusan:', selectedTembusan.value);
-  // console.log('[prepareKonsepFormData] tembusanPosIds:', tembusanPosIds);
-  // console.log('[prepareKonsepFormData] tembusanGrupIds:', tembusanGrupIds);
 
   formData.append('jenis', 'ND');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
-  formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', String(signerInfo.value || ''));
-  formData.append('pengirim_position_id', String(signerInfo.value || ''));
-  formData.append('penerima_position_ids', JSON.stringify(penerimaPosIds));
-  formData.append('tembusan_position_ids', JSON.stringify(tembusanPosIds));
-  formData.append('penerima_grup', JSON.stringify(penerimaGrupIds));
-  formData.append('tembusan_grup', JSON.stringify(tembusanGrupIds));
+  formData.append('from_position_id', user.value?.position || '');
+  formData.append('to_position_id', refPengirimPositionId.value || String(signerInfo.raw?.position_id || signerInfo.value || ''));
+  formData.append('pengirim_position_id', String(signerInfo.raw?.position_id || signerInfo.value || ''));
+  formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
+  formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
+  formData.append('penerima_grup', JSON.stringify(tertujuGrup.value));
+  formData.append('tembusan_grup', JSON.stringify(tembusanGrup.value));
   formData.append('tgl', tglDb);
   formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
   formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -567,9 +578,9 @@ const prepareKonsepFormData = () => {
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Jakarta");
   formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
-  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
-  formData.append('catatan', message.value || '-');
-
+  formData.append('lampiran_temp_ids', JSON.stringify(existingFiles.value.map((f) => f.id).filter(Boolean)));
+  formData.append('catatan', message.value.trim());
+  // formData.append('catatan', message.value || '-');
   return formData;
 };
 
@@ -580,22 +591,15 @@ const prepareRevisiFormData = () => {
   const tglDb = date.value
     ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
     : "";
-  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
-
-  // FIX: Snapshot computed arrays ke lokal variable
-  const penerimaPosIds = tertujuIndividu.value;
-  const tembusanPosIds = tembusanIndividu.value;
-  const penerimaGrupIds = tertujuGrup.value;
-  const tembusanGrupIds = tembusanGrup.value;
 
   formData.append('jenis', 'ND');
   formData.append('from_position_id', user.value?.position || '');
   formData.append('to_position_id', String(currentSender.value || ''));
   formData.append('pengirim_position_id', String(currentSender.value || ''));
-  formData.append('penerima_position_ids', JSON.stringify(penerimaPosIds));
-  formData.append('tembusan_position_ids', JSON.stringify(tembusanPosIds));
-  formData.append('penerima_grup_ids', JSON.stringify(penerimaGrupIds));
-  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrupIds));
+  formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
+  formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
+  formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
+  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
   formData.append('tgl', tglDb);
   formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
   formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -606,10 +610,10 @@ const prepareRevisiFormData = () => {
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
   formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
-  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
-  formData.append('catatan', message.value || '-');
+  formData.append('lampiran_temp_ids', JSON.stringify(existingFiles.value.map((f) => f.id).filter(Boolean)));
+  // formData.append('catatan', message.value || '-');
+  formData.append('catatan', message.value.trim());
   formData.append('lampiran', existingFiles.value.length > 0 ? '1' : '0');
-
   return formData;
 };
 
@@ -622,16 +626,16 @@ const handleApplyTemplate = (htmlContent: string) => {
 };
 
 const handlePreview = async () => {
-  if (!subject.value || !selectedSender.value) {
-    toast.add({ title: 'Data Belum Lengkap', description: 'Harap isi Pengirim dan Perihal', color: 'warning' });
-    return;
-  }
+  const payload = getBasePayload();
+
+  // Melakukan Pengecekan ZOD dengan ketat
+  if (!validateAndToast(payload)) return;
+
   loadingMessage.value = "Memproses Pratinjau...";
   isLoadingData.value = true;
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-    const formData = prepareKonsepFormData();
-    const blobResponse = await previewPdf(formData);
+    const blobResponse = await previewPdf(prepareKonsepFormData());
     if (blobResponse) {
       pdfBlob.value = blobResponse;
       pdfUrl.value = URL.createObjectURL(blobResponse);
@@ -648,6 +652,8 @@ const handlePreview = async () => {
 
 const handleKirimDokumen = async () => {
   const payload = getBasePayload();
+
+  // Memastikan kembali Validasi ZOD Lolos sebelum dikirim
   if (!validateAndToast(payload)) return;
 
   const isRevision = route.query.action === 'edit';
@@ -655,9 +661,7 @@ const handleKirimDokumen = async () => {
   const isConfirmed = await Alert.confirm(
     isRevision ? 'Kirim Perbaikan?' : 'Kirim Konsep?',
     isRevision ? 'Perbaikan konsep akan dikirim.' : 'Konsep Nota Dinas akan dikirim.',
-    'Ya, Kirim',
-    'Batal',
-    false
+    'Ya, Kirim', 'Batal', false
   );
   if (!isConfirmed) return;
 
@@ -666,19 +670,11 @@ const handleKirimDokumen = async () => {
 
   try {
     let result;
-
     if (isRevision) {
-      // FIX: Gunakan helper prepareRevisiFormData() agar konsisten
-      const formData = prepareRevisiFormData();
-
-      const dataWrapper = detail.value?.data || detail.value;
-      const konsepId = dataWrapper?.konsep?.id;
-      if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
-
-      result = await forwardKonsep(konsepId, formData);
+      if (!editDraftId.value) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan");
+      result = await forwardKonsep(editDraftId.value, prepareRevisiFormData());
     } else {
-      const formData = prepareKonsepFormData();
-      result = await createKonsep(formData);
+      result = await createKonsep(prepareKonsepFormData());
     }
 
     if (result.success) {
@@ -695,8 +691,7 @@ const handleKirimDokumen = async () => {
     }
   } catch (e: any) {
     console.error("Error Kirim:", e);
-    const errMsg = e.response?.data?.message || e.message || 'Terjadi kesalahan saat mengirim';
-    toast.add({ title: 'Gagal', description: errMsg, color: 'error' });
+    toast.add({ title: 'Gagal', description: e.response?.data?.message || e.message || 'Terjadi kesalahan saat mengirim', color: 'error' });
   } finally {
     isLoadingData.value = false;
     Alert.close();
@@ -705,17 +700,17 @@ const handleKirimDokumen = async () => {
 
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
+
+  // Wajib tervalidasi oleh ZOD saat save draft juga
   if (!validateAndToast(payload)) throw new Error("Validation failed");
 
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    const formData = createFormData(payload);
-    await saveND(formData, editDraftId.value);
+    await saveND(createFormData(payload), editDraftId.value);
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
   } catch (e: any) {
-    console.error("Gagal simpan draft:", e);
     throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
   } finally {
     isLoadingData.value = false;
@@ -723,13 +718,7 @@ const handleSaveDraft = async () => {
 };
 
 const confirmSaveDraft = async () => {
-  const isConfirmed = await Alert.confirm(
-    'Simpan sebagai Draft?',
-    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
-    'Ya, Simpan',
-    'Batal',
-    false
-  );
+  const isConfirmed = await Alert.confirm('Simpan sebagai Draft?', 'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.', 'Ya, Simpan', 'Batal', false);
   if (!isConfirmed) return;
   try {
     await handleSaveDraft();
@@ -739,17 +728,14 @@ const confirmSaveDraft = async () => {
   }
 };
 
-// --- Watchers ---
 watch(editorContent, (newVal) => {
-  if (tinymceEditor.value && newVal) {
-    if (tinymceEditor.value.getContent() !== newVal) {
-      tinymceEditor.value.setContent(newVal);
-    }
+  if (tinymceEditor.value && newVal && tinymceEditor.value.getContent() !== newVal) {
+    tinymceEditor.value.setContent(newVal);
   }
 });
 
 watch(selectedSender, async (newVal, oldVal) => {
-  if (newVal?.value !== oldVal?.value) {
+  if (newVal?.value !== oldVal?.value && !isPopulating.value) {
     items.value = [];
     selectedTertuju.value = [];
     selectedTembusan.value = [];
@@ -762,7 +748,6 @@ watch(selectedSender, async (newVal, oldVal) => {
   }
 }, { deep: true });
 
-// --- Lifecycle ---
 onMounted(async () => {
   const queryAction = route.query.action as string;
   const refId = route.query.ref_id as string;
@@ -775,97 +760,109 @@ onMounted(async () => {
     klasifikasiStatus.value = "loading";
     klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
-
     const groups = await getRecipientGroups("ND");
     recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch {
     klasifikasiStatus.value = "error";
   }
 
-  // A. EDIT MODE
   if (queryAction === 'edit' && refId) {
-    loadingMessage.value = "Memuat data konsep...";
+    loadingMessage.value = "Memuat...";
     isLoadingData.value = true;
     try {
       const result = await fetchKonsepDetail(refId);
-      if (result) {
-        const unwrappedData = result.data || result;
-        detail.value = unwrappedData;
-        editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
-        subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";
 
-        if (unwrappedData.flow && Array.isArray(unwrappedData.flow)) {
-          const createFlow = unwrappedData.flow.find((f: any) => f.aksi === 'create');
-          if (createFlow?.catatan) message.value = createFlow.catatan;
-        }
+      const dataArray = extractDataArray(result);
+      const draftData = dataArray.find((d: any) => d.jenis === 'K');
+      const originFlow = dataArray.find((d: any) => d.jenis !== 'K');
 
-        const tglStr = unwrappedData.tanggal || unwrappedData.naskah?.tanggal;
-        if (tglStr) {
-          const tglParts = new Date(tglStr);
-          date.value = new CalendarDate(tglParts.getFullYear(), tglParts.getMonth() + 1, tglParts.getDate());
-        }
-
-        const sifatStr = unwrappedData.sifat || unwrappedData.naskah?.sifat;
-        if (sifatStr) {
-          selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
-        }
-
-        const klasCode = unwrappedData.naskah?.klasifikasi;
-        if (klasCode) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === klasCode);
-          if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
-        }
-
-        const contentStr = unwrappedData.konten || unwrappedData.naskah?.konten || "";
-        editorContent.value = contentStr;
-
-        if (unwrappedData.pengirim) {
-          const senderObj = mapPersonToUI(unwrappedData.pengirim);
-          selectedSender.value = senderObj;
-          await fetchSenderList(senderObj.value);
-          await fetchRecipientsBySender(senderObj.value);
-        }
-
-        if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
-          const grupTertuju = mapGroupsToUI(unwrappedData.kepada_grup || []);
-          // FIX: Gunakan mapPersonToUI agar isGroup selalu ter-set ke false
-          const individTertuju = unwrappedData.kepada.map((p: any) => mapPersonToUI(p));
-          selectedTertuju.value = [...grupTertuju, ...individTertuju];
-        }
-
-        if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
-          const grupTembusan = mapGroupsToUI(unwrappedData.tembusan_grup || []);
-          // FIX: Gunakan mapPersonToUI agar isGroup selalu ter-set ke false
-          const individTembusan = unwrappedData.tembusan.map((t: any) => mapPersonToUI(t));
-          selectedTembusan.value = [...grupTembusan, ...individTembusan];
-        }
-
-        if (unwrappedData.lampiran_files && Array.isArray(unwrappedData.lampiran_files)) {
-          existingFiles.value = unwrappedData.lampiran_files.map((f: any) => ({
-            id: f.id,
-            fileName: f.filename || f.file_name || 'File',
-            filePath: f.url || f.file_path || '',
-            fileSize: f.size || 0,
-          }));
-        }
-
-        const flows = unwrappedData.flow || [];
-        if (flows.length > 0) {
-          const originFlow = flows[0];
-          if (originFlow.naskah || originFlow.pdf_snapshot) {
-            refData.value = {
-              id: originFlow.naskah?.id || 'ref-flow',
-              nomor: originFlow.naskah?.nomor || '-',
-              tanggal: originFlow.naskah?.tanggal || originFlow.tanggal,
-              final_pdf_url: originFlow.naskah?.final_pdf || originFlow.pdf_snapshot,
-              jenis: originFlow.naskah?.jenis || 'Naskah',
-              catatan: originFlow.catatan || '',
-            };
-          }
-        }
-      } else {
+      if (!draftData) {
         toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
+        return;
       }
+
+      detail.value = {
+        catatan_reject: draftData.detail?.catatan || '',
+        data: { catatan_reject: draftData.detail?.catatan || '' },
+      };
+
+      editDraftId.value = draftData.id;
+      subject.value = draftData.perihal || "";
+      editorContent.value = draftData.konten || "";
+      english.value = Boolean(draftData.english);
+
+      if (draftData.klasifikasi) {
+        const klCode = String(draftData.klasifikasi).trim();
+        const foundKlas = klasifikasiList.value.find((k: any) =>
+          k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
+        );
+        if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
+      }
+
+      if (draftData.tanggal) {
+        const parts = draftData.tanggal.split('T')[0].split('-');
+        if (parts.length === 3) {
+          date.value = new CalendarDate(Number(parts[0]), Number(parts[1]), Number(parts[2]));
+        }
+      }
+
+      const sifatStr = String(draftData.sifat || 'biasa').toLowerCase();
+      selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr) || sifatOptions[3];
+      isPopulating.value = true;
+      if (draftData.pengirim) {
+        const senderObj = mapPersonToUI(draftData.pengirim);
+        selectedSender.value = senderObj;
+        await fetchSenderList(senderObj.value);
+        await fetchRecipientsBySender(senderObj.value);
+      }
+
+      const penerimaGrup = draftData.penerima_grup || [];
+      const tembusanGrup = draftData.tembusan_grup || [];
+
+      const idDalamGrupTertuju = new Set(
+        penerimaGrup.flatMap((g: any) => (g.position_ids || []).map(String))
+      );
+      const idDalamGrupTembusan = new Set(
+        tembusanGrup.flatMap((g: any) => (g.position_ids || []).map(String))
+      );
+
+      const rawPenerima = (draftData.detail?.naskah_penerima || [])
+        .filter((p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.id || '')));
+
+      const rawTembusan = (draftData.detail?.naskah_tembusan || [])
+        .filter((p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.id || '')));
+
+      selectedTertuju.value = mergeGrupDanIndividu(
+        mapGrupDirect(penerimaGrup),
+        mapApiToUI(rawPenerima)
+      );
+
+      selectedTembusan.value = mergeGrupDanIndividu(
+        mapGrupDirect(tembusanGrup),
+        mapApiToUI(rawTembusan)
+      );
+
+      isPopulating.value = false;
+
+      existingFiles.value = (draftData.lampiran_files || []).map((f: any) => ({
+        id: f.id,
+        fileName: f.file_name || f.fileName || 'File',
+        filePath: f.file_url || f.file_path || '',
+        fileSize: f.size || f.fileSize || 0,
+      }));
+
+      if (originFlow) {
+        refData.value = {
+          id: originFlow.id,
+          nomor: originFlow.nomor || '-',
+          tanggal: originFlow.tanggal,
+          final_pdf_url: originFlow.final_pdf_url,
+          lampiran_files: originFlow.lampiran_files || [],
+          jenis: originFlow.jenis,
+        };
+        refPengirimPositionId.value = originFlow.pengirim?.position_id || '';
+      }
+
     } catch (e) {
       console.error("Error fetching edit data:", e);
       toast.add({ title: 'Error', description: 'Gagal memuat data edit', color: 'error' });
@@ -874,7 +871,6 @@ onMounted(async () => {
     }
   }
 
-  // B. REPLY / DISPOSISI
   else if (refId && refJenis) {
     loadingMessage.value = "Memuat data referensi...";
     isLoadingData.value = true;
@@ -891,6 +887,7 @@ onMounted(async () => {
           lampiran_files: rawFlow.lampiran_files || [],
           jenis: rawFlow.jenis,
         };
+        refPengirimPositionId.value = rawFlow.pengirim?.position_id || '';
       }
     } catch (e) { console.error(e); }
 
@@ -899,9 +896,8 @@ onMounted(async () => {
     isLoadingData.value = false;
   }
 
-  // C. DRAFT
   else if (draftId) {
-    loadingMessage.value = "Memuat draft...";
+    loadingMessage.value = "Memuat...";
     isLoadingData.value = true;
     try {
       editDraftId.value = draftId;
@@ -912,6 +908,7 @@ onMounted(async () => {
         editorContent.value = d.konten || "";
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
+
         if (d.klasifikasi) {
           const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
@@ -920,21 +917,27 @@ onMounted(async () => {
         if (user.value?.position) await fetchSenderList(user.value.position);
 
         const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
-          const posId = String(item.position_id || item.position || item.value);
+          const posId = String(item.position_id || item.position || item.value || item.id || '');
           const master = items.value.find(m => m.value === posId);
+
           return master || {
-            label: `${item.persnum || ''} - ${item.positionText || item.labelJob || ''}`,
-            labelJob: item.positionText || item.labelJob || '',
+            label: `${item.persnum_person_text || item.nama || item.name || item.persnum || ''} - ${item.position_text || item.positionText || item.labelJob || ''}`,
+            labelJob: item.position_text || item.positionText || item.labelJob || '',
             value: posId,
-            isGroup: false, // FIX: Selalu set isGroup
+            isGroup: false,
             raw: item,
           };
         }) || [];
 
-        const grupTertuju = mapGroupsToUI(d.penerima_grup || []);
-        const grupTembusan = mapGroupsToUI(d.tembusan_grup || []);
-        selectedTertuju.value = [...grupTertuju, ...mapApiToUI(d.penerima)];
-        selectedTembusan.value = [...grupTembusan, ...mapApiToUI(d.tembusan)];
+        selectedTertuju.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.penerima_grup || []),
+          mapApiToUI(d.penerima || [])
+        );
+
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(d.tembusan_grup || []),
+          mapApiToUI(d.tembusan || [])
+        );
 
         if (Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
@@ -944,7 +947,9 @@ onMounted(async () => {
             fileSize: f.fileSize || 0,
           }));
         }
+
         selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
+
         if (d.tanggal) {
           const p = d.tanggal.split('-');
           if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
@@ -954,7 +959,6 @@ onMounted(async () => {
     isLoadingData.value = false;
   }
 
-  // D. NEW
   else {
     isLoadingData.value = true;
     if (user.value?.position) await fetchSenderList(user.value.position);

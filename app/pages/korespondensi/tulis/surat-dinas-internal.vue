@@ -22,7 +22,9 @@ const alertState = useAlertState();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
-const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
+const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
+
+
 
 const { getConfigDigsig } = useDigsig();
 const isSignMethodModalOpen = ref(false);
@@ -146,7 +148,12 @@ const handleSaveDraft = async () => {
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    await saveDraft(createFormData(payload, false), editDraftId.value);
+    const fd = createFormData(payload, false);
+    if (editDraftId.value) {
+      await updateDraft(fd, editDraftId.value);
+    } else {
+      await saveDraft(fd);
+    }
     toastSuccess("Berhasil", "Draft berhasil disimpan");
     redirectDraf();
   } catch (e: any) {
@@ -298,30 +305,65 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
-        const buildSelected = (apiArr: any[]) => {
-          return (apiArr || []).map((item) => {
-            const found = tertujuItems.value.find(
-              (m) => String(m.raw.persnum_person) === String(item.persnum)
-            );
-            if (found) return found;
+        const buildSelectedFiltered = (apiArr: any[], grupArr: any[]) => {
+          if (!apiArr?.length) return [];
 
-            return {
-              label: `${item.persnum} - () ${item.positionText || ""}`,
-              labelJob: item.positionText || "",
-              organization: item.organizationText || "",
-              value: String(item.persnum),
-              raw: item,
-            };
-          }).filter(Boolean);
+          // Kumpulkan semua position_ids dari semua grup
+          const grupPositionIds = new Set<string>();
+          (grupArr || []).forEach((grup: any) => {
+            (grup.position_ids || []).forEach((posId: any) => {
+              grupPositionIds.add(String(posId));
+            });
+          });
+
+          // Kumpulkan persnum yang diwakili grup (via tertujuItems yang ada di list)
+          const grupPersnums = new Set<string>();
+          tertujuItems.value.forEach((item: any) => {
+            const posId = String(item.raw?.position || '');
+            if (grupPositionIds.has(posId)) {
+              const persnum = String(item.raw?.persnum_person || '');
+              if (persnum) grupPersnums.add(persnum);
+            }
+          });
+
+          // Kumpulkan SEMUA persnum yang ada di tertujuItems (untuk deteksi individu sejati)
+          const allKnownPersnums = new Set<string>();
+          tertujuItems.value.forEach((item: any) => {
+            const persnum = String(item.raw?.persnum_person || '');
+            if (persnum) allKnownPersnums.add(persnum);
+          });
+
+          return apiArr
+            .filter((item: any) => {
+              const pn = String(item.persnum || '');
+              if (!allKnownPersnums.has(pn) && grupPositionIds.size > 0) return false;
+              // Buang jika tidak dikenal di tertujuItems DAN ada grup aktif
+              // (berarti dia anggota grup yang tidak visible untuk user ini)
+              if (!allKnownPersnums.has(pn) && grupPositionIds.size > 0) return false;
+              return true;
+            })
+            .map((item: any) => {
+              const found = tertujuItems.value.find(
+                (m: any) => String(m.raw?.persnum_person) === String(item.persnum)
+              );
+              return found || {
+                label: `${item.persnum} - () ${item.positionText || ''}`,
+                labelJob: item.positionText || '',
+                organization: item.organizationText || '',
+                value: String(item.persnum),
+                raw: item,
+              };
+            })
+            .filter(Boolean);
         };
 
         selectedTertuju.value = mergeGrupDanIndividu(
           mapGroupsToUI(d.penerima_grup),
-          buildSelected(d.penerima || [])
+          buildSelectedFiltered(d.penerima || [], d.penerima_grup || [])
         );
         selectedTembusan.value = mergeGrupDanIndividu(
           mapGroupsToUI(d.tembusan_grup),
-          buildSelected(d.tembusan || [])
+          buildSelectedFiltered(d.tembusan || [], d.tembusan_grup || [])
         );
 
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);

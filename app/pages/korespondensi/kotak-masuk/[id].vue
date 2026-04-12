@@ -6,12 +6,10 @@ import {
   Users, FileText, Building2
 } from "lucide-vue-next";
 
-// Import Component Baru
 import DetailNaskah from '@/components/DetailNaskah.vue';
 
 definePageMeta({ middleware: "auth" });
 
-// --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
@@ -22,99 +20,85 @@ const { rejectKonsep } = useKonsep();
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
 
-const targetHighlightId = computed(() => {
-  // Jangan fallback ke route.params.id karena itu adalah ID konsep,
-  // bukan ID card/flow yang ada di DOM
-  return (route.query.highlight_id as string) || null;
-});
-// --- Cari bagian script ini dan sesuaikan ---
+const targetHighlightId = computed(() => (route.query.highlight_id as string) || null);
 
-// Tambahkan Computed Property (Opsional tapi bagus untuk readability)
-const isSingleData = computed(() => {
-  return !details.value || details.value.length <= 1;
-});
+const isSingleData = computed(() => !details.value || details.value.length <= 1);
 
 const isHighlighted = (detail: any) => {
-  // Guard di script (cadangan)
   if (isSingleData.value) return false;
-
   const target = targetHighlightId.value;
   if (!target) return false;
-
-  if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) {
-    return true;
-  }
-
-  if (String(target) === String(id) && detail.aksi === 'create') {
-    return true;
-  }
-
+  if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) return true;
+  if (String(target) === String(id) && detail.aksi === 'create') return true;
   return false;
 };
 
 const scrollToTarget = async () => {
   await nextTick();
-
   if (details.value.length <= 1) return;
-
   setTimeout(() => {
     const targetId = route.query.highlight_id as string;
-    let targetDetail: any = null;
-
-    if (targetId) {
-      // Ada highlight_id → scroll ke card spesifik
-      targetDetail = details.value.find((d: any) =>
-        String(d.id) === String(targetId) || String(d.urutan) === String(targetId)
-      );
-    } else {
-      // Tidak ada highlight_id → scroll ke card pertama (index 0)
-      targetDetail = details.value[0];
-    }
-
+    let targetDetail: any = targetId
+      ? details.value.find((d: any) => String(d.id) === String(targetId) || String(d.urutan) === String(targetId))
+      : details.value[0];
     if (!targetDetail) return;
-
-    const domId = targetDetail.id || targetDetail.urutan;
-    const element = document.getElementById(`card-${domId}`);
+    const element = document.getElementById(`card-${targetDetail.id || targetDetail.urutan}`);
     if (!element) return;
-
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
     if (targetId) {
-      // Highlight ring hanya kalau ada highlight_id eksplisit
       element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
-      setTimeout(() => {
-        element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
-      }, 2000);
+      setTimeout(() => element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2'), 2000);
     }
   }, 500);
 };
 
-// --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
   const jenis = (jenisQuery || '').toUpperCase();
   return path.includes('terkirim') || path.includes('keluar') || jenis === 'SK';
 });
 
-// --- LOGIC AKSES (NEW) ---
-const allowedActions = computed(() => {
-  if (isTerkirim.value) return []; // Terkirim tidak ada tombol
+const getPermissions = (bodTag: string | null | undefined, surat: string) => {
+  const suratNorm = surat?.toUpperCase();
+  if (!bodTag) {
+    return {
+      create: suratNorm === 'DI' ? ['KO'] : [],
+      forward: [],
+      reject: ['KO', 'K'].includes(suratNorm) ? ['Perbaiki'] : [],
+      finalize: []
+    };
+  }
+  if (bodTag === 'BOD' || bodTag === 'BOD-1') {
+    if (['KO', 'K'].includes(suratNorm)) {
+      return { create: ['Setujui', 'Tolak'], forward: ['Setujui', 'Tolak'], reject: [], finalize: ['Setujui', 'Tolak'] };
+    }
+    const create = suratNorm === 'KA' ? ['DI', 'ND'] : ['DI', 'ND', 'SDI', 'SDE'];
+    return { create, forward: [], reject: [], finalize: [] };
+  }
+  if (bodTag === 'BOD-2' || bodTag === 'BOD-3') {
+    if (['KO', 'K'].includes(suratNorm)) {
+      return { create: ['Setujui', 'Tolak'], forward: ['Setujui', 'Tolak'], reject: [], finalize: ['Setujui', 'Tolak'] };
+    }
+    const create = suratNorm === 'DI' ? ['DI', 'ND', 'KO'] : ['DI', 'ND'];
+    return { create, forward: [], reject: [], finalize: [] };
+  }
+  return { create: [], forward: [], reject: [], finalize: [] };
+};
 
+const allowedActions = computed(() => {
+  if (isTerkirim.value) return [];
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
-
-  if (!tag) { // STAFF (bodTag is empty/null)
-    if (surat === 'DI') return ['KO'];
-    return [];
-  } else if (tag === 'BOD' || tag === 'BOD-1') {
-    if (surat === 'KA') return ['DI', 'ND'];
-    return ['DI', 'ND', 'SDI', 'SDE'];
-  } else if (tag === 'BOD-2' || tag === 'BOD-3') {
-    if (surat === 'DI') return ['DI', 'ND', 'KO'];
-    return ['DI', 'ND'];
+  if (!isKonsepData.value) {
+    return getPermissions(tag, surat).create;
   }
-
-  return []; // Default
+  const aksi = details.value[0]?.aksi;
+  const permissions = getPermissions(tag, surat);
+  if (aksi === 'create') return permissions.create;
+  if (aksi === 'forward') return permissions.forward;
+  if (aksi === 'reject') return permissions.reject;
+  if (aksi === 'finalize') return permissions.finalize;
+  return [];
 });
 
 const breadcrumbs = [
@@ -129,18 +113,15 @@ const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
 
-// Actions State
 const showEditAction = ref(false);
 const showFinalizeActions = ref(false);
 const isOpenKonsepModal = ref(false);
 
-// Modals State
 const showFinalizeOptionsModal = ref(false);
 const showRejectModal = ref(false);
 const rejectNote = ref("");
 const isRejecting = ref(false);
 
-// Preview State
 const isPreviewOpen = ref(false);
 const previewTitle = ref("Preview Dokumen");
 const activePdfUrl = ref<string | null>(null);
@@ -152,6 +133,38 @@ const isJenisDI = computed(() => {
   return j.toUpperCase() === "DI" || l.toUpperCase().includes("DISPOSISI");
 });
 
+// --- GROUPING HELPER ---
+const processGrouping = (individuals: any[], groups: any[]) => {
+  if (!Array.isArray(individuals) || individuals.length === 0) return [];
+  if (!Array.isArray(groups) || groups.length === 0) return individuals;
+
+  const individualIds = new Set(individuals.map(item => String(item.position_id || item.id)));
+  const matchedIds = new Set();
+  const result: any[] = [];
+
+  const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
+  const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
+
+  for (const group of groups) {
+    const reqIds = group.position_ids || [];
+    const isComplete = reqIds.length > 0 && reqIds.every((gId: any) => {
+      const strId = String(gId);
+      return individualIds.has(strId) || strId === myPosId;
+    });
+    if (isComplete) {
+      result.push({ nama: group.nama, position_text: group.nama, is_group: true });
+      reqIds.forEach((gId: any) => matchedIds.add(String(gId)));
+    }
+  }
+
+  for (const indiv of individuals) {
+    if (!matchedIds.has(String(indiv.position_id || indiv.id))) {
+      result.push(indiv);
+    }
+  }
+
+  return result;
+};
 
 // --- DATA FETCHING ---
 const loadData = async () => {
@@ -162,70 +175,67 @@ const loadData = async () => {
 
   try {
     if (jenisQuery === 'K') {
-
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
       const rawData = response?.data || response;
 
-      // 1. PERBAIKAN: Deteksi apakah ada array "flow" di dalam rawData
-      let rawFlows = [];
+      let rawFlows: any[] = [];
       if (rawData && Array.isArray(rawData.flow)) {
-        rawFlows = rawData.flow; // Ambil isian dari array flow
+        rawFlows = rawData.flow;
       } else if (Array.isArray(rawData)) {
         rawFlows = rawData;
       } else if (rawData) {
         rawFlows = [rawData];
       }
 
-      // 2. Urutkan berdasarkan created_at descending (terbaru di index 0)
       const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
         new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
       );
 
       if (sortedFlows.length > 0) {
-        // Ambil elemen pertama sebagai data utama (terbaru)
         const lastFlow = sortedFlows[0];
         selected.value = lastFlow;
 
-        // Ambil ID user saat ini
         const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-        const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
-
-        // Ambil aksi terakhir dari objek 'detail'
+        const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
         const lastAksi = lastFlow.detail?.aksi || lastFlow.aksi || '';
 
-        // LOGIKA TOMBOL EDIT (Reject)
-        const rejectorId = String(lastFlow.pengirim?.position_id || lastFlow.pengirim?.id || '');
-        showEditAction.value = (lastAksi === 'reject' && rejectorId !== myPosId);
+        // Setujui/Tolak = user ada di penerima flow terbaru (A = yang harus menyetujui)
+        const isInPenerima = Array.isArray(lastFlow.penerima)
+          ? lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') === myPosId)
+          : false;
 
-        // LOGIKA TOMBOL SETUJUI/TOLAK (FINALIZE)
-        let isTarget = false;
-        if (myPosId && Array.isArray(lastFlow.penerima)) {
-          isTarget = lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') == myPosId);
-        }
-        showFinalizeActions.value = isTarget;
+        showFinalizeActions.value = (
+          isInPenerima &&
+          (lastAksi === 'create' || lastAksi === 'forward')
+        );
 
-        // Mapping array ke state details
+        // Perbaiki = user adalah pengirim (B = yang membuat konsep, konsepnya ditolak)
+        const pengirimId = String(lastFlow.pengirim?.position_id || '');
+        showEditAction.value = (
+          lastAksi === 'reject' &&
+          myPosId !== '' &&
+          pengirimId !== '' &&
+          myPosId === pengirimId
+        );
+
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
           const catatan = flow.detail?.catatan || flow.catatan || '';
 
-          // --- GROUPING PENERIMA (sama seperti logika surat masuk) ---
-          let rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
+          const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
           const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
           const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
 
-          // --- GROUPING TEMBUSAN ---
-          let rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
+          const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
           const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
           const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
-          // ----------------------------------------------------------
 
           return {
             id: flow.id,
             urutan: sortedFlows.length - index,
             sifat: flow.sifat,
-            aksi: aksi,
+            aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
             perihal: flow.perihal || '-',
@@ -234,38 +244,38 @@ const loadData = async () => {
             from: flow.pengirim || {},
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
             penerima: processedPenerima,
-            to: processedPenerima,       // sudah di-group
-            cc: processedTembusan,       // sudah di-group
+            to: processedPenerima,
+            cc: processedTembusan,
             rich_content: flow.konten || '',
-            catatan: catatan,
+            catatan:  flow.detail?.catatan || flow.catatan || '',
             attachments: flow.lampiran_files || [],
             pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
+            //  pdf_snapshot: flow.final_pdf_url || flow.final_pdf ||
+            // // Fallback: cari pdf dari flow lain yang punya (untuk kasus reject yg pdf-nya null)
+            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf_url ||
+            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf || '',
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
       }
+
     } else {
-      // === LOGIC SURAT MASUK/DISPOSISI/TERKIRIM ===
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
       const rawData = response?.data || response;
 
-      // PERBAIKAN: Identifikasi apakah rawData adalah array of flows langsung
-      let rawFlows = [];
-      let inboxData = null;
+      let rawFlows: any[] = [];
+      let inboxData: any = null;
 
       if (Array.isArray(rawData)) {
         if (rawData.length > 0 && rawData[0].flow) {
-          // Kasus jika formatnya array dan punya child "flow"
           inboxData = rawData[0];
           rawFlows = inboxData.flow;
         } else {
-          // Kasus jika formatnya langsung flat array (seperti source data JSON terbaru)
           rawFlows = rawData;
-          inboxData = rawData[0]; // Jadikan item pertama sebagai fallback data utama
+          inboxData = rawData[0];
         }
       } else if (rawData) {
-        // Kasus jika formatnya single object
         inboxData = rawData;
         rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
       }
@@ -279,27 +289,20 @@ const loadData = async () => {
           else if (Array.isArray(item.kepada) && item.kepada.length > 0) listPenerima = item.kepada;
           else if (Array.isArray(item.to)) listPenerima = item.to;
           else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
-
           if (listPenerima.length === 0 && inboxData) {
             if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
             else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
           }
-
-          // ---- GRUPING PENERIMA ----
           const penerimaGrup = item.penerima_grup || inboxData?.penerima_grup || inboxData?.raw?.penerima_grup || [];
           listPenerima = processGrouping(listPenerima, penerimaGrup);
-
 
           let listTembusan: any[] = [];
           if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
           else if (Array.isArray(item.cc)) listTembusan = item.cc;
-
           if (listTembusan.length === 0 && inboxData) {
             if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
             else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
           }
-
-          // ---- GRUPING TEMBUSAN ----
           const tembusanGrup = item.tembusan_grup || inboxData?.tembusan_grup || inboxData?.raw?.tembusan_grup || [];
           listTembusan = processGrouping(listTembusan, tembusanGrup);
 
@@ -327,21 +330,6 @@ const loadData = async () => {
       }
     }
 
-    // await nextTick(); // Tunggu DOM selesai render
-
-    // if (targetHighlightId.value) {
-    //   const elementId = `card-${targetHighlightId.value}`;
-    //   const element = document.getElementById(elementId);
-
-    //   if (element) {
-    //     // Scroll ke elemen
-    //     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    //     // Opsional: Fokuskan element jika perlu aksesibilitas
-    //     element.focus();
-    //   }
-    // }
-
   } catch (e) {
     console.error("❌ Error loading data", e);
   } finally {
@@ -350,55 +338,10 @@ const loadData = async () => {
   }
 };
 
-// Tambahkan fungsi ini di atas fungsi loadData()
-const processGrouping = (individuals: any[], groups: any[]) => {
-  if (!Array.isArray(individuals) || individuals.length === 0) return [];
-  if (!Array.isArray(groups) || groups.length === 0) return individuals;
-
-  // Pastikan ambil ID dengan fallback yang aman
-  const individualIds = new Set(individuals.map(item => String(item.position_id || item.id)));
-  const matchedIds = new Set();
-  const result: any[] = [];
-
-  // 1. Ambil ID posisi user saat ini untuk dieksklusi (dikecualikan)
-  const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-  const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
-
-  for (const group of groups) {
-    const reqIds = group.position_ids || [];
-
-    // 2. Cek apakah setiap ID ada di individualIds, ATAU ID tersebut adalah milik user saat ini
-    const isComplete = reqIds.length > 0 && reqIds.every((id: any) => {
-      const strId = String(id);
-      return individualIds.has(strId) || strId === myPosId;
-    });
-
-    if (isComplete) {
-      result.push({
-        nama: group.nama,
-        position_text: group.nama,
-        is_group: true
-      });
-      // Tandai semua ID dalam grup ini sebagai sudah di-grouping
-      reqIds.forEach((id: any) => matchedIds.add(String(id)));
-    }
-  }
-
-  // 3. Masukkan sisa individu yang tidak tergabung ke dalam grup manapun yang valid
-  for (const indiv of individuals) {
-    if (!matchedIds.has(String(indiv.position_id || indiv.id))) {
-      result.push(indiv);
-    }
-  }
-
-  return result;
-};
-
 onMounted(() => { loadData(); });
 
 // --- ACTIONS HANDLERS ---
 const goBack = () => router.back();
-
 const handleFinalize = () => { showFinalizeOptionsModal.value = true; };
 const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true; };
 
@@ -412,28 +355,55 @@ const handleFinalizeAndRedirect = () => {
   }
 };
 
+const isPengirimKonsep = computed(() => {
+  if (!isKonsepData.value) return false;
+
+  const myPosId = String(user.value?.position || '');
+  if (!myPosId || myPosId === 'undefined') return false;
+
+  const latestFlow = details.value[0];
+  if (!latestFlow || latestFlow.aksi !== 'reject') return false;
+
+  // Dari JSON: pengirim di root = EVP (70016786) = yang menyuruh & menolak
+  // penerima di root = VP (70017054) = yang diminta membuat & harus perbaiki
+  // Di mapping details: field 'from' = flow.pengirim (pengirim tiap flow)
+  // Flow reject: pengirimnya adalah EVP (yang menolak)
+  // Tapi kita butuh VP (yang harus perbaiki) = penerima di flow reject
+
+  // Cek dari raw data sortedFlows lewat selected.value
+  // selected.value = lastFlow = KONSEP-004 (flow reject terbaru)
+  const rawPenerima = selected.value?.penerima || [];
+  const isInPenerima = rawPenerima.some(
+    (p: any) => String(p.position_id || '') === myPosId
+  );
+
+  console.log('isPengirimKonsep →', { myPosId, rawPenerima, isInPenerima });
+
+  return isInPenerima;
+});
+
 const handleConfirmReject = async () => {
-  if (!rejectNote.value.trim()) return alert("Mohon isi catatan penolakan.");
+  if (!rejectNote.value.trim()) {
+    useToast().add({ title: 'Peringatan', description: 'Mohon isi catatan penolakan.', color: 'warning' });
+    return;
+  }
   isRejecting.value = true;
   try {
     const payload = {
-      // PERBAIKAN: Ambil id dari dalam object detail.naskah_pengirim
       from_position_id: selected.value?.detail?.naskah_pengirim?.position_id || selected.value?.pengirim?.position_id,
       catatan: rejectNote.value
     };
-
     const res = await rejectKonsep(selected.value.id, payload);
-
     if (res && res.success) {
       showRejectModal.value = false;
-      alert("Konsep berhasil ditolak.");
+      useToast().add({ title: 'Berhasil', description: 'Konsep berhasil ditolak.', color: 'success' });
       loadData();
     } else {
-      alert(res?.message || "Gagal menolak konsep.");
+      useToast().add({ title: 'Gagal', description: res?.message || 'Gagal menolak konsep.', color: 'error' });
     }
   } catch (error) {
     console.error("Gagal menolak:", error);
-    alert("Terjadi kesalahan.");
+    useToast().add({ title: 'Error', description: 'Terjadi kesalahan.', color: 'error' });
   } finally {
     isRejecting.value = false;
   }
@@ -445,14 +415,12 @@ const handleEditKonsep = () => {
   }
 };
 
-// HANDLER ROUTING YANG BARU UNTUK 4 TOMBOL
 const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/nota-dinas', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
 const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
 
-// Preview Handlers
 const openDocumentPreview = async (url: string, title = "Dokumen") => {
   if (!url) { alert("URL tidak valid."); return; }
   previewTitle.value = title;
@@ -463,7 +431,7 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
     const response = await fetch(url);
     const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
     activePdfUrl.value = URL.createObjectURL(blob);
-  } catch (error) {
+  } catch {
     activePdfUrl.value = url;
   } finally {
     isLocalPdfLoading.value = false;
@@ -471,7 +439,6 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
 };
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
 
-// Options Data
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600' },
   { type: 'SDI', label: 'Surat Dinas Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
@@ -496,14 +463,16 @@ const konsepOptions = [
       </div>
     </div>
 
+
     <template v-else-if="details && details.length > 0">
+      <!-- Di [id].vue template, taruh ini untuk debug sementara -->
       <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
         :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
           'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
         }">
         <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-          :show-edit="isKonsepData && index === 0 && showEditAction"
+          :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
           :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
           :user-position-id="user.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
           @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"

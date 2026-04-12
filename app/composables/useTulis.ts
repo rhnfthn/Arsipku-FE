@@ -3,12 +3,12 @@
 // Shared logic untuk semua halaman Tulis Surat
 // Masing-masing page hanya perlu memanggil composable ini dan menambahkan logic spesifik miliknya sendiri.
 
-import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
-import { CalendarDate } from "@internationalized/date";
-import type { Editor as TinyMCEEditor } from "tinymce";
-import type { Klasifikasi } from "~/types/klasifikasi";
-import { Alert } from "@/composables/useAlert";
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { CalendarDate } from '@internationalized/date';
+import type { Editor as TinyMCEEditor } from 'tinymce';
+import type { Klasifikasi } from '~/types/klasifikasi';
+import { Alert } from '@/composables/useAlert';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,12 +43,12 @@ export function useTulis() {
   // ── State umum ──────────────────────────────────────────────────────────────
 
   const isLoadingData = ref(false);
-  const loadingMessage = ref("");
+  const loadingMessage = ref('');
   const isOpenPreview = ref(false);
 
   const editDraftId = ref<string | null>(null);
-  const subject = ref("");
-  const editorContent = ref("");
+  const subject = ref('');
+  const editorContent = ref('');
   const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
   const today = new Date();
@@ -57,7 +57,7 @@ export function useTulis() {
   );
 
   const klasifikasiList = ref<Klasifikasi[]>([]);
-  const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
+  const klasifikasiStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
   const selectedKlasifikasiId = ref<string | null>(null);
   const existingFiles = ref<UploadedFile[]>([]);
 
@@ -67,35 +67,35 @@ export function useTulis() {
   const selectedSifat = ref<SifatOption | null>(null);
 
   const pdfBlob = ref<Blob | null>(null);
-  const pdfUrl = ref("");
+  const pdfUrl = ref('');
 
   // ── Constants ───────────────────────────────────────────────────────────────
 
   const maxPerihal = 200;
 
   const sifatOptions: SifatOption[] = [
-    { label: "Sangat Rahasia", value: "sangat rahasia" },
-    { label: "Rahasia", value: "rahasia" },
-    { label: "Terbatas", value: "terbatas" },
-    { label: "Biasa / Terbuka", value: "biasa" },
+    { label: 'Sangat Rahasia', value: 'sangat rahasia' },
+    { label: 'Rahasia', value: 'rahasia' },
+    { label: 'Terbatas', value: 'terbatas' },
+    { label: 'Biasa / Terbuka', value: 'biasa' }
   ];
 
   // TinyMCE config — page bisa override `setup` setelah memanggil composable ini
   const tinyMceInit = computed(() => ({
-    base_url: "/tinymce",
-    suffix: ".min",
+    base_url: '/tinymce',
+    suffix: '.min',
     height: 400,
     menubar: false,
     promotion: false,
     branding: false,
-    placeholder: "Ketik konten disini...",
-    plugins: "lists advlist link image code table fullscreen",
+    placeholder: 'Ketik konten disini...',
+    plugins: 'lists advlist link image code table fullscreen',
     toolbar:
-      "undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen",
+      'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
     content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
     setup(editor: TinyMCEEditor) {
       tinymceEditor.value = editor;
-    },
+    }
   }));
 
   // ── Computed ─────────────────────────────────────────────────────────────────
@@ -105,27 +105,27 @@ export function useTulis() {
   );
 
   const formattedDate = computed(() => {
-    if (!date.value) return "-";
+    if (!date.value) return '-';
     const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-    return jsDate.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+    return jsDate.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
     });
   });
 
   /** Tanggal dalam format YYYY-MM-DD untuk dikirim ke backend */
   const tglDb = computed(() =>
     date.value
-      ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-      : ""
+      ? `${date.value.year}-${String(date.value.month).padStart(2, '0')}-${String(date.value.day).padStart(2, '0')}`
+      : ''
   );
 
   /** Tanggal dalam format DD/MM/YYYY untuk display */
   const tglDisplay = computed(() =>
     date.value
-      ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-      : ""
+      ? `${String(date.value.day).padStart(2, '0')}/${String(date.value.month).padStart(2, '0')}/${date.value.year}`
+      : ''
   );
 
   /**
@@ -137,8 +137,10 @@ export function useTulis() {
     selectedTembusan.value
       .filter((i) => i.isGroup)
       .forEach((g) => {
-        const members =
-          g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+        const memberList: any[] = g.raw?.details || g.raw?.members || g.raw?.anggota || [];
+        const members = memberList.map((d: any) => ({
+          value: String(d.position ?? d.position_id ?? d.id ?? d)
+        }));
         excluded.push(...members);
       });
     return excluded;
@@ -153,8 +155,10 @@ export function useTulis() {
     selectedTertuju.value
       .filter((i) => i.isGroup)
       .forEach((g) => {
-        const members =
-          g.raw.details?.map((d: any) => ({ value: String(d.position) })) || [];
+        const memberList: any[] = g.raw?.details || g.raw?.members || g.raw?.anggota || [];
+        const members = memberList.map((d: any) => ({
+          value: String(d.position ?? d.position_id ?? d.id ?? d)
+        }));
         excluded.push(...members);
       });
     return excluded;
@@ -185,7 +189,7 @@ export function useTulis() {
   /** Set konten TinyMCE dari template yang dipilih */
   const handleApplyTemplate = (content: string) => {
     if (tinymceEditor.value) {
-      const clean = content.trim().replace(/>\s+</g, "><");
+      const clean = content.trim().replace(/>\s+</g, '><');
       tinymceEditor.value.setContent(clean);
       editorContent.value = tinymceEditor.value.getContent();
     } else {
@@ -202,7 +206,7 @@ export function useTulis() {
       pdfFileName?: string;
     } = {}
   ): FormData => {
-    const { includePdf = false, skipKeys = [], pdfFileName = "dokumen.pdf" } = options;
+    const { includePdf = false, skipKeys = [], pdfFileName = 'dokumen.pdf' } = options;
     const formData = new FormData();
 
     (Object.keys(payload) as Array<keyof T>).forEach((key) => {
@@ -216,7 +220,7 @@ export function useTulis() {
     });
 
     if (includePdf && pdfBlob.value) {
-      formData.append("final_pdf", pdfBlob.value, pdfFileName);
+      formData.append('final_pdf', pdfBlob.value, pdfFileName);
     }
 
     return formData;
@@ -238,7 +242,7 @@ export function useTulis() {
           labelJob: master.nama,
           value: `GROUP_${master.id}`,
           isGroup: true,
-          raw: master,
+          raw: master
         } as RecipientItem;
       })
       .filter(Boolean) as RecipientItem[];
@@ -256,11 +260,11 @@ export function useTulis() {
       if (master) return master;
       return {
         label: item.positionText
-          ? `${item.persnum || ""} - (${item.abbreviation || ""}) ${item.positionText || item.labelJob || ""}`
+          ? `${item.persnum || ''} - (${item.abbreviation || ''}) ${item.positionText || item.labelJob || ''}`
           : posId,
         labelJob: item.positionText || item.labelJob || item.label || posId,
         value: posId,
-        raw: item,
+        raw: item
       } as RecipientItem;
     });
   };
@@ -268,18 +272,26 @@ export function useTulis() {
   /**
    * Merge grup + individu untuk selectedTertuju/selectedTembusan saat load draft.
    * Otomatis filter individu yang merupakan anggota grup yang sudah dipilih.
+   *
+   * Mendukung berbagai nama field anggota grup:
+   *   - g.raw.details  / g.raw.members / g.raw.anggota
+   *   - x.position     / x.position_id / x.id
    */
   const mergeGrupDanIndividu = (
     grupItems: RecipientItem[],
     individuItems: RecipientItem[]
   ): RecipientItem[] => {
-    const grupMemberIds = grupItems.flatMap(
-      (g) => g.raw.details?.map((x: any) => String(x.position)) || []
-    );
-    return [
-      ...grupItems,
-      ...individuItems.filter((i) => !grupMemberIds.includes(String(i.value))),
-    ];
+    const grupMemberIds = grupItems.flatMap((g) => {
+      // coba berbagai nama array anggota yang mungkin dikembalikan API
+      const memberList: any[] = g.raw?.details || g.raw?.members || g.raw?.anggota || [];
+
+      return memberList.map((x: any) =>
+        // coba berbagai nama field ID
+        String(x.position ?? x.position_id ?? x.id ?? x)
+      );
+    });
+
+    return [...grupItems, ...individuItems.filter((i) => !grupMemberIds.includes(String(i.value)))];
   };
 
   /** Map lampiran dari API ke UploadedFile */
@@ -289,13 +301,13 @@ export function useTulis() {
       id: f.id,
       fileName: f.fileName || f.file_name,
       filePath: f.fileUrl || f.file_path,
-      fileSize: f.fileSize || 0,
+      fileSize: f.fileSize || 0
     }));
   };
 
   /** Set tanggal dari string YYYY-MM-DD */
   const setDateFromString = (tgl: string) => {
-    const parts = tgl.split("-");
+    const parts = tgl.split('-');
     if (parts.length === 3) {
       date.value = new CalendarDate(Number(parts[0]), Number(parts[1]), Number(parts[2]));
     }
@@ -303,19 +315,18 @@ export function useTulis() {
 
   /** Set sifat dari string, fallback ke 'biasa' */
   const setSifatFromString = (sifat: string) => {
-    const val = String(sifat || "biasa").toLowerCase();
-    selectedSifat.value =
-      sifatOptions.find((opt) => opt.value === val) ?? sifatOptions[3];
+    const val = String(sifat || 'biasa').toLowerCase();
+    selectedSifat.value = sifatOptions.find((opt) => opt.value === val) ?? sifatOptions[3];
   };
 
   // ── Confirm dialogs (identik di semua page) ──────────────────────────────────
 
   const confirmSaveDraft = async (onConfirmed: () => Promise<void>) => {
     const ok = await Alert.confirm(
-      "Simpan sebagai Draft?",
-      "Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.",
-      "Ya, Simpan",
-      "Batal",
+      'Simpan sebagai Draft?',
+      'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
+      'Ya, Simpan',
+      'Batal',
       false
     );
     if (!ok) return;
@@ -328,15 +339,12 @@ export function useTulis() {
     }
   };
 
-  const confirmKirim = async (
-    label: string,
-    onConfirmed: () => Promise<void>
-  ) => {
+  const confirmKirim = async (label: string, onConfirmed: () => Promise<void>) => {
     const ok = await Alert.confirm(
-      "Konfirmasi Akhir",
+      'Konfirmasi Akhir',
       `${label} Lanjutkan?`,
-      "Ya, Kirim Sekarang",
-      "Periksa Lagi",
+      'Ya, Kirim Sekarang',
+      'Periksa Lagi',
       false
     );
     if (ok) await onConfirmed();
@@ -347,28 +355,28 @@ export function useTulis() {
   const revokePdfUrl = () => {
     if (pdfUrl.value) {
       URL.revokeObjectURL(pdfUrl.value);
-      pdfUrl.value = "";
+      pdfUrl.value = '';
     }
   };
 
   const setPdfBlob = (blob: ArrayBuffer | Blob) => {
     revokePdfUrl();
-    pdfBlob.value = blob instanceof Blob ? blob : new Blob([blob], { type: "application/pdf" });
+    pdfBlob.value = blob instanceof Blob ? blob : new Blob([blob], { type: 'application/pdf' });
     pdfUrl.value = URL.createObjectURL(pdfBlob.value);
   };
 
   // ── Toast shortcuts ───────────────────────────────────────────────────────────
 
   const toastError = (title: string, description?: string) =>
-    toast.add({ title, description, color: "error" });
+    toast.add({ title, description, color: 'error' });
 
   const toastSuccess = (title: string, description?: string) =>
-    toast.add({ title, description, color: "success" });
+    toast.add({ title, description, color: 'success' });
 
   // ── Redirect helpers ──────────────────────────────────────────────────────────
 
-  const redirectTerkirim = () => router.push("/korespondensi/terkirim");
-  const redirectDraf = () => router.push("/korespondensi/draf");
+  const redirectTerkirim = () => router.push('/korespondensi/terkirim');
+  const redirectDraf = () => router.push('/korespondensi/draf');
 
   // ── Return ────────────────────────────────────────────────────────────────────
 
@@ -426,6 +434,6 @@ export function useTulis() {
     toastError,
     toastSuccess,
     redirectTerkirim,
-    redirectDraf,
+    redirectDraf
   };
 }

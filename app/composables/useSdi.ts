@@ -7,7 +7,7 @@ import type {
 import type { SDIPayload } from "~/types/sdi";
 
 export const useSdi = () => {
-  const { api, apiGet, apiPost, apiPut } = useApi();
+  const { api, apiGet, apiPost, apiPut, apiPatch } = useApi();
 
   // Helper untuk header FormData (agar browser set boundary otomatis)
   const formDataConfig = {
@@ -93,10 +93,18 @@ export const useSdi = () => {
   /**
    * Simpan sebagai Draft
    */
-  const saveDraft = async (formData: FormData, id?: string | null) => {
+  const saveDraft = async (formData: FormData) => {
     // Endpoint: POST /SDI/save-draft
-    // Biasanya draft endpoint juga menerima ID jika update, atau endpoint terpisah
     return await apiPost("/SDI/save-draft", formData, formDataConfig);
+  };
+
+  /**
+   * Update Draft yang sudah ada (PATCH)
+   */
+  const updateDraft = async (formData: FormData, idNaskah: string) => {
+    // Endpoint: PATCH /SDI/update-draft/{{id_naskah}}
+    if (!idNaskah) throw new Error("ID Naskah kosong untuk update");
+    return await apiPatch(`/SDI/update-draft/${idNaskah}`, formData, formDataConfig);
   };
 
   /**
@@ -116,6 +124,7 @@ export const useSdi = () => {
     generatePdf,
     sendSDI,
     saveDraft,
+    updateDraft,
     sendDraft,
     getSDIDetail
   };
