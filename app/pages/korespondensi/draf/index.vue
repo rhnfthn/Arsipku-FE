@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter, useRoute } from "vue-router";
 import { ref, computed, watch, onMounted } from "vue";
+import { parseDate } from '@internationalized/date';
 import {
   Inbox, FileText, Send, Building, Building2, FilePen, Trash2,
   ChevronLeft, ChevronRight, RotateCw, Check, Pencil, History,
@@ -39,15 +40,23 @@ const activeTab = ref("ALL");
 const showDateMenu = ref(false);
 const showSortMenu = ref(false);
 const showPageMenu = ref(false);
-const activeDateLabel = ref("30 Hari Terakhir");
+const activeDateLabel = ref("Semua");
 const activeSortLabel = ref("Terbaru");
+const itemsPerPage = ref(10);
+const currentPage = ref(1);
 
-// ── Date Filter State ─────────────────────────────────────────────────────────
-const startDate = ref(new Date());
-const endDate = ref(new Date());
-const openStart = ref(false);
-const openEnd = ref(false);
+// ── Date Filter State (sama dengan kotak-masuk) ───────────────────────────────
+const startDateInput = ref(new Date().toISOString().split('T')[0]);
+const endDateInput = ref(new Date().toISOString().split('T')[0]);
+const startDateCal = ref(parseDate(startDateInput.value));
+const endDateCal = ref(parseDate(endDateInput.value));
+const openStartDate = ref(false);
+const openEndDate = ref(false);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
+
+// Sync CalendarDate ↔ string YYYY-MM-DD
+watch(startDateCal, (val) => { if (val) startDateInput.value = val.toString(); });
+watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
 // ── Static Config ─────────────────────────────────────────────────────────────
 const breadcrumbs = [
@@ -65,14 +74,7 @@ const tabs = [
   { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 
-const dateOptions = [
-  "Hari ini",
-  "7 Hari Terakhir",
-  "30 Hari Terakhir",
-  "Bulan Ini",
-  "Tahun Ini",
-  "Semua",
-];
+const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
@@ -85,22 +87,24 @@ const formatDateForApi = (date) => {
   return [year, month.padStart(2, "0"), day.padStart(2, "0")].join("-");
 };
 
-const formatShortDate = (dateString) => {
+const formatShortDate = (dateString, waktu = '') => {
   if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
+
+  const datePart = dateString.substring(0, 10);
+  const [year, month, day] = datePart.split('-').map(Number);
 
   const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  const isThisYear = date.getFullYear() === now.getFullYear();
+  const isToday = year === now.getFullYear() && month === (now.getMonth() + 1) && day === now.getDate();
+  const isThisYear = year === now.getFullYear();
 
-  const time = `${date.getHours().toString().padStart(2, "0")}.${date.getMinutes().toString().padStart(2, "0")}`;
-  const day = date.getDate();
-  const month = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(date);
+  const dateForMonth = new Date(year, month - 1, day);
+  const monthName = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(dateForMonth);
 
-  if (isToday) return time;
-  if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getFullYear()} ${time}`;
+  const time = waktu ? waktu.replace(':', '.') : '';
+
+  if (isToday) return time || `${day} ${monthName}`;
+  if (isThisYear) return `${day} ${monthName}${time ? ' ' + time : ''}`;
+  return `${day} ${monthName} ${year}${time ? ' ' + time : ''}`;
 };
 
 const getTabCount = (tabValue) => {
@@ -126,8 +130,8 @@ const refreshData = async () => {
   const params = {};
 
   // Pagination
-  params.page = pagination.value?.page || 1;
-  params.limit = pagination.value?.limit || 10;
+  params.page = currentPage.value;
+  params.limit = itemsPerPage.value;
 
   // Tab & Search
   if (activeTab.value && activeTab.value !== "ALL") params.jenis = activeTab.value;
@@ -136,29 +140,22 @@ const refreshData = async () => {
   // Sort
   params.sort = activeSortLabel.value === "Terlama" ? "terlama" : "terbaru";
 
-  // Date filter
-  let startStr = undefined;
-  let endStr = undefined;
+  // Date filter (sama dengan kotak-masuk)
   const now = new Date();
-  let calculatedStart = new Date();
-
+  const toStr = (d) => d.toISOString().split("T")[0];
   if (activeDateLabel.value === "Custom") {
-    if (startDate.value && endDate.value) {
-      startStr = formatDateForApi(startDate.value);
-      endStr = formatDateForApi(endDate.value);
-    }
+    params.start_date = startDateInput.value;
+    params.end_date = endDateInput.value;
   } else if (activeDateLabel.value !== "Semua") {
-    endStr = formatDateForApi(now);
-    if (activeDateLabel.value === "Hari ini") calculatedStart = now;
-    else if (activeDateLabel.value === "7 Hari Terakhir") calculatedStart.setDate(now.getDate() - 7);
-    else if (activeDateLabel.value === "30 Hari Terakhir") calculatedStart.setDate(now.getDate() - 30);
-    else if (activeDateLabel.value === "Bulan Ini") calculatedStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    else if (activeDateLabel.value === "Tahun Ini") calculatedStart = new Date(now.getFullYear(), 0, 1);
-    startStr = formatDateForApi(calculatedStart);
+    const daysMap = { "7 Hari": 7, "30 Hari": 30, "60 Hari": 60, "1 Tahun": 365 };
+    const days = daysMap[activeDateLabel.value];
+    if (days) {
+      const from = new Date(now);
+      from.setDate(now.getDate() - days);
+      params.start_date = toStr(from);
+      params.end_date = toStr(now);
+    }
   }
-
-  params.start_date = startStr;
-  params.end_date = endStr;
 
   await fetchDrafts(params);
   selectedIds.value.clear();
@@ -166,20 +163,29 @@ const refreshData = async () => {
 
 // ── Edit Draft ────────────────────────────────────────────────────────────────
 const handleEdit = (mail) => {
-  const jenis = (mail.category || "").trim().toUpperCase();
+  // Jika ini draft dari konsep, arahkan ke halaman konsep
+  if (mail.isDraftKonsep) {
+    router.push({ path: '/korespondensi/tulis/konsep', query: { draft_id: mail.id, mode: 'edit' } });
+    return;
+  }
+
+  const jenis = (mail.category || '').trim().toUpperCase();
   const routes = {
-    ND: "/korespondensi/tulis/nota-dinas",
-    "NOTA DINAS": "/korespondensi/tulis/nota-dinas",
-    DI: "/korespondensi/tulis/disposisi",
-    DISPOSISI: "/korespondensi/tulis/disposisi",
-    SDI: "/korespondensi/tulis/surat-dinas-internal",
-    INTERNAL: "/korespondensi/tulis/surat-dinas-internal",
-    SDE: "/korespondensi/tulis/surat-dinas-eksternal",
-    EXTERNAL: "/korespondensi/tulis/surat-dinas-eksternal",
-    KA: "/korespondensi/tulis/kajian",
-    KAJIAN: "/korespondensi/tulis/kajian",
+    ND: '/korespondensi/tulis/nota-dinas',
+    'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
+    DI: '/korespondensi/tulis/disposisi',
+    DISPOSISI: '/korespondensi/tulis/disposisi',
+    SDI: '/korespondensi/tulis/surat-dinas-internal',
+    INTERNAL: '/korespondensi/tulis/surat-dinas-internal',
+    SDE: '/korespondensi/tulis/surat-dinas-eksternal',
+    EXTERNAL: '/korespondensi/tulis/surat-dinas-eksternal',
+    KA: '/korespondensi/tulis/kajian',
+    KAJIAN: '/korespondensi/tulis/kajian',
   };
-  router.push({ path: routes[jenis] || "/korespondensi/tulis/nota-dinas", query: { draft_id: mail.id, mode: "edit" } });
+  router.push({
+    path: routes[jenis] || '/korespondensi/tulis/nota-dinas',
+    query: { draft_id: mail.id, mode: 'edit' }
+  });
 };
 
 // ── Delete ────────────────────────────────────────────────────────────────────
@@ -251,30 +257,27 @@ const toggleSelectAll = () => {
 const isAllSelected = computed(() => items.value.length > 0 && selectedIds.value.size === items.value.length);
 
 // ── Filter / Sort / Pagination UI Actions ─────────────────────────────────────
-const selectSortOption = (opt) => { activeSortLabel.value = opt; showSortMenu.value = false; refreshData(); };
+const selectSortOption = (opt) => { activeSortLabel.value = opt; showSortMenu.value = false; currentPage.value = 1; refreshData(); };
 const selectDateFilter = (opt) => {
   activeDateLabel.value = opt;
   showDateMenu.value = false;
-  pagination.value.page = 1;
+  currentPage.value = 1;
   refreshData();
 };
 const applyCustomDate = () => {
   activeDateLabel.value = "Custom";
   showDateMenu.value = false;
-  pagination.value.page = 1;
+  currentPage.value = 1;
   refreshData();
 };
 
-// ── FUNGSI BARU: Select Limit Pagination ──
 const selectPageSize = (size) => {
-  pagination.value.limit = size;
-  pagination.value.page = 1;
+  itemsPerPage.value = size;
   showPageMenu.value = false;
-  refreshData();
 };
 
-const nextPage = () => { if (pagination.value.page < pagination.value.totalPages) { pagination.value.page++; refreshData(); } };
-const prevPage = () => { if (pagination.value.page > 1) { pagination.value.page--; refreshData(); } };
+const nextPage = () => { if (currentPage.value < pagination.value.totalPages) { currentPage.value++; refreshData(); } };
+const prevPage = () => { if (currentPage.value > 1) { currentPage.value--; refreshData(); } };
 
 // ── EXPORT EXCEL ──────────────────────────────────────────────────────────────
 const downloadExcel = () => {
@@ -295,18 +298,18 @@ const downloadExcel = () => {
 };
 
 // ── Watchers ──────────────────────────────────────────────────────────────────
-// Tab berubah → reset ke halaman 1
-watch([activeTab], () => {
-  pagination.value.page = 1;
+watch([activeTab, itemsPerPage], () => {
+  currentPage.value = 1;
   refreshData();
 });
+watch(currentPage, () => refreshData());
 
 // Search debounce
 let searchTimeout;
 watch(searchQuery, () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    pagination.value.page = 1;
+    currentPage.value = 1;
     refreshData();
   }, 500);
 });
@@ -360,76 +363,78 @@ onMounted(refreshData);
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
 
         <div class="relative">
-          <button @click="showDateMenu = !showDateMenu"
+          <button @click="showDateMenu = !showDateMenu" title="Periode Data"
             class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
             <History class="w-4 h-4 shrink-0" />
             <span v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"></span>
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900" />
           </button>
-          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent" />
           <div v-if="showDateMenu"
-            class="absolute top-full right-0 mt-1 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex">
-            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800">
+            class="absolute top-full right-0 mt-2 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden flex animate-in fade-in slide-in-from-top-2 duration-150">
+
+            <!-- Custom range -->
+            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
                 class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
-                <span>Pilih Tanggal</span>
-                <Check v-if="activeDateLabel === 'Custom'" class="w-3.5 h-3.5 text-primary" />
+                <span>Rentang Tanggal</span>
+                <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
               <div class="space-y-4">
+                <!-- Mulai -->
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openStart" :content="{ placement: 'bottom-start' }">
-                      <UButton color="white" variant="outline" block class="justify-start">
-                        <div class="flex items-center gap-2 w-full">
-                          <span class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">
-                            {{ startDate ? startDate.toLocaleDateString("id-ID") : "Pilih" }}
-                          </span>
-                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar v-model="startDate" @close="openStart = false" />
-                        </div>
+                    <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openStartDate = true">
+                        <UInputDate locale="id-ID" v-model="startDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="startDateCal" class="p-2" @update:model-value="openStartDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
+                <!-- Sampai -->
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openEnd" :content="{ placement: 'bottom-start' }">
-                      <UButton color="white" variant="outline" block class="justify-start">
-                        <div class="flex items-center gap-2 w-full">
-                          <span class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">
-                            {{ endDate ? endDate.toLocaleDateString("id-ID") : "Pilih" }}
-                          </span>
-                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar v-model="endDate" @close="openEnd = false" />
-                        </div>
+                    <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openEndDate = true">
+                        <UInputDate locale="id-ID" v-model="endDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="endDateCal" class="p-2" @update:model-value="openEndDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
                 <button @click="applyCustomDate"
-                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2 rounded-md hover:bg-primary-600 transition-colors shadow-sm">
-                  Terapkan Range
+                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
+                  Terapkan Filter
                 </button>
               </div>
             </div>
-            <div class="w-5/12 py-2 overflow-y-auto max-h-[300px]">
+
+            <!-- Preset -->
+            <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
               <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Preset
               </div>
               <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
-                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors">
+                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between transition-colors">
                 <span>{{ opt }}</span>
-                <Check v-if="activeDateLabel === opt && !isCustomDate" class="w-3.5 h-3.5 text-primary" />
+                <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
           </div>
@@ -472,7 +477,7 @@ onMounted(refreshData);
               class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
               <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary transition-colors"
-                :class="{ 'text-primary font-semibold bg-gray-50 dark:bg-gray-700': pagination.limit === size }">
+                :class="{ 'text-primary font-semibold bg-gray-50 dark:bg-gray-700': itemsPerPage === size }">
                 {{ size }} Item
               </button>
             </div>
@@ -486,12 +491,12 @@ onMounted(refreshData);
           </span>
           <button
             class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
-            @click="prevPage" :disabled="pagination.page === 1">
+            @click="prevPage" :disabled="currentPage === 1">
             <ChevronLeft class="w-4 h-4" />
           </button>
           <button
             class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
-            @click="nextPage" :disabled="pagination.page >= pagination.totalPages">
+            @click="nextPage" :disabled="currentPage >= pagination.totalPages">
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
@@ -561,7 +566,7 @@ onMounted(refreshData);
               <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3 overflow-hidden">
                 <div class="flex md:hidden w-full mb-0.5">
                   <span class="text-neutral-500 dark:text-gray-400 text-[10px]">
-                    {{ formatShortDate(mail.created_at || mail.date) }}
+                    {{ formatShortDate(mail.created_at, mail.waktu) }}
                   </span>
                 </div>
 
@@ -597,7 +602,7 @@ onMounted(refreshData);
 
               <div class="hidden md:flex pl-2 shrink-0 justify-end w-[130px]">
                 <span class="text-neutral-500 dark:text-gray-400 text-[12px] truncate">
-                  {{ formatShortDate(mail.created_at || mail.date) }}
+                  {{ formatShortDate(mail.created_at, mail.waktu) }}
                 </span>
               </div>
 

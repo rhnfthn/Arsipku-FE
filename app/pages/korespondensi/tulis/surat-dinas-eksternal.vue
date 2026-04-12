@@ -284,6 +284,14 @@ const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
 const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
+const { api: apiInstance } = useApi();
+
+// POST /SDE/send-draft/{id} — dipakai saat edit mode (composable tidak punya sendDraft)
+const sendDraftSDE = async (formData: FormData, id: string) => {
+  return await apiInstance.put(`/SDE/send-draft/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
 
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
@@ -420,6 +428,13 @@ const handleSaveDraftAction = async () => {
 
   try {
     const fd = createFormData(payload, false);
+
+    // DEBUG: pastikan penerima & tembusan terkirim ke backend
+    console.log('[SDE Save Draft] penerima:', payload.penerima);
+    console.log('[SDE Save Draft] tembusan:', payload.tembusan);
+    console.log('[SDE Save Draft] FormData penerima:', fd.get('penerima'));
+    console.log('[SDE Save Draft] FormData tembusan:', fd.get('tembusan'));
+
     let res = editDraftId.value ? await updateDraft(fd, editDraftId.value) : await saveDraft(fd);
 
     if (res?.success) {
@@ -464,9 +479,12 @@ const handleKirimDokumen = async (passphrase = '') => {
       fdFinal.append('nik', user.value.nik);
     }
 
-    const res = await sendSDE(fdFinal);
+    const res = editDraftId.value
+      ? await sendDraftSDE(fdFinal, editDraftId.value)
+      : await sendSDE(fdFinal);
 
-    if (res?.success || res?.data?.success) {
+    const isSuccess = res?.data?.success || res?.success;
+    if (isSuccess) {
       revokePdfUrl();
       toastSuccess('Berhasil', 'Surat Dinas Eksternal terkirim');
       Alert.close();
@@ -581,18 +599,38 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
+        // ── Tertuju (eksternal) ──────────────────────────────────────────
         if (d.penerima && Array.isArray(d.penerima)) {
-          selectedTertuju.value = d.penerima.map((item: any) => ({
-            label: item.nama,
-            value: item.id,
-            raw: item
-          }));
+          selectedTertuju.value = d.penerima.map((item: any) => {
+            // Cari item yang matching di externalItems (coerce ke string agar tidak type-mismatch)
+            const candidateIds = [
+              String(item.id ?? ''),
+              String(item.persuratan_eksternal_id ?? ''),
+              String(item.value ?? ''),
+            ].filter(Boolean);
+
+            const found = externalItems.value.find(ext =>
+              candidateIds.includes(String(ext.value))
+            );
+            if (found) return found;
+
+            // Fallback: bentuk object dengan format yang sama seperti externalItems
+            return {
+              label: item.nama || item.name || String(item.id ?? ''),
+              value: String(item.id ?? item.value ?? ''),
+              raw: item,
+            };
+          });
         }
 
+        // ── Tembusan (internal) ──────────────────────────────────────────
         if (d.tembusan && Array.isArray(d.tembusan)) {
-          const tembusanIds = d.tembusan.map((t: any) =>
-            typeof t === 'object' ? String(t.position || t.position_id || t.id || t.value) : String(t)
-          );
+          const tembusanIds = d.tembusan.map((t: any) => {
+            if (typeof t !== 'object') return String(t);
+            // Coba semua kemungkinan field id
+            return String(t.position ?? t.position_id ?? t.id ?? t.value ?? '');
+          }).filter(Boolean);
+
           selectedTembusan.value = internalItems.value.filter(item =>
             tembusanIds.includes(String(item.value))
           );

@@ -207,6 +207,7 @@ const allowedActions = computed(() => {
 
 // --- DATA FETCHING ---
 // --- DATA FETCHING ---
+// --- DATA FETCHING ---
 const loadData = async () => {
   if (!id) return;
   isLoading.value = true;
@@ -253,6 +254,15 @@ const loadData = async () => {
           const aksi = flow.detail?.aksi || 'read';
           const flowId = flow.id;
 
+          // Ekstraksi Penerima & Tembusan yang diperbaiki (Sama dengan page referensi)
+          const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
+          const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
+          const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
+
+          const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
+          const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
+          const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
+
           return {
             id: flowId,
             sifat: flow.sifat,
@@ -263,22 +273,13 @@ const loadData = async () => {
             perihal: flow.perihal || konsepData.perihal,
             nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
-
-            // Pengirim dokumen di-header utama vs aktor flow
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
-            from: flow.pengirim, // Aktor alur (Yusak meneruskan ke Suryadi, from = Yusak)
+            from: flow.pengirim,
 
-            // Grouping penerima & tembusan (sama seperti logika surat masuk)
-            to: (() => {
-              const raw = aksi === 'create' ? (flow.detail?.naskah_penerima || flow.penerima || []) : (flow.penerima || []);
-              const grup = flow.penerima_grup || flow.detail?.penerima_grup || [];
-              return processGrouping(raw, grup);
-            })(),
-            cc: (() => {
-              const raw = aksi === 'create' ? (flow.detail?.naskah_tembusan || flow.tembusan || []) : (flow.tembusan || []);
-              const grup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
-              return processGrouping(raw, grup);
-            })(),
+            // Assign data yang sudah diproses di atas
+            penerima: processedPenerima,
+            to: processedPenerima,
+            cc: processedTembusan,
 
             rich_content: flow.konten || '',
             catatan: flow.detail?.catatan,
@@ -293,54 +294,72 @@ const loadData = async () => {
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
 
-      const dataArray: any[] = Array.isArray(response) ? response : (response ? [response] : []);
-      const firstItem = dataArray[0]?.raw || dataArray[0];
+      const rawData = response?.data || response;
+      let rawFlows: any[] = [];
+      let inboxData: any = null;
 
-      if (firstItem) {
-        selected.value = firstItem;
+      if (Array.isArray(rawData)) {
+        if (rawData.length > 0 && rawData[0].flow) {
+          inboxData = rawData[0];
+          rawFlows = inboxData.flow;
+        } else {
+          rawFlows = rawData;
+          inboxData = rawData[0];
+        }
+      } else if (rawData) {
+        inboxData = rawData;
+        rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
+      }
 
-        details.value = dataArray.map((item: any) => {
-          const d = item.raw || item;
+      if (inboxData && rawFlows.length > 0) {
+        selected.value = inboxData;
 
+        details.value = rawFlows.map((item: any) => {
+          // Robust checking untuk penerima
           let listPenerima: any[] = [];
-          if (Array.isArray(d.penerima) && d.penerima.length > 0) listPenerima = d.penerima;
-          else if (Array.isArray(d.kepada) && d.kepada.length > 0) listPenerima = d.kepada;
-          if (listPenerima.length === 0 && d.detail?.kepada_yth) {
-            listPenerima = d.detail.kepada_yth.split(';').map((n: string) => ({ nama: n.trim(), position_text: n.trim() })).filter((x: any) => x.nama);
+          if (Array.isArray(item.penerima) && item.penerima.length > 0) listPenerima = item.penerima;
+          else if (Array.isArray(item.kepada) && item.kepada.length > 0) listPenerima = item.kepada;
+          else if (Array.isArray(item.to)) listPenerima = item.to;
+          else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
+
+          if (listPenerima.length === 0 && inboxData) {
+            if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
+            else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
           }
+          const penerimaGrup = item.penerima_grup || inboxData?.penerima_grup || inboxData?.raw?.penerima_grup || [];
+          listPenerima = processGrouping(listPenerima, penerimaGrup);
 
+          // Robust checking untuk tembusan
           let listTembusan: any[] = [];
-          if (Array.isArray(d.tembusan)) listTembusan = d.tembusan;
-          else if (Array.isArray(d.cc)) listTembusan = d.cc;
+          if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
+          else if (Array.isArray(item.cc)) listTembusan = item.cc;
 
-          // ==========================================
-          // EKSEKUSI GROUPING DI SINI
-          // ==========================================
-          const penerimaGrup = d.penerima_grup || [];
-          const tembusanGrup = d.tembusan_grup || [];
-
-          const finalPenerima = processGrouping(listPenerima, penerimaGrup);
-          const finalTembusan = processGrouping(listTembusan, tembusanGrup);
+          if (listTembusan.length === 0 && inboxData) {
+            if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
+            else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
+          }
+          const tembusanGrup = item.tembusan_grup || inboxData?.tembusan_grup || inboxData?.raw?.tembusan_grup || [];
+          listTembusan = processGrouping(listTembusan, tembusanGrup);
 
           return {
-            id: d.id,
+            id: item.id,
             ttd: item.ttd,
             sifat: item.sifat,
-            dikirim_oleh: d.dikirim_oleh || null,  // ← hanya satu
-            aksi: d.status || 'read',
-            jenis: d.jenis || 'SM',
-            jenis_label: d.jenis_label || 'SURAT MASUK',
-            perihal: d.perihal,
-            nomor: d.nomor || '-',
-            tanggal: d.tanggal || d.created_at,
-            pengirim: d.pengirim,
-            to: finalPenerima,
-            cc: finalTembusan,
-            mainDisplayContentHtml: d.konten || '',
-            catatan: d.detail?.catatan || d.disposisi_content?.catatan || '',  // ← optional chaining
-            disposisi: d.disposisi || d.instruksi || d.disposisi_content?.disposisi,
-            lampiran_files: d.lampiran_files || d.attachments || [],
-            final_pdf_url: d.final_pdf_url || d.file_url,
+            dikirim_oleh: inboxData.dikirim_oleh || null,
+            aksi: item.status || 'read',
+            jenis: item.jenis || inboxData.jenis || 'SM',
+            jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
+            perihal: item.perihal || inboxData.perihal,
+            nomor: item.nomor || inboxData.nomor || '-',
+            tanggal: item.tanggal || item.created_at || inboxData.tanggal,
+            pengirim: item.pengirim || item.from || inboxData.pengirim,
+            to: listPenerima,
+            cc: listTembusan,
+            mainDisplayContentHtml: item.konten || item.isi || '',
+            catatan: item.catatan || inboxData.detail?.catatan || inboxData.disposisi_content?.catatan || '',
+            disposisi: item.disposisi || item.instruksi || inboxData.disposisi_content?.disposisi,
+            lampiran_files: item.lampiran_files || item.attachments || [],
+            final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
