@@ -939,5 +939,7 @@
   "ver_btn_export": "Export",
   "ver_btn_mengekspor": "download data",
   "nom_export_success_title": "Data downloaded successfully",
-  "nom_export_error_title": "Data failed to download"
+  "nom_export_error_title": "Data failed to download",
+
+  "del_cari_placeholder": "Search Data"
 }

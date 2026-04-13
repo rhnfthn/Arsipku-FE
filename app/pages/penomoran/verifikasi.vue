@@ -13,9 +13,9 @@
     <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
         <!-- ROWS PER PAGE -->
-        <div class="flex items-center gap-2 px-4">
+        <div class="flex items-center gap-2">
           <div class="relative" ref="rowsRef">
             <button
               type="button"

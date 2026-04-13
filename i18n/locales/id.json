@@ -649,6 +649,7 @@
   "ma_err_title": "Gagal",
   "ma_err_save_desc": "Gagal menyimpan role",
   "ma_err_del_desc": "Gagal menghapus role",
+  "del_cari_placeholder": "Cari Data",
   "te_modal_add": "Tambah Tertuju Eksternal",
   "te_modal_edit": "Edit Tertuju Eksternal",
   "te_nama": "Nama",

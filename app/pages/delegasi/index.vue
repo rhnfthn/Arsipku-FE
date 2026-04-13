@@ -59,6 +59,8 @@ const listJabatanFilter = computed(() => {
 const openFilterStatus = ref(false);
 const openFilterLokasi = ref(false);
 const openFilterJabatan = ref(false);
+// NEW: rows per page dropdown state
+const openRowsPerPage = ref(false);
 
 const statusOptions = [
   { label: 'Semua Status', value: 'Semua' },
@@ -66,6 +68,8 @@ const statusOptions = [
   { label: 'Akan Datang', value: 'tidak_aktif' },
   { label: 'Kadaluwarsa', value: 'kedaluwarsa' }
 ];
+
+const rowsPerPageOptions = [5, 10, 15, 20, 50];
 
 const statusLabel = computed(
   () => statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
@@ -81,16 +85,25 @@ function toggleFilterStatus() {
   openFilterStatus.value = !openFilterStatus.value;
   openFilterLokasi.value = false;
   openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 function toggleFilterLokasi() {
   openFilterLokasi.value = !openFilterLokasi.value;
   openFilterStatus.value = false;
   openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 function toggleFilterJabatan() {
   openFilterJabatan.value = !openFilterJabatan.value;
   openFilterStatus.value = false;
   openFilterLokasi.value = false;
+  openRowsPerPage.value = false;
+}
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+  openFilterLokasi.value = false;
+  openFilterJabatan.value = false;
 }
 function selectFilterStatus(val: string) {
   filterStatus.value = val;
@@ -104,10 +117,27 @@ function selectFilterJabatan(val: string) {
   filterJabatan.value = val;
   openFilterJabatan.value = false;
 }
+function selectRowsPerPage(val: number) {
+  rowsPerPage.value = val;
+  openRowsPerPage.value = false;
+}
 
 // FETCH DATA
 const rowsPerPage = ref(10);
 const currentPage = ref(1);
+
+const mapDelegasiItem = (item: any) => ({
+  id: item.id,
+  delegator_nama: item.name || '-',
+  delegator_jabatan: item.position_text || '-',
+  nama: item.as_name || '-',
+  lokasi: item.as_organization_text || item.as_area_text || '-',
+  sebagai: item.position_status || '-',
+  jabatan: item.as_position_text || '-',
+  tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
+  status: item.status?.label || '-',
+  raw: item
+});
 
 const fetchData = async () => {
   isLoading.value = true;
@@ -126,18 +156,7 @@ const fetchData = async () => {
       listDelegasi.value = [];
       return;
     }
-    listDelegasi.value = dataArray.map((item: any) => ({
-      id: item.id,
-      delegator_nama: item.name || '-',
-      delegator_jabatan: item.position_text || '-',
-      nama: item.as_name || '-',
-      lokasi: item.as_organization_text || item.as_area_text || '-',
-      sebagai: item.position_status || '-',
-      jabatan: item.as_position_text || '-',
-      tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
-      status: item.status?.label || '-',
-      raw: item
-    }));
+    listDelegasi.value = dataArray.map(mapDelegasiItem);
     if (meta) {
       totalItems.value = meta.total;
       totalPagesApi.value = meta.totalPages;
@@ -391,7 +410,6 @@ const saveDelegasi = async () => {
   }
 };
 
-// SELECT helpers — clear error saat dipilih
 function selectNewPersonil(val: string) {
   newDelegasi.value.personil = val;
   newErrors.value.personil = '';
@@ -529,14 +547,18 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
   openFilterLokasi.value = false;
   openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
 });
 
-const exportData = () => {
-  if (filteredData.value.length === 0) {
+// ─── EXPORT: fetch ALL data, not just current page ───────────────────────────
+const isExporting = ref(false);
+
+const exportData = async () => {
+  if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
       description: 'Tidak ada data untuk diexport',
@@ -544,25 +566,95 @@ const exportData = () => {
     });
     return;
   }
-  const headers = ['Nama', 'Jabatan', 'Lokasi', 'Periode', 'Status'];
-  const rows = filteredData.value.map((i) => [i.nama, i.jabatan, i.lokasi, i.tanggal, i.status]);
-  const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute(
-    'download',
-    `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
-  );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  toast.add({
-    title: 'Berhasil',
-    description: `${filteredData.value.length} data berhasil diexport`,
-    color: 'success'
-  });
+
+  isExporting.value = true;
+  try {
+    // Fetch all data in one request using totalItems as limit
+    const res = await getDelegasiList({
+      page: 1,
+      limit: totalItems.value || 9999,
+      search: search.value,
+      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
+    });
+    const wrapper = res.data;
+    const dataArray = wrapper?.data || [];
+    if (!Array.isArray(dataArray) || dataArray.length === 0) {
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning'
+      });
+      return;
+    }
+
+    // Map to full objects
+    const allData = dataArray.map(mapDelegasiItem);
+
+    // Apply client-side filters (lokasi, jabatan) same as filteredData
+    let exportRows = [...allData];
+    if (filterLokasi.value !== 'Semua')
+      exportRows = exportRows.filter((item) => item.lokasi === filterLokasi.value);
+    if (filterJabatan.value !== 'Semua')
+      exportRows = exportRows.filter((item) => item.jabatan === filterJabatan.value);
+    if (sortDirection.value === 'asc') exportRows.sort((a, b) => a.nama.localeCompare(b.nama));
+    if (sortDirection.value === 'desc') exportRows.sort((a, b) => b.nama.localeCompare(a.nama));
+
+    // All table columns including Delegator
+    const headers = [
+      'Delegator',
+      'Jabatan Delegator',
+      'Penerima Delegasi',
+      'Lokasi',
+      'Status Peran',
+      'Sebagai Jabatan',
+      'Periode',
+      'Status'
+    ];
+    const rows = exportRows.map((i) => [
+      i.delegator_nama,
+      i.delegator_jabatan,
+      i.nama,
+      i.lokasi,
+      i.sebagai,
+      i.jabatan,
+      i.tanggal,
+      i.status === 'Tidak Aktif' || i.status === 'tidak_aktif' ? 'Akan Datang' : i.status
+    ]);
+
+    // Escape CSV values (handle commas and quotes)
+    const escapeCSV = (val: string) => {
+      const str = String(val ?? '');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const csvContent = [headers, ...rows].map((row) => row.map(escapeCSV).join(',')).join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.add({
+      title: 'Berhasil',
+      description: `${exportRows.length} data berhasil diexport`,
+      color: 'success'
+    });
+  } catch (error) {
+    handleApiError(error);
+  } finally {
+    isExporting.value = false;
+  }
 };
 </script>
 
@@ -585,22 +677,56 @@ const exportData = () => {
     <div
       class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
     >
-      <div
-        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between"
-      >
-        <div class="flex items-center gap-3 flex-wrap">
-          <select
-            v-model="rowsPerPage"
-            class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option v-for="n in [5, 10, 15]" :key="n" :value="n">{{ n }}</option>
-          </select>
+      <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+        <div class="flex items-center gap-3 flex-wrap flex-1">
+          <!-- ROWS PER PAGE — custom dropdown (same style as filter dropdowns) -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleRowsPerPage"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+            >
+              <span>{{ rowsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openRowsPerPage }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openRowsPerPage"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
+              >
+                <button
+                  v-for="n in rowsPerPageOptions"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    rowsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
 
           <div class="flex items-center gap-2">
             <button
               @click="toggleSort"
               class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Urutkan"
+              :title="
+                sortDirection === 'asc'
+                  ? 'Urutan A-Z'
+                  : sortDirection === 'desc'
+                    ? 'Urutan Z-A'
+                    : 'Urutkan'
+              "
+              :class="{ 'text-primary dark:text-primary-400': sortDirection !== null }"
             >
               <ArrowUpDown class="w-4 h-4" />
             </button>
@@ -744,24 +870,30 @@ const exportData = () => {
               </div>
             </Transition>
           </div>
+
+          <!-- SEARCH — memanjang mengisi sisa ruang -->
+          <div class="relative flex-1 min-w-[160px]">
+            <Search
+              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="search"
+              :placeholder="$t('del_cari_placeholder')"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
         </div>
 
-        <div class="relative">
-          <Search
-            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-          />
-          <input
-            v-model.lazy="search"
-            type="text"
-            placeholder="Cari..."
-            class="pl-9 pr-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-          />
-        </div>
         <button
           @click="exportData"
-          class="flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm"
+          :disabled="isExporting"
+          class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
         >
-          Export
+          <span
+            v-if="isExporting"
+            class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
+          />
+          {{ isExporting ? 'Mengexport...' : 'Export' }}
         </button>
       </div>
 

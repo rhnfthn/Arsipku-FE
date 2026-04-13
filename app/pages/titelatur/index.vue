@@ -282,7 +282,7 @@ const deleteNow = async () => {
     >
       <!-- TOP BAR -->
       <div
-        class="p-3 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
+        class="p-3.5 border-b border-gray-300 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3"
       >
         <div class="flex items-center gap-3 flex-wrap">
           <!-- ROWS PER PAGE -->

@@ -27,7 +27,7 @@
     >
       <!-- TOP BAR -->
       <div
-        class="flex flex-col md:flex-row justify-between items-center gap-4 p-3 border-b border-gray-200 dark:border-gray-700"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5 border-b border-gray-200 dark:border-gray-700"
       >
         <!-- ROWS PER PAGE -->
         <div class="flex items-center gap-2">

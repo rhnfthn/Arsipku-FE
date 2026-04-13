@@ -11,8 +11,8 @@
 
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
-        <div class="flex items-center gap-2 px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
+        <div class="flex items-center gap-2">
           <!-- ROWS PER PAGE -->
           <div class="relative" ref="rowsRef">
             <button
@@ -54,7 +54,7 @@
             <button
               type="button"
               @click.stop="showFilterDropdown = !showFilterDropdown"
-              class="h-9 flex ml-4 items-center text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
+              class="h-9 flex ml-2 items-center text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 hover:border-primary outline-none transition-all min-w-[180px] justify-between"
             >
               <div class="flex items-center gap-2">
                 <span class="truncate">{{ selectedFilterLabel }}</span>

@@ -22,7 +22,7 @@
       class="bg-white mt-2 dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full"
     >
       <!-- TOP ACTION BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
         <!-- STATUS FILTER -->
         <div class="relative" data-custom-dropdown>
           <button
