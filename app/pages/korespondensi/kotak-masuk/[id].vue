@@ -276,6 +276,7 @@ const loadData = async () => {
             aksi,
             jenis: flow.jenis || 'K',
             jenis_label: flow.jenis_label || 'Konsep',
+            jenis_naskah_konsep: flow.jenis_naskah_konsep || flow.detail?.jenis_naskah_konsep || flow.jenis_label || '',
             perihal: flow.perihal || '-',
             nomor: flow.nomor || '-',
             tanggal: flow.created_at || flow.tanggal,
@@ -383,8 +384,24 @@ const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true
 const handleFinalizeAndRedirect = () => {
   showFinalizeOptionsModal.value = false;
   if (selected.value?.id) {
+    const rawKind = selected.value?.jenis_naskah_konsep || selected.value?.detail?.jenis_naskah_konsep || selected.value?.jenis || 'ND';
+    const upperKind = String(rawKind).trim().toUpperCase();
+    
+    let pathSeg = 'nota-dinas';
+    if (konsepRouteMap[upperKind]) {
+      pathSeg = konsepRouteMap[upperKind];
+    } else if (upperKind.includes('INTERNAL') || upperKind === 'SDI') {
+      pathSeg = 'surat-dinas-internal';
+    } else if (upperKind.includes('EKSTERNAL') || upperKind.includes('EXTERNAL') || upperKind === 'SDE') {
+      pathSeg = 'surat-dinas-eksternal';
+    } else if (upperKind.includes('KAJIAN') || upperKind === 'KA') {
+      pathSeg = 'kajian';
+    } else if (upperKind.includes('DISPOSISI') || upperKind === 'DI') {
+      pathSeg = 'disposisi';
+    }
+
     router.push({
-      path: '/korespondensi/tulis/finalisasi/nota-dinas',
+      path: `/korespondensi/tulis/finalisasi/${pathSeg}`,
       query: { ref_id: selected.value.id, action: 'finalize' }
     });
   }

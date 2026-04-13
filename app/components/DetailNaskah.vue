@@ -170,8 +170,8 @@ const hasAccess = (codes: string[]) => {
           <div
             class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600">
             {{ data.aksi === 'kirim_disposisi' ?
-              'DISPOSISI' : (data.aksi === 'create' ?
-                'KONSEP' : (data.jenis_label || data.aksi)) }}
+              'DISPOSISI' : (data.aksi === 'create' || (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep) ?
+                (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}
           </div>
           <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
           <template v-if="aksiBadge">
