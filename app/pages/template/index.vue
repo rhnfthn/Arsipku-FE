@@ -366,8 +366,8 @@
                 accept=".pdf,.doc,.docx,.xlsx,.xls,.html"
                 @change="
                   (e) => {
-                    handleAddFile(e);
-                    addErrors.file = false;
+                    handleAddFile(e)
+                    addErrors.file = false
                   }
                 "
               />
@@ -523,8 +523,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Inbox,
   FileCheck,
@@ -535,23 +535,23 @@ import {
   Trash2,
   Plus,
   ChevronDown
-} from 'lucide-vue-next';
-import Heading from '~/components/Heading.vue';
-import Modal from '~/components/Modal.vue';
-import PageHeader from '~/components/PageHeader.vue';
-import ConfirmPopup from '~/components/ConfirmPopup.vue';
-import { useTemplate } from '~/composables/useTemplate';
-import type { Template } from '~/types/template';
+} from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
+import Modal from '~/components/Modal.vue'
+import PageHeader from '~/components/PageHeader.vue'
+import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import { useTemplate } from '~/composables/useTemplate'
+import type { Template } from '~/types/template'
 
-definePageMeta({ middleware: 'auth' });
+definePageMeta({ middleware: 'auth' })
 
-const { t } = useI18n();
-const toast = useToast();
+const { t } = useI18n()
+const toast = useToast()
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('tmpl_title'), to: '/admin/template' }
-]);
+])
 
 const {
   getTemplates,
@@ -563,19 +563,19 @@ const {
   isLoadingCreate,
   isLoadingUpdate,
   isLoadingDelete
-} = useTemplate();
+} = useTemplate()
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const templates = ref<Template[]>([]);
-const search = ref('');
-const editModal = ref(false);
-const addModal = ref(false);
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref<Template | null>(null);
-const addErrors = ref({ nama_template: false, file: false });
-const editErrors = ref({ nama_template: false });
-const editData = ref<any>({ id: '', nama_template: '', file: '', newFile: null, newFileName: '' });
-const addData = ref<any>({ nama_template: '', file: null, fileName: '' });
+const templates = ref<Template[]>([])
+const search = ref('')
+const editModal = ref(false)
+const addModal = ref(false)
+const confirmDeleteOpen = ref(false)
+const itemToDelete = ref<Template | null>(null)
+const addErrors = ref({ nama_template: false, file: false })
+const editErrors = ref({ nama_template: false })
+const editData = ref<any>({ id: '', nama_template: '', file: '', newFile: null, newFileName: '' })
+const addData = ref<any>({ nama_template: '', file: null, fileName: '' })
 
 const escapeHtml = (value: string) =>
   value
@@ -583,138 +583,170 @@ const escapeHtml = (value: string) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/'/g, '&#39;')
 
 function highlight(text: string | null | undefined, keyword: string): string {
-  const safeText = escapeHtml(String(text ?? '-'));
-  const q = keyword.trim();
-  if (!q) return safeText;
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
 
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
 
   return safeText.replace(
     regex,
     '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
-  );
+  )
 }
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 const fetchData = async () => {
   try {
-    const data = await getTemplates();
-    templates.value = data;
+    const data = await getTemplates()
+    templates.value = data
   } catch (error) {
-    console.error('❌ Error loading templates:', error);
+    console.error('❌ Error loading templates:', error)
   }
-};
+}
 
 // ─── Sort ─────────────────────────────────────────────────────────────────────
-const sortKey = ref('');
-const sortOrder = ref<'asc' | 'desc'>('asc');
+const sortKey = ref('')
+const sortOrder = ref<'asc' | 'desc'>('asc')
 
 const filteredTemplates = computed(() => {
-  const s = search.value.toLowerCase();
+  const s = search.value.toLowerCase()
   return templates.value.filter(
     (template) =>
       template.nama_template.toLowerCase().includes(s) || template.file.toLowerCase().includes(s)
-  );
-});
+  )
+})
 
 const sortedTemplates = computed(() => {
-  if (!sortKey.value) return filteredTemplates.value;
+  if (!sortKey.value) return filteredTemplates.value
 
   return [...filteredTemplates.value].sort((a, b) => {
-    const A = a[sortKey.value as keyof Template];
-    const B = b[sortKey.value as keyof Template];
-    if (A == null) return 1;
-    if (B == null) return -1;
-    if (A < B) return sortOrder.value === 'asc' ? -1 : 1;
-    if (A > B) return sortOrder.value === 'asc' ? 1 : -1;
-    return 0;
-  });
-});
+    const A = a[sortKey.value as keyof Template]
+    const B = b[sortKey.value as keyof Template]
+    if (A == null) return 1
+    if (B == null) return -1
+    if (A < B) return sortOrder.value === 'asc' ? -1 : 1
+    if (A > B) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+})
 
 const handleSort = (key: string) => {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
-    sortKey.value = key;
-    sortOrder.value = 'asc';
+    sortKey.value = key
+    sortOrder.value = 'asc'
   }
-};
+}
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const rowsPerPage = ref(10);
-const rowsChoices = [10, 25, 50, 100];
-const showRowsDropdown = ref(false);
-const rowsRef = ref<HTMLElement | null>(null);
-const currentPage = ref(1);
+const rowsPerPage = ref(10)
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
+const currentPage = ref(1)
 
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n;
-  showRowsDropdown.value = false;
-  currentPage.value = 1;
-};
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  currentPage.value = 1
+}
 
 const paginatedTemplates = computed(() => {
-  const start = (currentPage.value - 1) * rowsPerPage.value;
-  return sortedTemplates.value.slice(start, start + rowsPerPage.value);
-});
+  const start = (currentPage.value - 1) * rowsPerPage.value
+  return sortedTemplates.value.slice(start, start + rowsPerPage.value)
+})
 
-const totalItems = computed(() => filteredTemplates.value.length);
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)));
+const totalItems = computed(() => filteredTemplates.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / rowsPerPage.value)))
 
 const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const delta = 2;
-  const range: number[] = [];
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2
+  const range: number[] = []
   for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
-    range.push(i);
+    range.push(i)
   }
-  return range;
-});
+  return range
+})
 
 watch([search, rowsPerPage], () => {
-  currentPage.value = 1;
-});
+  currentPage.value = 1
+})
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
 }
 
 // ─── Add ──────────────────────────────────────────────────────────────────────
 const openAdd = () => {
-  addData.value = { nama_template: '', file: null, fileName: '' };
-  addErrors.value = { nama_template: false, file: false };
-  addModal.value = true;
-};
+  addData.value = { nama_template: '', file: null, fileName: '' }
+  addErrors.value = { nama_template: false, file: false }
+  addModal.value = true
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
 const handleAddFile = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  addData.value.file = file;
-  addData.value.fileName = file.name;
-};
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast.add({
+      title: t('tmpl_toast_file_terlalu_besar') || 'File Terlalu Besar',
+      description: t('tmpl_toast_file_maks') || 'Ukuran file maksimal 10 MB',
+      color: 'red'
+    })
+    // Reset input agar file tidak tersimpan
+    ;(event.target as HTMLInputElement).value = ''
+    return
+  }
+
+  addData.value.file = file
+  addData.value.fileName = file.name
+}
+
+const handleEditFile = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast.add({
+      title: t('tmpl_toast_file_terlalu_besar') || 'File Terlalu Besar',
+      description: t('tmpl_toast_file_maks') || 'Ukuran file maksimal 10 MB',
+      color: 'red'
+    })
+    ;(event.target as HTMLInputElement).value = ''
+    return
+  }
+
+  editData.value.newFile = file
+  editData.value.newFileName = file.name
+}
 const clearAddFile = () => {
-  addData.value.file = null;
-  addData.value.fileName = '';
-};
+  addData.value.file = null
+  addData.value.fileName = ''
+}
 const saveAdd = async () => {
   // Reset errors
-  addErrors.value = { nama_template: false, file: false };
+  addErrors.value = { nama_template: false, file: false }
 
-  let hasError = false;
+  let hasError = false
   if (!addData.value.nama_template?.trim()) {
-    addErrors.value.nama_template = true;
-    hasError = true;
+    addErrors.value.nama_template = true
+    hasError = true
   }
   if (!addData.value.file) {
-    addErrors.value.file = true;
-    hasError = true;
+    addErrors.value.file = true
+    hasError = true
   }
 
   if (hasError) {
@@ -722,24 +754,24 @@ const saveAdd = async () => {
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_file_wajib'),
       color: 'red'
-    });
-    return;
+    })
+    return
   }
 
   try {
-    await createTemplate({ nama_template: addData.value.nama_template, file: addData.value.file });
-    addModal.value = false;
-    await fetchData();
-    currentPage.value = 1;
+    await createTemplate({ nama_template: addData.value.nama_template, file: addData.value.file })
+    addModal.value = false
+    await fetchData()
+    currentPage.value = 1
   } catch (error) {
-    console.error('❌ Error creating template:', error);
+    console.error('❌ Error creating template:', error)
   }
-};
+}
 
 // ─── Edit ─────────────────────────────────────────────────────────────────────
 const openEdit = async (template: Template) => {
   try {
-    const detail = await getTemplateById(template.id);
+    const detail = await getTemplateById(template.id)
     if (detail) {
       editData.value = {
         id: detail.id,
@@ -748,101 +780,96 @@ const openEdit = async (template: Template) => {
         file_url: detail.file_url,
         newFile: null,
         newFileName: ''
-      };
-      editErrors.value = { nama_template: false }; // ← tambahkan ini
-      editModal.value = true;
+      }
+      editErrors.value = { nama_template: false } // ← tambahkan ini
+      editModal.value = true
     }
   } catch (error) {
-    console.error('❌ Error opening edit modal:', error);
+    console.error('❌ Error opening edit modal:', error)
   }
-};
-const handleEditFile = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  editData.value.newFile = file;
-  editData.value.newFileName = file.name;
-};
+}
+
 const clearEditFile = () => {
-  editData.value.newFile = null;
-  editData.value.newFileName = '';
-};
+  editData.value.newFile = null
+  editData.value.newFileName = ''
+}
 const saveEdit = async () => {
-  editErrors.value = { nama_template: false };
+  editErrors.value = { nama_template: false }
 
   if (!editData.value.nama_template?.trim()) {
-    editErrors.value.nama_template = true;
+    editErrors.value.nama_template = true
     toast.add({
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_wajib'),
       color: 'red'
-    });
-    return;
+    })
+    return
   }
 
   try {
-    const payload: any = { nama_template: editData.value.nama_template };
-    if (editData.value.newFile) payload.file = editData.value.newFile;
-    await updateTemplate(editData.value.id, payload);
-    editModal.value = false;
-    await fetchData();
+    const payload: any = { nama_template: editData.value.nama_template }
+    if (editData.value.newFile) payload.file = editData.value.newFile
+    await updateTemplate(editData.value.id, payload)
+    editModal.value = false
+    await fetchData()
   } catch (error) {
-    console.error('❌ Error updating template:', error);
+    console.error('❌ Error updating template:', error)
   }
-};
+}
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const openDelete = (template: Template) => {
-  itemToDelete.value = template;
-  confirmDeleteOpen.value = true;
-};
+  itemToDelete.value = template
+  confirmDeleteOpen.value = true
+}
 const deleteNow = async () => {
-  if (!itemToDelete.value) return;
+  if (!itemToDelete.value) return
   try {
-    await deleteTemplate(itemToDelete.value.id);
-    confirmDeleteOpen.value = false;
-    await fetchData();
+    await deleteTemplate(itemToDelete.value.id)
+    confirmDeleteOpen.value = false
+    await fetchData()
   } catch (error) {
-    console.error('❌ Error deleting template:', error);
+    console.error('❌ Error deleting template:', error)
   } finally {
-    itemToDelete.value = null;
+    itemToDelete.value = null
   }
-};
+}
 
 // ─── Download ─────────────────────────────────────────────────────────────────
 const downloadTemplate = (template: Template) => {
   if (template.file_url) {
-    window.open(template.file_url, '_blank');
+    window.open(template.file_url, '_blank')
   } else {
     toast.add({
       title: t('tmpl_toast_url_tidak_tersedia'),
       description: t('tmpl_toast_tidak_bisa_unduh'),
       color: 'red'
-    });
+    })
   }
-};
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getFileName = (filePath: string): string => {
-  if (!filePath) return '-';
-  const parts = filePath.split('/');
-  return parts[parts.length - 1];
-};
+  if (!filePath) return '-'
+  const parts = filePath.split('/')
+  return parts[parts.length - 1]
+}
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-};
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+}
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await fetchData();
-  document.addEventListener('click', handleDocumentClick);
-});
+  await fetchData()
+  document.addEventListener('click', handleDocumentClick)
+})
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick);
-});
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>
 
 <style scoped>
