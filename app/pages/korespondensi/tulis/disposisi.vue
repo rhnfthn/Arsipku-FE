@@ -330,7 +330,9 @@ const getBasePayload = (): DisposisiPayload => ({
   tertuju: selectedTertuju.value.map(i => i.value),
   tanggal_disposisi: tglDb.value,
   tanggal_ui: tglDisplay.value,
-  sifat: selectedSifat.value?.label || "Biasa",
+  sifat: (typeof selectedSifat.value === 'object'
+    ? selectedSifat.value?.value
+    : selectedSifat.value) || "biasa",
   ref_nomor: refNumber.value || "-",
   ref_perihal: refPerihal.value || "-",
   catatan: showEditor.value ? editorContent.value : "",

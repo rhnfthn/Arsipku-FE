@@ -712,16 +712,28 @@ onMounted(async () => {
 
         if (d.penerima) {
           const mapDraftRecipients = (list: any[]) => list.map(item => {
-            const idStr = String(item.id || item.position_id || item.value);
-            const found = recipientItems.value.find(r => r.value === idStr);
+            // Coba semua kemungkinan field id dari API draft
+            const candidateIds = [
+              String(item.position ?? ''),
+              String(item.position_id ?? ''),
+              String(item.id ?? ''),
+            ].filter(Boolean);
 
+            // Cari di recipientItems yang sudah terisi dari API get-recipient
+            const found = recipientItems.value.find(r =>
+              candidateIds.includes(String(r.value))
+            );
             if (found) return found;
 
-            // Fallback object construction
+            // Fallback: format label sama persis seperti mapRec
+            const nama = item.nama || item.persnum_person_text || '';
+            const jabatan = item.positionName || item.position_text || item.positionText || '';
+            const idStr = candidateIds[0] || String(item.value ?? '');
             return {
-              label: item.nama ? `${item.nama} - ${item.position_text}` : item.position_text,
-              labelJob: item.position_text || item.nama,
-              value: idStr
+              label: nama ? `${nama} - ${jabatan}` : jabatan,
+              labelJob: jabatan,
+              value: idStr,
+              raw: item,
             };
           });
           selectedPenerima.value = mapDraftRecipients(d.penerima);

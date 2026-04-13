@@ -255,25 +255,38 @@
                 @mouseleave="onMouseLeave"
                 @click="openRowModal(row)"
               >
-                <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.jenis }}</td>
-                <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.tanggal }}</td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300 whitespace-nowrap"
+                  v-html="highlight(row.jenis, search)"
+                ></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300 whitespace-nowrap"
+                  v-html="highlight(row.tanggal, search)"
+                ></td>
                 <td class="px-5 py-4">
                   <p
                     class="whitespace-normal break-words line-clamp-3 dark:text-gray-300 max-w-[350px]"
-                  >
-                    {{ row.perihal }}
-                  </p>
+                    v-html="highlight(row.perihal, search)"
+                  ></p>
                 </td>
                 <td class="px-5 py-4">
                   <p
                     class="whitespace-normal break-words line-clamp-3 dark:text-gray-300 max-w-[300px]"
-                  >
-                    {{ row.penandatangan }}
-                  </p>
+                    v-html="highlight(row.penandatangan, search)"
+                  ></p>
                 </td>
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
-                <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.pengusul }}</td>
-                <td class="px-5 py-4 dark:text-gray-300 whitespace-nowrap">{{ row.tglUsulan }}</td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300"
+                  v-html="highlight(row.jumlah, search)"
+                ></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300 whitespace-nowrap"
+                  v-html="highlight(row.pengusul, search)"
+                ></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300 whitespace-nowrap"
+                  v-html="highlight(row.tglUsulan, search)"
+                ></td>
                 <td
                   @click.stop
                   class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]"
@@ -1115,6 +1128,29 @@ const openAdd = ref(false);
 const klasifikasiMap = ref(new Map());
 
 const search = ref('');
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | number | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];

@@ -516,13 +516,42 @@ onMounted(async () => {
           if (found) selectedKlasifikasiId.value = found.id;
         }
 
+        // Helper: filter individu yang sudah diwakili grup (sama dengan SDI)
+        const buildSelectedFiltered = (apiArr: any[], grupArr: any[]) => {
+          if (!apiArr?.length) return [];
+          const grupPersnums = new Set<string>();
+          (grupArr || []).forEach((grup: any) => {
+            const positionIds = new Set((grup.position_ids || []).map(String));
+            items.value.forEach((item: any) => {
+              const itemPosId = String(item.raw?.position || item.raw?.position_id || item.value || '');
+              if (positionIds.has(itemPosId)) {
+                const persnum = String(item.raw?.persnum_person || item.raw?.persnum || '');
+                if (persnum) grupPersnums.add(persnum);
+              }
+            });
+          });
+          return apiArr
+            .filter((item: any) => !grupPersnums.has(String(item.persnum || '')))
+            .map((item: any) => {
+              const found = items.value.find(
+                (m: any) => String(m.raw?.persnum_person) === String(item.persnum)
+              );
+              return found || {
+                label: `${item.persnum} - () ${item.positionText || ''}`,
+                labelJob: item.positionText || '',
+                value: String(item.persnum),
+                raw: item,
+              };
+            });
+        };
+
         selectedTertuju.value = mergeGrupDanIndividu(
           mapGroupsToUI(d.penerima_grup),
-          mapApiToUI(d.penerima, items.value)
+          buildSelectedFiltered(d.penerima || [], d.penerima_grup || [])
         );
         selectedTembusan.value = mergeGrupDanIndividu(
           mapGroupsToUI(d.tembusan_grup),
-          mapApiToUI(d.tembusan, items.value)
+          buildSelectedFiltered(d.tembusan || [], d.tembusan_grup || [])
         );
 
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);

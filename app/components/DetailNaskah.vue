@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { Hash, Calendar, Paperclip, FileText, ArrowLeft, Printer, MoreHorizontal, ChevronUp, CheckCircle, XCircle, Edit3, Send, Users, Building2 } from "lucide-vue-next";
 
-// --- PROPS ---
+// Tambah prop
 const props = defineProps<{
   data: any;
   isHead?: boolean;
@@ -12,6 +12,7 @@ const props = defineProps<{
   allowedActions?: string[];
   context?: string;
   userPositionId?: string | number;
+  isPengirimKonsep?: boolean; // ← tambahkan ini
 }>();
 
 // --- EMITS ---
@@ -56,9 +57,9 @@ const getFlowInitials = (n: string) => n ? n.trim().split(" ").slice(0, 2).map((
 
 // --- AKSI BADGE (tambahan) ---
 const aksiConfig: Record<string, { label: string; color: string }> = {
-  create:  { label: 'BUAT KONSEP', color: 'bg-blue-500' },
-  forward: { label: 'REVISI',      color: 'bg-amber-500' },
-  reject:  { label: 'DITOLAK',     color: 'bg-red-500' },
+  create: { label: 'BUAT KONSEP', color: 'bg-blue-500' },
+  forward: { label: 'REVISI', color: 'bg-amber-500' },
+  reject: { label: 'DITOLAK', color: 'bg-red-500' },
 };
 
 const aksiBadge = computed(() => {
@@ -172,8 +173,7 @@ const hasAccess = (codes: string[]) => {
           <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
           <template v-if="aksiBadge">
             <span class="opacity-40">•</span>
-            <div
-              class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
+            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
               :class="aksiBadge.color">
               {{ aksiBadge.label }}
             </div>
@@ -211,7 +211,7 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
-      <div v-if="data.aksi === 'create' || data.aksi === 'forward'" class="mb-4 flex flex-col md:flex-row gap-2">
+      <div v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject'" class="mb-4 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
           Pengirim </div>
@@ -269,6 +269,7 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
+      <!-- debug {{ data }} -->
       <div v-if="(data.cc || data.tembusan) && (data.cc || data.tembusan).length > 0"
         class="mb-6 flex flex-col md:flex-row gap-2">
         <div
@@ -292,18 +293,22 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
-      <div v-if="data.disposisi_content?.disposisi || data.disposisi || data.jenis === 'DI'"
+      <div v-if="data.disposisi_content?.disposisi || data.disposisi || data.konten || data.jenis === 'DI'"
         class="mb-4 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
           Instruksi</div>
         <div class="flex flex-col gap-1 w-full min-w-0">
-          <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">
             {{ data.disposisi_content?.disposisi
               ? data.disposisi_content.disposisi.replace(/\n/g, ', ')
               : data.disposisi
                 ? formatDisposisiInline(data.disposisi)
-                : (data.mainDisplayContentHtml || '').replace(/\n/g, ', ') }}
+                : data.konten
+                  ? data.konten
+                  : data.mainDisplayContentHtml
+                    ? data.mainDisplayContentHtml
+            : (data.rich_content || '').replace(/\n/g, ', ') }}
           </p>
         </div>
       </div>
@@ -320,11 +325,19 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
+      <!-- Ganti seluruh div bg-gray-50 yang berisi template iframe -->
       <div class="bg-gray-50 dark:bg-gray-900 rounded-lg mt-5 p-5 border border-gray-100 dark:border-gray-700 relative">
-        <template v-if="data.rich_content || data.mainDisplayContentHtml">
+
+        <!-- Jika ini card riwayat (bukan head/terbaru) dengan aksi create → sembunyikan konten -->
+        <template v-if="!isHead && ['K', 'KO'].includes(data.jenis)">
+          <p class="text-sm text-gray-400 dark:text-gray-500 italic flex items-center gap-2">
+            Untuk melihat riwayat isi dokumen, klik ikon pratinjau di pojok kanan atas.
+          </p>
+        </template>
+
+        <template v-else-if="data.rich_content || data.mainDisplayContentHtml">
           <div class="relative w-full">
             <div class="relative overflow-hidden transition-all duration-300 ease-in-out">
-
               <iframe
                 :srcdoc="'<!DOCTYPE html><html><head><style>html,body{background-color:transparent !important;margin:0;padding:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;color:#374151;line-height:1.5;} @media (prefers-color-scheme: dark) { body { color: #d1d5db; } }</style></head><body>' + (data.jenis === 'DI' ? (data.catatan || '-') : (data.rich_content || data.mainDisplayContentHtml)) + '</body></html>'"
                 class="w-full bg-transparent block" style="border: none;" :style="{
@@ -332,12 +345,10 @@ const hasAccess = (codes: string[]) => {
                   overflowY: data.isExpanded ? 'auto' : 'hidden'
                 }" :scrolling="data.isExpanded ? 'auto' : 'no'" @load="handleFlowIframeLoad($event, data)">
               </iframe>
-
               <div v-if="data.showReadMore && !data.isExpanded"
                 class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 pointer-events-none">
               </div>
             </div>
-
             <div v-if="data.showReadMore" class="flex justify-center mt-2 relative z-10">
               <button @click="toggleFlowContent(data)"
                 class="flex items-center gap-1.5 px-5 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -358,9 +369,7 @@ const hasAccess = (codes: string[]) => {
               class="prose prose-sm prose-blue dark:prose-invert max-w-none text-sm"
               v-html="data.disposisi_content.catatan">
             </div>
-            <p v-else class="text-sm text-gray-400 italic">
-              - Tidak ada catatan disposisi -
-            </p>
+            <p v-else class="text-sm text-gray-400 italic">- Tidak ada catatan disposisi -</p>
           </div>
         </template>
 
@@ -370,11 +379,10 @@ const hasAccess = (codes: string[]) => {
               class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
               {{ data.catatan }}
             </p>
-            <p v-else class="text-sm text-gray-400 italic">
-              Tidak ada catatan
-            </p>
+            <p v-else class="text-sm text-gray-400 italic">Tidak ada catatan</p>
           </div>
         </template>
+
       </div>
 
       <div class="mt-6">
@@ -406,63 +414,85 @@ const hasAccess = (codes: string[]) => {
             </button>
           </div>
         </div>
-        <!-- {{ data.aksi }} -->
+
+        <!-- {{ data.jenis }} - {{ allowedActions }} - {{ isPengirimKonsep }} - -->
+        <!-- debug {{ userPositionId }} -->
         <div class="flex flex-wrap gap-3 mt-8">
-          <template
-            v-if="data.pengirim?.position_id == userPositionId && data.aksi === 'create' || data.aksi === 'forward'">
 
-            <div @click="!isHead ? null : emit('finalize')"
-              class="flex bg-emerald-500 text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm"
-              :class="!isHead ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-600 cursor-pointer active:scale-[0.98]'">
-              <CheckCircle class="w-4 h-4" />
-              <span class="text-sm font-medium whitespace-nowrap">Setujui</span>
-            </div>
+          <!-- ===== JENIS KO (Konsep): Setujui / Tolak / Perbaiki ===== -->
+          <template v-if="['K'].includes(data.jenis)">
 
-            <div @click="!isHead ? null : emit('reject')"
-              class="flex bg-red-500 text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm"
-              :class="!isHead ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600 cursor-pointer active:scale-[0.98]'">
-              <XCircle class="w-4 h-4" />
-              <span class="text-sm font-medium whitespace-nowrap">Tolak</span>
-            </div>
+            <!-- aksi create/forward → Setujui + Tolak (untuk BOD) -->
+            <template v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'finalize'">
+              <template v-if="hasAccess(['Setujui']) && showFinalize">
+                <div @click="isHead ? emit('finalize') : null"
+                  class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-emerald-500"
+                  :class="isHead ? 'hover:bg-emerald-600 cursor-pointer active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'">
+                  <CheckCircle class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">Setujui</span>
+                </div>
+                <div @click="isHead ? emit('reject') : null"
+                  class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-red-500"
+                  :class="isHead ? 'hover:bg-red-600 cursor-pointer active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'">
+                  <XCircle class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">Tolak</span>
+                </div>
+              </template>
+            </template>
+
+            <!-- aksi reject:
+       - Jika user adalah PENGIRIM konsep → tampilkan Perbaiki
+       - Jika user bukan pengirim (penerima/atasan) → tidak ada tombol
+  -->
+            <template v-if="data.aksi === 'reject'">
+              <div v-if="isPengirimKonsep && isHead" @click="emit('edit')"
+                class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]">
+                <Edit3 class="w-4 h-4" />
+                <span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+              </div>
+
+              <!-- Card riwayat (bukan head): tampilkan disabled -->
+              <div v-else-if="isPengirimKonsep && !isHead"
+                class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50">
+                <Edit3 class="w-4 h-4" />
+                <span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+              </div>
+            </template>
           </template>
 
-          <!-- <div v-if="data.penerima[0].position_id == userPositionId && data.aksi === 'reject'" @click="emit('edit')" -->
-          <div v-if="data.penerima?.[0]?.position_id == userPositionId && data.aksi === 'reject'" @click="emit('edit')"
-            class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]">
-            <Edit3 class="w-4 h-4" /><span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+          <!-- ===== SURAT MASUK BIASA (non-KO): tombol tindak lanjut ===== -->
+          <template v-else-if="showFooterActions">
 
-          </div>
-
-          <template v-if="showFooterActions">
             <div v-if="hasAccess(['ND'])" @click="emit('lanjut-nota')"
-              class="flex bg-emerald-600 hover:bg-emerald-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-emerald-600 hover:bg-emerald-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
               <FileText class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Nota Dinas</span>
             </div>
 
             <div v-if="hasAccess(['SDI'])" @click="emit('lanjut-sdi')"
-              class="flex bg-amber-600 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-amber-600 hover:bg-amber-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
               <Users class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Internal</span>
             </div>
 
             <div v-if="hasAccess(['SDE'])" @click="emit('lanjut-sde')"
-              class="flex bg-sky-600 hover:bg-sky-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-sky-600 hover:bg-sky-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
               <Building2 class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Eksternal</span>
             </div>
 
             <div v-if="hasAccess(['DI'])" @click="emit('lanjut-disposisi')"
-              class="flex bg-cyan-600 hover:bg-cyan-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-cyan-600 hover:bg-cyan-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
               <Send class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Disposisi</span>
             </div>
 
             <div v-if="hasAccess(['KO'])" @click="emit('lanjut-konsep')"
-              class="flex bg-yellow-500 hover:bg-yellow-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]">
+              class="flex bg-yellow-500 hover:bg-yellow-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
               <Edit3 class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Konsep</span>
             </div>
+
           </template>
 
         </div>

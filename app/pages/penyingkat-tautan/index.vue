@@ -20,7 +20,7 @@
 
     <!-- MODAL ADD / EDIT -->
     <Teleport to="body">
-      <Modal v-model="showAddModal" @save="saveAdd" size="xl">
+      <Modal v-model="showAddModal" :saving="isSavingAdd" @save="saveAdd" size="xl">
         <template #title>
           <div class="ml-5 mb-3 mt-3">
             <Heading variant="heading9b" class="font-semibold text-sm dark:text-white">
@@ -490,6 +490,7 @@ const isRefreshing = ref(false);
 const search = ref('');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 const showAddModal = ref(false);
+const isSavingAdd = ref(false);
 const isEditMode = ref(false);
 const editIndex = ref<number | null>(null);
 const editItemId = ref<number | null>(null);
@@ -688,6 +689,8 @@ const openEdit = (row: Payment, index: number) => {
 };
 
 const saveAdd = async () => {
+  if (isSavingAdd.value) return;
+
   // Reset errors
   formErrors.value = { LUrl: false, SUrl: false };
 
@@ -729,6 +732,7 @@ const saveAdd = async () => {
   addForm.value.LUrl = normalizedLongUrl;
 
   const alias = addForm.value.SUrl;
+  isSavingAdd.value = true;
 
   try {
     if (isEditMode.value && editItemId.value !== null) {
@@ -747,7 +751,15 @@ const saveAdd = async () => {
       });
       toast.add({ title: t('pt_toast_added'), color: 'success', icon: 'i-lucide-circle-check' });
     }
+
     await fetchData();
+
+    showAddModal.value = false;
+    isEditMode.value = false;
+    editIndex.value = null;
+    editItemId.value = null;
+    addForm.value = { LUrl: '', SUrl: '', keterangan: '' };
+    formErrors.value = { LUrl: false, SUrl: false };
   } catch (err: any) {
     toast.add({
       title: err?.response?.data?.message ?? t('pt_toast_save_failed'),
@@ -755,12 +767,7 @@ const saveAdd = async () => {
       icon: 'i-lucide-alert-circle'
     });
   } finally {
-    showAddModal.value = false;
-    isEditMode.value = false;
-    editIndex.value = null;
-    editItemId.value = null;
-    addForm.value = { LUrl: '', SUrl: '', keterangan: '' };
-    formErrors.value = { LUrl: false, SUrl: false };
+    isSavingAdd.value = false;
   }
 };
 

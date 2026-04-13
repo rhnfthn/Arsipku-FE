@@ -11,7 +11,8 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
             <div class="flex-1 space-y-2 pt-1">
@@ -39,7 +40,8 @@
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -58,12 +60,14 @@
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA
+                      DINAS</h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
@@ -91,7 +95,8 @@
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
+                        <td class="text-[14px] align-top">{{ subject ||
+                          "................................................" }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -112,7 +117,8 @@
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
+                      selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                     </ol>
@@ -125,9 +131,17 @@
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
@@ -151,7 +165,8 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
           <UButton label="Pratinjau & Finalisasi" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
@@ -240,10 +255,15 @@ const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const maxPerihal = 200;
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Finalisasi Nota Dinas", to: "#" },
-];
+const breadcrumbs = computed(() => {
+  const refId = route.query.ref_id as string;
+  return [
+    { label: "Beranda", to: "/beranda" },
+    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
+    { label: "Detail Surat", to: refId ? `/korespondensi/kotak-masuk/${refId}?jenis=K` : '#' },
+    { label: "Finalisasi Nota Dinas", to: "#" },
+  ];
+});
 
 const sifatOptions = [
   { label: "Sangat Rahasia", value: "sangat rahasia" },
@@ -281,9 +301,6 @@ const formattedDate = computed(() => {
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-const excludeTertujuList = computed(() => selectedTembusan.value || []);
-const excludeTembusanList = computed(() => selectedTertuju.value || []);
-
 const signerInfo = computed(() => ({
   name: user.value?.nama || "Nama Lengkap",
   role: user.value?.positionText || "Jabatan",
@@ -304,12 +321,24 @@ const mapApiToUI = (list: any[]) => {
   return list.map((item) => {
     const posId = String(item.position_id || item.position || item.value || item.id || item);
     const master = items.value.find((m) => m.value === posId);
-    if (master) return master;
 
+    // Fallback if master isn't found
     const posText = item.position_text || item.positionText || item.labelJob || item.label || posId;
+    const nama = item.nama || item.person_name || "";
+    // Memastikan format: Jabatan(Nama)
+    const dynamicLabelJob = nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;
+
+    if (master) {
+      // Jika master ditemukan namun belum ada format namanya (sedangkan API call punya namanya), kita replace
+      if (!master.labelJob.includes('(') && dynamicLabelJob.includes('(')) {
+        return { ...master, labelJob: dynamicLabelJob };
+      }
+      return master;
+    }
+
     return {
       label: posText !== posId ? `${item.persnum || ""} - (${item.abbreviation || ""}) ${posText}` : posId,
-      labelJob: posText,
+      labelJob: dynamicLabelJob,
       value: posId,
       raw: item,
     };
@@ -497,17 +526,23 @@ onMounted(async () => {
       getRecipientGroups().catch(() => [])
     ]);
 
-    // Ekstrak langsung jika data terbungkus dalam properti .data
     klasifikasiList.value = Array.isArray(klasRes) ? klasRes : (klasRes?.data || klasRes?.klasifikasi || []);
     recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
     const rawData = recRes.recipients || recRes.data || [];
-    items.value = rawData.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      value: String(r.position || r.position_id || r.id),
-      raw: r,
-    }));
+    items.value = rawData.map((r: any) => {
+      const posText = r.position_text || r.positionText;
+      const nama = r.nama || r.person_name || r.persnum_person_text || "";
+      // Tambahkan nama ke belakang jabatan agar muncul saat render UI & Print
+      const labelJob = nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;
+
+      return {
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${posText}`,
+        labelJob: labelJob,
+        value: String(r.position || r.position_id || r.id),
+        raw: r,
+      };
+    });
     klasifikasiStatus.value = "success";
   } catch {
     klasifikasiStatus.value = "error";
@@ -520,20 +555,17 @@ onMounted(async () => {
       editDraftId.value = refId;
       const resKonsep = await fetchKonsepDetail(refId);
 
-      // JSON LOGIC FIX: Berdasarkan log Anda, data berada di root object lalu di dalam properti `.flow`
       const flowList = resKonsep?.flow || (resKonsep?.data && resKonsep.data.flow) || [];
       const rootData = resKonsep?.data || resKonsep;
 
-      // Ambil elemen "Konsep" ("K") dari array flow
       let draftData = Array.isArray(flowList)
         ? flowList.find((d: any) => d.jenis === 'K')
         : null;
 
-      // Fallback jika `.flow` tidak tersedia atau kosong, baca dari root
       if (!draftData) {
-         draftData = Array.isArray(rootData)
-            ? rootData.find((d: any) => d.jenis === 'K') || rootData[0]
-            : rootData;
+        draftData = Array.isArray(rootData)
+          ? rootData.find((d: any) => d.jenis === 'K') || rootData[0]
+          : rootData;
       }
 
       if (draftData) {
@@ -553,12 +585,10 @@ onMounted(async () => {
           if (found) {
             selectedKlasifikasiId.value = found.id;
           } else {
-            // Pasang fallback kode asli jika UUID master belum cocok
             selectedKlasifikasiId.value = klCode;
           }
         }
 
-        // FUNGSI NORMALISASI: mengubah API snake_case menjadi format mapApiToUI()
         const normalizeRecipients = (arr: any[]) => {
           if (!Array.isArray(arr)) return [];
           return arr.map(item => ({
@@ -571,21 +601,53 @@ onMounted(async () => {
         // --- 3. Populate Penerima & Tembusan ---
         const detail = draftData.detail || {};
 
-        // Gunakan properti .kepada jika ada (karena API juga memberikan rootData.kepada), fallback naskah_penerima
-        const sourcePenerima = rootData.kepada?.length ? rootData.kepada :
-                               detail.naskah_penerima?.length ? detail.naskah_penerima :
-                               (draftData.penerima || []);
+        const rawGrupTertuju = detail.penerima_grup?.length ? detail.penerima_grup
+          : draftData.penerima_grup || [];
 
-        const mappedPenerimaGrup = mapGroupsToUI(detail.penerima_grup || []) || [];
-        const mappedPenerimaIndiv = mapApiToUI(normalizeRecipients(sourcePenerima)) || [];
+        const rawGrupTembusan = detail.tembusan_grup?.length ? detail.tembusan_grup
+          : draftData.tembusan_grup || [];
 
-        selectedTertuju.value = [...mappedPenerimaGrup, ...mappedPenerimaIndiv];
+        const mapGrupLocal = (arr: any[]) => {
+          if (!Array.isArray(arr)) return [];
+          return arr
+            .filter((g: any) => g?.id || g?.group_id)
+            .map((g: any) => {
+              const rawId = String(g.id || g.group_id || '');
+              if (!rawId) return null;
+              const master = recipientGroups.value.find((mg: any) => String(mg.id) === rawId);
+              const namaGrup = master?.nama || g.nama || g.name || g.label || rawId;
+              return {
+                label: namaGrup,
+                labelJob: namaGrup,
+                value: `GROUP_${rawId}`,
+                isGroup: true,
+                raw: master || g,
+              };
+            }).filter(Boolean);
+        };
 
-        const sourceTembusan = detail.naskah_tembusan?.length ? detail.naskah_tembusan : (draftData.tembusan || []);
-        const mappedTembusanGrup = mapGroupsToUI(detail.tembusan_grup || []) || [];
-        const mappedTembusanIndiv = mapApiToUI(normalizeRecipients(sourceTembusan)) || [];
+        const idDalamGrupTertuju = new Set(
+          rawGrupTertuju.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
+        const idDalamGrupTembusan = new Set(
+          rawGrupTembusan.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
 
-        selectedTembusan.value = [...mappedTembusanGrup, ...mappedTembusanIndiv];
+        const rawPenerima = (detail.naskah_penerima || draftData.penerima || [])
+          .filter((p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.id || '')));
+
+        const rawTembusan = (detail.naskah_tembusan || draftData.tembusan || [])
+          .filter((p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.id || '')));
+
+        selectedTertuju.value = [
+          ...mapGrupLocal(rawGrupTertuju),
+          ...mapApiToUI(normalizeRecipients(rawPenerima)),
+        ];
+
+        selectedTembusan.value = [
+          ...mapGrupLocal(rawGrupTembusan),
+          ...mapApiToUI(normalizeRecipients(rawTembusan)),
+        ];
 
         // --- 4. Sisanya (Lampiran & Sifat) ---
         const lampiranSrc = draftData.lampiran_files || [];

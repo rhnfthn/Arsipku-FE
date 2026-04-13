@@ -433,7 +433,7 @@ const getPayload = (): DisposisiPayload => {
 
   return {
     id_naskah:         editDraftId.value || null,
-    ref_id:            (route.query.ref_id as string) || null,
+    id_referensi_naskah:            (route.query.ref_id as string) || null,
     pengirim:          user.value?.position || "",
     tertuju:           selectedTertuju.value.map(i => i.value),
     tanggal_disposisi: tglDb,

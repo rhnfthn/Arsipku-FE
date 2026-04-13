@@ -1,25 +1,32 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
 
+// Parse tanpa asumsi UTC — baca sebagai waktu lokal
+const parseLocalDate = (isoString: string): Date | null => {
+  if (!isoString) return null;
+  // "2025-04-11T18:30:00" tanpa Z/offset → JS anggap UTC, geser +7 jadi 01:xx.
+  // Strip timezone suffix lalu buat Date dari string yang dianggap lokal.
+  const normalized =
+    isoString
+      .replace('Z', '') // buang UTC marker
+      .split('+')[0] // buang offset positif
+      .split('-').length > 3 // ada offset negatif? (e.g. -07:00)
+      ? isoString.slice(0, 19)
+      : isoString.slice(0, 19).replace('T', ' ');
+  const date = new Date(normalized);
+  return isNaN(date.getTime()) ? null : date;
+};
+
 const formatDateShort = (isoString: string) => {
-  if (!isoString) return '-';
-  const date = new Date(isoString);
-  if (isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short'
-  });
+  const date = parseLocalDate(isoString);
+  if (!date) return '-';
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
 };
 
 const formatFullDate = (isoString: string, time: string) => {
-  if (!isoString) return '-';
-  const date = new Date(isoString);
-  if (isNaN(date.getTime())) return '-';
-  const d = date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  const date = parseLocalDate(isoString);
+  if (!date) return '-';
+  const d = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   return `${d} ${time || ''}`;
 };
 
@@ -140,6 +147,7 @@ export const useDraft = () => {
 
         return {
           id: item.id_naskah,
+          isDraftKonsep: item.is_draft_konsep || false,
           from: displayRecipient,
           fullRecipients: fullRecipientList,
           subject: item.isi_pesan || 'Tanpa Keterangan',
@@ -147,9 +155,10 @@ export const useDraft = () => {
           nomor: item.nomor || '-',
           category: item.jenis || '',
           category_text: item.jenis_text || item.jenis,
-          category_label: item.labels || '',
+          category_label: item.labels || [],
           date: formatDateShort(item.tanggal),
           fullDate: formatFullDate(item.tanggal, item.waktu),
+          waktu: item.waktu || '', // ← pastikan baris ini ADA
           created_at: item.tanggal,
           initial: getInitial(displayNameForInitial),
           color: getRandomColor(item.id_naskah || '0'),

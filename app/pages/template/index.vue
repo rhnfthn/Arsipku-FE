@@ -170,14 +170,16 @@
               class="border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               <td class="p-4 text-sm dark:text-gray-200">
-                <div class="max-w-[400px] break-words whitespace-normal">
-                  {{ template.nama_template }}
-                </div>
+                <div
+                  class="max-w-[400px] break-words whitespace-normal"
+                  v-html="highlight(template.nama_template, search)"
+                ></div>
               </td>
               <td class="p-4 text-primary dark:text-primary-400 text-sm">
-                <div class="max-w-[400px] break-words whitespace-normal">
-                  {{ getFileName(template.file) }}
-                </div>
+                <div
+                  class="max-w-[400px] break-words whitespace-normal"
+                  v-html="highlight(getFileName(template.file), search)"
+                ></div>
               </td>
               <td class="px-4 py-2">
                 <div class="flex justify-center gap-2">
@@ -575,6 +577,28 @@ const editErrors = ref({ nama_template: false });
 const editData = ref<any>({ id: '', nama_template: '', file: '', newFile: null, newFileName: '' });
 const addData = ref<any>({ nama_template: '', file: null, fileName: '' });
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 const fetchData = async () => {
   try {
@@ -599,9 +623,12 @@ const filteredTemplates = computed(() => {
 
 const sortedTemplates = computed(() => {
   if (!sortKey.value) return filteredTemplates.value;
+
   return [...filteredTemplates.value].sort((a, b) => {
-    const A = a[sortKey.value];
-    const B = b[sortKey.value];
+    const A = a[sortKey.value as keyof Template];
+    const B = b[sortKey.value as keyof Template];
+    if (A == null) return 1;
+    if (B == null) return -1;
     if (A < B) return sortOrder.value === 'asc' ? -1 : 1;
     if (A > B) return sortOrder.value === 'asc' ? 1 : -1;
     return 0;

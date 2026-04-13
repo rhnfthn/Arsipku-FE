@@ -378,7 +378,13 @@
 
       <!-- MODAL TAMBAH KLASIFIKASI -->
       <Teleport to="body">
-        <Modal v-model="showAddModal" size="xl" @save="submitAddKlasifikasi" @close="resetAddForm">
+        <Modal
+          v-model="showAddModal"
+          :saving="savingAdd"
+          size="xl"
+          @save="submitAddKlasifikasi"
+          @close="resetAddForm"
+        >
           <template #title>
             <Heading
               variant="heading9b"
@@ -459,7 +465,7 @@
 
       <!-- MODAL EDIT KLASIFIKASI -->
       <Teleport to="body">
-        <Modal v-model="showEditModal" size="xl" @save="submitEditKlasifikasi">
+        <Modal v-model="showEditModal" :saving="savingEdit" size="xl" @save="submitEditKlasifikasi">
           <template #title>
             <Heading
               variant="heading9b"
@@ -713,6 +719,7 @@ const validateAdd = () => {
 };
 
 const submitAddKlasifikasi = async () => {
+  if (savingAdd.value) return;
   if (!validateAdd()) return;
   try {
     savingAdd.value = true;
@@ -805,6 +812,7 @@ const onEdit = async (row: Klasifikasi) => {
 };
 
 const submitEditKlasifikasi = async () => {
+  if (savingEdit.value) return;
   if (!editId.value) return;
   if (!validateEdit()) return;
   try {

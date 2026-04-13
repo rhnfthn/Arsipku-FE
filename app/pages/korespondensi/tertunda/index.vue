@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { parseDate } from '@internationalized/date';
 import {
   Inbox,
   FileText,
@@ -19,6 +20,9 @@ import {
   Check,
   Send,
   FilePen,
+  Download,
+  Search,
+  X,
 } from "lucide-vue-next";
 import * as XLSX from "xlsx";
 import { useTertunda } from "~/composables/useTertunda";
@@ -53,17 +57,23 @@ const activeTab = ref("ALL");
 const showDateMenu = ref(false);
 const showSortMenu = ref(false);
 const showPageMenu = ref(false);
-const activeDateLabel = ref("30 Hari Terakhir");
+const activeDateLabel = ref("Semua");
 const activeSortLabel = ref("Terbaru");
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
-// Date Filter State
-const startDate = ref(new Date());
-const endDate = ref(new Date());
-const openStart = ref(false);
-const openEnd = ref(false);
+// Date Filter State (sama persis dengan kotak-masuk)
+const startDateInput = ref(new Date().toISOString().split('T')[0]);
+const endDateInput = ref(new Date().toISOString().split('T')[0]);
+const startDateCal = ref(parseDate(startDateInput.value));
+const endDateCal = ref(parseDate(endDateInput.value));
+const openStartDate = ref(false);
+const openEndDate = ref(false);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
+
+// Sync CalendarDate ↔ string YYYY-MM-DD
+watch(startDateCal, (val) => { if (val) startDateInput.value = val.toString(); });
+watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -80,25 +90,11 @@ const tabs = [
   { label: "Eksternal", value: "SDE", icon: Building2 },
   { label: "Kajian", value: "KA", icon: BookOpen },
 ];
-const dateOptions = [
-  "Hari ini",
-  "7 Hari Terakhir",
-  "30 Hari Terakhir",
-  "Bulan Ini",
-  "Tahun Ini",
-  "Semua",
-];
+const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
 // --- HELPERS UI ---
-const formatDateForApi = (date: Date) => {
-  const d = new Date(date);
-  const month = "" + (d.getMonth() + 1);
-  const day = "" + d.getDate();
-  const year = d.getFullYear();
-  return [year, month.padStart(2, "0"), day.padStart(2, "0")].join("-");
-};
 
 const formatShortDate = (dateString: string | null) => {
   if (!dateString) return "-";
@@ -147,11 +143,13 @@ const getCategoryStyle = (cat: string) => {
 
 const getCategoryLabel = (cat: string) => {
   const c = (cat || "").toUpperCase();
-  if (["KA"].includes(c)) return "KA";
+  if (["KA", "KAJIAN"].includes(c)) return "KA";
   if (["SDI", "INTERNAL"].includes(c)) return "SDI";
   if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
   if (["ND", "NOTA DINAS"].includes(c)) return "ND";
-  return "K";
+  if (["DI", "DISPOSISI"].includes(c)) return "DI";
+  if (["K", "KO", "KONSEP"].includes(c)) return "K";
+  return cat || "-";
 };
 
 const getSifatStyle = (sifat: string) => {
@@ -164,43 +162,38 @@ const getSifatStyle = (sifat: string) => {
 // --- LOGIC ---
 const refreshData = async () => {
   try {
-    let jenisParam = undefined;
-    if (activeTab.value !== "ALL" && activeTab.value !== "Semua") {
-      jenisParam = activeTab.value;
-    }
-
-    let startStr = undefined;
-    let endStr = undefined;
-    const now = new Date();
-    let calculatedStart = new Date();
-
-    if (activeDateLabel.value === "Custom") {
-      if (startDate.value && endDate.value) {
-        startStr = formatDateForApi(startDate.value);
-        endStr = formatDateForApi(endDate.value);
-      }
-    } else if (activeDateLabel.value !== "Semua") {
-      endStr = formatDateForApi(now);
-      if (activeDateLabel.value === "Hari ini") calculatedStart = now;
-      else if (activeDateLabel.value === "7 Hari Terakhir")
-        calculatedStart.setDate(now.getDate() - 7);
-      else if (activeDateLabel.value === "30 Hari Terakhir")
-        calculatedStart.setDate(now.getDate() - 30);
-      else if (activeDateLabel.value === "Bulan Ini")
-        calculatedStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      else if (activeDateLabel.value === "Tahun Ini")
-        calculatedStart = new Date(now.getFullYear(), 0, 1);
-      startStr = formatDateForApi(calculatedStart);
-    }
-
-    await fetchTertunda({
+    const params: Record<string, any> = {
       page: currentPage.value,
       limit: itemsPerPage.value,
-      jenis: jenisParam,
       search: searchQuery.value || undefined,
-      start_date: startStr,
-      end_date: endStr,
-    });
+    };
+
+    // Tab → jenis
+    if (activeTab.value !== "ALL" && activeTab.value !== "Semua") {
+      params.jenis = activeTab.value;
+    }
+
+    // Sort
+    params.sort = activeSortLabel.value === "Terlama" ? "terlama" : "terbaru";
+
+    // Date filter (sama persis dengan kotak-masuk)
+    const now = new Date();
+    const toStr = (d: Date) => d.toISOString().split("T")[0];
+    if (activeDateLabel.value === "Custom") {
+      params.start_date = startDateInput.value;
+      params.end_date = endDateInput.value;
+    } else if (activeDateLabel.value !== "Semua") {
+      const daysMap: Record<string, number> = { "7 Hari": 7, "30 Hari": 30, "60 Hari": 60, "1 Tahun": 365 };
+      const days = daysMap[activeDateLabel.value];
+      if (days) {
+        const from = new Date(now);
+        from.setDate(now.getDate() - days);
+        params.start_date = toStr(from);
+        params.end_date = toStr(now);
+      }
+    }
+
+    await fetchTertunda(params);
   } catch (err) {
     console.error("Gagal refresh data tertunda:", err);
   }
@@ -209,48 +202,31 @@ const refreshData = async () => {
 const selectSortOption = (opt: string) => {
   activeSortLabel.value = opt;
   showSortMenu.value = false;
-  if (opt === "Terbaru") {
-    items.value.sort(
-      (a, b) => new Date(b.fullDate).getTime() - new Date(a.fullDate).getTime()
-    );
-  } else {
-    items.value.sort(
-      (a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime()
-    );
-  }
+  currentPage.value = 1;
+  refreshData();
 };
 
 const selectDateFilter = (opt: string) => {
   activeDateLabel.value = opt;
   showDateMenu.value = false;
+  currentPage.value = 1;
   refreshData();
 };
 
 const applyCustomDate = () => {
   activeDateLabel.value = "Custom";
   showDateMenu.value = false;
+  currentPage.value = 1;
   refreshData();
 };
 
 const selectPageSize = (size: number) => {
   itemsPerPage.value = size;
   showPageMenu.value = false;
-  refreshData();
 };
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-    refreshData();
-  }
-};
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-    refreshData();
-  }
-};
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
 const selectMail = (mail: any) => {
   navigateTo(`/korespondensi/tertunda/${mail.naskahId}?jenis=${mail.category}`);
@@ -284,17 +260,13 @@ const paginationInfo = computed(() => {
   return `${start}-${end} Dari ${pagination.value.total}`;
 });
 
-watch([activeTab], () => {
-  currentPage.value = 1;
-  refreshData();
-});
-let searchTimeout: NodeJS.Timeout;
+watch([activeTab, itemsPerPage], () => { currentPage.value = 1; refreshData(); });
+watch(currentPage, () => refreshData());
+
+let searchTimeout: ReturnType<typeof setTimeout>;
 watch(searchQuery, () => {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    refreshData();
-  }, 500);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; refreshData(); }, 500);
 });
 
 onMounted(async () => {
@@ -323,76 +295,79 @@ onMounted(async () => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <!-- Date filter -->
         <div class="relative">
-          <button @click="showDateMenu = !showDateMenu"
+          <button @click="showDateMenu = !showDateMenu" title="Periode Data"
             class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
             <History class="w-4 h-4 shrink-0" />
             <span v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"></span>
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900" />
           </button>
-          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
+          <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent" />
+
           <div v-if="showDateMenu"
-            class="absolute top-full right-0 mt-1 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex">
-            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800">
+            class="absolute top-full right-0 mt-2 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden flex animate-in fade-in slide-in-from-top-2 duration-150">
+
+            <!-- Custom range -->
+            <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
                 class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
-                <span>Pilih Tanggal</span>
-                <Check v-if="activeDateLabel === 'Custom'" class="w-3.5 h-3.5 text-primary" />
+                <span>Rentang Tanggal</span>
+                <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
               <div class="space-y-4">
+                <!-- Mulai -->
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openStart" :content="{ placement: 'bottom-start' }">
-                      <UButton color="white" variant="outline" block class="justify-start">
-                        <div class="flex items-center gap-2 w-full">
-                          <span class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">
-                            {{ startDate ? startDate.toLocaleDateString("id-ID") : "Pilih" }}
-                          </span>
-                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar v-model="startDate" @close="openStart = false" />
-                        </div>
+                    <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openStartDate = true">
+                        <UInputDate locale="id-ID" v-model="startDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="startDateCal" class="p-2" @update:model-value="openStartDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
+                <!-- Sampai -->
                 <div>
                   <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
                   <ClientOnly>
-                    <UPopover v-model:open="openEnd" :content="{ placement: 'bottom-start' }">
-                      <UButton color="white" variant="outline" block class="justify-start">
-                        <div class="flex items-center gap-2 w-full">
-                          <span class="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">
-                            {{ endDate ? endDate.toLocaleDateString("id-ID") : "Pilih" }}
-                          </span>
-                          <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                        </div>
-                      </UButton>
-                      <template #panel>
-                        <div class="p-2">
-                          <UCalendar v-model="endDate" @close="openEnd = false" />
-                        </div>
+                    <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+                      <div
+                        class="flex items-center gap-2 cursor-pointer w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md"
+                        @click="openEndDate = true">
+                        <UInputDate locale="id-ID" v-model="endDateCal" variant="none" size="sm" format="DD MMMM YYYY"
+                          class="flex-1"
+                          :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-5' }" />
+                        <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                      </div>
+                      <template #content>
+                        <UCalendar v-model="endDateCal" class="p-2" @update:model-value="openEndDate = false" />
                       </template>
                     </UPopover>
                   </ClientOnly>
                 </div>
                 <button @click="applyCustomDate"
-                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2 rounded-md hover:bg-primary-600 transition-colors shadow-sm">
-                  Terapkan Range
+                  class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
+                  Terapkan Filter
                 </button>
               </div>
             </div>
-            <div class="w-5/12 py-2 overflow-y-auto max-h-[300px]">
+
+            <!-- Preset -->
+            <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
               <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Preset
               </div>
               <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
-                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between group transition-colors">
+                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between transition-colors">
                 <span>{{ opt }}</span>
-                <Check v-if="activeDateLabel === opt && !isCustomDate" class="w-3.5 h-3.5 text-primary" />
+                <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
           </div>
