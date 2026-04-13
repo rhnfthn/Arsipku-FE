@@ -52,6 +52,7 @@ export interface DraftParams {
   sort?: string;
   start_date?: string;
   end_date?: string;
+  is_konsep?: boolean;
 }
 
 export const useDraft = () => {
@@ -90,6 +91,7 @@ export const useDraft = () => {
       if (params.sort) query.append('sort', params.sort);
       if (params.start_date) query.append('start_date', params.start_date);
       if (params.end_date) query.append('end_date', params.end_date);
+      if (params.is_konsep) query.append('is_konsep', 'true');
 
       const response = await get(`/draft/list?${query.toString()}`);
       const rawData = response?.data || [];
@@ -148,6 +150,7 @@ export const useDraft = () => {
         return {
           id: item.id_naskah,
           isDraftKonsep: item.is_draft_konsep || false,
+          jenisAsli: (item.jenis || '').toUpperCase(), // ← TAMBAHKAN INI
           from: displayRecipient,
           fullRecipients: fullRecipientList,
           subject: item.isi_pesan || 'Tanpa Keterangan',

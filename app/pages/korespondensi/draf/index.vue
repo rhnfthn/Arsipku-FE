@@ -121,8 +121,19 @@ const getCategoryStyle = (cat) => {
     SDI: "bg-green-50 dark:bg-green-900/30 text-green-500 dark:text-green-300",
     SDE: "bg-orange-50 dark:bg-orange-900/30 text-orange-500 dark:text-orange-300",
     KA: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-500 dark:text-cyan-300",
+    K: "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300",
   };
   return styles[(cat || "").toUpperCase()] || "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-300";
+};
+
+// Route map untuk konsep drafts
+const konsepRouteMap = {
+  ND: '/korespondensi/tulis/konsep/nota-dinas',
+  'NOTA DINAS': '/korespondensi/tulis/konsep/nota-dinas',
+  SDI: '/korespondensi/tulis/konsep/surat-dinas-internal',
+  INTERNAL: '/korespondensi/tulis/konsep/surat-dinas-internal',
+  SDE: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
+  EXTERNAL: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
 };
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
@@ -133,8 +144,12 @@ const refreshData = async () => {
   params.page = currentPage.value;
   params.limit = itemsPerPage.value;
 
-  // Tab & Search
-  if (activeTab.value && activeTab.value !== "ALL") params.jenis = activeTab.value;
+  // Tab & Search — tab 'K' = filter konsep khusus
+  if (activeTab.value === 'K') {
+    params.is_konsep = true;
+  } else if (activeTab.value && activeTab.value !== "ALL") {
+    params.jenis = activeTab.value;
+  }
   if (searchQuery.value) params.search = searchQuery.value;
 
   // Sort
@@ -161,30 +176,32 @@ const refreshData = async () => {
   selectedIds.value.clear();
 };
 
-// ── Edit Draft ────────────────────────────────────────────────────────────────
 const handleEdit = (mail) => {
-  // Jika ini draft dari konsep, arahkan ke halaman konsep
+  const jenis = (mail.category || '').trim().toUpperCase();
+
   if (mail.isDraftKonsep) {
-    router.push({ path: '/korespondensi/tulis/konsep', query: { draft_id: mail.id, mode: 'edit' } });
+    const konsepRouteMap = {
+      ND: '/korespondensi/tulis/konsep/nota-dinas',
+      SDI: '/korespondensi/tulis/konsep/surat-dinas-internal',
+      SDE: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
+    };
+    // jenisAsli dari field jenis API (ND/SDI/SDE), bukan category yg sudah jadi 'K'
+    const konsepPath = konsepRouteMap[mail.jenisAsli] ?? '/korespondensi/tulis/konsep/nota-dinas';
+    router.push({ path: konsepPath, query: { draft_id: mail.id } });
     return;
   }
 
-  const jenis = (mail.category || '').trim().toUpperCase();
+  // Draft biasa (bukan konsep)
   const routes = {
     ND: '/korespondensi/tulis/nota-dinas',
-    'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
     DI: '/korespondensi/tulis/disposisi',
-    DISPOSISI: '/korespondensi/tulis/disposisi',
     SDI: '/korespondensi/tulis/surat-dinas-internal',
-    INTERNAL: '/korespondensi/tulis/surat-dinas-internal',
     SDE: '/korespondensi/tulis/surat-dinas-eksternal',
-    EXTERNAL: '/korespondensi/tulis/surat-dinas-eksternal',
     KA: '/korespondensi/tulis/kajian',
-    KAJIAN: '/korespondensi/tulis/kajian',
   };
   router.push({
-    path: routes[jenis] || '/korespondensi/tulis/nota-dinas',
-    query: { draft_id: mail.id, mode: 'edit' }
+    path: routes[jenis] ?? '/korespondensi/tulis/nota-dinas',
+    query: { draft_id: mail.id },
   });
 };
 
@@ -573,8 +590,11 @@ onMounted(refreshData);
                 <UTooltip :text="mail.fullRecipients"
                   :ui="{ content: 'h-auto py-2 px-3 max-w-xs', text: 'whitespace-pre-line text-left' }"
                   class="min-w-0 truncate">
-                  <span
-                    class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold cursor-help">
+                  <!-- Ganti bagian <span> penerima di template -->
+                  <span class="block w-full md:w-48 xl:w-64 truncate text-[13px] shrink-0 font-semibold cursor-help"
+                    :class="mail.from === 'Tanpa Penerima'
+                      ? 'text-gray-400 dark:text-gray-500 italic font-normal'
+                      : 'text-neutral-900 dark:text-gray-100'">
                     {{ mail.from }}
                   </span>
                 </UTooltip>
@@ -592,10 +612,15 @@ onMounted(refreshData);
                   </div>
                 </div>
 
-                <div class="hidden xl:flex shrink-0 w-[100px] justify-start items-center">
+                <div class="hidden xl:flex shrink-0 items-center gap-1.5">
                   <span class="px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
                     :class="getCategoryStyle(mail.category)">
                     {{ mail.category }}
+                  </span>
+                  <span v-if="mail.isDraftKonsep"
+                    class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-700"
+                    title="Draft Konsep">
+                    K
                   </span>
                 </div>
               </div>

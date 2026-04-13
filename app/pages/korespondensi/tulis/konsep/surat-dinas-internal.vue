@@ -9,39 +9,41 @@
       <div
         class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
-          class="flex items-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
+          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
           <div class="flex items-center py-2 gap-3">
-            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-10 h-10 flex items-center justify-center">
+            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-sm font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
+              <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                Klik untuk melihat/menyembunyikan detail surat referensi
+                <span class="font-mono font-medium">{{ refData.nomor || '-' }}</span> •
+                {{ formatDateRef(refData.tanggal) }}
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <NuxtLink v-if="refData.id && refData.jenis"
-              :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank" @click.stop
-              class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
-              Buka Tab Baru
-              <UIcon name="i-lucide-external-link" class="w-3 h-3" />
-            </NuxtLink>
-            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
-              :class="{ 'rotate-180': isRefExpanded }" />
-          </div>
+          <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
+            :class="{ 'rotate-180': isRefExpanded }" />
         </div>
 
-        <div v-show="isRefExpanded">
-
+        <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
+          <div v-if="detail && (detail.catatan_reject || detail.data?.catatan_reject)"
+            class="bg-white dark:bg-gray-800 px-5 py-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Catatan
+                Penolakan</span>
+              <p class="text-sm text-gray-900 dark:text-white leading-relaxed">
+                {{ detail.catatan_reject || detail.data?.catatan_reject }}
+              </p>
+            </div>
+          </div>
 
           <div v-if="refPdfUrl" class="w-full">
             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[400px] border-none"
-              title="Preview Surat Referensi"></iframe>
+              title="Preview Surat Referensi" />
           </div>
-          <div v-else class="flex flex-col items-center justify-center h-[200px] text-gray-500 gap-2 bg-gray-50 dark:bg-gray-900">
-            <UIcon name="i-lucide-file-x" class="w-10 h-10 opacity-30" />
+          <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
+            <UIcon name="i-lucide-file-x" class="w-12 h-12 opacity-30" />
             <span class="text-sm font-medium">Dokumen PDF tidak tersedia untuk ditampilkan.</span>
           </div>
         </div>
@@ -63,7 +65,8 @@
       <div v-else class="flex-1 overflow-y-auto space-y-1">
 
         <!-- Pesan -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Pesan</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -74,28 +77,29 @@
           </div>
         </div>
 
-        <TulisInputPengirim v-model="selectedSender" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems" />
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []" :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputPengirim v-model="selectedSender" label="Pengirim" placeholder="Pilih Pengirim"
+          :items="senderItems" />
+        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
-            :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'"
-            :items="items" :groups="recipientGroups" :exclude-items="excludeTembusanList"
-            :disabled="!isSenderSelected" disabled-message="Sudah dipilih di Tembusan" />
-        </div>
+        <!-- Tertuju: exclude yang sudah dipilih di TEMBUSAN -->
+        <!-- Tertuju: exclude tembusan + anggota grup tembusan -->
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
+          :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
+          :groups="recipientGroups" :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
+          disabled-message="Sudah dipilih di Tembusan" />
 
-        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
-            :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'"
-            :items="items" :groups="recipientGroups" :exclude-items="excludeTertujuList"
-            :disabled="!isSenderSelected" disabled-message="Sudah dipilih di Tertuju" />
-        </div>
-
+        <!-- Tembusan: exclude tertuju + anggota grup tertuju -->
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
+          :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
+          :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
+          disabled-message="Sudah dipilih di Tertuju" />
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -111,7 +115,8 @@
         </div>
 
         <!-- Lampiran text -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <input type="text" v-model="lampiranText" readonly tabindex="-1"
@@ -124,7 +129,8 @@
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
                 <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
@@ -155,7 +161,8 @@
                         <tr>
                           <td class="align-top">Perihal</td>
                           <td class="align-top">:</td>
-                          <td class="align-top font-bold text-justify">{{ subject || "................................................" }}</td>
+                          <td class="align-top font-bold text-justify">{{ subject ||
+                            "................................................" }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -175,15 +182,18 @@
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <Editor api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit" />
+                  <Editor api-key="no-api-key" v-model="editorContent" :initial-value="editorContent"
+                    :init="tinyMceInit" />
                 </div>
 
                 <div class="flex justify-end mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
-                      <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
+                      <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}
+                      </div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ selectedSender?.raw?.persnum_person_text || user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ selectedSender?.raw?.persnum_person_text ||
+                      user?.nama || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 
@@ -201,9 +211,17 @@
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
@@ -228,8 +246,10 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold" @click="handlePreview" />
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+            @click="handlePreview" />
         </div>
       </div>
     </UCard>
@@ -274,12 +294,10 @@ interface UploadedFile {
 }
 
 // --- Composables ---
-const { createKonsep, previewPdf, forwardKonsep } = useKonsep();
+const { createKonsep, previewPdf, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
 const { apiGet } = useApi();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getDraftDetail } = useDraft();
-const { saveDraft: saveSDI } = useSdi();
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
 const { getRecipientGroups } = useRecipients();
 
@@ -316,7 +334,7 @@ const recipientGroups = ref<any[]>([]);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 const maxPerihal = 200;
 
 const sifatOptions: SifatOption[] = [
@@ -374,9 +392,70 @@ const formatDisposisiInline = (val: any) => {
 // --- Computed ---
 const isSenderSelected = computed(() => !!selectedSender.value);
 
-const excludeTertujuList = computed(() => selectedTertuju.value);
-const excludeTembusanList = computed(() => selectedTembusan.value);
+// excludeTertujuList = yang sudah dipilih di TEMBUSAN → di-disable di Tertuju
+const excludeTertujuList = computed(() => selectedTembusan.value);
+// excludeTembusanList = yang sudah dipilih di TERTUJU → di-disable di Tembusan
+const excludeTembusanList = computed(() => selectedTertuju.value);
 
+// Helper: ambil position IDs dari grup (handle kedua format API)
+const getGrupPositionIds = (grupData: any): string[] => {
+  if (!grupData) return [];
+  // Format 1: langsung ada position_ids array (dari penerima_grup di konsep)
+  if (Array.isArray(grupData.position_ids)) {
+    return grupData.position_ids.map(String);
+  }
+  // Format 2: dari getRecipientGroups — position ada di details[].position
+  if (Array.isArray(grupData.details)) {
+    return grupData.details.map((d: any) => String(d.position));
+  }
+  return [];
+};
+
+const expandedExcludeTertuju = computed(() => {
+  const result: any[] = [...selectedTembusan.value];
+
+  selectedTembusan.value
+    .filter((i: any) => i.isGroup)
+    .forEach((grupItem: any) => {
+      const rawId = String(grupItem.value).replace(/^GROUP_/, '');
+      const grupData = recipientGroups.value.find((g: any) => String(g.id) === rawId)
+        || grupItem.raw;
+      const positionIds = getGrupPositionIds(grupData);
+
+      positionIds.forEach((posId: string) => {
+        const found = items.value.find((item: any) => String(item.value) === posId);
+        if (found && !result.some((r: any) => r.value === found.value)) {
+          result.push(found);
+        }
+      });
+    });
+
+  return result;
+});
+
+const expandedExcludeTembusan = computed(() => {
+  const result: any[] = [...selectedTertuju.value];
+
+  selectedTertuju.value
+    .filter((i: any) => i.isGroup)
+    .forEach((grupItem: any) => {
+      const rawId = String(grupItem.value).replace(/^GROUP_/, '');
+      const grupData = recipientGroups.value.find((g: any) => String(g.id) === rawId)
+        || grupItem.raw;
+      const positionIds = getGrupPositionIds(grupData);
+
+      positionIds.forEach((posId: string) => {
+        const found = items.value.find((item: any) => String(item.value) === posId);
+        if (found && !result.some((r: any) => r.value === found.value)) {
+          result.push(found);
+        }
+      });
+    });
+
+  return result;
+});
+
+// ── computed: pisah individu & grup, strip GROUP_ prefix ─────────────────────
 const tertujuIndividu = computed(() =>
   selectedTertuju.value.filter((i: any) => !i.isGroup).map((i: any) => i.value)
 );
@@ -384,10 +463,14 @@ const tembusanIndividu = computed(() =>
   selectedTembusan.value.filter((i: any) => !i.isGroup).map((i: any) => i.value)
 );
 const tertujuGrup = computed(() =>
-  selectedTertuju.value.filter((i: any) => i.isGroup).map((i: any) => i.value)
+  selectedTertuju.value
+    .filter((i: any) => i.isGroup)
+    .map((i: any) => String(i.value).replace(/^GROUP_/, ''))
 );
 const tembusanGrup = computed(() =>
-  selectedTembusan.value.filter((i: any) => i.isGroup).map((i: any) => i.value)
+  selectedTembusan.value
+    .filter((i: any) => i.isGroup)
+    .map((i: any) => String(i.value).replace(/^GROUP_/, ''))
 );
 
 const refSenderInitials = computed(() => {
@@ -574,8 +657,8 @@ const prepareKonsepFormData = () => {
   formData.append('pengirim_position_id', signerInfo.value || '');
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
-  formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
-  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
+  formData.append('penerima_grup', JSON.stringify(tertujuGrup.value));
+  formData.append('tembusan_grup', JSON.stringify(tembusanGrup.value));
   formData.append('tgl', tglDb);
   formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
   formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -662,8 +745,8 @@ const handleKirimDokumen = async () => {
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
       formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
-      formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
-      formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
+      formData.append('penerima_grup', JSON.stringify(tertujuGrup.value));
+      formData.append('tembusan_grup', JSON.stringify(tembusanGrup.value));
       formData.append('tgl', tglDb);
       formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
       formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -679,9 +762,8 @@ const handleKirimDokumen = async () => {
       formData.append('catatan', message.value || '-');
       formData.append('lampiran_count', existingFiles.value.length > 0 ? '1' : '0');
 
-      const dataWrapper = detail.value?.data || detail.value;
-      const konsepId = dataWrapper?.konsep?.id;
-      if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
+     const konsepId = detail.value?.id || editDraftId.value;
+if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
 
       result = await forwardKonsep(konsepId, formData);
     } else {
@@ -717,8 +799,12 @@ const handleSaveDraft = async () => {
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    const formData = createFormData(payload);
-    await saveSDI(formData, editDraftId.value);
+    const formData = prepareKonsepFormData();
+    if (editDraftId.value) {
+      await updateDraft(editDraftId.value, formData);
+    } else {
+      await createDraft(formData);
+    }
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
   } catch (e: any) {
@@ -791,84 +877,161 @@ onMounted(async () => {
     try {
       const result = await fetchKonsepDetail(refId);
       if (result) {
-        const unwrappedData = result.data || result;
-        detail.value = unwrappedData;
-        editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
-        subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";
+        // fetchKonsepDetail return { flow: [...], ... } bukan raw array
+        const rawArray: any[] = result.flow || [];
 
-        if (unwrappedData.flow && Array.isArray(unwrappedData.flow)) {
-          const createFlow = unwrappedData.flow.find((f: any) => f.aksi === 'create');
-          if (createFlow?.catatan) message.value = createFlow.catatan;
+        if (rawArray.length === 0) {
+          toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
+          return;
         }
 
-        const tglStr = unwrappedData.tanggal || unwrappedData.naskah?.tanggal;
+        // Cari konsep terbaru (jenis K)
+        const konsepFlows = rawArray
+          .filter((f: any) => f.jenis === 'K')
+          .sort((a: any, b: any) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        const latestKonsep = konsepFlows[0];
+
+        if (!latestKonsep) {
+          toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
+          return;
+        }
+
+        // Cari referensi disposisi (jenis DI)
+        const refDisposisi = rawArray.find((f: any) => f.jenis === 'DI');
+
+        if (!latestKonsep) {
+          toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
+          return;
+        }
+
+        detail.value = { ...latestKonsep, catatan_reject: result.catatan_reject };
+        editDraftId.value = latestKonsep.id;
+        subject.value = latestKonsep.perihal || "";
+        editorContent.value = latestKonsep.konten || "";
+        message.value = latestKonsep.detail?.catatan || "";
+
+        // Tanggal
+        const tglStr = latestKonsep.tanggal;
         if (tglStr) {
           const tglParts = new Date(tglStr);
           date.value = new CalendarDate(tglParts.getFullYear(), tglParts.getMonth() + 1, tglParts.getDate());
         }
 
-        const sifatStr = unwrappedData.sifat || unwrappedData.naskah?.sifat;
-        if (sifatStr) selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
+        // Sifat
+        const sifatStr = latestKonsep.sifat;
+        if (sifatStr) {
+          selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
+        }
 
-        const klasCode = unwrappedData.naskah?.klasifikasi;
-        if (klasCode) {
-          const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === klasCode);
+        // Klasifikasi
+        if (latestKonsep.klasifikasi) {
+          const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === latestKonsep.klasifikasi);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        editorContent.value = unwrappedData.konten || unwrappedData.naskah?.konten || "";
-        lampiranText.value = unwrappedData.lampiran || "";
-
-        if (unwrappedData.pengirim) {
-          const senderObj = mapPersonToUI(unwrappedData.pengirim);
+        // Pengirim
+        if (latestKonsep.pengirim) {
+          const senderObj = mapPersonToUI(latestKonsep.pengirim);
           selectedSender.value = senderObj;
           await fetchSenderList(senderObj.value);
           await fetchRecipientsBySender(senderObj.value);
         }
 
-        if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
-          selectedTertuju.value = [
-            ...mapGroupsToUI(unwrappedData.kepada_grup || []),
-            ...unwrappedData.kepada.map((p: any) => mapPersonToUI(p)),
-          ];
-        }
-        if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
-          selectedTembusan.value = [
-            ...mapGroupsToUI(unwrappedData.tembusan_grup || []),
-            ...unwrappedData.tembusan.map((t: any) => mapPersonToUI(t)),
-          ];
-        }
+        // Penerima & Tembusan — ambil dari detail.naskah_penerima atau root penerima
+        // Gunakan logika sama persis dengan tulis SDI biasa (buildSelectedFiltered)
+        const buildSelectedFiltered = (apiArr: any[], grupArr: any[]) => {
+          if (!apiArr?.length) return [];
 
-        if (unwrappedData.lampiran_files && Array.isArray(unwrappedData.lampiran_files)) {
-          existingFiles.value = unwrappedData.lampiran_files.map((f: any) => ({
-            id: f.id, fileName: f.filename || f.file_name || 'File',
-            filePath: f.url || f.file_path || '', fileSize: f.size || 0,
+          const grupPositionIds = new Set<string>();
+          (grupArr || []).forEach((grup: any) => {
+            (grup.position_ids || []).forEach((posId: any) => {
+              grupPositionIds.add(String(posId));
+            });
+          });
+
+          const allKnownPositions = new Set<string>();
+          items.value.forEach((item: any) => {
+            allKnownPositions.add(String(item.value));
+          });
+
+          return apiArr
+            .filter((item: any) => {
+              const posId = String(item.position_id || '');
+              // Buang jika position ada di grup
+              if (grupPositionIds.has(posId)) return false;
+              // Buang jika tidak dikenal DAN ada grup aktif
+              if (!allKnownPositions.has(posId) && grupPositionIds.size > 0) return false;
+              return true;
+            })
+            .map((item: any) => {
+              const posId = String(item.position_id || '');
+              const found = items.value.find((m: any) => String(m.value) === posId);
+              return found || {
+                label: `${item.nama || ''} - ${item.position_text || ''}`,
+                labelJob: item.position_text || '',
+                value: posId,
+                raw: item,
+              };
+            })
+            .filter(Boolean);
+        };
+
+        // Sumber data penerima: dari detail.naskah_penerima (expand dari grup) atau root penerima
+        // Ambil dari detail, bukan root
+        const rawPenerima = latestKonsep.detail?.naskah_penerima || [];
+        const penerimaGrup = latestKonsep.detail?.penerima_grup || latestKonsep.penerima_grup || [];
+
+        const rawTembusan = latestKonsep.detail?.naskah_tembusan || latestKonsep.tembusan || [];
+        const tembusanGrupData = latestKonsep.detail?.tembusan_grup || latestKonsep.tembusan_grup || [];
+
+        // buildSelectedFiltered sudah benar — filter individu yang ada di grup
+        selectedTertuju.value = [
+          ...mapGroupsToUI(penerimaGrup),
+          ...buildSelectedFiltered(rawPenerima, penerimaGrup),
+        ];
+        selectedTembusan.value = [
+          ...mapGroupsToUI(tembusanGrupData),
+          ...buildSelectedFiltered(rawTembusan, tembusanGrupData),
+        ];
+
+        selectedTertuju.value = [
+          ...mapGroupsToUI(penerimaGrup),
+          ...buildSelectedFiltered(rawPenerima, penerimaGrup),
+        ];
+        selectedTembusan.value = [
+          ...mapGroupsToUI(tembusanGrupData),
+          ...buildSelectedFiltered(rawTembusan, tembusanGrupData),
+        ];
+
+        // Lampiran
+        if (latestKonsep.lampiran_files?.length) {
+          existingFiles.value = latestKonsep.lampiran_files.map((f: any) => ({
+            id: f.id,
+            fileName: f.file_name || f.fileName || 'File',
+            filePath: f.file_url || f.file_path || '',
+            fileSize: f.fileSize || 0,
           }));
         }
 
-        const flows = unwrappedData.flow || [];
-        if (flows.length > 0) {
-          const originFlow = flows[0];
-          if (originFlow.naskah || originFlow.pdf_snapshot) {
-            refData.value = {
-              id: originFlow.naskah?.id || 'ref-flow',
-              nomor: originFlow.naskah?.nomor || '-',
-              tanggal: originFlow.naskah?.tanggal || originFlow.tanggal,
-              perihal: originFlow.naskah?.perihal || '',
-              jenis: originFlow.naskah?.jenis || 'Naskah',
-              jenis_label: originFlow.naskah?.jenis || 'Naskah',
-              pengirim_nama: originFlow.naskah?.pengirim?.nama || '-',
-              pengirim_jabatan: originFlow.naskah?.pengirim?.position_text || '-',
-              kepada: originFlow.naskah?.penerima || [],
-              tembusan: originFlow.naskah?.tembusan || [],
-              catatan: originFlow.catatan || '',
-              final_pdf_url: originFlow.naskah?.final_pdf || originFlow.pdf_snapshot || null,
-              lampiran_files: originFlow.naskah?.lampiran_files || [],
-            };
-          }
+        // Referensi card — dari disposisi jika ada
+        if (refDisposisi) {
+          refData.value = {
+            id: refDisposisi.id,
+            nomor: refDisposisi.nomor || '-',
+            tanggal: refDisposisi.tanggal,
+            perihal: refDisposisi.perihal || refDisposisi.konten || '-',
+            jenis: refDisposisi.jenis,
+            jenis_label: 'DISPOSISI',
+            pengirim_nama: refDisposisi.pengirim?.nama || '-',
+            pengirim_jabatan: refDisposisi.pengirim?.position_text || '-',
+            catatan: refDisposisi.detail?.catatan || refDisposisi.konten || '',
+            final_pdf_url: refDisposisi.final_pdf_url || refDisposisi.final_pdf || null,
+            lampiran_files: refDisposisi.lampiran_files || [],
+          };
+          isRefExpanded.value = false;
         }
-      } else {
-        toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
       }
     } catch (e) {
       console.error("Error fetching edit data:", e);
@@ -917,7 +1080,7 @@ onMounted(async () => {
     isLoadingData.value = true;
     try {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
         subject.value = d.perihal || "";
@@ -927,18 +1090,31 @@ onMounted(async () => {
         english.value = Boolean(d.english);
 
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
+          const klCode = String(d.klasifikasi).trim();
+          const foundKlas = klasifikasiList.value.find((k: any) =>
+            k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
+          );
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
         if (user.value?.position) await fetchSenderList(user.value.position);
 
+        // Restore pengirim
+        if (d.from_position_id || d.pengirim_position_id) {
+          const senderId = String(d.pengirim_position_id || d.from_position_id);
+          const found = senderItems.value.find(s => s.value === senderId);
+          if (found) {
+            selectedSender.value = found;
+            await fetchRecipientsBySender(senderId);
+          }
+        }
+
         const mapApiToUI = (list: any[]) => list?.map(item => {
           const posId = String(item.position_id || item.position || item.value);
           const master = items.value.find(m => m.value === posId);
           return master || {
-            label: `${item.persnum || ''} - ${item.positionText || item.labelJob || ''}`,
-            labelJob: item.positionText || item.labelJob || '', value: posId, raw: item,
+            label: `${item.nama || ''} - ${item.position_text || item.positionText || ''}`,
+            labelJob: item.position_text || item.positionText || '', value: posId, raw: item,
           };
         }) || [];
 
@@ -952,8 +1128,9 @@ onMounted(async () => {
           }));
         }
         selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
-        if (d.tanggal) {
-          const p = d.tanggal.split('-');
+        const tglStr = d.tanggal || d.tgl;
+        if (tglStr) {
+          const p = tglStr.split('T')[0].split('-');
           if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
         }
       }
@@ -972,7 +1149,22 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:deep(.tox-tinymce) { border: none !important; }
-.tox-fullscreen { z-index: 9999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; }
-.tox-dialog-wrap, .tox-dropzone, .tox-promotions { z-index: 10000 !important; }
+:deep(.tox-tinymce) {
+  border: none !important;
+}
+
+.tox-fullscreen {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.tox-dialog-wrap,
+.tox-dropzone,
+.tox-promotions {
+  z-index: 10000 !important;
+}
 </style>

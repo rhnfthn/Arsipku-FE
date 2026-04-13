@@ -12,7 +12,9 @@ const props = defineProps<{
   allowedActions?: string[];
   context?: string;
   userPositionId?: string | number;
-  isPengirimKonsep?: boolean; // ← tambahkan ini
+  isPengirimKonsep?: boolean;
+  draft?: { id: string; jenis: string } | null;
+
 }>();
 
 // --- EMITS ---
@@ -98,10 +100,11 @@ const hasAccess = (codes: string[]) => {
   if (!props.allowedActions) return false;
   return codes.some(code => props.allowedActions?.includes(code));
 };
+
 </script>
 
 <template>
-  <div v-if="data.aksi !== 'pending'"
+  <div v-if="data.aksi !== 'pending' && data.status !== 'draf'"
     class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md relative transition-colors">
 
     <div>
@@ -211,7 +214,8 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
-      <div v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject'" class="mb-4 flex flex-col md:flex-row gap-2">
+      <div v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject'"
+        class="mb-4 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
           Pengirim </div>
@@ -235,7 +239,7 @@ const hasAccess = (codes: string[]) => {
               v-for="(t, ti) in (data.showAllTo ? (data.to || data.kepada) : (data.to || data.kepada).slice(0, LIMIT_DISPLAY))"
               :key="ti" class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0">
               <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-              }}.</span>
+                }}.</span>
 
               <div class="truncate min-w-0">
                 <template v-if="data.jenis === 'SDE' || data.jenis === 'sde'">
@@ -280,7 +284,7 @@ const hasAccess = (codes: string[]) => {
             v-for="(t, ti) in (data.showAllCc ? (data.cc || data.tembusan) : (data.cc || data.tembusan).slice(0, LIMIT_DISPLAY))"
             :key="ti" class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
             <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1
-            }}.</span>
+              }}.</span>
             <div class="truncate min-w-0">
               <span class="font-medium">{{ t.position_text }}</span>
               <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama }})</span>
@@ -308,7 +312,7 @@ const hasAccess = (codes: string[]) => {
                   ? data.konten
                   : data.mainDisplayContentHtml
                     ? data.mainDisplayContentHtml
-            : (data.rich_content || '').replace(/\n/g, ', ') }}
+                    : (data.rich_content || '').replace(/\n/g, ', ') }}
           </p>
         </div>
       </div>

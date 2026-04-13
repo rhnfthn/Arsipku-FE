@@ -143,7 +143,7 @@
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
-                          }}</td>
+                        }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
@@ -240,11 +240,9 @@ const {
   recipientGroups
 } = useTulis();
 
-const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep } = useKonsep();
+const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getDraftDetail } = useDraft();
-const { saveDraft: saveND } = useNotaDinas();
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
 const { getRecipientGroups } = useRecipients();
 
@@ -598,8 +596,8 @@ const prepareRevisiFormData = () => {
   formData.append('pengirim_position_id', String(currentSender.value || ''));
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
-  formData.append('penerima_grup_ids', JSON.stringify(tertujuGrup.value));
-  formData.append('tembusan_grup_ids', JSON.stringify(tembusanGrup.value));
+  formData.append('penerima_grup', JSON.stringify(tertujuGrup.value));
+  formData.append('tembusan_grup', JSON.stringify(tembusanGrup.value));
   formData.append('tgl', tglDb);
   formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
   formData.append('klasifikasi_text', selectedKlasifikasi.value?.nama || selectedKlasifikasi.value?.klasifikasi_text || '');
@@ -707,7 +705,12 @@ const handleSaveDraft = async () => {
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    await saveND(createFormData(payload), editDraftId.value);
+    const fd = prepareKonsepFormData();
+    if (editDraftId.value) {
+      await updateDraft(editDraftId.value, fd);
+    } else {
+      await createDraft(fd);
+    }
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
   } catch (e: any) {
@@ -901,7 +904,7 @@ onMounted(async () => {
     isLoadingData.value = true;
     try {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
         subject.value = d.perihal || "";
@@ -909,35 +912,85 @@ onMounted(async () => {
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
 
+        if (d.disposisi_referensi) {
+          refData.value = {
+            id: d.disposisi_referensi.id,
+            nomor: d.disposisi_referensi.nomor || '-',
+            tanggal: d.disposisi_referensi.tanggal,
+            final_pdf_url: d.disposisi_referensi.final_pdf_url || null,
+            lampiran_files: [],
+            jenis: 'DI',
+          };
+          refPengirimPositionId.value = d.disposisi_referensi.pengirim?.position_id || '';
+        }
+
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
+          const klCode = String(d.klasifikasi).trim();
+          const foundKlas = klasifikasiList.value.find((k: any) =>
+            k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
+          );
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
+        isPopulating.value = true;
+
         if (user.value?.position) await fetchSenderList(user.value.position);
 
-        const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
-          const posId = String(item.position_id || item.position || item.value || item.id || '');
-          const master = items.value.find(m => m.value === posId);
+        // Restore pengirim
+        if (d.pengirim?.position_id || d.from_position_id || d.pengirim_position_id) {
+          const senderId = String(d.pengirim?.position_id || d.pengirim_position_id || d.from_position_id);
+          const found = senderItems.value.find(s => s.value === senderId);
+          if (found) selectedSender.value = found;
+        }
 
+        // Wajib load recipients dulu sebelum populate grup/individu
+        if (selectedSender.value?.value) {
+          await fetchRecipientsBySender(selectedSender.value.value);
+        }
+
+        // ── PERBAIKAN UTAMA: gunakan mapGroupsToUI + filter individu seperti tulis-nd ──
+        const penerimaGrupRaw = d.penerima_grup || [];
+        const tembusanGrupRaw = d.tembusan_grup || [];
+
+        // Kumpulkan position_ids yang sudah diwakili grup
+        const idDalamGrupTertuju = new Set<string>(
+          penerimaGrupRaw.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
+        const idDalamGrupTembusan = new Set<string>(
+          tembusanGrupRaw.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
+
+        // Filter individu yang TIDAK diwakili grup
+        const rawPenerima = (d.penerima || []).filter(
+          (p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.position || ''))
+        );
+        const rawTembusan = (d.tembusan || []).filter(
+          (p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.position || ''))
+        );
+
+        // Helper map individu — cari di items dulu, fallback ke raw data
+        const mapIndividu = (list: any[]): RecipientItem[] => list.map(item => {
+          const posId = String(item.position_id || item.position || item.value || item.id || '');
+          const master = items.value.find((m: any) => m.value === posId);
           return master || {
-            label: `${item.persnum_person_text || item.nama || item.name || item.persnum || ''} - ${item.position_text || item.positionText || item.labelJob || ''}`,
-            labelJob: item.position_text || item.positionText || item.labelJob || '',
+            label: `${item.nama || item.persnum_person_text || ''} - ${item.position_text || item.positionText || ''}`,
+            labelJob: item.position_text || item.positionText || '',
             value: posId,
             isGroup: false,
             raw: item,
           };
-        }) || [];
+        });
 
         selectedTertuju.value = mergeGrupDanIndividu(
-          mapGroupsToUI(d.penerima_grup || []),
-          mapApiToUI(d.penerima || [])
+          mapGroupsToUI(penerimaGrupRaw),   // ← nama grup (Para EVP, dll)
+          mapIndividu(rawPenerima)           // ← individu di luar grup
+        );
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(tembusanGrupRaw),   // ← nama grup (Para Direksi, dll)
+          mapIndividu(rawTembusan)           // ← individu di luar grup
         );
 
-        selectedTembusan.value = mergeGrupDanIndividu(
-          mapGroupsToUI(d.tembusan_grup || []),
-          mapApiToUI(d.tembusan || [])
-        );
+        isPopulating.value = false;
 
         if (Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
@@ -948,10 +1001,13 @@ onMounted(async () => {
           }));
         }
 
-        selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
+        selectedSifat.value = sifatOptions.find(
+          opt => opt.value === String(d.sifat || 'biasa').toLowerCase()
+        ) || sifatOptions[3];
 
-        if (d.tanggal) {
-          const p = d.tanggal.split('-');
+        const tglStr = d.tanggal || d.tgl;
+        if (tglStr) {
+          const p = tglStr.split('T')[0].split('-');
           if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
         }
       }

@@ -52,6 +52,18 @@ const scrollToTarget = async () => {
   }, 500);
 };
 
+const konsepRouteMap: Record<string, string> = {
+  ND: 'nota-dinas',
+  SDI: 'surat-dinas-internal',
+  SDE: 'surat-dinas-eksternal',
+  DI: 'disposisi',
+  KA: 'kajian',
+};
+
+const handleLanjutKonsep = () => {
+  isOpenKonsepModal.value = true;
+};
+
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
   const jenis = (jenisQuery || '').toUpperCase();
@@ -62,7 +74,7 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
   const suratNorm = surat?.toUpperCase();
   if (!bodTag) {
     return {
-      create: suratNorm === 'DI' ? ['KO'] : [],
+      create: ['KO'],  // ← semua jenis surat bisa lanjut konsep untuk non-BOD
       forward: [],
       reject: ['KO', 'K'].includes(suratNorm) ? ['Perbaiki'] : [],
       finalize: []
@@ -107,6 +119,10 @@ const breadcrumbs = [
   { label: "Detail Surat", to: "#" },
 ];
 
+const visibleDetails = computed(() =>
+  details.value.filter((d: any) => d._rawStatus !== 'draf')
+);
+
 // --- STATE ---
 const details = ref<any[]>([]);
 const selected = ref<any>(null);
@@ -134,7 +150,7 @@ const isJenisDI = computed(() => {
 });
 
 // --- GROUPING HELPER ---
-const processGrouping = (individuals: any[], groups: any[]) => {
+const processGrouping = (individuals: any[], groups: any[], senderPositionId?: string) => {
   if (!Array.isArray(individuals) || individuals.length === 0) return [];
   if (!Array.isArray(groups) || groups.length === 0) return individuals;
 
@@ -142,23 +158,34 @@ const processGrouping = (individuals: any[], groups: any[]) => {
   const matchedIds = new Set();
   const result: any[] = [];
 
-  const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-  const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
+  const myPosId = String(
+    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+  );
+
+  // ID yang boleh "tidak hadir" di individualIds: user login + pengirim surat
+  const excludedIds = new Set([myPosId, senderPositionId].filter(Boolean));
 
   for (const group of groups) {
-    const reqIds = group.position_ids || [];
-    const isComplete = reqIds.length > 0 && reqIds.every((gId: any) => {
-      const strId = String(gId);
-      return individualIds.has(strId) || strId === myPosId;
+    const reqIds = (group.position_ids || []).map(String);
+    const isComplete = reqIds.length > 0 && reqIds.every((strId: string) => {
+      return individualIds.has(strId) || excludedIds.has(strId);
     });
+
     if (isComplete) {
-      result.push({ nama: group.nama, position_text: group.nama, is_group: true });
-      reqIds.forEach((gId: any) => matchedIds.add(String(gId)));
+      result.push({
+        id: group.id || `group-${group.nama}`,
+        nama: group.nama,
+        position_text: group.nama,
+        organization_text: 'Grup Penerima',
+        is_group: true
+      });
+      reqIds.forEach((strId: string) => matchedIds.add(strId));
     }
   }
 
   for (const indiv of individuals) {
-    if (!matchedIds.has(String(indiv.position_id || indiv.id))) {
+    const indivId = String(indiv.position_id || indiv.id);
+    if (!matchedIds.has(indivId)) {
       result.push(indiv);
     }
   }
@@ -221,18 +248,29 @@ const loadData = async () => {
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
-          const catatan = flow.detail?.catatan || flow.catatan || '';
+
+          // Ambil position_id pengirim flow ini
+          const senderPosId = String(
+            flow.detail?.naskah_pengirim?.position_id ||
+            flow.pengirim?.position_id ||
+            ''
+          );
 
           const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
-          const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
-          const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
+          const penerimaGrup = (flow.detail?.penerima_grup?.length ? flow.detail.penerima_grup : null)
+            || (flow.penerima_grup?.length ? flow.penerima_grup : null)
+            || [];
+          const processedPenerima = processGrouping(rawPenerima, penerimaGrup, senderPosId);
 
           const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
-          const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
-          const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
+          const tembusanGrup = (flow.detail?.tembusan_grup?.length ? flow.detail.tembusan_grup : null)
+            || (flow.tembusan_grup?.length ? flow.tembusan_grup : null)
+            || [];
+          const processedTembusan = processGrouping(rawTembusan, tembusanGrup, senderPosId);
 
           return {
             id: flow.id,
+            _rawStatus: flow.status || '',
             urutan: sortedFlows.length - index,
             sifat: flow.sifat,
             aksi,
@@ -247,13 +285,9 @@ const loadData = async () => {
             to: processedPenerima,
             cc: processedTembusan,
             rich_content: flow.konten || '',
-            catatan:  flow.detail?.catatan || flow.catatan || '',
+            catatan: flow.detail?.catatan || flow.catatan || '',
             attachments: flow.lampiran_files || [],
             pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
-            //  pdf_snapshot: flow.final_pdf_url || flow.final_pdf ||
-            // // Fallback: cari pdf dari flow lain yang punya (untuk kasus reject yg pdf-nya null)
-            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf_url ||
-            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf || '',
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
@@ -308,6 +342,7 @@ const loadData = async () => {
 
           return {
             id: item.id,
+            _rawStatus: item.status || '',
             ttd: item.ttd,
             sifat: item.sifat,
             aksi: item.status || 'read',
@@ -382,6 +417,11 @@ const isPengirimKonsep = computed(() => {
   return isInPenerima;
 });
 
+const draftItem = computed(() => {
+  // Cek di rawFlows via details — kita simpan status asli
+  return details.value.find((d: any) => d._rawStatus === 'draf') ?? null;
+});
+
 const handleConfirmReject = async () => {
   if (!rejectNote.value.trim()) {
     useToast().add({ title: 'Peringatan', description: 'Mohon isi catatan penolakan.', color: 'warning' });
@@ -419,7 +459,28 @@ const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path
 const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
-const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
+const selectKonsep = (opt: any) => {
+  // Jika ada draft dan opsi ini BUKAN jenis draft → disabled, tidak melakukan apa-apa
+  if (draftItem.value && opt.type !== draftItem.value.jenis) return;
+
+  isOpenKonsepModal.value = false;
+  if (!selected.value?.id) return;
+
+  // Jika opsi ini adalah jenis yang ada draftnya → lanjut edit draft
+  if (draftItem.value && opt.type === draftItem.value.jenis) {
+    router.push({
+      path: opt.path,
+      query: { draft_id: draftItem.value.id }
+    });
+    return;
+  }
+
+  // Tidak ada draft sama sekali → buat konsep baru
+  router.push({
+    path: opt.path,
+    query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis }
+  });
+};
 
 const openDocumentPreview = async (url: string, title = "Dokumen") => {
   if (!url) { alert("URL tidak valid."); return; }
@@ -439,11 +500,29 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
 };
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
 
-const konsepOptions = [
-  { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600' },
-  { type: 'SDI', label: 'Surat Dinas Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
-  { type: 'SDE', label: 'Surat Dinas Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600' }
-];
+const konsepOptions = computed(() => [
+  {
+    type: 'ND',
+    label: 'Nota Dinas',
+    path: '/korespondensi/tulis/konsep/nota-dinas',
+    icon: FileText,
+    colorClass: 'bg-blue-100 text-blue-600',
+  },
+  {
+    type: 'SDI',
+    label: 'Surat Dinas Internal',
+    path: '/korespondensi/tulis/konsep/surat-dinas-internal',
+    icon: Users,
+    colorClass: 'bg-green-100 text-green-600',
+  },
+  {
+    type: 'SDE',
+    label: 'Surat Dinas Eksternal',
+    path: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
+    icon: Building2,
+    colorClass: 'bg-orange-100 text-orange-600',
+  },
+]);
 </script>
 
 <template>
@@ -464,12 +543,12 @@ const konsepOptions = [
     </div>
 
 
-    <template v-else-if="details && details.length > 0">
-      <!-- Di [id].vue template, taruh ini untuk debug sementara -->
-      <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
+    <template v-else-if="visibleDetails && visibleDetails.length > 0">
+      <div v-for="(detail, index) in visibleDetails" :key="detail.id || detail.urutan || index"
         :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
           'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
         }">
+
         <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
           :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
@@ -477,11 +556,12 @@ const konsepOptions = [
           :user-position-id="user.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
           @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
           @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
-          @lanjut-disposisi="handleLanjutDisposisi" @lanjut-konsep="isOpenKonsepModal = true" />
+          @lanjut-disposisi="handleLanjutDisposisi"
+          :draft="index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null"
+          @lanjut-konsep="handleLanjutKonsep" />
 
       </div>
     </template>
-
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>
         <div class="w-full flex justify-between items-start">
@@ -498,19 +578,42 @@ const konsepOptions = [
       <template #body>
         <div class="space-y-3">
           <div v-for="(opt, idx) in konsepOptions" :key="idx" @click="selectKonsep(opt)"
-            class="group flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-500 cursor-pointer transition-all duration-200">
-            <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
-              :class="opt.colorClass">
+            class="group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200" :class="draftItem
+              ? opt.type === draftItem.jenis
+                ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 cursor-pointer'
+                : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 opacity-40 cursor-not-allowed'
+              : 'border-gray-200 dark:border-gray-700 hover:border-primary-500 cursor-pointer'">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+              :class="[opt.colorClass, draftItem && opt.type !== draftItem.jenis ? '' : 'transition-transform group-hover:scale-110']">
               <component :is="opt.icon" class="w-6 h-6" />
             </div>
             <div class="flex-1 min-w-0">
-              <h4
-                class="text-base font-bold text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors">
-                {{ opt.label }}</h4>
-              <!-- <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{{ opt.desc }}</p> -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-base font-bold text-gray-900 dark:text-white"
+                  :class="draftItem && opt.type !== draftItem.jenis ? '' : 'group-hover:text-primary-600 transition-colors'">
+                  {{ opt.label }}
+                </h4>
+                <span v-if="draftItem && opt.type === draftItem.jenis"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-white uppercase tracking-wide">
+                  Draft Tersimpan
+                </span>
+                <span v-else-if="draftItem && opt.type !== draftItem.jenis"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-300 dark:bg-gray-600 text-white uppercase tracking-wide">
+                  Tidak Tersedia
+                </span>
+              </div>
+              <p v-if="draftItem && opt.type === draftItem.jenis"
+                class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5">
+                Klik untuk melanjutkan draft yang sudah ada
+              </p>
+              <p v-else-if="draftItem && opt.type !== draftItem.jenis"
+                class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Selesaikan draft yang ada terlebih dahulu
+              </p>
             </div>
-            <ChevronRight class="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors" />
+            <ChevronRight class="w-5 h-5 transition-colors" :class="draftItem && opt.type !== draftItem.jenis
+              ? 'text-gray-200 dark:text-gray-700'
+              : 'text-gray-300 group-hover:text-primary-500'" />
           </div>
         </div>
       </template>
