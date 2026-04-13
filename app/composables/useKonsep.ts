@@ -6,7 +6,11 @@ import type {
 } from "~/types/konsep";
 
 export const useKonsep = () => {
-  const { apiGet, apiPost } = useApi();
+  const { apiGet, apiPost, api } = useApi();
+
+  const multipartConfig = {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  };
 
   interface KonsepDetail {
     konsep: any;
@@ -47,6 +51,21 @@ export const useKonsep = () => {
     return await apiPost("/KONSEP/create", formData);
   };
 
+  // Draft KONSEP
+  const createDraft = async (formData: FormData) => {
+    const res = await api.post("/KONSEP/draft/create", formData, multipartConfig);
+    return res.data;
+  };
+
+  const updateDraft = async (id: string, formData: FormData) => {
+    const res = await api.put(`/KONSEP/draft/update/${id}`, formData, multipartConfig);
+    return res.data;
+  };
+
+  const getKonsepDraftDetail = async (id: string) => {
+    return await apiGet<{ success: boolean; data: any }>(`/KONSEP/draft/detail/${id}`);
+  };
+
   // Actions
 const finalizeKonsep = async (id: string, formData: FormData) => {
   return await apiPost(`/KONSEP/finalize/${id}`, formData);
@@ -75,5 +94,8 @@ const finalizeKonsep = async (id: string, formData: FormData) => {
     createKonsep,
     getSendersById,
     getRecipientsBySender,
+    createDraft,
+    updateDraft,
+    getKonsepDraftDetail,
   };
 };

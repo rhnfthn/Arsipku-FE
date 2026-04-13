@@ -121,8 +121,19 @@ const getCategoryStyle = (cat) => {
     SDI: "bg-green-50 dark:bg-green-900/30 text-green-500 dark:text-green-300",
     SDE: "bg-orange-50 dark:bg-orange-900/30 text-orange-500 dark:text-orange-300",
     KA: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-500 dark:text-cyan-300",
+    K: "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300",
   };
   return styles[(cat || "").toUpperCase()] || "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-300";
+};
+
+// Route map untuk konsep drafts
+const konsepRouteMap = {
+  ND: '/korespondensi/tulis/konsep/nota-dinas',
+  'NOTA DINAS': '/korespondensi/tulis/konsep/nota-dinas',
+  SDI: '/korespondensi/tulis/konsep/surat-dinas-internal',
+  INTERNAL: '/korespondensi/tulis/konsep/surat-dinas-internal',
+  SDE: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
+  EXTERNAL: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
 };
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
@@ -133,8 +144,12 @@ const refreshData = async () => {
   params.page = currentPage.value;
   params.limit = itemsPerPage.value;
 
-  // Tab & Search
-  if (activeTab.value && activeTab.value !== "ALL") params.jenis = activeTab.value;
+  // Tab & Search — tab 'K' = filter konsep khusus
+  if (activeTab.value === 'K') {
+    params.is_konsep = true;
+  } else if (activeTab.value && activeTab.value !== "ALL") {
+    params.jenis = activeTab.value;
+  }
   if (searchQuery.value) params.search = searchQuery.value;
 
   // Sort
@@ -163,13 +178,15 @@ const refreshData = async () => {
 
 // ── Edit Draft ────────────────────────────────────────────────────────────────
 const handleEdit = (mail) => {
-  // Jika ini draft dari konsep, arahkan ke halaman konsep
+  const jenis = (mail.category || '').trim().toUpperCase();
+
+  // Jika ini draft konsep, arahkan ke halaman konsep yang sesuai jenisnya
   if (mail.isDraftKonsep) {
-    router.push({ path: '/korespondensi/tulis/konsep', query: { draft_id: mail.id, mode: 'edit' } });
+    const konsepPath = konsepRouteMap[jenis] || '/korespondensi/tulis/konsep/nota-dinas';
+    router.push({ path: konsepPath, query: { draft_id: mail.id } });
     return;
   }
 
-  const jenis = (mail.category || '').trim().toUpperCase();
   const routes = {
     ND: '/korespondensi/tulis/nota-dinas',
     'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
@@ -592,10 +609,15 @@ onMounted(refreshData);
                   </div>
                 </div>
 
-                <div class="hidden xl:flex shrink-0 w-[100px] justify-start items-center">
+                <div class="hidden xl:flex shrink-0 items-center gap-1.5">
                   <span class="px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
                     :class="getCategoryStyle(mail.category)">
                     {{ mail.category }}
+                  </span>
+                  <span v-if="mail.isDraftKonsep"
+                    class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-700"
+                    title="Draft Konsep">
+                    K
                   </span>
                 </div>
               </div>

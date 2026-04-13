@@ -753,8 +753,7 @@ onMounted(async () => {
                     :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-gray-600'"
                     @click.stop="handleToggleFlag(mail, 'favorit')" />
                   <Tag class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
-                    :class="mail.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-neutral-300 dark:text-gray-600'"
-                    @click.stop="handleToggleFlag(mail, 'tindak_lanjut')" />
+                    :class="mail.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-neutral-300 dark:text-gray-600'" />
                   <!-- Badge kategori (mobile) -->
                   <span
                     class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"

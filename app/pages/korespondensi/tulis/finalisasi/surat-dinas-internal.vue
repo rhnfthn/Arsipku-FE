@@ -11,7 +11,8 @@
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+        <div
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
             <div class="flex-1 space-y-2 pt-1">
@@ -31,15 +32,18 @@
           :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+          :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
+          disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <!-- Perihal -->
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
             <div class="flex items-center flex-1 w-full gap-2">
@@ -54,96 +58,132 @@
           </div>
         </div>
 
+        <!-- Lampiran text -->
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+            <input type="text" v-model="lampiranText" readonly tabindex="-1"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+              placeholder="Otomatis terisi saat upload file..." />
+          </div>
+        </div>
+
         <div class="flex flex-col py-4">
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
-                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
-                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
-                  <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
-                  </div>
-                  <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
-                    <tbody>
-                      <tr>
-                        <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
-                        <td class="text-[14px] w-[20px] align-top">:</td>
-                        <td class="text-[14px] align-top">
-                          <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else v-html="selectedTertuju.length
-                            ? selectedTertuju.map((s: any, i: number) =>
-                              selectedTertuju.length === 1
-                                ? `<div>${s.labelJob || s.label}</div>`
-                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
-                            ).join('')
-                            : '................................................'
-                            "></span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-[14px] font-bold align-top">Dari</td>
-                        <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ user?.positionText || 'Posisi' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="text-[14px] font-bold align-top">Perihal</td>
-                        <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
+
+                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+
+                <div class="flex mb-4 text-[14px] px-10">
+                  <div>{{ user?.areaText || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
-                <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
-
-                <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
-                  <div class="flex justify-end mb-4 text-black">
-                    <div class="text-center min-w-[250px]">
-                      <div class="mb-24 text-[14px]">
-                        <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
+                  <div class="w-full">
+                    <table class="w-full align-top">
+                      <tbody>
+                        <tr>
+                          <td class="w-[80px] align-top">Nomor</td>
+                          <td class="w-[10px] align-top">:</td>
+                          <td class="align-top">................................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Sifat</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top capitalize">{{ selectedSifat?.label || 'Biasa' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Lampiran</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top">{{ lampiranText || '-' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Perihal</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top font-bold text-justify">{{ subject ||
+                            "................................................" }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div class="mt-5">Kepada Yth.</div>
+                    <div class="font-bold mb-1">
+                      <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
+                      <div v-else-if="selectedTertuju.length > 0">
+                        <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
+                          <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
+                          {{ p.labelJob || p.label }}{{ p.organization ? ' - ' + p.organization : '' }}
+                        </div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
+                      <div v-else>................................................</div>
                     </div>
+                    <div class="mb-1">Di Tempat</div>
                   </div>
-                  <div class="text-[12px] mt-2 w-full text-left text-black">
-                    <div class="font-bold underline mb-1">Tembusan :</div>
-                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
-                    <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
-                      <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
-                    </ol>
-                    <div v-else class="text-gray-400 italic">...</div>
+                </div>
+
+                <div class="min-h-[300px] relative group">
+                  <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                </div>
+
+                <div class="flex mt-12 text-black px-10">
+                  <div class="text-center min-w-[250px]">
+                    <div class="mb-24 text-[14px]">
+                      <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                    </div>
+                    <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
                   </div>
+                </div>
+
+                <div class="mt-8 text-[12px] text-black px-10">
+                  <div class="font-bold underline mb-1">Tembusan :</div>
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                    <li v-for="t in selectedTembusan" :key="t.value">
+                      {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
+                    </li>
+                  </ol>
+                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tr>
+                          <td class="align-top pr-2">Lampiran Surat</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Nomor Surat :</td>
+                          <td>.....................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top pr-2">Tanggal Surat :</td>
+                          <td>{{ formattedDate }}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
+                        item.organization ? ' - ' + item.organization : '' }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
+                        item.organization ? ' - ' + item.organization : '' }}</li>
                     </ol>
                   </div>
                 </div>
+
               </div>
             </div>
           </ClientOnly>
@@ -151,7 +191,8 @@
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
         </div>
 
-        <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+        <div
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
           <UButton label="Pratinjau & Finalisasi" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
@@ -231,7 +272,8 @@ const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<any[]>([]);
 
 const selectedSifat = ref<any>(null);
-const items = ref<any[]>([]);
+const tertujuItems = ref<any[]>([]);
+const tembusanItems = ref<any[]>([]);
 const recipientGroups = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
@@ -239,10 +281,11 @@ const selectedTembusan = ref<any[]>([]);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const maxPerihal = 200;
+const lampiranText = ref("");
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Finalisasi Nota Dinas", to: "#" },
+  { label: "Finalisasi Surat Dinas Internal", to: "#" },
 ];
 
 const sifatOptions = [
@@ -325,6 +368,16 @@ const mapGroupsToUI = (grupList: any[]) => {
   }).filter(Boolean);
 };
 
+const mergeGrupDanIndividu = (grupArr: any[], indivArr: any[]) => {
+  const final = [...grupArr];
+  indivArr.forEach((item) => {
+    if (!final.some((f) => String(f.value) === String(item.value))) {
+      final.push(item);
+    }
+  });
+  return final;
+};
+
 // Payload Standard untuk validasi dan Pratinjau
 const getBasePayload = (): DraftPayload => {
   const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
@@ -367,8 +420,8 @@ const createFinalizeFormData = () => {
   formData.append("penerima_position_ids", JSON.stringify(selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value)));
   formData.append("tembusan_position_ids", JSON.stringify(selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value)));
 
-  formData.append("penerima_grup_ids", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
-  formData.append("tembusan_grup_ids", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("tembusan_grup", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("penerima_grup", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
 
   formData.append("tgl", tglDb);
   formData.append("klasifikasi", selectedKlasifikasi.value?.klasifikasi || "");
@@ -494,7 +547,7 @@ onMounted(async () => {
     const [klasRes, recRes, groupsRes] = await Promise.all([
       getKlasifikasi(),
       getRecipients(),
-      getRecipientGroups().catch(() => [])
+      getRecipientGroups("SDI").catch(() => [])
     ]);
 
     // Ekstrak langsung jika data terbungkus dalam properti .data
@@ -502,12 +555,14 @@ onMounted(async () => {
     recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
     const rawData = recRes.recipients || recRes.data || [];
-    items.value = rawData.map((r: any) => ({
+    tertujuItems.value = rawData.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
+      organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
+    tembusanItems.value = tertujuItems.value;
     klasifikasiStatus.value = "success";
   } catch {
     klasifikasiStatus.value = "error";
@@ -531,9 +586,9 @@ onMounted(async () => {
 
       // Fallback jika `.flow` tidak tersedia atau kosong, baca dari root
       if (!draftData) {
-         draftData = Array.isArray(rootData)
-            ? rootData.find((d: any) => d.jenis === 'K') || rootData[0]
-            : rootData;
+        draftData = Array.isArray(rootData)
+          ? rootData.find((d: any) => d.jenis === 'K') || rootData[0]
+          : rootData;
       }
 
       if (draftData) {
@@ -571,21 +626,51 @@ onMounted(async () => {
         // --- 3. Populate Penerima & Tembusan ---
         const detail = draftData.detail || {};
 
-        // Gunakan properti .kepada jika ada (karena API juga memberikan rootData.kepada), fallback naskah_penerima
+        const buildSelectedFiltered = (apiArr: any[], grupArr: any[]) => {
+          if (!apiArr?.length) return [];
+
+          // Set position_id yang diwakili grup
+          const grupPositionIds = new Set<string>();
+          (grupArr || []).forEach((grup: any) => {
+            (grup.position_ids || []).forEach((posId: any) => grupPositionIds.add(String(posId)));
+          });
+
+          return apiArr
+            .filter((item: any) => {
+              // Gunakan position_id langsung (bukan persnum)
+              const posId = String(item.position_id || item.position || '');
+              return posId && !grupPositionIds.has(posId);
+            })
+            .map((item: any) => {
+              const posId = String(item.position_id || item.position || '');
+              // Cari di tertujuItems berdasarkan value (= position_id)
+              const found = tertujuItems.value.find((m: any) => String(m.value) === posId);
+              return found || {
+                label: `${item.nama || ''} - (${item.abbreviation || ''}) ${item.position_text || ''}`,
+                labelJob: item.position_text || '',
+                organization: item.organization_text || '',
+                value: posId,
+                raw: item,
+              };
+            })
+            .filter(Boolean);
+        };
+
         const sourcePenerima = rootData.kepada?.length ? rootData.kepada :
-                               detail.naskah_penerima?.length ? detail.naskah_penerima :
-                               (draftData.penerima || []);
+          detail.naskah_penerima?.length ? detail.naskah_penerima :
+            (draftData.penerima || []);
 
-        const mappedPenerimaGrup = mapGroupsToUI(detail.penerima_grup || []) || [];
-        const mappedPenerimaIndiv = mapApiToUI(normalizeRecipients(sourcePenerima)) || [];
-
-        selectedTertuju.value = [...mappedPenerimaGrup, ...mappedPenerimaIndiv];
+        selectedTertuju.value = mergeGrupDanIndividu(
+          mapGroupsToUI(detail.penerima_grup || []),
+          buildSelectedFiltered(sourcePenerima, detail.penerima_grup || [])
+        );
 
         const sourceTembusan = detail.naskah_tembusan?.length ? detail.naskah_tembusan : (draftData.tembusan || []);
-        const mappedTembusanGrup = mapGroupsToUI(detail.tembusan_grup || []) || [];
-        const mappedTembusanIndiv = mapApiToUI(normalizeRecipients(sourceTembusan)) || [];
 
-        selectedTembusan.value = [...mappedTembusanGrup, ...mappedTembusanIndiv];
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(detail.tembusan_grup || []),
+          buildSelectedFiltered(sourceTembusan, detail.tembusan_grup || [])
+        );
 
         // --- 4. Sisanya (Lampiran & Sifat) ---
         const lampiranSrc = draftData.lampiran_files || [];

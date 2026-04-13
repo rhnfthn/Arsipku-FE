@@ -77,43 +77,40 @@ const isJenisDI = computed(() => {
 });
 
 // --- HELPER FUNCTION UNTUK GROUPING ---
-const processGrouping = (individuals: any[], groups: any[]) => {
+const processGrouping = (individuals: any[], groups: any[], senderPositionId?: string) => {
   if (!Array.isArray(individuals) || individuals.length === 0) return [];
   if (!Array.isArray(groups) || groups.length === 0) return individuals;
 
-  // 1. Kumpulkan semua ID yang benar-benar ada di list penerima/tembusan
   const individualIds = new Set(individuals.map(item => String(item.position_id || item.id)));
   const matchedIds = new Set();
   const result: any[] = [];
 
-  // 2. Ambil ID user saat ini (Pengirim yang dikecualikan)
-  const myPosId = String(user.value?.position?.id || user.value?.position_id || user.value?.position || '');
+  // Kumpulkan semua ID yang "tidak perlu ada" di individualIds:
+  // - myPosId (user login)
+  // - senderPositionId (pengirim flow, yang tidak menerima surat sendiri)
+  const myPosId = String(
+    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+  );
+  const excludedIds = new Set([myPosId, senderPositionId].filter(Boolean));
 
-  // 3. Evaluasi setiap grup
   for (const group of groups) {
-    const reqIds = group.position_ids || [];
-
-    // Cek apakah semua ID grup terpenuhi (Ada di list ATAU merupakan si pengirim)
-    const isComplete = reqIds.length > 0 && reqIds.every((id: any) => {
-      const strId = String(id);
-      return individualIds.has(strId) || strId === myPosId;
+    const reqIds = (group.position_ids || []).map(String);
+    const isComplete = reqIds.length > 0 && reqIds.every((strId: string) => {
+      return individualIds.has(strId) || excludedIds.has(strId);
     });
 
     if (isComplete) {
-      // Masukkan representasi Grup
       result.push({
-        id: group.id || `group-${Math.random()}`,
+        id: group.id || `group-${group.nama}`,
         nama: group.nama,
         position_text: group.nama,
         organization_text: 'Grup Penerima',
         is_group: true
       });
-      // Tandai ID yang sudah masuk ke grup ini
-      reqIds.forEach((id: any) => matchedIds.add(String(id)));
+      reqIds.forEach((strId: string) => matchedIds.add(strId));
     }
   }
 
-  // 4. Masukkan sisa individu yang tidak tergabung ke dalam grup manapun
   for (const indiv of individuals) {
     const indivId = String(indiv.position_id || indiv.id);
     if (!matchedIds.has(indivId)) {
@@ -216,79 +213,75 @@ const loadData = async () => {
 
   try {
     if (jenisQuery === 'K') {
-      // === KONSEP ===
+      // === KONSEP === (di halaman terkirim)
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
-      const konsepData = response?.data || response;
+      const rawData = response?.data || response;
 
-      if (konsepData) {
-        selected.value = konsepData;
-        const rawFlows = konsepData.flow || [];
+      // Handle kedua format: array langsung ATAU object dengan .flow
+      let rawFlows: any[] = [];
+      if (rawData && Array.isArray(rawData.flow)) {
+        rawFlows = rawData.flow;
+      } else if (Array.isArray(rawData)) {
+        rawFlows = rawData;
+      } else if (rawData) {
+        rawFlows = [rawData];
+      }
 
-        const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
-          new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
+      if (rawFlows.length === 0) return;
+
+      const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
+        new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
+      );
+
+      const lastFlow = sortedFlows[0];
+      selected.value = lastFlow;
+
+      // showFinalize & showEdit tidak relevan di terkirim, tapi tetap set
+      showFinalizeActions.value = false;
+      showEditAction.value = false;
+
+      details.value = sortedFlows.map((flow: any, index: number) => {
+        const aksi = flow.detail?.aksi || flow.aksi || 'read';
+
+        // Ambil position_id pengirim flow ini (yang tidak muncul di naskah_penerima)
+        const senderPosId = String(
+          flow.detail?.naskah_pengirim?.position_id ||
+          flow.pengirim?.position_id ||
+          ''
         );
 
-        const lastFlow = sortedFlows.length > 0 ? sortedFlows[0] : null;
+        const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
+        const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
+        const processedPenerima = processGrouping(rawPenerima, penerimaGrup, senderPosId); // ← pass senderPosId
 
-        if (lastFlow) {
-          const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-          const myPosId = String(authUser?.position?.id || authUser?.position_id || '');
+        const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
+        const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
+        const processedTembusan = processGrouping(rawTembusan, tembusanGrup, senderPosId);
 
-          // Rejector adalah aktor root pengirim dari flow terakhir
-          const rejectorId = String(lastFlow.pengirim?.position_id || lastFlow.pengirim?.id || '');
-          const lastAction = lastFlow.detail?.aksi;
+        return {
+          id: flow.id,
+          sifat: flow.sifat,
+          urutan: sortedFlows.length - index,
+          aksi,
+          jenis: flow.jenis || 'K',
+          jenis_label: flow.jenis_label || 'Konsep',
+          perihal: flow.perihal || '-',
+          nomor: flow.nomor || '-',
+          tanggal: flow.created_at || flow.tanggal,
+          pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
+          from: flow.pengirim,
+          penerima: processedPenerima,
+          to: processedPenerima,
+          cc: processedTembusan,
+          rich_content: flow.konten || '',
+          catatan: flow.detail?.catatan || flow.catatan || '',
+          attachments: flow.lampiran_files || [],
+          pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
+          _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
+        };
+      });
 
-          showEditAction.value = (lastAction === 'reject' && rejectorId !== myPosId);
-
-          let isTarget = false;
-          // Cek akses menggunakan penerima flow root (siapa yang dituju oleh forward/reject)
-          if (myPosId && Array.isArray(lastFlow.penerima)) {
-            isTarget = lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') === myPosId);
-          }
-          showFinalizeActions.value = isTarget;
-        }
-
-        // --- MAP DATA UNTUK UI COMPONENT DETAIL ---
-        details.value = sortedFlows.map((flow: any, index: number) => {
-          const aksi = flow.detail?.aksi || 'read';
-          const flowId = flow.id;
-
-          // Ekstraksi Penerima & Tembusan yang diperbaiki (Sama dengan page referensi)
-          const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
-          const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
-          const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
-
-          const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
-          const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
-          const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
-
-          return {
-            id: flowId,
-            sifat: flow.sifat,
-            urutan: sortedFlows.length - index,
-            aksi: aksi,
-            jenis: flow.jenis || 'K',
-            jenis_label: flow.jenis_label || (aksi === 'create' ? 'KONSEP AWAL' : aksi.toUpperCase()),
-            perihal: flow.perihal || konsepData.perihal,
-            nomor: flow.nomor || '-',
-            tanggal: flow.created_at || flow.tanggal,
-            pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
-            from: flow.pengirim,
-
-            // Assign data yang sudah diproses di atas
-            penerima: processedPenerima,
-            to: processedPenerima,
-            cc: processedTembusan,
-
-            rich_content: flow.konten || '',
-            catatan: flow.detail?.catatan,
-            attachments: flow.lampiran_files || [],
-            pdf_snapshot: flow.final_pdf_url,
-            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
-          };
-        });
-      }
     } else {
       // === SURAT MASUK / KELUAR ===
       isKonsepData.value = false;

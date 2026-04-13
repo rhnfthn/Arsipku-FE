@@ -9,104 +9,41 @@
       <div
         class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
-          class="flex items-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50 rounded-lg">
+          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
           <div class="flex items-center py-2 gap-3">
-            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-10 h-10 flex items-center justify-center">
+            <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-sm font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
+              <h3 class="font-bold text-gray-800 dark:text-white leading-none mb-0.5">Referensi Surat Asal</h3>
               <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                Klik untuk melihat/menyembunyikan detail surat referensi
+                <span class="font-mono font-medium">{{ refData.nomor || '-' }}</span> •
+                {{ formatDateRef(refData.tanggal) }}
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <NuxtLink v-if="refData.id && refData.jenis"
-              :to="`/korespondensi/kotak-masuk/${refData.id}?jenis=${refData.jenis}`" target="_blank" @click.stop
-              class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1 mr-2 px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors">
-              Buka Tab Baru
-              <UIcon name="i-lucide-external-link" class="w-3 h-3" />
-            </NuxtLink>
-            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
-              :class="{ 'rotate-180': isRefExpanded }" />
-          </div>
+          <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
+            :class="{ 'rotate-180': isRefExpanded }" />
         </div>
 
-        <div v-show="isRefExpanded">
-          <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-3 break-words">
-              {{ refData.perihal || '(Tidak ada perihal)' }}
-            </h2>
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <div class="flex items-center gap-1 shrink-0">
-                <Hash class="w-3.5 h-3.5" />
-                <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">{{ refData.nomor || '-' }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div class="flex items-center gap-1 shrink-0">
-                <Calendar class="w-3.5 h-3.5" />
-                <span>{{ formatDateRef(refData.tanggal) }}</span>
-              </div>
-              <span class="opacity-40 hidden sm:inline">•</span>
-              <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
-                :class="getCategoryStyle(refData.jenis_label)">
-                <Tag class="w-3 h-3" />
-                {{ refData.jenis_label }}
-              </div>
+        <div v-show="isRefExpanded" class="bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
+          <div v-if="detail && (detail.catatan_reject || detail.data?.catatan_reject)"
+            class="bg-white dark:bg-gray-800 px-5 py-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Catatan
+                Penolakan</span>
+              <p class="text-sm text-gray-900 dark:text-white leading-relaxed">
+                {{ detail.catatan_reject || detail.data?.catatan_reject }}
+              </p>
             </div>
-          </div>
-
-          <div class="p-5 bg-gray-50/60 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-700">
-            <div class="flex items-start gap-4">
-              <UAvatar size="md" class="bg-primary-500 text-white font-semibold flex items-center justify-center shrink-0">
-                {{ refSenderInitials }}
-              </UAvatar>
-              <div class="flex-1 min-w-0 space-y-4">
-                <div>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white block">{{ refData.pengirim_jabatan }}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{{ refData.pengirim_nama }}</span>
-                </div>
-                <div class="grid grid-cols-1 gap-4 text-xs">
-                  <div class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Kepada</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(k, idx) in refData.kepada" :key="idx" class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ k.nama }}</span>
-                      </div>
-                      <span v-if="!refData.kepada || !refData.kepada.length" class="text-gray-400 italic">-</span>
-                    </div>
-                  </div>
-                  <div v-if="refData.tembusan && refData.tembusan.length > 0" class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Tembusan</div>
-                    <div class="flex flex-col gap-1 w-full">
-                      <div v-for="(t, idx) in refData.tembusan" :key="idx" class="flex items-start gap-2 text-gray-800 dark:text-gray-200">
-                        <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
-                        <span class="font-medium">{{ t.nama }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="refData.disposisi" class="flex flex-col md:flex-row gap-2 md:gap-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest min-w-[70px] mt-0.5">Disposisi</div>
-                    <div class="text-gray-800 dark:text-gray-200 font-medium">{{ formatDisposisiInline(refData.disposisi) }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="refData.catatan" class="p-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan</div>
-            <div class="prose prose-sm prose-blue max-w-none text-gray-800 dark:text-gray-300 text-sm" v-html="refData.catatan"></div>
           </div>
 
           <div v-if="refPdfUrl" class="w-full">
             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[400px] border-none"
-              title="Preview Surat Referensi"></iframe>
+              title="Preview Surat Referensi" />
           </div>
-          <div v-else class="flex flex-col items-center justify-center h-[200px] text-gray-500 gap-2 bg-gray-50 dark:bg-gray-900">
-            <UIcon name="i-lucide-file-x" class="w-10 h-10 opacity-30" />
+          <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
+            <UIcon name="i-lucide-file-x" class="w-12 h-12 opacity-30" />
             <span class="text-sm font-medium">Dokumen PDF tidak tersedia untuk ditampilkan.</span>
           </div>
         </div>
@@ -354,12 +291,11 @@ interface UploadedFile {
 }
 
 // --- Composables ---
-const { createKonsep, previewPdf, forwardKonsep } = useKonsep();
+const { createKonsep, previewPdf, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
 const { apiGet } = useApi();
-const { getExternalRecipients, saveDraft: saveSDE } = useSde();
+const { getExternalRecipients } = useSde();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getDraftDetail } = useDraft();
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
 
 const route = useRoute();
@@ -398,7 +334,7 @@ const selectedTembusan = ref<RecipientItem[]>([]);  // internal
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const refData = ref<any>(null);
-const isRefExpanded = ref(true);
+const isRefExpanded = ref(false);
 const maxPerihal = 200;
 
 const sifatOptions: SifatOption[] = [
@@ -722,8 +658,12 @@ const handleSaveDraft = async () => {
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    const formData = createFormData(payload);
-    await saveSDE(formData, editDraftId.value);
+    const formData = prepareKonsepFormData();
+    if (editDraftId.value) {
+      await updateDraft(editDraftId.value, formData);
+    } else {
+      await createDraft(formData);
+    }
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
     router.push("/korespondensi/draf");
   } catch (e: any) {
@@ -964,7 +904,7 @@ onMounted(async () => {
     isLoadingData.value = true;
     try {
       editDraftId.value = draftId;
-      const resDraft = await getDraftDetail(draftId);
+      const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
         subject.value = d.perihal || "";
@@ -974,11 +914,21 @@ onMounted(async () => {
         english.value = Boolean(d.english);
 
         if (d.klasifikasi) {
-          const foundKlas = klasifikasiList.value.find((k: any) => k.klasifikasi === d.klasifikasi);
+          const klCode = String(d.klasifikasi).trim();
+          const foundKlas = klasifikasiList.value.find((k: any) =>
+            k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
+          );
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        // Tertuju: eksternal
+        // Restore pengirim
+        if (d.from_position_id || d.pengirim_position_id) {
+          const senderId = String(d.pengirim_position_id || d.from_position_id);
+          const found = senderItems.value.find(s => s.value === senderId);
+          if (found) selectedSender.value = found;
+        }
+
+        // Tertuju: eksternal — dari penerima array
         if (d.penerima && Array.isArray(d.penerima)) {
           selectedTertuju.value = d.penerima.map((item: any) => ({
             label: item.nama || item.label || '',
@@ -988,14 +938,23 @@ onMounted(async () => {
           }));
         }
 
-        // Tembusan: internal
+        // Tembusan: internal — dari tembusan array
         if (d.tembusan && Array.isArray(d.tembusan)) {
           const tembusanIds = d.tembusan.map((t: any) =>
-            typeof t === 'object' ? String(t.position || t.position_id || t.id || t.value) : String(t)
+            typeof t === 'object' ? String(t.position_id || t.position || t.id || t.value) : String(t)
           );
           selectedTembusan.value = internalItems.value.filter(item =>
             tembusanIds.includes(String(item.value))
           );
+          // Fallback: jika tidak cocok di internalItems, buat manual
+          if (selectedTembusan.value.length === 0 && d.tembusan.length > 0) {
+            selectedTembusan.value = d.tembusan.map((t: any) => ({
+              label: `${t.nama || ''} - ${t.position_text || ''}`,
+              labelJob: t.position_text || '',
+              value: String(t.position_id || t.position || t.id || ''),
+              raw: t,
+            }));
+          }
         }
 
         if (Array.isArray(d.lampiran_files)) {
@@ -1005,9 +964,9 @@ onMounted(async () => {
           }));
         }
         selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
-        if (d.tgl || d.tanggal) {
-          const tglStr = d.tgl || d.tanggal;
-          const p = tglStr.split('-');
+        const tglStr = d.tanggal || d.tgl;
+        if (tglStr) {
+          const p = tglStr.split('T')[0].split('-');
           if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
         }
       }

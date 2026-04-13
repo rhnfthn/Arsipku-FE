@@ -242,7 +242,7 @@ const maxPerihal = 200;
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
-  { label: "Finalisasi Nota Dinas", to: "#" },
+  { label: "Finalisasi Surat Dinas Eksternal", to: "#" },
 ];
 
 const sifatOptions = [
@@ -367,8 +367,8 @@ const createFinalizeFormData = () => {
   formData.append("penerima_position_ids", JSON.stringify(selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value)));
   formData.append("tembusan_position_ids", JSON.stringify(selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value)));
 
-  formData.append("penerima_grup_ids", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
-  formData.append("tembusan_grup_ids", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("tembusan_grup", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("penerima_grup", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
 
   formData.append("tgl", tglDb);
   formData.append("klasifikasi", selectedKlasifikasi.value?.klasifikasi || "");

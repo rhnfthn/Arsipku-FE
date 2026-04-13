@@ -356,18 +356,41 @@ const mapGroupsToUI = (grupList: any[]) => {
 
 // Payload Standard untuk validasi dan Pratinjau
 const getBasePayload = (): DraftPayload => {
-  const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
-  const tglPreview = date.value ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}` : "";
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
+    : "";
+  const tglPreview = date.value
+    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
+    : "";
   const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
+
+  // Pisahkan individu dan grup dari selectedTertuju
+  const tertujuIndividu = selectedTertuju.value
+    .filter(t => !t.isGroup)
+    .map(i => i.value);
+  const tertujuGrup = selectedTertuju.value
+    .filter(t => t.isGroup)
+    .map(i => String(i.value).replace('GROUP_', ''));
+
+  // Pisahkan individu dan grup dari selectedTembusan
+  const tembusanIndividu = selectedTembusan.value
+    .filter(t => !t.isGroup)
+    .map(i => i.value);
+  const tembusanGrup = selectedTembusan.value
+    .filter(t => t.isGroup)
+    .map(i => String(i.value).replace('GROUP_', ''));
 
   return {
     id_naskah: editDraftId.value || null,
+    id_referensi_naskah: null,
     pengirim: user.value?.position || "",
-    penerima: selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value),
-    tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
+    penerima: tertujuIndividu,
+    tembusan: tembusanIndividu,
+    penerima_grup: tertujuGrup,
+    tembusan_grup: tembusanGrup,
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     konten: String(editorContent.value || ''),
@@ -396,8 +419,8 @@ const createFinalizeFormData = () => {
   formData.append("penerima_position_ids", JSON.stringify(selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value)));
   formData.append("tembusan_position_ids", JSON.stringify(selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value)));
 
-  formData.append("penerima_grup_ids", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
-  formData.append("tembusan_grup_ids", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("tembusan_grup", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append("penerima_grup", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
 
   formData.append("tgl", tglDb);
   formData.append("klasifikasi", selectedKlasifikasi.value?.klasifikasi || "");
@@ -419,10 +442,15 @@ const createFinalizeFormData = () => {
 const handlePreview = async () => {
   const payload = getBasePayload();
   const validationResult = validateDraftPayload(payload);
+
   if (!validationResult.isValid) {
-    const errorMsg = Object.values(validationResult.errors || {})[0] || "Terjadi kesalahan input";
-    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
-    return;
+    const errors = validationResult.errors || {};
+    // Skip error tembusan — di finalisasi tembusan opsional
+    const errorKeys = Object.keys(errors).filter(k => k !== 'tembusan');
+    if (errorKeys.length > 0) {
+      toast.add({ title: 'Validasi Gagal', description: errors[errorKeys[0]!], color: 'error' });
+      return;
+    }
   }
 
   loadingMessage.value = "Memproses Pratinjau...";

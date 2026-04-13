@@ -134,7 +134,7 @@ const isJenisDI = computed(() => {
 });
 
 // --- GROUPING HELPER ---
-const processGrouping = (individuals: any[], groups: any[]) => {
+const processGrouping = (individuals: any[], groups: any[], senderPositionId?: string) => {
   if (!Array.isArray(individuals) || individuals.length === 0) return [];
   if (!Array.isArray(groups) || groups.length === 0) return individuals;
 
@@ -142,23 +142,34 @@ const processGrouping = (individuals: any[], groups: any[]) => {
   const matchedIds = new Set();
   const result: any[] = [];
 
-  const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
-  const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
+  const myPosId = String(
+    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+  );
+
+  // ID yang boleh "tidak hadir" di individualIds: user login + pengirim surat
+  const excludedIds = new Set([myPosId, senderPositionId].filter(Boolean));
 
   for (const group of groups) {
-    const reqIds = group.position_ids || [];
-    const isComplete = reqIds.length > 0 && reqIds.every((gId: any) => {
-      const strId = String(gId);
-      return individualIds.has(strId) || strId === myPosId;
+    const reqIds = (group.position_ids || []).map(String);
+    const isComplete = reqIds.length > 0 && reqIds.every((strId: string) => {
+      return individualIds.has(strId) || excludedIds.has(strId);
     });
+
     if (isComplete) {
-      result.push({ nama: group.nama, position_text: group.nama, is_group: true });
-      reqIds.forEach((gId: any) => matchedIds.add(String(gId)));
+      result.push({
+        id: group.id || `group-${group.nama}`,
+        nama: group.nama,
+        position_text: group.nama,
+        organization_text: 'Grup Penerima',
+        is_group: true
+      });
+      reqIds.forEach((strId: string) => matchedIds.add(strId));
     }
   }
 
   for (const indiv of individuals) {
-    if (!matchedIds.has(String(indiv.position_id || indiv.id))) {
+    const indivId = String(indiv.position_id || indiv.id);
+    if (!matchedIds.has(indivId)) {
       result.push(indiv);
     }
   }
@@ -221,15 +232,25 @@ const loadData = async () => {
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
-          const catatan = flow.detail?.catatan || flow.catatan || '';
+
+          // Ambil position_id pengirim flow ini
+          const senderPosId = String(
+            flow.detail?.naskah_pengirim?.position_id ||
+            flow.pengirim?.position_id ||
+            ''
+          );
 
           const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
-          const penerimaGrup = flow.penerima_grup || flow.detail?.penerima_grup || [];
-          const processedPenerima = processGrouping(rawPenerima, penerimaGrup);
+          const penerimaGrup = (flow.detail?.penerima_grup?.length ? flow.detail.penerima_grup : null)
+            || (flow.penerima_grup?.length ? flow.penerima_grup : null)
+            || [];
+          const processedPenerima = processGrouping(rawPenerima, penerimaGrup, senderPosId);
 
           const rawTembusan: any[] = flow.detail?.naskah_tembusan || flow.tembusan || [];
-          const tembusanGrup = flow.tembusan_grup || flow.detail?.tembusan_grup || [];
-          const processedTembusan = processGrouping(rawTembusan, tembusanGrup);
+          const tembusanGrup = (flow.detail?.tembusan_grup?.length ? flow.detail.tembusan_grup : null)
+            || (flow.tembusan_grup?.length ? flow.tembusan_grup : null)
+            || [];
+          const processedTembusan = processGrouping(rawTembusan, tembusanGrup, senderPosId);
 
           return {
             id: flow.id,
@@ -247,13 +268,9 @@ const loadData = async () => {
             to: processedPenerima,
             cc: processedTembusan,
             rich_content: flow.konten || '',
-            catatan:  flow.detail?.catatan || flow.catatan || '',
+            catatan: flow.detail?.catatan || flow.catatan || '',
             attachments: flow.lampiran_files || [],
             pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
-            //  pdf_snapshot: flow.final_pdf_url || flow.final_pdf ||
-            // // Fallback: cari pdf dari flow lain yang punya (untuk kasus reject yg pdf-nya null)
-            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf_url ||
-            // sortedFlows.find((f: any) => f.final_pdf_url || f.final_pdf)?.final_pdf || '',
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
