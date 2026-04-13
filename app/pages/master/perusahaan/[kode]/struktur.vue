@@ -39,23 +39,125 @@
 
       <!-- Search Bar -->
       <div class="mb-6">
-        <div class="relative max-w-6xl">
-          <Search
-            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-          />
-          <input
-            v-model="searchQuery"
-            @input="handleSearch"
-            :placeholder="$t('stu_cari_placeholder')"
-            class="w-full pl-12 pr-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-          />
-          <button
-            v-if="searchQuery"
-            @click="clearSearch"
-            class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-          >
-            <X class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          </button>
+        <div class="max-w-6xl search-suggestion-container">
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400"
+              >Cari berdasarkan:</span
+            >
+            <button
+              type="button"
+              @click="setSearchScope('organization')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'organization'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Unit
+            </button>
+            <button
+              type="button"
+              @click="setSearchScope('position')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'position'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Posisi
+            </button>
+            <button
+              type="button"
+              @click="setSearchScope('person')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'person'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Nama
+            </button>
+          </div>
+
+          <div class="relative">
+            <Search
+              class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="searchQuery"
+              @input="handleSearch"
+              @focus="onSearchFocus"
+              @blur="hideSearchSuggestions"
+              @keydown.enter.prevent="selectFirstSuggestion"
+              @keydown.escape="showSearchSuggestions = false"
+              :disabled="!searchScope"
+              :placeholder="getSearchPlaceholder()"
+              :class="[
+                'w-full pl-12 pr-12 py-4 border-2 rounded-xl shadow-sm text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+                searchScope
+                  ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500'
+                  : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              ]"
+            />
+            <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            >
+              <X class="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            </button>
+
+            <!-- Search Suggestions -->
+            <div
+              v-if="showSearchSuggestions && searchQuery.trim().length >= SEARCH_MIN_LENGTH"
+              class="absolute z-50 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden"
+            >
+              <div v-if="searchSuggestions.length > 0" class="max-h-80 overflow-y-auto">
+                <button
+                  v-for="item in searchSuggestions"
+                  :key="item.key"
+                  type="button"
+                  @mousedown.prevent="selectSearchSuggestion(item)"
+                  class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                >
+                  <div class="flex items-start gap-3">
+                    <component
+                      :is="getSuggestionIcon(item.type)"
+                      class="w-4 h-4 mt-0.5 text-gray-500 dark:text-gray-400"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-gray-800 dark:text-white truncate">
+                        {{ item.title }}
+                      </p>
+                      <div class="mt-1 flex items-center gap-2">
+                        <span
+                          :class="[
+                            'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium capitalize',
+                            getSuggestionBadgeClass(item.type)
+                          ]"
+                        >
+                          {{ getSuggestionTypeLabel(item.type) }}
+                        </span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {{ item.subtitle }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div
+                v-else-if="!loadingSearch"
+                class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+              >
+                Tidak ada suggestion untuk "{{ searchQuery }}"
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Search Results Info -->
@@ -862,8 +964,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   ChevronDown,
   ChevronRight,
@@ -878,23 +980,23 @@ import {
   User,
   Users,
   AlertCircle
-} from 'lucide-vue-next';
+} from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth'
-});
+})
 
-import { useStruktur } from '~/composables/useStruktur';
-import { useCompany } from '~/composables/useCompany';
-import { useArea } from '~/composables/useArea';
-import { useToast } from '#imports';
-import { usePerson } from '~/composables/usePerson';
+import { useStruktur } from '~/composables/useStruktur'
+import { useCompany } from '~/composables/useCompany'
+import { useArea } from '~/composables/useArea'
+import { useToast } from '#imports'
+import { usePerson } from '~/composables/usePerson'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
-const { t } = useI18n();
+const { t } = useI18n()
 
 // ─── Composables ─────────────────────────────────────────────────────────────
-const { searchPersons } = usePerson();
+const { searchPersons } = usePerson()
 
 const {
   getCompanyTree,
@@ -912,61 +1014,94 @@ const {
   createOrganization,
   deleteOrganization,
   updateOrganization
-} = useStruktur();
+} = useStruktur()
 
-const { getCompanyByCode } = useCompany();
-const { getSubAreasByCompany } = useArea();
-const toast = useToast();
-const route = useRoute();
+const { getCompanyByCode } = useCompany()
+const { getSubAreasByCompany } = useArea()
+const toast = useToast()
+const route = useRoute()
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref(null);
+const confirmDeleteOpen = ref(false)
+const itemToDelete = ref(null)
 
-const companyExpanded = ref(true);
-const expandedNodes = ref<Record<string, boolean>>({});
-const previousExpandedState = ref<Record<string, boolean>>({});
-const hoveredNode = ref<string | null>(null);
-const editingNode = ref<any>(null);
-const highlightNodeId = ref<string | null>(null);
-const treeContainer = ref<HTMLElement | null>(null);
+const companyExpanded = ref(true)
+const expandedNodes = ref<Record<string, boolean>>({})
+const previousExpandedState = ref<Record<string, boolean>>({})
+const hoveredNode = ref<string | null>(null)
+const editingNode = ref<any>(null)
+const highlightNodeId = ref<string | null>(null)
+const treeContainer = ref<HTMLElement | null>(null)
 
-const searchQuery = ref('');
+const searchQuery = ref('')
 const searchResults = ref<{
-  organizations: any[];
-  positions: any[];
-  persons: any[];
+  organizations: any[]
+  positions: any[]
+  persons: any[]
 }>({
   organizations: [],
   positions: [],
   persons: []
-});
-const loadingSearch = ref(false);
-const loadingExpand = ref(false);
+})
+const loadingSearch = ref(false)
+const loadingExpand = ref(false)
+
+type SearchSuggestionType = 'organization' | 'position' | 'person'
+type SearchScope = SearchSuggestionType | ''
+
+interface SearchSuggestionItem {
+  key: string
+  type: SearchSuggestionType
+  title: string
+  subtitle: string
+  organizationId?: string
+  organizationCode?: string
+  positionId?: string
+  positionCode?: string
+  personId?: string
+  persnum?: string
+}
+
+interface CachedSearchResult {
+  organizations: any[]
+  positions: any[]
+  persons: any[]
+  suggestions: SearchSuggestionItem[]
+}
+
+const SEARCH_MIN_LENGTH = 2
+const SEARCH_DEBOUNCE_MS = 450
+const SEARCH_SUGGESTION_LIMIT = 8
+
+const searchScope = ref<SearchScope>('')
+const searchSuggestions = ref<SearchSuggestionItem[]>([])
+const showSearchSuggestions = ref(false)
+const searchCache = ref<Record<string, CachedSearchResult>>({})
+const activeSearchRequestId = ref(0)
 
 // Modal search states
-const subAreaSearchQuery = ref('');
-const personSearchQuery = ref('');
-const filteredSubAreas = ref<any[]>([]);
-const showSubAreaDropdown = ref(false);
+const subAreaSearchQuery = ref('')
+const personSearchQuery = ref('')
+const filteredSubAreas = ref<any[]>([])
+const showSubAreaDropdown = ref(false)
 
 // Person search-as-you-type state
-const personSuggestions = ref<any[]>([]);
-const isSearchingPerson = ref(false);
-const showPersonSuggestions = ref(false);
-const selectedPersonForMember = ref<any>(null);
-let personSearchTimeout: any = null;
+const personSuggestions = ref<any[]>([])
+const isSearchingPerson = ref(false)
+const showPersonSuggestions = ref(false)
+const selectedPersonForMember = ref<any>(null)
+let personSearchTimeout: any = null
 
 // Modals
-const showAddUnitModal = ref(false);
-const showAddPositionModal = ref(false);
-const showAddMemberModal = ref(false);
-const showEditModal = ref(false);
-const editType = ref<string | null>(null);
-const isSavingAddUnit = ref(false);
-const isSavingAddPosition = ref(false);
-const isSavingAddMember = ref(false);
-const isSavingEdit = ref(false);
+const showAddUnitModal = ref(false)
+const showAddPositionModal = ref(false)
+const showAddMemberModal = ref(false)
+const showEditModal = ref(false)
+const editType = ref<string | null>(null)
+const isSavingAddUnit = ref(false)
+const isSavingAddPosition = ref(false)
+const isSavingAddMember = ref(false)
+const isSavingEdit = ref(false)
 
 // ─── Validation Error States ──────────────────────────────────────────────────
 const unitErrors = ref({
@@ -976,7 +1111,7 @@ const unitErrors = ref({
   idsubArea: false,
   mulai: false,
   berakhir: false
-});
+})
 
 const positionErrors = ref({
   namaPos: false,
@@ -985,13 +1120,13 @@ const positionErrors = ref({
   chiefLevel: false,
   mulai: false,
   berakhir: false
-});
+})
 
 const memberErrors = ref({
   personId: false,
   mulai: false,
   berakhir: false
-});
+})
 
 // Forms
 const formUnit = ref({
@@ -1003,7 +1138,7 @@ const formUnit = ref({
   deskripsi: '',
   mulai: '',
   berakhir: ''
-});
+})
 
 const formPosition = ref({
   namaPos: '',
@@ -1013,67 +1148,67 @@ const formPosition = ref({
   chiefLevel: '',
   mulai: '',
   berakhir: ''
-});
+})
 
 const formMember = ref({
   personId: '',
   nama: '',
   mulai: '',
   berakhir: ''
-});
+})
 
 // Data
-const company = ref<any>(null);
-const organizationTree = ref<any[]>([]);
-const subAreaOptions = ref<any[]>([]);
-const loadingSubArea = ref(false);
-const parentHasChief = ref(false);
-const selectedParentNode = ref<any>(null);
+const company = ref<any>(null)
+const organizationTree = ref<any[]>([])
+const subAreaOptions = ref<any[]>([])
+const loadingSubArea = ref(false)
+const parentHasChief = ref(false)
+const selectedParentNode = ref<any>(null)
 
 const chiefOptions = [
   { label: 'BOD', value: 'BOD' },
   { label: 'BOD-1', value: 'BOD-1' },
   { label: 'BOD-2', value: 'BOD-2' },
   { label: 'BOD-3', value: 'BOD-3' }
-];
+]
 
 const bodOrder: Record<string, number> = {
   BOD: 1,
   'BOD-1': 2,
   'BOD-2': 3,
   'BOD-3': 4
-};
+}
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const editTypeLabel = computed(() => {
-  if (editType.value === 'Unit') return t('stu_modal_edit_unit');
-  if (editType.value === 'Posisi') return t('stu_modal_edit_posisi');
-  if (editType.value === 'Anggota') return t('stu_modal_edit_anggota');
-  return '';
-});
+  if (editType.value === 'Unit') return t('stu_modal_edit_unit')
+  if (editType.value === 'Posisi') return t('stu_modal_edit_posisi')
+  if (editType.value === 'Anggota') return t('stu_modal_edit_anggota')
+  return ''
+})
 
 const totalResults = computed(
   () =>
     searchResults.value.organizations.length +
     searchResults.value.positions.length +
     searchResults.value.persons.length
-);
+)
 
 const searchResultsMap = computed(() => {
-  const map: Record<string, string> = {};
+  const map: Record<string, string> = {}
   searchResults.value.organizations.forEach((org) => {
-    map[org.id] = 'organization';
-  });
+    map[org.id] = 'organization'
+  })
   searchResults.value.positions.forEach((pos) => {
-    map[pos.id] = 'position';
-  });
+    map[pos.id] = 'position'
+  })
   searchResults.value.persons.forEach((person) => {
-    map[person.id] = 'person';
-  });
-  return map;
-});
+    map[person.id] = 'person'
+  })
+  return map
+})
 
-const displayTree = computed(() => organizationTree.value);
+const displayTree = computed(() => organizationTree.value)
 
 // ─── Toast helpers ────────────────────────────────────────────────────────────
 const showSuccessToast = (message: string) => {
@@ -1082,8 +1217,8 @@ const showSuccessToast = (message: string) => {
     description: message,
     color: 'success',
     icon: 'i-lucide-check-circle'
-  });
-};
+  })
+}
 
 const showErrorToast = (description: string) => {
   toast.add({
@@ -1091,38 +1226,38 @@ const showErrorToast = (description: string) => {
     description,
     color: 'error',
     icon: 'i-lucide-x-circle'
-  });
-};
+  })
+}
 
 const buildRequiredFieldsMessage = (fields: string[]) => {
-  if (fields.length === 0) return '';
-  return `${fields.join(', ')} wajib diisi`;
-};
+  if (fields.length === 0) return ''
+  return `${fields.join(', ')} wajib diisi`
+}
 
 const isEndDateInvalid = (startDate?: string, endDate?: string) => {
-  if (!startDate || !endDate) return false;
+  if (!startDate || !endDate) return false
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
 
-  return end <= start;
-};
+  return end <= start
+}
 
-const formatDateWarningMessage = () => t('stu_form_tgl_warning').replace(/^\*\s*/, '');
+const formatDateWarningMessage = () => t('stu_form_tgl_warning').replace(/^\*\s*/, '')
 
 const isUnitDateRangeInvalid = computed(() =>
   isEndDateInvalid(formUnit.value.mulai, formUnit.value.berakhir)
-);
+)
 
 const isPositionDateRangeInvalid = computed(() =>
   isEndDateInvalid(formPosition.value.mulai, formPosition.value.berakhir)
-);
+)
 
 const isMemberDateRangeInvalid = computed(() =>
   isEndDateInvalid(formMember.value.mulai, formMember.value.berakhir)
-);
+)
 
 // ─── Validation helpers ───────────────────────────────────────────────────────
 
@@ -1132,228 +1267,678 @@ const isMemberDateRangeInvalid = computed(() =>
  * Also triggers toast listing all empty required fields.
  */
 const validateUnitForm = (): boolean => {
-  const emptyFields: string[] = [];
+  const emptyFields: string[] = []
 
-  unitErrors.value.namaUnit = !formUnit.value.namaUnit.trim();
-  unitErrors.value.titelatur = !formUnit.value.titelatur.trim();
-  unitErrors.value.idUnit = !formUnit.value.idUnit.trim();
-  unitErrors.value.idsubArea = !formUnit.value.idsubArea;
-  unitErrors.value.mulai = !formUnit.value.mulai;
-  unitErrors.value.berakhir = !formUnit.value.berakhir;
+  unitErrors.value.namaUnit = !formUnit.value.namaUnit.trim()
+  unitErrors.value.titelatur = !formUnit.value.titelatur.trim()
+  unitErrors.value.idUnit = !formUnit.value.idUnit.trim()
+  unitErrors.value.idsubArea = !formUnit.value.idsubArea
+  unitErrors.value.mulai = !formUnit.value.mulai
+  unitErrors.value.berakhir = !formUnit.value.berakhir
 
-  if (unitErrors.value.namaUnit) emptyFields.push(t('stu_form_nama_unit'));
-  if (unitErrors.value.titelatur) emptyFields.push(t('stu_form_nama_pendek'));
-  if (unitErrors.value.idUnit) emptyFields.push(t('stu_form_id_unit'));
-  if (unitErrors.value.idsubArea) emptyFields.push(t('stu_form_sub_area'));
-  if (unitErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'));
-  if (unitErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'));
+  if (unitErrors.value.namaUnit) emptyFields.push(t('stu_form_nama_unit'))
+  if (unitErrors.value.titelatur) emptyFields.push(t('stu_form_nama_pendek'))
+  if (unitErrors.value.idUnit) emptyFields.push(t('stu_form_id_unit'))
+  if (unitErrors.value.idsubArea) emptyFields.push(t('stu_form_sub_area'))
+  if (unitErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'))
+  if (unitErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'))
 
   if (emptyFields.length > 0) {
-    showErrorToast(buildRequiredFieldsMessage(emptyFields));
-    return false;
+    showErrorToast(buildRequiredFieldsMessage(emptyFields))
+    return false
   }
 
   if (isEndDateInvalid(formUnit.value.mulai, formUnit.value.berakhir)) {
-    unitErrors.value.berakhir = true;
-    showErrorToast(formatDateWarningMessage());
-    return false;
+    unitErrors.value.berakhir = true
+    showErrorToast(formatDateWarningMessage())
+    return false
   }
-  return true;
-};
+  return true
+}
 
 /**
  * Validate Add Position form.
  * Returns true if valid, false if there are errors.
  */
 const validatePositionForm = (): boolean => {
-  const emptyFields: string[] = [];
+  const emptyFields: string[] = []
 
-  positionErrors.value.namaPos = !formPosition.value.namaPos.trim();
-  positionErrors.value.titelatur = !formPosition.value.titelatur.trim();
-  positionErrors.value.idPos = !formPosition.value.idPos.trim();
-  positionErrors.value.chiefLevel = formPosition.value.chief && !formPosition.value.chiefLevel;
-  positionErrors.value.mulai = !formPosition.value.mulai;
-  positionErrors.value.berakhir = !formPosition.value.berakhir;
+  positionErrors.value.namaPos = !formPosition.value.namaPos.trim()
+  positionErrors.value.titelatur = !formPosition.value.titelatur.trim()
+  positionErrors.value.idPos = !formPosition.value.idPos.trim()
+  positionErrors.value.chiefLevel = formPosition.value.chief && !formPosition.value.chiefLevel
+  positionErrors.value.mulai = !formPosition.value.mulai
+  positionErrors.value.berakhir = !formPosition.value.berakhir
 
-  if (positionErrors.value.namaPos) emptyFields.push(t('stu_form_nama_posisi'));
-  if (positionErrors.value.titelatur) emptyFields.push(t('stu_form_titelatur'));
-  if (positionErrors.value.idPos) emptyFields.push(t('stu_form_id_posisi'));
-  if (positionErrors.value.chiefLevel) emptyFields.push(t('stu_form_level_chief'));
-  if (positionErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'));
-  if (positionErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'));
+  if (positionErrors.value.namaPos) emptyFields.push(t('stu_form_nama_posisi'))
+  if (positionErrors.value.titelatur) emptyFields.push(t('stu_form_titelatur'))
+  if (positionErrors.value.idPos) emptyFields.push(t('stu_form_id_posisi'))
+  if (positionErrors.value.chiefLevel) emptyFields.push(t('stu_form_level_chief'))
+  if (positionErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'))
+  if (positionErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'))
 
   if (emptyFields.length > 0) {
-    showErrorToast(buildRequiredFieldsMessage(emptyFields));
-    return false;
+    showErrorToast(buildRequiredFieldsMessage(emptyFields))
+    return false
   }
 
   if (isEndDateInvalid(formPosition.value.mulai, formPosition.value.berakhir)) {
-    positionErrors.value.berakhir = true;
-    showErrorToast(formatDateWarningMessage());
-    return false;
+    positionErrors.value.berakhir = true
+    showErrorToast(formatDateWarningMessage())
+    return false
   }
-  return true;
-};
+  return true
+}
 
 /**
  * Validate Add Member form.
  * Returns true if valid, false if there are errors.
  */
 const validateMemberForm = (): boolean => {
-  const emptyFields: string[] = [];
+  const emptyFields: string[] = []
 
-  memberErrors.value.personId = !selectedPersonForMember.value;
-  memberErrors.value.mulai = !formMember.value.mulai;
-  memberErrors.value.berakhir = !formMember.value.berakhir;
+  memberErrors.value.personId = !selectedPersonForMember.value
+  memberErrors.value.mulai = !formMember.value.mulai
+  memberErrors.value.berakhir = !formMember.value.berakhir
 
-  if (memberErrors.value.personId) emptyFields.push(t('stu_form_nama_anggota'));
-  if (memberErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'));
-  if (memberErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'));
+  if (memberErrors.value.personId) emptyFields.push(t('stu_form_nama_anggota'))
+  if (memberErrors.value.mulai) emptyFields.push(t('stu_form_tgl_mulai'))
+  if (memberErrors.value.berakhir) emptyFields.push(t('stu_form_tgl_berakhir'))
 
   if (emptyFields.length > 0) {
-    showErrorToast(buildRequiredFieldsMessage(emptyFields));
-    return false;
+    showErrorToast(buildRequiredFieldsMessage(emptyFields))
+    return false
   }
 
   if (isEndDateInvalid(formMember.value.mulai, formMember.value.berakhir)) {
-    memberErrors.value.berakhir = true;
-    showErrorToast(formatDateWarningMessage());
-    return false;
+    memberErrors.value.berakhir = true
+    showErrorToast(formatDateWarningMessage())
+    return false
   }
-  return true;
-};
+  return true
+}
 
 // ─── Click-outside handler ────────────────────────────────────────────────────
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
+  const target = event.target as HTMLElement
 
   if (showSubAreaDropdown.value) {
-    const isClickInside = target.closest('.sub-area-dropdown-container');
-    if (!isClickInside) showSubAreaDropdown.value = false;
+    const isClickInside = target.closest('.sub-area-dropdown-container')
+    if (!isClickInside) showSubAreaDropdown.value = false
   }
-};
 
-onMounted(() => document.addEventListener('click', handleClickOutside));
-onUnmounted(() => document.removeEventListener('click', handleClickOutside));
+  if (showSearchSuggestions.value) {
+    const isClickInsideSearch = target.closest('.search-suggestion-container')
+    if (!isClickInsideSearch) showSearchSuggestions.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 // ─── Search ───────────────────────────────────────────────────────────────────
-let searchTimeout: any = null;
+let searchTimeout: any = null
+let searchAbortController: AbortController | null = null
 
-const handleSearch = async () => {
-  if (!searchQuery.value.trim()) {
-    clearSearch();
-    return;
+const toText = (value: unknown) => (value == null ? '' : String(value))
+const normalizeText = (value: unknown) => toText(value).trim().toLowerCase()
+
+const emptySearchResults = () => ({
+  organizations: [],
+  positions: [],
+  persons: []
+})
+
+const getSearchPlaceholder = () => {
+  if (!searchScope.value) return 'Pilih Unit / Posisi / Nama terlebih dahulu'
+  if (searchScope.value === 'organization') return 'Cari unit...'
+  if (searchScope.value === 'position') return 'Cari posisi...'
+  return 'Cari nama anggota...'
+}
+
+const setSearchScope = (scope: SearchSuggestionType) => {
+  if (searchScope.value === scope) return
+  searchScope.value = scope
+  clearSearch()
+}
+
+const extractOrganizationCode = (raw: any) =>
+  toText(
+    raw?.organizationCode ??
+      raw?.organization?.organization ??
+      raw?.organization?.organizationCode ??
+      raw?.organization?.code ??
+      raw?.organization ??
+      raw?.organization_id ??
+      raw?.organizationId ??
+      raw?.organizationData?.organization ??
+      raw?.organizationData?.organizationCode ??
+      raw?.organizationData?.code
+  )
+
+const extractOrganizationId = (raw: any) =>
+  toText(raw?.organizationId ?? raw?.organization_id ?? raw?.organizationData?.id)
+
+const extractPositionCode = (raw: any) =>
+  toText(
+    raw?.positionCode ??
+      raw?.position?.position ??
+      raw?.position?.positionCode ??
+      raw?.position?.code ??
+      raw?.position ??
+      raw?.position_id ??
+      raw?.positionId ??
+      raw?.positionData?.position ??
+      raw?.positionData?.positionCode ??
+      raw?.positionData?.code
+  )
+
+const extractPositionId = (raw: any) =>
+  toText(
+    raw?.positionId ?? raw?.position_id ?? raw?.id_position ?? raw?.positionData?.id ?? raw?.id
+  )
+
+const getSuggestionIcon = (type: SearchSuggestionType) => {
+  if (type === 'organization') return Building
+  if (type === 'position') return User
+  return Users
+}
+
+const getSuggestionBadgeClass = (type: SearchSuggestionType) => {
+  if (type === 'organization') {
+    return 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
   }
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(async () => {
-    await performSearch();
-  }, 300);
-};
+  if (type === 'position') {
+    return 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300'
+  }
+  return 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+}
 
-const performSearch = async () => {
-  if (!company.value?.kode || !searchQuery.value.trim()) return;
+const getSuggestionTypeLabel = (type: SearchSuggestionType) => {
+  if (type === 'organization') return 'Unit'
+  if (type === 'position') return 'Posisi'
+  return 'Nama'
+}
+
+const onSearchFocus = () => {
+  if (!searchScope.value) return
+  if (searchSuggestions.value.length > 0) {
+    showSearchSuggestions.value = true
+  }
+}
+
+const hideSearchSuggestions = () => {
+  setTimeout(() => {
+    showSearchSuggestions.value = false
+  }, 120)
+}
+
+const buildSearchSuggestions = (
+  organizations: any[],
+  positions: any[],
+  persons: any[]
+): SearchSuggestionItem[] => {
+  const suggestions: SearchSuggestionItem[] = []
+  const seen = new Set<string>()
+
+  const pushSuggestion = (item: SearchSuggestionItem) => {
+    if (!item.title || seen.has(item.key)) return
+    seen.add(item.key)
+    suggestions.push(item)
+  }
+
+  for (const person of persons) {
+    const personId = toText(
+      person.id || person.id_relation_sp || person.person_id || person.personId
+    )
+    const persnum = toText(person.persnum || person.person_number || person.personNumber)
+    const organizationCode = extractOrganizationCode(person)
+    const organizationId = extractOrganizationId(person)
+    const positionCode = extractPositionCode(person)
+    const positionId = extractPositionId(person)
+
+    pushSuggestion({
+      key: `person:${personId || persnum}`,
+      type: 'person',
+      title: person.name || '-',
+      subtitle: persnum ? `Persnum ${persnum}` : 'Anggota',
+      personId,
+      persnum,
+      organizationId,
+      organizationCode,
+      positionId,
+      positionCode
+    })
+  }
+
+  for (const position of positions) {
+    const positionId = extractPositionId(position)
+    const positionCode = extractPositionCode(position)
+    const organizationCode = extractOrganizationCode(position)
+    const organizationId = extractOrganizationId(position)
+
+    pushSuggestion({
+      key: `position:${positionId || `${organizationCode}:${positionCode}`}`,
+      type: 'position',
+      title:
+        position.long_text ||
+        position.longText ||
+        position.short_text ||
+        position.shortText ||
+        position.name ||
+        '-',
+      subtitle: organizationCode ? `Unit ${organizationCode}` : 'Posisi',
+      positionId,
+      positionCode,
+      organizationId,
+      organizationCode
+    })
+  }
+
+  for (const organization of organizations) {
+    const organizationId = toText(
+      organization.id || organization.organization_id || organization.organizationId
+    )
+    const organizationCode = extractOrganizationCode(organization)
+    pushSuggestion({
+      key: `organization:${organizationId || organizationCode}`,
+      type: 'organization',
+      title:
+        organization.longText ||
+        organization.long_text ||
+        organization.shortText ||
+        organization.short_text ||
+        '-',
+      subtitle: organizationCode ? `Kode ${organizationCode}` : 'Unit',
+      organizationId,
+      organizationCode
+    })
+  }
+
+  return suggestions.slice(0, SEARCH_SUGGESTION_LIMIT)
+}
+
+const performSearch = async (queryOverride?: string) => {
+  const query = (queryOverride ?? searchQuery.value).trim()
+  if (!company.value?.kode || query.length < SEARCH_MIN_LENGTH || !searchScope.value) {
+    searchResults.value = emptySearchResults()
+    searchSuggestions.value = []
+    showSearchSuggestions.value = false
+    return
+  }
+
+  if (Object.keys(previousExpandedState.value).length === 0) {
+    previousExpandedState.value = { ...expandedNodes.value }
+  }
+
+  const cacheKey = `${searchScope.value}:${query.toLowerCase()}`
+  const cached = searchCache.value[cacheKey]
+  if (cached) {
+    searchResults.value = {
+      organizations: cached.organizations,
+      positions: cached.positions,
+      persons: cached.persons
+    }
+    searchSuggestions.value = cached.suggestions
+    showSearchSuggestions.value = true
+    return
+  }
+
+  const requestId = ++activeSearchRequestId.value
+  if (searchAbortController) {
+    searchAbortController.abort()
+  }
+  const controller = new AbortController()
+  searchAbortController = controller
+
+  loadingSearch.value = true
 
   try {
-    if (Object.keys(previousExpandedState.value).length === 0) {
-      previousExpandedState.value = { ...expandedNodes.value };
+    let organizations: any[] = []
+    let positions: any[] = []
+    let persons: any[] = []
+
+    if (searchScope.value === 'organization') {
+      const orgRes = await searchOrganization(String(company.value.kode), query, controller.signal)
+      organizations = orgRes.data || []
+    } else if (searchScope.value === 'position') {
+      const posRes = await searchPosition(String(company.value.kode), query, controller.signal)
+      positions = posRes.data || []
+    } else if (searchScope.value === 'person') {
+      const personRes = await searchPerson(String(company.value.kode), query, controller.signal)
+      persons = personRes.data || []
     }
 
-    expandedNodes.value = {};
-    highlightNodeId.value = null;
-    companyExpanded.value = false;
-    loadingSearch.value = true;
+    if (requestId !== activeSearchRequestId.value) return
 
-    const [orgRes, posRes, personRes] = await Promise.all([
-      searchOrganization(String(company.value.kode), searchQuery.value.trim()),
-      searchPosition(String(company.value.kode), searchQuery.value.trim()),
-      searchPerson(String(company.value.kode), searchQuery.value.trim())
-    ]);
+    const suggestions = buildSearchSuggestions(organizations, positions, persons)
+
+    searchCache.value[cacheKey] = {
+      organizations,
+      positions,
+      persons,
+      suggestions
+    }
 
     searchResults.value = {
-      organizations: orgRes.data || [],
-      positions: posRes.data || [],
-      persons: personRes.data || []
-    };
-
-    loadingSearch.value = false;
-
-    if (totalResults.value > 0) {
-      companyExpanded.value = true;
-      await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      loadingExpand.value = true;
-      await autoExpandSearchResults();
-      loadingExpand.value = false;
-
-      await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      await scrollToFirstResult();
-    } else {
-      companyExpanded.value = false;
+      organizations,
+      positions,
+      persons
     }
+    searchSuggestions.value = suggestions
+    showSearchSuggestions.value = true
   } catch (err) {
-    console.error('❌ Search error:', err);
-    searchResults.value = { organizations: [], positions: [], persons: [] };
+    if (requestId !== activeSearchRequestId.value) return
+    if ((err as any)?.name === 'CanceledError' || (err as any)?.code === 'ERR_CANCELED') return
+    console.error('❌ Search error:', err)
+    searchResults.value = emptySearchResults()
+    searchSuggestions.value = []
+    showSearchSuggestions.value = true
   } finally {
-    loadingSearch.value = false;
-    loadingExpand.value = false;
+    if (requestId === activeSearchRequestId.value) {
+      loadingSearch.value = false
+      if (searchAbortController === controller) {
+        searchAbortController = null
+      }
+    }
   }
-};
+}
+
+const handleSearch = async () => {
+  const trimmed = searchQuery.value.trim()
+
+  if (!searchScope.value) {
+    showSearchSuggestions.value = false
+    searchResults.value = emptySearchResults()
+    return
+  }
+
+  if (!trimmed) {
+    clearSearch()
+    return
+  }
+
+  clearTimeout(searchTimeout)
+
+  if (trimmed.length < SEARCH_MIN_LENGTH) {
+    searchResults.value = emptySearchResults()
+    searchSuggestions.value = []
+    showSearchSuggestions.value = false
+    loadingSearch.value = false
+    return
+  }
+
+  searchTimeout = setTimeout(async () => {
+    await performSearch(trimmed)
+  }, SEARCH_DEBOUNCE_MS)
+}
 
 const clearSearch = () => {
-  searchQuery.value = '';
+  searchQuery.value = ''
+  clearTimeout(searchTimeout)
+  if (searchAbortController) {
+    searchAbortController.abort()
+    searchAbortController = null
+  }
+  activeSearchRequestId.value += 1
 
   if (Object.keys(previousExpandedState.value).length > 0) {
-    expandedNodes.value = { ...previousExpandedState.value };
-    companyExpanded.value = true;
+    expandedNodes.value = { ...previousExpandedState.value }
+    companyExpanded.value = true
   } else {
-    expandedNodes.value = {};
-    companyExpanded.value = true;
+    expandedNodes.value = {}
+    companyExpanded.value = true
   }
 
-  previousExpandedState.value = {};
-  highlightNodeId.value = null;
-  searchResults.value = { organizations: [], positions: [], persons: [] };
-};
+  previousExpandedState.value = {}
+  highlightNodeId.value = null
+  loadingSearch.value = false
+  loadingExpand.value = false
+  searchResults.value = emptySearchResults()
+  searchSuggestions.value = []
+  showSearchSuggestions.value = false
+}
 
-const scrollToFirstResult = async () => {
-  await nextTick();
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  let firstResultId: string | null = null;
-  if (searchResults.value.persons.length > 0) {
-    firstResultId = searchResults.value.persons[0].id;
-  } else if (searchResults.value.positions.length > 0) {
-    firstResultId = searchResults.value.positions[0].id;
-  } else if (searchResults.value.organizations.length > 0) {
-    firstResultId = searchResults.value.organizations[0].id;
-  }
-
-  if (firstResultId) {
-    highlightNodeId.value = firstResultId;
-    await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const element = document.querySelector(`[data-node-id="${firstResultId}"]`);
-    const scrollTo = (el: Element) => {
-      const offset = 200;
-      const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
-      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-      setTimeout(() => {
-        highlightNodeId.value = null;
-      }, 3000);
-    };
-
-    if (element) {
-      scrollTo(element);
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const retry = document.querySelector(`[data-node-id="${firstResultId}"]`);
-      if (retry) scrollTo(retry);
+const expandParentChain = (nodes: any[], targetId: string): boolean => {
+  for (const node of nodes) {
+    if (toText(node.id) === toText(targetId)) {
+      expandedNodes.value[node.id] = true
+      return true
+    }
+    if (node.children?.length) {
+      const found = expandParentChain(node.children, targetId)
+      if (found) {
+        expandedNodes.value[node.id] = true
+        return true
+      }
     }
   }
-};
+  return false
+}
+
+const scrollToNodeById = async (targetNodeId: string) => {
+  await nextTick()
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  highlightNodeId.value = targetNodeId
+
+  const scrollTo = (el: Element) => {
+    const offset = 200
+    const top = el.getBoundingClientRect().top + window.pageYOffset - offset
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    setTimeout(() => {
+      if (highlightNodeId.value === targetNodeId) {
+        highlightNodeId.value = null
+      }
+    }, 3000)
+  }
+
+  const element = document.querySelector(`[data-node-id="${targetNodeId}"]`)
+  if (element) {
+    scrollTo(element)
+    return
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  const retry = document.querySelector(`[data-node-id="${targetNodeId}"]`)
+  if (retry) {
+    scrollTo(retry)
+  }
+}
+
+const isPositionMatch = (positionNode: any, item: SearchSuggestionItem) => {
+  const byId = Boolean(item.positionId) && toText(positionNode.id) === toText(item.positionId)
+  const byCode =
+    Boolean(item.positionCode) && toText(positionNode.positionCode) === toText(item.positionCode)
+  const byName =
+    normalizeText(item.title).length > 0 &&
+    normalizeText(positionNode.name || positionNode.longText || positionNode.shortText).includes(
+      normalizeText(item.title)
+    )
+  return byId || byCode || byName
+}
+
+const findPositionNodeBySuggestion = async (item: SearchSuggestionItem): Promise<any | null> => {
+  const walk = async (nodes: any[]): Promise<any | null> => {
+    for (const node of nodes) {
+      if (node.type !== 'unit' && node.type !== 'direktorat') continue
+
+      if (!node._positionsLoaded) await loadPositions(node)
+      expandedNodes.value[node.id] = true
+
+      const positionNode = (node.children || []).find(
+        (child: any) => child.type === 'position' && isPositionMatch(child, item)
+      )
+
+      if (positionNode) {
+        expandParentChain(organizationTree.value, node.id)
+        expandedNodes.value[positionNode.id] = true
+        return positionNode
+      }
+
+      const childUnits = (node.children || []).filter(
+        (child: any) => child.type === 'unit' || child.type === 'direktorat'
+      )
+
+      if (childUnits.length > 0) {
+        const foundInChildren = await walk(childUnits)
+        if (foundInChildren) return foundInChildren
+      }
+    }
+
+    return null
+  }
+
+  return walk(organizationTree.value)
+}
+
+const findPersonNodeByPersnum = async (targetPersnum: string): Promise<any | null> => {
+  const walk = async (nodes: any[]): Promise<any | null> => {
+    for (const node of nodes) {
+      if (node.type !== 'unit' && node.type !== 'direktorat') continue
+
+      if (!node._positionsLoaded) await loadPositions(node)
+      expandedNodes.value[node.id] = true
+
+      const positions = (node.children || []).filter((child: any) => child.type === 'position')
+      for (const positionNode of positions) {
+        if (!positionNode._personsLoaded) await loadPersons(positionNode)
+
+        const personNode = (positionNode.children || []).find(
+          (child: any) => child.type === 'member' && toText(child.persnum) === toText(targetPersnum)
+        )
+
+        if (personNode) {
+          expandParentChain(organizationTree.value, node.id)
+          expandedNodes.value[positionNode.id] = true
+          return personNode
+        }
+      }
+
+      const childUnits = (node.children || []).filter(
+        (child: any) => child.type === 'unit' || child.type === 'direktorat'
+      )
+      if (childUnits.length > 0) {
+        const foundInChildren = await walk(childUnits)
+        if (foundInChildren) return foundInChildren
+      }
+    }
+
+    return null
+  }
+
+  return walk(organizationTree.value)
+}
+
+const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
+  if (!company.value?.kode) return
+
+  if (Object.keys(previousExpandedState.value).length === 0) {
+    previousExpandedState.value = { ...expandedNodes.value }
+  }
+
+  loadingExpand.value = true
+  companyExpanded.value = true
+
+  try {
+    let targetNode: any | null = null
+
+    const organizationNode = findNodeInTree(organizationTree.value, (node) => {
+      const matchOrganizationId =
+        Boolean(item.organizationId) && toText(node.id) === toText(item.organizationId)
+      const matchOrganizationCode =
+        Boolean(item.organizationCode) &&
+        toText(node.organizationCode) === toText(item.organizationCode)
+
+      return (
+        (node.type === 'unit' || node.type === 'direktorat') &&
+        (matchOrganizationId || matchOrganizationCode)
+      )
+    })
+
+    if (item.type === 'organization') {
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id)
+        targetNode = organizationNode
+      }
+    }
+
+    if (item.type === 'position') {
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id)
+        expandedNodes.value[organizationNode.id] = true
+        if (!organizationNode._positionsLoaded) await loadPositions(organizationNode)
+
+        targetNode = (organizationNode.children || []).find(
+          (node: any) => node.type === 'position' && isPositionMatch(node, item)
+        )
+
+        if (targetNode) {
+          expandedNodes.value[targetNode.id] = true
+        }
+      }
+
+      if (!targetNode) {
+        targetNode = await findPositionNodeBySuggestion(item)
+      }
+    }
+
+    if (item.type === 'person') {
+      const targetPersnum = toText(item.persnum)
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id)
+        expandedNodes.value[organizationNode.id] = true
+        if (!organizationNode._positionsLoaded) await loadPositions(organizationNode)
+
+        const positions = (organizationNode.children || []).filter(
+          (node: any) => node.type === 'position'
+        )
+
+        const preferredPosition = positions.find(
+          (node: any) =>
+            (item.positionId && toText(node.id) === toText(item.positionId)) ||
+            (item.positionCode && toText(node.positionCode) === toText(item.positionCode))
+        )
+
+        const positionsToScan = preferredPosition ? [preferredPosition] : positions
+
+        for (const positionNode of positionsToScan) {
+          expandedNodes.value[positionNode.id] = true
+          if (!positionNode._personsLoaded) await loadPersons(positionNode)
+
+          targetNode = (positionNode.children || []).find(
+            (node: any) => node.type === 'member' && toText(node.persnum) === targetPersnum
+          )
+
+          if (targetNode) break
+        }
+      }
+
+      if (!targetNode && targetPersnum) {
+        targetNode = await findPersonNodeByPersnum(targetPersnum)
+      }
+    }
+
+    if (targetNode?.id) {
+      await scrollToNodeById(targetNode.id)
+    }
+  } catch (err) {
+    console.error('❌ Focus search result error:', err)
+  } finally {
+    loadingExpand.value = false
+  }
+}
+
+const selectSearchSuggestion = async (item: SearchSuggestionItem) => {
+  showSearchSuggestions.value = false
+  await focusSearchSuggestion(item)
+}
+
+const selectFirstSuggestion = async () => {
+  const firstSuggestion = searchSuggestions.value[0]
+  if (!firstSuggestion) return
+  await selectSearchSuggestion(firstSuggestion)
+}
 
 const autoExpandSearchResults = async () => {
   // Step 1: Organizations
@@ -1361,11 +1946,11 @@ const autoExpandSearchResults = async () => {
     const orgNode = findNodeInTree(
       organizationTree.value,
       (n) => n.id === org.id || n.organizationCode === org.organization
-    );
+    )
     if (orgNode) {
-      expandedNodes.value[orgNode.id] = true;
-      if (!orgNode._positionsLoaded) await loadPositions(orgNode);
-      await expandParentNodes(orgNode.id);
+      expandedNodes.value[orgNode.id] = true
+      if (!orgNode._positionsLoaded) await loadPositions(orgNode)
+      await expandParentNodes(orgNode.id)
     }
   }
 
@@ -1375,20 +1960,20 @@ const autoExpandSearchResults = async () => {
       organizationTree.value,
       (n) =>
         (n.type === 'unit' || n.type === 'direktorat') && n.organizationCode === pos.organization
-    );
+    )
     if (orgNode) {
-      expandedNodes.value[orgNode.id] = true;
-      if (!orgNode._positionsLoaded) await loadPositions(orgNode);
+      expandedNodes.value[orgNode.id] = true
+      if (!orgNode._positionsLoaded) await loadPositions(orgNode)
 
       const posNode = findNodeInTree(
         orgNode.children,
         (n) => n.type === 'position' && n.positionCode === pos.position
-      );
+      )
       if (posNode) {
-        expandedNodes.value[posNode.id] = true;
-        if (!posNode._personsLoaded) await loadPersons(posNode);
+        expandedNodes.value[posNode.id] = true
+        if (!posNode._personsLoaded) await loadPersons(posNode)
       }
-      await expandParentNodes(orgNode.id);
+      await expandParentNodes(orgNode.id)
     }
   }
 
@@ -1397,84 +1982,84 @@ const autoExpandSearchResults = async () => {
     const searchAndExpandForPerson = async (nodes: any[]): Promise<boolean> => {
       for (const node of nodes) {
         if (node.type === 'unit' || node.type === 'direktorat') {
-          if (!node._positionsLoaded) await loadPositions(node);
+          if (!node._positionsLoaded) await loadPositions(node)
 
           for (const posNode of node.children.filter((c: any) => c.type === 'position')) {
-            if (!posNode._personsLoaded) await loadPersons(posNode);
+            if (!posNode._personsLoaded) await loadPersons(posNode)
 
             const personNode = posNode.children.find(
               (p: any) => p.type === 'member' && p.persnum === person.persnum
-            );
+            )
 
             if (personNode) {
-              expandedNodes.value[node.id] = true;
-              expandedNodes.value[posNode.id] = true;
-              expandedNodes.value[personNode.id] = true;
-              await expandParentNodes(node.id);
-              return true;
+              expandedNodes.value[node.id] = true
+              expandedNodes.value[posNode.id] = true
+              expandedNodes.value[personNode.id] = true
+              await expandParentNodes(node.id)
+              return true
             }
           }
 
           const childUnits = node.children.filter(
             (c: any) => c.type === 'unit' || c.type === 'direktorat'
-          );
+          )
           if (childUnits.length > 0) {
-            const found = await searchAndExpandForPerson(childUnits);
+            const found = await searchAndExpandForPerson(childUnits)
             if (found) {
-              expandedNodes.value[node.id] = true;
-              return true;
+              expandedNodes.value[node.id] = true
+              return true
             }
           }
         }
       }
-      return false;
-    };
-    await searchAndExpandForPerson(organizationTree.value);
+      return false
+    }
+    await searchAndExpandForPerson(organizationTree.value)
   }
-};
+}
 
 const findNodeInTree = (nodes: any[], predicate: (node: any) => boolean): any => {
   for (const node of nodes) {
-    if (predicate(node)) return node;
+    if (predicate(node)) return node
     if (node.children?.length) {
-      const found = findNodeInTree(node.children, predicate);
-      if (found) return found;
+      const found = findNodeInTree(node.children, predicate)
+      if (found) return found
     }
   }
-  return null;
-};
+  return null
+}
 
 const expandParentNodes = async (nodeId: string) => {
   const findAndExpand = async (nodes: any[], targetId: string): Promise<boolean> => {
     for (const node of nodes) {
       if (node.id === targetId) {
-        expandedNodes.value[node.id] = true;
+        expandedNodes.value[node.id] = true
         if ((node.type === 'unit' || node.type === 'direktorat') && !node._positionsLoaded)
-          await loadPositions(node);
-        if (node.type === 'position' && !node._personsLoaded) await loadPersons(node);
-        return true;
+          await loadPositions(node)
+        if (node.type === 'position' && !node._personsLoaded) await loadPersons(node)
+        return true
       }
       if (node.children?.length) {
-        const found = await findAndExpand(node.children, targetId);
+        const found = await findAndExpand(node.children, targetId)
         if (found) {
-          expandedNodes.value[node.id] = true;
+          expandedNodes.value[node.id] = true
           if ((node.type === 'unit' || node.type === 'direktorat') && !node._positionsLoaded)
-            await loadPositions(node);
-          if (node.type === 'position' && !node._personsLoaded) await loadPersons(node);
-          return true;
+            await loadPositions(node)
+          if (node.type === 'position' && !node._personsLoaded) await loadPersons(node)
+          return true
         }
       }
     }
-    return false;
-  };
-  await findAndExpand(organizationTree.value, nodeId);
-};
+    return false
+  }
+  await findAndExpand(organizationTree.value, nodeId)
+}
 
 // ─── Data Fetching ────────────────────────────────────────────────────────────
 const fetchData = async (kode: string | number) => {
   try {
-    const companyRes = await getCompanyByCode(String(kode));
-    if (!companyRes) return;
+    const companyRes = await getCompanyByCode(String(kode))
+    if (!companyRes) return
 
     company.value = {
       kode: companyRes.company,
@@ -1482,34 +2067,18 @@ const fetchData = async (kode: string | number) => {
       namaPanjang: companyRes.longText,
       tanggalMulai: companyRes.startDate,
       tanggalBerakhir: companyRes.endDate
-    };
+    }
 
-    const res = await getCompanyTree(String(kode));
-    organizationTree.value = await mapCompanyTree(res.data.tree);
+    const res = await getCompanyTree(String(kode))
+    organizationTree.value = await mapCompanyTree(res.data.tree)
   } catch (err) {
-    console.error('❌ fetchData error:', err);
+    console.error('❌ fetchData error:', err)
   }
-};
+}
 
 const mapCompanyTree = async (nodes: any[], level = 0): Promise<any[]> => {
-  const result = [];
+  const result = []
   for (const node of nodes) {
-    if (isExpired(node.endDate)) {
-      try {
-        const posRes = await getPositionsByOrganization(String(node.organization));
-        for (const pos of posRes.data) {
-          try {
-            const personRes = await getPersonsByPosition(pos.position);
-            for (const p of personRes.data) {
-              await deletePerson(p.id_relation_sp);
-            }
-          } catch {}
-          await deletePosition(pos.id);
-        }
-      } catch {}
-      await deleteOrganization(node.id);
-      continue;
-    }
     result.push({
       id: node.id,
       organizationCode: node.organization,
@@ -1522,10 +2091,10 @@ const mapCompanyTree = async (nodes: any[], level = 0): Promise<any[]> => {
       endDate: node.endDate,
       children: node.children ? await mapCompanyTree(node.children, level + 1) : [],
       _positionsLoaded: false
-    });
+    })
   }
-  return result;
-};
+  return result
+}
 
 const mapPositionToNode = (pos: any) => ({
   id: pos.id,
@@ -1540,7 +2109,7 @@ const mapPositionToNode = (pos: any) => ({
   endDate: pos.end_date,
   children: [],
   _personsLoaded: false
-});
+})
 
 const mapPersonToNode = (person: any, positionCode: number) => ({
   id: person.id_relation_sp,
@@ -1551,133 +2120,119 @@ const mapPersonToNode = (person: any, positionCode: number) => ({
   startDate: person.start_date,
   endDate: person.end_date,
   children: []
-});
+})
 
 const isExpired = (endDate?: string) => {
-  if (!endDate) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const end = new Date(endDate);
-  end.setHours(0, 0, 0, 0);
-  return end <= today;
-};
+  if (!endDate) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const end = new Date(endDate)
+  end.setHours(0, 0, 0, 0)
+  return end <= today
+}
 
 const loadPositions = async (node: any) => {
-  if (node._positionsLoaded) return;
-  const res = await getPositionsByOrganization(String(node.organizationCode));
-  const validPositions: any[] = [];
+  if (node._positionsLoaded) return
+  const res = await getPositionsByOrganization(String(node.organizationCode))
+  const validPositions: any[] = []
   for (const pos of res.data) {
-    if (isExpired(pos.end_date)) {
-      try {
-        const personRes = await getPersonsByPosition(pos.position);
-        for (const p of personRes.data) {
-          await deletePerson(p.id_relation_sp);
-        }
-      } catch {}
-      await deletePosition(pos.id);
-      continue;
-    }
-    validPositions.push(mapPositionToNode(pos));
+    validPositions.push(mapPositionToNode(pos))
   }
-  const sortedPositions = sortPositionsByBod(validPositions);
+  const sortedPositions = sortPositionsByBod(validPositions)
   node.children = [
     ...sortedPositions,
     ...(node.children || []).filter((c: any) => c.type !== 'position')
-  ];
-  node._positionsLoaded = true;
-};
+  ]
+  node._positionsLoaded = true
+}
 
 const loadPersons = async (node: any) => {
-  if (node._personsLoaded) return;
-  if (!node.positionCode) return;
+  if (node._personsLoaded) return
+  if (!node.positionCode) return
   try {
-    const res = await getPersonsByPosition(node.positionCode);
-    const validPersons: any[] = [];
+    const res = await getPersonsByPosition(node.positionCode)
+    const validPersons: any[] = []
     for (const p of res.data) {
-      if (isExpired(p.end_date)) {
-        await deletePerson(p.id_relation_sp);
-        continue;
-      }
-      validPersons.push(mapPersonToNode(p, node.positionCode));
+      validPersons.push(mapPersonToNode(p, node.positionCode))
     }
-    node.children = validPersons;
-    node._personsLoaded = true;
+    node.children = validPersons
+    node._personsLoaded = true
   } catch (err) {
-    console.error('❌ gagal load person:', err);
+    console.error('❌ gagal load person:', err)
   }
-};
+}
 
 const sortPositionsByBod = (positions: any[]) =>
   [...positions].sort((a, b) => {
-    const aOrder = bodOrder[a.bodTag ?? ''] ?? 99;
-    const bOrder = bodOrder[b.bodTag ?? ''] ?? 99;
-    return aOrder - bOrder;
-  });
+    const aOrder = bodOrder[a.bodTag ?? ''] ?? 99
+    const bOrder = bodOrder[b.bodTag ?? ''] ?? 99
+    return aOrder - bOrder
+  })
 
 const formatDate = (date: string) => {
-  if (!date) return '';
-  const d = new Date(date);
+  if (!date) return ''
+  const d = new Date(date)
   return d.toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
-  });
-};
+  })
+}
 
-const toDateOnly = (val?: string) => (val ? val.split('T')[0] : null);
+const toDateOnly = (val?: string) => (val ? val.split('T')[0] : null)
 
 // ─── Dropdown helpers ─────────────────────────────────────────────────────────
 const getSelectedSubAreaText = () => {
-  if (!formUnit.value.idsubArea) return '';
-  const selected = subAreaOptions.value.find((sub) => sub.sub_area === formUnit.value.idsubArea);
-  return selected ? `${selected.sub_area} - ${selected.shortText || selected.longText}` : '';
-};
+  if (!formUnit.value.idsubArea) return ''
+  const selected = subAreaOptions.value.find((sub) => sub.sub_area === formUnit.value.idsubArea)
+  return selected ? `${selected.sub_area} - ${selected.shortText || selected.longText}` : ''
+}
 
 const onPersonSearchAndClearError = () => {
-  onPersonSearch();
-  memberErrors.value.personId = false;
-};
+  onPersonSearch()
+  memberErrors.value.personId = false
+}
 
 const onPersonSearch = () => {
-  selectedPersonForMember.value = null;
-  formMember.value.personId = '';
-  if (personSearchTimeout) clearTimeout(personSearchTimeout);
+  selectedPersonForMember.value = null
+  formMember.value.personId = ''
+  if (personSearchTimeout) clearTimeout(personSearchTimeout)
   if (!personSearchQuery.value.trim()) {
-    personSuggestions.value = [];
-    showPersonSuggestions.value = false;
-    return;
+    personSuggestions.value = []
+    showPersonSuggestions.value = false
+    return
   }
   personSearchTimeout = setTimeout(async () => {
-    isSearchingPerson.value = true;
+    isSearchingPerson.value = true
     try {
-      const res = await searchPersons(personSearchQuery.value);
-      personSuggestions.value = res.data?.data || [];
-      showPersonSuggestions.value = personSuggestions.value.length > 0;
+      const res = await searchPersons(personSearchQuery.value)
+      personSuggestions.value = res.data?.data || []
+      showPersonSuggestions.value = personSuggestions.value.length > 0
     } catch {
-      personSuggestions.value = [];
-      showPersonSuggestions.value = false;
+      personSuggestions.value = []
+      showPersonSuggestions.value = false
     } finally {
-      isSearchingPerson.value = false;
+      isSearchingPerson.value = false
     }
-  }, 300);
-};
+  }, 300)
+}
 
 const selectPersonSuggestion = (person: any) => {
-  selectedPersonForMember.value = person;
-  formMember.value.personId = person.id;
-  personSearchQuery.value = `${person.name} - ${person.persnum}`;
-  showPersonSuggestions.value = false;
-  memberErrors.value.personId = false;
-};
+  selectedPersonForMember.value = person
+  formMember.value.personId = person.id
+  personSearchQuery.value = `${person.name} - ${person.persnum}`
+  showPersonSuggestions.value = false
+  memberErrors.value.personId = false
+}
 
 const hidePersonSuggestions = () => {
   setTimeout(() => {
-    showPersonSuggestions.value = false;
-  }, 150);
-};
+    showPersonSuggestions.value = false
+  }, 150)
+}
 
 const filterSubAreas = () => {
-  const query = subAreaSearchQuery.value.toLowerCase().trim();
+  const query = subAreaSearchQuery.value.toLowerCase().trim()
   filteredSubAreas.value = !query
     ? subAreaOptions.value
     : subAreaOptions.value.filter(
@@ -1685,21 +2240,21 @@ const filterSubAreas = () => {
           String(sub.sub_area).toLowerCase().includes(query) ||
           (sub.shortText || '').toLowerCase().includes(query) ||
           (sub.longText || '').toLowerCase().includes(query)
-      );
-};
+      )
+}
 
 const toggleSubAreaDropdown = () => {
-  showSubAreaDropdown.value = !showSubAreaDropdown.value;
-  unitErrors.value.idsubArea = false;
-};
+  showSubAreaDropdown.value = !showSubAreaDropdown.value
+  unitErrors.value.idsubArea = false
+}
 
 const selectSubArea = (sub: any) => {
-  formUnit.value.idsubArea = sub.sub_area;
-  formUnit.value.subarea = sub.shortText || sub.longText || '';
-  showSubAreaDropdown.value = false;
-  subAreaSearchQuery.value = '';
-  unitErrors.value.idsubArea = false;
-};
+  formUnit.value.idsubArea = sub.sub_area
+  formUnit.value.subarea = sub.shortText || sub.longText || ''
+  showSubAreaDropdown.value = false
+  subAreaSearchQuery.value = ''
+  unitErrors.value.idsubArea = false
+}
 
 // ─── Form resets ──────────────────────────────────────────────────────────────
 const resetUnitForm = () => {
@@ -1712,7 +2267,7 @@ const resetUnitForm = () => {
     deskripsi: '',
     mulai: '',
     berakhir: ''
-  };
+  }
   unitErrors.value = {
     namaUnit: false,
     titelatur: false,
@@ -1720,9 +2275,9 @@ const resetUnitForm = () => {
     idsubArea: false,
     mulai: false,
     berakhir: false
-  };
-  subAreaSearchQuery.value = '';
-};
+  }
+  subAreaSearchQuery.value = ''
+}
 
 const resetPositionForm = () => {
   formPosition.value = {
@@ -1733,7 +2288,7 @@ const resetPositionForm = () => {
     chiefLevel: '',
     mulai: '',
     berakhir: ''
-  };
+  }
   positionErrors.value = {
     namaPos: false,
     titelatur: false,
@@ -1741,40 +2296,40 @@ const resetPositionForm = () => {
     chiefLevel: false,
     mulai: false,
     berakhir: false
-  };
-};
+  }
+}
 
 const resetMemberForm = () => {
-  formMember.value = { personId: '', nama: '', mulai: '', berakhir: '' };
-  memberErrors.value = { personId: false, mulai: false, berakhir: false };
-  personSearchQuery.value = '';
-  personSuggestions.value = [];
-  showPersonSuggestions.value = false;
-  selectedPersonForMember.value = null;
-};
+  formMember.value = { personId: '', nama: '', mulai: '', berakhir: '' }
+  memberErrors.value = { personId: false, mulai: false, berakhir: false }
+  personSearchQuery.value = ''
+  personSuggestions.value = []
+  showPersonSuggestions.value = false
+  selectedPersonForMember.value = null
+}
 
 // ─── Node interaction ─────────────────────────────────────────────────────────
 const toggleNode = async (node: any) => {
-  const isExpanded = expandedNodes.value[node.id] ?? false;
-  expandedNodes.value[node.id] = !isExpanded;
-  if (isExpanded) return;
+  const isExpanded = expandedNodes.value[node.id] ?? false
+  expandedNodes.value[node.id] = !isExpanded
+  if (isExpanded) return
   if ((node.type === 'unit' || node.type === 'direktorat') && !node._positionsLoaded)
-    await loadPositions(node);
-  if (node.type === 'position') await loadPersons(node);
-};
+    await loadPositions(node)
+  if (node.type === 'position') await loadPersons(node)
+}
 
 const setHoveredNode = (id: string | null) => {
-  hoveredNode.value = id;
-};
+  hoveredNode.value = id
+}
 
-const hasChildren = (node: any) => Array.isArray(node.children) && node.children.length > 0;
+const hasChildren = (node: any) => Array.isArray(node.children) && node.children.length > 0
 
 // ─── Modal openers ────────────────────────────────────────────────────────────
 const openEditModal = (item: any) => {
-  editingNode.value = item;
+  editingNode.value = item
 
   if (item.type === 'unit' || item.type === 'direktorat') {
-    editType.value = 'Unit';
+    editType.value = 'Unit'
     formUnit.value = {
       namaUnit: item.longText || item.shortText,
       idUnit: item.organizationCode,
@@ -1784,11 +2339,11 @@ const openEditModal = (item: any) => {
       deskripsi: '',
       mulai: toDateOnly(item.startDate) ?? '',
       berakhir: toDateOnly(item.endDate) ?? ''
-    };
+    }
   }
 
   if (item.type === 'position') {
-    editType.value = 'Posisi';
+    editType.value = 'Posisi'
     formPosition.value = {
       namaPos: item.longText,
       idPos: item.positionCode,
@@ -1797,122 +2352,122 @@ const openEditModal = (item: any) => {
       chiefLevel: item.bodTag ?? '',
       mulai: toDateOnly(item.startDate) ?? '',
       berakhir: toDateOnly(item.endDate) ?? ''
-    };
+    }
   }
 
   if (item.type === 'member') {
-    editType.value = 'Anggota';
+    editType.value = 'Anggota'
     formMember.value = {
       nama: item.name,
       personId: item.persnum,
       mulai: toDateOnly(item.startDate) ?? '',
       berakhir: toDateOnly(item.endDate) ?? ''
-    };
+    }
   }
 
-  showEditModal.value = true;
-};
+  showEditModal.value = true
+}
 
 const openDelete = (item: any) => {
   if (hasChildren(item)) {
-    alert(t('stu_err_has_children'));
-    return;
+    alert(t('stu_err_has_children'))
+    return
   }
-  itemToDelete.value = item;
-  confirmDeleteOpen.value = true;
-};
+  itemToDelete.value = item
+  confirmDeleteOpen.value = true
+}
 
 const openAddUnitModal = async (parent: any, type: string) => {
-  resetUnitForm();
-  selectedParentNode.value = parent;
-  showAddUnitModal.value = true;
-  if (!company.value?.kode) return;
-  const res = await getSubAreasByCompany(String(company.value.kode));
-  subAreaOptions.value = res.data || [];
-  filteredSubAreas.value = res.data || [];
-};
+  resetUnitForm()
+  selectedParentNode.value = parent
+  showAddUnitModal.value = true
+  if (!company.value?.kode) return
+  const res = await getSubAreasByCompany(String(company.value.kode))
+  subAreaOptions.value = res.data || []
+  filteredSubAreas.value = res.data || []
+}
 
 const openAddPositionModal = async (parent: any) => {
-  resetPositionForm();
-  selectedParentNode.value = parent;
-  if (!parent._positionsLoaded) await loadPositions(parent);
-  parentHasChief.value = checkParentHasChief(parent);
+  resetPositionForm()
+  selectedParentNode.value = parent
+  if (!parent._positionsLoaded) await loadPositions(parent)
+  parentHasChief.value = checkParentHasChief(parent)
   if (parentHasChief.value) {
-    formPosition.value.chief = false;
-    formPosition.value.chiefLevel = '';
+    formPosition.value.chief = false
+    formPosition.value.chiefLevel = ''
   }
-  showAddPositionModal.value = true;
-};
+  showAddPositionModal.value = true
+}
 
 const openAddMemberModal = (parent: any) => {
-  resetMemberForm();
-  selectedParentNode.value = parent;
-  showAddMemberModal.value = true;
-};
+  resetMemberForm()
+  selectedParentNode.value = parent
+  showAddMemberModal.value = true
+}
 
 const checkParentHasChief = (parent: any) => {
-  if (!parent?.children) return false;
-  return parent.children.some((c: any) => c.type === 'position' && !!c.bodTag);
-};
+  if (!parent?.children) return false
+  return parent.children.some((c: any) => c.type === 'position' && !!c.bodTag)
+}
 
 // ─── CRUD handlers ────────────────────────────────────────────────────────────
 const removeNodeById = (nodes: any[], id: string): boolean => {
-  const index = nodes.findIndex((n) => n.id === id);
+  const index = nodes.findIndex((n) => n.id === id)
   if (index !== -1) {
-    nodes.splice(index, 1);
-    return true;
+    nodes.splice(index, 1)
+    return true
   }
   for (const node of nodes) {
-    if (node.children?.length && removeNodeById(node.children, id)) return true;
+    if (node.children?.length && removeNodeById(node.children, id)) return true
   }
-  return false;
-};
+  return false
+}
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return;
+  if (!itemToDelete.value) return
   try {
-    const item = itemToDelete.value;
+    const item = itemToDelete.value
     if (hasChildren(item)) {
-      alert(t('stu_err_has_children'));
-      return;
+      alert(t('stu_err_has_children'))
+      return
     }
 
     if (item.type === 'member') {
-      await deletePerson(item.id);
-      removeNodeById(organizationTree.value, item.id);
-      showSuccessToast(t('stu_success_delete_anggota'));
+      await deletePerson(item.id)
+      removeNodeById(organizationTree.value, item.id)
+      showSuccessToast(t('stu_success_delete_anggota'))
     } else if (item.type === 'position') {
-      await deletePosition(item.id);
-      removeNodeById(organizationTree.value, item.id);
-      showSuccessToast(t('stu_success_delete_posisi'));
+      await deletePosition(item.id)
+      removeNodeById(organizationTree.value, item.id)
+      showSuccessToast(t('stu_success_delete_posisi'))
     } else {
-      await deleteOrganization(item.id);
-      await fetchData(route.params.kode as string);
-      showSuccessToast(t('stu_success_delete_unit'));
+      await deleteOrganization(item.id)
+      await fetchData(route.params.kode as string)
+      showSuccessToast(t('stu_success_delete_unit'))
     }
 
-    confirmDeleteOpen.value = false;
+    confirmDeleteOpen.value = false
   } catch (error) {
-    console.error('❌ Error deleting item:', error);
+    console.error('❌ Error deleting item:', error)
   } finally {
-    itemToDelete.value = null;
+    itemToDelete.value = null
   }
-};
+}
 
 const handleSaveUnit = async () => {
-  if (isSavingAddUnit.value) return;
+  if (isSavingAddUnit.value) return
 
   // Run validation first
-  if (!validateUnitForm()) return;
+  if (!validateUnitForm()) return
 
-  isSavingAddUnit.value = true;
+  isSavingAddUnit.value = true
 
   try {
     if (isNaN(Number(formUnit.value.idUnit))) {
-      showErrorToast(t('stu_err_id_unit_angka'));
-      return;
+      showErrorToast(t('stu_err_id_unit_angka'))
+      return
     }
-    if (!company.value?.kode) return;
+    if (!company.value?.kode) return
 
     const payload = {
       company: Number(company.value.kode),
@@ -1925,34 +2480,34 @@ const handleSaveUnit = async () => {
       parentOrganization: selectedParentNode.value?.organizationCode ?? null,
       startDate: formUnit.value.mulai,
       endDate: formUnit.value.berakhir
-    };
+    }
 
-    await createOrganization(payload);
-    await fetchData(route.params.kode as string);
-    showSuccessToast(t('stu_success_add_unit'));
-    showAddUnitModal.value = false;
-    resetUnitForm();
+    await createOrganization(payload)
+    await fetchData(route.params.kode as string)
+    showSuccessToast(t('stu_success_add_unit'))
+    showAddUnitModal.value = false
+    resetUnitForm()
   } catch (err) {
-    console.error('❌ gagal create organization:', err);
+    console.error('❌ gagal create organization:', err)
   } finally {
-    isSavingAddUnit.value = false;
+    isSavingAddUnit.value = false
   }
-};
+}
 
 const handleSavePosition = async () => {
-  if (isSavingAddPosition.value) return;
+  if (isSavingAddPosition.value) return
 
   // Run validation first
-  if (!validatePositionForm()) return;
+  if (!validatePositionForm()) return
 
-  isSavingAddPosition.value = true;
+  isSavingAddPosition.value = true
 
   try {
     if (isNaN(Number(formPosition.value.idPos))) {
-      showErrorToast(t('stu_err_id_posisi_angka'));
-      return;
+      showErrorToast(t('stu_err_id_posisi_angka'))
+      return
     }
-    if (!company.value?.kode || !selectedParentNode.value) return;
+    if (!company.value?.kode || !selectedParentNode.value) return
 
     const payload = {
       company: Number(company.value.kode),
@@ -1964,33 +2519,33 @@ const handleSavePosition = async () => {
       bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
       startDate: formPosition.value.mulai,
       endDate: formPosition.value.berakhir
-    };
+    }
 
-    await createPosition(payload);
-    selectedParentNode.value._positionsLoaded = false;
-    await loadPositions(selectedParentNode.value);
-    showSuccessToast(t('stu_success_add_posisi'));
-    showAddPositionModal.value = false;
-    resetPositionForm();
+    await createPosition(payload)
+    selectedParentNode.value._positionsLoaded = false
+    await loadPositions(selectedParentNode.value)
+    showSuccessToast(t('stu_success_add_posisi'))
+    showAddPositionModal.value = false
+    resetPositionForm()
   } catch (err) {
-    console.error('❌ gagal create position:', err);
+    console.error('❌ gagal create position:', err)
   } finally {
-    isSavingAddPosition.value = false;
+    isSavingAddPosition.value = false
   }
-};
+}
 
 const handleSaveMember = async () => {
-  if (isSavingAddMember.value) return;
+  if (isSavingAddMember.value) return
 
   // Run validation first
-  if (!validateMemberForm()) return;
+  if (!validateMemberForm()) return
 
-  isSavingAddMember.value = true;
+  isSavingAddMember.value = true
 
   try {
-    if (!company.value?.kode || !selectedParentNode.value) return;
-    const selectedPerson = selectedPersonForMember.value;
-    if (!selectedPerson) return;
+    if (!company.value?.kode || !selectedParentNode.value) return
+    const selectedPerson = selectedPersonForMember.value
+    if (!selectedPerson) return
 
     const payload = {
       persnum: Number(selectedPerson.persnum),
@@ -1998,26 +2553,26 @@ const handleSaveMember = async () => {
       position: Number(selectedParentNode.value.positionCode),
       startDate: formMember.value.mulai,
       endDate: formMember.value.berakhir
-    };
+    }
 
-    await assignPersonToPosition(payload);
-    selectedParentNode.value._personsLoaded = false;
-    await loadPersons(selectedParentNode.value);
-    showSuccessToast(t('stu_success_add_anggota'));
-    showAddMemberModal.value = false;
-    resetMemberForm();
+    await assignPersonToPosition(payload)
+    selectedParentNode.value._personsLoaded = false
+    await loadPersons(selectedParentNode.value)
+    showSuccessToast(t('stu_success_add_anggota'))
+    showAddMemberModal.value = false
+    resetMemberForm()
   } catch (err) {
-    console.error('❌ gagal assign person:', err);
+    console.error('❌ gagal assign person:', err)
   } finally {
-    isSavingAddMember.value = false;
+    isSavingAddMember.value = false
   }
-};
+}
 
 const handleSaveEdit = async () => {
-  if (isSavingEdit.value) return;
-  if (!editingNode.value) return;
+  if (isSavingEdit.value) return
+  if (!editingNode.value) return
 
-  isSavingEdit.value = true;
+  isSavingEdit.value = true
 
   try {
     if (editType.value === 'Unit') {
@@ -2029,9 +2584,9 @@ const handleSaveEdit = async () => {
         subAreaText: formUnit.value.subarea,
         startDate: formUnit.value.mulai,
         endDate: formUnit.value.berakhir
-      };
-      await updateOrganization(editingNode.value.id, payload);
-      showSuccessToast(t('stu_success_edit_unit'));
+      }
+      await updateOrganization(editingNode.value.id, payload)
+      showSuccessToast(t('stu_success_edit_unit'))
     }
 
     if (editType.value === 'Posisi') {
@@ -2041,67 +2596,67 @@ const handleSaveEdit = async () => {
         bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
         startDate: toDateOnly(formPosition.value.mulai),
         endDate: toDateOnly(formPosition.value.berakhir)
-      };
-      await updatePosition(editingNode.value.id, payload);
-      showSuccessToast(t('stu_success_edit_posisi'));
+      }
+      await updatePosition(editingNode.value.id, payload)
+      showSuccessToast(t('stu_success_edit_posisi'))
 
-      editingNode.value.longText = formPosition.value.namaPos;
-      editingNode.value.name = formPosition.value.namaPos;
-      editingNode.value.bodTag = formPosition.value.chief ? formPosition.value.chiefLevel : null;
-      editingNode.value.startDate = formPosition.value.mulai;
-      editingNode.value.endDate = formPosition.value.berakhir;
+      editingNode.value.longText = formPosition.value.namaPos
+      editingNode.value.name = formPosition.value.namaPos
+      editingNode.value.bodTag = formPosition.value.chief ? formPosition.value.chiefLevel : null
+      editingNode.value.startDate = formPosition.value.mulai
+      editingNode.value.endDate = formPosition.value.berakhir
     }
 
     if (editType.value === 'Anggota') {
       const payload = {
         startDate: toDateOnly(formMember.value.mulai),
         endDate: toDateOnly(formMember.value.berakhir)
-      };
-      await updateAssignPerson(editingNode.value.id, payload);
-      showSuccessToast(t('stu_success_edit_anggota'));
-      editingNode.value.startDate = payload.startDate;
-      editingNode.value.endDate = payload.endDate;
+      }
+      await updateAssignPerson(editingNode.value.id, payload)
+      showSuccessToast(t('stu_success_edit_anggota'))
+      editingNode.value.startDate = payload.startDate
+      editingNode.value.endDate = payload.endDate
     }
 
-    showEditModal.value = false;
-    editingNode.value = null;
-    await fetchData(route.params.kode as string);
+    showEditModal.value = false
+    editingNode.value = null
+    await fetchData(route.params.kode as string)
   } catch (err) {
-    console.error('❌ gagal update:', err);
+    console.error('❌ gagal update:', err)
   } finally {
-    isSavingEdit.value = false;
+    isSavingEdit.value = false
   }
-};
+}
 
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(
   () => route.params.kode,
   (kode) => {
-    if (!kode) return;
-    fetchData(kode);
+    if (!kode) return
+    fetchData(kode)
   },
   { immediate: true }
-);
+)
 
 watch(
   () => formUnit.value.idsubArea,
   (id) => {
     if (!id) {
-      formUnit.value.subarea = '';
-      return;
+      formUnit.value.subarea = ''
+      return
     }
-    const selected = subAreaOptions.value.find((s) => s.sub_area === id);
-    formUnit.value.subarea = selected?.shortText || selected?.longText || '';
+    const selected = subAreaOptions.value.find((s) => s.sub_area === id)
+    formUnit.value.subarea = selected?.shortText || selected?.longText || ''
   }
-);
+)
 
 watch(
   () => formPosition.value.chief,
   (val) => {
     if (!val) {
-      formPosition.value.chiefLevel = '';
-      positionErrors.value.chiefLevel = false;
+      formPosition.value.chiefLevel = ''
+      positionErrors.value.chiefLevel = false
     }
   }
-);
+)
 </script>

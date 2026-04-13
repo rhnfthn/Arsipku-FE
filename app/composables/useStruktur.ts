@@ -16,6 +16,7 @@ export const useStruktur = () => {
   const searchOrganization = (
     companyId: string | number,
     searchQuery: string,
+    signal?: AbortSignal,
   ) => {
     return apiGet<{
       success: boolean;
@@ -24,10 +25,15 @@ export const useStruktur = () => {
       params: {
         search: searchQuery,
       },
+      signal,
     });
   };
 
-  const searchPosition = (companyId: string | number, searchQuery: string) => {
+  const searchPosition = (
+    companyId: string | number,
+    searchQuery: string,
+    signal?: AbortSignal,
+  ) => {
     return apiGet<{
       success: boolean;
       data: any[];
@@ -35,10 +41,15 @@ export const useStruktur = () => {
       params: {
         search: searchQuery,
       },
+      signal,
     });
   };
 
-  const searchPerson = (companyId: string | number, searchQuery: string) => {
+  const searchPerson = (
+    companyId: string | number,
+    searchQuery: string,
+    signal?: AbortSignal,
+  ) => {
     return apiGet<{
       success: boolean;
       data: any[];
@@ -46,6 +57,7 @@ export const useStruktur = () => {
       params: {
         search: searchQuery,
       },
+      signal,
     });
   };
 

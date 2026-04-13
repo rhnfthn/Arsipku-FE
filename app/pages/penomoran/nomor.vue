@@ -20,8 +20,8 @@
     <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
-        <div class="flex items-center gap-2 px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
+        <div class="flex items-center gap-2">
           <div class="relative" ref="rowsRef">
             <button
               type="button"
@@ -156,19 +156,25 @@
                 @mouseleave="onRowMouseLeave"
                 @click="openRowModal(row)"
               >
-                <td class="px-5 py-4">{{ row.jenis }}</td>
-                <td class="px-5 py-4">{{ row.jabatan }}</td>
+                <td class="px-5 py-4" v-html="highlight(row.jenis, searchQuery)"></td>
+                <td class="px-5 py-4" v-html="highlight(row.jabatan, searchQuery)"></td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[250px]">
-                    <p class="whitespace-normal break-words line-clamp-3">{{ row.perihal }}</p>
+                    <p
+                      class="whitespace-normal break-words line-clamp-3"
+                      v-html="highlight(row.perihal, searchQuery)"
+                    ></p>
                   </div>
                 </td>
                 <td class="px-5 py-4">
                   <div class="flex flex-col gap-0.5">
-                    <div class="text-sm font-medium">{{ row.tanggal }}</div>
+                    <div
+                      class="text-sm font-medium"
+                      v-html="highlight(row.tanggal, searchQuery)"
+                    ></div>
                     <div class="text-xs text-gray-600 dark:text-gray-200 font-mono">
                       <div v-for="(nomor, idx) in row.nomor_list.slice(0, 3)" :key="idx">
-                        {{ nomor }}
+                        <span v-html="highlight(nomor, searchQuery)"></span>
                       </div>
                       <div v-if="row.nomor_list.length > 3" class="text-primary font-medium">
                         +{{ row.nomor_list.length - 3 }} {{ $t('nom_nomor_lainnya') }}
@@ -178,10 +184,13 @@
                 </td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[300px]">
-                    <p class="whitespace-normal break-words line-clamp-3">{{ row.pengusul }}</p>
+                    <p
+                      class="whitespace-normal break-words line-clamp-3"
+                      v-html="highlight(row.pengusul, searchQuery)"
+                    ></p>
                   </div>
                 </td>
-                <td class="px-5 py-4">{{ row.waktu }}</td>
+                <td class="px-5 py-4" v-html="highlight(row.waktu, searchQuery)"></td>
               </tr>
             </template>
           </tbody>
@@ -908,20 +917,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, reactive, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next';
-import AddUsulan from '~/components/AddUsulan.vue';
-import Heading from '~/components/Heading.vue';
-import PageHeader from '~/components/PageHeader.vue';
-import { Modal } from '#components';
-import ConfirmPopup from '~/components/ConfirmPopup.vue';
-import { usePenomoran } from '~/composables/usePenomoran';
-import * as XLSX from 'xlsx';
-definePageMeta({ middleware: 'auth' });
+import { ref, computed, watch, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
+import AddUsulan from '~/components/AddUsulan.vue'
+import Heading from '~/components/Heading.vue'
+import PageHeader from '~/components/PageHeader.vue'
+import { Modal } from '#components'
+import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import { usePenomoran } from '~/composables/usePenomoran'
+import * as XLSX from 'xlsx'
+definePageMeta({ middleware: 'auth' })
 
-const { t } = useI18n();
-const config = useRuntimeConfig();
+const { t } = useI18n()
+const config = useRuntimeConfig()
 
 const {
   createPenomoranFinal,
@@ -937,172 +946,172 @@ const {
   showToastSaveTitle,
   showToastPenomoranSuccess,
   showToastCopied
-} = usePenomoran();
+} = usePenomoran()
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const loading = ref<boolean>(true);
-const loadingDetail = ref<boolean>(false);
-const openAdd = ref<boolean>(false);
-const openPreview = ref(false);
-const openConfirmHangus = ref(false);
-const isHangusing = ref(false);
-const selectedRow = ref(null);
-const detailData = ref(null);
-const rows = ref<any[]>([]);
-const pagination = ref<any>(null);
+const loading = ref<boolean>(true)
+const loadingDetail = ref<boolean>(false)
+const openAdd = ref<boolean>(false)
+const openPreview = ref(false)
+const openConfirmHangus = ref(false)
+const isHangusing = ref(false)
+const selectedRow = ref(null)
+const detailData = ref(null)
+const rows = ref<any[]>([])
+const pagination = ref<any>(null)
 
 // ✅ Array untuk menampung semua id yang akan di-hangus (single atau multi)
-const selectedDetailIds = ref<string[]>([]);
+const selectedDetailIds = ref<string[]>([])
 
-const fileStates = ref<Record<string, any>>({});
-const isEditingTitle = ref(false);
-const editedTitle = ref('');
+const fileStates = ref<Record<string, any>>({})
+const isEditingTitle = ref(false)
+const editedTitle = ref('')
 
-const searchQuery = ref<string>('');
-const limit = ref<number>(10);
-const currentPage = ref<number>(1);
-const sortBy = ref<string>('');
-const sortOrder = ref<'asc' | 'desc'>('desc');
-const rowsChoices = [10, 25, 50, 100];
-const showRowsDropdown = ref<boolean>(false);
-const isExporting = ref(false);
-const rowsRef = ref<HTMLElement | null>(null);
+const searchQuery = ref<string>('')
+const limit = ref<number>(10)
+const currentPage = ref<number>(1)
+const sortBy = ref<string>('')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref<boolean>(false)
+const isExporting = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
 
-const getFileUrl = (filePath: string) => `${config.public.apiBaseUrl}/${filePath}`;
+const getFileUrl = (filePath: string) => `${config.public.apiBaseUrl}/${filePath}`
 
 // ─── Single-file mode state ───────────────────────────────────────────────────
 const singleFileData = reactive({
   file_name: null as string | null,
   file_url: null as string | null,
   file_text: null as string | null
-});
+})
 const singleFileState = reactive({
   isReplacing: false,
   isUploading: false,
   file: null as File | null
-});
+})
 
 const resetSingleFile = () => {
-  singleFileData.file_name = null;
-  singleFileData.file_url = null;
-  singleFileData.file_text = null;
-  singleFileState.isReplacing = false;
-  singleFileState.isUploading = false;
-  singleFileState.file = null;
-};
+  singleFileData.file_name = null
+  singleFileData.file_url = null
+  singleFileData.file_text = null
+  singleFileState.isReplacing = false
+  singleFileState.isUploading = false
+  singleFileState.file = null
+}
 
 // ─── Computed: apakah SEMUA nomor sudah hangus (single file mode) ─────────────
 const allNomorHangus = computed(() => {
-  if (!detailData.value?.is_single_file) return false;
-  const list = detailData.value?.nomor_list ?? [];
-  return list.length > 0 && list.every((n: any) => n.status === 'hangus');
-});
+  if (!detailData.value?.is_single_file) return false
+  const list = detailData.value?.nomor_list ?? []
+  return list.length > 0 && list.every((n: any) => n.status === 'hangus')
+})
 
 const handleSingleFileSelect = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
   if (file.size > 10 * 1024 * 1024) {
-    showToastFileTooLargeAdmin();
-    return;
+    showToastFileTooLargeAdmin()
+    return
   }
-  singleFileState.file = file;
-};
+  singleFileState.file = file
+}
 
 const saveSingleFile = async () => {
   if (!singleFileState.file) {
-    showToastPilihFile();
-    return;
+    showToastPilihFile()
+    return
   }
   // Cari nomor pertama yang belum hangus sebagai target upload
-  const firstActiveItem = detailData.value?.nomor_list?.find((n: any) => n.status !== 'hangus');
-  if (!firstActiveItem) return;
+  const firstActiveItem = detailData.value?.nomor_list?.find((n: any) => n.status !== 'hangus')
+  if (!firstActiveItem) return
 
-  singleFileState.isUploading = true;
+  singleFileState.isUploading = true
   try {
-    const result = await uploadDetailFile(firstActiveItem.id, singleFileState.file);
-    singleFileData.file_name = result?.file_name || singleFileState.file.name;
-    singleFileData.file_url = result?.file_url || null;
-    singleFileData.file_text = result?.file_text || null;
+    const result = await uploadDetailFile(firstActiveItem.id, singleFileState.file)
+    singleFileData.file_name = result?.file_name || singleFileState.file.name
+    singleFileData.file_url = result?.file_url || null
+    singleFileData.file_text = result?.file_text || null
 
     // Mirror onto all nomor items that are not hangus
     detailData.value.nomor_list.forEach((n: any) => {
       if (n.status !== 'hangus') {
-        n.file_name = singleFileData.file_name;
-        n.file_text = singleFileData.file_text;
-        n.file_url = singleFileData.file_url;
-        n.status = result?.status || 'terpakai_final';
+        n.file_name = singleFileData.file_name
+        n.file_text = singleFileData.file_text
+        n.file_url = singleFileData.file_url
+        n.status = result?.status || 'terpakai_final'
       }
-    });
+    })
 
-    singleFileState.isReplacing = false;
-    singleFileState.file = null;
+    singleFileState.isReplacing = false
+    singleFileState.file = null
   } catch (err) {
-    console.error('❌ saveSingleFile error:', err);
+    console.error('❌ saveSingleFile error:', err)
   } finally {
-    singleFileState.isUploading = false;
+    singleFileState.isUploading = false
   }
-};
+}
 
 const previewSharedFile = () => {
   const url =
     singleFileData.file_url ||
-    (singleFileData.file_text ? getFileUrl(singleFileData.file_text) : null);
+    (singleFileData.file_text ? getFileUrl(singleFileData.file_text) : null)
   if (!url) {
-    showToastFileNotFound();
-    return;
+    showToastFileNotFound()
+    return
   }
-  previewPdfUrl.value = url;
-  isOpenPreviewFile.value = true;
-};
+  previewPdfUrl.value = url
+  isOpenPreviewFile.value = true
+}
 
 // ─── Hangus ────────────────────────────────────────────────────────────────────
 
 // Single file: hangus semua nomor yang masih aktif
 const confirmHangusSharedFile = () => {
-  const activeItems = detailData.value?.nomor_list?.filter((n: any) => n.status !== 'hangus');
-  if (!activeItems?.length) return;
-  selectedDetailIds.value = activeItems.map((n: any) => n.id);
-  openConfirmHangus.value = true;
-};
+  const activeItems = detailData.value?.nomor_list?.filter((n: any) => n.status !== 'hangus')
+  if (!activeItems?.length) return
+  selectedDetailIds.value = activeItems.map((n: any) => n.id)
+  openConfirmHangus.value = true
+}
 
 // Multi file: hangus 1 nomor
 const confirmHangusNomor = (detailId: string) => {
-  selectedDetailIds.value = [detailId];
-  openConfirmHangus.value = true;
-};
+  selectedDetailIds.value = [detailId]
+  openConfirmHangus.value = true
+}
 
 const executeHangusNomor = async () => {
-  if (!selectedDetailIds.value?.length) return;
-  isHangusing.value = true;
+  if (!selectedDetailIds.value?.length) return
+  isHangusing.value = true
   try {
     // Hit endpoint hangus untuk setiap id secara paralel
-    await Promise.all(selectedDetailIds.value.map((id) => hangusDetailNomor(id)));
+    await Promise.all(selectedDetailIds.value.map((id) => hangusDetailNomor(id)))
 
     // Update status lokal
     selectedDetailIds.value.forEach((id) => {
-      const target = detailData.value?.nomor_list?.find((n: any) => n.id === id);
-      if (target) target.status = 'hangus';
-    });
+      const target = detailData.value?.nomor_list?.find((n: any) => n.id === id)
+      if (target) target.status = 'hangus'
+    })
 
     // Jika single file dan semua sudah hangus → reset shared file card
     if (detailData.value?.is_single_file) {
-      resetSingleFile();
+      resetSingleFile()
     }
 
-    openConfirmHangus.value = false;
-    selectedDetailIds.value = [];
+    openConfirmHangus.value = false
+    selectedDetailIds.value = []
   } catch (error: any) {
-    console.error('❌ Error hangus nomor:', error);
+    console.error('❌ Error hangus nomor:', error)
   } finally {
-    isHangusing.value = false;
+    isHangusing.value = false
   }
-};
+}
 
 // ─── Computed breadcrumbs & headers ──────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('nom_title'), to: '/penomoran/nomor' }
-]);
+])
 const headers = computed(() => [
   { label: t('nom_col_jenis'), key: 'jenis', sortable: true },
   { label: t('nom_col_penandatangan'), key: 'jabatan', sortable: false },
@@ -1110,122 +1119,144 @@ const headers = computed(() => [
   { label: t('nom_col_tanggal_nomor'), key: 'tanggal', sortable: true },
   { label: t('nom_col_pengusul'), key: 'pengusul', sortable: false },
   { label: t('nom_col_waktu'), key: 'waktu', sortable: true }
-]);
+])
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const highlight = (text: string | number | null | undefined, keyword: string) => {
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  )
+}
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 const getStatusLabel = (item: any): string => {
-  if (item.status === 'hangus') return t('nom_status_hangus');
-  if (item.status === 'terpakai_final') return t('nom_status_final');
-  if (item.status === 'terpakai') return t('nom_status_terpakai');
-  return t('nom_status_booking');
-};
+  if (item.status === 'hangus') return t('nom_status_hangus')
+  if (item.status === 'terpakai_final') return t('nom_status_final')
+  if (item.status === 'terpakai') return t('nom_status_terpakai')
+  return t('nom_status_booking')
+}
 const getStatusClass = (item: any): string => {
-  if (item.status === 'hangus') return 'bg-red-100 text-red-800';
-  if (item.status === 'terpakai_final') return 'bg-green-100 text-green-800';
-  if (item.status === 'terpakai') return 'bg-blue-100 text-blue-800';
-  return 'bg-yellow-100 text-yellow-800';
-};
+  if (item.status === 'hangus') return 'bg-red-100 text-red-800'
+  if (item.status === 'terpakai_final') return 'bg-green-100 text-green-800'
+  if (item.status === 'terpakai') return 'bg-blue-100 text-blue-800'
+  return 'bg-yellow-100 text-yellow-800'
+}
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
 function toLocal(dateStr: string) {
-  return new Date(dateStr.replace('Z', '').replace('+00:00', ''));
+  return new Date(dateStr.replace('Z', '').replace('+00:00', ''))
 }
 function formatTanggalWIB(dateStr: string) {
-  if (!dateStr) return '-';
-  const d = toLocal(dateStr);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  if (!dateStr) return '-'
+  const d = toLocal(dateStr)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 function formatWaktuWIB(dateStr: string) {
-  if (!dateStr) return '-';
-  const d = toLocal(dateStr);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (!dateStr) return '-'
+  const d = toLocal(dateStr)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 // ─── Preview file ─────────────────────────────────────────────────────────────
-const isOpenPreviewFile = ref(false);
-const previewPdfUrl = ref<string | null>(null);
+const isOpenPreviewFile = ref(false)
+const previewPdfUrl = ref<string | null>(null)
 const previewFile = async (item: any) => {
-  const fileUrl = item.file_url || (item.file_text ? getFileUrl(item.file_text) : null);
+  const fileUrl = item.file_url || (item.file_text ? getFileUrl(item.file_text) : null)
   if (!fileUrl) {
-    showToastFileNotFound();
-    return;
+    showToastFileNotFound()
+    return
   }
   try {
-    previewPdfUrl.value = null;
-    previewPdfUrl.value = fileUrl;
-    isOpenPreviewFile.value = true;
+    previewPdfUrl.value = null
+    previewPdfUrl.value = fileUrl
+    isOpenPreviewFile.value = true
   } catch (err) {
-    console.error('❌ Error preview file:', err);
-    showToastGagalPreview();
+    console.error('❌ Error preview file:', err)
+    showToastGagalPreview()
   }
-};
+}
 
 // ─── Multi-file actions ────────────────────────────────────────────────────────
 const startUploadFile = (detailId: string) => {
-  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null };
-};
+  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null }
+}
 const startReplacingFile = (detailId: string) => {
-  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null };
-};
+  fileStates.value[detailId] = { isReplacing: true, isUploading: false, file: null }
+}
 const handleFileSelect = (detailId: string, event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
+  const file = (event.target as HTMLInputElement).files?.[0]
   if (file) {
     if (file.size > 10 * 1024 * 1024) {
-      showToastFileTooLargeAdmin();
-      return;
+      showToastFileTooLargeAdmin()
+      return
     }
-    fileStates.value[detailId].file = file;
+    fileStates.value[detailId].file = file
   }
-};
+}
 const saveFile = async (detailId: string) => {
-  const state = fileStates.value[detailId];
+  const state = fileStates.value[detailId]
   if (!state?.file) {
-    showToastPilihFile();
-    return;
+    showToastPilihFile()
+    return
   }
-  state.isUploading = true;
+  state.isUploading = true
   try {
-    const result = await uploadDetailFile(detailId, state.file);
-    const target = detailData.value?.nomor_list?.find((n: any) => n.id === detailId);
+    const result = await uploadDetailFile(detailId, state.file)
+    const target = detailData.value?.nomor_list?.find((n: any) => n.id === detailId)
     if (target) {
-      target.file_name = result?.file_name || state.file.name;
-      target.file_text = result?.file_text || null;
-      target.file_url = result?.file_url || null;
-      target.status = result?.status || 'terpakai_final';
+      target.file_name = result?.file_name || state.file.name
+      target.file_text = result?.file_text || null
+      target.file_url = result?.file_url || null
+      target.status = result?.status || 'terpakai_final'
     }
-    delete fileStates.value[detailId];
+    delete fileStates.value[detailId]
   } catch (error: any) {
-    console.error('❌ Error upload file:', error);
+    console.error('❌ Error upload file:', error)
   } finally {
-    state.isUploading = false;
+    state.isUploading = false
   }
-};
+}
 const cancelReplacing = (detailId: string) => {
-  delete fileStates.value[detailId];
-};
+  delete fileStates.value[detailId]
+}
 
 // ─── Edit title ────────────────────────────────────────────────────────────────
 function startEditTitle() {
-  if (!detailData.value) return;
-  editedTitle.value = detailData.value.perihal;
-  isEditingTitle.value = true;
+  if (!detailData.value) return
+  editedTitle.value = detailData.value.perihal
+  isEditingTitle.value = true
 }
 function cancelEditTitle() {
-  isEditingTitle.value = false;
-  editedTitle.value = '';
+  isEditingTitle.value = false
+  editedTitle.value = ''
 }
 function saveTitle() {
-  if (!detailData.value) return;
-  detailData.value.perihal = editedTitle.value;
-  isEditingTitle.value = false;
-  showToastSaveTitle();
+  if (!detailData.value) return
+  detailData.value.perihal = editedTitle.value
+  isEditingTitle.value = false
+  showToastSaveTitle()
 }
 
 // ─── Copy ──────────────────────────────────────────────────────────────────────
 const handleCopy = (value: string) => {
-  navigator.clipboard.writeText(value);
-  showToastCopied(value);
-};
+  navigator.clipboard.writeText(value)
+  showToastCopied(value)
+}
 
 // ─── Sort & search ─────────────────────────────────────────────────────────────
 const handleSort = (col: string) => {
@@ -1233,43 +1264,43 @@ const handleSort = (col: string) => {
     jenis: 'jenis',
     tanggal: 'tanggal',
     waktu: 'waktu'
-  };
-  const backendColumn = columnMapping[col] || col;
-  if (sortBy.value === backendColumn) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortBy.value = backendColumn;
-    sortOrder.value = 'asc';
   }
-  currentPage.value = 1;
-  fetchData();
-};
+  const backendColumn = columnMapping[col] || col
+  if (sortBy.value === backendColumn) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = backendColumn
+    sortOrder.value = 'asc'
+  }
+  currentPage.value = 1
+  fetchData()
+}
 const handleLimitChange = () => {
-  currentPage.value = 1;
-  fetchData();
-};
-let searchTimeout: any = null;
+  currentPage.value = 1
+  fetchData()
+}
+let searchTimeout: any = null
 const handleSearchInput = () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
+  if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
-};
+    currentPage.value = 1
+    fetchData()
+  }, 500)
+}
 const goToPage = (page: number) => {
-  if (!pagination.value) return;
-  const totalPages = pagination.value.total_pages || pagination.value.totalPages || 1;
-  if (page < 1 || page > totalPages) return;
-  currentPage.value = page;
-  fetchData();
-};
+  if (!pagination.value) return
+  const totalPages = pagination.value.total_pages || pagination.value.totalPages || 1
+  if (page < 1 || page > totalPages) return
+  currentPage.value = page
+  fetchData()
+}
 
 // ─── Export Excel ──────────────────────────────────────────────────────────────
 const handleExport = async () => {
-  if (isExporting.value || rows.value.length === 0) return;
-  isExporting.value = true;
+  if (isExporting.value || rows.value.length === 0) return
+  isExporting.value = true
   try {
-    let exportRows = rows.value;
+    let exportRows = rows.value
 
     if (pagination.value && pagination.value.total > limit.value) {
       const res = await getListNomor({
@@ -1278,9 +1309,9 @@ const handleExport = async () => {
         search: searchQuery.value || undefined,
         sort_by: sortBy.value || undefined,
         sort_order: sortOrder.value || undefined
-      });
+      })
       if (res?.data && Array.isArray(res.data)) {
-        exportRows = groupDuplicateRows(res.data);
+        exportRows = groupDuplicateRows(res.data)
       }
     }
 
@@ -1293,76 +1324,76 @@ const handleExport = async () => {
       Tanggal: row.tanggal,
       Pengusul: row.pengusul,
       Waktu: row.waktu
-    }));
+    }))
 
-    if (!sheetData.length) return;
+    if (!sheetData.length) return
 
-    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const ws = XLSX.utils.json_to_sheet(sheetData)
     const colWidths = Object.keys(sheetData[0]).map((key) => ({
       wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
-    }));
-    ws['!cols'] = colWidths;
+    }))
+    ws['!cols'] = colWidths
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Nomor Surat');
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Nomor Surat')
 
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-    XLSX.writeFile(wb, `NomorSurat_${dateStr}.xlsx`);
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+    XLSX.writeFile(wb, `NomorSurat_${dateStr}.xlsx`)
 
     toast.add({
       title: t('nom_export_success_title') || 'Export Berhasil',
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
-    });
+    })
   } catch (e) {
-    console.error('❌ Error export:', e);
+    console.error('❌ Error export:', e)
     toast.add({
       title: t('nom_export_error_title') || 'Export Gagal',
       description: 'Terjadi kesalahan saat export data',
       color: 'error'
-    });
+    })
   } finally {
-    isExporting.value = false;
+    isExporting.value = false
   }
-};
-const toast = useToast();
+}
+const toast = useToast()
 // ─── Pagination computed ──────────────────────────────────────────────────────
 const paginationStart = computed(() => {
-  if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0;
-  const page = pagination.value.current_page || pagination.value.page || 1;
-  return (page - 1) * (pagination.value.limit || limit.value || 10) + 1;
-});
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0
+  const page = pagination.value.current_page || pagination.value.page || 1
+  return (page - 1) * (pagination.value.limit || limit.value || 10) + 1
+})
 const paginationEnd = computed(() => {
-  if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0;
-  const page = pagination.value.current_page || pagination.value.page || 1;
-  return Math.min(page * (pagination.value.limit || limit.value || 10), pagination.value.total);
-});
+  if (!pagination.value || !pagination.value.total || rows.value.length === 0) return 0
+  const page = pagination.value.current_page || pagination.value.page || 1
+  return Math.min(page * (pagination.value.limit || limit.value || 10), pagination.value.total)
+})
 const paginationPages = computed(() => {
-  if (!pagination.value) return [];
-  const total = pagination.value.total_pages || pagination.value.totalPages || 0;
-  const current = pagination.value.current_page || pagination.value.page || 1;
-  if (total === 0) return [];
-  const pages: number[] = [];
+  if (!pagination.value) return []
+  const total = pagination.value.total_pages || pagination.value.totalPages || 0
+  const current = pagination.value.current_page || pagination.value.page || 1
+  if (total === 0) return []
+  const pages: number[] = []
   if (total <= 9) {
-    for (let i = 1; i <= total; i++) pages.push(i);
+    for (let i = 1; i <= total; i++) pages.push(i)
   } else {
     let start = Math.max(2, current - 3),
-      end = Math.min(total - 1, current + 3);
-    if (current <= 4) end = 7;
-    if (current >= total - 3) start = total - 6;
-    for (let i = start; i <= end; i++) pages.push(i);
+      end = Math.min(total - 1, current + 3)
+    if (current <= 4) end = 7
+    if (current >= total - 3) start = total - 6
+    for (let i = start; i <= end; i++) pages.push(i)
   }
-  return pages;
-});
+  return pages
+})
 
 // ─── Fetch data ────────────────────────────────────────────────────────────────
 function groupDuplicateRows(dataArray) {
-  const grouped = new Map();
+  const grouped = new Map()
   dataArray.forEach((item) => {
-    const key = item.id_request;
+    const key = item.id_request
     if (grouped.has(key)) {
-      grouped.get(key).nomor_list.push(item.nomor);
+      grouped.get(key).nomor_list.push(item.nomor)
     } else {
       grouped.set(key, {
         id_request: item.id_request,
@@ -1375,48 +1406,48 @@ function groupDuplicateRows(dataArray) {
         nomor_list: [item.nomor],
         tanggal: formatTanggalWIB(item.tanggal),
         waktu: formatWaktuWIB(item.waktu)
-      });
+      })
     }
-  });
-  return Array.from(grouped.values());
+  })
+  return Array.from(grouped.values())
 }
 
 const fetchData = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const params: any = { page: currentPage.value, limit: limit.value };
-    if (searchQuery.value) params.search = searchQuery.value;
+    const params: any = { page: currentPage.value, limit: limit.value }
+    if (searchQuery.value) params.search = searchQuery.value
     if (sortBy.value) {
-      params.sort_by = sortBy.value;
-      params.sort_order = sortOrder.value;
+      params.sort_by = sortBy.value
+      params.sort_order = sortOrder.value
     }
-    const response = await getListNomor(params);
+    const response = await getListNomor(params)
     if (response?.data && Array.isArray(response.data)) {
-      rows.value = groupDuplicateRows(response.data);
-      pagination.value = response.pagination || null;
+      rows.value = groupDuplicateRows(response.data)
+      pagination.value = response.pagination || null
     } else {
-      rows.value = [];
-      pagination.value = null;
+      rows.value = []
+      pagination.value = null
     }
   } catch (error) {
-    console.error('❌ Error fetch data:', error);
-    rows.value = [];
-    pagination.value = null;
+    console.error('❌ Error fetch data:', error)
+    rows.value = []
+    pagination.value = null
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const openRowModal = async (row) => {
-  selectedRow.value = row;
-  openPreview.value = true;
-  loadingDetail.value = true;
-  detailData.value = null;
-  fileStates.value = {};
-  resetSingleFile();
+  selectedRow.value = row
+  openPreview.value = true
+  loadingDetail.value = true
+  detailData.value = null
+  fileStates.value = {}
+  resetSingleFile()
   try {
-    const detail = await getDetailNomor(row.id_request);
-    if (!detail) throw new Error('Detail tidak ditemukan');
+    const detail = await getDetailNomor(row.id_request)
+    if (!detail) throw new Error('Detail tidak ditemukan')
     const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
       id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
@@ -1424,7 +1455,7 @@ const openRowModal = async (row) => {
       file_name: item.file_name ?? null,
       file_text: item.file_text ?? null,
       file_url: item.file_url ?? null
-    }));
+    }))
     detailData.value = {
       ...detail,
       perihal: detail.perihal || row.perihal || '-',
@@ -1435,18 +1466,18 @@ const openRowModal = async (row) => {
       jumlah: detail.is_single_file ? detail.jumlah : nomorList.length,
       is_single_file: !!detail.is_single_file,
       nomor_list: nomorList
-    };
+    }
     // Populate shared file for single-file mode
     // Cari dari nomor yang masih aktif (belum hangus) dulu, kalau semua hangus pakai nomor pertama
-    const activeNomor = nomorList.find((n) => n.status !== 'hangus');
-    const sourceNomor = activeNomor || nomorList[0];
+    const activeNomor = nomorList.find((n) => n.status !== 'hangus')
+    const sourceNomor = activeNomor || nomorList[0]
     if (detail.is_single_file && sourceNomor?.file_name) {
-      singleFileData.file_name = sourceNomor.file_name;
-      singleFileData.file_url = sourceNomor.file_url;
-      singleFileData.file_text = sourceNomor.file_text;
+      singleFileData.file_name = sourceNomor.file_name
+      singleFileData.file_url = sourceNomor.file_url
+      singleFileData.file_text = sourceNomor.file_text
     }
   } catch (err) {
-    console.error('❌ Error loading detail:', err);
+    console.error('❌ Error loading detail:', err)
     detailData.value = {
       ...row,
       klasifikasiDisplay: row.klasifikasi,
@@ -1460,67 +1491,67 @@ const openRowModal = async (row) => {
         file_text: null,
         file_url: null
       }))
-    };
+    }
   } finally {
-    loadingDetail.value = false;
+    loadingDetail.value = false
   }
-};
+}
 
 const handleSubmitFromModal = async (payload) => {
   try {
-    const response = await createPenomoranFinal(payload);
-    currentPage.value = 1;
-    sortBy.value = 'waktu';
-    sortOrder.value = 'desc';
-    searchQuery.value = '';
-    await fetchData();
-    showToastPenomoranSuccess(response?.data?.nomor_list?.length || payload.jumlah);
+    const response = await createPenomoranFinal(payload)
+    currentPage.value = 1
+    sortBy.value = 'waktu'
+    sortOrder.value = 'desc'
+    searchQuery.value = ''
+    await fetchData()
+    showToastPenomoranSuccess(response?.data?.nomor_list?.length || payload.jumlah)
   } catch (error) {
-    console.error('❌ Error di handleSubmitFromModal:', error);
+    console.error('❌ Error di handleSubmitFromModal:', error)
   }
-};
+}
 
 watch(refreshTrigger, () => {
-  fetchData();
-  if (openPreview.value && selectedRow.value) openRowModal(selectedRow.value);
-});
+  fetchData()
+  if (openPreview.value && selectedRow.value) openRowModal(selectedRow.value)
+})
 watch(isOpenPreviewFile, (open) => {
-  if (!open) previewPdfUrl.value = null;
-});
+  if (!open) previewPdfUrl.value = null
+})
 
 const selectLimit = (n: number) => {
-  limit.value = n;
-  showRowsDropdown.value = false;
-  handleLimitChange();
-};
+  limit.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
 const handleClickOutside = (e: MouseEvent) => {
   if (rowsRef.value && !rowsRef.value.contains(e.target as HTMLElement))
-    showRowsDropdown.value = false;
-};
+    showRowsDropdown.value = false
+}
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+})
 onMounted(async () => {
-  document.addEventListener('click', handleClickOutside);
-  loading.value = true;
-  sortBy.value = 'waktu';
-  sortOrder.value = 'desc';
-  await fetchData();
-  loading.value = false;
-});
+  document.addEventListener('click', handleClickOutside)
+  loading.value = true
+  sortBy.value = 'waktu'
+  sortOrder.value = 'desc'
+  await fetchData()
+  loading.value = false
+})
 
-const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
+const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
     show: true,
     text,
     x: Math.min(e.clientX + 12, window.innerWidth - 200),
     y: Math.min(e.clientY + 12, window.innerHeight - 40)
-  };
-};
+  }
+}
 const onRowMouseLeave = () => {
-  tooltip.value.show = false;
-};
+  tooltip.value.show = false
+}
 </script>
 
 <style scoped>

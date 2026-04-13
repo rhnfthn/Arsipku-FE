@@ -2,12 +2,10 @@
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="">
       <!-- HEADER -->
-      <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-      >
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <Heading variant="heading6b" class="text-mobile-md dark:text-white">
-            {{ $t("sign_title") }}
+            {{ $t('sign_title') }}
           </Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
@@ -52,7 +50,7 @@
                       'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                       rowsPerPage === n
                         ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                     ]"
                   >
                     {{ n }}
@@ -73,7 +71,7 @@
               <ChevronDown
                 :class="[
                   'w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200',
-                  openFilterStatus ? 'rotate-180' : '',
+                  openFilterStatus ? 'rotate-180' : ''
                 ]"
               />
             </button>
@@ -122,7 +120,7 @@
                   class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition select-none"
                 >
                   <div class="flex items-center gap-2 px-4 py-3">
-                    <span>{{ $t("sign_tanggal_dibuat") }}</span>
+                    <span>{{ $t('sign_tanggal_dibuat') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 origin-center transition-transform duration-200"
                       :class="
@@ -136,23 +134,23 @@
                   </div>
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm">
-                  {{ $t("nodokumen") }}
+                  {{ $t('nodokumen') }}
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm">
-                  {{ $t("perihal") }}
+                  {{ $t('perihal') }}
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  {{ $t("sign_penanda_tangan") }}
+                  {{ $t('sign_penanda_tangan') }}
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  {{ $t("dokumen") }}
+                  {{ $t('dokumen') }}
                 </th>
                 <th
                   @click="handleSort('status')"
                   class="cursor-pointer hover:bg-primary-600 dark:hover:bg-primary-800 transition select-none"
                 >
                   <div class="flex items-center gap-2 ml-5 px-4 py-3">
-                    <span>{{ $t("sign_status") }}</span>
+                    <span>{{ $t('sign_status') }}</span>
                     <ArrowUpDown
                       class="w-4 h-4 origin-center transition-transform duration-200"
                       :class="
@@ -166,7 +164,7 @@
                   </div>
                 </th>
                 <th class="px-4 py-3 font-semibold text-sm text-center">
-                  {{ $t("aksi") }}
+                  {{ $t('aksi') }}
                 </th>
               </tr>
             </thead>
@@ -180,19 +178,13 @@
                 class="border-b border-gray-100 dark:border-gray-700"
               >
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-28"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
                 </td>
                 <td class="px-4 py-3">
-                  <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48"
-                  ></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48"></div>
                 </td>
                 <td class="px-4 py-3 text-center">
                   <div
@@ -230,10 +222,10 @@
                   <div class="flex flex-col items-center gap-3">
                     <FileX class="w-12 h-12 text-gray-400 dark:text-gray-600" />
                     <p class="text-gray-500 dark:text-gray-400 font-medium">
-                      {{ $t("sign_tidak_ada_data") }}
+                      {{ $t('sign_tidak_ada_data') }}
                     </p>
                     <p class="text-sm text-gray-400 dark:text-gray-500">
-                      {{ $t("sign_belum_ada_dokumen") }}
+                      {{ $t('sign_belum_ada_dokumen') }}
                     </p>
                   </div>
                 </td>
@@ -249,17 +241,13 @@
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-white">
                   {{ formatDate(row.tanggalDibuat) }}
                 </td>
-                <td
-                  class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  {{ row.nomorDokumen }}
+                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                  <span v-html="highlight(row.nomorDokumen, search)"></span>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row.perihal }}
+                  <span v-html="highlight(row.perihal, search)"></span>
                 </td>
-                <td
-                  class="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-300"
-                >
+                <td class="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-300">
                   {{ row.totalPenandatangan }}
                 </td>
 
@@ -276,7 +264,7 @@
                     "
                   >
                     <FileCheck class="w-4 h-4" />
-                    {{ $t("sign_lihat") }}
+                    {{ $t('sign_lihat') }}
                     <ChevronRight class="w-4 h-4" />
                   </button>
                 </td>
@@ -286,17 +274,17 @@
                   <span
                     v-if="row.mySignerStatus === 'waiting'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-                    >{{ $t("sign_status_menunggu") }}</span
+                    >{{ $t('sign_status_menunggu') }}</span
                   >
                   <span
                     v-else-if="row.mySignerStatus === 'signed'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                    >{{ $t("sign_status_sudah_ttd") }}</span
+                    >{{ $t('sign_status_sudah_ttd') }}</span
                   >
                   <span
                     v-else-if="row.mySignerStatus === 'rejected'"
                     class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
-                    >{{ $t("sign_status_ditolak") }}</span
+                    >{{ $t('sign_status_ditolak') }}</span
                   >
                   <span
                     v-else
@@ -322,13 +310,9 @@
                         'p-2 rounded-lg transition',
                         row.canSign
                           ? 'text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer'
-                          : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                          : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                       ]"
-                      :title="
-                        row.canSign
-                          ? $t('sign_tanda_tangani')
-                          : $t('sign_tidak_bisa_ttd')
-                      "
+                      :title="row.canSign ? $t('sign_tanda_tangani') : $t('sign_tidak_bisa_ttd')"
                     >
                       <Signature class="w-4.5 h-4.5" />
                     </button>
@@ -339,13 +323,9 @@
                         'p-2 rounded-lg transition',
                         row.canReject
                           ? 'text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 cursor-pointer'
-                          : 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
+                          : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                       ]"
-                      :title="
-                        row.canReject
-                          ? $t('sign_tolak')
-                          : $t('sign_tidak_bisa_tolak')
-                      "
+                      :title="row.canReject ? $t('sign_tolak') : $t('sign_tidak_bisa_tolak')"
                     >
                       <X class="w-4.5 h-4.5" />
                     </button>
@@ -361,8 +341,8 @@
           class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-4"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            {{ $t("menampilkan") }} {{ startRow }} - {{ endRow }}
-            {{ $t("dari") }} {{ totalRows }} {{ $t("data") }}
+            {{ $t('menampilkan') }} {{ startRow }} - {{ endRow }} {{ $t('dari') }} {{ totalRows }}
+            {{ $t('data') }}
           </div>
           <div class="flex gap-2">
             <button
@@ -372,15 +352,10 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === 1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
               ]"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -388,7 +363,7 @@
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              {{ $t("sebelumnya") }}
+              {{ $t('sebelumnya') }}
             </button>
 
             <div class="flex items-center gap-1">
@@ -412,15 +387,13 @@
                   'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                   currentPage === page
                     ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400',
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary dark:hover:text-primary-400'
                 ]"
               >
                 {{ page }}
               </button>
               <span
-                v-if="
-                  paginationPages[paginationPages.length - 1] < totalPages - 1
-                "
+                v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
                 class="px-2 text-gray-400 dark:text-gray-500 text-sm"
                 >...</span
               >
@@ -440,16 +413,11 @@
                 'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
                 currentPage === totalPages
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600',
+                  : 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-gray-600'
               ]"
             >
-              {{ $t("selanjutnya") }}
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              {{ $t('selanjutnya') }}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -467,7 +435,7 @@
         <Modal v-model="openDetail" :hideDefaultFooter="true" size="xl">
           <template #title>
             <h2 class="text-xl font-semibold ml-5 mt-5 mb-4 dark:text-white">
-              {{ $t("sign_detail_dokumen") }}
+              {{ $t('sign_detail_dokumen') }}
             </h2>
           </template>
           <div v-if="loadingDetail" class="p-12 text-center">
@@ -476,7 +444,7 @@
                 class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
               ></div>
               <p class="text-gray-500 dark:text-gray-400 text-sm">
-                {{ $t("sign_memuat_detail") }}
+                {{ $t('sign_memuat_detail') }}
               </p>
             </div>
           </div>
@@ -487,7 +455,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("sign_no_dokumen_label") }}
+                  {{ $t('sign_no_dokumen_label') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.nomorDokumen }}
@@ -495,7 +463,7 @@
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("sign_tanggal_dokumen") }}
+                  {{ $t('sign_tanggal_dokumen') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ formatDate(penandatanganDetail.tanggalDokumen) }}
@@ -503,29 +471,23 @@
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("sign_jenis_naskah") }}
+                  {{ $t('sign_jenis_naskah') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
-                  {{
-                    penandatanganDetail.jenisNaskahText ||
-                    penandatanganDetail.jenisNaskah
-                  }}
+                  {{ penandatanganDetail.jenisNaskahText || penandatanganDetail.jenisNaskah }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("klasifikasi") }}
+                  {{ $t('klasifikasi') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
-                  {{
-                    penandatanganDetail.klasifikasiText ||
-                    penandatanganDetail.klasifikasi
-                  }}
+                  {{ penandatanganDetail.klasifikasiText || penandatanganDetail.klasifikasi }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("perihal") }}
+                  {{ $t('perihal') }}
                 </p>
                 <p class="font-medium text-gray-900 dark:text-white">
                   {{ penandatanganDetail.perihal }}
@@ -533,7 +495,7 @@
               </div>
               <div>
                 <p class="text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("sign_status_dokumen") }}
+                  {{ $t('sign_status_dokumen') }}
                 </p>
                 <span
                   class="px-3 py-1 rounded-lg text-xs font-medium inline-block"
@@ -544,39 +506,37 @@
               </div>
               <div class="md:col-span-2">
                 <p class="text-gray-500 dark:text-gray-400 mb-2">
-                  {{ $t("dokumen") }}
+                  {{ $t('dokumen') }}
                 </p>
                 <button
                   @click="viewDocumentFromDetail"
                   class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
                 >
                   <FileCheck class="w-4 h-4" />
-                  {{ $t("sign_lihat_preview") }}
+                  {{ $t('sign_lihat_preview') }}
                   <ChevronRight class="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div
-              class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
-            >
+            <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
               <table class="w-full text-sm">
                 <thead class="bg-primary dark:bg-primary-700 text-white">
                   <tr>
                     <th class="p-3 text-left font-semibold">
-                      {{ $t("sign_col_no") }}
+                      {{ $t('sign_col_no') }}
                     </th>
                     <th class="p-3 text-left font-semibold">
-                      {{ $t("sign_col_enik") }}
+                      {{ $t('sign_col_enik') }}
                     </th>
                     <th class="p-3 text-left font-semibold">
-                      {{ $t("sign_col_nama_jabatan") }}
+                      {{ $t('sign_col_nama_jabatan') }}
                     </th>
                     <th class="p-3 text-center font-semibold">
-                      {{ $t("sign_status") }}
+                      {{ $t('sign_status') }}
                     </th>
                     <th class="p-3 text-left font-semibold">
-                      {{ $t("sign_col_keterangan") }}
+                      {{ $t('sign_col_keterangan') }}
                     </th>
                   </tr>
                 </thead>
@@ -596,9 +556,7 @@
                       <div class="font-semibold text-gray-900 dark:text-white">
                         {{ signer.nama }}
                       </div>
-                      <div
-                        class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
-                      >
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {{ signer.jabatan }}
                       </div>
                     </td>
@@ -613,7 +571,7 @@
                     <td class="p-3">
                       <div v-if="signer.status === 'signed' && signer.signedAt">
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                          {{ $t("sign_ditandatangani_pada") }}
+                          {{ $t('sign_ditandatangani_pada') }}
                         </p>
                         <p class="font-medium text-gray-900 dark:text-white">
                           {{ formatDate(signer.signedAt) }}
@@ -625,11 +583,7 @@
                           {{ signer.keterangan }}
                         </p>
                       </div>
-                      <div
-                        v-else-if="
-                          signer.status === 'rejected' && signer.rejectedAt
-                        "
-                      >
+                      <div v-else-if="signer.status === 'rejected' && signer.rejectedAt">
                         <p
                           v-if="signer.keterangan"
                           class="text-xs mt-1 text-center text-gray-900 dark:text-white font-mono"
@@ -654,7 +608,7 @@
         <Modal v-model="openSign" :hideDefaultFooter="true" size="xl">
           <template #title>
             <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 dark:text-white">
-              {{ $t("sign_tanda_tangan_digital") }}
+              {{ $t('sign_tanda_tangan_digital') }}
             </h2>
           </template>
           <div class="px-6 pb-6 space-y-5">
@@ -669,7 +623,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {{ $t("sign_ditandatangani_oleh") }}
+                  {{ $t('sign_ditandatangani_oleh') }}
                 </p>
                 <p class="font-semibold text-gray-900 dark:text-white">
                   {{ selectedDoc.mySignerInfo?.nama }}
@@ -680,10 +634,8 @@
               </div>
             </div>
             <div>
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {{ $t("sign_passphrase") }} <span class="text-red-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('sign_passphrase') }} <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="passphrase"
@@ -692,17 +644,13 @@
                 :placeholder="$t('sign_passphrase_placeholder')"
               />
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {{ $t("sign_passphrase_hint") }}
+                {{ $t('sign_passphrase_hint') }}
               </p>
             </div>
             <div>
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {{ $t("sign_keterangan") }}
-                <span class="text-gray-400 text-xs"
-                  >({{ $t("sign_keterangan_opsional") }})</span
-                >
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('sign_keterangan') }}
+                <span class="text-gray-400 text-xs">({{ $t('sign_keterangan_opsional') }})</span>
               </label>
               <textarea
                 v-model="keterangan"
@@ -718,19 +666,16 @@
                 'w-full rounded-lg py-3 font-semibold text-sm transition',
                 passphrase && !loadingSign
                   ? 'bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white'
-                  : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-500 cursor-not-allowed',
+                  : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-500 cursor-not-allowed'
               ]"
             >
-              <span
-                v-if="loadingSign"
-                class="flex items-center justify-center gap-2"
-              >
+              <span v-if="loadingSign" class="flex items-center justify-center gap-2">
                 <div
                   class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
                 ></div>
-                {{ $t("sign_memproses") }}
+                {{ $t('sign_memproses') }}
               </span>
-              <span v-else>{{ $t("sign_proses_tanda_tangan") }}</span>
+              <span v-else>{{ $t('sign_proses_tanda_tangan') }}</span>
             </button>
           </div>
         </Modal>
@@ -740,33 +685,27 @@
       <Teleport to="body">
         <Modal v-model="confirmRejectOpen" :hideDefaultFooter="true" size="xl">
           <template #title>
-            <h2
-              class="text-lg font-semibold ml-5 mt-5 mb-3 text-gray-900 dark:text-white"
-            >
-              {{ $t("sign_tolak_dokumen") }}
+            <h2 class="text-lg font-semibold ml-5 mt-5 mb-3 text-gray-900 dark:text-white">
+              {{ $t('sign_tolak_dokumen') }}
             </h2>
           </template>
           <div class="px-6 pb-6 space-y-4">
             <div
               class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg"
             >
-              <AlertTriangle
-                class="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5"
-              />
+              <AlertTriangle class="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p class="text-sm font-medium text-red-800 dark:text-red-400">
-                  {{ $t("sign_peringatan") }}
+                  {{ $t('sign_peringatan') }}
                 </p>
                 <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-                  {{ $t("sign_konfirmasi_tolak") }}
+                  {{ $t('sign_konfirmasi_tolak') }}
                 </p>
               </div>
             </div>
             <div>
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {{ $t("sign_alasan_penolakan") }}
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('sign_alasan_penolakan') }}
                 <span class="text-red-500">*</span>
               </label>
               <textarea
@@ -776,22 +715,20 @@
                 :placeholder="$t('sign_alasan_placeholder')"
               ></textarea>
             </div>
-            <div
-              class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
-            >
+            <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 @click="confirmRejectOpen = false"
                 class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
               >
-                {{ $t("sign_batal") }}
+                {{ $t('sign_batal') }}
               </button>
               <button
                 @click="rejectNow"
                 :disabled="!rejectReason || loadingReject"
                 class="flex-1 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span v-if="loadingReject">{{ $t("sign_memproses") }}</span>
-                <span v-else>{{ $t("sign_tolak_dokumen") }}</span>
+                <span v-if="loadingReject">{{ $t('sign_memproses') }}</span>
+                <span v-else>{{ $t('sign_tolak_dokumen') }}</span>
               </button>
             </div>
           </div>
@@ -807,15 +744,13 @@
         :ui="{ content: 'h-screen max-h-screen', body: 'p-0' }"
       >
         <template #body>
-          <div
-            class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"
-          >
+          <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
             <div v-if="loadingPreview" class="flex flex-col items-center gap-3">
               <div
                 class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
               ></div>
               <span class="text-gray-500 dark:text-gray-400 text-sm">{{
-                $t("sign_memuat_pratinjau")
+                $t('sign_memuat_pratinjau')
               }}</span>
             </div>
             <iframe
@@ -828,7 +763,7 @@
             <div v-else class="flex flex-col items-center gap-3">
               <FileX class="w-12 h-12 text-gray-400 dark:text-gray-600" />
               <span class="text-gray-500 dark:text-gray-400 text-sm">{{
-                $t("sign_gagal_memuat")
+                $t('sign_gagal_memuat')
               }}</span>
             </div>
           </div>
@@ -850,13 +785,13 @@ import {
   FileCheck,
   AlertTriangle,
   ArrowUpDown,
-  ChevronRight,
-} from "lucide-vue-next";
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
-import { useI18n } from "vue-i18n";
-import Modal from "~/components/Modal.vue";
-import { useDigsig } from "~/composables/useDigsig";
-import type { PenandatangananDocument } from "~/types/digsig";
+  ChevronRight
+} from 'lucide-vue-next';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import Modal from '~/components/Modal.vue';
+import { useDigsig } from '~/composables/useDigsig';
+import type { PenandatangananDocument } from '~/types/digsig';
 
 const { t } = useI18n();
 const toast = useToast();
@@ -871,7 +806,7 @@ const {
   fetchPenandatanganDocuments,
   fetchPenandatanganDetail,
   signDocument,
-  rejectDocument,
+  rejectDocument
 } = useDigsig();
 
 // ─── Modal states ─────────────────────────────
@@ -884,26 +819,26 @@ const selectedDoc = ref<PenandatangananDocument | null>(null);
 const isOpenPreview = ref(false);
 const pdfUrl = ref<string | null>(null);
 const loadingPreview = ref(false);
-const previewSource = ref<"detail" | null>(null);
+const previewSource = ref<'detail' | null>(null);
 
 // ─── Form state ───────────────────────────────
-const passphrase = ref("");
-const keterangan = ref("");
-const rejectReason = ref("");
+const passphrase = ref('');
+const keterangan = ref('');
+const rejectReason = ref('');
 const loadingSign = ref(false);
 const loadingReject = ref(false);
 const itemToReject = ref<PenandatangananDocument | null>(null);
 
 // ─── Filter & Pagination ──────────────────────
-const search = ref("");
-const filterStatus = ref("");
+const search = ref('');
+const filterStatus = ref('');
 const openFilterStatus = ref(false);
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
 const showRowsDropdown = ref(false);
-const sortKey = ref("");
-const sortOrder = ref("asc");
+const sortKey = ref('');
+const sortOrder = ref('asc');
 
 // ─── Refs for click-outside ───────────────────
 const rowsRef = ref<HTMLElement | null>(null);
@@ -911,32 +846,30 @@ const filterStatusRef = ref<HTMLElement | null>(null);
 
 // ─── Breadcrumbs (reactive to locale) ────────
 const breadcrumbs = computed(() => [
-  { label: t("beranda"), to: "/beranda" },
-  { label: t("sign_title"), to: "/admin/digsig/penandatanganan" },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('sign_title'), to: '/admin/digsig/penandatanganan' }
 ]);
 
 // ─── Filter options (reactive to locale) ─────
 const filterOptions = computed(() => [
-  { label: t("sign_filter_semua"), value: "" },
-  { label: t("sign_filter_menunggu"), value: "waiting" },
-  { label: t("sign_filter_sudah_ttd"), value: "signed" },
-  { label: t("sign_filter_ditolak"), value: "rejected" },
+  { label: t('sign_filter_semua'), value: '' },
+  { label: t('sign_filter_menunggu'), value: 'waiting' },
+  { label: t('sign_filter_sudah_ttd'), value: 'signed' },
+  { label: t('sign_filter_ditolak'), value: 'rejected' }
 ]);
 
 function handleSort(key: string) {
   if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
     sortKey.value = key;
-    sortOrder.value = "asc";
+    sortOrder.value = 'asc';
   }
 }
 
 const filterStatusLabel = computed(() => {
-  const found = filterOptions.value.find(
-    (opt) => opt.value === filterStatus.value,
-  );
-  return found?.label || t("sign_filter_semua");
+  const found = filterOptions.value.find((opt) => opt.value === filterStatus.value);
+  return found?.label || t('sign_filter_semua');
 });
 
 const filteredRows = computed(() => {
@@ -944,29 +877,21 @@ const filteredRows = computed(() => {
   if (search.value) {
     const s = search.value.toLowerCase();
     filtered = filtered.filter(
-      (doc) =>
-        doc.nomorDokumen?.toLowerCase().includes(s) ||
-        doc.perihal?.toLowerCase().includes(s),
+      (doc) => doc.nomorDokumen?.toLowerCase().includes(s) || doc.perihal?.toLowerCase().includes(s)
     );
   }
   if (filterStatus.value) {
-    filtered = filtered.filter(
-      (doc) => doc.mySignerStatus === filterStatus.value,
-    );
+    filtered = filtered.filter((doc) => doc.mySignerStatus === filterStatus.value);
   }
   return filtered;
 });
 
 const totalRows = computed(() => filteredRows.value.length);
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(totalRows.value / rowsPerPage.value)),
-);
+const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / rowsPerPage.value)));
 const startRow = computed(() =>
-  totalRows.value === 0 ? 0 : (currentPage.value - 1) * rowsPerPage.value + 1,
+  totalRows.value === 0 ? 0 : (currentPage.value - 1) * rowsPerPage.value + 1
 );
-const endRow = computed(() =>
-  Math.min(currentPage.value * rowsPerPage.value, totalRows.value),
-);
+const endRow = computed(() => Math.min(currentPage.value * rowsPerPage.value, totalRows.value));
 
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;
@@ -984,64 +909,77 @@ const paginationPages = computed(() => {
 });
 
 // ─── Helpers ──────────────────────────────────
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
 const formatDate = (dateString: string) => {
-  if (!dateString) return "-";
-  const localString = dateString.replace("Z", "").replace("+00:00", "");
+  if (!dateString) return '-';
+  const localString = dateString.replace('Z', '').replace('+00:00', '');
   const date = new Date(localString);
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 };
 
 const getSignerStatusClass = (status: string) => {
   const map: Record<string, string> = {
-    waiting:
-      "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300",
-    pending: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
-    signed: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
-    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
+    waiting: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    pending: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300',
+    signed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
   };
-  return (
-    map[status] ||
-    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-  );
+  return map[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
 };
 
 const getSignerStatusLabel = (status: string) => {
   const map: Record<string, string> = {
-    waiting: t("sign_status_menunggu"),
-    pending: t("sign_status_pending"),
-    signed: t("sign_status_sudah_ttd"),
-    rejected: t("sign_status_ditolak"),
+    waiting: t('sign_status_menunggu'),
+    pending: t('sign_status_pending'),
+    signed: t('sign_status_sudah_ttd'),
+    rejected: t('sign_status_ditolak')
   };
   return map[status] || status;
 };
 
 const getDocStatusClass = (status: string) => {
   const map: Record<string, string> = {
-    draft: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
-    on_progress:
-      "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300",
-    completed:
-      "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300",
-    rejected: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300",
+    draft: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+    on_progress: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300',
+    completed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
   };
-  return (
-    map[status] ||
-    "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-  );
+  return map[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
 };
 
 const getDocStatusLabel = (status: string) => {
   const map: Record<string, string> = {
-    on_progress: t("sign_status_on_progress"),
-    completed: t("sign_status_selesai"),
-    rejected: t("sign_status_ditolak"),
-    draft: t("sign_status_draft"),
+    on_progress: t('sign_status_on_progress'),
+    completed: t('sign_status_selesai'),
+    rejected: t('sign_status_ditolak'),
+    draft: t('sign_status_draft')
   };
   return map[status] || status;
 };
@@ -1057,9 +995,9 @@ const viewDocumentFromTable = (row: PenandatangananDocument) => {
   const url = row.signedFilePreviewUrl || row.filePreviewUrl;
   if (!url) {
     toast.add({
-      title: "Gagal",
-      description: t("sign_toast_gagal_preview"),
-      color: "red",
+      title: 'Gagal',
+      description: t('sign_toast_gagal_preview'),
+      color: 'red'
     });
     return;
   }
@@ -1071,17 +1009,16 @@ const viewDocumentFromTable = (row: PenandatangananDocument) => {
 const viewDocumentFromDetail = () => {
   if (!penandatanganDetail.value) return;
   const url =
-    penandatanganDetail.value.signedFilePreviewUrl ||
-    penandatanganDetail.value.filePreviewUrl;
+    penandatanganDetail.value.signedFilePreviewUrl || penandatanganDetail.value.filePreviewUrl;
   if (!url) {
     toast.add({
-      title: "Gagal",
-      description: t("sign_toast_gagal_preview"),
-      color: "red",
+      title: 'Gagal',
+      description: t('sign_toast_gagal_preview'),
+      color: 'red'
     });
     return;
   }
-  previewSource.value = "detail";
+  previewSource.value = 'detail';
   openDetail.value = false;
   pdfUrl.value = url;
   isOpenPreview.value = true;
@@ -1090,11 +1027,11 @@ const viewDocumentFromDetail = () => {
 // ─── Watch: ketika slideover ditutup ──────────
 watch(isOpenPreview, (isOpen) => {
   if (!isOpen) {
-    if (pdfUrl.value && !pdfUrl.value.startsWith("http")) {
+    if (pdfUrl.value && !pdfUrl.value.startsWith('http')) {
       URL.revokeObjectURL(pdfUrl.value);
     }
     pdfUrl.value = null;
-    if (previewSource.value === "detail") {
+    if (previewSource.value === 'detail') {
       openDetail.value = true;
       previewSource.value = null;
     }
@@ -1108,9 +1045,9 @@ const isUUID = (str: string) =>
 const handleViewDetail = async (doc: PenandatangananDocument) => {
   if (!isUUID(doc.id)) {
     toast.add({
-      title: "Gagal",
-      description: t("sign_toast_data_tidak_valid"),
-      color: "red",
+      title: 'Gagal',
+      description: t('sign_toast_data_tidak_valid'),
+      color: 'red'
     });
     return;
   }
@@ -1122,8 +1059,8 @@ const handleViewDetail = async (doc: PenandatangananDocument) => {
 const handleOpenSign = (doc: PenandatangananDocument) => {
   selectedDoc.value = doc;
   openSign.value = true;
-  passphrase.value = "";
-  keterangan.value = "";
+  passphrase.value = '';
+  keterangan.value = '';
 };
 
 const handleSign = async () => {
@@ -1134,18 +1071,17 @@ const handleSign = async () => {
     if (keterangan.value.trim()) payload.keterangan = keterangan.value.trim();
     await signDocument(selectedDoc.value.id, payload);
     toast.add({
-      title: "Berhasil",
-      description: t("sign_toast_berhasil_ttd"),
-      color: "green",
+      title: 'Berhasil',
+      description: t('sign_toast_berhasil_ttd'),
+      color: 'green'
     });
     openSign.value = false;
-    passphrase.value = "";
-    keterangan.value = "";
+    passphrase.value = '';
+    keterangan.value = '';
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message || err?.message || t("sign_toast_gagal_ttd");
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    const msg = err?.response?.data?.message || err?.message || t('sign_toast_gagal_ttd');
+    toast.add({ title: 'Gagal', description: msg, color: 'red' });
   } finally {
     loadingSign.value = false;
   }
@@ -1154,7 +1090,7 @@ const handleSign = async () => {
 // ─── Reject ───────────────────────────────────
 const handleReject = (doc: PenandatangananDocument) => {
   itemToReject.value = doc;
-  rejectReason.value = "";
+  rejectReason.value = '';
   confirmRejectOpen.value = true;
 };
 
@@ -1164,19 +1100,16 @@ const rejectNow = async () => {
   try {
     await rejectDocument(itemToReject.value.id, rejectReason.value.trim());
     toast.add({
-      title: "Berhasil",
-      description: t("sign_toast_berhasil_tolak"),
-      color: "green",
+      title: 'Berhasil',
+      description: t('sign_toast_berhasil_tolak'),
+      color: 'green'
     });
     confirmRejectOpen.value = false;
-    rejectReason.value = "";
+    rejectReason.value = '';
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
-    const msg =
-      err?.response?.data?.message ||
-      err?.message ||
-      t("sign_toast_gagal_tolak");
-    toast.add({ title: "Gagal", description: msg, color: "red" });
+    const msg = err?.response?.data?.message || err?.message || t('sign_toast_gagal_tolak');
+    toast.add({ title: 'Gagal', description: msg, color: 'red' });
   } finally {
     loadingReject.value = false;
   }
@@ -1195,12 +1128,12 @@ const handleClickOutside = (e: MouseEvent) => {
 
 // ─── Lifecycle ────────────────────────────────
 onMounted(async () => {
-  document.addEventListener("click", handleClickOutside);
+  document.addEventListener('click', handleClickOutside);
   await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
+  document.removeEventListener('click', handleClickOutside);
 });
 
 watch([search, filterStatus, rowsPerPage], () => {

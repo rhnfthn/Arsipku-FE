@@ -17,7 +17,7 @@
       >
         <!-- TOP BAR -->
         <div
-          class="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-700"
+          class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5 border-b border-gray-200 dark:border-gray-700"
         >
           <!-- ROWS PER PAGE -->
           <div class="flex items-center gap-2">
@@ -242,10 +242,10 @@
                   {{ formatDate(row.tanggalDibuat) }}
                 </td>
                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {{ row.nomorDokumen }}
+                  <span v-html="highlight(row.nomorDokumen, search)"></span>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                  {{ row.perihal }}
+                  <span v-html="highlight(row.perihal, search)"></span>
                 </td>
                 <td class="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-300">
                   {{ row.totalPenandatangan }}
@@ -914,6 +914,28 @@ const paginationPages = computed(() => {
 });
 
 // ─── Helpers ──────────────────────────────────
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
 const formatDate = (dateString: string) => {
   if (!dateString) return '-';
   const localString = dateString.replace('Z', '').replace('+00:00', '');
