@@ -383,8 +383,7 @@ function formatStatus(status: string) {
       return t('cek_status_valid_label')
     case 'INVALID':
       return t('cek_status_invalid_label')
-    case 'EXPIRED':
-      return t('cek_status_expired_label')
+
     case 'UNKNOWN':
       return t('cek_status_unknown_label')
     default:

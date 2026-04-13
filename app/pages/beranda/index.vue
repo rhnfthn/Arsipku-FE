@@ -27,7 +27,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid gap-4">
           <UCard v-for="i in 4" :key="i" :ui="cardUI">
             <div class="flex justify-between items-start pl-2">
               <div class="space-y-2">
@@ -40,7 +40,7 @@
         </div>
 
         <div class="flex flex-col lg:flex-row gap-6">
-          <UCard :ui="cardUI" class="w-full lg:flex-1">
+          <!-- <UCard :ui="cardUI" class="w-full lg:flex-1">
             <template #header>
               <USkeleton class="h-6 w-32 bg-gray-200 dark:bg-gray-700" />
             </template>
@@ -51,7 +51,7 @@
               <USkeleton class="w-full h-[80%] bg-gray-200 dark:bg-gray-700 rounded-t" />
               <USkeleton class="w-full h-[60%] bg-gray-200 dark:bg-gray-700 rounded-t" />
             </div>
-          </UCard>
+          </UCard> -->
 
           <UCard :ui="cardUI" class="w-full lg:flex-1">
             <template #header>
@@ -139,8 +139,8 @@
           </NuxtLink>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-6">
-          <UCard :ui="cardUI" class="w-full lg:flex-1">
+        <!-- <div class="flex flex-col gap-6">
+          <UCard :ui="cardUI" class="w-full">
             <template #header>
               <div class="flex flex-col gap-3">
                 <Heading variant="heading9sb" class="font-semibold">{{ $t('statstitle') }}</Heading>
@@ -163,9 +163,11 @@
             <div class="mb-5">
               <canvas id="chart" height="250"></canvas>
             </div>
-          </UCard>
+          </UCard> -->
 
-          <UCard :ui="cardUI" class="w-full lg:flex-1">
+        <!-- <UCard :ui="cardUI" class="w-full lg:flex-1"> -->
+        <div class="flex flex-col gap-6">
+          <UCard :ui="cardUI" class="w-full">
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-gray-900 dark:text-white">
@@ -271,55 +273,55 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import { AlertTriangle } from 'lucide-vue-next';
-import { useAuth } from '@/composables/useAuth';
-import { useDashboard } from '@/composables/useDashboard';
+import { onMounted, watch } from 'vue'
+import { AlertTriangle } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
+import { useDashboard } from '@/composables/useDashboard'
 
 definePageMeta({
   middleware: 'auth'
-});
+})
 
-const { user, getProfile } = useAuth();
+const { user, getProfile } = useAuth()
 const { isLoading, error, stats, recentMails, chartData, fetchDashboardData, dashboardData } =
-  useDashboard();
+  useDashboard()
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const cardUI = {
   root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
   header: { padding: 'px-5 py-4 sm:px-6' },
   body: { padding: 'p-5 sm:p-6' },
   divide: 'divide-y divide-gray-100 dark:divide-gray-700'
-};
+}
 
 const formatName = (name: string | undefined) => {
-  if (!name) return 'User';
-  return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-};
+  if (!name) return 'User'
+  return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+}
 
 const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+  if (!dateString) return '-'
+  const date = new Date(dateString)
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
-  }).format(date);
-};
+  }).format(date)
+}
 
-let chartInstance: any = null;
+let chartInstance: any = null
 
 const initChart = async () => {
-  const data = chartData.value;
-  if (!data.labels.length) return;
+  const data = chartData.value
+  if (!data.labels.length) return
 
   try {
-    const chartJs = await import('chart.js/auto');
-    const Chart = chartJs.default;
-    const ctx = document.getElementById('chart') as HTMLCanvasElement;
-    if (!ctx) return;
-    if (chartInstance) chartInstance.destroy();
+    const chartJs = await import('chart.js/auto')
+    const Chart = chartJs.default
+    const ctx = document.getElementById('chart') as HTMLCanvasElement
+    if (!ctx) return
+    if (chartInstance) chartInstance.destroy()
 
     chartInstance = new Chart(ctx, {
       type: 'line',
@@ -377,7 +379,7 @@ const initChart = async () => {
             displayColors: true,
             callbacks: {
               title: function (context: any) {
-                return `Bulan: ${context[0].label}`;
+                return `Bulan: ${context[0].label}`
               }
             }
           }
@@ -394,23 +396,23 @@ const initChart = async () => {
           }
         }
       }
-    });
+    })
   } catch (err) {
-    console.error('Error initializing chart:', err);
+    console.error('Error initializing chart:', err)
   }
-};
+}
 
 watch(dashboardData, async (newData) => {
   if (newData?.statistik_bulanan) {
-    await initChart();
+    await initChart()
   }
-});
+})
 
 onMounted(async () => {
-  if (!user.value) await getProfile();
-  await fetchDashboardData();
-  if (dashboardData.value?.statistik_bulanan) await initChart();
-});
+  if (!user.value) await getProfile()
+  await fetchDashboardData()
+  if (dashboardData.value?.statistik_bulanan) await initChart()
+})
 </script>
 
 <style scoped>
