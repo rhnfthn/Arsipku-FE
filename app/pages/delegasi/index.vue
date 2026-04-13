@@ -1,18 +1,18 @@
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth'
-});
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
-import { Search, ArrowUpDown, RotateCcw, Plus, Pencil, Trash2, ChevronDown } from 'lucide-vue-next';
+})
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { Search, ArrowUpDown, RotateCcw, Plus, Pencil, Trash2, ChevronDown } from 'lucide-vue-next'
 
-import Modal from '~/components/Modal.vue';
-import ConfirmPopup from '~/components/ConfirmPopup.vue';
-import Heading from '~/components/Heading.vue';
+import Modal from '~/components/Modal.vue'
+import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import Heading from '~/components/Heading.vue'
 
-import { useDelegasi } from '~/composables/useDelegasi';
-import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/delegasi';
+import { useDelegasi } from '~/composables/useDelegasi'
+import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/delegasi'
 
-const toast = useToast();
+const toast = useToast()
 
 const {
   getDelegasiList,
@@ -22,109 +22,110 @@ const {
   createDelegasi,
   updateDelegasi,
   deleteDelegasi
-} = useDelegasi();
+} = useDelegasi()
 
 // STATE
-const isLoading = ref(false);
-const isSubmitting = ref(false);
-const search = ref('');
-const filterStatus = ref('Semua');
-const filterLokasi = ref('Semua');
-const filterJabatan = ref('Semua');
-const sortDirection = ref<'asc' | 'desc' | null>(null);
+const isLoading = ref(false)
+const isSubmitting = ref(false)
+const search = ref('')
+const filterStatus = ref('Semua')
+const filterLokasi = ref('Semua')
+const filterJabatan = ref('Semua')
+const sortDirection = ref<'asc' | 'desc' | null>(null)
 
-const showAddModal = ref(false);
-const showEditModal = ref(false);
+const showAddModal = ref(false)
+const showEditModal = ref(false)
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Delegasi', to: '/delegasi' }
-];
+]
 
-const listDelegasi = ref<any[]>([]);
-const totalItems = ref(0);
-const totalPagesApi = ref(1);
+const listDelegasi = ref<any[]>([])
+const totalItems = ref(0)
+const totalPagesApi = ref(1)
 
 const listLokasi = computed(() => {
-  const set = new Set(listDelegasi.value.map((item) => item.lokasi));
-  return Array.from(set).sort();
-});
+  const set = new Set(listDelegasi.value.map((item) => item.lokasi))
+  return Array.from(set).sort()
+})
 
 const listJabatanFilter = computed(() => {
-  const set = new Set(listDelegasi.value.map((item) => item.jabatan));
-  return Array.from(set).sort();
-});
+  const set = new Set(listDelegasi.value.map((item) => item.jabatan))
+  return Array.from(set).sort()
+})
 
 // FILTER DROPDOWN STATE
-const openFilterStatus = ref(false);
-const openFilterLokasi = ref(false);
-const openFilterJabatan = ref(false);
+const openFilterStatus = ref(false)
+const openFilterLokasi = ref(false)
+const openFilterJabatan = ref(false)
 
 const statusOptions = [
   { label: 'Semua Status', value: 'Semua' },
   { label: 'Aktif', value: 'aktif' },
   { label: 'Akan Datang', value: 'tidak_aktif' },
   { label: 'Kadaluwarsa', value: 'kedaluwarsa' }
-];
+]
 
 const statusLabel = computed(
   () => statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
-);
+)
 const lokasiLabel = computed(() =>
   filterLokasi.value === 'Semua' ? 'Semua Lokasi' : filterLokasi.value
-);
+)
 const jabatanLabel = computed(() =>
   filterJabatan.value === 'Semua' ? 'Semua Jabatan' : filterJabatan.value
-);
+)
 
 function toggleFilterStatus() {
-  openFilterStatus.value = !openFilterStatus.value;
-  openFilterLokasi.value = false;
-  openFilterJabatan.value = false;
+  openFilterStatus.value = !openFilterStatus.value
+  openFilterLokasi.value = false
+  openFilterJabatan.value = false
 }
 function toggleFilterLokasi() {
-  openFilterLokasi.value = !openFilterLokasi.value;
-  openFilterStatus.value = false;
-  openFilterJabatan.value = false;
+  openFilterLokasi.value = !openFilterLokasi.value
+  openFilterStatus.value = false
+  openFilterJabatan.value = false
 }
 function toggleFilterJabatan() {
-  openFilterJabatan.value = !openFilterJabatan.value;
-  openFilterStatus.value = false;
-  openFilterLokasi.value = false;
+  openFilterJabatan.value = !openFilterJabatan.value
+  openFilterStatus.value = false
+  openFilterLokasi.value = false
 }
 function selectFilterStatus(val: string) {
-  filterStatus.value = val;
-  openFilterStatus.value = false;
+  filterStatus.value = val
+  openFilterStatus.value = false
 }
 function selectFilterLokasi(val: string) {
-  filterLokasi.value = val;
-  openFilterLokasi.value = false;
+  filterLokasi.value = val
+  openFilterLokasi.value = false
 }
 function selectFilterJabatan(val: string) {
-  filterJabatan.value = val;
-  openFilterJabatan.value = false;
+  filterJabatan.value = val
+  openFilterJabatan.value = false
 }
 
 // FETCH DATA
-const rowsPerPage = ref(10);
-const currentPage = ref(1);
+const rowsPerPage = ref(10)
+const currentPage = ref(1)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const fetchData = async () => {
-  isLoading.value = true;
+  isLoading.value = true
   try {
     const params = {
       page: currentPage.value,
       limit: rowsPerPage.value,
       search: search.value,
       status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
-    };
-    const res = await getDelegasiList(params);
-    const wrapper = res.data;
-    const dataArray = wrapper?.data || [];
-    const meta = wrapper?.meta;
+    }
+    const res = await getDelegasiList(params)
+    const wrapper = res.data
+    const dataArray = wrapper?.data || []
+    const meta = wrapper?.meta
     if (!Array.isArray(dataArray)) {
-      listDelegasi.value = [];
-      return;
+      listDelegasi.value = []
+      return
     }
     listDelegasi.value = dataArray.map((item: any) => ({
       id: item.id,
@@ -137,109 +138,139 @@ const fetchData = async () => {
       tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
       status: item.status?.label || '-',
       raw: item
-    }));
+    }))
     if (meta) {
-      totalItems.value = meta.total;
-      totalPagesApi.value = meta.totalPages;
+      totalItems.value = meta.total
+      totalPagesApi.value = meta.totalPages
     }
   } catch (error) {
-    console.error('Gagal mengambil data:', error);
+    console.error('Gagal mengambil data:', error)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const [y, m, d] = dateStr.split('-');
-  return `${d}.${m}.${y}`;
-};
+  if (!dateStr) return ''
+  const [y, m, d] = dateStr.split('-')
+  return `${d}.${m}.${y}`
+}
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  )
+}
 
 const handleApiError = (error: any) => {
-  let message = 'Terjadi kesalahan pada sistem.';
-  const errData = error.data || error.response?._data || error.response?.data;
+  let message = 'Terjadi kesalahan pada sistem.'
+  const errData = error.data || error.response?._data || error.response?.data
   if (errData) {
-    if (Array.isArray(errData.message)) message = errData.message[0];
-    else if (typeof errData.message === 'string') message = errData.message;
+    if (Array.isArray(errData.message)) message = errData.message[0]
+    else if (typeof errData.message === 'string') message = errData.message
   } else if (error.message) {
-    message = error.message;
+    message = error.message
   }
-  toast.add({ title: 'Gagal', description: message, color: 'error' });
-};
+  toast.add({ title: 'Gagal', description: message, color: 'error' })
+}
 
 const validateDates = (start: string, end: string) => {
-  if (!start || !end) return 'Tanggal mulai dan sampai harus diisi.';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  if (startDate < today) return 'Tanggal mulai tidak boleh kurang dari hari ini.';
-  if (endDate < startDate) return 'Tanggal sampai tidak boleh kurang dari tanggal mulai.';
-  return null;
-};
+  if (!start || !end) return 'Tanggal mulai dan sampai harus diisi.'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  if (startDate < today) return 'Tanggal mulai tidak boleh kurang dari hari ini.'
+  if (endDate < startDate) return 'Tanggal sampai tidak boleh kurang dari tanggal mulai.'
+  return null
+}
 
 const toggleSort = () => {
-  if (!sortDirection.value) sortDirection.value = 'asc';
-  else if (sortDirection.value === 'asc') sortDirection.value = 'desc';
-  else sortDirection.value = null;
-};
+  if (!sortDirection.value) sortDirection.value = 'asc'
+  else if (sortDirection.value === 'asc') sortDirection.value = 'desc'
+  else sortDirection.value = null
+}
 
 const refreshData = () => {
-  search.value = '';
-  filterStatus.value = 'Semua';
-  filterLokasi.value = 'Semua';
-  filterJabatan.value = 'Semua';
-  sortDirection.value = null;
-  currentPage.value = 1;
-  fetchData();
-};
+  search.value = ''
+  filterStatus.value = 'Semua'
+  filterLokasi.value = 'Semua'
+  filterJabatan.value = 'Semua'
+  sortDirection.value = null
+  currentPage.value = 1
+  fetchData()
+}
+
+const handleSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchData()
+  }, 300)
+}
 
 const filteredData = computed(() => {
-  let data = [...listDelegasi.value];
+  let data = [...listDelegasi.value]
   if (filterLokasi.value !== 'Semua')
-    data = data.filter((item) => item.lokasi === filterLokasi.value);
+    data = data.filter((item) => item.lokasi === filterLokasi.value)
   if (filterJabatan.value !== 'Semua')
-    data = data.filter((item) => item.jabatan === filterJabatan.value);
-  if (sortDirection.value === 'asc') data.sort((a, b) => a.nama.localeCompare(b.nama));
-  if (sortDirection.value === 'desc') data.sort((a, b) => b.nama.localeCompare(a.nama));
-  return data;
-});
+    data = data.filter((item) => item.jabatan === filterJabatan.value)
+  if (sortDirection.value === 'asc') data.sort((a, b) => a.nama.localeCompare(b.nama))
+  if (sortDirection.value === 'desc') data.sort((a, b) => b.nama.localeCompare(a.nama))
+  return data
+})
 
 // DELETE
-const confirmDeleteOpen = ref(false);
-const itemToDelete = ref<any>(null);
+const confirmDeleteOpen = ref(false)
+const itemToDelete = ref<any>(null)
 
 const openDelete = (item: any) => {
-  itemToDelete.value = item;
-  confirmDeleteOpen.value = true;
-};
+  itemToDelete.value = item
+  confirmDeleteOpen.value = true
+}
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return;
-  isSubmitting.value = true;
+  if (!itemToDelete.value) return
+  isSubmitting.value = true
   try {
-    await deleteDelegasi(itemToDelete.value.id);
-    confirmDeleteOpen.value = false;
+    await deleteDelegasi(itemToDelete.value.id)
+    confirmDeleteOpen.value = false
     toast.add({
       title: 'Berhasil',
       description: `Data delegasi ${itemToDelete.value.nama} berhasil dihapus.`,
       color: 'success'
-    });
-    fetchData();
+    })
+    fetchData()
   } catch (error) {
-    handleApiError(error);
+    handleApiError(error)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 // DROPDOWN DATA API
-const personilOptions = ref<PersonilItem[]>([]);
-const sebagaiOptions = ref<PositionStatusItem[]>([]);
-const jabatanOptions = ref<JabatanItem[]>([]);
-const jabatanSearch = ref('');
-const personilSearch = ref('');
-const sebagaiSearch = ref('');
+const personilOptions = ref<PersonilItem[]>([])
+const sebagaiOptions = ref<PositionStatusItem[]>([])
+const jabatanOptions = ref<JabatanItem[]>([])
+const jabatanSearch = ref('')
+const personilSearch = ref('')
+const sebagaiSearch = ref('')
 
 const jabatanList = computed(() =>
   jabatanOptions.value.map((j) => ({
@@ -248,12 +279,12 @@ const jabatanList = computed(() =>
     value: j.id,
     raw: j
   }))
-);
+)
 const filteredJabatanList = computed(() => {
-  const query = jabatanSearch.value.toLowerCase();
-  if (!query) return jabatanList.value.slice(0, 10);
-  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
-});
+  const query = jabatanSearch.value.toLowerCase()
+  if (!query) return jabatanList.value.slice(0, 10)
+  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
+})
 const personilList = computed(() =>
   personilOptions.value.map((p) => ({
     id: p.persnum,
@@ -261,55 +292,55 @@ const personilList = computed(() =>
     value: p.persnum,
     raw: p
   }))
-);
+)
 const filteredPersonilList = computed(() => {
-  const query = personilSearch.value.toLowerCase();
-  if (!query) return personilList.value.slice(0, 10);
-  return personilList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
-});
+  const query = personilSearch.value.toLowerCase()
+  if (!query) return personilList.value.slice(0, 10)
+  return personilList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
+})
 const sebagaiList = computed(() =>
   sebagaiOptions.value.map((s) => ({
     id: s.value,
     label: s.label,
     value: s.value
   }))
-);
+)
 const filteredSebagaiList = computed(() => {
-  const query = sebagaiSearch.value.toLowerCase();
-  if (!query) return sebagaiList.value.slice(0, 10);
-  return sebagaiList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
-});
+  const query = sebagaiSearch.value.toLowerCase()
+  if (!query) return sebagaiList.value.slice(0, 10)
+  return sebagaiList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
+})
 
-const openNewPersonil = ref(false);
-const openNewSebagai = ref(false);
-const openNewJabatan = ref(false);
-const openEditPersonil = ref(false);
-const openEditSebagai = ref(false);
-const openEditJabatan = ref(false);
+const openNewPersonil = ref(false)
+const openNewSebagai = ref(false)
+const openNewJabatan = ref(false)
+const openEditPersonil = ref(false)
+const openEditSebagai = ref(false)
+const openEditJabatan = ref(false)
 
 function toggleNewJabatan() {
-  openNewJabatan.value = !openNewJabatan.value;
-  if (openNewJabatan.value) jabatanSearch.value = '';
+  openNewJabatan.value = !openNewJabatan.value
+  if (openNewJabatan.value) jabatanSearch.value = ''
 }
 function toggleEditJabatan() {
-  openEditJabatan.value = !openEditJabatan.value;
-  if (openEditJabatan.value) jabatanSearch.value = '';
+  openEditJabatan.value = !openEditJabatan.value
+  if (openEditJabatan.value) jabatanSearch.value = ''
 }
 function toggleNewPersonil() {
-  openNewPersonil.value = !openNewPersonil.value;
-  if (openNewPersonil.value) personilSearch.value = '';
+  openNewPersonil.value = !openNewPersonil.value
+  if (openNewPersonil.value) personilSearch.value = ''
 }
 function toggleEditPersonil() {
-  openEditPersonil.value = !openEditPersonil.value;
-  if (openEditPersonil.value) personilSearch.value = '';
+  openEditPersonil.value = !openEditPersonil.value
+  if (openEditPersonil.value) personilSearch.value = ''
 }
 function toggleNewSebagai() {
-  openNewSebagai.value = !openNewSebagai.value;
-  if (openNewSebagai.value) sebagaiSearch.value = '';
+  openNewSebagai.value = !openNewSebagai.value
+  if (openNewSebagai.value) sebagaiSearch.value = ''
 }
 function toggleEditSebagai() {
-  openEditSebagai.value = !openEditSebagai.value;
-  if (openEditSebagai.value) sebagaiSearch.value = '';
+  openEditSebagai.value = !openEditSebagai.value
+  if (openEditSebagai.value) sebagaiSearch.value = ''
 }
 
 onMounted(async () => {
@@ -318,22 +349,22 @@ onMounted(async () => {
     getPersonilList().then((res) => (personilOptions.value = res)),
     getPositionStatuses().then((res) => (sebagaiOptions.value = res)),
     getJabatanList().then((res) => (jabatanOptions.value = res))
-  ]);
-  document.addEventListener('click', handleDocumentClick);
-});
+  ])
+  document.addEventListener('click', handleDocumentClick)
+})
 
 // ERRORS
-const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
-const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' })
+const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' })
 
 const validateForm = (form: any, errors: typeof newErrors.value) => {
-  errors.personil = form.personil ? '' : 'Personil wajib dipilih';
-  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih';
-  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih';
-  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi';
-  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi';
-  return !Object.values(errors).some(Boolean);
-};
+  errors.personil = form.personil ? '' : 'Personil wajib dipilih'
+  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih'
+  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih'
+  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi'
+  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi'
+  return !Object.values(errors).some(Boolean)
+}
 
 // ADD
 const newDelegasi = ref({
@@ -342,32 +373,32 @@ const newDelegasi = ref({
   jabatan: '',
   mulai: '',
   sampai: ''
-});
+})
 const getPersonilLabel = (val: string) =>
-  personilList.value.find((p) => p.value === val)?.label || val;
+  personilList.value.find((p) => p.value === val)?.label || val
 const getSebagaiLabel = (val: string) =>
-  sebagaiList.value.find((s) => s.value === val)?.label || val;
+  sebagaiList.value.find((s) => s.value === val)?.label || val
 const getJabatanLabel = (val: string) =>
-  jabatanList.value.find((j) => j.value === val)?.label || val;
+  jabatanList.value.find((j) => j.value === val)?.label || val
 
 const openAdd = () => {
-  newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
-  newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
-  showAddModal.value = true;
-};
+  newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
+  newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
+  showAddModal.value = true
+}
 
 const saveDelegasi = async () => {
-  if (!validateForm(newDelegasi.value, newErrors.value)) return;
-  const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai);
+  if (!validateForm(newDelegasi.value, newErrors.value)) return
+  const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai)
   if (errorMsg) {
-    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
-    return;
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' })
+    return
   }
-  isSubmitting.value = true;
+  isSubmitting.value = true
   try {
     const selectedPersonil = personilOptions.value.find(
       (p) => p.persnum === newDelegasi.value.personil
-    );
+    )
     const payload = {
       start_date: newDelegasi.value.mulai,
       end_date: newDelegasi.value.sampai,
@@ -375,52 +406,52 @@ const saveDelegasi = async () => {
       as_persnum: newDelegasi.value.personil,
       as_name: selectedPersonil?.name,
       as_position: newDelegasi.value.jabatan
-    };
-    await createDelegasi(payload);
-    showAddModal.value = false;
+    }
+    await createDelegasi(payload)
+    showAddModal.value = false
     toast.add({
       title: 'Berhasil',
       description: 'Data delegasi berhasil ditambahkan.',
       color: 'success'
-    });
-    fetchData();
+    })
+    fetchData()
   } catch (error) {
-    handleApiError(error);
+    handleApiError(error)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 // SELECT helpers — clear error saat dipilih
 function selectNewPersonil(val: string) {
-  newDelegasi.value.personil = val;
-  newErrors.value.personil = '';
-  openNewPersonil.value = false;
+  newDelegasi.value.personil = val
+  newErrors.value.personil = ''
+  openNewPersonil.value = false
 }
 function selectNewSebagai(val: string) {
-  newDelegasi.value.sebagai = val;
-  newErrors.value.sebagai = '';
-  openNewSebagai.value = false;
+  newDelegasi.value.sebagai = val
+  newErrors.value.sebagai = ''
+  openNewSebagai.value = false
 }
 function selectNewJabatan(val: string) {
-  newDelegasi.value.jabatan = val;
-  newErrors.value.jabatan = '';
-  openNewJabatan.value = false;
+  newDelegasi.value.jabatan = val
+  newErrors.value.jabatan = ''
+  openNewJabatan.value = false
 }
 function selectEditPersonil(val: string) {
-  editDelegasi.value.personil = val;
-  editErrors.value.personil = '';
-  openEditPersonil.value = false;
+  editDelegasi.value.personil = val
+  editErrors.value.personil = ''
+  openEditPersonil.value = false
 }
 function selectEditSebagai(val: string) {
-  editDelegasi.value.sebagai = val;
-  editErrors.value.sebagai = '';
-  openEditSebagai.value = false;
+  editDelegasi.value.sebagai = val
+  editErrors.value.sebagai = ''
+  openEditSebagai.value = false
 }
 function selectEditJabatan(val: string) {
-  editDelegasi.value.jabatan = val;
-  editErrors.value.jabatan = '';
-  openEditJabatan.value = false;
+  editDelegasi.value.jabatan = val
+  editErrors.value.jabatan = ''
+  openEditJabatan.value = false
 }
 
 // EDIT
@@ -431,10 +462,10 @@ const editDelegasi = ref({
   jabatan: '',
   mulai: '',
   sampai: ''
-});
+})
 
 const openEdit = (item: any) => {
-  const raw = item.raw;
+  const raw = item.raw
   editDelegasi.value = {
     id: item.id,
     personil: raw.as_persnum || '',
@@ -442,10 +473,10 @@ const openEdit = (item: any) => {
     jabatan: raw.as_position || '',
     mulai: raw.start_date,
     sampai: raw.end_date
-  };
-  editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
-  showEditModal.value = true;
-};
+  }
+  editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
+  showEditModal.value = true
+}
 
 const saveEditDelegasi = async () => {
   const editForm = {
@@ -454,14 +485,14 @@ const saveEditDelegasi = async () => {
     jabatan: editDelegasi.value.jabatan,
     mulai: editDelegasi.value.mulai,
     sampai: editDelegasi.value.sampai
-  };
-  if (!validateForm(editForm, editErrors.value)) return;
-  const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai);
-  if (errorMsg) {
-    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
-    return;
   }
-  isSubmitting.value = true;
+  if (!validateForm(editForm, editErrors.value)) return
+  const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai)
+  if (errorMsg) {
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' })
+    return
+  }
+  isSubmitting.value = true
   try {
     const payload = {
       start_date: editDelegasi.value.mulai,
@@ -469,71 +500,72 @@ const saveEditDelegasi = async () => {
       position_status: editDelegasi.value.sebagai,
       as_persnum: editDelegasi.value.personil,
       as_position: editDelegasi.value.jabatan
-    };
-    await updateDelegasi(editDelegasi.value.id, payload);
-    showEditModal.value = false;
+    }
+    await updateDelegasi(editDelegasi.value.id, payload)
+    showEditModal.value = false
     toast.add({
       title: 'Berhasil',
       description: 'Data delegasi berhasil diperbarui.',
       color: 'success'
-    });
-    fetchData();
+    })
+    fetchData()
   } catch (error) {
-    handleApiError(error);
+    handleApiError(error)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
-const paginatedDelegasi = computed(() => filteredData.value);
-const totalPages = computed(() => totalPagesApi.value);
+const paginatedDelegasi = computed(() => filteredData.value)
+const totalPages = computed(() => totalPagesApi.value)
 
 const paginationPages = computed(() => {
   const total = totalPages.value,
-    current = currentPage.value;
-  const pages: number[] = [];
+    current = currentPage.value
+  const pages: number[] = []
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i);
+    for (let i = 1; i <= total; i++) pages.push(i)
   } else {
-    if (current <= 2) pages.push(1, 2, 3, 4, 5);
-    else if (current >= total - 1) pages.push(total - 2, total - 1, total);
-    else pages.push(current - 1, current, current + 1);
+    if (current <= 2) pages.push(1, 2, 3, 4, 5)
+    else if (current >= total - 1) pages.push(total - 2, total - 1, total)
+    else pages.push(current - 1, current, current + 1)
   }
-  return pages;
-});
+  return pages
+})
 
 watch(
-  [search, filterStatus, filterLokasi, filterJabatan, rowsPerPage],
+  [filterStatus, filterLokasi, filterJabatan, rowsPerPage],
   () => {
-    currentPage.value = 1;
-    fetchData();
+    currentPage.value = 1
+    fetchData()
   },
   { deep: true }
-);
+)
 watch(currentPage, () => {
-  fetchData();
-});
+  fetchData()
+})
 
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]');
+  const target = e.target as HTMLElement
+  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]')
   for (const el of Array.from(dropdownEls)) {
-    if (el.contains(target)) return;
+    if (el.contains(target)) return
   }
-  openNewPersonil.value = false;
-  openNewSebagai.value = false;
-  openNewJabatan.value = false;
-  openEditPersonil.value = false;
-  openEditSebagai.value = false;
-  openEditJabatan.value = false;
-  openFilterStatus.value = false;
-  openFilterLokasi.value = false;
-  openFilterJabatan.value = false;
+  openNewPersonil.value = false
+  openNewSebagai.value = false
+  openNewJabatan.value = false
+  openEditPersonil.value = false
+  openEditSebagai.value = false
+  openEditJabatan.value = false
+  openFilterStatus.value = false
+  openFilterLokasi.value = false
+  openFilterJabatan.value = false
 }
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick);
-});
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+})
 
 const exportData = () => {
   if (filteredData.value.length === 0) {
@@ -541,29 +573,29 @@ const exportData = () => {
       title: 'Tidak ada data',
       description: 'Tidak ada data untuk diexport',
       color: 'warning'
-    });
-    return;
+    })
+    return
   }
-  const headers = ['Nama', 'Jabatan', 'Lokasi', 'Periode', 'Status'];
-  const rows = filteredData.value.map((i) => [i.nama, i.jabatan, i.lokasi, i.tanggal, i.status]);
-  const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
+  const headers = ['Nama', 'Jabatan', 'Lokasi', 'Periode', 'Status']
+  const rows = filteredData.value.map((i) => [i.nama, i.jabatan, i.lokasi, i.tanggal, i.status])
+  const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
   link.setAttribute(
     'download',
     `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
-  );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  )
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
   toast.add({
     title: 'Berhasil',
     description: `${filteredData.value.length} data berhasil diexport`,
     color: 'success'
-  });
-};
+  })
+}
 </script>
 
 <template>
@@ -751,7 +783,8 @@ const exportData = () => {
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
           <input
-            v-model.lazy="search"
+            v-model="search"
+            @input="handleSearchInput"
             type="text"
             placeholder="Cari..."
             class="pl-9 pr-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-50 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
@@ -842,34 +875,41 @@ const exportData = () => {
               >
                 <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{
-                      item.delegator_nama
-                    }}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
-                      item.delegator_jabatan
-                    }}</span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium"
+                      v-html="highlight(item.delegator_nama, search)"
+                    ></span>
+                    <span
+                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                      v-html="highlight(item.delegator_jabatan, search)"
+                    ></span>
                   </div>
                 </td>
                 <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{ item.nama }}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
-                      item.lokasi
-                    }}</span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium"
+                      v-html="highlight(item.nama, search)"
+                    ></span>
+                    <span
+                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                      v-html="highlight(item.lokasi, search)"
+                    ></span>
                   </div>
                 </td>
                 <td class="px-4 py-2">
                   <div class="flex flex-col">
                     <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1"
-                      >Status: {{ item.sebagai }}</span
-                    >
-                    <span class="text-gray-900 dark:text-white font-medium leading-snug">{{
-                      item.jabatan
-                    }}</span>
+                      >Status: <span v-html="highlight(item.sebagai, search)"></span
+                    ></span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium leading-snug"
+                      v-html="highlight(item.jabatan, search)"
+                    ></span>
                   </div>
                 </td>
                 <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
-                  {{ item.tanggal }}
+                  <span v-html="highlight(item.tanggal, search)"></span>
                 </td>
                 <td class="px-4 py-2">
                   <span
@@ -886,11 +926,16 @@ const exportData = () => {
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
                     ]"
                   >
-                    {{
-                      item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
-                        ? 'Akan Datang'
-                        : item.status
-                    }}
+                    <span
+                      v-html="
+                        highlight(
+                          item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
+                            ? 'Akan Datang'
+                            : item.status,
+                          search
+                        )
+                      "
+                    ></span>
                   </span>
                 </td>
                 <td class="px-4 py-2">

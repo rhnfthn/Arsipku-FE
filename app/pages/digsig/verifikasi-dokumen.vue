@@ -231,12 +231,12 @@
               </td>
               <td class="p-4">
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ doc.nomorDokumen }}
+                  <span v-html="highlight(doc.nomorDokumen, search)"></span>
                 </div>
               </td>
               <td class="p-4">
                 <div class="text-gray-700 dark:text-gray-300 text-sm">
-                  {{ doc.perihal }}
+                  <span v-html="highlight(doc.perihal, search)"></span>
                 </div>
               </td>
               <td class="p-4 text-center text-gray-900 dark:text-white">
@@ -1232,6 +1232,28 @@ const sortedRows = computed(() => {
     return 0;
   });
 });
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * rowsPerPage.value;

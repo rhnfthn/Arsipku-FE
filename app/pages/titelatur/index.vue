@@ -42,6 +42,29 @@ onBeforeUnmount(() => {
 
 // ─── Search + Sort ────────────────────────────────────────────────────────────
 const search = ref('');
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
+
 const filteredItems = computed(() => {
   const s = search.value.toLowerCase();
   return items.value.filter(
@@ -393,9 +416,12 @@ const deleteNow = async () => {
                 :key="it.id"
                 class="border-b border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition"
               >
-                <td class="px-5 py-3 text-gray-900 dark:text-white">{{ it.long_text || '-' }}</td>
+                <td
+                  class="px-5 py-3 text-gray-900 dark:text-white"
+                  v-html="highlight(it.long_text || '-', search)"
+                ></td>
                 <td class="px-5 py-3 text-gray-900 dark:text-white">
-                  {{ it.long_text_en || '-' }}
+                  <span v-html="highlight(it.long_text_en || '-', search)"></span>
                 </td>
                 <td class="px-4 py-3 text-center flex justify-center gap-1">
                   <button
