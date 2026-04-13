@@ -345,31 +345,77 @@ const applyCustomDate = () => {
 };
 
 // ── Excel Export ──────────────────────────────────────────────────────────────
-const downloadExcel = () => {
-  if (displayItems.value.length === 0) return;
-  const totalTerbaca = displayItems.value.filter((m) => m.isRead).length;
-  const totalBelumDibaca = displayItems.value.filter((m) => !m.isRead).length;
+// ── Excel Export ──────────────────────────────────────────────────────────────
+const isExporting = ref(false);
 
-  const tableData = displayItems.value.map((mail, i) => ({
-    No: i + 1,
-    Nomor: mail.nomor || "-",
-    Perihal: mail.subject || "-",
-    Pengirim: mail.from || "-",
-    Kategori: mail.category_label || mail.category || "-",
-    Tanggal: formatShortDate(mail.raw?.created_at),
-    Status_Baca: mail.isRead ? "Sudah Dibaca" : "Belum Dibaca",
-  }));
+const downloadExcel = async () => {
+  isExporting.value = true;
+  try {
+    // Fetch semua data tanpa pagination dan filter
+    const params: Record<string, any> = {
+      page: 1,
+      limit: 9999,
+    };
 
-  const ws = XLSX.utils.aoa_to_sheet([
-    ["RINGKASAN KOTAK MASUK (Halaman Ini)"],
-    ["Total Terbaca", totalTerbaca],
-    ["Total Belum Dibaca", totalBelumDibaca],
-    [],
-  ]);
-  XLSX.utils.sheet_add_json(ws, tableData, { origin: "A5" });
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Kotak Masuk");
-  XLSX.writeFile(wb, `kotak_masuk_${new Date().toISOString().split("T")[0]}.xlsx`);
+    // Hanya kirim jenis jika tab aktif bukan ALL
+    if (activeTab.value !== "ALL" && activeTab.value !== "Semua") {
+      params.jenis = activeTab.value;
+    }
+
+    await fetchInbox(params);
+    const allItems = items.value || [];
+
+    if (allItems.length === 0) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diekspor.', color: 'warning' });
+      return;
+    }
+
+    const totalTerbaca = allItems.filter((m) => m.isRead).length;
+    const totalBelumDibaca = allItems.filter((m) => !m.isRead).length;
+
+    const tableData = allItems.map((mail, i) => ({
+      No: i + 1,
+      Nomor: mail.nomor || "-",
+      Perihal: mail.subject || "-",
+      Pengirim: mail.from || "-",
+      Kategori: mail.category_label || mail.category || "-",
+      Tanggal: formatShortDate(mail.raw?.created_at),
+      Status_Baca: mail.isRead ? "Sudah Dibaca" : "Belum Dibaca",
+    }));
+
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["RINGKASAN KOTAK MASUK (Semua Data)"],
+      ["Total Item", allItems.length],
+      ["Total Terbaca", totalTerbaca],
+      ["Total Belum Dibaca", totalBelumDibaca],
+      [],
+    ]);
+    XLSX.utils.sheet_add_json(ws, tableData, { origin: "A6" });
+
+    // Set lebar kolom
+    ws['!cols'] = [
+      { wch: 5 },   // No
+      { wch: 15 },  // Nomor
+      { wch: 40 },  // Perihal
+      { wch: 30 },  // Pengirim
+      { wch: 12 },  // Kategori
+      { wch: 18 },  // Tanggal
+      { wch: 15 },  // Status Baca
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Kotak Masuk");
+    XLSX.writeFile(wb, `kotak_masuk_semua_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    toast.add({ title: 'Berhasil', description: `${allItems.length} data berhasil diekspor.`, color: 'success' });
+  } catch (err) {
+    console.error("Gagal export Excel:", err);
+    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan saat mengekspor data.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+    // Refresh kembali ke state semula setelah export
+    refreshData();
+  }
 };
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -599,10 +645,11 @@ onMounted(async () => {
         </div>
 
         <!-- Download Excel -->
-        <button @click="downloadExcel"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+        <button @click="downloadExcel" :disabled="isExporting"
+          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors disabled:opacity-50"
           title="Download Excel">
-          <Download class="w-3.5 h-3.5" />
+          <Loader2 v-if="isExporting" class="w-3.5 h-3.5 animate-spin" />
+          <Download v-else class="w-3.5 h-3.5" />
         </button>
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />

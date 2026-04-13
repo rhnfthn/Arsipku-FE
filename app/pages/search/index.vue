@@ -168,12 +168,20 @@
               <div
                 class="w-full md:w-auto shrink-0 flex flex-row md:items-center justify-between md:justify-end gap-4 mt-2 md:mt-0"
               >
-                <span
-                  class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-transparent min-w-[60px] text-center"
-                  :class="getCategoryStyle(item.jenis)"
-                >
-                  {{ getCategoryLabel(item.jenis) }}
-                </span>
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border border-transparent min-w-[60px] text-center"
+                    :class="getCategoryStyle(item.jenis)"
+                  >
+                    {{ getCategoryLabel(item.jenis) }}
+                  </span>
+                  <span
+                    v-if="item.priority"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800"
+                  >
+                    PRIORITAS
+                  </span>
+                </div>
 
                 <span
                   class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap font-medium min-w-[90px] text-right"

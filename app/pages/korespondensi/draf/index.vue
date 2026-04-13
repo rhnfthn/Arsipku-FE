@@ -475,11 +475,11 @@ onMounted(refreshData);
           </div>
         </div>
 
-        <button @click="downloadExcel"
+        <!-- <button @click="downloadExcel"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
           title="Download Excel">
           <Download class="w-3.5 h-3.5" />
-        </button>
+        </button> -->
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 

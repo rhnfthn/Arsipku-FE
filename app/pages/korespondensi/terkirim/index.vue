@@ -404,21 +404,84 @@ const applyCustomDate = () => {
 };
 
 // ── Excel Export ──────────────────────────────────────────────────────────────
-const downloadExcel = () => {
-  if (items.value.length === 0) return;
-  const tableData = items.value.map((mail, i) => ({
-    No: i + 1,
-    Nomor: mail.nomor || "-",
-    Perihal: mail.subject || "-",
-    Pengirim: mail.from || "-",
-    Kategori: mail.category_label || mail.category || "-",
-    Tanggal: formatShortDate(mail.fullDate),
-    Status_Baca: mail.viewCount > 0 ? "Sudah Dibaca" : "Belum Dibaca",
-  }));
-  const ws = XLSX.utils.json_to_sheet(tableData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Terkirim");
-  XLSX.writeFile(wb, `terkirim_${new Date().toISOString().split("T")[0]}.xlsx`);
+const downloadExcel = async () => {
+  try {
+    // Fetch semua data tanpa pagination — kirim limit besar, tanpa filter halaman
+    const exportParams: Record<string, any> = {
+      page: 1,
+      limit: 9999,
+    };
+
+    // Tetap terapkan filter jenis/tab agar kontekstual dengan tab aktif
+    // tapi TIDAK filter pagination, date, sort — export semua
+    // Hapus baris ini jika ingin export benar-benar semua tanpa filter tab:
+    if (activeTab.value !== "ALL" && activeTab.value !== "Semua") {
+      exportParams.jenis = activeTab.value;
+    }
+
+    // Jalankan fetch sementara ke instance terpisah agar tidak ganggu state utama
+    const { apiGet } = useApi();
+    const query = new URLSearchParams();
+    query.append('page', '1');
+    query.append('limit', '9999');
+    if (exportParams.jenis) query.append('jenis', exportParams.jenis);
+
+    const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
+    const responseBody = res?.data?.pagination ? res.data : res;
+    const allData: any[] = Array.isArray(responseBody?.data) ? responseBody.data : [];
+
+    if (allData.length === 0) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diekspor', color: 'warning' });
+      return;
+    }
+
+    const tableData = allData.map((item: any, i: number) => {
+      const listPenerima = item.penerima || [];
+      const isSDE = ['SDE', 'EXTERNAL', 'EKSTERNAL'].includes((item.jenis || '').toUpperCase());
+      const penerimaText = listPenerima
+        .map((p: any) => isSDE ? p.nama : (p.position_text || p.nama))
+        .join('; ');
+
+      const tembusanText = (item.tembusan || [])
+        .map((p: any) => p.position_text || p.nama)
+        .join('; ');
+
+      return {
+        No: i + 1,
+        Nomor: item.nomor || "-",
+        Jenis: item.jenis_label || item.jenis || "-",
+        Perihal: item.perihal || "-",
+        Pengirim: item.pengirim?.nama || "-",
+        Jabatan_Pengirim: item.pengirim?.position_text || "-",
+        Penerima: penerimaText || "-",
+        Tembusan: tembusanText || "-",
+        Total_Pembaca: item.summary_baca?.total || 0,
+        Sudah_Baca: item.summary_baca?.terbaca || 0,
+        Belum_Baca: item.summary_baca?.belum_terbaca || 0,
+        Sifat: item.sifat || "-",
+        Status: item.status || "-",
+        Tanggal: item.tanggal ? new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-",
+        Dibuat: item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-",
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(tableData);
+
+    // Auto-width kolom
+    const colWidths = Object.keys(tableData[0] || {}).map(key => ({
+      wch: Math.max(key.length, ...tableData.map(row => String(row[key] || '').length).slice(0, 50))
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Terkirim");
+    XLSX.writeFile(wb, `terkirim_semua_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    toast.add({ title: 'Berhasil', description: `${allData.length} data berhasil diekspor`, color: 'success' });
+  } catch (err) {
+    console.error('Export error:', err);
+    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan saat mengekspor data', color: 'error' });
+  }
 };
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -652,10 +715,10 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Download Excel -->
+        <!-- Ganti @click="downloadExcel" -->
         <button @click="downloadExcel"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          title="Download Excel">
+          title="Download Excel (Semua Data)">
           <Download class="w-3.5 h-3.5" />
         </button>
 
