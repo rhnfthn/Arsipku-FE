@@ -122,6 +122,26 @@ function selectRowsPerPage(val: number) {
   openRowsPerPage.value = false
 }
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  )
+}
+
 // FETCH DATA
 const rowsPerPage = ref(10)
 const currentPage = ref(1)
@@ -878,6 +898,12 @@ const exportData = async () => {
             />
             <input
               v-model="search"
+              @input="
+                () => {
+                  currentPage = 1
+                  fetchData()
+                }
+              "
               :placeholder="$t('del_cari_placeholder')"
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
@@ -974,34 +1000,41 @@ const exportData = async () => {
               >
                 <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{
-                      item.delegator_nama
-                    }}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
-                      item.delegator_jabatan
-                    }}</span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium"
+                      v-html="highlight(item.delegator_nama, search)"
+                    />
+                    <span
+                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                      v-html="highlight(item.delegator_jabatan, search)"
+                    />
                   </div>
                 </td>
                 <td class="px-4 py-2 min-w-[220px]">
                   <div class="flex flex-col">
-                    <span class="text-gray-900 dark:text-white font-medium">{{ item.nama }}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{
-                      item.lokasi
-                    }}</span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium"
+                      v-html="highlight(item.nama, search)"
+                    />
+                    <span
+                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                      v-html="highlight(item.lokasi, search)"
+                    />
                   </div>
                 </td>
                 <td class="px-4 py-2">
                   <div class="flex flex-col">
-                    <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1"
-                      >Status: {{ item.sebagai }}</span
-                    >
-                    <span class="text-gray-900 dark:text-white font-medium leading-snug">{{
-                      item.jabatan
-                    }}</span>
+                    <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1">
+                      Status: <span v-html="highlight(item.sebagai, search)" />
+                    </span>
+                    <span
+                      class="text-gray-900 dark:text-white font-medium leading-snug"
+                      v-html="highlight(item.jabatan, search)"
+                    />
                   </div>
                 </td>
                 <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
-                  {{ item.tanggal }}
+                  <span v-html="highlight(item.tanggal, search)" />
                 </td>
                 <td class="px-4 py-2">
                   <span
@@ -1029,8 +1062,18 @@ const exportData = async () => {
                   <div class="flex justify-center gap-3">
                     <button
                       @click="openEdit(item)"
-                      class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-500 transition-colors"
-                      title="Edit"
+                      :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
+                      :class="[
+                        'p-2 rounded-lg transition-colors',
+                        item.status === 'Aktif' || item.status === 'Kedaluwarsa'
+                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                          : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500'
+                      ]"
+                      :title="
+                        item.status === 'Aktif' || item.status === 'Kedaluwarsa'
+                          ? 'Tidak dapat diedit'
+                          : 'Edit'
+                      "
                     >
                       <Pencil class="w-4 h-4" />
                     </button>
@@ -1181,7 +1224,7 @@ const exportData = async () => {
                     <input
                       v-model="personilSearch"
                       type="text"
-                      placeholder="Cari personil..."
+                      :placeholder="$t('del_cari_personil')"
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
@@ -1246,7 +1289,7 @@ const exportData = async () => {
                     <input
                       v-model="sebagaiSearch"
                       type="text"
-                      placeholder="Cari peran..."
+                      :placeholder="$t('del_cari_sebagai')"
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
@@ -1311,7 +1354,7 @@ const exportData = async () => {
                     <input
                       v-model="jabatanSearch"
                       type="text"
-                      placeholder="Cari jabatan..."
+                      :placeholder="$t('del_cari_jabatan')"
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
@@ -1391,7 +1434,7 @@ const exportData = async () => {
           <Heading
             variant="heading9b"
             class="text-lg p-3 ml-3 font-bold text-gray-900 dark:text-white"
-            >Edit Delegasi</Heading
+            >{{ $t('del_modal_edit_title') }}</Heading
           >
         </template>
         <div class="flex flex-col gap-5 p-3">
@@ -1430,7 +1473,7 @@ const exportData = async () => {
                     <input
                       v-model="personilSearch"
                       type="text"
-                      placeholder="Cari personil..."
+                      :placeholder="$t('del_cari_personil')"
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
@@ -1495,7 +1538,7 @@ const exportData = async () => {
                     <input
                       v-model="sebagaiSearch"
                       type="text"
-                      placeholder="Cari peran..."
+                      :placeholder="$t('del_cari_sebagai')"
                       class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:border-primary"
                       @click.stop
                     />
@@ -1638,10 +1681,10 @@ const exportData = async () => {
     <ConfirmPopup
       v-model="confirmDeleteOpen"
       type="danger"
-      title="Hapus Data"
-      message="Yakin ingin menghapus data ini?"
-      confirmText="Hapus"
-      cancelText="Batal"
+      :title="$t('del_pop_title')"
+      :message="$t('del_pop_desc')"
+      :confirmText="$t('del_pop_confirm')"
+      :cancelText="$t('del_pop_batal')"
       cancelColor="primary"
       @confirm="deleteNow"
       :loading="isSubmitting"
