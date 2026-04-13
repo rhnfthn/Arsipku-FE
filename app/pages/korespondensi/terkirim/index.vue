@@ -62,7 +62,14 @@ const currentBulkAction = ref("delete");
 
 // ── Reader Modal ──────────────────────────────────────────────────────────────
 const showReaderModal = ref(false);
-const currentReaderData = ref({ subject: "", readList: [] as any[], unreadList: [] as any[] });
+const currentReaderData = ref({
+  subject: "",
+  category: "",        // ← TAMBAHKAN INI
+  readList: [] as any[],
+  unreadList: [] as any[],
+  tembusanReadList: [] as any[],
+  tembusanUnreadList: [] as any[],
+});
 
 // ── Static Config ─────────────────────────────────────────────────────────────
 const breadcrumbs = [
@@ -120,12 +127,12 @@ const formatShortDate = (dateString: string | null) => {
 
 const jenisAliasMap: Record<string, string[]> = {
   "ALL": [],
-  "ND":  ["ND", "nd", "Nota Dinas", "NOTA DINAS"],
-  "DI":  ["DI", "di", "Disposisi",  "DISPOSISI"],
+  "ND": ["ND", "nd", "Nota Dinas", "NOTA DINAS"],
+  "DI": ["DI", "di", "Disposisi", "DISPOSISI"],
   "SDI": ["SDI", "sdi", "Internal", "INTERNAL"],
   "SDE": ["SDE", "sde", "External", "EXTERNAL", "Eksternal"],
-  "KO":  ["KO", "ko", "Konsep",    "KONSEP"],
-  "KA":  ["KA", "ka", "Kajian",    "KAJIAN"],
+  "KO": ["KO", "ko", "Konsep", "KONSEP"],
+  "KA": ["KA", "ka", "Kajian", "KAJIAN"],
 };
 
 const getTabCount = (tabValue: string) => {
@@ -272,25 +279,27 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
 const openReaderModal = (mail: any) => {
   const item = mail.originalData || mail;
   const penerimaList = item.penerima || [];
+  const tembusanList = item.tembusan || [];
 
   const mapPenerima = (p: any, isRead: boolean) => ({
     name: p.nama,
     position: p.position_text || p.jabatan,
     initial: p.nama?.substring(0, 1) || "?",
-    bg: isRead ? "bg-blue-500" : "bg-gray-400",
+    bg: isRead ? "bg-primary-500" : "bg-gray-400",
     ...(isRead ? {
       date: p.read_time
         ? `${new Date(p.read_time).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} ${new Date(p.read_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`
         : "-",
-    } : {
-      status: "Belum membaca",
-    }),
+    } : {}),
   });
 
   currentReaderData.value = {
     subject: item.perihal || item.subject,
+    category: (mail.category || '').toUpperCase(),
     readList: penerimaList.filter((p: any) => p.status_baca === "terbaca").map((p: any) => mapPenerima(p, true)),
     unreadList: penerimaList.filter((p: any) => p.status_baca !== "terbaca").map((p: any) => mapPenerima(p, false)),
+    tembusanReadList: tembusanList.filter((p: any) => p.status_baca === "terbaca").map((p: any) => mapPenerima(p, true)),
+    tembusanUnreadList: tembusanList.filter((p: any) => p.status_baca !== "terbaca").map((p: any) => mapPenerima(p, false)),
   };
   showReaderModal.value = true;
 };
@@ -837,12 +846,11 @@ onMounted(async () => {
                     </span>
                     <!-- Viewer count — nonaktif untuk SDE -->
                     <div
-                      class="flex items-center gap-1 rounded py-0.5 px-1.5 text-neutral-500 dark:text-gray-400 transition-colors w-auto order-2"
-                      :class="mail.category === 'SDE' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700'"
-                      @click.stop="mail.category !== 'SDE' && openReaderModal(mail)">
+                      class="flex items-center gap-1 rounded py-0.5 px-1.5 text-neutral-500 dark:text-gray-400 transition-colors w-auto order-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                      @click.stop="openReaderModal(mail)">
                       <Eye class="w-3.5 h-3.5 text-primary dark:text-primary-400" />
                       <span class="text-[12px] font-medium text-primary dark:text-primary-400">
-                        {{ mail.category === "SDE" ? "-" : mail.viewCount || 0 }}
+                        {{ mail.viewCount || 0 }}
                       </span>
                     </div>
                   </div>
@@ -875,59 +883,152 @@ onMounted(async () => {
               <X class="w-5 h-5" />
             </button>
           </div>
-          <div class="p-5 pt-2 flex-1 overflow-y-auto max-h-[60vh]">
-            <!-- Sudah Membaca -->
-            <div class="mb-4">
+
+          <div class="p-5 pt-3 flex-1 overflow-y-auto max-h-[65vh] space-y-6">
+
+            <!-- ── KATEGORI: TERTUJU — disembunyikan untuk SDE ── -->
+            <div v-if="currentReaderData.category !== 'SDE'">
               <div class="flex items-center gap-2 mb-3">
-                <div class="w-2 h-2 rounded-full bg-green-500" />
-                <span class="text-[15px] font-medium text-gray-800 dark:text-gray-200">
-                  Sudah Membaca ({{ currentReaderData.readList.length }})
-                </span>
+                <span
+                  class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Tertuju</span>
+                <div class="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
               </div>
-              <div class="space-y-2">
-                <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
-                  class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-                  <div class="flex items-center gap-3">
-                    <UAvatar size="md" :ui="{ background: reader.bg }"
-                      class="text-white font-semibold flex items-center justify-center shrink-0">
-                      {{ getInitials(reader.name) }}
-                    </UAvatar>
-                    <div>
-                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">Dibaca pada: {{ reader.date }}</div>
-                    </div>
-                  </div>
+
+              <!-- Sudah Membaca -->
+              <div class="mb-3">
+                <div class="flex items-center gap-2 mb-2">
                   <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                  <span class="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                    Sudah Membaca ({{ currentReaderData.readList.length }})
+                  </span>
                 </div>
+                <div v-if="currentReaderData.readList.length > 0" class="space-y-2">
+                  <div v-for="(reader, idx) in currentReaderData.readList" :key="idx"
+                    class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                        :class="reader.bg">
+                        {{ reader.initial }}
+                      </div>
+                      <div>
+                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                        <div class="text-xs text-gray-400 dark:text-gray-500">Dibaca: {{ reader.date }}</div>
+                      </div>
+                    </div>
+                    <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                  </div>
+                </div>
+                <p v-else class="text-xs text-gray-400 italic pl-4">Belum ada yang membaca</p>
+              </div>
+
+              <!-- Belum Membaca -->
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+                  <span class="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                    Belum Membaca ({{ currentReaderData.unreadList.length }})
+                  </span>
+                </div>
+                <div v-if="currentReaderData.unreadList.length > 0" class="space-y-2">
+                  <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
+                    class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                        :class="reader.bg">
+                        {{ reader.initial }}
+                      </div>
+                      <div>
+                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                      </div>
+                    </div>
+                    <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+                  </div>
+                </div>
+                <p v-else class="text-xs text-gray-400 italic pl-4">Semua sudah membaca</p>
               </div>
             </div>
-            <!-- Belum Membaca -->
+
+            <!-- ── KATEGORI: TEMBUSAN — header disembunyikan untuk SDE ── -->
             <div>
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-2 h-2 rounded-full bg-gray-400" />
-                <span class="text-[15px] font-medium text-gray-800 dark:text-gray-200">
-                  Belum Membaca ({{ currentReaderData.unreadList.length }})
-                </span>
+              <!-- Label "Tembusan" hanya muncul jika bukan SDE (SDE = hanya tembusan, tidak perlu label pembeda) -->
+              <div v-if="currentReaderData.category !== 'SDE'" class="flex items-center gap-2 mb-3">
+                <span
+                  class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Tembusan</span>
+                <div class="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
               </div>
-              <div class="space-y-2">
-                <div v-for="(reader, idx) in currentReaderData.unreadList" :key="idx"
-                  class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <div class="flex items-center gap-3">
-                    <UAvatar size="md" :ui="{ background: reader.bg }"
-                      class="text-white font-semibold flex items-center justify-center shrink-0">
-                      {{ getInitials(reader.name) }}
-                    </UAvatar>
-                    <div>
-                      <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}</div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+
+              <div
+                v-if="currentReaderData.tembusanReadList.length === 0 && currentReaderData.tembusanUnreadList.length === 0"
+                class="flex flex-col items-center justify-center py-6 text-gray-300 dark:text-gray-600">
+                <span class="text-xs">Tidak ada data tembusan</span>
+              </div>
+
+              <template v-else>
+                <!-- Sudah Membaca Tembusan -->
+                <div class="mb-3">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                    <span class="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                      Sudah Membaca ({{ currentReaderData.tembusanReadList.length }})
+                    </span>
+                  </div>
+                  <div class="space-y-2">
+                    <div v-for="(reader, idx) in currentReaderData.tembusanReadList" :key="idx"
+                      class="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                          :class="reader.bg">
+                          {{ reader.initial }}
+                        </div>
+                        <div>
+                          <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}
+                          </div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                          <div class="text-xs text-gray-400 dark:text-gray-500">Dibaca: {{ reader.date }}</div>
+                        </div>
+                      </div>
+                      <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
                     </div>
                   </div>
-                  <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
                 </div>
-              </div>
+
+                <!-- Belum Membaca Tembusan -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+                    <span class="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                      Belum Membaca ({{ currentReaderData.tembusanUnreadList.length }})
+                    </span>
+                  </div>
+                  <div class="space-y-2">
+                    <div v-for="(reader, idx) in currentReaderData.tembusanUnreadList" :key="idx"
+                      class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                          :class="reader.bg">
+                          {{ reader.initial }}
+                        </div>
+                        <div>
+                          <div class="text-sm font-semibold text-gray-900 dark:text-gray-200">{{ reader.position }}
+                          </div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">{{ reader.name }}</div>
+                        </div>
+                      </div>
+                      <div class="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
+
           </div>
+
           <div class="p-4 border-t border-gray-100 dark:border-gray-700">
             <button @click="showReaderModal = false"
               class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">

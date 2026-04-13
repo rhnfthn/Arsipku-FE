@@ -150,6 +150,7 @@ export const useDraft = () => {
         return {
           id: item.id_naskah,
           isDraftKonsep: item.is_draft_konsep || false,
+          jenisAsli: (item.jenis || '').toUpperCase(), // ← TAMBAHKAN INI
           from: displayRecipient,
           fullRecipients: fullRecipientList,
           subject: item.isi_pesan || 'Tanpa Keterangan',

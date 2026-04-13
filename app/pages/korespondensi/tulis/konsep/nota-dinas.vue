@@ -143,7 +143,7 @@
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
-                          }}</td>
+                        }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
@@ -912,6 +912,18 @@ onMounted(async () => {
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
 
+        if (d.disposisi_referensi) {
+          refData.value = {
+            id: d.disposisi_referensi.id,
+            nomor: d.disposisi_referensi.nomor || '-',
+            tanggal: d.disposisi_referensi.tanggal,
+            final_pdf_url: d.disposisi_referensi.final_pdf_url || null,
+            lampiran_files: [],
+            jenis: 'DI',
+          };
+          refPengirimPositionId.value = d.disposisi_referensi.pengirim?.position_id || '';
+        }
+
         if (d.klasifikasi) {
           const klCode = String(d.klasifikasi).trim();
           const foundKlas = klasifikasiList.value.find((k: any) =>
@@ -920,21 +932,46 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
+        isPopulating.value = true;
+
         if (user.value?.position) await fetchSenderList(user.value.position);
 
-        // Restore pengirim dari detail draft
-        if (d.from_position_id || d.pengirim_position_id) {
-          const senderId = String(d.pengirim_position_id || d.from_position_id);
+        // Restore pengirim
+        if (d.pengirim?.position_id || d.from_position_id || d.pengirim_position_id) {
+          const senderId = String(d.pengirim?.position_id || d.pengirim_position_id || d.from_position_id);
           const found = senderItems.value.find(s => s.value === senderId);
           if (found) selectedSender.value = found;
         }
 
-        // Restore penerima
-        if (selectedSender.value?.value) await fetchRecipientsBySender(selectedSender.value.value);
+        // Wajib load recipients dulu sebelum populate grup/individu
+        if (selectedSender.value?.value) {
+          await fetchRecipientsBySender(selectedSender.value.value);
+        }
 
-        const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
+        // ── PERBAIKAN UTAMA: gunakan mapGroupsToUI + filter individu seperti tulis-nd ──
+        const penerimaGrupRaw = d.penerima_grup || [];
+        const tembusanGrupRaw = d.tembusan_grup || [];
+
+        // Kumpulkan position_ids yang sudah diwakili grup
+        const idDalamGrupTertuju = new Set<string>(
+          penerimaGrupRaw.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
+        const idDalamGrupTembusan = new Set<string>(
+          tembusanGrupRaw.flatMap((g: any) => (g.position_ids || []).map(String))
+        );
+
+        // Filter individu yang TIDAK diwakili grup
+        const rawPenerima = (d.penerima || []).filter(
+          (p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.position || ''))
+        );
+        const rawTembusan = (d.tembusan || []).filter(
+          (p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.position || ''))
+        );
+
+        // Helper map individu — cari di items dulu, fallback ke raw data
+        const mapIndividu = (list: any[]): RecipientItem[] => list.map(item => {
           const posId = String(item.position_id || item.position || item.value || item.id || '');
-          const master = items.value.find(m => m.value === posId);
+          const master = items.value.find((m: any) => m.value === posId);
           return master || {
             label: `${item.nama || item.persnum_person_text || ''} - ${item.position_text || item.positionText || ''}`,
             labelJob: item.position_text || item.positionText || '',
@@ -942,10 +979,18 @@ onMounted(async () => {
             isGroup: false,
             raw: item,
           };
-        }) || [];
+        });
 
-        selectedTertuju.value = mapApiToUI(d.penerima || []);
-        selectedTembusan.value = mapApiToUI(d.tembusan || []);
+        selectedTertuju.value = mergeGrupDanIndividu(
+          mapGroupsToUI(penerimaGrupRaw),   // ← nama grup (Para EVP, dll)
+          mapIndividu(rawPenerima)           // ← individu di luar grup
+        );
+        selectedTembusan.value = mergeGrupDanIndividu(
+          mapGroupsToUI(tembusanGrupRaw),   // ← nama grup (Para Direksi, dll)
+          mapIndividu(rawTembusan)           // ← individu di luar grup
+        );
+
+        isPopulating.value = false;
 
         if (Array.isArray(d.lampiran_files)) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
@@ -956,7 +1001,9 @@ onMounted(async () => {
           }));
         }
 
-        selectedSifat.value = sifatOptions.find(opt => opt.value === String(d.sifat || 'biasa').toLowerCase()) || sifatOptions[3];
+        selectedSifat.value = sifatOptions.find(
+          opt => opt.value === String(d.sifat || 'biasa').toLowerCase()
+        ) || sifatOptions[3];
 
         const tglStr = d.tanggal || d.tgl;
         if (tglStr) {

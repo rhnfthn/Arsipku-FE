@@ -176,32 +176,32 @@ const refreshData = async () => {
   selectedIds.value.clear();
 };
 
-// ── Edit Draft ────────────────────────────────────────────────────────────────
 const handleEdit = (mail) => {
   const jenis = (mail.category || '').trim().toUpperCase();
 
-  // Jika ini draft konsep, arahkan ke halaman konsep yang sesuai jenisnya
   if (mail.isDraftKonsep) {
-    const konsepPath = konsepRouteMap[jenis] || '/korespondensi/tulis/konsep/nota-dinas';
+    const konsepRouteMap = {
+      ND: '/korespondensi/tulis/konsep/nota-dinas',
+      SDI: '/korespondensi/tulis/konsep/surat-dinas-internal',
+      SDE: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
+    };
+    // jenisAsli dari field jenis API (ND/SDI/SDE), bukan category yg sudah jadi 'K'
+    const konsepPath = konsepRouteMap[mail.jenisAsli] ?? '/korespondensi/tulis/konsep/nota-dinas';
     router.push({ path: konsepPath, query: { draft_id: mail.id } });
     return;
   }
 
+  // Draft biasa (bukan konsep)
   const routes = {
     ND: '/korespondensi/tulis/nota-dinas',
-    'NOTA DINAS': '/korespondensi/tulis/nota-dinas',
     DI: '/korespondensi/tulis/disposisi',
-    DISPOSISI: '/korespondensi/tulis/disposisi',
     SDI: '/korespondensi/tulis/surat-dinas-internal',
-    INTERNAL: '/korespondensi/tulis/surat-dinas-internal',
     SDE: '/korespondensi/tulis/surat-dinas-eksternal',
-    EXTERNAL: '/korespondensi/tulis/surat-dinas-eksternal',
     KA: '/korespondensi/tulis/kajian',
-    KAJIAN: '/korespondensi/tulis/kajian',
   };
   router.push({
-    path: routes[jenis] || '/korespondensi/tulis/nota-dinas',
-    query: { draft_id: mail.id, mode: 'edit' }
+    path: routes[jenis] ?? '/korespondensi/tulis/nota-dinas',
+    query: { draft_id: mail.id },
   });
 };
 
@@ -590,8 +590,11 @@ onMounted(refreshData);
                 <UTooltip :text="mail.fullRecipients"
                   :ui="{ content: 'h-auto py-2 px-3 max-w-xs', text: 'whitespace-pre-line text-left' }"
                   class="min-w-0 truncate">
-                  <span
-                    class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold cursor-help">
+                  <!-- Ganti bagian <span> penerima di template -->
+                  <span class="block w-full md:w-48 xl:w-64 truncate text-[13px] shrink-0 font-semibold cursor-help"
+                    :class="mail.from === 'Tanpa Penerima'
+                      ? 'text-gray-400 dark:text-gray-500 italic font-normal'
+                      : 'text-neutral-900 dark:text-gray-100'">
                     {{ mail.from }}
                   </span>
                 </UTooltip>
