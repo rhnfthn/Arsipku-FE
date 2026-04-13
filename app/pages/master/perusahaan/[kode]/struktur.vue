@@ -39,23 +39,125 @@
 
       <!-- Search Bar -->
       <div class="mb-6">
-        <div class="relative max-w-6xl">
-          <Search
-            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-          />
-          <input
-            v-model="searchQuery"
-            @input="handleSearch"
-            :placeholder="$t('stu_cari_placeholder')"
-            class="w-full pl-12 pr-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-          />
-          <button
-            v-if="searchQuery"
-            @click="clearSearch"
-            class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-          >
-            <X class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          </button>
+        <div class="max-w-6xl search-suggestion-container">
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400"
+              >Cari berdasarkan:</span
+            >
+            <button
+              type="button"
+              @click="setSearchScope('organization')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'organization'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Unit
+            </button>
+            <button
+              type="button"
+              @click="setSearchScope('position')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'position'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Posisi
+            </button>
+            <button
+              type="button"
+              @click="setSearchScope('person')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                searchScope === 'person'
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              ]"
+            >
+              Nama
+            </button>
+          </div>
+
+          <div class="relative">
+            <Search
+              class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="searchQuery"
+              @input="handleSearch"
+              @focus="onSearchFocus"
+              @blur="hideSearchSuggestions"
+              @keydown.enter.prevent="selectFirstSuggestion"
+              @keydown.escape="showSearchSuggestions = false"
+              :disabled="!searchScope"
+              :placeholder="getSearchPlaceholder()"
+              :class="[
+                'w-full pl-12 pr-12 py-4 border-2 rounded-xl shadow-sm text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+                searchScope
+                  ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500'
+                  : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              ]"
+            />
+            <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            >
+              <X class="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            </button>
+
+            <!-- Search Suggestions -->
+            <div
+              v-if="showSearchSuggestions && searchQuery.trim().length >= SEARCH_MIN_LENGTH"
+              class="absolute z-50 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden"
+            >
+              <div v-if="searchSuggestions.length > 0" class="max-h-80 overflow-y-auto">
+                <button
+                  v-for="item in searchSuggestions"
+                  :key="item.key"
+                  type="button"
+                  @mousedown.prevent="selectSearchSuggestion(item)"
+                  class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                >
+                  <div class="flex items-start gap-3">
+                    <component
+                      :is="getSuggestionIcon(item.type)"
+                      class="w-4 h-4 mt-0.5 text-gray-500 dark:text-gray-400"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-gray-800 dark:text-white truncate">
+                        {{ item.title }}
+                      </p>
+                      <div class="mt-1 flex items-center gap-2">
+                        <span
+                          :class="[
+                            'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium capitalize',
+                            getSuggestionBadgeClass(item.type)
+                          ]"
+                        >
+                          {{ getSuggestionTypeLabel(item.type) }}
+                        </span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {{ item.subtitle }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div
+                v-else-if="!loadingSearch"
+                class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+              >
+                Tidak ada suggestion untuk "{{ searchQuery }}"
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Search Results Info -->
@@ -944,6 +1046,39 @@ const searchResults = ref<{
 const loadingSearch = ref(false);
 const loadingExpand = ref(false);
 
+type SearchSuggestionType = 'organization' | 'position' | 'person';
+type SearchScope = SearchSuggestionType | '';
+
+interface SearchSuggestionItem {
+  key: string;
+  type: SearchSuggestionType;
+  title: string;
+  subtitle: string;
+  organizationId?: string;
+  organizationCode?: string;
+  positionId?: string;
+  positionCode?: string;
+  personId?: string;
+  persnum?: string;
+}
+
+interface CachedSearchResult {
+  organizations: any[];
+  positions: any[];
+  persons: any[];
+  suggestions: SearchSuggestionItem[];
+}
+
+const SEARCH_MIN_LENGTH = 2;
+const SEARCH_DEBOUNCE_MS = 450;
+const SEARCH_SUGGESTION_LIMIT = 8;
+
+const searchScope = ref<SearchScope>('');
+const searchSuggestions = ref<SearchSuggestionItem[]>([]);
+const showSearchSuggestions = ref(false);
+const searchCache = ref<Record<string, CachedSearchResult>>({});
+const activeSearchRequestId = ref(0);
+
 // Modal search states
 const subAreaSearchQuery = ref('');
 const personSearchQuery = ref('');
@@ -1231,6 +1366,11 @@ const handleClickOutside = (event: MouseEvent) => {
     const isClickInside = target.closest('.sub-area-dropdown-container');
     if (!isClickInside) showSubAreaDropdown.value = false;
   }
+
+  if (showSearchSuggestions.value) {
+    const isClickInsideSearch = target.closest('.search-suggestion-container');
+    if (!isClickInsideSearch) showSearchSuggestions.value = false;
+  }
 };
 
 onMounted(() => document.addEventListener('click', handleClickOutside));
@@ -1238,71 +1378,309 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 let searchTimeout: any = null;
+let searchAbortController: AbortController | null = null;
+
+const toText = (value: unknown) => (value == null ? '' : String(value));
+const normalizeText = (value: unknown) => toText(value).trim().toLowerCase();
+
+const emptySearchResults = () => ({
+  organizations: [],
+  positions: [],
+  persons: []
+});
+
+const getSearchPlaceholder = () => {
+  if (!searchScope.value) return 'Pilih Unit / Posisi / Nama terlebih dahulu';
+  if (searchScope.value === 'organization') return 'Cari unit...';
+  if (searchScope.value === 'position') return 'Cari posisi...';
+  return 'Cari nama anggota...';
+};
+
+const setSearchScope = (scope: SearchSuggestionType) => {
+  if (searchScope.value === scope) return;
+  searchScope.value = scope;
+  clearSearch();
+};
+
+const extractOrganizationCode = (raw: any) =>
+  toText(
+    raw?.organizationCode ??
+      raw?.organization?.organization ??
+      raw?.organization?.organizationCode ??
+      raw?.organization?.code ??
+      raw?.organization ??
+      raw?.organization_id ??
+      raw?.organizationId ??
+      raw?.organizationData?.organization ??
+      raw?.organizationData?.organizationCode ??
+      raw?.organizationData?.code
+  );
+
+const extractOrganizationId = (raw: any) =>
+  toText(raw?.organizationId ?? raw?.organization_id ?? raw?.organizationData?.id);
+
+const extractPositionCode = (raw: any) =>
+  toText(
+    raw?.positionCode ??
+      raw?.position?.position ??
+      raw?.position?.positionCode ??
+      raw?.position?.code ??
+      raw?.position ??
+      raw?.position_id ??
+      raw?.positionId ??
+      raw?.positionData?.position ??
+      raw?.positionData?.positionCode ??
+      raw?.positionData?.code
+  );
+
+const extractPositionId = (raw: any) =>
+  toText(
+    raw?.positionId ?? raw?.position_id ?? raw?.id_position ?? raw?.positionData?.id ?? raw?.id
+  );
+
+const getSuggestionIcon = (type: SearchSuggestionType) => {
+  if (type === 'organization') return Building;
+  if (type === 'position') return User;
+  return Users;
+};
+
+const getSuggestionBadgeClass = (type: SearchSuggestionType) => {
+  if (type === 'organization') {
+    return 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300';
+  }
+  if (type === 'position') {
+    return 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300';
+  }
+  return 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300';
+};
+
+const getSuggestionTypeLabel = (type: SearchSuggestionType) => {
+  if (type === 'organization') return 'Unit';
+  if (type === 'position') return 'Posisi';
+  return 'Nama';
+};
+
+const onSearchFocus = () => {
+  if (!searchScope.value) return;
+  if (searchSuggestions.value.length > 0) {
+    showSearchSuggestions.value = true;
+  }
+};
+
+const hideSearchSuggestions = () => {
+  setTimeout(() => {
+    showSearchSuggestions.value = false;
+  }, 120);
+};
+
+const buildSearchSuggestions = (
+  organizations: any[],
+  positions: any[],
+  persons: any[]
+): SearchSuggestionItem[] => {
+  const suggestions: SearchSuggestionItem[] = [];
+  const seen = new Set<string>();
+
+  const pushSuggestion = (item: SearchSuggestionItem) => {
+    if (!item.title || seen.has(item.key)) return;
+    seen.add(item.key);
+    suggestions.push(item);
+  };
+
+  for (const person of persons) {
+    const personId = toText(
+      person.id || person.id_relation_sp || person.person_id || person.personId
+    );
+    const persnum = toText(person.persnum || person.person_number || person.personNumber);
+    const organizationCode = extractOrganizationCode(person);
+    const organizationId = extractOrganizationId(person);
+    const positionCode = extractPositionCode(person);
+    const positionId = extractPositionId(person);
+
+    pushSuggestion({
+      key: `person:${personId || persnum}`,
+      type: 'person',
+      title: person.name || '-',
+      subtitle: persnum ? `Persnum ${persnum}` : 'Anggota',
+      personId,
+      persnum,
+      organizationId,
+      organizationCode,
+      positionId,
+      positionCode
+    });
+  }
+
+  for (const position of positions) {
+    const positionId = extractPositionId(position);
+    const positionCode = extractPositionCode(position);
+    const organizationCode = extractOrganizationCode(position);
+    const organizationId = extractOrganizationId(position);
+
+    pushSuggestion({
+      key: `position:${positionId || `${organizationCode}:${positionCode}`}`,
+      type: 'position',
+      title:
+        position.long_text ||
+        position.longText ||
+        position.short_text ||
+        position.shortText ||
+        position.name ||
+        '-',
+      subtitle: organizationCode ? `Unit ${organizationCode}` : 'Posisi',
+      positionId,
+      positionCode,
+      organizationId,
+      organizationCode
+    });
+  }
+
+  for (const organization of organizations) {
+    const organizationId = toText(
+      organization.id || organization.organization_id || organization.organizationId
+    );
+    const organizationCode = extractOrganizationCode(organization);
+    pushSuggestion({
+      key: `organization:${organizationId || organizationCode}`,
+      type: 'organization',
+      title:
+        organization.longText ||
+        organization.long_text ||
+        organization.shortText ||
+        organization.short_text ||
+        '-',
+      subtitle: organizationCode ? `Kode ${organizationCode}` : 'Unit',
+      organizationId,
+      organizationCode
+    });
+  }
+
+  return suggestions.slice(0, SEARCH_SUGGESTION_LIMIT);
+};
+
+const performSearch = async (queryOverride?: string) => {
+  const query = (queryOverride ?? searchQuery.value).trim();
+  if (!company.value?.kode || query.length < SEARCH_MIN_LENGTH || !searchScope.value) {
+    searchResults.value = emptySearchResults();
+    searchSuggestions.value = [];
+    showSearchSuggestions.value = false;
+    return;
+  }
+
+  if (Object.keys(previousExpandedState.value).length === 0) {
+    previousExpandedState.value = { ...expandedNodes.value };
+  }
+
+  const cacheKey = `${searchScope.value}:${query.toLowerCase()}`;
+  const cached = searchCache.value[cacheKey];
+  if (cached) {
+    searchResults.value = {
+      organizations: cached.organizations,
+      positions: cached.positions,
+      persons: cached.persons
+    };
+    searchSuggestions.value = cached.suggestions;
+    showSearchSuggestions.value = true;
+    return;
+  }
+
+  const requestId = ++activeSearchRequestId.value;
+  if (searchAbortController) {
+    searchAbortController.abort();
+  }
+  const controller = new AbortController();
+  searchAbortController = controller;
+
+  loadingSearch.value = true;
+
+  try {
+    let organizations: any[] = [];
+    let positions: any[] = [];
+    let persons: any[] = [];
+
+    if (searchScope.value === 'organization') {
+      const orgRes = await searchOrganization(String(company.value.kode), query, controller.signal);
+      organizations = orgRes.data || [];
+    } else if (searchScope.value === 'position') {
+      const posRes = await searchPosition(String(company.value.kode), query, controller.signal);
+      positions = posRes.data || [];
+    } else if (searchScope.value === 'person') {
+      const personRes = await searchPerson(String(company.value.kode), query, controller.signal);
+      persons = personRes.data || [];
+    }
+
+    if (requestId !== activeSearchRequestId.value) return;
+
+    const suggestions = buildSearchSuggestions(organizations, positions, persons);
+
+    searchCache.value[cacheKey] = {
+      organizations,
+      positions,
+      persons,
+      suggestions
+    };
+
+    searchResults.value = {
+      organizations,
+      positions,
+      persons
+    };
+    searchSuggestions.value = suggestions;
+    showSearchSuggestions.value = true;
+  } catch (err) {
+    if (requestId !== activeSearchRequestId.value) return;
+    if ((err as any)?.name === 'CanceledError' || (err as any)?.code === 'ERR_CANCELED') return;
+    console.error('❌ Search error:', err);
+    searchResults.value = emptySearchResults();
+    searchSuggestions.value = [];
+    showSearchSuggestions.value = true;
+  } finally {
+    if (requestId === activeSearchRequestId.value) {
+      loadingSearch.value = false;
+      if (searchAbortController === controller) {
+        searchAbortController = null;
+      }
+    }
+  }
+};
 
 const handleSearch = async () => {
-  if (!searchQuery.value.trim()) {
+  const trimmed = searchQuery.value.trim();
+
+  if (!searchScope.value) {
+    showSearchSuggestions.value = false;
+    searchResults.value = emptySearchResults();
+    return;
+  }
+
+  if (!trimmed) {
     clearSearch();
     return;
   }
+
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(async () => {
-    await performSearch();
-  }, 300);
-};
 
-const performSearch = async () => {
-  if (!company.value?.kode || !searchQuery.value.trim()) return;
-
-  try {
-    if (Object.keys(previousExpandedState.value).length === 0) {
-      previousExpandedState.value = { ...expandedNodes.value };
-    }
-
-    expandedNodes.value = {};
-    highlightNodeId.value = null;
-    companyExpanded.value = false;
-    loadingSearch.value = true;
-
-    const [orgRes, posRes, personRes] = await Promise.all([
-      searchOrganization(String(company.value.kode), searchQuery.value.trim()),
-      searchPosition(String(company.value.kode), searchQuery.value.trim()),
-      searchPerson(String(company.value.kode), searchQuery.value.trim())
-    ]);
-
-    searchResults.value = {
-      organizations: orgRes.data || [],
-      positions: posRes.data || [],
-      persons: personRes.data || []
-    };
-
+  if (trimmed.length < SEARCH_MIN_LENGTH) {
+    searchResults.value = emptySearchResults();
+    searchSuggestions.value = [];
+    showSearchSuggestions.value = false;
     loadingSearch.value = false;
-
-    if (totalResults.value > 0) {
-      companyExpanded.value = true;
-      await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      loadingExpand.value = true;
-      await autoExpandSearchResults();
-      loadingExpand.value = false;
-
-      await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      await scrollToFirstResult();
-    } else {
-      companyExpanded.value = false;
-    }
-  } catch (err) {
-    console.error('❌ Search error:', err);
-    searchResults.value = { organizations: [], positions: [], persons: [] };
-  } finally {
-    loadingSearch.value = false;
-    loadingExpand.value = false;
+    return;
   }
+
+  searchTimeout = setTimeout(async () => {
+    await performSearch(trimmed);
+  }, SEARCH_DEBOUNCE_MS);
 };
 
 const clearSearch = () => {
   searchQuery.value = '';
+  clearTimeout(searchTimeout);
+  if (searchAbortController) {
+    searchAbortController.abort();
+    searchAbortController = null;
+  }
+  activeSearchRequestId.value += 1;
 
   if (Object.keys(previousExpandedState.value).length > 0) {
     expandedNodes.value = { ...previousExpandedState.value };
@@ -1314,45 +1692,252 @@ const clearSearch = () => {
 
   previousExpandedState.value = {};
   highlightNodeId.value = null;
-  searchResults.value = { organizations: [], positions: [], persons: [] };
+  loadingSearch.value = false;
+  loadingExpand.value = false;
+  searchResults.value = emptySearchResults();
+  searchSuggestions.value = [];
+  showSearchSuggestions.value = false;
 };
 
-const scrollToFirstResult = async () => {
-  await nextTick();
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  let firstResultId: string | null = null;
-  if (searchResults.value.persons.length > 0) {
-    firstResultId = searchResults.value.persons[0].id;
-  } else if (searchResults.value.positions.length > 0) {
-    firstResultId = searchResults.value.positions[0].id;
-  } else if (searchResults.value.organizations.length > 0) {
-    firstResultId = searchResults.value.organizations[0].id;
-  }
-
-  if (firstResultId) {
-    highlightNodeId.value = firstResultId;
-    await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const element = document.querySelector(`[data-node-id="${firstResultId}"]`);
-    const scrollTo = (el: Element) => {
-      const offset = 200;
-      const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
-      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-      setTimeout(() => {
-        highlightNodeId.value = null;
-      }, 3000);
-    };
-
-    if (element) {
-      scrollTo(element);
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const retry = document.querySelector(`[data-node-id="${firstResultId}"]`);
-      if (retry) scrollTo(retry);
+const expandParentChain = (nodes: any[], targetId: string): boolean => {
+  for (const node of nodes) {
+    if (toText(node.id) === toText(targetId)) {
+      expandedNodes.value[node.id] = true;
+      return true;
+    }
+    if (node.children?.length) {
+      const found = expandParentChain(node.children, targetId);
+      if (found) {
+        expandedNodes.value[node.id] = true;
+        return true;
+      }
     }
   }
+  return false;
+};
+
+const scrollToNodeById = async (targetNodeId: string) => {
+  await nextTick();
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  highlightNodeId.value = targetNodeId;
+
+  const scrollTo = (el: Element) => {
+    const offset = 200;
+    const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    setTimeout(() => {
+      if (highlightNodeId.value === targetNodeId) {
+        highlightNodeId.value = null;
+      }
+    }, 3000);
+  };
+
+  const element = document.querySelector(`[data-node-id="${targetNodeId}"]`);
+  if (element) {
+    scrollTo(element);
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  const retry = document.querySelector(`[data-node-id="${targetNodeId}"]`);
+  if (retry) {
+    scrollTo(retry);
+  }
+};
+
+const isPositionMatch = (positionNode: any, item: SearchSuggestionItem) => {
+  const byId = Boolean(item.positionId) && toText(positionNode.id) === toText(item.positionId);
+  const byCode =
+    Boolean(item.positionCode) && toText(positionNode.positionCode) === toText(item.positionCode);
+  const byName =
+    normalizeText(item.title).length > 0 &&
+    normalizeText(positionNode.name || positionNode.longText || positionNode.shortText).includes(
+      normalizeText(item.title)
+    );
+  return byId || byCode || byName;
+};
+
+const findPositionNodeBySuggestion = async (item: SearchSuggestionItem): Promise<any | null> => {
+  const walk = async (nodes: any[]): Promise<any | null> => {
+    for (const node of nodes) {
+      if (node.type !== 'unit' && node.type !== 'direktorat') continue;
+
+      if (!node._positionsLoaded) await loadPositions(node);
+      expandedNodes.value[node.id] = true;
+
+      const positionNode = (node.children || []).find(
+        (child: any) => child.type === 'position' && isPositionMatch(child, item)
+      );
+
+      if (positionNode) {
+        expandParentChain(organizationTree.value, node.id);
+        expandedNodes.value[positionNode.id] = true;
+        return positionNode;
+      }
+
+      const childUnits = (node.children || []).filter(
+        (child: any) => child.type === 'unit' || child.type === 'direktorat'
+      );
+
+      if (childUnits.length > 0) {
+        const foundInChildren = await walk(childUnits);
+        if (foundInChildren) return foundInChildren;
+      }
+    }
+
+    return null;
+  };
+
+  return walk(organizationTree.value);
+};
+
+const findPersonNodeByPersnum = async (targetPersnum: string): Promise<any | null> => {
+  const walk = async (nodes: any[]): Promise<any | null> => {
+    for (const node of nodes) {
+      if (node.type !== 'unit' && node.type !== 'direktorat') continue;
+
+      if (!node._positionsLoaded) await loadPositions(node);
+      expandedNodes.value[node.id] = true;
+
+      const positions = (node.children || []).filter((child: any) => child.type === 'position');
+      for (const positionNode of positions) {
+        if (!positionNode._personsLoaded) await loadPersons(positionNode);
+
+        const personNode = (positionNode.children || []).find(
+          (child: any) => child.type === 'member' && toText(child.persnum) === toText(targetPersnum)
+        );
+
+        if (personNode) {
+          expandParentChain(organizationTree.value, node.id);
+          expandedNodes.value[positionNode.id] = true;
+          return personNode;
+        }
+      }
+
+      const childUnits = (node.children || []).filter(
+        (child: any) => child.type === 'unit' || child.type === 'direktorat'
+      );
+      if (childUnits.length > 0) {
+        const foundInChildren = await walk(childUnits);
+        if (foundInChildren) return foundInChildren;
+      }
+    }
+
+    return null;
+  };
+
+  return walk(organizationTree.value);
+};
+
+const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
+  if (!company.value?.kode) return;
+
+  if (Object.keys(previousExpandedState.value).length === 0) {
+    previousExpandedState.value = { ...expandedNodes.value };
+  }
+
+  loadingExpand.value = true;
+  companyExpanded.value = true;
+
+  try {
+    let targetNode: any | null = null;
+
+    const organizationNode = findNodeInTree(organizationTree.value, (node) => {
+      const matchOrganizationId =
+        Boolean(item.organizationId) && toText(node.id) === toText(item.organizationId);
+      const matchOrganizationCode =
+        Boolean(item.organizationCode) &&
+        toText(node.organizationCode) === toText(item.organizationCode);
+
+      return (
+        (node.type === 'unit' || node.type === 'direktorat') &&
+        (matchOrganizationId || matchOrganizationCode)
+      );
+    });
+
+    if (item.type === 'organization') {
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id);
+        targetNode = organizationNode;
+      }
+    }
+
+    if (item.type === 'position') {
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id);
+        expandedNodes.value[organizationNode.id] = true;
+        if (!organizationNode._positionsLoaded) await loadPositions(organizationNode);
+
+        targetNode = (organizationNode.children || []).find(
+          (node: any) => node.type === 'position' && isPositionMatch(node, item)
+        );
+
+        if (targetNode) {
+          expandedNodes.value[targetNode.id] = true;
+        }
+      }
+
+      if (!targetNode) {
+        targetNode = await findPositionNodeBySuggestion(item);
+      }
+    }
+
+    if (item.type === 'person') {
+      const targetPersnum = toText(item.persnum);
+      if (organizationNode) {
+        expandParentChain(organizationTree.value, organizationNode.id);
+        expandedNodes.value[organizationNode.id] = true;
+        if (!organizationNode._positionsLoaded) await loadPositions(organizationNode);
+
+        const positions = (organizationNode.children || []).filter(
+          (node: any) => node.type === 'position'
+        );
+
+        const preferredPosition = positions.find(
+          (node: any) =>
+            (item.positionId && toText(node.id) === toText(item.positionId)) ||
+            (item.positionCode && toText(node.positionCode) === toText(item.positionCode))
+        );
+
+        const positionsToScan = preferredPosition ? [preferredPosition] : positions;
+
+        for (const positionNode of positionsToScan) {
+          expandedNodes.value[positionNode.id] = true;
+          if (!positionNode._personsLoaded) await loadPersons(positionNode);
+
+          targetNode = (positionNode.children || []).find(
+            (node: any) => node.type === 'member' && toText(node.persnum) === targetPersnum
+          );
+
+          if (targetNode) break;
+        }
+      }
+
+      if (!targetNode && targetPersnum) {
+        targetNode = await findPersonNodeByPersnum(targetPersnum);
+      }
+    }
+
+    if (targetNode?.id) {
+      await scrollToNodeById(targetNode.id);
+    }
+  } catch (err) {
+    console.error('❌ Focus search result error:', err);
+  } finally {
+    loadingExpand.value = false;
+  }
+};
+
+const selectSearchSuggestion = async (item: SearchSuggestionItem) => {
+  showSearchSuggestions.value = false;
+  await focusSearchSuggestion(item);
+};
+
+const selectFirstSuggestion = async () => {
+  const firstSuggestion = searchSuggestions.value[0];
+  if (!firstSuggestion) return;
+  await selectSearchSuggestion(firstSuggestion);
 };
 
 const autoExpandSearchResults = async () => {

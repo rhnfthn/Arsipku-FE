@@ -19,9 +19,7 @@
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         <!-- TOOLBAR -->
-        <div
-          class="flex flex-col md:flex-row justify-between items-center gap-4 pl-4 mb-4 pt-5 pr-4"
-        >
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
           <!-- SEARCH & LIMIT -->
           <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
             <!-- ROWS PER PAGE DROPDOWN -->
@@ -264,7 +262,7 @@
                     >
                       {{ getUserInitials(row.userName) }}
                     </div>
-                    <span>{{ row.userName }}</span>
+                    <span v-html="highlight(row.userName, searchQuery)"></span>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -273,7 +271,7 @@
                   </code>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                  {{ row.jenisNaskah || '-' }}
+                  <span v-html="highlight(row.jenisNaskah, searchQuery)"></span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <span
@@ -572,6 +570,28 @@ const SORT_FIELD_MAP: Record<string, keyof DigsigLog> = {
   jenisNaskah: 'jenisNaskah',
   status: 'note'
 };
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+function highlight(text: string | null | undefined, keyword: string): string {
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  );
+}
 
 /**
  * 1. Filter client-side: hanya cocokkan searchQuery pada userName & jenisNaskah.

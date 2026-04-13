@@ -383,6 +383,9 @@
   "tmpl_tooltip_edit": "Edit",
   "tmpl_tooltip_hapus": "Delete",
   "tmpl_error_harus_diisi": "Please fill out the form",
+  "tmpl_toast_tidak_bisa_unduh": "File cannot be downloaded",
+  "tmpl_toast_file_terlalu_besar": "File is too large",
+  "tmpl_toast_file_maks": "Maximum file size 10 MB",
   "usl_title": "Numbering Proposal List",
   "usl_btn_tambah": "Add",
   "usl_filter_semua": "All",
@@ -939,5 +942,7 @@
   "ver_btn_export": "Export",
   "ver_btn_mengekspor": "download data",
   "nom_export_success_title": "Data downloaded successfully",
-  "nom_export_error_title": "Data failed to download"
+  "nom_export_error_title": "Data failed to download",
+
+  "del_cari_placeholder": "Search Data"
 }

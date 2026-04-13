@@ -13,9 +13,9 @@
     <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
         <!-- ROWS PER PAGE -->
-        <div class="flex items-center gap-2 px-4">
+        <div class="flex items-center gap-2">
           <div class="relative" ref="rowsRef">
             <button
               type="button"
@@ -215,25 +215,39 @@
                 @mouseleave="onRowMouseLeave"
                 @click="showPreview(row)"
               >
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
+                <td class="px-5 py-4 dark:text-gray-300" v-html="highlight(row.jenis, search)"></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300"
+                  v-html="highlight(row.tanggal, search)"
+                ></td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[350px]">
-                    <p class="whitespace-normal break-words line-clamp-3 dark:text-gray-300">
-                      {{ row.perihal || '-' }}
-                    </p>
+                    <p
+                      class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                      v-html="highlight(row.perihal || '-', search)"
+                    ></p>
                   </div>
                 </td>
                 <td class="px-5 py-4">
                   <div class="relative group max-w-[300px]">
-                    <p class="whitespace-normal break-words line-clamp-3 dark:text-gray-300">
-                      {{ row.penandatangan }}
-                    </p>
+                    <p
+                      class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                      v-html="highlight(row.penandatangan, search)"
+                    ></p>
                   </div>
                 </td>
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
-                <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300"
+                  v-html="highlight(row.jumlah, search)"
+                ></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300"
+                  v-html="highlight(row.pengusul, search)"
+                ></td>
+                <td
+                  class="px-5 py-4 dark:text-gray-300"
+                  v-html="highlight(row.tglUsulan, search)"
+                ></td>
                 <td
                   class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
                 >
@@ -250,7 +264,7 @@
                       }
                     ]"
                   >
-                    {{ getRowStatusLabel(row.status) }}
+                    <span v-html="highlight(getRowStatusLabel(row.status), search)"></span>
                   </span>
                 </td>
               </tr>
@@ -1018,21 +1032,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { Search, Copy, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
-import Heading from '~/components/Heading.vue';
-import PageHeader from '~/components/PageHeader.vue';
-import { Modal } from '#components';
-import ConfirmPopup from '~/components/ConfirmPopup.vue';
-import { usePenomoran } from '~/composables/usePenomoran';
-import * as XLSX from 'xlsx';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Search, Copy, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
+import Heading from '~/components/Heading.vue'
+import PageHeader from '~/components/PageHeader.vue'
+import { Modal } from '#components'
+import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import { usePenomoran } from '~/composables/usePenomoran'
+import * as XLSX from 'xlsx'
 
-definePageMeta({ middleware: 'auth' });
+definePageMeta({ middleware: 'auth' })
 
-const { t } = useI18n();
-const config = useRuntimeConfig();
-const apiBaseUrl = config.public.apiBaseUrl;
+const { t } = useI18n()
+const config = useRuntimeConfig()
+const apiBaseUrl = config.public.apiBaseUrl
 
 const {
   approveBulkNomor,
@@ -1045,13 +1059,13 @@ const {
   showToastKeteranganRequired,
   showToastApprovalSuccess,
   showToastTidakAdaNomor
-} = usePenomoran();
+} = usePenomoran()
 
 // ─── Breadcrumbs & headers ────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('ver_title'), to: '/penomoran/verifikasi' }
-]);
+])
 
 const headers = computed(() => [
   { label: t('ver_col_jenis'), key: 'jenis', sortable: true },
@@ -1061,29 +1075,51 @@ const headers = computed(() => [
   { label: t('ver_col_jumlah'), key: 'jumlah', sortable: false },
   { label: t('ver_col_pengusul'), key: 'pengusul', sortable: false },
   { label: t('ver_col_tgl_usulan'), key: 'tanggal_usulan', sortable: true }
-]);
+])
 
 const filterOptions = computed(() => [
   { label: t('ver_filter_semua'), value: 'Semua' },
   { label: t('ver_filter_menunggu'), value: 'Menunggu Verifikasi' },
   { label: t('ver_filter_disetujui'), value: 'Disetujui' },
   { label: t('ver_filter_ditolak'), value: 'Ditolak' }
-]);
+])
 
 const currentFilterLabel = computed(
   () =>
     filterOptions.value.find((o) => o.value === filterStatus.value)?.label ?? t('ver_filter_semua')
-);
+)
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const highlight = (text: string | number | null | undefined, keyword: string) => {
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  )
+}
 
 // ─── Export Excel ─────────────────────────────────────────────────────────────
-const isExporting = ref(false);
+const isExporting = ref(false)
 
 const handleExport = async () => {
-  if (isExporting.value || sortedRows.value.length === 0) return;
-  isExporting.value = true;
+  if (isExporting.value || sortedRows.value.length === 0) return
+  isExporting.value = true
 
   try {
-    let exportRows = sortedRows.value;
+    let exportRows = sortedRows.value
 
     if (pagination.value && pagination.value.total > rowsPerPage.value) {
       const res = await getListSubmitted({
@@ -1093,14 +1129,14 @@ const handleExport = async () => {
         sort_by: sortBy.value || undefined,
         sort_order: sortOrder.value || undefined,
         status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined
-      });
-      const data = res.data || [];
+      })
+      const data = res.data || []
       exportRows = data.map((item: any) => {
-        const tanggalDate = new Date(item.tanggal);
-        const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
-        const localCreated = item.created_at.replace('Z', '').replace('+00:00', '');
-        const createdDate = new Date(localCreated);
-        const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`;
+        const tanggalDate = new Date(item.tanggal)
+        const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+        const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
+        const createdDate = new Date(localCreated)
+        const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
         return {
           jenis: item.jenis,
           tanggal: formattedTanggal,
@@ -1110,8 +1146,8 @@ const handleExport = async () => {
           pengusul: item.nama || '-',
           tglUsulan,
           status: item.status
-        };
-      });
+        }
+      })
     }
 
     const sheetData = exportRows.map((row: any, idx: number) => ({
@@ -1124,70 +1160,70 @@ const handleExport = async () => {
       Pengusul: row.pengusul,
       'Tanggal Usulan': row.tglUsulan,
       Status: getRowStatusLabel(row.status)
-    }));
+    }))
 
     if (!sheetData.length) {
       toast.add({
         title: 'Tidak ada data',
         description: 'Tidak ada data untuk diexport',
         color: 'warning'
-      });
-      return;
+      })
+      return
     }
 
-    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const ws = XLSX.utils.json_to_sheet(sheetData)
     const colWidths = Object.keys(sheetData[0] || {}).map((key) => ({
       wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
-    }));
-    ws['!cols'] = colWidths;
+    }))
+    ws['!cols'] = colWidths
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Verifikasi');
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Verifikasi')
 
     const statusLabel =
-      filterOptions.value.find((o) => o.value === filterStatus.value)?.label || 'Semua';
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-    XLSX.writeFile(wb, `Verifikasi_${statusLabel}_${dateStr}.xlsx`);
+      filterOptions.value.find((o) => o.value === filterStatus.value)?.label || 'Semua'
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+    XLSX.writeFile(wb, `Verifikasi_${statusLabel}_${dateStr}.xlsx`)
 
     // ← toast sukses
     toast.add({
       title: t('ver_btn_export') || 'Export Berhasil',
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
-    });
+    })
   } catch (e) {
-    console.error('❌ Error export:', e);
+    console.error('❌ Error export:', e)
     // ← toast error
     toast.add({
       title: 'Export Gagal',
       description: 'Terjadi kesalahan saat export data',
       color: 'error'
-    });
+    })
   } finally {
-    isExporting.value = false;
+    isExporting.value = false
   }
-};
+}
 const sortedRows = computed<any[]>(() => {
-  if (!sortBy.value || rows.value.length === 0) return rows.value;
-  const key = sortBy.value as keyof (typeof rows.value)[0];
-  const dir = sortOrder.value === 'asc' ? 1 : -1;
+  if (!sortBy.value || rows.value.length === 0) return rows.value
+  const key = sortBy.value as keyof (typeof rows.value)[0]
+  const dir = sortOrder.value === 'asc' ? 1 : -1
   return [...rows.value].sort((a, b) => {
-    const av = a[key] ?? '';
-    const bv = b[key] ?? '';
-    return String(av).localeCompare(String(bv), 'id', { sensitivity: 'base' }) * dir;
-  });
-});
-const toast = useToast();
+    const av = a[key] ?? ''
+    const bv = b[key] ?? ''
+    return String(av).localeCompare(String(bv), 'id', { sensitivity: 'base' }) * dir
+  })
+})
+const toast = useToast()
 // ─── Status labels ────────────────────────────────────────────────────────────
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
     'Menunggu Verifikasi': t('ver_status_menunggu'),
     Disetujui: t('ver_status_disetujui'),
     Ditolak: t('ver_status_ditolak')
-  };
-  return map[status] ?? status;
-};
+  }
+  return map[status] ?? status
+}
 
 const getDetailStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -1198,47 +1234,47 @@ const getDetailStatusLabel = (status: string) => {
     terpakai_final: t('ver_status_detail_final'),
     ditolak: t('ver_status_detail_ditolak'),
     hangus: t('ver_status_detail_hangus')
-  };
-  return map[status] ?? status;
-};
+  }
+  return map[status] ?? status
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const isOpenPreview = ref(false);
-const pdfUrl = ref<string | null>(null);
-const rowsPerPage = ref<number>(10);
-const rowsChoices = [10, 25, 50, 100];
-const showRowsDropdown = ref(false);
-const rowsRef = ref<HTMLElement | null>(null);
-const currentPage = ref<number>(1);
-const search = ref<string>('');
-const selectedRow = ref<any>(null);
-const keterangan_ditolak = ref('');
-const showKeteranganWarning = ref(false);
-const isProcessing = ref(false);
-const showConfirmApprove = ref(false);
-const showConfirmReject = ref(false);
-const sortBy = ref<string>('');
-const sortOrder = ref<'asc' | 'desc'>('desc');
-const filterStatus = ref<string>('Menunggu Verifikasi');
-const openFilterStatus = ref<boolean>(false);
-const openPreview = ref(false);
-const rows = ref<any[]>([]);
-const pagination = ref(null);
-const loading = ref(false);
-const uncheckAll = ref(false);
+const isOpenPreview = ref(false)
+const pdfUrl = ref<string | null>(null)
+const rowsPerPage = ref<number>(10)
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
+const currentPage = ref<number>(1)
+const search = ref<string>('')
+const selectedRow = ref<any>(null)
+const keterangan_ditolak = ref('')
+const showKeteranganWarning = ref(false)
+const isProcessing = ref(false)
+const showConfirmApprove = ref(false)
+const showConfirmReject = ref(false)
+const sortBy = ref<string>('')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const filterStatus = ref<string>('Menunggu Verifikasi')
+const openFilterStatus = ref<boolean>(false)
+const openPreview = ref(false)
+const rows = ref<any[]>([])
+const pagination = ref(null)
+const loading = ref(false)
+const uncheckAll = ref(false)
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ─── Rows per page ────────────────────────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n;
-  showRowsDropdown.value = false;
-  handleLimitChange();
-};
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
 
 // ─── Fetch data ───────────────────────────────────────────────────────────────
 const fetchData = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const params = {
       search: search.value || undefined,
@@ -1247,20 +1283,20 @@ const fetchData = async () => {
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
-    };
-    const res = await getListSubmitted(params);
-    const data = res.data || [];
-    pagination.value = res.pagination || null;
+    }
+    const res = await getListSubmitted(params)
+    const data = res.data || []
+    pagination.value = res.pagination || null
     if (!Array.isArray(data)) {
-      rows.value = [];
-      return;
+      rows.value = []
+      return
     }
     rows.value = data.map((item: any) => {
-      const tanggalDate = new Date(item.tanggal);
-      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
-      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '');
-      const createdDate = new Date(localCreated);
-      const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`;
+      const tanggalDate = new Date(item.tanggal)
+      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
+      const createdDate = new Date(localCreated)
+      const tglUsulan = `${String(createdDate.getDate()).padStart(2, '0')}/${String(createdDate.getMonth() + 1).padStart(2, '0')}/${String(createdDate.getFullYear()).slice(-2)} ${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`
       return {
         id: item.id,
         jenis: item.jenis,
@@ -1273,85 +1309,85 @@ const fetchData = async () => {
         status: item.status,
         klasifikasi: item.klasifikasi,
         file_path: item.file_path
-      };
-    });
+      }
+    })
   } catch (error) {
-    console.error('❌ Error fetch data verifikasi:', error);
-    rows.value = [];
-    pagination.value = null;
+    console.error('❌ Error fetch data verifikasi:', error)
+    rows.value = []
+    pagination.value = null
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleSearchInput = () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
+  if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
-};
+    currentPage.value = 1
+    fetchData()
+  }, 500)
+}
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
-    sortBy.value = column;
-    sortOrder.value = 'desc';
+    sortBy.value = column
+    sortOrder.value = 'desc'
   }
-  currentPage.value = 1;
-  fetchData();
-};
+  currentPage.value = 1
+  fetchData()
+}
 const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return;
-  currentPage.value = page;
-  fetchData();
-};
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  fetchData()
+}
 const handleLimitChange = () => {
-  currentPage.value = 1;
-  fetchData();
-};
+  currentPage.value = 1
+  fetchData()
+}
 const selectFilterStatus = (item: { label: string; value: string }) => {
-  filterStatus.value = item.value;
-  openFilterStatus.value = false;
-  currentPage.value = 1;
-  fetchData();
-};
+  filterStatus.value = item.value
+  openFilterStatus.value = false
+  currentPage.value = 1
+  fetchData()
+}
 
-const totalPages = computed(() => pagination.value?.totalPages || 1);
+const totalPages = computed(() => pagination.value?.totalPages || 1)
 const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages: number[] = []
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i);
+    for (let i = 1; i <= total; i++) pages.push(i)
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5);
+    pages.push(1, 2, 3, 4, 5)
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total);
+    pages.push(total - 2, total - 1, total)
   } else {
-    pages.push(current - 1, current, current + 1);
+    pages.push(current - 1, current, current + 1)
   }
-  return pages;
-});
+  return pages
+})
 
 // ─── Show preview modal ───────────────────────────────────────────────────────
 const showPreview = async (row: any) => {
   try {
-    const detailData = await getDetailVerifikasiRequest(row.id);
-    if (!detailData) return;
-    selectedRow.value = { ...row, ...detailData };
-    keterangan_ditolak.value = '';
-    showKeteranganWarning.value = false;
-    uncheckAll.value = false;
-    openPreview.value = true;
+    const detailData = await getDetailVerifikasiRequest(row.id)
+    if (!detailData) return
+    selectedRow.value = { ...row, ...detailData }
+    keterangan_ditolak.value = ''
+    showKeteranganWarning.value = false
+    uncheckAll.value = false
+    openPreview.value = true
   } catch (error) {
-    console.error('❌ Error fetch detail:', error);
+    console.error('❌ Error fetch detail:', error)
   }
-};
+}
 
 // ─── Toggle uncheck all ───────────────────────────────────────────────────────
 const toggleUncheckAll = () => {
-  if (!selectedRow.value?.details) return;
+  if (!selectedRow.value?.details) return
   selectedRow.value.details.forEach((d: any) => {
     if (
       d.status !== 'hangus' &&
@@ -1359,204 +1395,203 @@ const toggleUncheckAll = () => {
       d.status !== 'terpakai_final' &&
       d.status !== 'ditolak'
     ) {
-      d.checked = !uncheckAll.value;
+      d.checked = !uncheckAll.value
     }
-  });
-};
+  })
+}
 
 watch(
   () => selectedRow.value?.details,
   (details) => {
-    if (!details) return;
+    if (!details) return
     const valid = details.filter(
       (d: any) =>
         d.status !== 'hangus' &&
         d.status !== 'terpakai' &&
         d.status !== 'terpakai_final' &&
         d.status !== 'ditolak'
-    );
-    uncheckAll.value = valid.length > 0 && valid.every((d: any) => !d.checked);
+    )
+    uncheckAll.value = valid.length > 0 && valid.every((d: any) => !d.checked)
   },
   { deep: true }
-);
+)
 
 // ─── Preview file ─────────────────────────────────────────────────────────────
 const previewFile = (detail: any) => {
-  const url = detail.file_url || (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null);
+  const url = detail.file_url || (detail.file_text ? `${apiBaseUrl}/${detail.file_text}` : null)
   if (!url) {
-    showToastFileNotFound();
-    return;
+    showToastFileNotFound()
+    return
   }
-  pdfUrl.value = url;
-  isOpenPreview.value = true;
-};
+  pdfUrl.value = url
+  isOpenPreview.value = true
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const displayNomor = (detail: any) => {
-  if (detail.status === 'terpakai' && detail.nomor) return detail.nomor;
-  if (detail.template_nomor) return detail.template_nomor;
-  if (selectedRow.value?.template_nomor) return selectedRow.value.template_nomor;
-  return '-';
-};
+  if (detail.status === 'terpakai' && detail.nomor) return detail.nomor
+  if (detail.template_nomor) return detail.template_nomor
+  if (selectedRow.value?.template_nomor) return selectedRow.value.template_nomor
+  return '-'
+}
 const handleCopy = (value: string) => {
-  navigator.clipboard.writeText(value);
-  showToastCopied(value);
-};
-const getFileName = (path: string) => (path ? path.split('/').pop() || path : '-');
-const hasExistingFile = (detail: any) =>
-  !!(detail.file_name || detail.file_text || detail.file_url);
+  navigator.clipboard.writeText(value)
+  showToastCopied(value)
+}
+const getFileName = (path: string) => (path ? path.split('/').pop() || path : '-')
+const hasExistingFile = (detail: any) => !!(detail.file_name || detail.file_text || detail.file_url)
 const getDisplayFileName = (detail: any) => {
-  if (detail.file_name) return detail.file_name;
-  if (detail.file_text) return getFileName(detail.file_text);
-  if (detail.file_url) return getFileName(detail.file_url);
-  return 'File Terlampir';
-};
+  if (detail.file_name) return detail.file_name
+  if (detail.file_text) return getFileName(detail.file_text)
+  if (detail.file_url) return getFileName(detail.file_url)
+  return 'File Terlampir'
+}
 
 // ─── Computed validasi ────────────────────────────────────────────────────────
 const validDetails = computed(() =>
   (selectedRow.value?.details || []).filter(
     (d: any) => d.id && d.id !== null && d.id !== 'null' && d.status !== 'hangus'
   )
-);
-const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked));
-const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked));
+)
+const hasAnyChecked = computed(() => validDetails.value.some((d: any) => d.checked))
+const hasUnchecked = computed(() => validDetails.value.some((d: any) => !d.checked))
 const allUnchecked = computed(
   () => validDetails.value.length > 0 && validDetails.value.every((d: any) => !d.checked)
-);
-const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length);
-const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length);
+)
+const checkedCount = computed(() => validDetails.value.filter((d: any) => d.checked).length)
+const uncheckedCount = computed(() => validDetails.value.filter((d: any) => !d.checked).length)
 
 // ─── Approval ─────────────────────────────────────────────────────────────────
 const confirmApproval = () => {
   if (!hasAnyChecked.value) {
-    showToastNomorMinimal();
-    return;
+    showToastNomorMinimal()
+    return
   }
   if (hasUnchecked.value && !keterangan_ditolak.value.trim()) {
-    showKeteranganWarning.value = true;
-    showToastKeteranganRequired(uncheckedCount.value);
-    document.querySelector('textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
+    showKeteranganWarning.value = true
+    showToastKeteranganRequired(uncheckedCount.value)
+    document.querySelector('textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return
   }
-  showKeteranganWarning.value = false;
-  showConfirmApprove.value = true;
-};
+  showKeteranganWarning.value = false
+  showConfirmApprove.value = true
+}
 const processApproval = async () => {
-  showConfirmApprove.value = false;
-  if (!selectedRow.value) return;
-  const approvedDetails = validDetails.value.filter((d: any) => d.checked);
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
+  showConfirmApprove.value = false
+  if (!selectedRow.value) return
+  const approvedDetails = validDetails.value.filter((d: any) => d.checked)
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
   if (approvedDetails.length === 0) {
-    showToastTidakAdaNomor('disetujui');
-    return;
+    showToastTidakAdaNomor('disetujui')
+    return
   }
-  isProcessing.value = true;
+  isProcessing.value = true
   try {
-    await approveBulkNomor(approvedDetails.map((d: any) => d.id));
+    await approveBulkNomor(approvedDetails.map((d: any) => d.id))
     if (rejectedDetails.length > 0 && keterangan_ditolak.value.trim()) {
       await rejectNomorRequest(
         selectedRow.value.id,
         rejectedDetails.map((d: any) => d.id),
         keterangan_ditolak.value
-      );
+      )
     }
-    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length);
-    openPreview.value = false;
-    await fetchData();
+    showToastApprovalSuccess(approvedDetails.length, rejectedDetails.length)
+    openPreview.value = false
+    await fetchData()
   } catch (error) {
-    console.error('❌ Error approval:', error);
+    console.error('❌ Error approval:', error)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
-};
+}
 
 // ─── Rejection ────────────────────────────────────────────────────────────────
 const confirmRejection = () => {
-  if (!allUnchecked.value) return;
+  if (!allUnchecked.value) return
   if (!keterangan_ditolak.value.trim()) {
-    showKeteranganWarning.value = true;
-    showToastKeteranganRequired();
-    document.querySelector('textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
+    showKeteranganWarning.value = true
+    showToastKeteranganRequired()
+    document.querySelector('textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return
   }
-  showKeteranganWarning.value = false;
-  showConfirmReject.value = true;
-};
+  showKeteranganWarning.value = false
+  showConfirmReject.value = true
+}
 const processRejection = async () => {
-  showConfirmReject.value = false;
-  if (!selectedRow.value) return;
-  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked);
+  showConfirmReject.value = false
+  if (!selectedRow.value) return
+  const rejectedDetails = validDetails.value.filter((d: any) => !d.checked)
   if (rejectedDetails.length === 0) {
-    showToastTidakAdaNomor('ditolak');
-    return;
+    showToastTidakAdaNomor('ditolak')
+    return
   }
   if (!keterangan_ditolak.value.trim()) {
-    showKeteranganWarning.value = true;
-    showToastKeteranganRequired();
-    return;
+    showKeteranganWarning.value = true
+    showToastKeteranganRequired()
+    return
   }
-  isProcessing.value = true;
+  isProcessing.value = true
   try {
     await rejectNomorRequest(
       selectedRow.value.id,
       rejectedDetails.map((d: any) => d.id),
       keterangan_ditolak.value
-    );
-    openPreview.value = false;
-    await fetchData();
+    )
+    openPreview.value = false
+    await fetchData()
   } catch (error) {
-    console.error('❌ Error rejection:', error);
+    console.error('❌ Error rejection:', error)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
-};
+}
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
   for (const el of Array.from(document.querySelectorAll('[data-custom-dropdown]'))) {
-    if (el.contains(target)) return;
+    if (el.contains(target)) return
   }
-  openFilterStatus.value = false;
+  openFilterStatus.value = false
 }
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
-const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
+const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onRowMouseMove = (e: MouseEvent, text: string) => {
   tooltip.value = {
     show: true,
     text,
     x: Math.min(e.clientX + 12, window.innerWidth - 200),
     y: Math.min(e.clientY + 12, window.innerHeight - 40)
-  };
-};
+  }
+}
 const onRowMouseLeave = () => {
-  tooltip.value.show = false;
-};
+  tooltip.value.show = false
+}
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await fetchData();
-  document.addEventListener('click', handleDocumentClick);
-});
+  await fetchData()
+  document.addEventListener('click', handleDocumentClick)
+})
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick);
-  if (searchTimeout) clearTimeout(searchTimeout);
-  pdfUrl.value = null;
-});
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  pdfUrl.value = null
+})
 
 watch(keterangan_ditolak, (v) => {
-  if (v.trim()) showKeteranganWarning.value = false;
-});
+  if (v.trim()) showKeteranganWarning.value = false
+})
 watch(isOpenPreview, (open) => {
   if (open) {
-    openPreview.value = false;
+    openPreview.value = false
   } else {
-    pdfUrl.value = null;
-    if (selectedRow.value) openPreview.value = true;
+    pdfUrl.value = null
+    if (selectedRow.value) openPreview.value = true
   }
-});
+})
 </script>
 
 <style scoped>

@@ -1210,22 +1210,19 @@ function finishAndClose() {
 // ─── HANDLE CLOSE ─────────────────────────────────────────────
 function handleCloseRequest(value) {
   if (!value) {
-    if (currentStep.value >= 2 && createdRequestId.value) {
-      showCloseConfirm.value = true;
-      return;
-    }
-    resetAndClose();
+    showCloseConfirm.value = true; // selalu tampilkan confirm
   }
 }
 
 async function confirmCloseAndDelete() {
   if (!createdRequestId.value) {
-    resetAndClose();
-    hasLoadedJenis.value = false;
-    jenisOptions.value = [];
+    // Step 1: tidak ada draft → langsung tutup
     showCloseConfirm.value = false;
+    resetAndClose();
     return;
   }
+
+  // Step 2/3: ada draft → hapus dulu
   isDeletingDraft.value = true;
   try {
     await deleteUsulanUser(createdRequestId.value);
@@ -1245,6 +1242,8 @@ async function confirmCloseAndDelete() {
 
 // ─── RESET ────────────────────────────────────────────────────
 function resetAndClose() {
+  emit('update:modelValue', false);
+
   currentStep.value = 1;
   createdRequestId.value = null;
   bookingDetails.value = [];
@@ -1276,8 +1275,8 @@ function resetAndClose() {
   isSingleFile.value = false;
   singleFile.value = null;
   filesByIndex.value = [null];
-  emit('update:modelValue', false);
 }
+
 formErrors.value = {
   tanggal: false,
   klasifikasi: false,

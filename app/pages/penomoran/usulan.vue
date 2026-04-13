@@ -20,9 +20,9 @@
     <!-- CARD -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl w-full">
       <!-- TOP BAR -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 mb-4 pr-3">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
         <!-- ROWS PER PAGE -->
-        <div class="flex items-center gap-2 px-4">
+        <div class="flex items-center gap-2">
           <div class="relative" ref="rowsRef">
             <button
               type="button"
@@ -240,25 +240,33 @@
               @mouseleave="onMouseLeave"
               @click.capture="openRowModal(row)"
             >
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.jenis }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.tanggal }}</td>
+              <td class="px-5 py-4 dark:text-gray-300" v-html="highlight(row.jenis, search)"></td>
+              <td class="px-5 py-4 dark:text-gray-300" v-html="highlight(row.tanggal, search)"></td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[350px]">
-                  <p class="whitespace-normal break-words line-clamp-3 dark:text-gray-300">
-                    {{ row.perihal }}
-                  </p>
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                    v-html="highlight(row.perihal, search)"
+                  ></p>
                 </div>
               </td>
               <td class="px-5 py-4">
                 <div class="relative group max-w-[300px]">
-                  <p class="whitespace-normal break-words line-clamp-3 dark:text-gray-300">
-                    {{ row.penandatangan }}
-                  </p>
+                  <p
+                    class="whitespace-normal break-words line-clamp-3 dark:text-gray-300"
+                    v-html="highlight(row.penandatangan, search)"
+                  ></p>
                 </div>
               </td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.jumlah }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.pengusul }}</td>
-              <td class="px-5 py-4 dark:text-gray-300">{{ row.tglUsulan }}</td>
+              <td class="px-5 py-4 dark:text-gray-300" v-html="highlight(row.jumlah, search)"></td>
+              <td
+                class="px-5 py-4 dark:text-gray-300"
+                v-html="highlight(row.pengusul, search)"
+              ></td>
+              <td
+                class="px-5 py-4 dark:text-gray-300"
+                v-html="highlight(row.tglUsulan, search)"
+              ></td>
               <td
                 @click.stop
                 class="sticky right-0 z-20 bg-white dark:bg-gray-800 px-5 py-3 border-l border-gray-200 dark:border-gray-700 shadow-[inset_1px_0_1px_-1px_rgba(0,0,0,9)]"
@@ -276,7 +284,7 @@
                       row.status === 'Draft'
                   }"
                 >
-                  {{ getRowStatusLabel(row.status) }}
+                  <span v-html="highlight(getRowStatusLabel(row.status), search)"></span>
                 </span>
               </td>
             </tr>
@@ -728,28 +736,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next';
-import AddUsulan from '~/components/AddUsulan.vue';
-import Heading from '~/components/Heading.vue';
-import PageHeader from '~/components/PageHeader.vue';
-import { Modal } from '#components';
-import { usePenomoran } from '~/composables/usePenomoran';
-import { useAuth } from '~/composables/useAuth';
-import * as XLSX from 'xlsx';
-definePageMeta({ middleware: 'auth' });
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Search, ArrowUpDown, Plus, Copy, ChevronDown } from 'lucide-vue-next'
+import AddUsulan from '~/components/AddUsulan.vue'
+import Heading from '~/components/Heading.vue'
+import PageHeader from '~/components/PageHeader.vue'
+import { Modal } from '#components'
+import { usePenomoran } from '~/composables/usePenomoran'
+import { useAuth } from '~/composables/useAuth'
+import * as XLSX from 'xlsx'
+definePageMeta({ middleware: 'auth' })
 
-const { t } = useI18n();
-const { user, getProfile } = useAuth();
-const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran();
-const toast = useToast();
+const { t } = useI18n()
+const { user, getProfile } = useAuth()
+const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran()
+const toast = useToast()
 
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('usl_title'), to: '/penomoran/usulan' }
-]);
+])
 
 const headers = computed(() => [
   { label: t('usl_col_jenis'), key: 'jenis', sortable: true },
@@ -759,7 +767,7 @@ const headers = computed(() => [
   { label: t('usl_col_jumlah'), key: 'jumlah', sortable: false },
   { label: t('usl_col_pengusul'), key: 'pengusul', sortable: false },
   { label: t('usl_col_tgl_usulan'), key: 'tanggal_usulan', sortable: true }
-]);
+])
 
 const filterOptions = computed(() => [
   { label: t('usl_filter_semua'), value: 'Semua' },
@@ -767,12 +775,34 @@ const filterOptions = computed(() => [
   { label: t('usl_filter_menunggu'), value: 'Menunggu Verifikasi' },
   { label: t('usl_filter_disetujui'), value: 'Disetujui' },
   { label: t('usl_filter_ditolak'), value: 'Ditolak' }
-]);
+])
 
 const selectedFilterLabel = computed(
   () =>
     filterOptions.value.find((o) => o.value === filterStatus.value)?.label ?? t('usl_filter_semua')
-);
+)
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const highlight = (text: string | number | null | undefined, keyword: string) => {
+  const safeText = escapeHtml(String(text ?? '-'))
+  const q = keyword.trim()
+  if (!q) return safeText
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+
+  return safeText.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
+  )
+}
 
 const getRowStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -780,9 +810,9 @@ const getRowStatusLabel = (status: string) => {
     Disetujui: t('usl_status_disetujui'),
     Ditolak: t('usl_status_ditolak'),
     Draft: t('usl_status_draft')
-  };
-  return map[status] || status;
-};
+  }
+  return map[status] || status
+}
 
 const getDetailStatusLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -791,9 +821,9 @@ const getDetailStatusLabel = (status: string) => {
     terpakai_final: t('usl_status_final'),
     ditolak: t('usl_status_ditolak'),
     hangus: t('usl_status_hangus')
-  };
-  return map[status] || status;
-};
+  }
+  return map[status] || status
+}
 
 const detailStatusClass = (status: string) => ({
   'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': status === 'booking',
@@ -802,28 +832,28 @@ const detailStatusClass = (status: string) => ({
   'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400': status === 'hangus',
   'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400':
     status === 'terpakai_final'
-});
+})
 const getStatusLabel = (item: any): string => {
-  if (item.status === 'hangus') return t('nom_status_hangus');
-  if (item.status === 'terpakai_final') return t('nom_status_final');
-  if (item.status === 'terpakai') return t('nom_status_terpakai');
-  if (item.status === 'draft') return t('usl_status_draft');
-  return t('nom_status_booking');
-};
+  if (item.status === 'hangus') return t('nom_status_hangus')
+  if (item.status === 'terpakai_final') return t('nom_status_final')
+  if (item.status === 'terpakai') return t('nom_status_terpakai')
+  if (item.status === 'draft') return t('usl_status_draft')
+  return t('nom_status_booking')
+}
 
 const getStatusClass = (item: any): string => {
   if (item.status === 'hangus')
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
   if (item.status === 'terpakai_final')
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
   if (item.status === 'terpakai')
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
   if (item.status === 'draft')
-    return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
-  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-};
+    return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+}
 
-const sortedRows = computed(() => rows.value);
+const sortedRows = computed(() => rows.value)
 
 const statusTabs = computed(() => [
   { value: 'Semua', label: t('usl_filter_semua') },
@@ -831,16 +861,16 @@ const statusTabs = computed(() => [
   { value: 'Menunggu Verifikasi', label: t('usl_status_menunggu_verifikasi') },
   { value: 'Disetujui', label: t('usl_status_disetujui') },
   { value: 'Ditolak', label: t('usl_status_ditolak') }
-]);
+])
 // ─── Export Excel ─────────────────────────────────────────────────────────────
-const isExporting = ref(false);
+const isExporting = ref(false)
 
 const handleExport = async () => {
-  if (isExporting.value || rows.value.length === 0) return;
-  isExporting.value = true;
+  if (isExporting.value || rows.value.length === 0) return
+  isExporting.value = true
 
   try {
-    let exportRows = sortedRows.value;
+    let exportRows = sortedRows.value
 
     if (pagination.value && pagination.value.total > rowsPerPage.value) {
       const res = await getListUsulan(String(user.value.position), {
@@ -850,12 +880,12 @@ const handleExport = async () => {
         sort_by: sortBy.value || undefined,
         sort_order: sortOrder.value || undefined,
         status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined
-      });
+      })
       exportRows = (res.data || []).map((item: any) => {
-        const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
-        const tanggalDate = new Date(item.tanggal);
-        const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
-        const createdDate = new Date(item.created_at);
+        const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
+        const tanggalDate = new Date(item.tanggal)
+        const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+        const createdDate = new Date(item.created_at)
         return {
           jenis: item.jenis,
           tanggal: formattedTanggal,
@@ -867,11 +897,11 @@ const handleExport = async () => {
           template_nomor: item.template_nomor || '-',
           status: item.status || 'Draft',
           is_single_file: item.is_single_file
-        };
-      });
+        }
+      })
     }
 
-    const safeRows = Array.isArray(exportRows) ? exportRows : [];
+    const safeRows = Array.isArray(exportRows) ? exportRows : []
     const sheetData = safeRows.map((row: any, idx: number) => ({
       No: idx + 1,
       'Jenis Naskah': row.jenis,
@@ -884,83 +914,83 @@ const handleExport = async () => {
       'Template Nomor': row.template_nomor || '-',
       Status: getRowStatusLabel(row.status),
       'Single File': row.is_single_file ? 'Ya' : 'Tidak'
-    }));
+    }))
 
     if (!sheetData.length) {
       toast.add({
         title: 'Tidak ada data',
         description: 'Data kosong tidak bisa diexport',
         color: 'warning'
-      });
-      return;
+      })
+      return
     }
 
-    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const ws = XLSX.utils.json_to_sheet(sheetData)
     const colWidths = Object.keys(sheetData[0] || {}).map((key) => ({
       wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
-    }));
-    ws['!cols'] = colWidths;
+    }))
+    ws['!cols'] = colWidths
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Penomoran');
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Penomoran')
 
     const statusLabel =
-      statusTabs.value.find((s) => s.value === filterStatus.value)?.label || 'Semua';
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-    XLSX.writeFile(wb, `Penomoran_${statusLabel}_${dateStr}.xlsx`);
+      statusTabs.value.find((s) => s.value === filterStatus.value)?.label || 'Semua'
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+    XLSX.writeFile(wb, `Penomoran_${statusLabel}_${dateStr}.xlsx`)
 
     // ← toast sukses
     toast.add({
       title: t('ver_btn_export') || 'Export Berhasil',
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
-    });
+    })
   } catch (e) {
-    console.error('❌ Error export:', e);
+    console.error('❌ Error export:', e)
     // ← toast error
     toast.add({
       title: 'Export Gagal',
       description: 'Terjadi kesalahan saat export data',
       color: 'error'
-    });
+    })
   } finally {
-    isExporting.value = false;
+    isExporting.value = false
   }
-};
+}
 // ─── State ────────────────────────────────────────────────────────────────────
-const openDetail = ref(false);
-const selectedRow = ref<any>(null);
-const rows = ref<any[]>([]);
-const loading = ref(true);
-const pagination = ref<any>(null);
+const openDetail = ref(false)
+const selectedRow = ref<any>(null)
+const rows = ref<any[]>([])
+const loading = ref(true)
+const pagination = ref<any>(null)
 
-const isOpenPreview = ref(false);
-const pdfUrl = ref<string | null>(null);
+const isOpenPreview = ref(false)
+const pdfUrl = ref<string | null>(null)
 
-const openAdd = ref(false);
-const klasifikasiMap = ref(new Map());
+const openAdd = ref(false)
+const klasifikasiMap = ref(new Map())
 
-const search = ref('');
-const currentPage = ref(1);
-const rowsPerPage = ref(10);
-const rowsChoices = [10, 25, 50, 100];
-const showRowsDropdown = ref(false);
-const rowsRef = ref<HTMLElement | null>(null);
-const sortBy = ref('');
-const sortOrder = ref<'asc' | 'desc'>('desc');
-const filterStatus = ref('Semua');
-const openFilterStatus = ref(false);
+const search = ref('')
+const currentPage = ref(1)
+const rowsPerPage = ref(10)
+const rowsChoices = [10, 25, 50, 100]
+const showRowsDropdown = ref(false)
+const rowsRef = ref<HTMLElement | null>(null)
+const sortBy = ref('')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const filterStatus = ref('Semua')
+const openFilterStatus = ref(false)
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ─── Single / Multi file ──────────────────────────────────────────────────────
-const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file);
+const isSingleFileMode = computed(() => !!selectedRow.value?.is_single_file)
 
 const sharedFile = computed(() => {
-  if (!isSingleFileMode.value) return null;
-  return selectedRow.value?.nomor_list?.find((n: any) => n.file_name) ?? null;
-});
+  if (!isSingleFileMode.value) return null
+  return selectedRow.value?.nomor_list?.find((n: any) => n.file_name) ?? null
+})
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
 const previewFile = (detail: any) => {
@@ -969,19 +999,19 @@ const previewFile = (detail: any) => {
       title: t('usl_toast_file_tidak_ada_title'),
       description: t('usl_toast_file_tidak_ada_desc'),
       color: 'warning'
-    });
-    return;
+    })
+    return
   }
-  pdfUrl.value = detail.file_url;
-  isOpenPreview.value = true;
-};
+  pdfUrl.value = detail.file_url
+  isOpenPreview.value = true
+}
 
 // ─── Rows per page ────────────────────────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {
-  rowsPerPage.value = n;
-  showRowsDropdown.value = false;
-  handleLimitChange();
-};
+  rowsPerPage.value = n
+  showRowsDropdown.value = false
+  handleLimitChange()
+}
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
 // const fetchPersonMap = async () => {
@@ -1001,20 +1031,20 @@ const selectRowsPerPage = (n: number) => {
 
 const fetchKlasifikasiMap = async () => {
   try {
-    const list = await getKlasifikasi();
-    list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display));
+    const list = await getKlasifikasi()
+    list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display))
   } catch (e) {
-    console.error('❌ Error fetch klasifikasi map:', e);
+    console.error('❌ Error fetch klasifikasi map:', e)
   }
-};
+}
 
 const fetchData = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     if (!user.value?.position) {
-      rows.value = [];
-      pagination.value = null;
-      return;
+      rows.value = []
+      pagination.value = null
+      return
     }
     const params = {
       search: search.value || undefined,
@@ -1023,21 +1053,21 @@ const fetchData = async () => {
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
       sort_by: sortBy.value || undefined,
       sort_order: sortOrder.value || undefined
-    };
-    const response = await getListUsulan(String(user.value.position), params);
-    const data = response.data || [];
-    pagination.value = response.pagination || null;
+    }
+    const response = await getListUsulan(String(user.value.position), params)
+    const data = response.data || []
+    pagination.value = response.pagination || null
     if (!Array.isArray(data)) {
-      rows.value = [];
-      return;
+      rows.value = []
+      return
     }
     rows.value = data.map((item: any) => {
-      const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi;
-      const mappedStatus = item.status || 'Draft';
-      const tanggalDate = new Date(item.tanggal);
-      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`;
-      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '');
-      const createdDate = new Date(localCreated);
+      const klasifikasiDisplay = klasifikasiMap.value.get(item.klasifikasi) || item.klasifikasi
+      const mappedStatus = item.status || 'Draft'
+      const tanggalDate = new Date(item.tanggal)
+      const formattedTanggal = `${String(tanggalDate.getUTCDate()).padStart(2, '0')}/${String(tanggalDate.getUTCMonth() + 1).padStart(2, '0')}/${tanggalDate.getUTCFullYear()}`
+      const localCreated = item.created_at.replace('Z', '').replace('+00:00', '')
+      const createdDate = new Date(localCreated)
       return {
         id: item.id,
         jenis: item.jenis,
@@ -1052,80 +1082,80 @@ const fetchData = async () => {
         status: mappedStatus,
         details: item.details || [],
         template_nomor: item.template_nomor || ''
-      };
-    });
+      }
+    })
   } catch (err) {
-    console.error('❌ Gagal fetch data:', err);
-    rows.value = [];
-    pagination.value = null;
+    console.error('❌ Gagal fetch data:', err)
+    rows.value = []
+    pagination.value = null
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // ─── Pagination / sort / filter ───────────────────────────────────────────────
 const handleSearchInput = () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
+  if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
-};
+    currentPage.value = 1
+    fetchData()
+  }, 500)
+}
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
-    sortBy.value = column;
-    sortOrder.value = 'desc';
+    sortBy.value = column
+    sortOrder.value = 'desc'
   }
-  currentPage.value = 1;
-  fetchData();
-};
+  currentPage.value = 1
+  fetchData()
+}
 const handlePageChange = (page: number) => {
-  if (page < 1 || page > totalPages.value) return;
-  currentPage.value = page;
-  fetchData();
-};
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  fetchData()
+}
 const handleLimitChange = () => {
-  currentPage.value = 1;
-  fetchData();
-};
+  currentPage.value = 1
+  fetchData()
+}
 const selectFilterStatus = (val: string) => {
-  filterStatus.value = val;
-  openFilterStatus.value = false;
-  currentPage.value = 1;
-  fetchData();
-};
+  filterStatus.value = val
+  openFilterStatus.value = false
+  currentPage.value = 1
+  fetchData()
+}
 
-const totalPages = computed(() => pagination.value?.totalPages || 1);
+const totalPages = computed(() => pagination.value?.totalPages || 1)
 const paginationPages = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const pages: number[] = [];
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages: number[] = []
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i);
+    for (let i = 1; i <= total; i++) pages.push(i)
   } else if (current <= 2) {
-    pages.push(1, 2, 3, 4, 5);
+    pages.push(1, 2, 3, 4, 5)
   } else if (current >= total - 1) {
-    pages.push(total - 2, total - 1, total);
+    pages.push(total - 2, total - 1, total)
   } else {
-    pages.push(current - 1, current, current + 1);
+    pages.push(current - 1, current, current + 1)
   }
-  return pages;
-});
+  return pages
+})
 
 // ─── Open row modal ───────────────────────────────────────────────────────────
 const openRowModal = async (row: any) => {
   try {
-    const detailData = await getDetailUsulan(row.id);
-    if (!detailData) return;
+    const detailData = await getDetailUsulan(row.id)
+    if (!detailData) return
     const klasifikasiDisplay =
-      klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi;
+      klasifikasiMap.value.get(detailData.klasifikasi) || detailData.klasifikasi
     const normalizedDetails = normalizeDetails(
       detailData.details || [],
       detailData.jumlah,
       detailData.template_nomor || ''
-    );
+    )
     selectedRow.value = {
       id_usulan: detailData.id,
       jenis: detailData.jenis,
@@ -1141,17 +1171,17 @@ const openRowModal = async (row: any) => {
       template_nomor: detailData.template_nomor || '',
       details: normalizedDetails,
       nomor_list: normalizedDetails
-    };
-    openDetail.value = true;
+    }
+    openDetail.value = true
   } catch (err) {
-    console.error('❌ Gagal load detail:', err);
+    console.error('❌ Gagal load detail:', err)
   }
-};
+}
 
 const normalizeDetails = (details: any[], jumlah: number, template: string) => {
-  const result = [];
+  const result = []
   for (let i = 0; i < jumlah; i++) {
-    const d = details[i];
+    const d = details[i]
     result.push(
       d
         ? {
@@ -1170,72 +1200,72 @@ const normalizeDetails = (details: any[], jumlah: number, template: string) => {
             file_url: null,
             file_text: null
           }
-    );
+    )
   }
-  return result;
-};
+  return result
+}
 
 const handleCopy = (value: string) => {
-  if (!value) return;
-  navigator.clipboard.writeText(value);
+  if (!value) return
+  navigator.clipboard.writeText(value)
   toast.add({
     title: t('usl_toast_tersalin'),
     description: `"${value}" ${t('usl_toast_tersalin_desc')}`,
     color: 'success'
-  });
-};
+  })
+}
 
 const handleSubmitFromModal = async () => {
-  openAdd.value = false;
-  currentPage.value = 1;
-  await fetchData();
-};
+  openAdd.value = false
+  currentPage.value = 1
+  await fetchData()
+}
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
+  if (!dateStr) return '-'
   return new Date(dateStr.replace('Z', '').replace('+00:00', '')).toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
-  });
-};
+  })
+}
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false;
-  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]');
+  const target = e.target as HTMLElement
+  if (rowsRef.value && !rowsRef.value.contains(target)) showRowsDropdown.value = false
+  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]')
   for (const el of Array.from(dropdownEls)) {
-    if (el.contains(target)) return;
+    if (el.contains(target)) return
   }
-  openFilterStatus.value = false;
+  openFilterStatus.value = false
 }
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
-const tooltip = ref({ show: false, text: '', x: 0, y: 0 });
+const tooltip = ref({ show: false, text: '', x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent, text: string) => {
-  tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 };
-};
+  tooltip.value = { show: true, text, x: e.clientX + 12, y: e.clientY + 12 }
+}
 const onMouseLeave = () => {
-  tooltip.value.show = false;
-};
+  tooltip.value.show = false
+}
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  loading.value = true;
-  if (!user.value) await getProfile();
-  await fetchKlasifikasiMap();
-  await fetchData();
-  document.addEventListener('click', handleDocumentClick);
-});
+  loading.value = true
+  if (!user.value) await getProfile()
+  await fetchKlasifikasiMap()
+  await fetchData()
+  document.addEventListener('click', handleDocumentClick)
+})
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick);
-  if (searchTimeout) clearTimeout(searchTimeout);
-  pdfUrl.value = null;
-});
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  pdfUrl.value = null
+})
 watch(isOpenPreview, (open) => {
-  if (!open) pdfUrl.value = null;
-});
+  if (!open) pdfUrl.value = null
+})
 </script>
 
 <style scoped>
