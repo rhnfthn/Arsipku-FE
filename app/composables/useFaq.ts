@@ -32,10 +32,12 @@ interface FaqRaw {
   id_kategori?: string | number
   kategoriNama?: string
   kategori_nama?: string
-  puas: number
-  tidak_puas: number
+  puas?: number
+  tidak_puas?: number
+  tidakPuas?: number
   created_at: string
-  updated_at: string
+  updated_at?: string
+  updatedAt?: string
 }
 
 // ── Response wrapper dari API ─────────────────────────────────
@@ -78,9 +80,9 @@ const mapFaq = (raw: FaqRaw): Faq => {
     deskripsi: raw.deskripsi,
     kategori: kategoriNama,
     kategoriId,
-    puas: raw.puas,
-    tidakPuas: raw.tidak_puas,
-    updatedAt: raw.updated_at,
+    puas: Number(raw.puas ?? (raw as any).puas_count ?? 0),
+    tidakPuas: Number(raw.tidak_puas ?? raw.tidakPuas ?? (raw as any).tidak_puas_count ?? 0),
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? '',
   }
 }
 
@@ -241,13 +243,19 @@ export const useFaq = () => {
   }
 
   // ── VOTE PUAS ─────────────────────────────────────────────────
-  const votePuas = async (id: string): Promise<void> => {
-    await apiPost(`/faq/${id}/puas`)
+  const votePuas = async (id: string): Promise<Faq> => {
+    const res = await apiPost<any>(`/faq/${id}/puas`, {})
+    const raw = extractRawFaq(res)
+    if (!raw) throw new Error('Unexpected response shape from vote puas')
+    return mapFaq(raw)
   }
 
   // ── VOTE TIDAK PUAS ───────────────────────────────────────────
-  const voteTidakPuas = async (id: string): Promise<void> => {
-    await apiPost(`/faq/${id}/tidak-puas`)
+  const voteTidakPuas = async (id: string): Promise<Faq> => {
+    const res = await apiPost<any>(`/faq/${id}/tidak-puas`, {})
+    const raw = extractRawFaq(res)
+    if (!raw) throw new Error('Unexpected response shape from vote tidak puas')
+    return mapFaq(raw)
   }
 
   return {

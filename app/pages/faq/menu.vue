@@ -106,7 +106,12 @@
                     <button
                       @click="handleVote(faq, 'puas')"
                       :disabled="votingId === faq.id"
-                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
+                      :class="[
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition disabled:cursor-not-allowed',
+                        isVoted(faq.id, 'puas')
+                          ? 'bg-primary-400 border-primary-400 text-white'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                      ]"
                     >
                       <ThumbsUp class="w-4 h-4" />
                       Puas
@@ -115,7 +120,12 @@
                     <button
                       @click="handleVote(faq, 'tidak-puas')"
                       :disabled="votingId === faq.id"
-                      class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-100 transition disabled:opacity-50"
+                      :class="[
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition disabled:cursor-not-allowed',
+                        isVoted(faq.id, 'tidak-puas')
+                          ? 'bg-primary-400 border-primary-400 text-white'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                      ]"
                     >
                       <ThumbsDown class="w-4 h-4" />
                       Tidak Puas
@@ -132,99 +142,149 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
-import type { Faq, FaqKategori } from '@/composables/useFaq'
+import { ref, computed, watch, onMounted } from 'vue';
+import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next';
+import type { Faq, FaqKategori } from '@/composables/useFaq';
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth' });
 
-const { faqs, loading, fetchFaqs, fetchCategories, votePuas, voteTidakPuas } = useFaq()
+const { faqs, loading, fetchFaqs, fetchCategories, votePuas, voteTidakPuas } = useFaq();
 
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'FAQ', to: '/faq/menu' }
-] satisfies BreadcrumbItem[]
+] satisfies BreadcrumbItem[];
 
 // ─── Categories ──────────────────────────────────────────────────────────────
-const categories = ref<FaqKategori[]>([])
-const selectedCategoryId = ref('')
+const categories = ref<FaqKategori[]>([]);
+const selectedCategoryId = ref('');
 
 // ─── Open indices (support multi-open when searching) ────────────────────────
-const openIndices = ref<Set<number>>(new Set())
+const openIndices = ref<Set<number>>(new Set());
 
-const isOpen = (index: number) => openIndices.value.has(index)
+const isOpen = (index: number) => openIndices.value.has(index);
 
 const toggle = (index: number) => {
-  const s = new Set(openIndices.value)
+  const s = new Set(openIndices.value);
   if (s.has(index)) {
-    s.delete(index)
+    s.delete(index);
   } else {
-    s.add(index)
+    s.add(index);
   }
-  openIndices.value = s
-}
+  openIndices.value = s;
+};
 
 // ─── Search ───────────────────────────────────────────────────────────────────
-const searchQuery = ref('')
-let searchTimer: ReturnType<typeof setTimeout> | null = null
+const searchQuery = ref('');
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-const isSearching = computed(() => searchQuery.value.trim().length > 0)
+const isSearching = computed(() => searchQuery.value.trim().length > 0);
+
+// ─── Persisted vote state per FAQ ───────────────────────────────────────────
+type VoteType = 'puas' | 'tidak-puas';
+const savedVotes = ref<Record<string, VoteType>>({});
+
+const getVoteStorageKey = () => {
+  if (!process.client) return 'faq-feedback-votes';
+  const token = localStorage.getItem('token') || 'anonymous';
+  return `faq-feedback-votes:${token}`;
+};
+
+const loadSavedVotes = () => {
+  if (!process.client) return;
+  try {
+    const raw = localStorage.getItem(getVoteStorageKey());
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      savedVotes.value = parsed as Record<string, VoteType>;
+    }
+  } catch {
+    savedVotes.value = {};
+  }
+};
+
+const persistSavedVotes = () => {
+  if (!process.client) return;
+  localStorage.setItem(getVoteStorageKey(), JSON.stringify(savedVotes.value));
+};
+
+const isVoted = (faqId: string, type: VoteType) => savedVotes.value[faqId] === type;
 
 watch(searchQuery, (q) => {
-  if (searchTimer) clearTimeout(searchTimer)
+  if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(async () => {
-    const trimmed = q.trim()
+    const trimmed = q.trim();
     if (trimmed) {
-      await fetchFaqs({ search: trimmed })
+      await fetchFaqs({ search: trimmed });
       // Auto-open all results
-      openIndices.value = new Set(faqs.value.map((_, i) => i))
+      openIndices.value = new Set(faqs.value.map((_, i) => i));
     } else {
       // Back to category view
-      openIndices.value = new Set()
+      openIndices.value = new Set();
       if (selectedCategoryId.value) {
-        await fetchFaqs({ kategoriId: selectedCategoryId.value })
+        await fetchFaqs({ kategoriId: selectedCategoryId.value });
       }
     }
-  }, 350)
-})
+  }, 350);
+});
 
 // ─── Vote state ───────────────────────────────────────────────────────────────
-const votingId = ref<string | null>(null)
+const votingId = ref<string | null>(null);
 
 // ─── Load categories then load first category FAQs ───────────────────────────
 onMounted(async () => {
-  const cats = await fetchCategories()
-  categories.value = cats
-  const first = cats[0]
+  loadSavedVotes();
+  const cats = await fetchCategories();
+  categories.value = cats;
+  const first = cats[0];
   if (first) {
-    selectedCategoryId.value = first.id
-    await fetchFaqs({ kategoriId: first.id })
+    selectedCategoryId.value = first.id;
+    await fetchFaqs({ kategoriId: first.id });
   }
-})
+});
 
 watch(selectedCategoryId, async (catId) => {
-  if (isSearching.value) return // don't switch category while searching
-  openIndices.value = new Set()
-  if (catId) await fetchFaqs({ kategoriId: catId })
-})
+  if (isSearching.value) return; // don't switch category while searching
+  openIndices.value = new Set();
+  if (catId) await fetchFaqs({ kategoriId: catId });
+});
 
 const handleVote = async (faq: Faq, type: 'puas' | 'tidak-puas') => {
-  if (votingId.value === faq.id) return
-  votingId.value = faq.id
+  if (votingId.value === faq.id || isVoted(faq.id, type)) return;
+
+  const previousVote = savedVotes.value[faq.id];
+  savedVotes.value = {
+    ...savedVotes.value,
+    [faq.id]: type
+  };
+  persistSavedVotes();
+
+  votingId.value = faq.id;
   try {
-    if (type === 'puas') {
-      await votePuas(faq.id)
-      faq.puas += 1
-    } else {
-      await voteTidakPuas(faq.id)
-      faq.tidakPuas += 1
+    const updatedFaq = type === 'puas' ? await votePuas(faq.id) : await voteTidakPuas(faq.id);
+
+    faq.puas = updatedFaq.puas;
+    faq.tidakPuas = updatedFaq.tidakPuas;
+  } catch (error: any) {
+    const status = error?.response?.status;
+    if (status !== 409) {
+      if (previousVote) {
+        savedVotes.value = {
+          ...savedVotes.value,
+          [faq.id]: previousVote
+        };
+      } else {
+        const nextVotes = { ...savedVotes.value };
+        delete nextVotes[faq.id];
+        savedVotes.value = nextVotes;
+      }
+      persistSavedVotes();
     }
-  } catch {
-    // silent fail
   } finally {
-    votingId.value = null
+    votingId.value = null;
   }
-}
+};
 </script>
 
 <style scoped>
