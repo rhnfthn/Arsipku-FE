@@ -12,7 +12,7 @@
             <UIcon name="i-lucide-calendar" class="size-4 text-gray-400 shrink-0 mr-0.5" />
           </div>
           <template #content>
-            <UCalendar v-model="model" class="p-2" @update:model-value="open = false" />
+            <UCalendar :max-value="maxDate" v-model="model" class="p-2" @update:model-value="open = false" />
           </template>
         </UPopover>
       </ClientOnly>
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { today, getLocalTimeZone } from '@internationalized/date'
 
 defineProps({
   label: {
@@ -33,4 +34,6 @@ defineProps({
 // Model ini akan menerima variable 'date' dari parent (CalendarDate object)
 const model = defineModel()
 const open = ref(false)
+
+const maxDate = today(getLocalTimeZone())
 </script>

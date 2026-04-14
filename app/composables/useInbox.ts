@@ -237,6 +237,8 @@ export function useInbox() {
           lampiran_files: d.lampiran_files || [],
           final_pdf_url:  d.final_pdf_url  || d.final_pdf,
           referensi:      d.referensi || null,
+          flow:           d.flow || [],
+          created_at:     d.createdAt || d.created_at,
           raw: d,
         };
       });
