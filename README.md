@@ -1,4 +1,4 @@
-# ArsipKu - E-Office & Mail Tracking System
+# ArsipKu 
 
 Selamat datang di repositori **ArsipKu**, sebuah sistem persuratan elektronik (e-office) berbasis **Nuxt 4** dan **Vue 3** yang dirancang untuk mengelola siklus hidup naskah dinas, penomoran otomatis, hingga tanda tangan elektronik (TTE/BSrE). 
 
