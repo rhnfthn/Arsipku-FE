@@ -53,7 +53,20 @@ const LIMIT_DISPLAY = 2;
 const MAX_FLOW_HEIGHT = 200;
 
 // --- HELPERS ---
-const formatDate = (v: string) => v ? new Date(v).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
+const formatDate = (v: string) => {
+  if (!v) return "-";
+  const d = new Date(v);
+  return `${d.getUTCDate()} ${new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" }).format(d)} ${d.getUTCFullYear()}`;
+};
+const formatFullDateTime = (v: string) => {
+  if (!v) return "-";
+  const d = new Date(v);
+  const dateStr = `${d.getUTCDate()} ${new Intl.DateTimeFormat("id-ID", { month: "long", timeZone: "UTC" }).format(d)} ${d.getUTCFullYear()}`;
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  const seconds = d.getUTCSeconds().toString().padStart(2, "0");
+  return `${dateStr} ${hours}:${minutes}:${seconds} WIB`;
+};
 const formatDisposisiInline = (v: any) => Array.isArray(v) ? v.join(', ') : String(v || '').replace(/(\r\n|\n|\r)/gm, ", ");
 const getFlowInitials = (n: string) => n ? n.trim().split(" ").slice(0, 2).map((x: string) => x[0].toUpperCase()).join("") : "?";
 
@@ -158,8 +171,8 @@ const hasAccess = (codes: string[]) => {
               data.naskah?.nomor || data.nomor }}</span>
           </div>
           <span class="opacity-40">•</span>
-          <div class="flex items-center gap-1">
-            <Calendar class="w-3.5 h-3.5" /><span>{{ formatDate(data.created_at || data.tanggal) }}</span>
+          <div class="flex items-center gap-1 cursor-help" :title="'Waktu Kirim: ' + formatFullDateTime(data.created_at || data.createdAt || data.tanggal)">
+            <Calendar class="w-3.5 h-3.5" /><span>{{ formatDate(data.tanggal || data.created_at || data.createdAt) }}</span>
           </div>
           <span class="opacity-40">•</span>
           <div

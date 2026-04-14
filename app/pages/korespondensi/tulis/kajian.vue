@@ -662,7 +662,7 @@ onMounted(async () => {
         const idPos = String(r.position || r.position_id || r.id);
 
         return {
-          label: nama ? `${nama} - ${jabatan}` : jabatan, // Tampilan di dropdown
+          label: nama ? `${nama} - ${jabatan}` : `${idPos} - ${jabatan}`, // Tampilan di dropdown
           labelJob: jabatan, // Tampilan di Preview Surat
           value: idPos, // ID yang dikirim ke backend
           raw: r,
@@ -730,7 +730,7 @@ onMounted(async () => {
             const jabatan = item.positionName || item.position_text || item.positionText || '';
             const idStr = candidateIds[0] || String(item.value ?? '');
             return {
-              label: nama ? `${nama} - ${jabatan}` : jabatan,
+              label: nama ? `${nama} - ${jabatan}` : `${idStr} - ${jabatan}`,
               labelJob: jabatan,
               value: idStr,
               raw: item,
