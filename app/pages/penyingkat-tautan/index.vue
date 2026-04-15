@@ -43,7 +43,7 @@
                 'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
                 formErrors.LUrl
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500',
               ]"
               @input="formErrors.LUrl = false"
             />
@@ -65,7 +65,7 @@
                 'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
                 formErrors.SUrl
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500',
               ]"
               @input="formErrors.SUrl = false"
             />
@@ -129,7 +129,7 @@
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   perPage === n
                     ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                 ]"
               >
                 {{ n }}
@@ -245,7 +245,7 @@
                     new Date(row.tanggal).toLocaleDateString('id-ID', {
                       day: '2-digit',
                       month: '2-digit',
-                      year: 'numeric'
+                      year: 'numeric',
                     })
                   }}
                 </td>
@@ -355,7 +355,7 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === 1
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,7 +397,7 @@
                 'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
                 currentPage === page
                   ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary',
               ]"
             >
               {{ page }}
@@ -429,7 +429,7 @@
               'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
               currentPage === totalPages
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+                : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900',
             ]"
           >
             {{ t('selanjutnya') }}
@@ -458,7 +458,7 @@ import {
   Copy,
   Trash2,
   Pencil,
-  ChevronDown
+  ChevronDown,
 } from 'lucide-vue-next';
 import Heading from '~/components/Heading.vue';
 import ConfirmPopup from '@/components/ConfirmPopup.vue';
@@ -466,7 +466,7 @@ import { useUrl } from '~/composables/useUrl';
 import { useI18n } from 'vue-i18n';
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
 });
 
 const { t } = useI18n();
@@ -500,12 +500,12 @@ const deleteIndex = ref<number | null>(null);
 const addForm = ref({
   LUrl: '',
   SUrl: '',
-  keterangan: ''
+  keterangan: '',
 });
 
 const formErrors = ref({
   LUrl: false,
-  SUrl: false
+  SUrl: false,
 });
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -529,13 +529,23 @@ const truncateUrl = (url: string, max = 50) => {
   return url.length > max ? url.slice(0, max) + '.....' : url;
 };
 
-const isValidHttpsUrl = (url: string) => {
-  const normalizedUrl = url.trim();
-  if (!normalizedUrl.toLowerCase().startsWith('https://')) return false;
+const normalizeUrl = (url: string) => {
+  let normalized = url.trim();
 
+  // kalau tidak ada protocol → tambahkan https
+  if (!/^https?:\/\//i.test(normalized)) {
+    normalized = 'https://' + normalized;
+  }
+
+  return normalized;
+};
+
+const isValidUrl = (url: string) => {
   try {
-    const parsed = new URL(normalizedUrl);
-    return parsed.protocol === 'https:' && !!parsed.hostname;
+    const parsed = new URL(url);
+
+    // hanya izinkan http & https
+    return ['http:', 'https:'].includes(parsed.protocol) && !!parsed.hostname;
   } catch {
     return false;
   }
@@ -587,7 +597,7 @@ const copyShortUrl = async (shortUrl: string) => {
     toast.add({
       title: t('pt_toast_copied'),
       color: 'success',
-      icon: 'i-lucide-copy'
+      icon: 'i-lucide-copy',
     });
     return;
   }
@@ -596,7 +606,7 @@ const copyShortUrl = async (shortUrl: string) => {
     title: t('gagal'),
     description: 'URL gagal disalin. Coba salin manual.',
     color: 'error',
-    icon: 'i-lucide-alert-circle'
+    icon: 'i-lucide-alert-circle',
   });
 };
 
@@ -607,7 +617,7 @@ const fetchData = async () => {
     size: 10,
     orderby: 'udate',
     sortby: sortOrder.value,
-    cari: search.value
+    cari: search.value,
   });
 };
 
@@ -682,7 +692,7 @@ const openEdit = (row: Payment, index: number) => {
   addForm.value = {
     LUrl: row.LUrl,
     SUrl: row.alias ?? '',
-    keterangan: row.keterangan
+    keterangan: row.keterangan,
   };
   formErrors.value = { LUrl: false, SUrl: false };
   showAddModal.value = true;
@@ -712,23 +722,25 @@ const saveAdd = async () => {
       title: t('gagal'),
       description: `${emptyFields.join(', ')} wajib diisi`,
       color: 'error',
-      icon: 'i-lucide-alert-circle'
+      icon: 'i-lucide-alert-circle',
     });
     return;
   }
 
-  const normalizedLongUrl = addForm.value.LUrl.trim();
-  if (!isValidHttpsUrl(normalizedLongUrl)) {
+  let normalizedLongUrl = normalizeUrl(addForm.value.LUrl);
+
+  if (!isValidUrl(normalizedLongUrl)) {
     formErrors.value.LUrl = true;
     toast.add({
       title: t('gagal'),
-      description: 'link tidak valid',
+      description: 'Link tidak valid',
       color: 'error',
-      icon: 'i-lucide-alert-circle'
+      icon: 'i-lucide-alert-circle',
     });
     return;
   }
 
+  // simpan hasil normalize
   addForm.value.LUrl = normalizedLongUrl;
 
   const alias = addForm.value.SUrl;
@@ -740,14 +752,14 @@ const saveAdd = async () => {
         id: editItemId.value,
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
-        alias
+        alias,
       });
       toast.add({ title: t('pt_toast_updated'), color: 'success', icon: 'i-lucide-circle-check' });
     } else {
       await createShortUrl({
         url: addForm.value.LUrl,
         keterangan: addForm.value.keterangan,
-        alias
+        alias,
       });
       toast.add({ title: t('pt_toast_added'), color: 'success', icon: 'i-lucide-circle-check' });
     }
@@ -764,7 +776,7 @@ const saveAdd = async () => {
     toast.add({
       title: err?.response?.data?.message ?? t('pt_toast_save_failed'),
       color: 'error',
-      icon: 'i-lucide-alert-circle'
+      icon: 'i-lucide-alert-circle',
     });
   } finally {
     isSavingAdd.value = false;
@@ -788,7 +800,7 @@ const confirmDelete = async () => {
       toast.add({
         title: err?.response?.data?.message ?? t('pt_toast_delete_failed'),
         color: 'error',
-        icon: 'i-lucide-alert-circle'
+        icon: 'i-lucide-alert-circle',
       });
     }
   }
@@ -814,7 +826,7 @@ onMounted(() => fetchData());
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('pt_title'), to: '/penyingkat-tautan' }
+  { label: t('pt_title'), to: '/penyingkat-tautan' },
 ]);
 
 // ─── Highlight Function ───────────────────────────────────────────────────────
