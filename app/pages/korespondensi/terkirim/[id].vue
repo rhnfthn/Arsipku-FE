@@ -217,6 +217,7 @@ const loadData = async () => {
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
       const rawData = response?.data || response;
+      const konsepTo = rawData?.to_konsep || null;
 
       // Handle kedua format: array langsung ATAU object dengan .flow
       let rawFlows: any[] = [];
@@ -230,9 +231,13 @@ const loadData = async () => {
 
       if (rawFlows.length === 0) return;
 
-      const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
-        new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
-      );
+      const sortedFlows = [...rawFlows].sort((a: any, b: any) => {
+        const aJenis = String(a?.jenis || '').toUpperCase();
+        const bJenis = String(b?.jenis || '').toUpperCase();
+        if (aJenis === 'KN' && bJenis !== 'KN') return -1;
+        if (bJenis === 'KN' && aJenis !== 'KN') return 1;
+        return new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime();
+      });
 
       const lastFlow = sortedFlows[0];
       selected.value = lastFlow;
@@ -271,6 +276,7 @@ const loadData = async () => {
           created_at: flow.created_at || flow.createdAt || flow.detail?.created_at || flow.detail?.createdAt,
           pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
           from: flow.pengirim,
+          to_konsep: flow.penerima[0] || {},
           penerima: processedPenerima,
           to: processedPenerima,
           cc: processedTembusan,

@@ -270,13 +270,28 @@ export function useInbox() {
       const catatanReject   = lastFlow?.detail?.aksi === "reject" ? lastFlow.detail.catatan : null;
       const lastFlowWithPdf = sortedFlows.find((f) => f.final_pdf_url);
 
+      const fromPositionId = lastFlow?.pengirim?.position_id;
+      const fromPositionText = lastFlow?.pengirim?.position_text;
+      const fromNama = lastFlow?.pengirim?.nama;
+
+      const toPositionId = lastFlow?.penerima[0]?.position_id;
+      const toPositionText = lastFlow?.penerima[0]?.position_text;
+      const toNama = lastFlow?.penerima[0]?.nama;
+
       return {
         id:             idKonsep,
         nomor:          lastFlow?.nomor || "-",
         perihal:        lastFlow?.perihal || firstFlow?.perihal || "",
         status:         lastFlow?.status,
         last_action:    lastFlow?.detail?.aksi,
+        from_position_id: fromPositionId ? String(fromPositionId) : null,
+        from_position_text: fromPositionText,
+        from_nama: fromNama,
+        to_position_id: toPositionId ? String(toPositionId) : null,
+        to_position_text: toPositionText,
+        to_nama: toNama,
         pengirim:       lastFlow?.detail?.naskah_pengirim || lastFlow?.pengirim,
+        to_konsep:       lastFlow?.penerima[0] || {},
         kepada:         lastFlow?.detail?.naskah_penerima || lastFlow?.penerima || [],
         tembusan:       lastFlow?.detail?.naskah_tembusan || lastFlow?.tembusan || [],
         final_pdf_url:  lastFlowWithPdf?.final_pdf_url ?? null,

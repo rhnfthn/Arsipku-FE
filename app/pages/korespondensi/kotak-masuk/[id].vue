@@ -61,6 +61,13 @@ const konsepRouteMap: Record<string, string> = {
 };
 
 const handleLanjutKonsep = () => {
+  if (isKonsepData.value && selected.value?.id) {
+    router.push({
+      path: '/korespondensi/tulis/konsep/nota-dinas',
+      query: { ref_id: selected.value.id, action: 'edit' }
+    });
+    return;
+  }
   isOpenKonsepModal.value = true;
 };
 
@@ -142,6 +149,7 @@ const isPreviewOpen = ref(false);
 const previewTitle = ref("Preview Dokumen");
 const activePdfUrl = ref<string | null>(null);
 const isLocalPdfLoading = ref(false);
+const sessionDebug = ref<any>(null);
 
 const isJenisDI = computed(() => {
   const j = selected.value?.jenis || '';
@@ -205,6 +213,7 @@ const loadData = async () => {
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
       const rawData = response?.data || response;
+      const konsepTo = rawData?.to_konsep || null;
 
       let rawFlows: any[] = [];
       if (rawData && Array.isArray(rawData.flow)) {
@@ -215,9 +224,28 @@ const loadData = async () => {
         rawFlows = [rawData];
       }
 
-      const sortedFlows = [...rawFlows].sort((a: any, b: any) =>
-        new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime()
+      const baseSortedFlows = [...rawFlows].sort(
+        (a: any, b: any) =>
+          new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime(),
       );
+
+      // Khusus kotak masuk:
+      // 1) naskah paling baru tetap di urutan pertama
+      // 2) sisipkan KN di urutan kedua (jika ada)
+      // 3) sisanya lanjut urut terbaru -> terlama
+      const sortedFlows = (() => {
+        if (baseSortedFlows.length <= 1) return baseSortedFlows;
+
+        const first = baseSortedFlows[0];
+        const knIndex = baseSortedFlows.findIndex((f: any, idx: number) =>
+          idx > 0 && String(f?.jenis || '').toUpperCase() === 'KN',
+        );
+        if (knIndex === -1) return baseSortedFlows;
+
+        const knItem = baseSortedFlows[knIndex];
+        const rest = baseSortedFlows.filter((_: any, idx: number) => idx !== knIndex && idx !== 0);
+        return [first, knItem, ...rest];
+      })();
 
       if (sortedFlows.length > 0) {
         const lastFlow = sortedFlows[0];
@@ -283,6 +311,7 @@ const loadData = async () => {
             created_at: flow.created_at,
             from: flow.pengirim || {},
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
+            to_konsep: flow.penerima[0] || {},
             penerima: processedPenerima,
             to: processedPenerima,
             cc: processedTembusan,
@@ -293,6 +322,20 @@ const loadData = async () => {
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
         });
+
+        // Jika ada flow KN dengan nomor valid, paksa aksi semua row menjadi finalize
+        const hasFinalKonsepNaskah = details.value.some((row: any) => {
+          const isKN = String(row?.jenis || '').toUpperCase() === 'KN';
+          const nomor = String(row?.nomor || '').trim();
+          return isKN && nomor !== '' && nomor !== '-';
+        });
+
+        if (hasFinalKonsepNaskah) {
+          details.value = details.value.map((row: any) => ({
+            ...row,
+            aksi: 'finish',
+          }));
+        }
       }
 
     } else {
@@ -376,7 +419,18 @@ const loadData = async () => {
   }
 };
 
-onMounted(() => { loadData(); });
+onMounted(() => {
+  if (process.client) {
+    const token = localStorage.getItem('token');
+    const sessionId = localStorage.getItem('sessionId');
+    sessionDebug.value = {
+      user: user.value || null,
+      sessionId: sessionId || null,
+      tokenPreview: token ? `${token.slice(0, 18)}...` : null,
+    };
+  }
+  loadData();
+});
 
 // --- ACTIONS HANDLERS ---
 const goBack = () => router.back();
@@ -386,6 +440,8 @@ const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true
 const handleFinalizeAndRedirect = () => {
   showFinalizeOptionsModal.value = false;
   if (selected.value?.id) {
+    console.log("cek");
+    console.log(selected.value);
     const rawKind = selected.value?.jenis_naskah_konsep || selected.value?.detail?.jenis_naskah_konsep || selected.value?.jenis || 'ND';
     const upperKind = String(rawKind).trim().toUpperCase();
     
@@ -403,8 +459,9 @@ const handleFinalizeAndRedirect = () => {
     }
 
     router.push({
-      path: `/korespondensi/tulis/finalisasi/${pathSeg}`,
-      query: { ref_id: selected.value.id, action: 'finalize' }
+      // path: `/korespondensi/tulis/finalisasi/${pathSeg}`,
+      path: `/korespondensi/tulis/${pathSeg}`,
+      query: { draft_id: selected.value.id_naskah_asli, action: 'finalize' }
     });
   }
 };
@@ -547,6 +604,16 @@ const konsepOptions = computed(() => [
 <template>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
+  <!-- <div v-if="sessionDebug" class="mt-4 mb-4">
+    <UCard :ui="{ root: 'rounded-lg ring-0 shadow-sm bg-white dark:bg-gray-800' }">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Debug User Session</h3>
+        <span class="text-[11px] text-gray-500">Mode inspeksi</span>
+      </div>
+      <pre class="text-[11px] leading-5 overflow-auto max-h-80 bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">{{ JSON.stringify(sessionDebug, null, 2) }}</pre>
+    </UCard>
+  </div> -->
+
   <div class="w-full flex flex-col gap-6 pt-4">
 
     <div v-if="isLoading"
@@ -567,7 +634,7 @@ const konsepOptions = computed(() => [
         :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
           'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
         }">
-
+<!-- {{ selected }} -->
         <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
           :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"

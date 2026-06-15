@@ -48,6 +48,26 @@ const shouldShowFinalize = computed(() => {
   return false;
 });
 
+const normalizePositionId = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    return String(value?.id || value?.position_id || value?.position || '');
+  }
+  return String(value);
+};
+
+const isSamePengirimPosition = computed(() => {
+  const userPos = normalizePositionId(props.userPositionId);
+  const pengirimPos = normalizePositionId(
+    props.data?.pengirim?.position_id ||
+    props.data?.pengirim?.position ||
+    props.data?.from?.position_id ||
+    props.data?.from?.position
+  );
+  if (!userPos || !pengirimPos) return false;
+  return userPos === pengirimPos;
+});
+
 // --- CONSTANTS ---
 const LIMIT_DISPLAY = 2;
 const MAX_FLOW_HEIGHT = 200;
@@ -80,6 +100,31 @@ const aksiConfig: Record<string, { label: string; color: string }> = {
 const aksiBadge = computed(() => {
   const aksi = props.data?.aksi as string;
   return aksiConfig[aksi] ?? null; // null = badge tidak ditampilkan
+});
+
+const isKonsepJenis = computed(() => {
+  const jenis = String(props.data?.jenis || '').toUpperCase();
+  const jenisLabel = String(props.data?.jenis_label || '').toLowerCase();
+  return jenis === 'K' || jenisLabel.includes('konsep');
+});
+
+const isKonsepNaskahJenis = computed(() => String(props.data?.jenis || '').toUpperCase() === 'KN');
+
+const konsepNaskahStatus = computed(() => {
+  const nomor = String(props.data?.nomor || '').trim();
+  const hasNomor = nomor !== '' && nomor !== '-';
+  return {
+    label: hasNomor ? 'Terkirim' : 'Pending',
+    badgeClass: hasNomor
+      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  };
+});
+
+const headerRecipients = computed(() => {
+  const src = props.data?.to || props.data?.kepada || props.data?.penerima || [];
+  const list = Array.isArray(src) ? src : (src ? [src] : []);
+  return list.filter(Boolean);
 });
 
 // --- IFRAME LOGIC ---
@@ -137,13 +182,13 @@ const hasAccess = (codes: string[]) => {
                   data.aksi === 'create' ? 'Konsep Awal' :
                     data.aksi === 'reject' ? 'Konsep Ditolak' :
                       data.aksi === 'forward' ? 'Revisi Konsep' :
-                        'Riwayat'
+                        isKonsepNaskahJenis ? 'Konsep Naskah' : 'Riwayat'
                 )
               }}
             </h2>
           </template>
         </div>
-
+        <!-- {{ data }} -->
         <div class="flex items-center gap-2 shrink-0 pl-2">
           <UTooltip text="Pratinjau Dokumen">
             <button v-if="data.pdf_snapshot || data.naskah?.final_pdf || data.final_pdf_url"
@@ -184,7 +229,7 @@ const hasAccess = (codes: string[]) => {
             class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600">
             {{ data.aksi === 'kirim_disposisi' ?
               'DISPOSISI' : (data.aksi === 'create' || (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep) ?
-                (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}
+                (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}                
           </div>
           <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
           <template v-if="aksiBadge">
@@ -193,6 +238,7 @@ const hasAccess = (codes: string[]) => {
               :class="aksiBadge.color">
               {{ aksiBadge.label }}
             </div>
+            <!-- <div>{{ data }}</div> -->
           </template>
           <span class="opacity-40" v-if="data.ttd">•</span>
           <div v-if="data.ttd"
@@ -212,7 +258,8 @@ const hasAccess = (codes: string[]) => {
 
     <div class="p-5 sm:p-8">
 
-      <div class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50">
+      <div v-if="!isKonsepNaskahJenis" class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50">
+        
         <UAvatar size="md" class="bg-primary-500 text-white font-semibold">
           {{ getFlowInitials(data.from?.nama || data.pengirim?.nama) }}
         </UAvatar>
@@ -225,9 +272,45 @@ const hasAccess = (codes: string[]) => {
             ||
             '-' }}</span>
         </div>
+
+        <div
+          v-if="data.to_konsep && String(data.jenis_label || '').toLowerCase().includes('konsep')"
+          class="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700">
+          <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block">
+            Penerima Konsep
+          </span>
+          <span class="text-sm font-semibold block text-gray-900 dark:text-white">
+            {{ data.to_konsep.position_text || data.to_konsep.positionText || '-' }}
+          </span>
+          <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+            {{ data.to_konsep.nama || '-' }}
+          </span>
+        </div>
       </div>
 
-      <div v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject'"
+      <div
+        v-if="isKonsepNaskahJenis"
+        class="mb-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/40 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-gray-900 dark:text-white">Konsep Naskah</h3>
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+            :class="konsepNaskahStatus.badgeClass">
+            {{ konsepNaskahStatus.label }}
+          </span>
+        </div>
+
+        <div class="space-y-2 text-sm">
+          <div><span class="text-gray-500 dark:text-gray-400">Nomor:</span> <span class="font-medium text-gray-900 dark:text-white">{{ data.nomor || '-' }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tanggal:</span> <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(data.tanggal || data.created_at) }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Pengirim:</span> <span class="font-medium text-gray-900 dark:text-white">{{ data.pengirim?.position_text || '-' }} <span class="text-gray-500 dark:text-gray-400">({{ data.pengirim?.nama || '-' }})</span></span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tertuju:</span> <span class="font-medium text-gray-900 dark:text-white">{{ Array.isArray(data.to) ? data.to.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ') : '-' }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tembusan:</span> <span class="font-medium text-gray-900 dark:text-white">{{ Array.isArray(data.cc) && data.cc.length > 0 ? data.cc.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ') : '-' }}</span></div>
+          
+        </div>
+      </div>
+
+      <div v-if="!isKonsepJenis && (data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject')"
         class="mb-4 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
@@ -240,7 +323,9 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
-      <div class="mb-4 flex flex-col md:flex-row gap-2">
+      
+
+      <div v-if="!isKonsepJenis" class="mb-4 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
           Tertuju
@@ -287,7 +372,7 @@ const hasAccess = (codes: string[]) => {
       </div>
 
       <!-- debug {{ data }} -->
-      <div v-if="(data.cc || data.tembusan) && (data.cc || data.tembusan).length > 0"
+      <div v-if="!isKonsepJenis && (data.cc || data.tembusan) && (data.cc || data.tembusan).length > 0"
         class="mb-6 flex flex-col md:flex-row gap-2">
         <div
           class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
@@ -352,7 +437,7 @@ const hasAccess = (codes: string[]) => {
           </p>
         </template>
 
-        <template v-else-if="data.rich_content || data.mainDisplayContentHtml">
+        <template v-else-if="String(data.jenis || '').toUpperCase() !== 'K' && (!isKonsepJenis || (data.rich_content || data.mainDisplayContentHtml))">
           <div class="relative w-full">
             <div class="relative overflow-hidden transition-all duration-300 ease-in-out">
               <iframe
@@ -437,16 +522,35 @@ const hasAccess = (codes: string[]) => {
         <div class="flex flex-wrap gap-3 mt-8">
 
           <!-- ===== JENIS KO (Konsep): Setujui / Tolak / Perbaiki ===== -->
-          <template v-if="['K'].includes(data.jenis)">
+           <template v-if="['K'].includes(data.jenis)">
 
             <!-- aksi create/forward → Setujui + Tolak (untuk BOD) -->
             <template v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'finalize'">
-              <template v-if="hasAccess(['Setujui']) && showFinalize">
+              <template v-if="hasAccess(['Setujui']) && showFinalize && isSamePengirimPosition">
                 <div @click="isHead ? emit('finalize') : null"
                   class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-emerald-500"
                   :class="isHead ? 'hover:bg-emerald-600 cursor-pointer active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'">
                   <CheckCircle class="w-4 h-4" />
-                  <span class="text-sm font-medium whitespace-nowrap">Setujui</span>
+                  <span class="text-sm font-medium whitespace-nowrap">Lanjut & Review</span>
+                </div>
+                <div @click="isHead ? emit('reject') : null"
+                  class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-red-500"
+                  :class="isHead ? 'hover:bg-red-600 cursor-pointer active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'">
+                  <XCircle class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">Tolak</span>
+                </div>
+                <!-- <div @click="emit('edit')"
+                class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50">
+                <Edit3 class="w-4 h-4" />
+                <span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+              </div> -->
+              </template>
+              <template v-else-if="showFinalize && !isSamePengirimPosition">
+                <div @click="isHead ? emit('lanjut-konsep') : null"
+                  class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-yellow-500"
+                  :class="isHead ? 'hover:bg-yellow-600 cursor-pointer active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'">
+                  <Edit3 class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">Lanjutkan Konsep</span>
                 </div>
                 <div @click="isHead ? emit('reject') : null"
                   class="flex text-white py-2.5 px-6 rounded-lg gap-2 items-center transition-colors shadow-sm bg-red-500"
