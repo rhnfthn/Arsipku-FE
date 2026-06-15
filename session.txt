@@ -1,0 +1,49 @@
+{
+  "user": {
+    "persnum": 10010593,
+    "nama": "ARYA BIMA SETYANTORO",
+    "role": "user",
+    "company": "10000",
+    "companyText": "PERUM LPPNPI",
+    "area": "A000",
+    "areaText": "Kantor Pusat",
+    "subArea": "1001",
+    "subAreaText": "Kantor Pusat",
+    "organization": "10002218",
+    "organizationText": "Itbp Management Unit",
+    "position": "70017167",
+    "positionText": "AVP of ITBP Management",
+    "bodTag": "BOD-3",
+    "abbreviation": "TTEI",
+    "atasan_langsung": {
+      "persnum": 10010425,
+      "nama": "SAID FAUZUL RUSNAIDI",
+      "company": 10000,
+      "companyText": "PERUM LPPNPI",
+      "area": "A000",
+      "areaText": "Kantor Pusat",
+      "subArea": 1001,
+      "subAreaText": "Kantor Pusat",
+      "organization": 10002157,
+      "organizationText": "Enterprise Technology Planning And Itbp Department",
+      "organizationAbbreviation": "TNG",
+      "position": 70017054,
+      "positionText": "VP of Enterprise Technology Planning and ITBP - Interim Officer",
+      "positionAbbreviation": "TTE",
+      "abbreviation": "TTE",
+      "isChief": true,
+      "bodTag": "BOD-2"
+    },
+    "nik": "0803202100007062",
+    "iat": 1778497767,
+    "exp": 1778584162,
+    "alamatInfo": {
+      "kantor": "Kantor Pusat Perum LPPNPI",
+      "gedung": "Gedung AirNav Indonesia",
+      "kota": "Tangerang",
+      "alamat": "Jl. Ir. H. Juanda No. 1 Tangerang<br>Banten 15121 Indonesia<br>Telp : 021-55915000<br>www.airnavindonesia.co.id"
+    }
+  },
+  "sessionId": "396ac41e-6a60-4787-9a2f-7b417153db7f",
+  "tokenPreview": "eyJhbGciOiJIUzI1Ni..."
+}

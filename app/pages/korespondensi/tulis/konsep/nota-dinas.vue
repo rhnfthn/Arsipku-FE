@@ -3,7 +3,7 @@
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
 
     <PageHeader title="Lanjut Konsep Nota Dinas" :items="breadcrumbs" />
-
+    <!-- <div>{{ detail }}</div> -->
     <div v-if="refData" class="mb-4 mt-6">
       <div
         class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
@@ -49,8 +49,49 @@
       </div>
     </div>
 
-    <UCard variant="soft"
-      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
+    <div v-if="forwardTargetInfo" class="mb-4">
+      <div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3">
+        <div class="flex items-start gap-2">
+          <UIcon name="i-lucide-user-round-check" class="w-4 h-4 text-primary-500 mt-0.5" />
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Konsep Akan Diteruskan Ke</p>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-0.5 break-words leading-5">
+              <div class="font-semibold text-primary-600 dark:text-primary-400">{{ forwardTargetInfo.positionText || '-' }}</div>
+              <div>{{ forwardTargetInfo.nama || '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mb-4">
+      <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+        Debug `to_position_id`: <span class="font-mono font-semibold">{{ refPengirimPositionId || '-' }}</span>
+      </div>
+    </div>
+
+    <div
+      v-if="isRejectAction"
+      class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+    >
+      Mode revisi: konsep ini dikembalikan dan perlu diperbaiki.
+    </div>
+
+    <div
+      v-if="isReferenceLoading"
+      class="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200"
+    >
+      Memuat data referensi surat...
+    </div>
+
+    <UCard
+      variant="soft"
+      :ui="{
+        root: `rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm ${
+          isRejectAction ? 'border border-red-300 dark:border-red-900/60' : ''
+        }`
+      }"
+      :class="{ 'pointer-events-none opacity-70 select-none': isReferenceLoading }"
+    >
       <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
@@ -59,6 +100,7 @@
       </div>
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
+
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -285,6 +327,39 @@ const isRefExpanded = ref(false);
 const maxPerihal = 200;
 const refPengirimPositionId = ref<string>('');
 const isPopulating = ref(false);
+const isReferenceLoading = ref(
+  Boolean(route.query.ref_id) && Boolean(route.query.ref_jenis),
+);
+
+const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
+const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
+const isNewKonsepFromReference = computed(() =>
+  String(route.query.workflow || '').toLowerCase() === 'konsep' &&
+  String(route.query.action || '').toLowerCase() !== 'edit'
+);
+const forwardTargetInfo = computed(() => {
+  if (isRejectAction.value) {
+    const fromPositionId = detail.value?.from_position_id;
+    const fromPositionText = detail.value?.from_position_text;
+    const fromNama = detail.value?.from_nama;
+    if (fromPositionId || fromPositionText || fromNama) {
+      return {
+        position: fromPositionId || '',
+        positionText: fromPositionText || '',
+        nama: fromNama || '',
+      };
+    }
+  }
+  if (isNewKonsepFromReference.value && refData.value?.pengirim) {
+    const p = refData.value.pengirim;
+    return {
+      position: p.position_id || p.position || '',
+      positionText: p.position_text || p.positionText || '',
+      nama: p.nama || p.persnum_person_text || '',
+    };
+  }
+  return atasanLangsungInfo.value;
+});
 
 const mapPersonToUI = (person: any): RecipientItem => {
   if (!person) return {} as RecipientItem;
@@ -592,7 +667,7 @@ const prepareRevisiFormData = () => {
 
   formData.append('jenis', 'ND');
   formData.append('from_position_id', user.value?.position || '');
-  formData.append('to_position_id', String(currentSender.value || ''));
+  formData.append('to_position_id', refPengirimPositionId.value || String(currentSender.value || ''));
   formData.append('pengirim_position_id', String(currentSender.value || ''));
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -656,12 +731,21 @@ const handleKirimDokumen = async () => {
 
   const isRevision = route.query.action === 'edit';
 
+  const confirmTitle = isRevision
+    ? (isRejectAction.value ? 'Kirim Perbaikan?' : 'Teruskan Konsep?')
+    : 'Kirim Konsep?';
+
+  const confirmDescription = isRevision
+    ? (isRejectAction.value ? 'Perbaikan konsep akan dikirim.' : 'Konsep akan diteruskan.')
+    : 'Konsep Nota Dinas akan dikirim.';
+
   const isConfirmed = await Alert.confirm(
-    isRevision ? 'Kirim Perbaikan?' : 'Kirim Konsep?',
-    isRevision ? 'Perbaikan konsep akan dikirim.' : 'Konsep Nota Dinas akan dikirim.',
+    confirmTitle,
+    confirmDescription,
     'Ya, Kirim', 'Batal', false
   );
   if (!isConfirmed) return;
+  
 
   loadingMessage.value = isRevision ? "Mengirim Perbaikan..." : "Membuat Konsep Nota Dinas...";
   isLoadingData.value = true;
@@ -670,7 +754,12 @@ const handleKirimDokumen = async () => {
     let result;
     if (isRevision) {
       if (!editDraftId.value) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan");
-      result = await forwardKonsep(editDraftId.value, prepareRevisiFormData());
+      const revisiFormData = prepareRevisiFormData();
+      console.log("[prepareRevisiFormData] entries:");
+      for (const [key, value] of revisiFormData.entries()) {
+        console.log(`- ${key}:`, value);
+      }
+      result = await forwardKonsep(editDraftId.value, revisiFormData);
     } else {
       result = await createKonsep(prepareKonsepFormData());
     }
@@ -751,13 +840,47 @@ watch(selectedSender, async (newVal, oldVal) => {
   }
 }, { deep: true });
 
+watch(
+  [
+    () => detail.value?.aksi,
+    () => detail.value?.from_position_id,
+    () => atasanLangsungInfo.value?.position,
+    () => refData.value?.pengirim?.position_id,
+    () => refData.value?.pengirim?.position,
+    () => route.query.workflow,
+    () => route.query.action,
+  ],
+  () => {
+    if (isRejectAction.value && detail.value?.from_position_id) {
+      refPengirimPositionId.value = String(detail.value.from_position_id);
+      return;
+    }
+    if (isNewKonsepFromReference.value && refData.value?.pengirim) {
+      refPengirimPositionId.value = String(refData.value.pengirim.position_id || refData.value.pengirim.position || '');
+      return;
+    }
+    if (atasanLangsungInfo.value?.position) {
+      refPengirimPositionId.value = String(atasanLangsungInfo.value.position);
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   const queryAction = route.query.action as string;
   const refId = route.query.ref_id as string;
   const refJenis = route.query.ref_jenis as string;
   const draftId = route.query.draft_id as string;
 
+  // Blok form seawal mungkin jika halaman dibuka dengan referensi surat.
+  if (refId && refJenis) {
+    isReferenceLoading.value = true;
+  }
+
   if (!user.value) await getProfile();
+  if (atasanLangsungInfo.value?.position) {
+    refPengirimPositionId.value = String(atasanLangsungInfo.value.position);
+  }
 
   try {
     klasifikasiStatus.value = "loading";
@@ -774,10 +897,11 @@ onMounted(async () => {
     isLoadingData.value = true;
     try {
       const result = await fetchKonsepDetail(refId);
-
       const dataArray = extractDataArray(result);
       const draftData = dataArray.find((d: any) => d.jenis === 'K');
       const originFlow = dataArray.find((d: any) => d.jenis !== 'K');
+      console.log("cek konsep");
+      console.log(draftData);
 
       if (!draftData) {
         toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });
@@ -785,6 +909,10 @@ onMounted(async () => {
       }
 
       detail.value = {
+        aksi: draftData.detail?.aksi || '',
+        from_position_id: draftData?.from_position_id || draftData?.detail?.from_position_id || draftData?.pengirim?.position_id || '',
+        from_position_text: draftData?.from_position_text || draftData?.detail?.from_position_text || draftData?.pengirim?.position_text || '',
+        from_nama: draftData?.from_nama || draftData?.detail?.from_nama || draftData?.pengirim?.nama || '',
         catatan_reject: draftData.detail?.catatan || '',
         data: { catatan_reject: draftData.detail?.catatan || '' },
       };
@@ -812,11 +940,15 @@ onMounted(async () => {
       const sifatStr = String(draftData.sifat || 'biasa').toLowerCase();
       selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr) || sifatOptions[3];
       isPopulating.value = true;
-      if (draftData.pengirim) {
-        const senderObj = mapPersonToUI(draftData.pengirim);
-        selectedSender.value = senderObj;
+      const pengirimDraft = draftData.detail?.naskah_pengirim || draftData.pengirim;
+      if (pengirimDraft?.position_id || pengirimDraft?.position) {
+        const senderObj = mapPersonToUI(pengirimDraft);
         await fetchSenderList(senderObj.value);
-        await fetchRecipientsBySender(senderObj.value);
+        const selectedFromList = senderItems.value.find(
+          (s) => String(s.value) === String(senderObj.value),
+        );
+        selectedSender.value = selectedFromList || senderObj;
+        await fetchRecipientsBySender(String(selectedSender.value?.value || senderObj.value));
       }
 
       const penerimaGrup = draftData.penerima_grup || [];
@@ -862,8 +994,15 @@ onMounted(async () => {
           final_pdf_url: originFlow.final_pdf_url,
           lampiran_files: originFlow.lampiran_files || [],
           jenis: originFlow.jenis,
+          pengirim: originFlow.pengirim || null,
         };
-        refPengirimPositionId.value = originFlow.pengirim?.position_id || '';
+        refPengirimPositionId.value = isRejectAction.value && detail.value?.from_position_id
+          ? String(detail.value.from_position_id)
+          : (isNewKonsepFromReference.value
+            ? String(originFlow.pengirim?.position_id || originFlow.pengirim?.position || '')
+            : (atasanLangsungInfo.value?.position
+              ? String(atasanLangsungInfo.value.position)
+              : (originFlow.pengirim?.position_id || '')));
       }
 
     } catch (e) {
@@ -877,6 +1016,7 @@ onMounted(async () => {
   else if (refId && refJenis) {
     loadingMessage.value = "Memuat data referensi...";
     isLoadingData.value = true;
+    isReferenceLoading.value = true;
     try {
       const result = await fetchInboxDetail(refId, refJenis);
       if (result) {
@@ -889,10 +1029,18 @@ onMounted(async () => {
           final_pdf_url: rawFlow.final_pdf_url,
           lampiran_files: rawFlow.lampiran_files || [],
           jenis: rawFlow.jenis,
+          pengirim: rawFlow.pengirim || null,
         };
-        refPengirimPositionId.value = rawFlow.pengirim?.position_id || '';
+        refPengirimPositionId.value = isNewKonsepFromReference.value
+          ? String(rawFlow.pengirim?.position_id || rawFlow.pengirim?.position || '')
+          : (atasanLangsungInfo.value?.position
+            ? String(atasanLangsungInfo.value.position)
+            : (rawFlow.pengirim?.position_id || ''));
       }
     } catch (e) { console.error(e); }
+    finally {
+      isReferenceLoading.value = false;
+    }
 
     if (user.value?.position) await fetchSenderList(user.value.position);
     if (selectedSender.value?.value) await fetchRecipientsBySender(selectedSender.value.value);
@@ -921,7 +1069,9 @@ onMounted(async () => {
             lampiran_files: [],
             jenis: 'DI',
           };
-          refPengirimPositionId.value = d.disposisi_referensi.pengirim?.position_id || '';
+          refPengirimPositionId.value = atasanLangsungInfo.value?.position
+            ? String(atasanLangsungInfo.value.position)
+            : (d.disposisi_referensi.pengirim?.position_id || '');
         }
 
         if (d.klasifikasi) {
