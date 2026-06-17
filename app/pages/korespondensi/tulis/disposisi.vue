@@ -116,22 +116,24 @@
 
                   <div class="w-[55%] border-r-2 border-black p-2 text-xs">
                     <table class="w-full">
-                      <tr>
-                        <td class="w-16 py-1">Surat dari</td>
-                        <td class="py-1">: {{ user?.positionText || "....................." }}</td>
-                      </tr>
-                      <tr>
-                        <td class="py-1">Tanggal</td>
-                        <td class="py-1">: {{ formattedDate }}</td>
-                      </tr>
-                      <tr>
-                        <td class="py-1">Nomor</td>
-                        <td class="py-1">: {{ refNumber || "-" }}</td>
-                      </tr>
-                      <tr>
-                        <td class="py-1 align-top">Perihal</td>
-                        <td class="py-1 align-top">: {{ refPerihal || "-" }}</td>
-                      </tr>
+                      <tbody>
+                        <tr>
+                          <td class="w-16 py-1">Surat dari</td>
+                          <td class="py-1">: {{ user?.positionText || "....................." }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1">Tanggal</td>
+                          <td class="py-1">: {{ formattedDate }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1">Nomor</td>
+                          <td class="py-1">: {{ refNumber || "-" }}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-1 align-top">Perihal</td>
+                          <td class="py-1 align-top">: {{ refPerihal || "-" }}</td>
+                        </tr>
+                      </tbody>
                     </table>
                   </div>
 
