@@ -175,13 +175,15 @@
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr>
-                          <td class="align-top pr-2">Lampiran Kajian</td>
-                        </tr>
-                        <tr>
-                          <td class="align-top pr-2">Tanggal :</td>
-                          <td>{{ formattedDate }}</td>
-                        </tr>
+                        <tbody>
+                          <tr>
+                            <td class="align-top pr-2">Lampiran Kajian</td>
+                          </tr>
+                          <tr>
+                            <td class="align-top pr-2">Tanggal :</td>
+                            <td>{{ formattedDate }}</td>
+                          </tr>
+                        </tbody>
                       </table>
                     </div>
                   </div>
