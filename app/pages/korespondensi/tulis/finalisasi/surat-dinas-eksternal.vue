@@ -125,9 +125,11 @@
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
-                        <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                        <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                        <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        <tbody>
+                          <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
+                          <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
+                          <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                        </tbody>
                       </table>
                     </div>
                   </div>

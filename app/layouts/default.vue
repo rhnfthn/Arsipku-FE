@@ -43,8 +43,6 @@
         <span class="font-bold text-primary-400">Team Dev Maganghub</span>
       </footer>
     </div>
-
-    <UNotifications :ui="{ wrapper: 'fixed flex flex-col justify-end z-[9999] ...' }" />
   </div>
 </template>
 
