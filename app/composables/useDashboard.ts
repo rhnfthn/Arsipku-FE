@@ -133,7 +133,7 @@ export const useDashboard = () => {
         bgSolid: "bg-orange-100",
         borderColor: "bg-orange-500",
         iconColor: "text-orange-600",
-        link: "/korespondensi/kotak-masuk",
+        link: "/korespondensi/kotak-masuk?filter=Belum+Tinjut",
       },
       {
         label: "Disposisi Belum Dibaca",
@@ -143,7 +143,7 @@ export const useDashboard = () => {
         bgSolid: "bg-purple-100",
         borderColor: "bg-purple-500",
         iconColor: "text-purple-600",
-        link: "/korespondensi/kotak-masuk",
+        link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Dibaca",
       },
       {
         label: "Disposisi Belum Tindak Lanjut",
@@ -153,7 +153,7 @@ export const useDashboard = () => {
         bgSolid: "bg-blue-100",
         borderColor: "bg-blue-500",
         iconColor: "text-blue-600",
-        link: "/korespondensi/kotak-masuk",
+        link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Tinjut",
       },
       {
         label: "Menunggu Tanda Tangan",
