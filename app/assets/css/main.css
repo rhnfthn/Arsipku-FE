@@ -14,6 +14,27 @@ body,
 }
 
 @theme static {
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-dropdown: 50;
+  --z-modal-backdrop: 9998;
+  --z-modal: 9999;
+  --z-toast: 10000;
+
+  /* Backdrop */
+  --backdrop-sm: rgba(0, 0, 0, 0.32);
+  --backdrop-md: rgba(0, 0, 0, 0.4);
+  --backdrop-blur-sm: blur(1px);
+  --backdrop-blur-md: blur(4px);
+
+  /* Border Radius */
+  --radius-card: 0.75rem;
+  --radius-modal: 0.75rem;
+  --radius-badge: 9999px;
+  --radius-input: 0.5rem;
+  --radius-button: 0.5rem;
+
   /* Typography */
   --color-neutral: #141414;
   --color-neutral-50: #e5e5e8;

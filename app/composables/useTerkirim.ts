@@ -2,18 +2,20 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
 
+const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false
+});
+
 const formatDateTime = (value: string | null | undefined): string => {
   if (!value) return '-';
   const date = new Date(value);
   if (isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(date);
+  return dateTimeFormatter.format(date);
 };
 
 export interface SentParams {
@@ -60,7 +62,7 @@ export const useSirkulasi = () => {
       if (params.favorite) query.append('favorite', 'true');
       if (params.priority) query.append('priority', 'true');
 
-      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
+      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`, {}, { skipCache: params.search ? true : false });
 
       // Samakan normalisasi dengan useInbox agar pagination & summary selalu terbaca
       const responseBody = res?.data?.pagination ? res.data : res;

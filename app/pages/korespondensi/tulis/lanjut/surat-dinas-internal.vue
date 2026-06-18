@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
-import Editor from "@tinymce/tinymce-vue";
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
 import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
@@ -533,7 +533,7 @@ watch(
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                  <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
                 <div class="flex mt-12 text-black px-10">

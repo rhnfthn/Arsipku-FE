@@ -195,7 +195,7 @@
 
             <div
               v-else
-              class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 pr-1 flex flex-col gap-2"
+              class="max-h-72 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-gray-800 pr-1 flex flex-col gap-2"
             >
               <NuxtLink
                 v-for="mail in recentMails"
@@ -247,7 +247,7 @@
                             : 'text-gray-400 dark:text-gray-500'
                         "
                       >
-                        {{ formatDate(mail.tanggal) }}
+                        {{ formatShortDate(mail.tanggal) }}
                       </span>
                     </div>
                   </div>
@@ -273,6 +273,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatShortDate } from "~/utils/mail-helpers";
 import { onMounted, watch } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
@@ -300,15 +301,7 @@ const formatName = (name: string | undefined) => {
   return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).format(date)
-}
+/* digantikan formatShortDate dari ~/utils/mail-helpers */
 
 let chartInstance: any = null
 
@@ -432,36 +425,6 @@ onMounted(async () => {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
-}
-
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-track {
-  background: #1f2937;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #4b5563;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
 }
 
 .group:hover .text-3xl {

@@ -102,7 +102,7 @@ const mapToTertundaItem = (raw: NaskahTertunda): TertundaItem => {
 
 export const useTertunda = () => {
   const { apiGet, apiPost } = useApi();
-  const { fetchInboxDetail } = useInbox(null);
+  const { fetchInboxDetail } = useInbox();
 
   const items = ref<TertundaItem[]>([]);
   const pagination = ref<TertundaPagination>({

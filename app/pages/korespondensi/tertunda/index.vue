@@ -95,61 +95,12 @@ const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
 // --- HELPERS UI ---
-
-const formatShortDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-
-  const now = new Date();
-  const isToday =
-    date.getUTCDate() === now.getUTCDate() &&
-    date.getUTCMonth() === now.getUTCMonth() &&
-    date.getUTCFullYear() === now.getUTCFullYear();
-  const isThisYear = date.getUTCFullYear() === now.getUTCFullYear();
-
-  const hours = date.getUTCHours().toString().padStart(2, "0");
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const time = `${hours}.${minutes}`;
-  const day = date.getUTCDate();
-  const month = new Intl.DateTimeFormat("id-ID", {
-    month: "short",
-    timeZone: "UTC",
-  }).format(date);
-
-  if (isToday) return time;
-  if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getUTCFullYear()} ${time}`;
-};
+import { formatShortDate, getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
 
 const getTabCount = (tabValue: string) => {
   if (!summary.value?.total_per_jenis) return 0;
   if (tabValue === "ALL") return summary.value.total_semua || 0;
   return summary.value.total_per_jenis[tabValue] || 0;
-};
-
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c))
-    return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
-  if (["SDI", "INTERNAL"].includes(c))
-    return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
-  if (["SDE", "EXTERNAL"].includes(c))
-    return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
-  if (["KAJIAN", "KA"].includes(c))
-    return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
-};
-
-const getCategoryLabel = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["KA", "KAJIAN"].includes(c)) return "KA";
-  if (["SDI", "INTERNAL"].includes(c)) return "SDI";
-  if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
-  if (["ND", "NOTA DINAS"].includes(c)) return "ND";
-  if (["DI", "DISPOSISI"].includes(c)) return "DI";
-  if (["K", "KO", "KONSEP"].includes(c)) return "K";
-  return cat || "-";
 };
 
 const getSifatStyle = (sifat: string) => {

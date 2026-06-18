@@ -1316,7 +1316,7 @@ const ensureDropdownData = async () => {
 
   if (promises.length > 0) {
     await Promise.all(promises);
-    console.log('✅ Dropdown data loaded');
+    /* log removed */
   }
 };
 

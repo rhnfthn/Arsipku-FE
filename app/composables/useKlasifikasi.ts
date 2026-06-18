@@ -1,12 +1,19 @@
-export interface Klasifikasi {
-  id: string;
+import type { Klasifikasi } from "~/types/klasifikasi";
+
+export type { Klasifikasi };
+
+export interface KlasifikasiPayload {
+  company: string;
   klasifikasi: string;
   klasifikasi_text: string;
+  deskripsi?: string | null;
+  id_parent?: string;
   active: number;
 }
 
 export const useKlasifikasi = () => {
   const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
+  const { klasifikasi, isLoadingKlasifikasi } = useMasterCache();
 
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
@@ -25,7 +32,33 @@ export const useKlasifikasi = () => {
   };
 
   const getKlasifikasiList = async (): Promise<Klasifikasi[]> => {
-    return await apiGet<Klasifikasi[]>("/persuratan/klasifikasi");
+    if (klasifikasi.value && klasifikasi.value.length > 0) {
+      return klasifikasi.value;
+    }
+    if (isLoadingKlasifikasi.value) {
+      // tunggu jika ada request lain sedang berjalan
+      await new Promise((resolve) => {
+        const stop = watch(isLoadingKlasifikasi, (v) => {
+          if (!v) {
+            stop();
+            resolve(true);
+          }
+        });
+      });
+      return klasifikasi.value ?? [];
+    }
+
+    isLoadingKlasifikasi.value = true;
+    try {
+      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi");
+      klasifikasi.value = data;
+      return data;
+    } catch (error) {
+      console.error("Gagal mengambil klasifikasi:", error);
+      throw error;
+    } finally {
+      isLoadingKlasifikasi.value = false;
+    }
   };
 
   const createKlasifikasi = (payload: KlasifikasiPayload) => {
@@ -40,6 +73,17 @@ export const useKlasifikasi = () => {
     return apiDelete(`/persuratan/klasifikasi/${id}`);
   };
 
+  const refreshKlasifikasi = async () => {
+    isLoadingKlasifikasi.value = true;
+    try {
+      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi", {}, { skipCache: true });
+      klasifikasi.value = data;
+      return data;
+    } finally {
+      isLoadingKlasifikasi.value = false;
+    }
+  };
+
   return {
     getKlasifikasi,
     getKlasifikasiList,
@@ -47,5 +91,6 @@ export const useKlasifikasi = () => {
     createKlasifikasi,
     updateKlasifikasi,
     deleteKlasifikasi,
+    refreshKlasifikasi,
   };
 };

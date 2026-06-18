@@ -197,7 +197,7 @@
                   </table>
                 </div>
 
-                <Editor api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit"
+                <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit"
                   class="min-h-[400px]" />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
@@ -247,7 +247,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue';
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
@@ -755,9 +755,9 @@ const handleKirimDokumen = async () => {
     if (isRevision) {
       if (!editDraftId.value) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan");
       const revisiFormData = prepareRevisiFormData();
-      console.log("[prepareRevisiFormData] entries:");
+      /* log removed */
       for (const [key, value] of revisiFormData.entries()) {
-        console.log(`- ${key}:`, value);
+        /* log removed */
       }
       result = await forwardKonsep(editDraftId.value, revisiFormData);
     } else {
@@ -900,8 +900,8 @@ onMounted(async () => {
       const dataArray = extractDataArray(result);
       const draftData = dataArray.find((d: any) => d.jenis === 'K');
       const originFlow = dataArray.find((d: any) => d.jenis !== 'K');
-      console.log("cek konsep");
-      console.log(draftData);
+      /* log removed */
+      /* log removed */
 
       if (!draftData) {
         toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });

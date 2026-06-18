@@ -110,7 +110,9 @@ const getFileUrlString = (file: any): string => {
 
   // 2. File dari server (Sudah punya ID) -> Gunakan Link Preview Server
   if (file.id) {
-    return `http://172.20.16.115:3011/preview-file/${file.id}`;
+    const config = useRuntimeConfig();
+    const previewBase = config.public.previewFileUrl || "http://172.20.16.115:3011";
+    return `${previewBase}/preview-file/${file.id}`;
   }
 
   // 3. Fallback (Jika data lama ada filePath tapi tidak ada ID)

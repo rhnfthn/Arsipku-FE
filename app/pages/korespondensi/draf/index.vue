@@ -11,6 +11,7 @@ import {
 import * as XLSX from "xlsx";
 import { useDraft } from "@/composables/useDraft";
 import { useLabel } from "~/composables/useLabel";
+import { getCategoryStyle } from "~/utils/mail-helpers";
 
 definePageMeta({ middleware: "auth" });
 
@@ -114,17 +115,7 @@ const getTabCount = (tabValue) => {
   return counts[tabValue] || counts[tabValue.toUpperCase()] || counts[tabValue.toLowerCase()] || 0;
 };
 
-const getCategoryStyle = (cat) => {
-  const styles = {
-    ND: "bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300",
-    DI: "bg-purple-50 dark:bg-purple-900/30 text-purple-500 dark:text-purple-300",
-    SDI: "bg-green-50 dark:bg-green-900/30 text-green-500 dark:text-green-300",
-    SDE: "bg-orange-50 dark:bg-orange-900/30 text-orange-500 dark:text-orange-300",
-    KA: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-500 dark:text-cyan-300",
-    K: "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300",
-  };
-  return styles[(cat || "").toUpperCase()] || "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-300";
-};
+
 
 // Route map untuk konsep drafts
 const konsepRouteMap = {
