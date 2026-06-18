@@ -259,6 +259,8 @@ import { useAuth } from '~/composables/useAuth';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
+import { useRealtimeSummary } from '~/composables/useRealtimeSummary';
+import { usePollingSmart } from '~/composables/usePollingSmart';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
@@ -276,6 +278,7 @@ const {
   updateLabel,
   deleteLabel
 } = useLabel();
+const { summary: realtimeSummary, fetchSummary } = useRealtimeSummary();
 
 const labelTree = computed(() => labels.value);
 const route = useRoute();
@@ -303,6 +306,9 @@ const getPositionId = (userValue) => {
 
 // ─── Count fetching ───────────────────────────────────────────────────────────
 
+// fetchCounts khusus penomoran (admin/user nomor request) — tetap dipanggil
+// dari watcher user awal & saat realtime tick, namun tidak terlalu sensitif
+// jadi cukup tiap 60s atau saat user kembali ke tab.
 const fetchCounts = async () => {
   try {
     if (!user.value) return;
@@ -321,21 +327,38 @@ const fetchCounts = async () => {
   }
 };
 
-let countInterval = null;
+// Sinkronkan state global dari endpoint /dashboard/realtime ke composable lama
+// agar UI lain (yang masih baca unreadCount / labelCounts) tetap up-to-date.
+const syncFromRealtime = () => {
+  const data = realtimeSummary.value;
+  if (!data) return;
+  if (data.inboxCount && typeof data.inboxCount.count === 'number') {
+    unreadCount.value = data.inboxCount.count;
+  }
+  if (data.labelCounts && typeof data.labelCounts === 'object') {
+    labelCounts.value = data.labelCounts;
+  }
+};
+
+watch(realtimeSummary, syncFromRealtime, { deep: true });
 
 watch(
   () => user.value,
   async (newUser) => {
     if (newUser) {
       fetchLabels();
-      fetchLabelCounts();
-      const posId = getPositionId(newUser);
       await fetchCounts();
-      if (posId && !isNaN(posId)) await fetchInboxCount(posId);
+      await fetchSummary();
     }
   },
   { immediate: true }
 );
+
+// Polling smart: 60s, auto-pause saat tab tidak aktif, refetch saat tab kembali
+usePollingSmart(async () => {
+  if (!user.value) return;
+  await Promise.allSettled([fetchSummary(), fetchCounts()]);
+}, 60_000);
 
 onMounted(async () => {
   try {
@@ -345,19 +368,9 @@ onMounted(async () => {
     window.addEventListener('resize', checkScreenSize);
     if (user.value) {
       fetchLabels();
-      fetchLabelCounts();
       await fetchCounts();
-      const positionId = getPositionId(user.value);
-      if (positionId && !isNaN(positionId)) await fetchInboxCount(positionId);
+      await fetchSummary();
     }
-    countInterval = setInterval(() => {
-      if (user.value) {
-        fetchCounts();
-        fetchLabelCounts();
-        const positionId = getPositionId(user.value);
-        if (positionId && !isNaN(positionId)) fetchInboxCount(positionId);
-      }
-    }, 30000);
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -883,7 +896,6 @@ const confirmDelete = async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize);
-  if (countInterval) clearInterval(countInterval);
 });
 
 defineExpose({ openMobile, closeMobile });
