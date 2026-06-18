@@ -43,8 +43,10 @@
 <script setup lang="ts">
 import { AlertTriangle, X } from "lucide-vue-next";
 import { useDigsig } from "~/composables/useDigsig";
+import { useRealtimeSummary } from "~/composables/useRealtimeSummary";
 
-const { bsreAlert, fetchBsreAlert } = useDigsig();
+const { bsreAlert } = useDigsig();
+const { summary: realtimeSummary, fetchSummary } = useRealtimeSummary();
 
 // Local state untuk dismiss
 const isDismissed = ref(false);
@@ -73,25 +75,22 @@ watch(
   },
 );
 
-// Fetch alert status saat component mounted
+// Sinkronkan bsreAlert dari endpoint agregat (cached) — tidak polling sendiri.
+// Sidebar sudah polling /dashboard/realtime tiap 60s (visibility-aware).
+watch(
+  realtimeSummary,
+  (val) => {
+    if (val?.bsreAlert) {
+      bsreAlert.value = val.bsreAlert;
+    }
+  },
+  { deep: true, immediate: true },
+);
+
+// Initial fetch sekali saat mount (jaga-jaga kalau Sidebar belum mount duluan)
 onMounted(async () => {
-  await fetchBsreAlert();
-  console.log("✅ Alert component mounted, status:", bsreAlert.value);
-});
-
-// Poll alert status setiap 30 detik untuk update real-time
-const pollInterval = ref<NodeJS.Timeout | null>(null);
-
-onMounted(() => {
-  // Poll setiap 30 detik
-  pollInterval.value = setInterval(async () => {
-    await fetchBsreAlert();
-  }, 30000); // 30 seconds
-});
-
-onBeforeUnmount(() => {
-  if (pollInterval.value) {
-    clearInterval(pollInterval.value);
+  if (!realtimeSummary.value) {
+    await fetchSummary();
   }
 });
 </script>
