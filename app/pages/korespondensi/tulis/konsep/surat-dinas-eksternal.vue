@@ -269,6 +269,7 @@ import type { Editor as TinyMCEEditor } from 'tinymce';
 import { Hash, Calendar, Tag } from "lucide-vue-next";
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { Alert } from "@/composables/useAlert";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
 
 definePageMeta({ middleware: "auth" });
 

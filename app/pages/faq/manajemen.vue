@@ -261,8 +261,14 @@
             </td>
           </tr>
           <tr v-else-if="paginatedFaqs.length === 0">
-            <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
-              Tidak ada data FAQ ditemukan.
+            <td colspan="7" class="px-4 py-10">
+              <EmptyState
+                :icon="HelpCircle"
+                title="Tidak ada data FAQ"
+                description="Tidak ada FAQ yang cocok dengan pencarian atau filter."
+                icon-wrapper-class="bg-primary-50 dark:bg-primary-900/30"
+                icon-class="text-primary"
+              />
             </td>
           </tr>
         </tbody>
@@ -547,12 +553,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next';
+import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown, HelpCircle } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Modal from '@/components/Modal.vue';
 import type { Faq, FaqKategori } from '@/composables/useFaq';
 import { formatDateSlash } from '~/utils/mail-helpers';
+import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({ middleware: 'auth' });
 

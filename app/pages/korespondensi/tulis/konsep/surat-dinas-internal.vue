@@ -272,6 +272,8 @@ import { Hash, Calendar, Tag } from "lucide-vue-next";
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
+import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
 
 definePageMeta({ middleware: "auth" });
 
