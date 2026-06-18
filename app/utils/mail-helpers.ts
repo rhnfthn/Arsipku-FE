@@ -2,6 +2,7 @@
 // Shared helpers untuk halaman korespondensi (kotak masuk, terkirim, label, dll)
 
 const monthShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const monthLong = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 export const formatShortDate = (dateString: string | null | undefined): string => {
   if (!dateString) return "-";
@@ -69,4 +70,23 @@ export const formatDate2Digit = (dateString: string | null | undefined): string 
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/** Format tanggal dd/mm/yyyy */
+export const formatDateSlash = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
+};
+
+/** Format tanggal panjang: dd Month yyyy */
+export const formatDateLong = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${day} ${monthLong[date.getMonth()]} ${date.getFullYear()}`;
 };

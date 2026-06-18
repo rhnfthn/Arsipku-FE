@@ -409,7 +409,7 @@
 
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">{{ $t('usl_detail_tanggal') }}</p>
-          <p class="font-medium mt-1 dark:text-gray-200">{{ formatDate(selectedRow.tanggal) }}</p>
+            <p class="font-medium mt-1 dark:text-gray-200">{{ formatDateLong(selectedRow.tanggal) }}</p>
         </div>
         <div class="pb-2 border-b border-gray-200 dark:border-gray-700">
           <p class="text-gray-500 dark:text-gray-400 text-xs">
@@ -746,6 +746,7 @@ import PageHeader from '~/components/PageHeader.vue'
 import { Modal } from '#components'
 import { usePenomoran } from '~/composables/usePenomoran'
 import { useAuth } from '~/composables/useAuth'
+import { formatDateLong } from '~/utils/mail-helpers'
 import * as XLSX from 'xlsx'
 definePageMeta({ middleware: 'auth' })
 
@@ -1222,14 +1223,7 @@ const handleSubmitFromModal = async () => {
   await fetchData()
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  return new Date(dateStr.replace('Z', '').replace('+00:00', '')).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
-}
+
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {

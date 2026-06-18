@@ -80,10 +80,10 @@
                 ]"
               >
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlight(formatDate(row.tanggalMulai), search)"></span>
+                  <span v-html="highlight(formatDateSlash(row.tanggalMulai), search)"></span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlight(formatDate(row.tanggalBerakhir), search)"></span>
+                  <span v-html="highlight(formatDateSlash(row.tanggalBerakhir), search)"></span>
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
@@ -369,6 +369,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
 import { useCompany } from '~/composables/useCompany';
+import { formatDateSlash } from '~/utils/mail-helpers';
 
 definePageMeta({
   middleware: 'auth'
@@ -812,16 +813,7 @@ const handleDelete = async () => {
   }
 };
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
 
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
-};
 
 // Highlight function for search results
 function highlight(text: string, keyword: string): string {

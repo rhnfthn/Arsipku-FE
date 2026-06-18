@@ -219,7 +219,7 @@
             </td>
 
             <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-              {{ formatDate(faq.updatedAt) }}
+              {{ formatDateSlash(faq.updatedAt) }}
             </td>
 
             <td class="px-4 py-3 text-center text-gray-700 dark:text-gray-200">
@@ -552,6 +552,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Modal from '@/components/Modal.vue';
 import type { Faq, FaqKategori } from '@/composables/useFaq';
+import { formatDateSlash } from '~/utils/mail-helpers';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -836,7 +837,7 @@ const onExport = () => {
     Pertanyaan: faq.pertanyaan,
     'Deskripsi/Jawaban': faq.deskripsi,
     Kategori: faq.kategori,
-    'Terakhir Update': formatDate(faq.updatedAt),
+    'Terakhir Update': formatDateSlash(faq.updatedAt),
     Puas: faq.puas,
     'Tidak Puas': faq.tidakPuas
   }));
@@ -864,16 +865,6 @@ const onExport = () => {
   });
   saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast('Berhasil', 'Export berhasil.', 'success');
-};
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return dateStr;
-  }
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 const showToast = (
