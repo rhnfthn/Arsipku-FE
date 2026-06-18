@@ -48,3 +48,25 @@ export const getInitials = (name: string): string => {
   const parts = name.trim().split(" ");
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 };
+
+/** Format tanggal + waktu (id-ID, 2-digit) */
+export const formatDateTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/** Format tanggal id-ID dengan day 2-digit (tanpa waktu) */
+export const formatDate2Digit = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};

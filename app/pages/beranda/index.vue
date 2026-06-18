@@ -247,7 +247,7 @@
                             : 'text-gray-400 dark:text-gray-500'
                         "
                       >
-                        {{ formatDate(mail.tanggal) }}
+                        {{ formatShortDate(mail.tanggal) }}
                       </span>
                     </div>
                   </div>
@@ -273,6 +273,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatShortDate } from "~/utils/mail-helpers";
 import { onMounted, watch } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
@@ -300,15 +301,7 @@ const formatName = (name: string | undefined) => {
   return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).format(date)
-}
+/* digantikan formatShortDate dari ~/utils/mail-helpers */
 
 let chartInstance: any = null
 

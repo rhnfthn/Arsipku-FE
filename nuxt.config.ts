@@ -17,7 +17,7 @@ export default defineNuxtConfig({
 
   build: {
     transpile: ["@vuepic/vue-datepicker"],
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,6 +25,12 @@ export default defineNuxtConfig({
           lucide: ["lucide-vue-next"],
           datepicker: ["@vuepic/vue-datepicker"],
           "internationalized-date": ["@internationalized/date"],
+          xlsx: ["xlsx"],
+          "file-saver": ["file-saver"],
+          chart: ["chart.js/auto"],
+          "reka-ui": ["reka-ui"],
+          zod: ["zod"],
+          axios: ["axios"],
         },
       },
     },
