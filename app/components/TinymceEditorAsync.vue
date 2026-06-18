@@ -17,11 +17,4 @@
 import { defineAsyncComponent } from "vue";
 
 const Editor = defineAsyncComponent(() => import("@tinymce/tinymce-vue"));
-
-/*
-  Nuxt reserves the <Lazy...> prefix for auto-generated dynamic imports.
-  Karena komponen ini secara manual lazy-load TinyMCE, kita sengaja memberi nama
-  LazyTinymceEditor agar jelas. Runtime uji coba menunjukkan tetap berfungsi,
-  tetapi warning di atas dapat diabaikan.
-*/
 </script>

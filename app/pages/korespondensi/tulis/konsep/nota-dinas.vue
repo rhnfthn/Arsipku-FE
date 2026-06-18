@@ -197,7 +197,7 @@
                   </table>
                 </div>
 
-                <LazyTinymceEditor api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit"
+                <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit"
                   class="min-h-[400px]" />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
@@ -247,7 +247,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
-import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";

@@ -160,7 +160,7 @@
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <LazyTinymceEditor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                  <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   <div v-if="!editorContent"
                     class="absolute top-0 left-10 text-gray-400 pointer-events-none italic z-0 mt-2">
                     Ketik isi surat di sini...
@@ -261,7 +261,7 @@
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
-import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
 // --- COMPONENTS ---

@@ -747,7 +747,7 @@
 /* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted, nextTick } from "vue";
 import { CalendarDate } from "@internationalized/date";
-import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import { useAuth } from "@/composables/useAuth"; // <--- IMPORT USEAUTH
 
 // Types
