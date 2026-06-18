@@ -90,6 +90,13 @@
         </UButton>
       </div>
 
+      <!-- Version indicator -->
+      <div
+        class="fixed bottom-3 right-4 z-30 text-[10px] font-medium text-[#457FB6]/40 select-none"
+      >
+        v1.0.0
+      </div>
+
       <div
         v-if="showOnboarding"
         :class="[OnboardingClass, 'fade-slide-up']"
