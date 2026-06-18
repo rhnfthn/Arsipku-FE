@@ -199,7 +199,7 @@
                     <UButton
                       icon="i-lucide-x"
                       size="2xs"
-                      color="gray"
+                      color="neutral"
                       variant="ghost"
                       :padded="false"
                       class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
@@ -298,7 +298,7 @@
                     <UButton
                       icon="i-lucide-x"
                       size="2xs"
-                      color="gray"
+                      color="neutral"
                       variant="ghost"
                       :padded="false"
                       class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
