@@ -17,11 +17,24 @@ export default defineNuxtConfig({
 
   build: {
     transpile: ["@vuepic/vue-datepicker"],
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          tinymce: ["@tinymce/tinymce-vue"],
+          lucide: ["lucide-vue-next"],
+          datepicker: ["@vuepic/vue-datepicker"],
+          "internationalized-date": ["@internationalized/date"],
+        },
+      },
+    },
   },
 
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || "",
+      pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || "http://172.20.16.115:3011",
+      previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || "http://172.20.16.115:3011",
     },
   },
 

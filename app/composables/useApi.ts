@@ -86,7 +86,7 @@ export const useApi = () => {
       setCached(cacheKey, res.data, options.ttlMs);
       return res.data;
     } catch (err) {
-      console.error("[api] GET error ->", url, err);
+      if (isDev) console.error("[api] GET error ->", url, err);
       throw err;
     }
   };
@@ -100,7 +100,7 @@ export const useApi = () => {
       invalidateCache(url.split("?")[0]);
       return res.data;
     } catch (err) {
-      console.error("[api] POST error ->", url, err);
+      if (isDev) console.error("[api] POST error ->", url, err);
       throw err;
     }
   };
@@ -114,7 +114,7 @@ export const useApi = () => {
       invalidateCache(url.split("?")[0]);
       return res.data;
     } catch (err) {
-      console.error("[api] PUT error ->", url, err);
+      if (isDev) console.error("[api] PUT error ->", url, err);
       throw err;
     }
   };
@@ -128,7 +128,7 @@ export const useApi = () => {
       invalidateCache(url.split("?")[0]);
       return res.data as T;
     } catch (err) {
-      console.error("[api] PATCH error ->", url, err);
+      if (isDev) console.error("[api] PATCH error ->", url, err);
       throw err;
     }
   };

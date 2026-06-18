@@ -875,7 +875,9 @@ async function openPreview() {
 
     // FETCH PDF
     // Pastikan endpoint ini benar dan backend mengembalikan BLOB
-    const response = await fetch("http://172.20.16.115:3011/ND/generate-pdf", {
+    const config = useRuntimeConfig();
+    const pdfServiceUrl = config.public.pdfServiceUrl || "http://172.20.16.115:3011";
+    const response = await fetch(`${pdfServiceUrl}/ND/generate-pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
