@@ -62,7 +62,7 @@ export const useSirkulasi = () => {
       if (params.favorite) query.append('favorite', 'true');
       if (params.priority) query.append('priority', 'true');
 
-      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
+      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`, {}, { skipCache: params.search ? true : false });
 
       // Samakan normalisasi dengan useInbox agar pagination & summary selalu terbaca
       const responseBody = res?.data?.pagination ? res.data : res;

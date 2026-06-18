@@ -599,7 +599,7 @@ onMounted(async () => {
       }
 
       if (draftData) {
-        console.log("Data Konsep Ditemukan:", draftData);
+        /* log removed */
 
         // --- 1. Populate Text Editor & Basic ---
         subject.value = draftData.perihal || "";

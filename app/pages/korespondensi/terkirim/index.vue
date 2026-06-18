@@ -10,6 +10,7 @@ import {
 import * as XLSX from "xlsx";
 import { useSirkulasi } from "~/composables/useTerkirim";
 import { useLabel } from "~/composables/useLabel";
+import { getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
 
 definePageMeta({ middleware: "auth" });
 
@@ -122,25 +123,7 @@ const getTabCount = (tabValue: string) => {
   return 0;
 };
 
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c)) return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
-  if (["DI", "DISPOSISI"].includes(c)) return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
-  if (["SDI", "INTERNAL"].includes(c)) return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
-  if (["SDE", "EXTERNAL"].includes(c)) return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
-  if (["KAJIAN", "KA"].includes(c)) return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
-};
 
-const getCategoryLabel = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["KA"].includes(c)) return "KA";
-  if (["SDI", "INTERNAL"].includes(c)) return "SDI";
-  if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
-  if (["ND", "NOTA DINAS"].includes(c)) return "ND";
-  if (["DI", "DISPOSISI"].includes(c)) return "DI";
-  return "K";
-};
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
 const refreshData = async () => {
@@ -509,9 +492,9 @@ watch(searchQuery, () => {
 onMounted(async () => {
   if (!user.value) await getProfile();
   await refreshData();
-  console.log('pagination:', pagination.value);
-  console.log('totalPages:', totalPages.value);
-  console.log('items count:', items.value.length);
+  /* log removed */
+  /* log removed */
+  /* log removed */
 });
 </script>
 

@@ -174,7 +174,7 @@ const redirectToSSO = async () => {
       }
     } catch (error) {
       // Token invalid, continue to SSO
-      console.log('Token invalid, redirecting to SSO')
+      /* log removed */
     }
   }
 

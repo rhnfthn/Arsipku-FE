@@ -755,9 +755,9 @@ const handleKirimDokumen = async () => {
     if (isRevision) {
       if (!editDraftId.value) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan");
       const revisiFormData = prepareRevisiFormData();
-      console.log("[prepareRevisiFormData] entries:");
+      /* log removed */
       for (const [key, value] of revisiFormData.entries()) {
-        console.log(`- ${key}:`, value);
+        /* log removed */
       }
       result = await forwardKonsep(editDraftId.value, revisiFormData);
     } else {
@@ -900,8 +900,8 @@ onMounted(async () => {
       const dataArray = extractDataArray(result);
       const draftData = dataArray.find((d: any) => d.jenis === 'K');
       const originFlow = dataArray.find((d: any) => d.jenis !== 'K');
-      console.log("cek konsep");
-      console.log(draftData);
+      /* log removed */
+      /* log removed */
 
       if (!draftData) {
         toast.add({ title: 'Gagal', description: 'Data konsep tidak ditemukan', color: 'error' });

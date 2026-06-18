@@ -65,7 +65,7 @@ export function useInbox() {
       if (params.arsip    !== undefined) query.append("arsip",    String(params.arsip));
       if (params.priority !== undefined) query.append("priority", String(params.priority));
 
-      const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`, {}, { skipCache: true });
+      const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`, {}, { skipCache: params.search ? true : false });
 
       const responseBody = res?.data?.pagination ? res.data : res;
       const rawItems = Array.isArray(responseBody?.data) ? responseBody.data : [];

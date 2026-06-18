@@ -302,11 +302,11 @@ const formatDateRef = (dateString: string) => {
 
 const validateAndToast = (payload: DraftPayload) => {
   // Debug: lihat field mana yang null
-  console.log('Payload sebelum validasi:', JSON.stringify(payload, null, 2));
+  /* log removed */
 
   const result = validateDraftPayload(payload);
   if (!result.isValid) {
-    console.log('Validation errors:', result.errors);
+    /* log removed */
     const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
     toastError("Validasi Gagal", firstError);
     return false;

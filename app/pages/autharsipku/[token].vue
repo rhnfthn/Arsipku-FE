@@ -57,8 +57,8 @@ const visible = ref(true)
 
 onMounted(async () => {
   const token = route.params.token
-  console.log('ROUTE FULL:', route.fullPath)
-  console.log('TOKEN:', token)
+  /* log removed */
+  /* log removed */
 
   if (!token) {
     await delayWithFade()
@@ -68,7 +68,7 @@ onMounted(async () => {
   try {
     const result = await verifyToken(token)
 
-    console.log('VERIFY RESULT:', result)
+    /* log removed */
 
     await delayWithFade()
 

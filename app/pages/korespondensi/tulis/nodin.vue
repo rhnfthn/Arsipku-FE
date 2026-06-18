@@ -988,7 +988,7 @@ onMounted(async () => {
     // Ambil position ID user
     const userPositionId = user.value?.position || 70016581; // Fallback ID jika null
 
-    console.log("Mengambil penerima untuk posisi:", userPositionId);
+    /* log removed */
 
     const res = await getRecipients(userPositionId);
     const rawData = res.recipients || res.data || [];

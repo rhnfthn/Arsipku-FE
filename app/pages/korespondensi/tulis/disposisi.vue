@@ -369,7 +369,6 @@ const handlePriorityChange = async (e: Event) => {
 
 const handlePreview = async () => {
   const payload = getBasePayload();
-  console.log("payload:", payload); // cek di console
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;

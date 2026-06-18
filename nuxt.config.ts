@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
 
   devtools: {
-    enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || true,
+    enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || false,
   },
 
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n"],

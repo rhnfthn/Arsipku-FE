@@ -6,6 +6,7 @@ import {
   FileText, Upload, X, Loader2, Send, CheckCircle,
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
+import { formatShortDate, getInitials } from "~/utils/mail-helpers";
 
 definePageMeta({ middleware: "auth" });
 
@@ -34,16 +35,6 @@ const breadcrumbs = [
 ];
 
 // --- HELPERS ---
-const formatDate = (v: string) => {
-  if (!v) return "-";
-  return new Date(v).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-};
-
-const getInitials = (name: string) => {
-  if (!name) return "?";
-  return name.trim().split(" ").slice(0, 2).map((x: string) => x[0].toUpperCase()).join("");
-};
-
 const formatFileSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -65,7 +56,7 @@ const getSifatStyle = (sifat: string) => {
   return "bg-primary-500 text-white";
 };
 
-const getCategoryLabel = (jenis: string) => {
+const getCategoryLabelLong = (jenis: string) => {
   const map: Record<string, string> = {
     ND: "NOTA DINAS", SDI: "SURAT INTERNAL", SDE: "SURAT EKSTERNAL",
     KA: "KAJIAN", DI: "DISPOSISI",
@@ -198,7 +189,7 @@ onMounted(loadData);
           <span class="opacity-40">•</span>
           <div class="flex items-center gap-1">
             <Calendar class="w-3.5 h-3.5" />
-            <span>{{ formatDate(naskah?.tanggal || naskah?.created_at) }}</span>
+            <span>{{ formatShortDate(naskah?.tanggal || naskah?.created_at) }}</span>
           </div>
           <template v-if="naskah?.sifat">
             <span class="opacity-40">•</span>
@@ -208,7 +199,7 @@ onMounted(loadData);
           </template>
           <span class="opacity-40">•</span>
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-primary-500 text-white">
-            {{ getCategoryLabel(naskah?.jenis || jenisQuery) }}
+            {{ getCategoryLabelLong(naskah?.jenis || jenisQuery) }}
           </span>
           <span class="opacity-40">•</span>
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500 text-white">TTD
