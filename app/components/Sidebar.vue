@@ -342,23 +342,23 @@ const syncFromRealtime = () => {
 
 watch(realtimeSummary, syncFromRealtime, { deep: true });
 
+// Watch user — hanya fetch label tree (tidak ada count fetch di sini, biar tidak overlap dengan polling).
 watch(
   () => user.value,
-  async (newUser) => {
+  (newUser) => {
     if (newUser) {
       fetchLabels();
-      await fetchCounts();
-      await fetchSummary();
     }
   },
   { immediate: true }
 );
 
-// Polling smart: 60s, auto-pause saat tab tidak aktif, refetch saat tab kembali
+// Polling smart: 30s, auto-pause saat tab tidak aktif, refetch saat tab kembali.
+// usePollingSmart juga eksekusi initial fetch saat mount → satu sumber of truth untuk fetching count.
 usePollingSmart(async () => {
   if (!user.value) return;
   await Promise.allSettled([fetchSummary(), fetchCounts()]);
-}, 60_000);
+}, 30_000);
 
 onMounted(async () => {
   try {
@@ -366,11 +366,8 @@ onMounted(async () => {
     await nextTick();
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    if (user.value) {
-      fetchLabels();
-      await fetchCounts();
-      await fetchSummary();
-    }
+    // fetchLabels sudah dipanggil dari watch(user, immediate); tidak perlu di sini.
+    // fetchCounts/fetchSummary di-handle oleh usePollingSmart (initial run di onMounted internal-nya).
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
