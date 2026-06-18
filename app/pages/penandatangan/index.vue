@@ -997,7 +997,7 @@ const viewDocumentFromTable = (row: PenandatangananDocument) => {
     toast.add({
       title: 'Gagal',
       description: t('sign_toast_gagal_preview'),
-      color: 'red'
+      color: 'error'
     });
     return;
   }
@@ -1014,7 +1014,7 @@ const viewDocumentFromDetail = () => {
     toast.add({
       title: 'Gagal',
       description: t('sign_toast_gagal_preview'),
-      color: 'red'
+      color: 'error'
     });
     return;
   }
@@ -1047,7 +1047,7 @@ const handleViewDetail = async (doc: PenandatangananDocument) => {
     toast.add({
       title: 'Gagal',
       description: t('sign_toast_data_tidak_valid'),
-      color: 'red'
+      color: 'error'
     });
     return;
   }
@@ -1073,7 +1073,7 @@ const handleSign = async () => {
     toast.add({
       title: 'Berhasil',
       description: t('sign_toast_berhasil_ttd'),
-      color: 'green'
+      color: 'success'
     });
     openSign.value = false;
     passphrase.value = '';
@@ -1081,7 +1081,7 @@ const handleSign = async () => {
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || t('sign_toast_gagal_ttd');
-    toast.add({ title: 'Gagal', description: msg, color: 'red' });
+    toast.add({ title: 'Gagal', description: msg, color: 'error' });
   } finally {
     loadingSign.value = false;
   }
@@ -1102,14 +1102,14 @@ const rejectNow = async () => {
     toast.add({
       title: 'Berhasil',
       description: t('sign_toast_berhasil_tolak'),
-      color: 'green'
+      color: 'success'
     });
     confirmRejectOpen.value = false;
     rejectReason.value = '';
     await fetchPenandatanganDocuments({ page: 1, limit: 10000 });
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || t('sign_toast_gagal_tolak');
-    toast.add({ title: 'Gagal', description: msg, color: 'red' });
+    toast.add({ title: 'Gagal', description: msg, color: 'error' });
   } finally {
     loadingReject.value = false;
   }

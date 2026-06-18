@@ -4,7 +4,7 @@
       <UAlert
         v-if="error"
         icon="i-heroicons-exclamation-triangle"
-        color="red"
+        color="error"
         variant="solid"
         title="Terjadi Kesalahan"
         :description="error"

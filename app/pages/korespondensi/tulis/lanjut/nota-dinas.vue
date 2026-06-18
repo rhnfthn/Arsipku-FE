@@ -475,7 +475,7 @@ onMounted(async () => {
         // Normalisasi: pastikan selalu array
         refData.value = Array.isArray(result) ? result : [result];
       } else {
-        toast.add({ title: "Info", description: "Data referensi tidak ditemukan", color: "gray" });
+        toast.add({ title: "Info", description: "Data referensi tidak ditemukan", color: "neutral" });
       }
     } catch {
       toast.add({ title: "Error", description: "Gagal memuat data referensi", color: "error" });

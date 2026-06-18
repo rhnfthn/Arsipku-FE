@@ -703,7 +703,7 @@ const handleAddFile = (event: Event) => {
     toast.add({
       title: t('tmpl_toast_file_terlalu_besar') || 'File Terlalu Besar',
       description: t('tmpl_toast_file_maks') || 'Ukuran file maksimal 10 MB',
-      color: 'red'
+      color: 'error'
     })
     // Reset input agar file tidak tersimpan
     ;(event.target as HTMLInputElement).value = ''
@@ -722,7 +722,7 @@ const handleEditFile = (event: Event) => {
     toast.add({
       title: t('tmpl_toast_file_terlalu_besar') || 'File Terlalu Besar',
       description: t('tmpl_toast_file_maks') || 'Ukuran file maksimal 10 MB',
-      color: 'red'
+      color: 'error'
     })
     ;(event.target as HTMLInputElement).value = ''
     return
@@ -753,7 +753,7 @@ const saveAdd = async () => {
     toast.add({
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_file_wajib'),
-      color: 'red'
+      color: 'error'
     })
     return
   }
@@ -801,7 +801,7 @@ const saveEdit = async () => {
     toast.add({
       title: t('tmpl_toast_form_tidak_lengkap'),
       description: t('tmpl_toast_nama_wajib'),
-      color: 'red'
+      color: 'error'
     })
     return
   }
@@ -843,7 +843,7 @@ const downloadTemplate = (template: Template) => {
     toast.add({
       title: t('tmpl_toast_url_tidak_tersedia'),
       description: t('tmpl_toast_tidak_bisa_unduh'),
-      color: 'red'
+      color: 'error'
     })
   }
 }
