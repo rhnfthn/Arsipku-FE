@@ -66,7 +66,7 @@
               <span class="text-xs font-medium text-left truncate">
                 {{ item.label }}
               </span>
-              <UButton icon="i-lucide-x" size="2xs" color="gray" variant="ghost" :padded="false"
+              <UButton icon="i-lucide-x" size="2xs" color="neutral" variant="ghost" :padded="false"
                 class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
                 @click.stop="removePerson(item)" />
             </UBadge>

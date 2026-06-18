@@ -15,7 +15,11 @@
       </h1>
 
       <!-- SEARCH BUTTON (DESKTOP) -->
-      <div v-if="searchConfig.show" class="hidden md:block w-full max-w-3xl">
+      <div
+        v-if="searchConfig.show"
+        ref="searchBoxRef"
+        class="hidden md:block w-full max-w-3xl relative"
+      >
         <div class="relative flex items-center">
           <UIcon
             name="i-heroicons-magnifying-glass"
@@ -25,7 +29,12 @@
             v-model="quickSearch"
             type="text"
             placeholder="Cari perihal surat..."
-            @keydown.enter="handleQuickSearch"
+            autocomplete="off"
+            @keydown.enter="onSearchEnter"
+            @keydown.down.prevent="onArrowDown"
+            @keydown.up.prevent="onArrowUp"
+            @keydown.esc="closeSuggestions"
+            @focus="onSearchFocus"
             class="w-full pl-11 pr-12 py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full hover:bg-white hover:shadow-md dark:hover:bg-gray-700 focus:bg-white dark:focus:bg-gray-700 focus:shadow-md outline-none transition-all text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
           />
           <button
@@ -37,6 +46,88 @@
               name="i-heroicons-adjustments-horizontal"
               class="text-primary-600 dark:text-primary-400 w-5 h-5"
             />
+          </button>
+        </div>
+
+        <!-- AUTOCOMPLETE DROPDOWN -->
+        <div
+          v-if="showSuggestions"
+          class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden z-[60] max-h-[60vh] overflow-y-auto"
+        >
+          <!-- LOADING -->
+          <div
+            v-if="suggestionLoading"
+            class="px-4 py-6 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+          >
+            <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+            Mencari...
+          </div>
+
+          <!-- EMPTY -->
+          <div
+            v-else-if="suggestionItems.length === 0"
+            class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400"
+          >
+            Tidak ada hasil untuk "{{ quickSearch }}"
+          </div>
+
+          <!-- ITEMS -->
+          <ul v-else class="py-1">
+            <li
+              v-for="(item, idx) in suggestionItems"
+              :key="item.id_sirkulasi || item.id"
+              :class="[
+                'px-4 py-2.5 cursor-pointer flex items-start gap-3 transition-colors',
+                selectedIndex === idx
+                  ? 'bg-primary-50 dark:bg-gray-700'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
+              ]"
+              @mouseenter="selectedIndex = idx"
+              @mousedown.prevent="selectSuggestion(item)"
+            >
+              <UTooltip :text="resolveSourceMeta(item).label">
+                <UIcon
+                  :name="resolveSourceMeta(item).icon"
+                  class="w-4 h-4 mt-0.5 shrink-0 text-gray-500 dark:text-gray-400"
+                />
+              </UTooltip>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0"
+                    :class="getSuggestionBadgeClass(item.jenis)"
+                  >
+                    {{ item.jenis || '-' }}
+                  </span>
+                  <span
+                    class="text-sm text-gray-900 dark:text-gray-100 truncate font-medium"
+                    v-html="item._formatted?.perihal || item.perihal || '(tanpa perihal)'"
+                  />
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1.5">
+                  <span
+                    class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  >
+                    <UIcon :name="resolveSourceMeta(item).icon" class="w-3 h-3" />
+                    {{ resolveSourceMeta(item).label }}
+                  </span>
+                  <span v-if="item.nomor" class="truncate">{{ item.nomor }}</span>
+                  <span v-if="item.nomor && item.pengirim?.nama">•</span>
+                  <span v-if="item.pengirim?.nama" class="truncate">{{ item.pengirim.nama }}</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <!-- FOOTER: lihat semua hasil -->
+          <button
+            v-if="suggestionItems.length > 0"
+            type="button"
+            @mousedown.prevent="goToFullSearch"
+            class="w-full text-left px-4 py-2.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors flex items-center gap-2"
+          >
+            <UIcon name="i-lucide-search" class="w-3.5 h-3.5" />
+            Lihat semua hasil untuk "{{ quickSearch }}"
           </button>
         </div>
       </div>
@@ -735,11 +826,106 @@
     @cancel="showLogoutPopup = false"
   />
 
+  <!-- VISUALISASI DIGSIG MODAL -->
+  <teleport to="body">
+    <transition name="fade">
+      <div
+        v-if="showDigsigModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        @click.self="showDigsigModal = false"
+      >
+        <div
+          class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        >
+          <!-- HEADER -->
+          <div
+            class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-lucide-pen-tool"
+                class="w-5 h-5 text-primary-600 dark:text-primary-400"
+              />
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Visualisasi Digsig (Visible)
+              </h3>
+            </div>
+            <button
+              @click="showDigsigModal = false"
+              class="p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            >
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- BODY -->
+          <div class="px-6 py-5 space-y-4">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Pratinjau visualisasi tanda tangan digital berdasarkan profil aktif Anda.
+              Ukuran kanvas <span class="font-medium">960×240 px</span>.
+            </p>
+
+            <div
+              class="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 p-4 flex justify-center"
+            >
+              <canvas
+                ref="digsigCanvasRef"
+                width="960"
+                height="240"
+                class="max-w-full h-auto rounded-md bg-white"
+              />
+            </div>
+
+            <div
+              class="text-xs bg-gray-50 dark:bg-gray-900 rounded-md p-3 border border-gray-200 dark:border-gray-700 space-y-1"
+            >
+              <div class="flex gap-2">
+                <span class="text-gray-500 dark:text-gray-400 w-20 shrink-0">Nama</span>
+                <span class="text-gray-900 dark:text-gray-100 font-medium">{{
+                  user?.nama || '-'
+                }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-gray-500 dark:text-gray-400 w-20 shrink-0">Jabatan</span>
+                <span class="text-gray-900 dark:text-gray-100 font-medium">{{
+                  user?.positionText || '-'
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div
+            class="flex flex-col sm:flex-row gap-2 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/40"
+          >
+            <button
+              @click="copyDigsigText"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <UIcon
+                :name="digsigCopied ? 'i-lucide-check' : 'i-lucide-copy'"
+                class="w-4 h-4"
+              />
+              {{ digsigCopied ? 'Tersalin' : 'Salin Teks' }}
+            </button>
+            <button
+              @click="downloadDigsigVisual"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+            >
+              <UIcon name="i-lucide-download" class="w-4 h-4" />
+              Unduh Visualisasi
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </teleport>
+
   <LoadingOverlay :loading="isSwitching" :message="switchingMessage" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, reactive, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDark } from '@vueuse/core';
 import type { DropdownMenuItem } from '#ui/types';
@@ -759,6 +945,207 @@ const search = ref('');
 const delegationRoles = ref<any[]>([]);
 const switchingMessage = ref('');
 
+// --- VISUALISASI DIGSIG ---
+const showDigsigModal = ref(false);
+const digsigCanvasRef = ref<HTMLCanvasElement | null>(null);
+const digsigCopied = ref(false);
+
+const drawDigsigCanvas = () => {
+  const canvas = digsigCanvasRef.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const W = canvas.width; // 960
+  const H = canvas.height; // 240
+
+  // Background putih
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Border dark charcoal tebal
+  const borderWidth = 4;
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = borderWidth;
+  const half = borderWidth / 2;
+  ctx.strokeRect(half, half, W - borderWidth, H - borderWidth);
+
+  // Layout
+  const padding = 24;
+  const logoSize = 200;
+  const logoX = padding + 4;
+  const logoY = (H - logoSize) / 2;
+
+  const drawTexts = () => {
+    const textX = logoX + logoSize + 32;
+    const textMaxW = W - textX - padding;
+
+    // Font sizes (lebih besar agar canvas terisi penuh)
+    const sizeBase = 22;
+    const sizeName = Math.round(sizeBase * 1.5); // 33
+
+    // Line spacing rapat
+    const lhBase = sizeBase + 6; // 28
+    const lhName = sizeName + 6; // 39
+    const gapBetween = 4;
+    const gapNama = 44;
+
+    // Hitung tinggi total block teks utk centering vertikal
+    const jabatan = (user.value?.positionText || '-').toString();
+    const nama = (user.value?.nama || '-').toString();
+
+    ctx.font = `${sizeBase}px "Times New Roman", Times, serif`;
+    const headerLines = countWrapLines(ctx, 'Ditandatangani secara elektronik oleh', textMaxW);
+
+    ctx.font = `bold ${sizeBase}px "Times New Roman", Times, serif`;
+    const jabatanLines = countWrapLines(ctx, jabatan, textMaxW);
+
+    ctx.font = `bold ${sizeName}px "Times New Roman", Times, serif`;
+    const namaLines = countWrapLines(ctx, nama, textMaxW);
+
+    const totalH =
+      headerLines * lhBase +
+      gapBetween +
+      jabatanLines * lhBase +
+      gapNama +
+      namaLines * lhName;
+
+    let cy = (H - totalH) / 2;
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#000000';
+
+    // Baris 1: header (regular)
+    ctx.font = `${sizeBase}px "Times New Roman", Times, serif`;
+    wrapText(ctx, 'Ditandatangani secara elektronik oleh', textX, cy, textMaxW, lhBase);
+    cy += headerLines * lhBase + gapBetween;
+
+    // Baris 2: jabatan (bold)
+    ctx.font = `bold ${sizeBase}px "Times New Roman", Times, serif`;
+    wrapText(ctx, jabatan, textX, cy, textMaxW, lhBase);
+    cy += jabatanLines * lhBase + gapNama;
+
+    // Baris 3: nama (bold, 1.5x) - dengan jarak lebih lebar
+    ctx.font = `bold ${sizeName}px "Times New Roman", Times, serif`;
+    wrapText(ctx, nama, textX, cy, textMaxW, lhName);
+  };
+
+  // Logo Airnav (load async)
+  const logo = new Image();
+  logo.onload = () => {
+    const ratio = Math.min(logoSize / logo.width, logoSize / logo.height);
+    const w = logo.width * ratio;
+    const h = logo.height * ratio;
+    const x = logoX + (logoSize - w) / 2;
+    const y = logoY + (logoSize - h) / 2;
+    ctx.drawImage(logo, x, y, w, h);
+    drawTexts();
+  };
+  logo.onerror = () => {
+    drawTexts();
+  };
+  logo.src = '/logoAirnav.png';
+};
+
+const countWrapLines = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): number => {
+  const words = text.split(' ');
+  let line = '';
+  let lines = 1;
+  for (let i = 0; i < words.length; i++) {
+    const test = line + words[i] + ' ';
+    if (ctx.measureText(test).width > maxWidth && i > 0) {
+      lines++;
+      line = words[i] + ' ';
+    } else {
+      line = test;
+    }
+  }
+  return lines;
+};
+
+const wrapText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number
+) => {
+  const words = text.split(' ');
+  let line = '';
+  let cy = y;
+  for (let i = 0; i < words.length; i++) {
+    const test = line + words[i] + ' ';
+    if (ctx.measureText(test).width > maxWidth && i > 0) {
+      ctx.fillText(line.trim(), x, cy);
+      line = words[i] + ' ';
+      cy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line.trim(), x, cy);
+};
+
+const openDigsigVisual = async () => {
+  showDigsigModal.value = true;
+  await nextTick();
+  drawDigsigCanvas();
+};
+
+const downloadDigsigVisual = () => {
+  const canvas = digsigCanvasRef.value;
+  if (!canvas) return;
+  const link = document.createElement('a');
+  const safeName = (user.value?.nama || 'visualisasi-digsig')
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  link.download = `digsig-${safeName || 'user'}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
+
+const copyDigsigText = async () => {
+  const nama = user.value?.nama || '-';
+  const jabatan = user.value?.positionText || '-';
+  const text = `Ditandatangani secara elektronik oleh\n${jabatan}\n${nama}`;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  digsigCopied.value = true;
+  toast.add({
+    title: 'Berhasil disalin',
+    description: 'Teks visualisasi digsig sudah disalin ke clipboard.',
+    icon: 'i-heroicons-check-circle',
+    color: 'success'
+  });
+  setTimeout(() => (digsigCopied.value = false), 1500);
+};
+
+watch(showDigsigModal, (val) => {
+  if (val) {
+    nextTick(drawDigsigCanvas);
+  } else {
+    digsigCopied.value = false;
+  }
+});
+
 // --- QUICK SEARCH ---
 const quickSearch = ref('');
 
@@ -776,6 +1163,197 @@ const handleQuickSearch = () => {
   });
   quickSearch.value = '';
 };
+
+// --- QUICK SEARCH AUTOCOMPLETE DROPDOWN ---
+const searchBoxRef = ref<HTMLElement | null>(null);
+const showSuggestions = ref(false);
+const suggestionLoading = ref(false);
+const suggestionItems = ref<any[]>([]);
+const selectedIndex = ref(-1);
+let suggestionDebounce: ReturnType<typeof setTimeout> | null = null;
+let suggestionAbort: AbortController | null = null;
+
+const { apiGet: quickSearchGet } = useApi();
+
+const fetchQuickSuggestions = async (q: string) => {
+  // cancel inflight
+  if (suggestionAbort) suggestionAbort.abort();
+  suggestionAbort = new AbortController();
+
+  suggestionLoading.value = true;
+  try {
+    const res = await quickSearchGet('/search/v3', {
+      params: {
+        perihal: q,
+        page: 1,
+        limit: 5,
+        sortBy: 'tanggal',
+        sortOrder: 'DESC'
+      },
+      signal: suggestionAbort.signal
+    });
+    if (res?.success) {
+      suggestionItems.value = res.data?.items ?? [];
+    } else {
+      suggestionItems.value = [];
+    }
+  } catch (e: any) {
+    if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return;
+    suggestionItems.value = [];
+  } finally {
+    suggestionLoading.value = false;
+  }
+};
+
+watch(quickSearch, (val) => {
+  selectedIndex.value = -1;
+  if (suggestionDebounce) clearTimeout(suggestionDebounce);
+
+  const q = (val || '').trim();
+  if (q.length < 3) {
+    suggestionItems.value = [];
+    showSuggestions.value = false;
+    suggestionLoading.value = false;
+    return;
+  }
+
+  showSuggestions.value = true;
+  suggestionLoading.value = true;
+  suggestionDebounce = setTimeout(() => fetchQuickSuggestions(q), 300);
+});
+
+const onSearchFocus = () => {
+  if (quickSearch.value.trim().length >= 3) {
+    showSuggestions.value = true;
+  }
+};
+
+const closeSuggestions = () => {
+  showSuggestions.value = false;
+  selectedIndex.value = -1;
+};
+
+const onArrowDown = () => {
+  if (!showSuggestions.value || suggestionItems.value.length === 0) return;
+  selectedIndex.value = (selectedIndex.value + 1) % suggestionItems.value.length;
+};
+
+const onArrowUp = () => {
+  if (!showSuggestions.value || suggestionItems.value.length === 0) return;
+  selectedIndex.value =
+    selectedIndex.value <= 0 ? suggestionItems.value.length - 1 : selectedIndex.value - 1;
+};
+
+const onSearchEnter = () => {
+  if (
+    showSuggestions.value &&
+    selectedIndex.value >= 0 &&
+    suggestionItems.value[selectedIndex.value]
+  ) {
+    selectSuggestion(suggestionItems.value[selectedIndex.value]);
+    return;
+  }
+  closeSuggestions();
+  handleQuickSearch();
+};
+
+const goToFullSearch = () => {
+  closeSuggestions();
+  handleQuickSearch();
+};
+
+const resolveDetailRoute = (item: any) => {
+  const type = (item.source || item.folder || item.status || '').toString().toLowerCase();
+  const roles: string[] = item.userRoles || [];
+
+  if (item.status === 'draf') return 'draf';
+  if (item.status === 'pending') return 'tertunda';
+  if (roles.includes('pengirim') || ['sent', 'keluar', 'outbox'].some((k) => type.includes(k)))
+    return 'terkirim';
+  if (['draft', 'konsep'].some((k) => type.includes(k))) return 'draf';
+  return 'kotak-masuk';
+};
+
+const resolveSourceMeta = (item: any) => {
+  const type = (item.source || item.folder || item.status || '').toString().toLowerCase();
+  const roles: string[] = item.userRoles || [];
+
+  if (item.status === 'draf') {
+    return {
+      icon: 'i-lucide-file-edit',
+      label: 'Draf',
+      color: 'text-amber-500 dark:text-amber-400'
+    };
+  }
+  if (item.status === 'pending') {
+    return {
+      icon: 'i-lucide-clock',
+      label: 'Tertunda',
+      color: 'text-orange-500 dark:text-orange-400'
+    };
+  }
+  if (roles.includes('pengirim') || ['sent', 'keluar', 'outbox'].some((k) => type.includes(k))) {
+    return {
+      icon: 'i-lucide-send',
+      label: 'Terkirim',
+      color: 'text-sky-500 dark:text-sky-400'
+    };
+  }
+  if (['draft', 'konsep'].some((k) => type.includes(k))) {
+    return {
+      icon: 'i-lucide-file-text',
+      label: 'Konsep',
+      color: 'text-purple-500 dark:text-purple-400'
+    };
+  }
+  return {
+    icon: 'i-lucide-inbox',
+    label: 'Kotak Masuk',
+    color: 'text-emerald-500 dark:text-emerald-400'
+  };
+};
+
+const selectSuggestion = (item: any) => {
+  if (!item?.id) return;
+  const segment = resolveDetailRoute(item);
+  closeSuggestions();
+  quickSearch.value = '';
+  navigateTo(`/korespondensi/${segment}/${item.id}?jenis=${item.jenis || ''}`);
+};
+
+const getSuggestionBadgeClass = (jenis?: string) => {
+  const c = (jenis || '').toUpperCase();
+  if (c === 'ND')
+    return 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
+  if (c === 'DI')
+    return 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
+  if (c === 'SDI')
+    return 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800';
+  if (c === 'SDE')
+    return 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
+  if (c === 'KA')
+    return 'bg-cyan-50 text-cyan-600 border-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800';
+  return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
+};
+
+// click outside
+const handleClickOutside = (e: MouseEvent) => {
+  if (!searchBoxRef.value) return;
+  if (!searchBoxRef.value.contains(e.target as Node)) {
+    closeSuggestions();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleClickOutside);
+  if (suggestionDebounce) clearTimeout(suggestionDebounce);
+  if (suggestionAbort) suggestionAbort.abort();
+});
+
 const advancedFilters = reactive({
   nomorSurat: '',
   perihal: '',
@@ -1075,7 +1653,7 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
     toast.add({
       title: 'Gagal',
       description: 'Gagal mengganti role.',
-      color: 'red'
+      color: 'error'
     });
     isSwitching.value = false;
   }
@@ -1230,7 +1808,11 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         }
       },
       { label: 'Setting Notif Email', class: itemClass },
-      { label: 'Visualisasi Digsig (Visible)', class: itemClass },
+      {
+        label: 'Visualisasi Digsig (Visible)',
+        class: itemClass,
+        onSelect: () => openDigsigVisual()
+      },
       { label: 'Setting Temporary File', class: itemClass }
     ],
     [{ slot: 'theme-label', type: 'label' }],
@@ -1261,7 +1843,7 @@ onMounted(() => {
         title: 'Berhasil',
         description: successMsg,
         icon: 'i-heroicons-check-circle',
-        color: 'green'
+        color: 'success'
       });
       localStorage.removeItem('switch_role_message');
     }

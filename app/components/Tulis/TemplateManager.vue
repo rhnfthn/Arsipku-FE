@@ -19,7 +19,7 @@
       <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Template Umum</h3>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
         </div>
         <div class="p-4 overflow-y-auto">
           <UAccordion type="multiple" :items="publicTemplatesAccordion" :ui="{
@@ -81,7 +81,7 @@
           </div>
         </div>
         <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-lg">
-          <UButton label="Batal" variant="ghost" color="gray" @click="isAddTemplateOpen = false" />
+          <UButton label="Batal" variant="ghost" color="neutral" @click="isAddTemplateOpen = false" />
           <UButton :label="isEditMode ? 'Simpan Perubahan' : 'Simpan'" color="primary" icon="i-heroicons-check-circle"
             :loading="isLoadingAction" :disabled="!newTemplateName.trim()" @click="submitTemplate" />
         </div>
@@ -99,7 +99,7 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">Template Saya</h3>
             <UBadge color="primary" variant="subtle">{{ myTemplates.length }}</UBadge>
           </div>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
         </div>
         <div class="p-4 overflow-y-auto">
           <div v-if="isLoadingList" class="flex justify-center py-8">
@@ -124,9 +124,9 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-2 ml-2" @click.stop>
-                  <UButton icon="i-heroicons-pencil-square" color="orange" variant="soft" size="xs"
+                  <UButton icon="i-heroicons-pencil-square" color="warning" variant="soft" size="xs"
                     @click="openEditModal(item)" />
-                  <UButton icon="i-heroicons-trash" color="red" variant="soft" size="xs"
+                  <UButton icon="i-heroicons-trash" color="error" variant="soft" size="xs"
                     @click="handleDeleteTemplate(item.id)" />
                   <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
                 </div>

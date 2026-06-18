@@ -455,8 +455,25 @@ watch(searchQuery, () => {
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+const route = useRoute();
+
+const applyQueryFilters = () => {
+  const q = route.query;
+  // tab (jenis): ALL, ND, DI, SDI, SDE, K, KA
+  if (typeof q.tab === 'string' && q.tab) {
+    const validTabs = tabs.map((t) => t.value);
+    if (validTabs.includes(q.tab)) activeTab.value = q.tab;
+  }
+  // filter: salah satu nilai dari filterMenuOptions
+  if (typeof q.filter === 'string' && q.filter) {
+    const validFilters = filterMenuOptions.map((f) => f.value);
+    if (validFilters.includes(q.filter)) activeFilterType.value = q.filter;
+  }
+};
+
 onMounted(async () => {
   if (!user.value) await getProfile();
+  applyQueryFilters();
   refreshData();
 });
 </script>

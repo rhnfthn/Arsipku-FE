@@ -81,7 +81,7 @@ const removeFile = (i: number) => {
             <span class="text-xs text-gray-400">{{ (file.size / 1024).toFixed(1) }} KB</span>
           </div>
         </div>
-        <UButton icon="i-lucide-trash-2" color="red" variant="ghost" size="xs" :padded="false"
+        <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" :padded="false"
           class="w-6 h-6 hover:bg-red-50 rounded shrink-0" @click.stop="removeFile(index)" />
       </div>
     </div>
