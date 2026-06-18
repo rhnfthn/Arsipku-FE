@@ -45,10 +45,12 @@ const showPageMenu = ref(false);
 const showDateMenu = ref(false);
 
 // ── Date Range (Custom) ───────────────────────────────────────────────────────
-const startDateInput = ref(new Date().toISOString().split('T')[0]);
-const endDateInput = ref(new Date().toISOString().split('T')[0]);
-const startDateCal = ref(parseDate(startDateInput.value));
-const endDateCal = ref(parseDate(endDateInput.value));
+// Init kosong supaya SSR & client render identik (no hydration mismatch).
+// Nilai aktual ditentukan di onMounted di bawah.
+const startDateInput = ref('');
+const endDateInput = ref('');
+const startDateCal = ref<any>(null);
+const endDateCal = ref<any>(null);
 const openStartDate = ref(false);
 const openEndDate = ref(false);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
@@ -202,9 +204,22 @@ const toggleSelection = (id: string) => {
 };
 
 const selectMail = (mail: any) => {
+  // Safeguard: kalau naskahId tidak valid, tampilkan toast dan log untuk diagnose.
+  if (!mail?.naskahId) {
+    console.warn('[Inbox] selectMail: naskahId kosong untuk mail:', mail);
+    useToast().add({
+      title: 'Surat tidak bisa dibuka',
+      description: 'Data surat ini tidak lengkap. Coba refresh halaman atau hubungi admin.',
+      color: 'warning',
+    });
+    return;
+  }
+
   selected.value = mail;
   if (user.value?.position) markAsRead(mail, user.value.position);
-  navigateTo(`/korespondensi/kotak-masuk/${mail.naskahId}?jenis=${mail.category}`);
+
+  const jenisParam = mail.category || mail.jenis || 'ND';
+  navigateTo(`/korespondensi/kotak-masuk/${mail.naskahId}?jenis=${jenisParam}`);
 };
 
 // ── Toggle Flag (per-item) ────────────────────────────────────────────────────
@@ -433,6 +448,13 @@ const applyQueryFilters = () => {
 };
 
 onMounted(async () => {
+  // Inisialisasi tanggal di client (hindari hydration mismatch dari new Date()).
+  const today = new Date().toISOString().split('T')[0];
+  startDateInput.value = today;
+  endDateInput.value = today;
+  startDateCal.value = parseDate(today);
+  endDateCal.value = parseDate(today);
+
   if (!user.value) await getProfile();
   applyQueryFilters();
   refreshData();
@@ -491,7 +513,7 @@ onMounted(async () => {
         </button>
 
         <!-- Bulk Actions (muncul saat ada item dipilih) -->
-        <template v-if="selectedIds.size > 0">
+        <div v-if="selectedIds.size > 0" class="flex items-center">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
             <button @click="showDeleteModal = true"
@@ -506,10 +528,10 @@ onMounted(async () => {
             </button>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
           </div>
-        </template>
+        </div>
 
         <!-- Badge filter aktif -->
-        <template v-if="activeFilterType !== 'Semua' && selectedIds.size === 0">
+        <div v-if="activeFilterType !== 'Semua' && selectedIds.size === 0" class="flex items-center">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <span
             class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200">
@@ -518,7 +540,7 @@ onMounted(async () => {
               <X class="w-3 h-3" />
             </button>
           </span>
-        </template>
+        </div>
       </div>
 
       <!-- RIGHT: Date + Sort + Download + Pagination -->
@@ -715,11 +737,11 @@ onMounted(async () => {
           </div>
           <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tidak ada data</span>
           <span class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            <template v-if="activeFilterType !== 'Semua'">
+            <span v-if="activeFilterType !== 'Semua'">
               Filter "{{ activeFilterType }}" tidak menghasilkan data.
               <button @click="applyFilter('Semua')" class="text-primary hover:underline ml-1">Reset filter</button>
-            </template>
-            <template v-else>Kotak masuk kosong.</template>
+            </span>
+            <span v-else>Kotak masuk kosong.</span>
           </span>
         </div>
 
@@ -757,9 +779,8 @@ onMounted(async () => {
             </div>
 
             <!-- Mail Items -->
-            <div v-else class="w-full">
+            <div v-else class="w-full" :key="`list-${activeTab}-${activeFilterType}-${currentPage}`">
               <div v-for="mail in displayItems" :key="mail.id" @click="selectMail(mail)"
-                v-memo="[mail.id, mail.isRead, mail.isStarred, mail.isTinjut, mail.is_priority, mail.isArsip, selectedIds.has(mail.id)]"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority

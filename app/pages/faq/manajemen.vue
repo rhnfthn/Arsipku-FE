@@ -49,7 +49,7 @@
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   rowsPerPage === n
-                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    ? 'bg-primary/5 dark:bg-primary-900/30 text-primary dark:text-primary-300 font-medium'
                     : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
@@ -98,7 +98,7 @@
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 transition-colors',
                   !selectedFilterKategoriId
-                    ? 'bg-primary/5 text-primary font-medium'
+                    ? 'bg-primary/5 dark:bg-primary-900/30 text-primary dark:text-primary-300 font-medium'
                     : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
@@ -115,7 +115,7 @@
                 :class="[
                   'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors capitalize',
                   selectedFilterKategoriId === cat.id
-                    ? 'bg-primary/5 text-primary font-medium'
+                    ? 'bg-primary/5 dark:bg-primary-900/30 text-primary dark:text-primary-300 font-medium'
                     : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
@@ -435,7 +435,7 @@
                 :class="[
                   'group relative flex items-center border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
                   form.kategoriId === cat.id
-                    ? 'bg-primary/5'
+                    ? 'bg-primary/5 dark:bg-primary-900/30'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 ]"
               >
@@ -449,7 +449,7 @@
                   :class="[
                     'flex-1 text-left px-4 py-2.5 text-sm capitalize',
                     form.kategoriId === cat.id
-                      ? 'text-primary dark:text-primary-400 font-medium'
+                      ? 'text-primary dark:text-primary-300 font-medium'
                       : 'text-gray-700 dark:text-white'
                   ]"
                 >
@@ -470,7 +470,7 @@
                   showNewKategori = true;
                   openKategoriDropdown = false;
                 "
-                class="w-full text-left px-4 py-2.5 text-sm text-primary dark:text-primary-400 hover:bg-primary/5 transition-colors font-medium flex items-center gap-2"
+                class="w-full text-left px-4 py-2.5 text-sm text-primary dark:text-primary-300 hover:bg-primary/5 dark:hover:bg-primary-900/30 transition-colors font-medium flex items-center gap-2"
               >
                 <Plus class="w-3.5 h-3.5" />
                 Lainnya...

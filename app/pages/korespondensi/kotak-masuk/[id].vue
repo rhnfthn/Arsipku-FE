@@ -3,7 +3,7 @@ import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
-  Users, FileText, Building2
+  Users, FileText, Building2, ChevronRight
 } from "lucide-vue-next";
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
@@ -400,10 +400,18 @@ const loadData = async () => {
             pengirim: item.pengirim || item.from || inboxData.pengirim,
             to: listPenerima,
             cc: listTembusan,
-            mainDisplayContentHtml: item.konten || item.isi || '',
-            catatan: item.catatan,
-            disposisi: item.disposisi || item.instruksi,
-            lampiran_files: item.lampiran_files || item.attachments || [],
+            // Konten utama: fallback ke inboxData kalau item.konten kosong
+            // (umum terjadi di flow karena field konten ada di root response, bukan per flow)
+            mainDisplayContentHtml:
+              item.konten ||
+              item.isi ||
+              inboxData?.konten ||
+              inboxData?.isi ||
+              inboxData?.raw?.konten ||
+              '',
+            catatan: item.catatan || inboxData?.catatan,
+            disposisi: item.disposisi || item.instruksi || inboxData?.disposisi,
+            lampiran_files: item.lampiran_files || item.attachments || inboxData?.lampiran_files || [],
             final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
           };
@@ -444,7 +452,7 @@ const handleFinalizeAndRedirect = () => {
     /* log removed */
     const rawKind = selected.value?.jenis_naskah_konsep || selected.value?.detail?.jenis_naskah_konsep || selected.value?.jenis || 'ND';
     const upperKind = String(rawKind).trim().toUpperCase();
-    
+
     let pathSeg = 'nota-dinas';
     if (konsepRouteMap[upperKind]) {
       pathSeg = konsepRouteMap[upperKind];
@@ -629,7 +637,7 @@ const konsepOptions = computed(() => [
     </div>
 
 
-    <template v-else-if="visibleDetails && visibleDetails.length > 0">
+    <div v-else-if="visibleDetails && visibleDetails.length > 0" class="flex flex-col gap-6">
       <div v-for="(detail, index) in visibleDetails" :key="detail.id || detail.urutan || index"
         :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
           'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
@@ -647,7 +655,10 @@ const konsepOptions = computed(() => [
           @lanjut-konsep="handleLanjutKonsep" />
 
       </div>
-    </template>
+    </div>
+    <div v-else class="w-full text-center py-12 text-sm text-gray-400 dark:text-gray-500">
+      Surat tidak ditemukan atau tidak dapat ditampilkan.
+    </div>
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>
         <div class="w-full flex justify-between items-start">

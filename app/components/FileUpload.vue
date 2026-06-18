@@ -3,6 +3,7 @@ const props = defineProps({
   modelValue: { type: Array as () => File[], default: () => [] },
   accept: { type: String, default: 'application/pdf' },
   multiple: { type: Boolean, default: false },
+  label: { type: String, default: 'Upload file' },
   description: { type: String, default: 'Drag & drop atau klik untuk memilih file' }
 })
 
