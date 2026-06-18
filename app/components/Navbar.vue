@@ -238,32 +238,42 @@
         <template #theme-label>
           <div class="flex items-center justify-between w-full px-3">
             <span class="text-sm text-gray-700 dark:text-gray-200">Tampilan</span>
-            <div
-              class="flex items-center p-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
-            >
-              <button
-                @click="isDark = false"
-                class="p-1 rounded-full transition-all flex items-center justify-center"
-                :class="
-                  !isDark
-                    ? 'bg-white text-orange-500 shadow-sm'
-                    : 'text-gray-400 hover:text-gray-600'
-                "
+            <ClientOnly>
+              <div
+                class="flex items-center p-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
               >
-                <UIcon name="i-heroicons-sun" class="w-4 h-4" />
-              </button>
-              <button
-                @click="isDark = true"
-                class="p-1 rounded-full transition-all flex items-center justify-center"
-                :class="
-                  isDark
-                    ? 'bg-gray-700 text-yellow-300 shadow-sm'
-                    : 'text-gray-400 hover:text-gray-600'
-                "
-              >
-                <UIcon name="i-heroicons-moon" class="w-4 h-4" />
-              </button>
-            </div>
+                <button
+                  @click="isDark = false"
+                  class="p-1 rounded-full transition-all flex items-center justify-center"
+                  :class="
+                    !isDark
+                      ? 'bg-white text-orange-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  "
+                >
+                  <UIcon name="i-heroicons-sun" class="w-4 h-4" />
+                </button>
+                <button
+                  @click="isDark = true"
+                  class="p-1 rounded-full transition-all flex items-center justify-center"
+                  :class="
+                    isDark
+                      ? 'bg-gray-700 text-yellow-300 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  "
+                >
+                  <UIcon name="i-heroicons-moon" class="w-4 h-4" />
+                </button>
+              </div>
+              <template #fallback>
+                <div
+                  class="flex items-center p-0.5 rounded-full border border-gray-200 bg-gray-50"
+                >
+                  <div class="w-7 h-7" />
+                  <div class="w-7 h-7" />
+                </div>
+              </template>
+            </ClientOnly>
           </div>
         </template>
 

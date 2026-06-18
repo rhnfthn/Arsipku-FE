@@ -86,9 +86,10 @@ export function useInbox() {
         return {
           id:             it.id_sirkulasi || it.id,
           sirkulasiId:    it.id_sirkulasi,
-          naskahId:       it.id_naskah,
+          // Fallback chain: kadang backend pakai id_naskah / naskah_id / id
+          naskahId:       it.id_naskah || it.naskah_id || it.id || null,
           jenis:          it.jenis,
-          category:       it.jenis,
+          category:       it.jenis || it.jenis_label || 'ND',
           category_label: it.jenis_label,
           nomor:          it.nomor,
           date:           formatDateTime(it.created_at),

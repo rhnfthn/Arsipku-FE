@@ -4,6 +4,11 @@ import { X, Tag, Plus, Loader2 } from 'lucide-vue-next';
 import { useLabel } from '~/composables/useLabel';
 import { useToast } from '#imports';
 
+// Komponen ini render <Teleport> sebagai root + v-if di dalamnya — tidak punya
+// concrete root element. Disable auto inheritAttrs supaya Vue tidak warn soal
+// "extraneous non-emits event listeners".
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps({
   modelValue: {
     type: Boolean,
