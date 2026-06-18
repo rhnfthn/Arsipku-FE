@@ -1,40 +1,42 @@
 import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
 
+const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "2-digit", month: "long", year: "numeric",
+  hour: "2-digit", minute: "2-digit", hour12: false,
+});
+
 const formatDateTime = (value: string | null | undefined) => {
   if (!value) return "-";
   const date = new Date(value);
   if (isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit", month: "long", year: "numeric",
-    hour: "2-digit", minute: "2-digit", hour12: false,
-  }).format(date);
+  return dateTimeFormatter.format(date);
 };
 
 export interface InboxParams {
   page?: number;
   limit?: number;
-  jenis?: string;        // ND | SDI | SDE | DI | KA | K
-  status_baca?: string;  // terbaca | belum_terbaca
+  jenis?: string;
+  status_baca?: string;
   search?: string;
-  start_date?: string;   // YYYY-MM-DD
-  end_date?: string;     // YYYY-MM-DD
+  start_date?: string;
+  end_date?: string;
   favorite?: boolean;
-  tinjut?: string;       // sudah_tinjut | belum_tinjut
+  tinjut?: string;
   lock?: boolean;
   note?: boolean;
-  arsip?: boolean;       // default false di backend (exclude archived)
-  priority?: boolean;    // khusus jenis=DI
-  sort?: string;         // terbaru | terlama
+  arsip?: boolean;
+  priority?: boolean;
+  sort?: string;
 }
 
 export function useInbox() {
   const { apiGet, apiPut, apiPatch } = useApi();
 
+  // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
   const items = ref<any[]>([]);
   const pending = ref(false);
   const error = ref<any>(null);
-
   const pagination = ref({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const summary = ref({
     total_semua: 0,
@@ -57,16 +59,14 @@ export function useInbox() {
       if (params.end_date)     query.append("end_date", params.end_date);
       if (params.sort)         query.append("sort", params.sort);
       if (params.tinjut)       query.append("tinjut", params.tinjut);
-      // Boolean flags — hanya dikirim jika terdefinisi
-      if (params.favorite  !== undefined) query.append("favorite",  String(params.favorite));
-      if (params.lock      !== undefined) query.append("lock",      String(params.lock));
-      if (params.note      !== undefined) query.append("note",      String(params.note));
-      if (params.arsip     !== undefined) query.append("arsip",     String(params.arsip));
-      if (params.priority  !== undefined) query.append("priority",  String(params.priority));
+      if (params.favorite !== undefined) query.append("favorite", String(params.favorite));
+      if (params.lock     !== undefined) query.append("lock",     String(params.lock));
+      if (params.note     !== undefined) query.append("note",     String(params.note));
+      if (params.arsip    !== undefined) query.append("arsip",    String(params.arsip));
+      if (params.priority !== undefined) query.append("priority", String(params.priority));
 
-      const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`);
+      const res = await apiGet(`/naskah_sirkulasi/inbox/?${query.toString()}`, {}, { skipCache: true });
 
-      // Samakan normalisasi dengan useTerkirim
       const responseBody = res?.data?.pagination ? res.data : res;
       const rawItems = Array.isArray(responseBody?.data) ? responseBody.data : [];
 
@@ -158,7 +158,6 @@ export function useInbox() {
       await apiPatch("/naskah_sirkulasi/toggle-flag", { id_sirkulasi: idToSend, flag_type: flagType });
     } catch (err) {
       console.error("Gagal toggle flag:", flagType, err);
-      // Revert ke nilai lama jika API gagal
       if (flagType === "favorit")       mail.isStarred = oldVal;
       else if (flagType === "arsip")    mail.isArsip   = oldVal;
       else if (flagType === "note")     mail.isNote    = oldVal;
@@ -206,7 +205,7 @@ export function useInbox() {
     };
 
     try {
-      const res = await apiGet(`/persuratan/naskah/${encodeURIComponent(idNaskah)}`);
+      const res = await apiGet(`/persuratan/naskah/${encodeURIComponent(idNaskah)}`, {}, { skipCache: true });
 
       const dataArray = res?.data && Array.isArray(res.data) ? res.data : res?.data ? [res.data] : [];
       if (dataArray.length === 0) return null;
@@ -257,7 +256,7 @@ export function useInbox() {
     pending.value = true;
     error.value = null;
     try {
-      const res = await apiGet(`/konsep/${idKonsep}`);
+      const res = await apiGet(`/konsep/${idKonsep}`, {}, { skipCache: true });
       if (!res?.data) return null;
 
       const flows = Array.isArray(res.data) ? res.data : [res.data];

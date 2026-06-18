@@ -747,8 +747,7 @@
 /* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted, nextTick } from "vue";
 import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue'; // Pastikan import ini ada jika pakai TinyMCE
-import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
 import { useAuth } from "@/composables/useAuth"; // <--- IMPORT USEAUTH
 
 // Types

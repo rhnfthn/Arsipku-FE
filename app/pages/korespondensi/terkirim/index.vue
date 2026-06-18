@@ -98,32 +98,8 @@ const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const getInitials = (name: string) => {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-};
-
-const formatShortDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-
-  const now = new Date();
-  const isToday = date.getUTCDate() === now.getUTCDate() && date.getUTCMonth() === now.getUTCMonth() && date.getUTCFullYear() === now.getUTCFullYear();
-  const isThisYear = date.getUTCFullYear() === now.getUTCFullYear();
-
-  const hours = date.getUTCHours().toString().padStart(2, "0");
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const time = `${hours}.${minutes}`;
-  const day = date.getUTCDate();
-  const month = new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" }).format(date);
-
-  if (isToday) return time;
-  if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getUTCFullYear()} ${time}`;
-};
+// ── Helpers ─────────────────────────────────────────────────────────────────--
+import { formatShortDate, getInitials } from "~/utils/mail-helpers";
 
 const jenisAliasMap: Record<string, string[]> = {
   "ALL": [],
@@ -798,7 +774,7 @@ onMounted(async () => {
 
             <!-- Skeleton -->
             <div v-else-if="pending" class="w-full">
-              <div v-for="n in 10" :key="n"
+              <div v-for="n in Math.min(itemsPerPage, 10)" :key="n"
                 class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
                 <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
                   <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -827,6 +803,7 @@ onMounted(async () => {
             <!-- Mail Items -->
             <div v-else class="w-full">
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
+                v-memo="[mail.id, mail.isRead, mail.isStarred, mail.isTinjut, mail.is_priority, selectedIds.has(mail.id)]"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority

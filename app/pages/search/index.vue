@@ -83,6 +83,7 @@
           <li
             v-for="item in results"
             :key="item.id"
+            v-memo="[item.id, item.isRead, item.isStarred]"
             class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer first:rounded-t-none last:rounded-b-xl"
             @click="openDetail(item)"
           >
@@ -186,7 +187,7 @@
                 <span
                   class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap font-medium min-w-[90px] text-right"
                 >
-                  {{ formatDate(item.tanggal) }}
+                  {{ formatShortDate(item.tanggal) }}
                 </span>
               </div>
             </div>
@@ -198,6 +199,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatShortDate, getCategoryStyle, getCategoryLabel } from '~/utils/mail-helpers';
+
 const route = useRoute();
 const router = useRouter();
 const { fetchSearch, results, pagination, isLoading } = useSearch();
@@ -226,10 +229,6 @@ const displaySearchLabel = computed(() => {
   // 2. Jika tidak ada keyword, cek parameter filter lainnya
   const ignoredKeys = ['page', 'limit', 'sortBy', 'sortOrder', 'keyword', 'scope']; // ← tambah 'scope'
 
-  // Tambahkan sebelum Object.entries loop
-  if (q.scope === 'priority') {
-    activeFilters.unshift('Prioritas');
-  }
   const keyMap: Record<string, string> = {
     jenis: 'Jenis',
     sifat: 'Sifat',
@@ -309,42 +308,6 @@ const openDetail = (item: any) => {
   const config = getSourceConfig(item);
 
   navigateTo(`/korespondensi/${config.route}/${item.id}?jenis=${item.jenis || ''}`);
-};
-
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c))
-    return 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
-  if (['DI', 'DISPOSISI'].includes(c))
-    return 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c))
-    return 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800';
-  if (['SDE', 'SURAT DINAS EKSTERNAL'].includes(c))
-    return 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
-  if (['KAJIAN', 'KA'].includes(c))
-    return 'bg-cyan-50 text-cyan-600 border-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800';
-
-  return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
-};
-
-const getCategoryLabel = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['KA', 'KAJIAN'].includes(c)) return 'KA';
-  if (['SDI', 'INTERNAL', 'SURAT DINAS INTERNAL'].includes(c)) return 'SDI';
-  if (['SDE', 'EXTERNAL', 'EKSTERNAL', 'SURAT DINAS EKSTERNAL'].includes(c)) return 'SDE';
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'ND';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'DI';
-  return c || 'UMUM';
-};
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
 };
 
 // --- ACTIONS ---

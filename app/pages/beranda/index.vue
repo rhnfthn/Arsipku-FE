@@ -195,7 +195,7 @@
 
             <div
               v-else
-              class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 pr-1 flex flex-col gap-2"
+              class="max-h-72 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-gray-800 pr-1 flex flex-col gap-2"
             >
               <NuxtLink
                 v-for="mail in recentMails"
@@ -432,36 +432,6 @@ onMounted(async () => {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
-}
-
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-track {
-  background: #1f2937;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #4b5563;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
 }
 
 .group:hover .text-3xl {

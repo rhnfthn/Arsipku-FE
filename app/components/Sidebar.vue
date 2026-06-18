@@ -902,32 +902,6 @@ defineExpose({ openMobile, closeMobile });
 </script>
 
 <style scoped>
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 20px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-}
-:is(.dark .custom-scrollbar)::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-:is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
-}
 @keyframes fadeIn {
   from {
     opacity: 0;

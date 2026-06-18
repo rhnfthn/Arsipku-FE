@@ -157,7 +157,7 @@
                   </table>
                 </div>
 
-                <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
+                <LazyTinymceEditor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
                   <div class="flex justify-end mb-4 text-black">
@@ -208,7 +208,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import Editor from "@tinymce/tinymce-vue";
+import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
 
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";

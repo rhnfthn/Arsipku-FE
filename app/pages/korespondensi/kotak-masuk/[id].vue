@@ -14,7 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
 
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
 const { rejectKonsep } = useKonsep();
 
 const id = route.params.id as string;

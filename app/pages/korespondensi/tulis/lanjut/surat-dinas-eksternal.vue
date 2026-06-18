@@ -191,7 +191,7 @@
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                  <LazyTinymceEditor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
                 <div class="flex mt-12 text-black px-10">
@@ -288,7 +288,7 @@
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue';
+import LazyTinymceEditor from '~/components/LazyTinymceEditor.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
 // --- COMPONENTS ---
