@@ -45,9 +45,38 @@ export type JenisCreateResponse = {
 
 export const useJenis = () => {
   const { apiGet, apiDelete, apiPost, apiPut } = useApi();
+  const { jenis, isLoadingJenis } = useMasterCache();
 
-  const getJenisList = (params?: { search?: string }) => {
-    return apiGet<JenisResponse>("/jenis", { params });
+  const getJenisList = async (params?: { search?: string }): Promise<JenisResponse> => {
+    const cacheKey = JSON.stringify(params ?? {});
+    if (!params?.search && jenis.value && jenis.value.length > 0) {
+      return { success: true, message: "OK", data: jenis.value };
+    }
+    if (isLoadingJenis.value) {
+      await new Promise((resolve) => {
+        const stop = watch(isLoadingJenis, (v) => {
+          if (!v) {
+            stop();
+            resolve(true);
+          }
+        });
+      });
+      return { success: true, message: "OK", data: jenis.value ?? [] };
+    }
+
+    isLoadingJenis.value = true;
+    try {
+      const response = await apiGet<JenisResponse>("/jenis", { params });
+      if (!params?.search) {
+        jenis.value = response.data;
+      }
+      return response;
+    } catch (error) {
+      console.error("Gagal mengambil jenis:", error);
+      throw error;
+    } finally {
+      isLoadingJenis.value = false;
+    }
   };
 
   const getJenisDetail = (id: string) => {
@@ -86,11 +115,23 @@ export const useJenis = () => {
     return apiDelete(`/jenis/${id}`);
   };
 
+  const refreshJenis = async () => {
+    isLoadingJenis.value = true;
+    try {
+      const response = await apiGet<JenisResponse>("/jenis", {}, { skipCache: true });
+      jenis.value = response.data;
+      return response;
+    } finally {
+      isLoadingJenis.value = false;
+    }
+  };
+
   return {
     getJenisList,
     getJenisDetail,
     createJenis,
     updateJenis,
     deleteJenis,
+    refreshJenis,
   };
 };

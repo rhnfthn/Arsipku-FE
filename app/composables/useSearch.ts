@@ -29,7 +29,6 @@ export const useSearch = () => {
       );
 
       const response = await apiGet("/search/v3", {
-        // ← ganti di sini
         params: cleanParams,
       });
 
@@ -50,27 +49,53 @@ export const useSearch = () => {
 
   const suggestions = ref<{ nama: string; jabatan: string }[]>([]);
   const isSuggestionsLoading = ref(false);
+  let suggestionAbortController: AbortController | null = null;
+  let suggestionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const fetchSuggestions = async (q: string, type: "pengirim" | "penerima") => {
-    if (!q || q.trim().length < 2) {
+    if (suggestionTimeout) clearTimeout(suggestionTimeout);
+    if (suggestionAbortController) {
+      suggestionAbortController.abort();
+      suggestionAbortController = null;
+    }
+
+    const trimmed = q?.trim();
+    if (!trimmed || trimmed.length < 2) {
       suggestions.value = [];
+      isSuggestionsLoading.value = false;
       return;
     }
+
     isSuggestionsLoading.value = true;
-    try {
-      const response = await apiGet("/search/v3/suggestions", {
-        params: { q: q.trim(), type },
-      });
-      if (response.success) {
-        suggestions.value = response.data?.items ?? []; // ← fix: .items
-      } else {
-        suggestions.value = [];
+    suggestions.value = [];
+
+    suggestionTimeout = setTimeout(async () => {
+      suggestionAbortController = new AbortController();
+      try {
+        const response = await apiGet(
+          "/search/v3/suggestions",
+          {
+            params: { q: trimmed, type },
+            signal: suggestionAbortController.signal,
+          },
+          { skipCache: true }
+        );
+        if (response.success) {
+          suggestions.value = response.data?.items ?? [];
+        } else {
+          suggestions.value = [];
+        }
+      } catch (err: any) {
+        if (err?.name !== "AbortError" && err?.code !== "ERR_CANCELED") {
+          suggestions.value = [];
+        }
+      } finally {
+        if (suggestionAbortController && !suggestionAbortController.signal.aborted) {
+          isSuggestionsLoading.value = false;
+        }
+        suggestionAbortController = null;
       }
-    } catch {
-      suggestions.value = [];
-    } finally {
-      isSuggestionsLoading.value = false;
-    }
+    }, 300);
   };
 
   return {

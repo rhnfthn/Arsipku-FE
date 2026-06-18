@@ -10,6 +10,7 @@ import {
 import * as XLSX from "xlsx";
 import { useSirkulasi } from "~/composables/useTerkirim";
 import { useLabel } from "~/composables/useLabel";
+import { getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
 
 definePageMeta({ middleware: "auth" });
 
@@ -98,32 +99,8 @@ const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const getInitials = (name: string) => {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-};
-
-const formatShortDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-
-  const now = new Date();
-  const isToday = date.getUTCDate() === now.getUTCDate() && date.getUTCMonth() === now.getUTCMonth() && date.getUTCFullYear() === now.getUTCFullYear();
-  const isThisYear = date.getUTCFullYear() === now.getUTCFullYear();
-
-  const hours = date.getUTCHours().toString().padStart(2, "0");
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const time = `${hours}.${minutes}`;
-  const day = date.getUTCDate();
-  const month = new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" }).format(date);
-
-  if (isToday) return time;
-  if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${date.getUTCFullYear()} ${time}`;
-};
+// ── Helpers ─────────────────────────────────────────────────────────────────--
+import { formatShortDate, getInitials } from "~/utils/mail-helpers";
 
 const jenisAliasMap: Record<string, string[]> = {
   "ALL": [],
@@ -146,25 +123,7 @@ const getTabCount = (tabValue: string) => {
   return 0;
 };
 
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c)) return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
-  if (["DI", "DISPOSISI"].includes(c)) return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
-  if (["SDI", "INTERNAL"].includes(c)) return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
-  if (["SDE", "EXTERNAL"].includes(c)) return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
-  if (["KAJIAN", "KA"].includes(c)) return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
-};
 
-const getCategoryLabel = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["KA"].includes(c)) return "KA";
-  if (["SDI", "INTERNAL"].includes(c)) return "SDI";
-  if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
-  if (["ND", "NOTA DINAS"].includes(c)) return "ND";
-  if (["DI", "DISPOSISI"].includes(c)) return "DI";
-  return "K";
-};
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
 const refreshData = async () => {
@@ -533,9 +492,9 @@ watch(searchQuery, () => {
 onMounted(async () => {
   if (!user.value) await getProfile();
   await refreshData();
-  console.log('pagination:', pagination.value);
-  console.log('totalPages:', totalPages.value);
-  console.log('items count:', items.value.length);
+  /* log removed */
+  /* log removed */
+  /* log removed */
 });
 </script>
 
@@ -798,7 +757,7 @@ onMounted(async () => {
 
             <!-- Skeleton -->
             <div v-else-if="pending" class="w-full">
-              <div v-for="n in 10" :key="n"
+              <div v-for="n in Math.min(itemsPerPage, 10)" :key="n"
                 class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
                 <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
                   <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -827,6 +786,7 @@ onMounted(async () => {
             <!-- Mail Items -->
             <div v-else class="w-full">
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
+                v-memo="[mail.id, mail.isRead, mail.isStarred, mail.isTinjut, mail.is_priority, selectedIds.has(mail.id)]"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority

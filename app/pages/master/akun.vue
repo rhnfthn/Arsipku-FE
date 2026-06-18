@@ -444,6 +444,7 @@ import { useManajemenAkun } from '@/composables/useManajemenAkun';
 import { usePerson } from '@/composables/usePerson';
 import type { PersonSuggestion } from '@/composables/usePerson';
 import { useToast } from '#imports';
+import { getInitials } from '~/utils/mail-helpers';
 
 const { user: authUser } = useAuth();
 const toast = useToast();
@@ -540,14 +541,6 @@ const openRowsDropdown = ref(false);
 
 // ── Helpers ──────────────────────────────────────────────────────
 const selectedPersonJabatan = ref('');
-
-const getInitials = (name: string) => {
-  if (!name) return '';
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return words[0][0].toUpperCase();
-  if (words.length === 2) return (words[0][0] + words[1][0]).toUpperCase();
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-};
 
 const isSelfSuperAdmin = (row: any) =>
   authUser.value?.role === 'superadmin' && authUser.value?.persnum === row.persnum;

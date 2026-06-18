@@ -507,7 +507,7 @@ const selectTemplate = async (template: any) => {
   try {
     // 1. Jalankan logika utama Anda di sini (contoh: set content editor)
     // await applyTemplateToEditor(templateName);
-    // console.log("Template diterapkan");
+    /* log removed */;
 
     // Simulasi proses async (hapus ini jika kode Anda sinkron)
     await new Promise(r => setTimeout(r, 500));

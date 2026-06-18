@@ -178,7 +178,7 @@
                 <div class="p-0 min-h-[300px] relative group">
                   <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
-                    <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                    <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
                   <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
@@ -229,7 +229,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { useRoute } from 'vue-router';
-import Editor from '@tinymce/tinymce-vue';
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
@@ -369,7 +369,6 @@ const handlePriorityChange = async (e: Event) => {
 
 const handlePreview = async () => {
   const payload = getBasePayload();
-  console.log("payload:", payload); // cek di console
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;

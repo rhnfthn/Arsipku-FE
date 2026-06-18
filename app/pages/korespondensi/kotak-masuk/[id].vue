@@ -14,7 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
 
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
 const { rejectKonsep } = useKonsep();
 
 const id = route.params.id as string;
@@ -440,8 +440,8 @@ const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true
 const handleFinalizeAndRedirect = () => {
   showFinalizeOptionsModal.value = false;
   if (selected.value?.id) {
-    console.log("cek");
-    console.log(selected.value);
+    /* log removed */
+    /* log removed */
     const rawKind = selected.value?.jenis_naskah_konsep || selected.value?.detail?.jenis_naskah_konsep || selected.value?.jenis || 'ND';
     const upperKind = String(rawKind).trim().toUpperCase();
     
@@ -488,7 +488,7 @@ const isPengirimKonsep = computed(() => {
     (p: any) => String(p.position_id || '') === myPosId
   );
 
-  console.log('isPengirimKonsep →', { myPosId, rawPenerima, isInPenerima });
+  /* log removed */
 
   return isInPenerima;
 });

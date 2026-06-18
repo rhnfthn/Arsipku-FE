@@ -12,9 +12,6 @@ import type {
 } from '@/types/konfigurasi'
 import { useApi } from '@/composables/useApi'
 
-// Dibuat di luar fungsi agar reaktif secara global (shared state)
-const messageList = ref<KonfigurasiMessageItem[]>([])
-
 export const useKonfigurasi = () => {
   const { apiGet, apiPost, apiPatch, apiPut, apiDelete } = useApi()
 
@@ -24,6 +21,9 @@ export const useKonfigurasi = () => {
   const digsigList = ref<KonfigurasiDigsigItem[]>([])
   const isLoading = ref(false)
   const isToggling = ref<string | null>(null)
+
+  // Message list dipindahkan ke dalam fungsi composable agar tidak terjadi cross-page contamination
+  const messageList = ref<KonfigurasiMessageItem[]>([])
 
   const fetchDigsig = async () => {
     try {

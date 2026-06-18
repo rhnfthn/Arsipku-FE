@@ -126,7 +126,7 @@
                 </div>
 
                 <div class="min-h-[300px] relative group">
-                  <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                  <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
                 <div class="flex mt-12 text-black px-10">
@@ -214,7 +214,7 @@
 import { ref, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { CalendarDate } from "@internationalized/date";
-import Editor from "@tinymce/tinymce-vue";
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
@@ -594,7 +594,7 @@ onMounted(async () => {
       }
 
       if (draftData) {
-        console.log("Data Konsep Ditemukan:", draftData);
+        /* log removed */
 
         // --- 1. Populate Text Editor & Basic ---
         subject.value = draftData.perihal || "";

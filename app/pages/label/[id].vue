@@ -6,10 +6,11 @@ import {
   Inbox, FileText, Send, Building, Building2, FilePen,
   Check, X, RotateCw, History, Layers,
   Trash2, ChevronLeft, ChevronRight, Eye, Loader2, BookOpen, Calendar as CalendarIcon,
-  ArrowUpDown, AlertTriangle, Tag,
+  ArrowUpDown, Tag,
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useLabel } from '~/composables/useLabel';
+import { getInitials, getCategoryStyle } from '~/utils/mail-helpers';
 
 // --- TYPE DEFINITIONS ---
 interface UIMailItem {
@@ -244,23 +245,6 @@ const formatDate = (dateString: string) => {
 const formatTime = (dateString: string) => {
   if (!dateString) return '';
   return new Date(dateString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-};
-
-const getInitials = (name: string) => {
-  if (!name) return "?";
-  const parts = name.trim().split(" ");
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-};
-
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || '').toUpperCase();
-  if (['ND', 'NOTA DINAS'].includes(c)) return 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300';
-  if (['DI', 'DISPOSISI'].includes(c)) return 'bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300';
-  if (['SDI', 'INTERNAL'].includes(c)) return 'bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300';
-  if (['SDE', 'EKSTERNAL'].includes(c)) return 'bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300';
-  if (['KA', 'KAJIAN'].includes(c)) return 'bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300';
-  if (['K', 'KO', 'KONSEP'].includes(c)) return 'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300';
-  return 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300';
 };
 
 const getCategoryLabelShort = (cat: string) => {
@@ -753,7 +737,7 @@ const tabs = [
 
           <!-- Skeleton Loading -->
           <div v-if="isLoading" class="flex flex-col w-full">
-            <div v-for="i in 5" :key="i" class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 w-full">
+            <div v-for="i in Math.min(itemsPerPage, 10)" :key="i" class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 w-full">
               <div class="flex flex-col md:flex-row items-start gap-3 md:gap-4 w-full">
                 <div class="shrink-0 flex items-center gap-3 pt-1 md:pt-0">
                   <USkeleton class="h-4 w-4" />
@@ -787,6 +771,7 @@ const tabs = [
 
           <!-- Mail Rows -->
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="navigateToDetail(mail)"
+            v-memo="[mail.id, mail.isRead, mail.isStarred, selectedIds.has(mail.id)]"
             class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 relative w-full"
             :class="!mail.isRead ? 'bg-blue-50/10' : ''">
 
@@ -1076,32 +1061,17 @@ const tabs = [
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal"
-      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
-        <div class="p-5 text-center">
-          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle class="w-6 h-6 text-red-600" />
-          </div>
-          <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">Hapus Item dari Label?</h3>
-          <div class="text-sm text-gray-500 mb-6">
-            Apakah Anda yakin ingin menghapus {{ selectedIds.size }} item terpilih dari label ini?
-          </div>
-          <div class="flex gap-3 justify-center">
-            <button @click="showDeleteModal = false" :disabled="isDeleting"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-              Batal
-            </button>
-            <button @click="handleBulkDeleteExecute" :disabled="isDeleting"
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-50">
-              <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-              {{ isDeleting ? 'Memproses...' : 'Hapus' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ConfirmModal
+      v-model="showDeleteModal"
+      title="Hapus Item dari Label?"
+      :description="`Apakah Anda yakin ingin menghapus ${selectedIds.size} item terpilih dari label ini?`"
+      confirm-text="Hapus"
+      cancel-text="Batal"
+      variant="danger"
+      :loading="isDeleting"
+      @confirm="handleBulkDeleteExecute"
+      @cancel="showDeleteModal = false"
+    />
 
   </Teleport>
 </template>

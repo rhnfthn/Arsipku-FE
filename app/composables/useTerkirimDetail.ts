@@ -164,10 +164,9 @@ export const useTerkirimDetail = () => {
       // Pastikan useApi Anda mendukung config axios tambahan (responseType)
       // Jika tidak, fallback ke fetch native seperti kode lama Anda.
 
-      // CONTOH FETCH NATIVE (Lebih aman untuk Blob):
-      // Ganti BASE_API_URL dengan url endpoint asli Anda
-      const BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://172.20.16.115:3011";
+      // Gunakan runtime config untuk base URL agar tidak hardcoded
+      const config = useRuntimeConfig();
+      const BASE_URL = config.public.apiBaseUrl;
 
       const response = await fetch(`${BASE_URL}${pdfEndpoint}`, {
         method: "POST",

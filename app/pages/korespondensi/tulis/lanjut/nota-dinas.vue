@@ -157,7 +157,7 @@
                   </table>
                 </div>
 
-                <Editor api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
+                <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
                   <div class="flex justify-end mb-4 text-black">
@@ -208,7 +208,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import Editor from "@tinymce/tinymce-vue";
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
@@ -302,11 +302,11 @@ const formatDateRef = (dateString: string) => {
 
 const validateAndToast = (payload: DraftPayload) => {
   // Debug: lihat field mana yang null
-  console.log('Payload sebelum validasi:', JSON.stringify(payload, null, 2));
+  /* log removed */
 
   const result = validateDraftPayload(payload);
   if (!result.isValid) {
-    console.log('Validation errors:', result.errors);
+    /* log removed */
     const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
     toastError("Validasi Gagal", firstError);
     return false;

@@ -95,51 +95,12 @@ const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const formatShortDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-
-  const hours = date.getUTCHours().toString().padStart(2, "0");
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const time = `${hours}.${minutes}`;
-  const day = date.getUTCDate();
-  const month = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][date.getUTCMonth()];
-  const year = date.getUTCFullYear();
-
-  const now = new Date();
-  const isToday = day === now.getDate() && date.getUTCMonth() === now.getMonth() && year === now.getFullYear();
-  const isThisYear = year === now.getFullYear();
-
-  if (isToday) return time;
-  if (isThisYear) return `${day} ${month} ${time}`;
-  return `${day} ${month} ${year} ${time}`;
-};
+import { formatShortDate, getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
 
 const getTabCount = (tabValue: string) => {
   if (!summary.value?.total_per_jenis) return 0;
   if (tabValue === "ALL") return summary.value.total_semua || 0;
   return summary.value.total_per_jenis[tabValue] || 0;
-};
-
-const getCategoryStyle = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["ND", "NOTA DINAS"].includes(c)) return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
-  if (["DI", "DISPOSISI"].includes(c)) return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
-  if (["SDI", "INTERNAL"].includes(c)) return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
-  if (["SDE", "EXTERNAL"].includes(c)) return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
-  if (["KAJIAN", "KA"].includes(c)) return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
-};
-
-const getCategoryLabel = (cat: string) => {
-  const c = (cat || "").toUpperCase();
-  if (["KA"].includes(c)) return "KA";
-  if (["SDI", "INTERNAL"].includes(c)) return "SDI";
-  if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
-  if (["ND", "NOTA DINAS"].includes(c)) return "ND";
-  if (["DI", "DISPOSISI"].includes(c)) return "DI";
-  return "K";
 };
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
@@ -768,7 +729,7 @@ onMounted(async () => {
 
             <!-- Skeleton -->
             <div v-if="pending || isLoading" class="w-full">
-              <div v-for="n in itemsPerPage > 10 ? 10 : itemsPerPage" :key="n"
+              <div v-for="n in Math.min(itemsPerPage, 10)" :key="n"
                 class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-3 items-center w-full min-h-[50px]">
                 <div class="flex items-center shrink-0 gap-2 w-full md:w-auto">
                   <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -798,6 +759,7 @@ onMounted(async () => {
             <!-- Mail Items -->
             <div v-else class="w-full">
               <div v-for="mail in displayItems" :key="mail.id" @click="selectMail(mail)"
+                v-memo="[mail.id, mail.isRead, mail.isStarred, mail.isTinjut, mail.is_priority, mail.isArsip, selectedIds.has(mail.id)]"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority

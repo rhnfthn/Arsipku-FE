@@ -747,8 +747,7 @@
 /* -------------------------------------------------------------------------- */
 import { ref, computed, onMounted, nextTick } from "vue";
 import { CalendarDate } from "@internationalized/date";
-import Editor from '@tinymce/tinymce-vue'; // Pastikan import ini ada jika pakai TinyMCE
-import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import { useAuth } from "@/composables/useAuth"; // <--- IMPORT USEAUTH
 
 // Types
@@ -876,7 +875,9 @@ async function openPreview() {
 
     // FETCH PDF
     // Pastikan endpoint ini benar dan backend mengembalikan BLOB
-    const response = await fetch("http://172.20.16.115:3011/ND/generate-pdf", {
+    const config = useRuntimeConfig();
+    const pdfServiceUrl = config.public.pdfServiceUrl || "http://172.20.16.115:3011";
+    const response = await fetch(`${pdfServiceUrl}/ND/generate-pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -987,7 +988,7 @@ onMounted(async () => {
     // Ambil position ID user
     const userPositionId = user.value?.position || 70016581; // Fallback ID jika null
 
-    console.log("Mengambil penerima untuk posisi:", userPositionId);
+    /* log removed */
 
     const res = await getRecipients(userPositionId);
     const rawData = res.recipients || res.data || [];

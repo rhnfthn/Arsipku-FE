@@ -230,7 +230,8 @@ export const useDraft = () => {
 
   const generatePdf = async (payload: any) => {
     try {
-      const url = 'http://172.20.16.115:3011/ND/generate-pdf';
+      const config = useRuntimeConfig();
+      const url = `${config.public.apiBaseUrl}/ND/generate-pdf`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
