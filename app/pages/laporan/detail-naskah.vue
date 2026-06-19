@@ -547,6 +547,7 @@ import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 
 //GLOBAL UTIL
 const toast = useToast();
@@ -759,15 +760,6 @@ const fetchTahunRange = async () => {
 };
 
 //HELPER
-const formatTanggal = (date: string) => {
-  if (!date) return '-';
-  const d = new Date(date);
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
 
 const formatStatusLabel = (status: string) => {
   if (!status) return '-';

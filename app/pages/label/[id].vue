@@ -10,7 +10,7 @@ import {
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useLabel } from '~/composables/useLabel';
-import { getInitials, getCategoryStyle } from '~/utils/mail-helpers';
+import { getInitials, getCategoryStyle, formatDateWithTime as formatDate, formatTimeShort as formatTime } from '~/utils/mail-helpers';
 import EmptyState from '~/components/EmptyState.vue';
 
 // --- TYPE DEFINITIONS ---
@@ -232,21 +232,6 @@ const getSourceIcon = (sourceType: string) => {
     default:
       return 'i-heroicons-envelope';
   }
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return (
-    date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) +
-    ', ' +
-    date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-  );
-};
-
-const formatTime = (dateString: string) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
 
 const getCategoryLabelShort = (cat: string) => {

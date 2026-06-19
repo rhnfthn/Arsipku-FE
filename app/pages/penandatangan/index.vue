@@ -792,6 +792,7 @@ import { useI18n } from 'vue-i18n';
 import Modal from '~/components/Modal.vue';
 import { useDigsig } from '~/composables/useDigsig';
 import type { PenandatangananDocument } from '~/types/digsig';
+import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
 const toast = useToast();
@@ -930,19 +931,6 @@ function highlight(text: string | null | undefined, keyword: string): string {
     '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
   );
 }
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-  const localString = dateString.replace('Z', '').replace('+00:00', '');
-  const date = new Date(localString);
-  return date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 const getSignerStatusClass = (status: string) => {
   const map: Record<string, string> = {

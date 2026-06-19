@@ -1007,6 +1007,7 @@ import { Modal } from '#components';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 import * as XLSX from 'xlsx';
+import { formatDateLong2Digit as formatDate } from '~/utils/mail-helpers';
 definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
@@ -1738,17 +1739,6 @@ watch(localPaginatedRows, (newRows) => {
     rows.value = newRows;
   }
 });
-
-// ─── Date formatter ───────────────────────────────────────────────────────────
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const localStr = dateStr.replace('Z', '').replace('+00:00', '');
-  return new Date(localStr).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-};
 
 // ─── Dropdown close on outside click ─────────────────────────────────────────
 const selectRowsPerPage = (n: number) => {

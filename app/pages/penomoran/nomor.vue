@@ -927,6 +927,7 @@ import { Modal } from '#components'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import * as XLSX from 'xlsx'
+import { formatDateSlash as formatTanggalWIB, formatTimeShort as formatWaktuWIB } from '~/utils/mail-helpers'
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
@@ -1158,19 +1159,6 @@ const getStatusClass = (item: any): string => {
 }
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
-function toLocal(dateStr: string) {
-  return new Date(dateStr.replace('Z', '').replace('+00:00', ''))
-}
-function formatTanggalWIB(dateStr: string) {
-  if (!dateStr) return '-'
-  const d = toLocal(dateStr)
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
-}
-function formatWaktuWIB(dateStr: string) {
-  if (!dateStr) return '-'
-  const d = toLocal(dateStr)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
 
 // ─── Preview file ─────────────────────────────────────────────────────────────
 const isOpenPreviewFile = ref(false)
