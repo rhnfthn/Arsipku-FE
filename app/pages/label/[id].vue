@@ -10,7 +10,8 @@ import {
 } from 'lucide-vue-next';
 import { useAuth } from '@/composables/useAuth';
 import { useLabel } from '~/composables/useLabel';
-import { getInitials, getCategoryStyle } from '~/utils/mail-helpers';
+import { getInitials, getCategoryStyle, formatDateWithTime as formatDate, formatTimeShort as formatTime } from '~/utils/mail-helpers';
+import EmptyState from '~/components/EmptyState.vue';
 
 // --- TYPE DEFINITIONS ---
 interface UIMailItem {
@@ -231,21 +232,6 @@ const getSourceIcon = (sourceType: string) => {
     default:
       return 'i-heroicons-envelope';
   }
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return (
-    date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) +
-    ', ' +
-    date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-  );
-};
-
-const formatTime = (dateString: string) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
 
 const getCategoryLabelShort = (cat: string) => {
@@ -773,11 +759,14 @@ const tabs = [
           </div>
 
           <!-- Empty State -->
-          <div v-else-if="paginatedEmails.length === 0"
-            class="flex flex-col items-center justify-center h-64 text-gray-500">
-            <Inbox class="w-10 h-10 mb-2 opacity-20" />
-            <span class="text-sm">Tidak ada data ditemukan</span>
-          </div>
+          <EmptyState
+            v-else-if="paginatedEmails.length === 0"
+            :icon="Inbox"
+            title="Tidak ada data"
+            description="Tidak ada email dengan label ini."
+            icon-wrapper-class="bg-gray-100 dark:bg-gray-700"
+            icon-class="text-gray-400 dark:text-gray-500"
+          />
 
           <!-- Mail Rows -->
           <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="navigateToDetail(mail)"

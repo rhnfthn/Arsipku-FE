@@ -11,6 +11,7 @@ import {
 import * as XLSX from "xlsx";
 import { useInbox } from "~/composables/useInbox";
 import { useLabel } from "~/composables/useLabel";
+import EmptyState from "~/components/EmptyState.vue";
 
 definePageMeta({ middleware: "auth" });
 
@@ -730,20 +731,18 @@ onMounted(async () => {
         </div>
 
         <!-- Empty State -->
-        <div v-if="displayItems.length === 0 && !pending && !isLoading"
-          class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-gray-500 w-full">
-          <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
-            <Inbox class="w-8 h-8 opacity-50" />
-          </div>
-          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tidak ada data</span>
-          <span class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            <span v-if="activeFilterType !== 'Semua'">
-              Filter "{{ activeFilterType }}" tidak menghasilkan data.
-              <button @click="applyFilter('Semua')" class="text-primary hover:underline ml-1">Reset filter</button>
-            </span>
-            <span v-else>Kotak masuk kosong.</span>
-          </span>
-        </div>
+        <EmptyState
+          v-if="displayItems.length === 0 && !pending && !isLoading"
+          :icon="Inbox"
+          :title="activeFilterType !== 'Semua' ? 'Filter tidak menghasilkan data' : 'Tidak ada data'"
+          :description="activeFilterType !== 'Semua'
+            ? `Filter "${activeFilterType}" tidak menghasilkan data. Klik tombol di bawah untuk reset.`
+            : 'Kotak masuk kosong.'"
+          :action-label="activeFilterType !== 'Semua' ? 'Reset filter' : undefined"
+          @action="applyFilter('Semua')"
+          icon-wrapper-class="bg-gray-100 dark:bg-gray-700"
+          icon-class="text-gray-400 dark:text-gray-500"
+        />
 
         <!-- List -->
         <div v-else class="w-full overflow-x-auto pb-2">

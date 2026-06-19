@@ -4,11 +4,13 @@ import { useRoute } from "vue-router";
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiran.vue";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
 import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
 import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
 import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
 import TemplateManager from "@/components/Tulis/TemplateManager.vue";
+import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
+import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModalAsync.vue";
 
 import { Alert } from "@/composables/useAlert";
 import { useInbox } from "@/composables/useInbox";

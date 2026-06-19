@@ -905,6 +905,7 @@ import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
 import { useToast } from '#imports';
 import * as XLSX from 'xlsx';
+import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 
 const toast = useToast();
 const { t } = useI18n();
@@ -1083,16 +1084,6 @@ const fetchTable2 = async () => {
   } finally {
     loadingTable2.value = false;
   }
-};
-
-const formatTanggal = (date: string) => {
-  if (!date) return '-';
-  const d = new Date(date);
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
 };
 
 const capitalize = (text: string) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : '-');

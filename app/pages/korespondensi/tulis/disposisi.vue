@@ -233,6 +233,8 @@ import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
+import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModalAsync.vue";
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const route = useRoute();

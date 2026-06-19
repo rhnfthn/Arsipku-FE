@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import { useSirkulasi } from "~/composables/useTerkirim";
 import { useLabel } from "~/composables/useLabel";
 import { getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
+import EmptyState from "~/components/EmptyState.vue";
 
 definePageMeta({ middleware: "auth" });
 
@@ -758,11 +759,14 @@ onMounted(async () => {
           <div class="w-full min-w-full md:min-w-[800px]">
 
             <!-- Empty State -->
-            <div v-if="items.length === 0 && !pending"
-              class="flex flex-col items-center justify-center py-10 text-neutral-400 dark:text-gray-500 w-full">
-              <Inbox class="w-12 h-12 mb-2 opacity-50" />
-              <span class="text-sm">Tidak ada data</span>
-            </div>
+            <EmptyState
+              v-if="items.length === 0 && !pending"
+              :icon="Inbox"
+              title="Tidak ada data"
+              description="Tidak ada surat terkirim."
+              icon-wrapper-class="bg-gray-100 dark:bg-gray-700"
+              icon-class="text-gray-400 dark:text-gray-500"
+            />
 
             <!-- Skeleton -->
             <div v-else-if="pending" class="w-full">

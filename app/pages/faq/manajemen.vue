@@ -219,7 +219,7 @@
             </td>
 
             <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-              {{ formatDate(faq.updatedAt) }}
+              {{ formatDateSlash(faq.updatedAt) }}
             </td>
 
             <td class="px-4 py-3 text-center text-gray-700 dark:text-gray-200">
@@ -261,8 +261,14 @@
             </td>
           </tr>
           <tr v-else-if="paginatedFaqs.length === 0">
-            <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
-              Tidak ada data FAQ ditemukan.
+            <td colspan="7" class="px-4 py-10">
+              <EmptyState
+                :icon="HelpCircle"
+                title="Tidak ada data FAQ"
+                description="Tidak ada FAQ yang cocok dengan pencarian atau filter."
+                icon-wrapper-class="bg-primary-50 dark:bg-primary-900/30"
+                icon-class="text-primary"
+              />
             </td>
           </tr>
         </tbody>
@@ -547,11 +553,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next';
+import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown, HelpCircle } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Modal from '@/components/Modal.vue';
 import type { Faq, FaqKategori } from '@/composables/useFaq';
+import { formatDateSlash } from '~/utils/mail-helpers';
+import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -836,7 +844,7 @@ const onExport = () => {
     Pertanyaan: faq.pertanyaan,
     'Deskripsi/Jawaban': faq.deskripsi,
     Kategori: faq.kategori,
-    'Terakhir Update': formatDate(faq.updatedAt),
+    'Terakhir Update': formatDateSlash(faq.updatedAt),
     Puas: faq.puas,
     'Tidak Puas': faq.tidakPuas
   }));
@@ -864,16 +872,6 @@ const onExport = () => {
   });
   saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast('Berhasil', 'Export berhasil.', 'success');
-};
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return dateStr;
-  }
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 const showToast = (

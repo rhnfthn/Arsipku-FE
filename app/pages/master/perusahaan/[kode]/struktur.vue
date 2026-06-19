@@ -991,6 +991,7 @@ import { useCompany } from '~/composables/useCompany'
 import { useArea } from '~/composables/useArea'
 import { useToast } from '#imports'
 import { usePerson } from '~/composables/usePerson'
+import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const { t } = useI18n()
@@ -2168,16 +2169,6 @@ const sortPositionsByBod = (positions: any[]) =>
     const bOrder = bodOrder[b.bodTag ?? ''] ?? 99
     return aOrder - bOrder
   })
-
-const formatDate = (date: string) => {
-  if (!date) return ''
-  const d = new Date(date)
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-}
 
 const toDateOnly = (val?: string) => (val ? val.split('T')[0] : null)
 

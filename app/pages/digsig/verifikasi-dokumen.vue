@@ -1066,6 +1066,7 @@ import {
 
 import { useDigsig } from '~/composables/useDigsig';
 import type { Verifikator } from '~/types/digsig';
+import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 definePageMeta({
   middleware: 'auth'
 });
@@ -1432,21 +1433,6 @@ const sortBy = (key: string) => {
     sortKey.value = key;
     sortOrder.value = 'asc';
   }
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-';
-
-  const localString = dateString.replace('Z', '').replace('+00:00', '');
-  const date = new Date(localString);
-
-  return date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 };
 
 const getStatusClass = (status: string) => {

@@ -212,6 +212,9 @@ import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
+import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
+import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModalAsync.vue";
 import { useInbox } from "@/composables/useInbox";
 
 definePageMeta({ middleware: ["auth"] });

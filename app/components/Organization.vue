@@ -172,6 +172,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
 import {
   ChevronDown,
   ChevronRight,
@@ -376,13 +377,5 @@ const getNodeConfig = () => {
   }
 }
 
-const formatDate = (date: string) => {
-  if (!date) return '-'
-  const d = new Date(date)
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-}
+const toDateOnly = (val?: string) => (val ? val.split('T')[0] : null)
 </script>

@@ -510,6 +510,7 @@ import Modal from '~/components/Modal.vue';
 import { Search, AlertTriangle, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import type { DigsigLog } from '~/types/digsig';
+import { formatDate2Digit as formatDate, formatTimeShort as formatTime } from '~/utils/mail-helpers';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -738,18 +739,6 @@ const deactivateAlert = async () => {
 };
 
 // ─── Formatters ────────────────────────────────
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
-const formatTime = (dateString: string) =>
-  new Date(dateString).toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 
 const getUserInitials = (name: string) => {
   if (!name) return '';

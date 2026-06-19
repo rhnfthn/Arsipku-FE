@@ -2,6 +2,7 @@
 // Shared helpers untuk halaman korespondensi (kotak masuk, terkirim, label, dll)
 
 const monthShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const monthLong = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 export const formatShortDate = (dateString: string | null | undefined): string => {
   if (!dateString) return "-";
@@ -69,4 +70,75 @@ export const formatDate2Digit = (dateString: string | null | undefined): string 
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/** Format tanggal dd/mm/yyyy */
+export const formatDateSlash = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
+};
+
+/** Format tanggal panjang: dd Month yyyy */
+export const formatDateLong = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${day} ${monthLong[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+/** Format tanggal id-ID dengan day 2-digit + month long (mis. "09 Juni 2025") */
+export const formatDateLong2Digit = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const local = typeof dateString === "string" ? dateString.replace("Z", "").replace("+00:00", "") : dateString;
+  const date = new Date(local);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+};
+
+/** Format tanggal dd/mm/yyyy dengan opsi strip timezone (WIB) sebelum parsing */
+export const formatDateNumeric = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const local = typeof dateString === "string" ? dateString.replace("Z", "").replace("+00:00", "") : dateString;
+  const date = new Date(local);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
+/** Format waktu HH:mm (id-ID) */
+export const formatTimeShort = (dateString: string | null | undefined): string => {
+  if (!dateString) return "";
+  const local = typeof dateString === "string" ? dateString.replace("Z", "").replace("+00:00", "") : dateString;
+  const date = new Date(local);
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+};
+
+/** Format tanggal + waktu dd 2-digit mm 2-digit yyyy HH:mm (id-ID), dengan strip timezone opsional */
+export const formatDateTimeNumeric = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const local = typeof dateString === "string" ? dateString.replace("Z", "").replace("+00:00", "") : dateString;
+  const date = new Date(local);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/** Format "dd MMM yyyy, HH:mm" (dengan koma) - umum dipakai pada list korespondensi */
+export const formatDateWithTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const d = date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const t = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return `${d}, ${t}`;
 };

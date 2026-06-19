@@ -252,6 +252,8 @@ import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
+import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
+import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
 
 definePageMeta({ middleware: "auth" });
 
