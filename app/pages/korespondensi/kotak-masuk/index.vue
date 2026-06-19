@@ -736,7 +736,7 @@ onMounted(async () => {
           :icon="Inbox"
           :title="activeFilterType !== 'Semua' ? 'Filter tidak menghasilkan data' : 'Tidak ada data'"
           :description="activeFilterType !== 'Semua'
-            ? `Filter "${activeFilterType}" tidak menghasilkan data. Klik tombol di bawah untuk reset.`
+            ? 'Filter ini tidak menghasilkan data. Klik tombol di bawah untuk reset.'
             : 'Kotak masuk kosong.'"
           :action-label="activeFilterType !== 'Semua' ? 'Reset filter' : undefined"
           @action="applyFilter('Semua')"
