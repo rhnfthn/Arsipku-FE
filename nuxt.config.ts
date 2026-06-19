@@ -1,5 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // ArsipKu adalah dashboard internal authenticated, tidak butuh SEO/SSR.
+  // Disable SSR = SPA mode → eliminasi semua hydration mismatch karena
+  // state aplikasi (auth/user/localStorage) memang hanya ada di client.
+  ssr: false,
+
   app: {
     head: {
       title: "ArsipKu",

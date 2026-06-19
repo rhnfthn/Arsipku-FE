@@ -63,10 +63,11 @@ const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
 // Date Filter State (sama persis dengan kotak-masuk)
-const startDateInput = ref(new Date().toISOString().split('T')[0]);
-const endDateInput = ref(new Date().toISOString().split('T')[0]);
-const startDateCal = ref(parseDate(startDateInput.value));
-const endDateCal = ref(parseDate(endDateInput.value));
+// Init kosong supaya SSR & client render identik (hindari hydration mismatch).
+const startDateInput = ref('');
+const endDateInput = ref('');
+const startDateCal = ref<any>(null);
+const endDateCal = ref<any>(null);
 const openStartDate = ref(false);
 const openEndDate = ref(false);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
@@ -221,6 +222,13 @@ watch(searchQuery, () => {
 });
 
 onMounted(async () => {
+  // Inisialisasi tanggal di client (hindari hydration mismatch dari new Date()).
+  const today = new Date().toISOString().split('T')[0];
+  startDateInput.value = today;
+  endDateInput.value = today;
+  startDateCal.value = parseDate(today);
+  endDateCal.value = parseDate(today);
+
   if (!user.value) await getProfile();
   await fetchLabels();
   refreshData();

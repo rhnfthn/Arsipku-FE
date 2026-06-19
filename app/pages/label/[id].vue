@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { parseDate, getLocalTimeZone, today } from '@internationalized/date';
 import {
@@ -64,10 +64,11 @@ const showDateMenu = ref(false);
 const activeDateLabel = ref("Semua");
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 
-const startDateInput = ref(new Date().toISOString().split('T')[0]);
-const endDateInput = ref(new Date().toISOString().split('T')[0]);
-const startDateCal = ref(parseDate(startDateInput.value));
-const endDateCal = ref(parseDate(endDateInput.value));
+// Init kosong supaya SSR & client render identik (hindari hydration mismatch).
+const startDateInput = ref('');
+const endDateInput = ref('');
+const startDateCal = ref<any>(null);
+const endDateCal = ref<any>(null);
 const openStartDate = ref(false);
 const openEndDate = ref(false);
 const isCustomDate = computed(() => activeDateLabel.value === "Custom");
@@ -328,6 +329,15 @@ watch(searchQuery, () => {
 watch([() => user.value, labelId], ([newUser, newLabelId]) => {
   if (newUser && newLabelId) loadData();
 }, { immediate: true });
+
+// Inisialisasi tanggal di client (hindari hydration mismatch dari new Date()).
+onMounted(() => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  startDateInput.value = todayStr;
+  endDateInput.value = todayStr;
+  startDateCal.value = parseDate(todayStr);
+  endDateCal.value = parseDate(todayStr);
+});
 
 // --- UI EVENT HANDLERS ---
 const refreshData = () => loadData();
