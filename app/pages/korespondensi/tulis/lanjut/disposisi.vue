@@ -705,7 +705,7 @@ onMounted(async () => {
           const firstRef = refDetail.value;
           // Auto-fill ref nomor dan perihal dari data referensi
           refNumber.value = firstRef?.nomor || "-";
-          refPerihal.value = firstRef?.perihal || "-";
+          refPerihal.value = firstRef?.perihal || firstRef?.ref_perihal || "-";
           refPdfUrl.value = firstRef?.final_pdf_url || "";
         }
       } catch (refErr) {
