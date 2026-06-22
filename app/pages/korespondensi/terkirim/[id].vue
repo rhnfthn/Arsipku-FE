@@ -298,7 +298,7 @@ const loadData = async () => {
       let inboxData: any = null;
 
       if (Array.isArray(rawData)) {
-        if (rawData.length > 0 && rawData[0].flow) {
+        if (rawData.length > 0 && Array.isArray(rawData[0].flow) && rawData[0].flow.length > 0) {
           inboxData = rawData[0];
           rawFlows = inboxData.flow;
         } else {
