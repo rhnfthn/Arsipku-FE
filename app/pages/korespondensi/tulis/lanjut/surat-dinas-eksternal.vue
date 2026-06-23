@@ -486,12 +486,12 @@ const handleSaveDraftAction = async () => {
     const fd = createFormData(payload, false);
     let res = editDraftId.value ? await updateDraft(fd, editDraftId.value) : await saveDraft(fd);
 
-    if (res?.success || res?.data?.success) {
+    if (res?.success || (res as any)?.data?.success) {
       toastSuccess('Berhasil', 'Draft berhasil disimpan');
       if (res.data?.id) editDraftId.value = res.data.id;
       redirectDraf();
     } else {
-      throw new Error(res?.data?.message || 'Gagal menyimpan draft');
+      throw new Error((res as any)?.data?.message || 'Gagal menyimpan draft');
     }
   } catch (e: any) {
     toastError('Gagal', e.response?.data?.message || 'Gagal memperbarui draft');
@@ -532,13 +532,13 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
 
     const res = await sendSDE(fdFinal);
 
-    if (res?.success || res?.data?.success) {
+    if (res?.success || (res as any)?.data?.success) {
       revokePdfUrl();
       toastSuccess('Berhasil', 'Surat Dinas Eksternal terkirim');
       Alert.close();
       redirectTerkirim();
     } else {
-      throw new Error(res?.data?.message || res?.message || 'Pengiriman gagal');
+      throw new Error((res as any)?.data?.message || res?.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
     Alert.close();
@@ -658,9 +658,9 @@ onMounted(async () => {
         if (d.penerima && Array.isArray(d.penerima)) {
           selectedTertuju.value = d.penerima.map((item: any) => ({
             label: item.nama,
-            value: item.id,
+            value: String(item.id),
             raw: item
-          }));
+          } as any));
         }
 
         if (d.tembusan && Array.isArray(d.tembusan)) {
@@ -673,7 +673,7 @@ onMounted(async () => {
         }
 
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
-        setSifatFromString(d.sifat);
+        setSifatFromString(d.sifat || 'biasa');
         if (d.tgl) setDateFromString(d.tgl);
       }
     }

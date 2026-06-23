@@ -832,7 +832,7 @@ import {
   ChevronDown
 } from 'lucide-vue-next';
 
-import type { BreadcrumbItem } from '~/types/breadcrumb';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import { useJenis, type JenisItem } from '~/composables/useJenis';
 import Modal from '@/components/Modal.vue';
 import ConfirmDialog from '@/components/ConfirmPopup.vue';
@@ -929,8 +929,8 @@ const filteredJenis = computed(() => {
 const sortedJenis = computed(() => {
   const sorted = [...filteredJenis.value];
   sorted.sort((a, b) => {
-    const aVal = String(a[sortColumn.value] || '').toLowerCase();
-    const bVal = String(b[sortColumn.value] || '').toLowerCase();
+    const aVal = String((a as any)[sortColumn.value] || '').toLowerCase();
+    const bVal = String((b as any)[sortColumn.value] || '').toLowerCase();
     if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;

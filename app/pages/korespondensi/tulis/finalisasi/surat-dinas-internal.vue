@@ -350,7 +350,7 @@ const mapApiToUI = (list: any[]) => {
   if (!list || !Array.isArray(list)) return [];
   return list.map((item) => {
     const posId = String(item.position_id || item.position || item.value || item.id || item);
-    const master = items.value.find((m) => m.value === posId);
+    const master = tertujuItems.value.find((m: any) => m.value === posId);
     if (master) return master;
 
     const posText = item.position_text || item.positionText || item.labelJob || item.label || posId;
@@ -393,9 +393,11 @@ const getBasePayload = (): DraftPayload => {
     pengirim: user.value?.position || "",
     penerima: selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value),
     tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
+    penerima_grup: selectedTertuju.value.filter(t => t.isGroup).map(i => i.value),
+    tembusan_grup: selectedTembusan.value.filter(t => t.isGroup).map(i => i.value),
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     konten: String(editorContent.value || ''),
@@ -555,10 +557,10 @@ onMounted(async () => {
     ]);
 
     // Ekstrak langsung jika data terbungkus dalam properti .data
-    klasifikasiList.value = Array.isArray(klasRes) ? klasRes : (klasRes?.data || klasRes?.klasifikasi || []);
+    klasifikasiList.value = Array.isArray(klasRes) ? klasRes : ((klasRes as any)?.data || (klasRes as any)?.klasifikasi || []);
     recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
-    const rawData = recRes.recipients || recRes.data || [];
+    const rawData = recRes.recipients || (recRes as any).data || [];
     tertujuItems.value = rawData.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
@@ -580,8 +582,8 @@ onMounted(async () => {
       const resKonsep = await fetchKonsepDetail(refId);
 
       // JSON LOGIC FIX: Berdasarkan log Anda, data berada di root object lalu di dalam properti `.flow`
-      const flowList = resKonsep?.flow || (resKonsep?.data && resKonsep.data.flow) || [];
-      const rootData = resKonsep?.data || resKonsep;
+      const flowList = resKonsep?.flow || ((resKonsep as any)?.data && (resKonsep as any).data.flow) || [];
+      const rootData: any = (resKonsep as any)?.data || resKonsep;
 
       // Ambil elemen "Konsep" ("K") dari array flow
       let draftData = Array.isArray(flowList)

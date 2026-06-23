@@ -22,20 +22,25 @@ export default defineNuxtConfig({
 
   build: {
     transpile: ["@vuepic/vue-datepicker"],
-    chunkSizeWarningLimit: 900,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          tinymce: ["@tinymce/tinymce-vue"],
-          lucide: ["lucide-vue-next"],
-          datepicker: ["@vuepic/vue-datepicker"],
-          "internationalized-date": ["@internationalized/date"],
-          xlsx: ["xlsx"],
-          "file-saver": ["file-saver"],
-          chart: ["chart.js/auto"],
-          "reka-ui": ["reka-ui"],
-          zod: ["zod"],
-          axios: ["axios"],
+  },
+
+  vite: {
+    build: {
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            tinymce: ["@tinymce/tinymce-vue"],
+            lucide: ["lucide-vue-next"],
+            datepicker: ["@vuepic/vue-datepicker"],
+            "internationalized-date": ["@internationalized/date"],
+            xlsx: ["xlsx"],
+            "file-saver": ["file-saver"],
+            chart: ["chart.js/auto"],
+            "reka-ui": ["reka-ui"],
+            zod: ["zod"],
+            axios: ["axios"],
+          },
         },
       },
     },
@@ -52,7 +57,6 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: "id",
     langDir: "locales/",
-    lazy: true,
     strategy: "no_prefix",
     locales: [
       { code: "id", name: "ID", file: "id.json" },
@@ -61,6 +65,14 @@ export default defineNuxtConfig({
   },
 
   css: ["~/assets/css/main.css"],
+
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        noUncheckedIndexedAccess: false,
+      },
+    },
+  },
 
   ui: {
     fonts: true,

@@ -30,6 +30,9 @@ interface UIMailItem {
   color: string;
   viewCount: number;
   isRead: boolean;
+  isStarred?: boolean;
+  recipient?: string;
+  labels?: any[];
   sourceType: string;
   isDraftKonsep?: boolean;
   jenisAsli?: string;
@@ -148,7 +151,7 @@ const loadData = async () => {
     const data = naskahByLabel.value;
     if (data) {
       labelName.value = data.namaLabel || "Label";
-      emails.value = Array.isArray(data.items) ? data.items.map(mapJsonToUI) : [];
+      emails.value = Array.isArray(data.items) ? data.items.map(mapJsonToUI) as UIMailItem[] : [];
     }
   } catch (e: any) {
     toast.add({ title: 'Error', description: 'Gagal memuat data label', color: 'error' });
@@ -210,7 +213,7 @@ const mapJsonToUI = (item: any): UIMailItem => {
     isDraftKonsep,
     jenisAsli,
     originalData: item,
-  };
+  } as UIMailItem;
 };
 
 // --- HELPER FUNCTIONS ---

@@ -445,7 +445,7 @@ const handleSaveDraftAction = async () => {
       if (res.data?.id) editDraftId.value = res.data.id;
       redirectDraf();
     } else {
-      throw new Error(res?.data?.message || 'Gagal menyimpan draft');
+      throw new Error((res as any)?.data?.message || 'Gagal menyimpan draft');
     }
   } catch (e: any) {
     toastError('Gagal', e.response?.data?.message || 'Gagal memperbarui draft');
@@ -486,14 +486,14 @@ const handleKirimDokumen = async (passphrase = '') => {
       ? await sendDraftSDE(fdFinal, editDraftId.value)
       : await sendSDE(fdFinal);
 
-    const isSuccess = res?.data?.success || res?.success;
+    const isSuccess = (res as any)?.data?.success || (res as any)?.success;
     if (isSuccess) {
       revokePdfUrl();
       toastSuccess('Berhasil', 'Surat Dinas Eksternal terkirim');
       Alert.close();
       redirectTerkirim();
     } else {
-      throw new Error(res?.data?.message || res?.message || 'Pengiriman gagal');
+      throw new Error((res as any)?.data?.message || (res as any)?.message || 'Pengiriman gagal');
     }
   } catch (e: any) {
     Alert.close();
@@ -640,7 +640,7 @@ onMounted(async () => {
         }
 
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
-        setSifatFromString(d.sifat);
+        setSifatFromString(d.sifat || 'biasa');
         if (d.tgl) setDateFromString(d.tgl);
       }
     }

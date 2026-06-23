@@ -287,7 +287,7 @@ const {
 const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
 const { getRecipientGroups } = useRecipients();
 
 const route = useRoute();

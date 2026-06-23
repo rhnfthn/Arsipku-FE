@@ -28,6 +28,8 @@ export const NotaDinasSchema = z
     tgl:     z.string().min(1, 'Tanggal wajib diisi'),
     tanggal: z.string().min(1, 'Tanggal wajib diisi'),
 
+    lampiran: z.string().optional(),
+    catatan: z.string().optional(),
     lampiran_temp_ids: z.array(z.string().uuid()).default([])
   })
   .refine((data) => data.penerima.length > 0 || data.penerima_grup.length > 0, {

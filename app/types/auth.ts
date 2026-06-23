@@ -50,13 +50,15 @@ export interface UserProfile {
   subAreaText: string;
   organization: string;
   organizationText: string;
-  position: string;
+  position: any;
   positionText: string;
+  position_id?: string | number;
 
   // --- Field Baru ---
   position_status?: string; // contoh: "PT", "Definitif"
   position_status_label?: string; // contoh: "Pelaksana Tugas"
   nik?: string;
+  atasan_langsung?: any;
   // ------------------
 
   bodTag: string;

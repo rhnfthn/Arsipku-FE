@@ -10,14 +10,15 @@ const groupIdArray = z
 export const SDIPayloadSchema = z
   .object({
     id_naskah: z.string().nullable().optional(),
+    id_referensi_naskah: z.string().nullable().optional(),
 
     pengirim: z.string().min(1, 'Pengirim wajib diisi'),
 
     tertuju: z.array(z.string()).default([]),
     tembusan: z.array(z.string()).default([]),
 
-    penerima_grup: groupIdArray,
-    tembusan_grup: groupIdArray,
+    penerima_grup: groupIdArray.optional().default([]),
+    tembusan_grup: groupIdArray.optional().default([]),
 
     klasifikasi: z.string().min(1, 'Klasifikasi wajib dipilih'),
     klasifikasi_text: z.string().optional(),

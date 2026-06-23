@@ -299,7 +299,7 @@ const { apiGet } = useApi();
 const { getExternalRecipients } = useSde();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
 
 const route = useRoute();
 const router = useRouter();
@@ -769,7 +769,7 @@ onMounted(async () => {
     try {
       const result = await fetchKonsepDetail(refId);
       if (result) {
-        const unwrappedData = result.data || result;
+        const unwrappedData: any = (result as any).data || result;
         detail.value = unwrappedData;
         editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
         subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";

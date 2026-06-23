@@ -274,7 +274,7 @@ onMounted(async () => {
     klasifikasiStatus.value = "success";
 
     const resRec = await getRecipients();
-    tertujuItems.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
+    tertujuItems.value = (resRec.recipients || (resRec as any).data || []).map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       organization: r.organization_text,

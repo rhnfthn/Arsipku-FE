@@ -302,7 +302,7 @@ const { createKonsep, previewPdf, forwardKonsep, createDraft, updateDraft, getKo
 const { apiGet } = useApi();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox(null);
+const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
 const { getRecipientGroups } = useRecipients();
 
 const route = useRoute();
@@ -613,8 +613,8 @@ const getBasePayload = (): DraftPayload => {
     penerima_grup: tertujuGrup.value,
     tembusan_grup: tembusanGrup.value,
     tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || null,
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || null,
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     lampiran: lampiranText.value,

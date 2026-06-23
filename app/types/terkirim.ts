@@ -72,6 +72,7 @@ export interface UIMailItem {
   recipient: string; // String gabungan penerima
   disposition: string;
   note: string;
+  labels?: any[];
   // Raw data untuk modal detail/reader
   originalData: NaskahItem;
 }

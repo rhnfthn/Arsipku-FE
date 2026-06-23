@@ -93,7 +93,10 @@ export const useSdi = () => {
   /**
    * Simpan sebagai Draft
    */
-  const saveDraft = async (formData: FormData) => {
+  const saveDraft = async (formData: FormData, idNaskah?: string) => {
+    if (idNaskah) {
+      return await apiPatch(`/SDI/update-draft/${idNaskah}`, formData, formDataConfig);
+    }
     // Endpoint: POST /SDI/save-draft
     return await apiPost("/SDI/save-draft", formData, formDataConfig);
   };

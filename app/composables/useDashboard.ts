@@ -216,7 +216,7 @@ export const useDashboard = () => {
       KA: "bg-pink-500", // Kajian
       default: "bg-gray-400",
     };
-    return colors[jenis] || colors.default;
+    return colors[jenis] || colors.default || "";
   };
 
   /**

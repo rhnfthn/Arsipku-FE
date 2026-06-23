@@ -28,7 +28,7 @@
               base: 'w-full flex justify-between items-center',
               padding: 'px-4 py-3'
             }
-          }">
+          } as any">
 
             <template #trailing="{ item, open }">
               <UIcon name="i-heroicons-chevron-down-20-solid"
@@ -146,7 +146,7 @@
                 base: 'w-full flex justify-between items-center',
                 padding: 'px-4 py-3'
               }
-            }">
+            } as any">
 
               <template #trailing="{ item, open }">
                 <UIcon name="i-heroicons-chevron-down-20-solid"
@@ -190,7 +190,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import { useTemplateTulis } from '@/composables/useTemplateTulis';
-import type { TemplateSurat, TemplatePayload } from '@/types/template';
+import type { TemplateSurat, TemplatePayload } from '@/types/templates';
 
 // Props & Emits
 const props = defineProps<{ currentContent: string }>();

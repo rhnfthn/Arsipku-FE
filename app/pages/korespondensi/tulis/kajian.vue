@@ -307,6 +307,7 @@ const alertState = useAlertState(); // Initialize alertState
 
 const isPassphraseModalOpen = ref(false)
 const selectedSendType = ref('qr_only') // Default to 'qr_only' as per instructions
+const passphraseInput = ref('')
 
 const signerInfo = computed(() => ({
   name: user.value?.nama || 'Nama Lengkap',
@@ -419,8 +420,8 @@ const createFormData = (payload: KajianPayload, includePdf: boolean) => {
 const validateInput = (payload: KajianPayload) => {
   const check = validateKajianPayload(payload)
   if (!check.isValid) {
-    const firstKey = Object.keys(check.errors)[0]
-    const message = firstKey ? check.errors[firstKey] : 'Mohon lengkapi semua field yang wajib diisi.'
+    const firstKey = Object.keys(check.errors || {})[0]
+    const message = firstKey ? (check.errors || {})[firstKey] : 'Mohon lengkapi semua field yang wajib diisi.'
     toast.add({ title: 'Validasi Gagal', description: message, color: 'error' })
     return false
   }
@@ -475,7 +476,7 @@ const handleSaveDraft = async () => {
       res = await saveDraft(fd);
     }
 
-    if (res?.data?.success || res?.success) {
+    if ((res as any)?.data?.success || (res as any)?.success) {
       toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' }); // Changed description
       if (res.data?.id) editDraftId.value = res.data.id;
       router.push("/korespondensi/draf");
@@ -540,7 +541,7 @@ const handleKirimDokumen = async (passphrase = '') => {
       ? await sendDraft(fdFinal, editDraftId.value)
       : await sendKajian(fdFinal);
 
-    if (res?.data?.success || res?.success) {
+    if ((res as any)?.data?.success || (res as any)?.success) {
       toast.add({ title: 'Berhasil', description: 'Kajian terkirim', color: 'success' });
       Alert.close();
       router.push("/korespondensi/terkirim");
@@ -598,7 +599,7 @@ const handlePassphraseSubmit = async () => {
     return;
   }
 
-  if (selectedSendType.value === 'digsig' && !passphrase.value) {
+  if (selectedSendType.value === 'digsig' && !passphraseInput.value) {
     toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
     return;
   }
@@ -618,7 +619,7 @@ const handlePassphraseSubmit = async () => {
   );
 
   if (isConfirmed) {
-    await handleKirimDokumen();
+    await handleKirimDokumen(passphraseInput.value);
   }
 };
 

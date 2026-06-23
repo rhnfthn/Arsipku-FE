@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed } from 'vue';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import { useSwitch } from '@/composables/useSwitch';
 import { useToast } from '#imports';
 

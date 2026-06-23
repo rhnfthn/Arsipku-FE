@@ -625,7 +625,7 @@ const canSeeLocationFilter = computed(() => {
 
 //LANGUAGE SWITCH
 const switchLocale = async (lang: string) => {
-  await setLocale(lang);
+  await setLocale(lang as 'id' | 'en');
   showLangDropdown.value = false;
 };
 

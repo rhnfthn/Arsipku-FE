@@ -7,7 +7,7 @@ export const SDEPayloadSchema = z
     id_referensi_naskah: z.string().nullable().optional(),
 
     pengirim: z.union([z.string(), z.number()], {
-      errorMap: () => ({ message: 'Pengirim (Position ID) wajib ada' })
+      error: () => ({ message: 'Pengirim (Position ID) wajib ada' })
     }),
 
     penerima: z.array(z.any()).min(1, 'Minimal harus ada satu penerima eksternal'),
@@ -76,16 +76,31 @@ export interface SdeSenderRaw {
   area_text: string;
 }
 
+export interface ExternalRecipient {
+  id?: string | number
+  persuratan_eksternal_id?: string | number
+  value?: string | number
+  nama?: string
+  name?: string
+  alamat?: string
+  telepon?: string
+  email?: string
+  kontak?: string
+  [key: string]: any
+}
+
 export interface SdeRecipientApiResponse {
   success: boolean;
   data: {
     sender: SdeSenderRaw;
     recipients?: Record<string, any[]> | any[];
+    tembusan?: any[];
   };
 }
 
 export interface SdeActionResponse {
-  success: boolean;
+  success?: boolean;
+  message?: string;
   data: {
     id: string;
     jenis: 'SDE';
@@ -95,5 +110,15 @@ export interface SdeActionResponse {
     perihal: string;
     pengirim: SdeSenderRaw;
     penerima: ExternalRecipient[];
+    tembusan?: any[];
+    tertuju?: ExternalRecipient[];
+    lampiran?: string;
+    lampiran_files?: any[];
+    konten?: string;
+    english?: boolean;
+    klasifikasi?: string;
+    klasifikasi_text?: string;
+    sifat?: string;
+    tgl?: string;
   };
 }

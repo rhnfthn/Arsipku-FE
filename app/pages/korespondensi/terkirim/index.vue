@@ -25,7 +25,7 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 const selected = ref(null);
-const selectedIds = ref(new Set());
+const selectedIds = ref(new Set<string>());
 const searchQuery = ref("");
 const isLabelProcessing = ref(false);
 const showLabelAssignModal = ref(false);
@@ -194,7 +194,7 @@ const handleToggleFlag = async (mail: any, type: "favorit" | "arsip") => {
       arsip: ["Pesan diarsipkan", "Pesan dikembalikan dari arsip"],
     };
 
-    toast.add({ title: "Berhasil", description: descMap[type][isNowActive ? 0 : 1], color: "success", timeout: 2000 });
+    toast.add({ title: "Berhasil", description: descMap[type][isNowActive ? 0 : 1], color: "success" } as any);
 
     // 3. Hapus baris secara instan jika kita sedang di tab filter "Arsip"
     //    dan item di-unarchive, ATAU kita di "Semua" tapi item di-archive
@@ -321,7 +321,7 @@ const handleBulkExecute = async () => {
       if (!user.value?.position) return;
       await bulkActionSent({
         position_id: Number(user.value.position),
-        naskah_ids: Array.from(selectedIds.value),
+        naskah_ids: Array.from(selectedIds.value) as string[],
         action: 'delete',
       });
       toast.add({ title: 'Berhasil', description: 'Item berhasil dihapus.', color: 'success' });
@@ -431,7 +431,7 @@ const downloadExcel = async () => {
 
     // Auto-width kolom
     const colWidths = Object.keys(tableData[0] || {}).map(key => ({
-      wch: Math.max(key.length, ...tableData.map(row => String(row[key] || '').length).slice(0, 50))
+      wch: Math.max(key.length, ...tableData.map((row: any) => String(row[key] || '').length).slice(0, 50))
     }));
     ws['!cols'] = colWidths;
 

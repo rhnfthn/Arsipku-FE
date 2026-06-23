@@ -6,6 +6,9 @@ export type JenisItem = {
   jenis_text: string;
   format_penomoran: string;
   file_url?: string | null;
+  file_text?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type JenisResponse = {

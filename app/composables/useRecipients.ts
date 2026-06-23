@@ -4,7 +4,7 @@ import type {
   RecipientItem,
   RecipientApiResponse,
   RecipientApiData,
-} from "~/types/recipients";
+} from "~/types/recipient";
 
 export const useRecipients = () => {
   const { apiGet } = useApi();

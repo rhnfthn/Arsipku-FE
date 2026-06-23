@@ -166,6 +166,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import type { Faq, FaqKategori } from '@/composables/useFaq';
 
 definePageMeta({ middleware: 'auth' });
