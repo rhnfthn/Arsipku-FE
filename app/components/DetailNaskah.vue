@@ -20,8 +20,9 @@ import {
   ChevronRight,
   Star,
   Lock,
+  LockOpen,
   StickyNote,
-  ArrowRightLeft,
+  Tag,
 } from "lucide-vue-next";
 
 // Tambah prop
@@ -37,6 +38,10 @@ const props = defineProps<{
   isPengirimKonsep?: boolean;
   draft?: { id: string; jenis: string } | null;
   collapsed?: boolean;
+  isStarred?: boolean;
+  isTinjut?: boolean;
+  isLocked?: boolean;
+  isNote?: boolean;
 }>();
 
 // --- EMITS ---
@@ -237,14 +242,14 @@ const isCollapsed = computed(() => props.collapsed ?? false);
           </template>
         </div>
         <!-- {{ data }} -->
-        <div class="flex items-center gap-2 shrink-0 pl-2">
+        <div class="flex items-center gap-1 shrink-0 pl-2">
           <!-- Navigasi pesan lebih baru (<) -->
           <UTooltip v-if="isHead" text="Pesan lebih baru">
             <button
               @click="emit('nav-newer')"
               :disabled="!data._hasNewer"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              :class="data._hasNewer ? 'hover:text-primary-600 dark:hover:text-primary-400' : ''"
+              class="p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :class="data._hasNewer ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400' : 'text-gray-300 dark:text-gray-600'"
             >
               <ChevronLeft class="w-4 h-4" />
             </button>
@@ -255,48 +260,60 @@ const isCollapsed = computed(() => props.collapsed ?? false);
             <button
               @click="emit('nav-older')"
               :disabled="!data._hasOlder"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              :class="data._hasOlder ? 'hover:text-primary-600 dark:hover:text-primary-400' : ''"
+              class="p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :class="data._hasOlder ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400' : 'text-gray-300 dark:text-gray-600'"
             >
               <ChevronRight class="w-4 h-4" />
             </button>
           </UTooltip>
 
+          <!-- Divider: navigasi vs aksi -->
+          <div v-if="isHead" class="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1" />
+
           <!-- Favorite -->
           <UTooltip v-if="isHead" text="Favorit">
             <button @click="emit('favorite')"
-              class="p-2 hover:bg-yellow-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 rounded-lg transition-colors">
-              <Star class="w-4 h-4" />
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <Star class="w-4 h-4 transition-colors cursor-pointer"
+                :class="data.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'" />
             </button>
           </UTooltip>
 
           <!-- Tindak Lanjut -->
           <UTooltip v-if="isHead" text="Tindak Lanjut">
             <button @click="emit('tindak-lanjut')"
-              class="p-2 hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
-              <ArrowRightLeft class="w-4 h-4" />
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <Tag class="w-4 h-4 -rotate-45 transition-colors cursor-pointer"
+                :class="data.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-gray-400 dark:text-gray-500 hover:text-primary-400'" />
             </button>
           </UTooltip>
 
           <!-- Lock -->
           <UTooltip v-if="isHead" text="Kunci">
             <button @click="emit('lock')"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors">
-              <Lock class="w-4 h-4" />
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <Lock v-if="data.isLocked"
+                class="w-4 h-4 transition-colors text-red-600 fill-red-100 cursor-pointer" />
+              <LockOpen v-else
+                class="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500 hover:text-red-500 cursor-pointer" />
             </button>
           </UTooltip>
 
           <!-- Catatan -->
           <UTooltip v-if="isHead" text="Catatan">
             <button @click="emit('catatan')"
-              class="p-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors">
-              <StickyNote class="w-4 h-4" />
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <StickyNote class="w-4 h-4 transition-colors cursor-pointer"
+                :class="data.isNote ? 'text-orange-600 fill-orange-100' : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'" />
             </button>
           </UTooltip>
 
+          <!-- Divider: aksi vs utilitas -->
+          <div v-if="isHead" class="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1" />
+
           <!-- Collapse toggle for non-head cards -->
           <button v-if="!isHead" @click="emit('toggle-collapse')"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
+            class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
             <ChevronDown v-if="isCollapsed" class="w-4 h-4 transition-transform duration-300" />
             <ChevronUp v-else class="w-4 h-4 transition-transform duration-300" />
           </button>
@@ -306,7 +323,7 @@ const isCollapsed = computed(() => props.collapsed ?? false);
               @click="
                 emit('preview', data.pdf_snapshot || data.naskah?.final_pdf || data.final_pdf_url)
               "
-              class="p-2 hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors"
+              class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               <Printer class="w-4 h-4" />
             </button>
