@@ -491,7 +491,7 @@ onMounted(async () => {
     klasifikasiStatus.value = "success";
 
     const resRec = await getRecipients();
-    items.value = (resRec.recipients || resRec.data || []).map((r: any) => ({
+    items.value = (resRec.recipients || (resRec as any).data || []).map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       value: String(r.position || r.position_id || r.id),

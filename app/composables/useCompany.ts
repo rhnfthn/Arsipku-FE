@@ -11,10 +11,10 @@ export const useCompany = () => {
     return res.data.find((c) => String(c.company) === String(companyCode));
   };
 
-  const createCompany = (payload: CreateCompanyPayload) =>
+  const createCompany = (payload: Record<string, any>) =>
     apiPost("/company", payload);
 
-  const updateCompany = (id: string, payload: UpdateCompanyPayload) =>
+  const updateCompany = (id: string, payload: Record<string, any>) =>
     apiPut(`/company/${id}`, payload);
 
   const deleteCompany = (id: string) => apiDelete(`/company/${id}`);

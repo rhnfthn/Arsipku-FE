@@ -80,7 +80,7 @@ const finalizeKonsep = async (id: string, formData: FormData) => {
   };
 
   const getRecipientsBySender = async (senderPositionId: string | number) => {
-    return await apiGet<{ success: boolean; data: any[] }>(
+    return await apiGet<{ success: boolean; data: any }>(
       `/ND/get-recipient?pengirim=${senderPositionId}`,
     );
   };

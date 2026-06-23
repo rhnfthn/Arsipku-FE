@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
-  Users, FileText, Building2, ChevronRight
+  Users, FileText, Building2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown
 } from "lucide-vue-next";
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
@@ -14,7 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
 
-const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
+const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation } = useInbox();
 const { rejectKonsep } = useKonsep();
 
 const id = route.params.id as string;
@@ -136,6 +136,13 @@ const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
 
+// --- NAVIGATION (previous/next dari kotak masuk) ---
+// Backend: previous = pesan lebih lama, next = pesan lebih baru.
+// UI user: '>' = lebih lama, '<' = lebih baru.
+const navPrev = ref<any>(null); // lebih lama
+const navNext = ref<any>(null); // lebih baru
+const isLoadingNav = ref(false);
+
 const showEditAction = ref(false);
 const showFinalizeActions = ref(false);
 const isOpenKonsepModal = ref(false);
@@ -167,7 +174,7 @@ const processGrouping = (individuals: any[], groups: any[], senderPositionId?: s
   const result: any[] = [];
 
   const myPosId = String(
-    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+    user.value?.position || ''
   );
 
   // ID yang boleh "tidak hadir" di individualIds: user login + pengirim surat
@@ -208,11 +215,29 @@ const loadData = async () => {
   details.value = [];
   selected.value = null;
 
+  // Reset navigasi setiap ganti naskah
+  navPrev.value = null;
+  navNext.value = null;
+
   try {
+    // Navigasi hanya untuk pesan kotak masuk (bukan konsep)
+    if (jenisQuery !== 'K') {
+      isLoadingNav.value = true;
+      try {
+        // Tanpa filter jenis agar navigasi mencakup semua pesan (seperti Gmail)
+        const nav = await fetchInboxNavigation(id);
+        navPrev.value = nav.previous;
+        navNext.value = nav.next;
+      } catch (navErr) {
+        console.error('[Detail] fetchInboxNavigation failed:', navErr);
+      } finally {
+        isLoadingNav.value = false;
+      }
+    }
     if (jenisQuery === 'K') {
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
-      const rawData = response?.data || response;
+      const rawData: any = response;
       const konsepTo = rawData?.to_konsep || null;
 
       let rawFlows: any[] = [];
@@ -250,6 +275,10 @@ const loadData = async () => {
       if (sortedFlows.length > 0) {
         const lastFlow = sortedFlows[0];
         selected.value = lastFlow;
+
+        // Navigasi hanya untuk card head (naskah terbaru)
+        const hasNewer = Boolean(navNext.value);
+        const hasOlder = Boolean(navPrev.value);
 
         const authUser = user.value || JSON.parse(localStorage.getItem('user_data') || '{}');
         const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
@@ -319,7 +348,9 @@ const loadData = async () => {
             catatan: flow.detail?.catatan || flow.catatan || '',
             attachments: flow.lampiran_files || [],
             pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
-            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
+            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+            _hasNewer: index === 0 ? hasNewer : false,
+            _hasOlder: index === 0 ? hasOlder : false,
           };
         });
 
@@ -362,7 +393,11 @@ const loadData = async () => {
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
 
-        details.value = rawFlows.map((item: any) => {
+        // Navigasi hanya untuk card head (naskah terbaru)
+        const hasNewer = Boolean(navNext.value);
+        const hasOlder = Boolean(navPrev.value);
+
+        details.value = rawFlows.map((item: any, index: number) => {
           let listPenerima: any[] = [];
           if (Array.isArray(item.penerima) && item.penerima.length > 0) listPenerima = item.penerima;
           else if (Array.isArray(item.kepada) && item.kepada.length > 0) listPenerima = item.kepada;
@@ -413,7 +448,9 @@ const loadData = async () => {
             disposisi: item.disposisi || item.instruksi || inboxData?.disposisi,
             lampiran_files: item.lampiran_files || item.attachments || inboxData?.lampiran_files || [],
             final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
-            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
+            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+            _hasNewer: index === 0 ? hasNewer : false,
+            _hasOlder: index === 0 ? hasOlder : false,
           };
         });
       }
@@ -440,8 +477,27 @@ onMounted(() => {
   loadData();
 });
 
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) loadData();
+  },
+);
+
 // --- ACTIONS HANDLERS ---
-const goBack = () => router.back();
+const goBack = () => router.push('/korespondensi/kotak-masuk');
+
+const goToNav = (target: any) => {
+  if (!target?.id_naskah) return;
+  const targetJenis = target.jenis || jenisQuery || 'ND';
+  router.push({
+    path: `/korespondensi/kotak-masuk/${target.id_naskah}`,
+    query: { jenis: targetJenis },
+  });
+};
+
+const goToNewer = () => goToNav(navNext.value); // '<' = pesan lebih baru
+const goToOlder = () => goToNav(navPrev.value); // '>' = pesan lebih lama
 const handleFinalize = () => { showFinalizeOptionsModal.value = true; };
 const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true; };
 
@@ -612,6 +668,7 @@ const konsepOptions = computed(() => [
 <template>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
+
   <!-- <div v-if="sessionDebug" class="mt-4 mb-4">
     <UCard :ui="{ root: 'rounded-lg ring-0 shadow-sm bg-white dark:bg-gray-800' }">
       <div class="flex items-center justify-between mb-2">
@@ -647,12 +704,14 @@ const konsepOptions = computed(() => [
           :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
           :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
           :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
-          :user-position-id="user.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
+          :user-position-id="user?.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
           @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
           @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
           @lanjut-disposisi="handleLanjutDisposisi"
           :draft="index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null"
-          @lanjut-konsep="handleLanjutKonsep" />
+          @lanjut-konsep="handleLanjutKonsep"
+          @nav-newer="goToNewer"
+          @nav-older="goToOlder" />
 
       </div>
     </div>

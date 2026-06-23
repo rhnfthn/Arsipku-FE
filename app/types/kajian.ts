@@ -29,7 +29,11 @@ export const KajianSchema = z.object({
 export type KajianPayload = z.infer<typeof KajianSchema>
 
 // Tambahkan wrapper function seperti pola disposisi
-export const validateKajianPayload = (data: any) => {
+export const validateKajianPayload = (data: any): {
+  isValid: boolean
+  errors?: Record<string, string>
+  data?: any
+} => {
   const result = KajianSchema.safeParse(data)
 
   if (!result.success) {

@@ -7,7 +7,7 @@
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu v-model="selected" :items="sifatOptions" placeholder="Pilih sifat ..." class="w-full p-0"
         variant="none" :search="false" value-attribute="value">
-        <template #default="{ label }">
+        <template #default="{ label }: any">
           <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
             <span v-if="selected" class="text-sm text-left truncate text-gray-900 dark:text-white">
               {{ getLabel(selected) }}
@@ -25,7 +25,7 @@ import { computed, onMounted } from 'vue'
 
 const props = defineProps({
   modelValue: {
-    type: [Object, String, null],
+    type: [Object, String, null] as any,
     default: null
   }
 })

@@ -6,13 +6,10 @@ const parseLocalDate = (isoString: string): Date | null => {
   if (!isoString) return null;
   // "2025-04-11T18:30:00" tanpa Z/offset → JS anggap UTC, geser +7 jadi 01:xx.
   // Strip timezone suffix lalu buat Date dari string yang dianggap lokal.
-  const normalized =
-    isoString
-      .replace('Z', '') // buang UTC marker
-      .split('+')[0] // buang offset positif
-      .split('-').length > 3 // ada offset negatif? (e.g. -07:00)
-      ? isoString.slice(0, 19)
-      : isoString.slice(0, 19).replace('T', ' ');
+  const hasNegativeOffset = isoString.replace('Z', '').split('+')[0].split('-').length > 3;
+  const normalized = hasNegativeOffset
+    ? isoString.slice(0, 19)
+    : isoString.slice(0, 19).replace('T', ' ');
   const date = new Date(normalized);
   return isNaN(date.getTime()) ? null : date;
 };
@@ -301,6 +298,7 @@ export const useDraft = () => {
     getDraftDetail,
     generatePdf,
     sendMessage,
-    saveDraft
+    saveDraft,
+    isLoadingDraft
   };
 };

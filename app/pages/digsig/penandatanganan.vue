@@ -793,6 +793,7 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { PenandatangananDocument } from '~/types/digsig';
 import Modal from '~/components/Modal.vue';
 import { useDigsig } from '~/composables/useDigsig';
 import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';

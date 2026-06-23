@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-const toaster = { position: 'top-right' }
+const toaster = { position: 'top-right' } as const
 </script>
 
 <style>

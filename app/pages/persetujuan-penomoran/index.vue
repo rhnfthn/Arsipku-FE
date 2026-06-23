@@ -73,7 +73,7 @@
                   v-for="item in filterOptions"
                   :key="item.value"
                   type="button"
-                  @click.stop="selectFilterStatus(item.value)"
+                  @click.stop="selectFilterStatus(item.value as any)"
                   :class="[
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0 flex items-center gap-2.5',
                     statusFilter === item.value
@@ -571,7 +571,7 @@
                       class="w-5 h-5 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                     />
                     <span class="text-sm text-gray-500 dark:text-gray-400 font-medium flex-shrink-0"
-                      >{{ idx + 1 }}.</span
+                      >{{ Number(idx) + 1 }}.</span
                     >
                     <span
                       :class="[
@@ -628,7 +628,7 @@
                     ]"
                   >
                     <span class="text-sm text-gray-500 dark:text-gray-400 font-medium"
-                      >{{ idx + 1 }}.</span
+                      >{{ Number(idx) + 1 }}.</span
                     >
                     <span
                       :class="[

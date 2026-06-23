@@ -316,6 +316,7 @@ const fileUploaded = ref(false)
 const selectedFile = ref<File | null>(null)
 const openSigners = ref(new Set<number>())
 const fileInput = ref<HTMLInputElement | null>(null)
+const showConfirmDialog = ref(false)
 
 /* Handle File Selection */
 function handleFile(e: any) {

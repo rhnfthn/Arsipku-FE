@@ -609,7 +609,7 @@ const handleSave = async () => {
       showToast('Berhasil', 'Data berhasil diperbarui.', 'success');
     } else {
       await createTertujuEksternal({
-        id_position_pembuat: user.value.position,
+        id_position_pembuat: user.value?.position,
         company: 'MN',
         area: 'Regional 1',
         nama: form.value.nama,
@@ -730,8 +730,8 @@ const filteredData = computed(() => {
 const sortedData = computed(() => {
   const sorted = [...filteredData.value];
   sorted.sort((a, b) => {
-    const aVal = String(a[sortColumn.value] || '').toLowerCase();
-    const bVal = String(b[sortColumn.value] || '').toLowerCase();
+    const aVal = String((a as any)[sortColumn.value] || '').toLowerCase();
+    const bVal = String((b as any)[sortColumn.value] || '').toLowerCase();
     if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;

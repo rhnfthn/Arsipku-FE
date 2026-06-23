@@ -289,7 +289,7 @@ const { isLoading, error, stats, recentMails, chartData, fetchDashboardData, das
 
 const { t } = useI18n()
 
-const cardUI = {
+const cardUI: Record<string, any> = {
   root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
   header: { padding: 'px-5 py-4 sm:px-6' },
   body: { padding: 'p-5 sm:p-6' },

@@ -177,7 +177,7 @@ const handleSaveDraftAction = async () => {
   loadingMessage.value = "Menyimpan Draft...";
   isLoadingData.value = true;
   try {
-    await saveDraft(createFormData(payload, false), editDraftId.value);
+    await saveDraft(createFormData(payload, false), editDraftId.value || undefined);
     toastSuccess("Berhasil", "Draft berhasil disimpan");
     redirectDraf();
   } catch (e: any) {

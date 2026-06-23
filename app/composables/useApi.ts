@@ -91,11 +91,11 @@ export const useApi = () => {
     }
   };
 
-  const apiPost = async <T = any>(url: string, data?: any): Promise<T> => {
+  const apiPost = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] POST ->", fullUrl, data);
-      const res = await api.post(url, data);
+      const res = await api.post(url, data, axiosConfig);
       if (isDev) console.log("[api] POST response <-", fullUrl, res.status);
       invalidateCache(url.split("?")[0]);
       return res.data;
@@ -105,11 +105,11 @@ export const useApi = () => {
     }
   };
 
-  const apiPut = async <T = any>(url: string, data?: any): Promise<T> => {
+  const apiPut = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] PUT ->", fullUrl, data);
-      const res = await api.put(url, data);
+      const res = await api.put(url, data, axiosConfig);
       if (isDev) console.log("[api] PUT response <-", fullUrl, res.status);
       invalidateCache(url.split("?")[0]);
       return res.data;
@@ -119,11 +119,11 @@ export const useApi = () => {
     }
   };
 
-  const apiPatch = async <T = any>(url: string, data?: any): Promise<T> => {
+  const apiPatch = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] PATCH ->", fullUrl, data);
-      const res = await api.patch(url, data);
+      const res = await api.patch(url, data, axiosConfig);
       if (isDev) console.log("[api] PATCH response <-", fullUrl, res.status);
       invalidateCache(url.split("?")[0]);
       return res.data as T;

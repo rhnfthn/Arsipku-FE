@@ -549,7 +549,7 @@
 
           <!-- Warning: ada nomor pending -->
           <div
-            v-if="selectedRow.details.some((d) => !d.id || d.id === null)"
+            v-if="selectedRow.details.some((d: any) => !d.id || d.id === null)"
             class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2"
           >
             <svg
@@ -641,7 +641,7 @@
                   :key="detail.id || idx"
                   :class="[
                     'flex items-center gap-3 px-4 py-3 transition',
-                    idx < selectedRow.details.length - 1
+                    Number(idx) < selectedRow.details.length - 1
                       ? 'border-b border-gray-100 dark:border-gray-700'
                       : '',
                     detail.status === 'hangus'
@@ -666,7 +666,7 @@
                   <span
                     class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
                   >
-                    {{ idx + 1 }}.
+                    {{ Number(idx) + 1 }}.
                   </span>
 
                   <!-- Nomor -->
@@ -751,7 +751,7 @@
                       class="relative flex flex-1 min-w-0 items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2"
                     >
                       <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                        {{ idx + 1 }}.
+                        {{ Number(idx) + 1 }}.
                       </span>
                       <input
                         type="text"
@@ -1259,7 +1259,7 @@ const filterStatus = ref<string>('Menunggu Verifikasi')
 const openFilterStatus = ref<boolean>(false)
 const openPreview = ref(false)
 const rows = ref<any[]>([])
-const pagination = ref(null)
+const pagination = ref<any>(null)
 const loading = ref(false)
 const uncheckAll = ref(false)
 

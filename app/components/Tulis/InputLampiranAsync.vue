@@ -1,5 +1,5 @@
 <template>
-  <component :is="TulisInputLampiran" v-bind="$attrs" />
+  <component :is="TulisInputLampiran" v-bind="($attrs as any)" />
 </template>
 
 <script setup lang="ts">

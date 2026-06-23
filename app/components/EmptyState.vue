@@ -19,8 +19,8 @@
     <UButton
       v-if="actionLabel"
       class="mt-4"
-      :color="actionColor"
-      :variant="actionVariant"
+      :color="(actionColor as any)"
+      :variant="(actionVariant as any)"
       :to="actionTo"
       @click="$emit('action')"
     >

@@ -1,6 +1,6 @@
 <script setup>
 const props = defineProps({
-  title: { type: String, required: true },
+  title: { type: String, default: '' },
   items: { type: Array, default: () => [] },
 });
 </script>
@@ -9,7 +9,7 @@ const props = defineProps({
   <div class="space-y-1 mb-5">
     <!-- TITLE -->
     <!-- <Heading variant="heading6sb" class="text-gray-900 dark:text-white"> -->
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+    <h1 v-if="title" class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
       {{ title }}
     </h1>
 

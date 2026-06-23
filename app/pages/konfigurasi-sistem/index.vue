@@ -445,7 +445,7 @@ const getAvailableOptions = (_doc: any) => {
   return signOptions
 }
 
-const fieldMap: Record<string, keyof typeof fieldMap> = {
+const fieldMap: Record<string, string> = {
   digsig: 'digsig',
   qr: 'ttdQr',
   basah: 'ttdBasah',

@@ -316,7 +316,7 @@ export function useTulis() {
   /** Set sifat dari string, fallback ke 'biasa' */
   const setSifatFromString = (sifat: string) => {
     const val = String(sifat || 'biasa').toLowerCase();
-    selectedSifat.value = sifatOptions.find((opt) => opt.value === val) ?? sifatOptions[3];
+    selectedSifat.value = sifatOptions.find((opt) => opt.value === val) ?? sifatOptions[3] ?? null;
   };
 
   // ── Confirm dialogs (identik di semua page) ──────────────────────────────────

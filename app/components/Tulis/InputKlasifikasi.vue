@@ -7,14 +7,14 @@
 
     <div class="flex flex-wrap gap-1 w-full items-center min-w-0">
       <USelectMenu v-model="model" :items="computedItems" value-key="id" label-key="searchLabel" variant="none"
-        class="w-full" searchable :content="{ class: 'max-h-[380px]' }"
+        class="w-full" searchable :content="({ class: 'max-h-[380px]' } as any)"
         :search-attributes="['searchLabel']" placeholder="Pilih Klasifikasi"
         :search-input="{ placeholder: 'Cari kode atau nama klasifikasi...' }" :ui="{
           base: '!px-0 !bg-transparent w-full dark:text-white',
           ring: 'ring-0',
           shadow: 'shadow-none',
           width: 'w-full sm:w-auto max-w-[calc(100vw-2rem)]'
-        }">
+        } as any">
 
         <template #item="{ item }">
           <div v-if="item.isParent" class="w-full py-1 overflow-hidden">
@@ -57,7 +57,7 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
-const model = defineModel<string | null>();
+const model = defineModel<any>();
 const selectedObj = computed(() => {
   return props.items.find((b) => b.id === model.value);
 });

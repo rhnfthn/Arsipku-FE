@@ -49,6 +49,20 @@ export const Alert = {
     });
   },
 
+  error(title: string, message: string) {
+    state.type = "danger";
+    state.title = title;
+    state.message = message;
+    state.confirmText = "OK";
+    state.isAlert = true;
+    state.isLoading = false;
+    state.isOpen = true;
+
+    return new Promise<boolean>((res) => {
+      state.resolve = res;
+    });
+  },
+
   // TAMBAHKAN INI: Fungsi untuk menutup alert manual
   close() {
     state.isOpen = false;

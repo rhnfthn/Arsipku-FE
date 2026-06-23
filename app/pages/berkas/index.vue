@@ -202,6 +202,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { Search, FileDown, RotateCcw, Trash2, Pencil, Plus } from 'lucide-vue-next';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import ConfirmPopup from '~/components/ConfirmPopup.vue';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useBerkas } from '~/composables/useBerkas';
@@ -216,7 +217,7 @@ const fetchKlasifikasi = async () => {
   try {
     loadingKlasifikasi.value = true;
     const res = await getKlasifikasiList();
-    const list = res.data ?? res;
+    const list = (res as any)?.data ?? res;
 
     klasifikasiOptions.value = list.filter((item: Klasifikasi) => item.active === 1);
   } catch (err) {
@@ -237,7 +238,7 @@ const fetchBerkas = async () => {
   try {
     loadingData.value = true;
     const res = await getBerkasList();
-    const list = res.data ?? res;
+    const list = (res as any)?.data ?? res;
 
     data.value = list.map((item: any) => ({
       id: item.id,
@@ -364,7 +365,7 @@ const editData = async (item: any) => {
     selectedId.value = item.id;
 
     const res = await getBerkasById(item.id);
-    const berkas = res.data ?? res;
+    const berkas: any = (res as any)?.data ?? res;
 
     form.value = {
       klasifikasi: berkas.klasifikasi,
@@ -402,7 +403,7 @@ const saveData = async () => {
   }
 
   try {
-    const payload = {
+    const payload: any = {
       klasifikasi: form.value.klasifikasi,
       judul_berkas: form.value.berkas,
       hitung_waktu_retensi_dari: form.value.retensi,

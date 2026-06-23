@@ -8,7 +8,7 @@
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu :model-value="model" :items="combinedOptions" multiple :placeholder="placeholder"
         class="w-full p-0 custom-select-menu" variant="none"
-        :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' }" :filter-fields="['label']" :ui="{
+        :content="({ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any)" :filter-fields="['label']" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
           wrapper: 'pr-10 w-full',
           input: 'pr-10 w-full',
@@ -18,7 +18,7 @@
           item: 'cursor-pointer',
           itemWrapper: 'w-full',
           itemLabel: 'w-full'
-        }">
+        } as any">
         <template #item="{ item }">
           <div v-if="item.type === 'label'" class="header-label">
             <span class="header-label-text">
@@ -66,7 +66,7 @@
               <span class="text-xs font-medium text-left truncate">
                 {{ item.label }}
               </span>
-              <UButton icon="i-lucide-x" size="2xs" color="neutral" variant="ghost" :padded="false"
+              <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :padded="false"
                 class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
                 @click.stop="removePerson(item)" />
             </UBadge>
@@ -133,7 +133,7 @@ const processedGroups = computed(() => {
     );
 
     // Cek apakah salah satu anggota grup ini sudah dipilih secara manual di input ini
-    const hasSelectedMemberInSelf = groupMemberIds.some(id => selectedIndividualIds.includes(id));
+    const hasSelectedMemberInSelf = groupMemberIds.some((id: string) => selectedIndividualIds.includes(id));
 
     return {
       ...g,

@@ -329,7 +329,7 @@
           v-model="showDeleteConfirm"
           type="danger"
           :title="t('pt_delete_title')"
-          :message="`${t('pt_delete_title').replace('?', '')} ${data[deleteIndex]?.SUrl}?`"
+          :message="`${t('pt_delete_title').replace('?', '')} ${data[deleteIndex || 0]?.SUrl}?`"
           :confirm-text="t('pt_delete_confirm')"
           :cancel-text="t('pt_delete_cancel')"
           @confirm="confirmDelete"

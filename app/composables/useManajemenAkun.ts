@@ -4,6 +4,7 @@ import { useApi } from './useApi'
 export interface Account {
   persnum: number
   name: string
+  username?: string
   email: string | null
   role: string
   status: string

@@ -4,6 +4,7 @@ import { z } from "zod";
 export const DisposisiPayloadSchema = z.object({
   id_naskah:          z.string().nullable().optional(),
   ref_id:             z.string().nullable().optional(),
+  id_referensi_naskah: z.string().nullable().optional(),
   pengirim:           z.string().min(1, "Pengirim tidak teridentifikasi"),
   tertuju:            z.array(z.string()).min(1, "Penerima tertuju wajib dipilih minimal satu"),
   tanggal_disposisi:  z.string().min(1, "Tanggal disposisi wajib diisi").regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal salah"),
@@ -20,7 +21,11 @@ export const DisposisiPayloadSchema = z.object({
 
 export type DisposisiPayload = z.infer<typeof DisposisiPayloadSchema>;
 
-export const validateDisposisiPayload = (data: any) => {
+export const validateDisposisiPayload = (data: any): {
+  isValid: boolean;
+  errors?: Record<string, string>;
+  data?: any;
+} => {
   const result = DisposisiPayloadSchema.safeParse(data);
 
   if (!result.success) {

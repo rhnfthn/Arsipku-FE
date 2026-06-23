@@ -8,7 +8,7 @@ export interface KlasifikasiPayload {
   klasifikasi_text: string;
   deskripsi?: string | null;
   id_parent?: string;
-  active: number;
+  active?: number;
 }
 
 export const useKlasifikasi = () => {
