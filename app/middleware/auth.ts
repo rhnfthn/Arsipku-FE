@@ -73,6 +73,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/lampiran',
     '/switch',
     '/faq/menu',
+    '/pedoman/menu',
     '/persetujuan-penomoran'
   ]
 

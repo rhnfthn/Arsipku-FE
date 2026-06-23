@@ -468,12 +468,15 @@ const userMenuUtilitas = computed(() => {
 });
 
 const faqMenuUser = computed(() => [
-  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' }
+  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
+  { label: 'Pedoman', to: '/pedoman/menu', icon: 'i-lucide-book-open' }
 ]);
 
 const faqMenuAdmin = computed(() => [
   { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
-  { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' }
+  { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' },
+  { label: 'Pedoman', to: '/pedoman/menu', icon: 'i-lucide-book-open' },
+  { label: 'Manajemen Pedoman', to: '/pedoman/manajemen', icon: 'i-lucide-file-text' }
 ]);
 
 // ─── Admin menus ──────────────────────────────────────────────────────────────
