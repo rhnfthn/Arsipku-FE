@@ -5,6 +5,7 @@
     
     COPY package*.json ./
     RUN npm ci
+    RUN npm install lightningcss-linux-x64-gnu --no-save
     
     COPY . .
     RUN npm run build
