@@ -18,7 +18,13 @@ export default defineNuxtConfig({
     enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || false,
   },
 
-  modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n"],
+  modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n", "motion-v/nuxt"],
+
+  motionV: {
+    components: true,
+    utilities: true,
+    directives: true,
+  },
 
   build: {
     transpile: ["@vuepic/vue-datepicker"],
