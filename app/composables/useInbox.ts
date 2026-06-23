@@ -211,6 +211,8 @@ export function useInbox() {
       const dataArray = res?.data && Array.isArray(res.data) ? res.data : res?.data ? [res.data] : [];
       if (dataArray.length === 0) return null;
 
+      const userSirkulasi = res?.user_sirkulasi || null;
+
       const mapped = dataArray.map((d: any) => {
         const rawPenerima = Array.isArray(d.penerima) ? d.penerima : d.kepada || [];
         const groupedPenerima = processGrouping(rawPenerima, d.penerima_grup || []);
@@ -240,6 +242,13 @@ export function useInbox() {
           flow:           d.flow || [],
           created_at:     d.createdAt || d.created_at,
           raw: d,
+          user_sirkulasi: userSirkulasi,
+          isStarred:      userSirkulasi?.is_favorit ?? false,
+          isTinjut:       userSirkulasi?.is_tindak_lanjut ?? false,
+          isLocked:       userSirkulasi?.is_locked ?? false,
+          isNote:         userSirkulasi?.is_note ?? false,
+          isArsip:        userSirkulasi?.is_arsip ?? false,
+          sirkulasiId:    userSirkulasi?.id_sirkulasi ?? null,
         };
       });
 
