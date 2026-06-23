@@ -16,7 +16,7 @@ const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
 
-const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation } = useInbox();
+const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
 
 const id = route.params.id as string;
@@ -311,6 +311,7 @@ const loadData = async () => {
       if (sortedFlows.length > 0) {
         const lastFlow = sortedFlows[0];
         selected.value = lastFlow;
+        initFlagState();
 
         const hasNewer = Boolean(navNext.value);
         const hasOlder = Boolean(navPrev.value);
@@ -423,6 +424,7 @@ const loadData = async () => {
 
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
+        initFlagState();
 
         const hasNewer = Boolean(navNext.value);
         const hasOlder = Boolean(navPrev.value);
@@ -520,6 +522,62 @@ watch(
 
 // --- ACTIONS HANDLERS ---
 const goBack = () => router.push('/korespondensi/kotak-masuk');
+
+// --- FLAG TOGGLE (favorit, tindak_lanjut, lock, note) ---
+const flagState = ref({
+  isStarred: false,
+  isTinjut: false,
+  isLocked: false,
+  isNote: false,
+});
+
+const initFlagState = () => {
+  const s = selected.value;
+  flagState.value = {
+    isStarred: s?.isStarred ?? s?.user_sirkulasi?.is_favorit ?? false,
+    isTinjut: s?.isTinjut ?? s?.user_sirkulasi?.is_tindak_lanjut ?? false,
+    isLocked: s?.isLocked ?? s?.user_sirkulasi?.is_locked ?? false,
+    isNote: s?.isNote ?? s?.user_sirkulasi?.is_note ?? false,
+  };
+};
+
+const handleToggleFlag = async (
+  type: "favorit" | "tindak_lanjut" | "lock" | "note",
+) => {
+  const s = selected.value;
+  if (!s) return;
+  const idSirkulasi = s.sirkulasiId || s.user_sirkulasi?.id_sirkulasi || s.raw?.user_sirkulasi?.id_sirkulasi;
+  if (!idSirkulasi) {
+    useToast().add({ title: 'Error', description: 'ID Sirkulasi tidak ditemukan.', color: 'error' });
+    return;
+  }
+
+  const flagKeyMap: Record<string, keyof typeof flagState.value> = {
+    favorit: 'isStarred',
+    tindak_lanjut: 'isTinjut',
+    lock: 'isLocked',
+    note: 'isNote',
+  };
+  const flagKey = flagKeyMap[type];
+  (flagState.value as any)[flagKey] = !(flagState.value as any)[flagKey];
+  const isNowActive = (flagState.value as any)[flagKey];
+
+  const descMap: Record<string, [string, string]> = {
+    favorit: ['Ditambahkan ke Favorit', 'Dihapus dari Favorit'],
+    tindak_lanjut: ['Ditandai tindak lanjut', 'Tindak lanjut selesai'],
+    lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
+    note: ['Note ditandai', 'Tanda note dihapus'],
+  };
+  useToast().add({ title: 'Berhasil', description: descMap[type][isNowActive ? 0 : 1], color: 'success' });
+
+  try {
+    const mailObj = { sirkulasiId: idSirkulasi, ...flagState.value };
+    await toggleFlag(mailObj, type);
+  } catch {
+    (flagState.value as any)[flagKey] = !(flagState.value as any)[flagKey];
+    useToast().add({ title: 'Gagal', description: 'Gagal memperbarui status.', color: 'error' });
+  }
+};
 
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
@@ -757,19 +815,9 @@ const konsepOptions = computed(() => [
         :id="`card-${detail.id || detail.urutan}`" class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
         :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
-        <!-- Timeline connector line (between cards) -->
-        <div v-if="index < visibleDetails.length - 1" class="absolute left-5 -bottom-2 w-0.5 h-2 bg-linear-to-b from-primary-300 to-primary-200 dark:from-primary-600 dark:to-primary-700 z-0" />
-
-        <!-- Timeline dot -->
-        <div class="absolute left-3.5 top-4 z-10">
-          <div class="w-4 h-4 rounded-full border-2 border-primary-400 bg-white dark:bg-gray-800 flex items-center justify-center">
-            <div class="w-1.5 h-1.5 rounded-full bg-primary-500" />
-          </div>
-        </div>
-
         <!-- Card content -->
-        <div class="ml-12">
-          <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
+        <div>
+          <DetailNaskah context="inbox" :data="index === 0 ? { ...detail, ...flagState } : detail" :is-head="index === 0"
             :collapsed="isCardCollapsed(index)"
             :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
             :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
@@ -782,6 +830,10 @@ const konsepOptions = computed(() => [
             @lanjut-konsep="handleLanjutKonsep"
             @nav-newer="goToNewer"
             @nav-older="goToOlder"
+            @favorite="handleToggleFlag('favorit')"
+            @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
+            @lock="handleToggleFlag('lock')"
+            @catatan="handleToggleFlag('note')"
             @toggle-collapse="toggleCardCollapse(index)" />
         </div>
       </div>
